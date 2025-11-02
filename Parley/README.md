@@ -95,7 +95,7 @@ dotnet run --project Parley/Parley.csproj
 
 1. **Open Settings** (Tools → Settings or Ctrl+,)
 2. **Set Game Directory**: Point to your NWN installation
-   - Windows: `C:\Users\[Name]\Documents\Neverwinter Nights`
+   - Windows: `~\Documents\Neverwinter Nights`
    - Linux: `~/.local/share/Neverwinter Nights`
    - macOS: `~/Library/Application Support/Neverwinter Nights`
 3. **Set Module Directory** (optional): Choose specific module folder
