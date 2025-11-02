@@ -149,3 +149,7 @@ CopyTreeStructure.txt
 /ArcReactor.bak
 replace_legal_name.py
 /.claude/settings.local.json
+
+# Build test artifacts
+Parley/test-publish/
+Parley/test-publish-v2/
