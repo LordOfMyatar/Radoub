@@ -1,0 +1,83 @@
+name: "🧪 Testing Checklist"
+description: "Track 4C testing progress for a release"
+labels: ["testing", "checklist"]
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: "Testing Phase"
+      options:
+        - "Phase 0 - Avalonia Migration"
+        - "Phase 1 - Core Editing"
+        - "Phase 2 - Resource Integration"
+        - "Phase 3 - Script & Parameters"
+        - "Phase 4 - UI/UX Enhancements"
+        - "Phase 5 - Advanced Visualization"
+        - "Phase 6 - Testing & Validation"
+    validations:
+      required: true
+
+  - type: input
+    id: build
+    attributes:
+      label: "Build"
+      description: "Commit hash or version"
+      placeholder: "abc1234"
+    validations:
+      required: true
+
+  - type: input
+    id: test_files
+    attributes:
+      label: "Test Files"
+      placeholder: "aob.dlg, complex-conversation.dlg"
+
+  - type: checkboxes
+    id: core_tests
+    attributes:
+      label: "Core Functionality"
+      options:
+        - label: "File open/save operations"
+        - label: "Node creation/deletion"
+        - label: "Tree navigation"
+        - label: "Property editing"
+        - label: "Copy/paste system"
+
+  - type: checkboxes
+    id: aurora_tests
+    attributes:
+      label: "Aurora Compatibility"
+      options:
+        - label: "Round-trip: ArcReactor → Aurora → ArcReactor"
+        - label: "No data corruption"
+        - label: "File format preserved"
+
+  - type: checkboxes
+    id: edge_cases
+    attributes:
+      label: "Edge Cases"
+      options:
+        - label: "Delete ROOT blocked"
+        - label: "Copy ROOT blocked"
+        - label: "Empty file handling"
+        - label: "Large file performance"
+
+  - type: textarea
+    id: results
+    attributes:
+      label: "Test Results"
+      placeholder: |
+        ## Summary
+        - Passed: X/Y
+        - Critical issues: [list]
+
+        ## Bugs Found
+        - #123 - [description]
+        - #456 - [description]
+
+        ## Ready for next phase: Y/N
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: "Additional Notes"

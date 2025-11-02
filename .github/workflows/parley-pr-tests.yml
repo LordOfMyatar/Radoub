@@ -1,0 +1,43 @@
+name: Parley PR Test Suite
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Parley/**'
+      - '.github/workflows/parley-pr-tests.yml'
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Parley.sln
+      working-directory: ./Parley
+
+    - name: Build solution
+      run: dotnet build Parley.sln --configuration Release --no-restore
+      working-directory: ./Parley
+
+    - name: Run tests
+      run: |
+        $testProjects = Get-ChildItem -Path TestingTools -Recurse -Filter "*.csproj"
+        foreach ($project in $testProjects) {
+          Write-Host "Testing: $($project.Name)"
+          dotnet test $project.FullName --configuration Release --no-build --verbosity normal
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Tests failed in $($project.Name)"
+            exit 1
+          }
+        }
+        Write-Host "✅ All Parley tests passed"
+      working-directory: ./Parley

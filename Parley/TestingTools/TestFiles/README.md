@@ -32,7 +32,6 @@ string workspace = TestPathHelper.GetWorkspaceRoot();
 ```csharp
 // ❌ Hardcoded paths - will break on other machines
 string testFile = @"D:\LOM\Tools\LNS_DLG\TestFiles\chef.dlg";
-string testFile = @"C:\Users\Name\Documents\...\chef.dlg";
 ```
 
 ## TestPathHelper

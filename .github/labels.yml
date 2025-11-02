@@ -1,0 +1,67 @@
+# GitHub Labels Configuration for Radoub Multi-Tool Repository
+# Use: gh label sync --file .github/labels.yml
+
+# Tool Labels (for multi-tool repo)
+- name: "parley"
+  color: "0052cc"
+  description: "Parley dialog editor"
+
+# Priority Labels
+- name: "priority-critical"
+  color: "d73a4a"
+  description: "Blocking - Crash, data loss, stops work"
+
+- name: "priority-high"
+  color: "f85149"
+  description: "Blocking - Core functionality broken"
+
+- name: "priority-medium"
+  color: "fb8500"
+  description: "Impairing - Feature impacted, workarounds exist"
+
+- name: "priority-low"
+  color: "ffeb3b"
+  description: "Nuisance - Minor issues, cosmetic"
+
+# Issue Types
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "enhancement"
+  color: "a2eeef"
+  description: "New feature or improvement"
+
+- name: "aurora-compatibility"
+  color: "7057ff"
+  description: "Aurora Toolset compatibility issue"
+
+- name: "testing"
+  color: "e4e669"
+  description: "Testing framework or checklist"
+
+# Status Labels
+- name: "needs-retest"
+  color: "fbca04"
+  description: "Fix applied, needs verification"
+
+- name: "verified-fixed"
+  color: "0e8a16"
+  description: "Fix confirmed through testing"
+
+- name: "blocked"
+  color: "b60205"
+  description: "Blocked by dependency or issue"
+
+# Area Labels
+- name: "ui"
+  color: "c5def5"
+  description: "User interface related"
+
+- name: "performance"
+  color: "f9d71c"
+  description: "Performance optimization"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Documentation improvements"
