@@ -1,0 +1,54 @@
+{
+  "testFilesDirectory": "C:~\\Documents\\Neverwinter Nights\\modules\\LNS_DLG",
+  "testFiles": {
+    "chef": {
+      "filename": "chef.dlg",
+      "description": "Simple conversation - Chef from South Park",
+      "complexity": "low",
+      "features": ["basic_entry_reply", "simple_branching"]
+    },
+    "hicks_hudson": {
+      "filename": "hicks_hudson.dlg",
+      "description": "Colonial Marines gate guards",
+      "complexity": "low",
+      "features": ["basic_entry_reply", "conditional_pointers", "simple_branching"]
+    },
+    "lista": {
+      "filename": "lista.dlg",
+      "description": "Medium complexity conversation",
+      "complexity": "medium",
+      "features": ["multiple_starts", "complex_branching", "loops"]
+    },
+    "convolutedconvo": {
+      "filename": "convolutedconvo.dlg",
+      "description": "Complex conversation with loops",
+      "complexity": "high",
+      "features": ["complex_branching", "loops", "multiple_paths"]
+    },
+    "blank": {
+      "filename": "blank.dlg",
+      "description": "Minimal/empty conversation",
+      "complexity": "minimal",
+      "features": ["edge_case"]
+    },
+    "generic_hench": {
+      "filename": "generic_hench.dlg",
+      "description": "Henchman conversation from NWN",
+      "complexity": "medium",
+      "features": ["bioware_original", "complex_branching"]
+    },
+    "x2_associate": {
+      "filename": "x2_associate.dlg",
+      "description": "Associate conversation from HotU expansion",
+      "complexity": "high",
+      "features": ["bioware_original", "very_complex", "expansion_content"]
+    }
+  },
+  "testSuites": {
+    "quick": ["chef", "hicks_hudson"],
+    "medium": ["chef", "hicks_hudson", "lista"],
+    "full": ["chef", "hicks_hudson", "lista", "convolutedconvo", "generic_hench"],
+    "edge_cases": ["blank"],
+    "bioware": ["generic_hench", "x2_associate"]
+  }
+}

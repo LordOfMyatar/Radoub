@@ -1,0 +1,10 @@
+Conversation Tree Structure for lista.dlg:
+==============================
+- Root
+  - [Owner] "Hello there!" (StrRef:4294967295)
+    - [PC] "Hello, how are you?" (StrRef:4294967295)
+      - [Owner] "I am well, thank you." (StrRef:4294967295)
+        - [PC] "okay" (StrRef:4294967295)
+    - [PC] "Why are you alone in the woods?" (StrRef:4294967295)
+      - [Owner] "I'm not, I'm with Harvey the Rabbit." (StrRef:4294967295)
+        - [PC] "okay" (StrRef:4294967295)

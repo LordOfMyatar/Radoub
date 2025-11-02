@@ -1,0 +1,515 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DialogEditor.ViewModels"
+        xmlns:models="using:DialogEditor.Models"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="DialogEditor.Views.MainWindow"
+        Title="{Binding WindowTitle}"
+        Icon="avares://Parley/Assets/parley.ico"
+        Width="1200" Height="800"
+        MinWidth="800" MinHeight="600">
+
+    <Design.DataContext>
+        <vm:MainViewModel/>
+    </Design.DataContext>
+
+    <Window.Resources>
+        <!-- Converter for End flag: true = 0.5 opacity (faded), false = 1.0 opacity (normal) -->
+        <models:BoolToOpacityConverter x:Key="BoolToOpacityConverter"/>
+    </Window.Resources>
+
+    <Grid x:Name="MainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="0"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New" InputGesture="Ctrl+N" Click="OnNewClick"/>
+                <Separator/>
+                <MenuItem Header="_Open..." InputGesture="Ctrl+O" Click="OnOpenClick"/>
+                <MenuItem Name="RecentFilesMenuItem" Header="Recent _Files"/>
+                <Separator/>
+                <MenuItem Header="_Save" InputGesture="Ctrl+S" Click="OnSaveClick"/>
+                <MenuItem Header="Save _As..." Click="OnSaveAsClick"/>
+                <Separator/>
+                <MenuItem Header="_Close" Click="OnCloseClick"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="OnExitClick"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" Click="OnUndoClick"/>
+                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" Click="OnRedoClick"/>
+                <Separator/>
+                <MenuItem Header="Add _Node" InputGesture="Ctrl+D" Click="OnAddSmartNodeClick"/>
+                <Separator/>
+                <MenuItem Header="_Save" InputGesture="Ctrl+S" Click="OnSaveClick"/>
+                <Separator/>
+                <MenuItem Header="Move _Up" InputGesture="Ctrl+Shift+Up" Click="OnMoveNodeUpClick"/>
+                <MenuItem Header="Move _Down" InputGesture="Ctrl+Shift+Down" Click="OnMoveNodeDownClick"/>
+                <Separator/>
+                <MenuItem Header="_Expand This and Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
+                <MenuItem Header="_Collapse This and Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
+                <Separator/>
+                <MenuItem Header="_Delete Node" InputGesture="Delete" Click="OnDeleteNodeClick"/>
+                <Separator/>
+                <MenuItem Header="Cu_t Node" InputGesture="Ctrl+X" Click="OnCutNodeClick"/>
+                <MenuItem Header="_Copy Node" InputGesture="Ctrl+C" Click="OnCopyNodeClick"/>
+                <MenuItem Header="_Paste" InputGesture="Ctrl+V" Click="OnPasteAsDuplicateClick"/>
+                <MenuItem Header="Paste as _Link" InputGesture="Ctrl+L" Click="OnPasteAsLinkClick"/>
+                <Separator/>
+                <MenuItem Header="Copy Node _Text" InputGesture="Ctrl+Shift+T" Click="OnCopyNodeTextClick"/>
+                <MenuItem Header="Copy Node _Properties" InputGesture="Ctrl+Shift+P" Click="OnCopyNodePropertiesClick"/>
+                <MenuItem Header="Copy Tree _Structure" InputGesture="Ctrl+Shift+S" Click="OnCopyTreeStructureClick"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem x:Name="ShowDebugMenuItem" Header="Show _Debug Console" Click="OnToggleDebugConsoleClick">
+                    <MenuItem.Icon>
+                        <CheckBox IsChecked="True" IsHitTestVisible="False" Focusable="False"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Clear _Debug Output" Click="OnClearDebugClick"/>
+                <Separator/>
+                <MenuItem Header="Font Size">
+                    <MenuItem Header="Small (10pt)" Click="OnFontSizeClick" Tag="10"/>
+                    <MenuItem Header="Normal (12pt)" Click="OnFontSizeClick" Tag="12"/>
+                    <MenuItem Header="Large (14pt)" Click="OnFontSizeClick" Tag="14"/>
+                    <MenuItem Header="Extra Large (16pt)" Click="OnFontSizeClick" Tag="16"/>
+                    <MenuItem Header="Reader Friendly (18pt)" Click="OnFontSizeClick" Tag="18"/>
+                    <MenuItem Header="Super Reader (20pt)" Click="OnFontSizeClick" Tag="20"/>
+                    <MenuItem Header="Maximum (24pt)" Click="OnFontSizeClick" Tag="24"/>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Settings">
+                <MenuItem Header="_Preferences..." Click="OnPreferencesClick"/>
+                <Separator/>
+                <MenuItem Header="_Game Directories..." Click="OnGameDirectoriesClick"/>
+                <MenuItem Header="_Logging Settings..." Click="OnLogSettingsClick"/>
+                <Separator/>
+                <MenuItem Header="_Refresh Script Cache" Click="OnRefreshScriptCacheClick"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About Parley" Click="OnAboutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Module Info Bar -->
+        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="8,4">
+            <StackPanel Orientation="Horizontal" Spacing="15">
+                <TextBlock x:Name="ModuleNameTextBlock"
+                           Text="No module loaded"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="|"
+                           Foreground="Gray"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="ModulePathTextBlock"
+                           Text=""
+                           Foreground="Gray"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+<!-- Main Content Area -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Dialog Tree View -->
+            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
+                <DockPanel>
+                    <!-- Header -->
+                    <TextBlock DockPanel.Dock="Top" Text="Dialog Tree" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
+
+                    <!-- Tree Control Buttons -->
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
+                        <Button Name="ExpandAllButton" Content="Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                        <Button Name="CollapseAllButton" Content="Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                        <Separator Width="1" Margin="5,0"/>
+                        <Button Name="AddNodeButton" Content="+ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
+                        <Button Name="DeleteNodeButton" Content="Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
+                    </StackPanel>
+
+                    <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
+                              SelectionChanged="OnDialogTreeViewSelectionChanged">
+                        <TreeView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Add Node" Click="OnAddSmartNodeClick"/>
+                                <Separator/>
+                                <MenuItem Header="Move Up" InputGesture="Alt+Up" Click="OnMoveNodeUpClick"/>
+                                <MenuItem Header="Move Down" InputGesture="Alt+Down" Click="OnMoveNodeDownClick"/>
+                                <Separator/>
+                                <MenuItem Header="Delete Node" Click="OnDeleteNodeClick"/>
+                                <Separator/>
+                                <MenuItem Header="Cut Node" Click="OnCutNodeClick"/>
+                                <MenuItem Header="Copy Node" Click="OnCopyNodeClick"/>
+                                <MenuItem Header="Paste" Click="OnPasteAsDuplicateClick"/>
+                                <MenuItem Header="Paste as Link" Click="OnPasteAsLinkClick"/>
+                                <Separator/>
+                                <MenuItem Header="Expand This Node and Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
+                                <MenuItem Header="Collapse This Node and Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
+                                <Separator/>
+                                <MenuItem Header="Copy Node Text" Click="OnCopyNodeTextClick"/>
+                                <MenuItem Header="Copy Node Properties" Click="OnCopyNodePropertiesClick"/>
+                            </ContextMenu>
+                        </TreeView.ContextMenu>
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                            </Style>
+                            <!-- Show focus indicator when TreeView has keyboard focus -->
+                            <Style Selector="TreeViewItem:focus /template/ Border#PART_LayoutRoot">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                            </Style>
+                            <!-- Alternative: Use background color for focus indication -->
+                            <Style Selector="TreeViewItem:selected:focus /template/ Border#PART_LayoutRoot">
+                                <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+                                <Setter Property="BorderThickness" Value="2"/>
+                            </Style>
+                        </TreeView.Styles>
+                        <TreeView.DataTemplates>
+                            <TreeDataTemplate DataType="models:TreeViewSafeNode" ItemsSource="{Binding Children}">
+                                <TextBlock Text="{Binding DisplayText}" TextWrapping="Wrap" Foreground="{Binding NodeColor}"/>
+                            </TreeDataTemplate>
+                        </TreeView.DataTemplates>
+                    </TreeView>
+                </DockPanel>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" Width="3"/>
+
+            <!-- Properties Panel -->
+            <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
+                <ScrollViewer>
+                    <StackPanel Margin="5">
+                        <!-- Conversation Settings (dialog-level properties) -->
+                        <TextBlock Text="Conversation Settings" FontWeight="Bold" FontSize="15" Margin="0,0,0,5"/>
+
+                        <CheckBox x:Name="PreventZoomCheckBox" Content="Prevent Camera Zoom (Cutscene Mode)"
+                                  Margin="0,0,0,5" Checked="OnConversationSettingChanged" Unchecked="OnConversationSettingChanged"
+                                  ToolTip.Tip="When checked, prevents camera zoom-in during conversation (useful for cutscenes)"/>
+
+                        <TextBlock Text="On Conversation End (Normal):"/>
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="ScriptEndTextBox" Grid.Column="0" FontFamily="Consolas"
+                                     TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
+                                     ToolTip.Tip="Script to run when conversation ends normally"/>
+                            <Button Grid.Column="2" Content="Browse..." MinWidth="70" Padding="5,0"
+                                    Click="OnBrowseConversationScriptClick" Tag="ScriptEnd"/>
+                        </Grid>
+
+                        <TextBlock Text="On Conversation Abort:"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="ScriptAbortTextBox" Grid.Column="0" FontFamily="Consolas"
+                                     TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
+                                     ToolTip.Tip="Script to run when conversation is aborted"/>
+                            <Button Grid.Column="2" Content="Browse..." MinWidth="70" Padding="5,0"
+                                    Click="OnBrowseConversationScriptClick" Tag="ScriptAbort"/>
+                        </Grid>
+
+                        <Separator Margin="0,5,0,10"/>
+
+                        <TextBlock Text="Node Properties" FontWeight="Bold" FontSize="15" Margin="0,0,0,10"/>
+
+                        <!-- Basic Node Info -->
+                        <TextBlock Text="Type:" FontWeight="Bold"/>
+                        <TextBox x:Name="NodeTypeTextBox" IsReadOnly="True" Margin="0,0,0,5"
+                                 TextWrapping="Wrap" AcceptsReturn="True"/>
+
+                        <TextBlock Text="Speaker:"/>
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="SpeakerTextBox" Grid.Column="0"
+                                     TextWrapping="Wrap" AcceptsReturn="True"
+                                     LostFocus="OnFieldLostFocus"/>
+                            <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="2"
+                                      MinWidth="100" MaxWidth="150"
+                                      PlaceholderText="Recent..."
+                                      SelectionChanged="OnRecentCreatureTagSelected">
+                                <!-- Populated dynamically -->
+                            </ComboBox>
+                            <Button x:Name="BrowseCreatureButton" Grid.Column="4" Content="Browse..."
+                                    MinWidth="70" Padding="5,0" Click="OnBrowseCreatureClick"/>
+                        </Grid>
+
+                        <TextBlock Text="Text:"/>
+                        <TextBox x:Name="TextTextBox" AcceptsReturn="True" MinHeight="80"
+                                TextWrapping="Wrap" Margin="0,0,0,5"
+                                LostFocus="OnFieldLostFocus"/>
+                        <!-- Save Changes button removed - using field-level auto-save -->
+
+                        <!-- Animation and Audio -->
+                        <Separator Margin="0,5"/>
+                        <TextBlock Text="Animation &amp; Audio:" FontWeight="Bold" Margin="0,5,0,5"/>
+
+                        <TextBlock Text="Animation:"/>
+                        <ComboBox x:Name="AnimationComboBox" Margin="0,0,0,5"
+                                  SelectionChanged="OnAnimationSelectionChanged"/>
+
+                        <TextBlock Text="Sound File:"/>
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="SoundTextBox" Grid.Column="0" TextWrapping="Wrap"
+                                     LostFocus="OnFieldLostFocus"/>
+                            <Button x:Name="BrowseSoundButton" Grid.Column="2" Content="Browse..."
+                                    MinWidth="70" Padding="5,0" Click="OnBrowseSoundClick"/>
+                            <Button x:Name="PlaySoundButton" Grid.Column="4" Content="Play"
+                                    MinWidth="50" Padding="5,0" Click="OnPlaySoundClick"/>
+                        </Grid>
+
+                        <TextBlock Text="Delay (ms):"/>
+                        <TextBox x:Name="DelayTextBox" Margin="0,0,0,10" TextWrapping="Wrap"
+                                 TextChanged="OnDelayTextChanged"
+                                 LostFocus="OnFieldLostFocus"/>
+
+                        <!-- Conditional Scripts -->
+                        <Separator Margin="0,5"/>
+                        <TextBlock Text="Conditional Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
+
+                        <TextBlock Text="Script (Appears When):"/>
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas"
+                                     TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
+                            <Button x:Name="BrowseConditionalScriptButton" Grid.Column="2" Content="Browse..."
+                                    MinWidth="70" Padding="5,0" Click="OnBrowseConditionalScriptClick"/>
+                        </Grid>
+
+                        <TextBlock Text="Condition Parameters:" Margin="0,5,0,2"/>
+                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Key-Value pairs for condition script"
+                                           FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
+                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40">
+                                    <StackPanel x:Name="ConditionsParametersPanel" Margin="5"/>
+                                </ScrollViewer>
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
+                                    <Button Content="+ Add Parameter"
+                                            x:Name="AddConditionsParamButton" Click="OnAddConditionsParamClick"
+                                            Margin="0,0,10,0"/>
+                                    <CheckBox x:Name="AutoTrimConditionsCheckBox"
+                                              Content="Auto-Trim whitespace"
+                                              IsChecked="True"
+                                              ToolTip.Tip="Automatically trim leading/trailing whitespace from keys and values"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="Conditional Script Preview:" Margin="0,5,0,2"/>
+                        <Border x:Name="ConditionalScriptPreviewGrid" MinHeight="100" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                            <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer">
+                                <TextBox x:Name="ConditionalScriptPreviewTextBox"
+                                         FontFamily="Consolas" FontSize="11"
+                                         Background="Transparent" BorderThickness="0"
+                                         IsReadOnly="True" TextWrapping="Wrap"
+                                         Text="// Conditional script preview will appear here"
+                                         Margin="5"/>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Action Scripts -->
+                        <Separator Margin="0,5"/>
+                        <TextBlock Text="Action Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
+
+                        <TextBlock Text="Script (Action):"/>
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas"
+                                     TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
+                            <Button x:Name="BrowseActionScriptButton" Grid.Column="2" Content="Browse..."
+                                    MinWidth="70" Padding="5,0" Click="OnBrowseActionScriptClick"/>
+                        </Grid>
+
+                        <TextBlock Text="Action Parameters:" Margin="0,5,0,2"/>
+                        <Border x:Name="ActionsParametersGrid" MinHeight="60" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Key-Value pairs for action script"
+                                           FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
+                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40">
+                                    <StackPanel x:Name="ActionsParametersPanel" Margin="5"/>
+                                </ScrollViewer>
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
+                                    <Button Content="+ Add Parameter"
+                                            x:Name="AddActionsParamButton" Click="OnAddActionsParamClick"
+                                            Margin="0,0,10,0"/>
+                                    <CheckBox x:Name="AutoTrimActionsCheckBox"
+                                              Content="Auto-Trim whitespace"
+                                              IsChecked="True"
+                                              ToolTip.Tip="Automatically trim leading/trailing whitespace from keys and values"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="Action Script Preview:" Margin="0,5,0,2"/>
+                        <Border x:Name="ActionScriptPreviewGrid" MinHeight="100" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                            <ScrollViewer x:Name="ActionScriptPreviewScrollViewer">
+                                <TextBox x:Name="ActionScriptPreviewTextBox"
+                                         FontFamily="Consolas" FontSize="11"
+                                         Background="Transparent" BorderThickness="0"
+                                         IsReadOnly="True" TextWrapping="Wrap"
+                                         Text="// Action script preview will appear here"
+                                         Margin="5"/>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Quest System -->
+                        <Separator Margin="0,5"/>
+                        <TextBlock Text="Quest System:" FontWeight="Bold" Margin="0,5,0,5"/>
+
+                        <TextBlock Text="Quest Tag:"/>
+                        <ComboBox x:Name="QuestTagComboBox" Margin="0,0,0,5"
+                                  SelectionChanged="OnQuestTagChanged"
+                                  ToolTip.Tip="Select a quest from the module's journal">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayName}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- Quest Name Display (read-only info) -->
+                        <TextBlock x:Name="QuestNameTextBlock"
+                                   Foreground="Gray"
+                                   FontStyle="Italic"
+                                   Margin="5,0,0,5"
+                                   Text=""
+                                   TextWrapping="Wrap"/>
+
+                        <TextBlock Text="Quest Entry:"/>
+                        <ComboBox x:Name="QuestEntryComboBox" Margin="0,0,0,5"
+                                  SelectionChanged="OnQuestEntryChanged"
+                                  ToolTip.Tip="Select a quest entry">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayText}"
+                                               ToolTip.Tip="{Binding FullText}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- Quest Entry Details (text preview and end status) -->
+                        <StackPanel Orientation="Horizontal" Margin="5,0,0,10">
+                            <TextBlock x:Name="QuestEntryPreviewTextBlock"
+                                       Foreground="Gray"
+                                       FontStyle="Italic"
+                                       Text=""
+                                       TextWrapping="NoWrap"
+                                       Margin="0,0,10,0"/>
+                            <TextBlock x:Name="QuestEntryEndTextBlock"
+                                       Foreground="DarkGreen"
+                                       FontWeight="Bold"
+                                       Text=""
+                                       ToolTip.Tip="This entry marks quest as complete and plays reward sound"/>
+                        </StackPanel>
+
+                        <!-- Link Properties -->
+                        <Separator Margin="0,5"/>
+                        <TextBlock x:Name="IsChildTextBlock"
+                                   Foreground="Gray"
+                                   FontStyle="Italic"
+                                   Margin="0,5,0,10"
+                                   Text=""
+                                   ToolTip.Tip="Indicates if this node is a child/link appearing under multiple parents"/>
+
+                        <!-- Comment -->
+                        <TextBlock Text="Comment:"/>
+                        <TextBox x:Name="CommentTextBox" AcceptsReturn="True" MinHeight="50"
+                                TextWrapping="Wrap" Margin="0,0,0,5"
+                                LostFocus="OnFieldLostFocus"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Splitter between main content and debug -->
+        <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" Background="Gray"/>
+
+        <!-- Debug Output -->
+        <Border x:Name="DebugConsoleGroupBox" Grid.Row="4" BorderBrush="Gray" BorderThickness="1" Margin="5,0,5,5" Padding="5">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Debug Output" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
+                <ListBox x:Name="DebugListBox"
+                         ItemsSource="{Binding DebugMessages}"
+                         Background="Transparent">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="13" Padding="2"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="5" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="5,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"/>
+                <TextBlock Grid.Column="1" Text="{Binding LoadedFileName}" Foreground="Gray" Margin="20,0,0,0"/>
+                <ProgressBar Grid.Column="2" Width="100" Height="16"
+                             IsIndeterminate="{Binding IsLoading}"
+                             IsVisible="{Binding IsLoading}" Margin="10,0,0,0"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

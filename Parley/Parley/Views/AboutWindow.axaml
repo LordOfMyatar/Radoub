@@ -1,0 +1,82 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DialogEditor.Views.AboutWindow"
+        Title="About Parley"
+        Width="500" Height="400"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Icon="avares://Parley/Assets/parley.ico">
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- App Icon -->
+        <Image Grid.Row="0"
+               Source="avares://Parley/Assets/parley.ico"
+               Width="64" Height="64"
+               HorizontalAlignment="Center"
+               Margin="0,0,0,20"/>
+
+        <!-- App Name -->
+        <TextBlock Grid.Row="1"
+                   Text="Parley - Dialog Editor"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,10"/>
+
+        <!-- Author -->
+        <TextBlock Grid.Row="2"
+                   Text="by Lord"
+                   FontSize="16"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,5"/>
+
+        <!-- GitHub Link -->
+        <TextBlock Grid.Row="3"
+                   Text="https://github.com/LordOfMyatar/"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"
+                   Foreground="Blue"
+                   TextDecorations="Underline"
+                   Cursor="Hand"
+                   PointerPressed="OnGitHubLinkClick"/>
+
+        <!-- Version and Thanks -->
+        <StackPanel Grid.Row="4"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="10">
+            <TextBlock x:Name="VersionTextBlock"
+                       Text="Version 1.0 (Alpha)"
+                       FontSize="14"
+                       HorizontalAlignment="Center"
+                       Foreground="Gray"/>
+
+            <Border BorderBrush="Gray"
+                    BorderThickness="0,1,0,0"
+                    Padding="0,15,0,0"
+                    Margin="0,10,0,0">
+                <TextBlock Text="Special thanks to all of the&#x0a;Neverwinter Nights modding community"
+                           FontSize="14"
+                           TextAlignment="Center"
+                           Foreground="Gray"/>
+            </Border>
+        </StackPanel>
+
+        <!-- Close Button -->
+        <Button Grid.Row="5"
+                Content="Close"
+                HorizontalAlignment="Center"
+                Width="100"
+                Click="OnCloseClick"
+                Margin="0,20,0,0"/>
+    </Grid>
+</Window>

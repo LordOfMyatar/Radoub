@@ -1,0 +1,65 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore LNS_DLG.sln
+
+    - name: Build solution
+      run: dotnet build LNS_DLG.sln --configuration Release --no-restore
+
+    - name: Run full test suite
+      run: |
+        $testProjects = Get-ChildItem -Path TestingTools -Recurse -Filter "*.csproj"
+        $failed = $false
+        foreach ($project in $testProjects) {
+          Write-Host "Testing: $($project.Name)"
+          dotnet test $project.FullName --configuration Release --no-build --verbosity normal
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Tests failed in $($project.Name)"
+            $failed = $true
+          }
+        }
+        if ($failed) {
+          exit 1
+        }
+        Write-Host "✅ All tests passed"
+
+    - name: Publish ArcReactor
+      run: dotnet publish ArcReactor/ArcReactor.csproj --configuration Release --output ./publish/ArcReactor
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ./publish/ArcReactor/**
+        body: |
+          Release ${{ github.ref_name }}
+
+          ## Changes
+          See commit history for detailed changes.
+
+          ## Installation
+          1. Download the release package
+          2. Extract to desired location
+          3. Run ArcReactor.exe
+
+          🤖 Generated with GitHub Actions
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

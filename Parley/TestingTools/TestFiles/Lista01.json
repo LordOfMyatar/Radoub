@@ -1,0 +1,499 @@
+{
+  "Entries": [
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Hello there!"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 2,
+          "Node": {
+            "Type": 1,
+            "Comment": "",
+            "Quest": "",
+            "Speaker": "",
+            "QuestEntry": 4294967295,
+            "ScriptAction": "",
+            "Sound": "",
+            "Text": {
+              "Strings": {
+                "0": "Hello, how are you?"
+              }
+            },
+            "Animation": 0,
+            "AnimationLoop": false,
+            "Delay": 4294967295,
+            "Pointers": [
+              {
+                "Type": 0,
+                "Index": 2,
+                "Node": {
+                  "Type": 0,
+                  "Comment": "",
+                  "Quest": "",
+                  "Speaker": "",
+                  "QuestEntry": 4294967295,
+                  "ScriptAction": "",
+                  "Sound": "",
+                  "Text": {
+                    "Strings": {
+                      "0": "I am well, thank you."
+                    }
+                  },
+                  "Animation": 0,
+                  "AnimationLoop": false,
+                  "Delay": 4294967295,
+                  "Pointers": [
+                    {
+                      "Type": 1,
+                      "Index": 1,
+                      "Node": {
+                        "Type": 1,
+                        "Comment": "",
+                        "Quest": "",
+                        "Speaker": "",
+                        "QuestEntry": 4294967295,
+                        "ScriptAction": "",
+                        "Sound": "",
+                        "Text": {
+                          "Strings": {
+                            "0": "okay"
+                          }
+                        },
+                        "Animation": 0,
+                        "AnimationLoop": false,
+                        "Delay": 4294967295,
+                        "Pointers": [],
+                        "ActionParams": {}
+                      },
+                      "ScriptAppears": "",
+                      "ConditionParams": {},
+                      "IsStart": false,
+                      "IsLink": false,
+                      "Comment": "",
+                      "LinkComment": ""
+                    }
+                  ],
+                  "ActionParams": {}
+                },
+                "ScriptAppears": "",
+                "ConditionParams": {},
+                "IsStart": false,
+                "IsLink": false,
+                "Comment": "",
+                "LinkComment": ""
+              }
+            ],
+            "ActionParams": {}
+          },
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 1,
+          "Index": 0,
+          "Node": {
+            "Type": 1,
+            "Comment": "",
+            "Quest": "",
+            "Speaker": "",
+            "QuestEntry": 4294967295,
+            "ScriptAction": "",
+            "Sound": "",
+            "Text": {
+              "Strings": {
+                "0": "Why are you alone in the woods?"
+              }
+            },
+            "Animation": 0,
+            "AnimationLoop": false,
+            "Delay": 4294967295,
+            "Pointers": [
+              {
+                "Type": 0,
+                "Index": 1,
+                "Node": {
+                  "Type": 0,
+                  "Comment": "",
+                  "Quest": "",
+                  "Speaker": "",
+                  "QuestEntry": 4294967295,
+                  "ScriptAction": "",
+                  "Sound": "",
+                  "Text": {
+                    "Strings": {
+                      "0": "I'm not, I'm with Harvey the Rabbit."
+                    }
+                  },
+                  "Animation": 0,
+                  "AnimationLoop": false,
+                  "Delay": 4294967295,
+                  "Pointers": [
+                    {
+                      "Type": 1,
+                      "Index": 1,
+                      "Node": {
+                        "Type": 1,
+                        "Comment": "",
+                        "Quest": "",
+                        "Speaker": "",
+                        "QuestEntry": 4294967295,
+                        "ScriptAction": "",
+                        "Sound": "",
+                        "Text": {
+                          "Strings": {
+                            "0": "okay"
+                          }
+                        },
+                        "Animation": 0,
+                        "AnimationLoop": false,
+                        "Delay": 4294967295,
+                        "Pointers": [],
+                        "ActionParams": {}
+                      },
+                      "ScriptAppears": "",
+                      "ConditionParams": {},
+                      "IsStart": false,
+                      "IsLink": false,
+                      "Comment": "",
+                      "LinkComment": ""
+                    }
+                  ],
+                  "ActionParams": {}
+                },
+                "ScriptAppears": "",
+                "ConditionParams": {},
+                "IsStart": false,
+                "IsLink": false,
+                "Comment": "",
+                "LinkComment": ""
+              }
+            ],
+            "ActionParams": {}
+          },
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I'm not, I'm with Harvey the Rabbit."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 1,
+          "Node": {
+            "Type": 1,
+            "Comment": "",
+            "Quest": "",
+            "Speaker": "",
+            "QuestEntry": 4294967295,
+            "ScriptAction": "",
+            "Sound": "",
+            "Text": {
+              "Strings": {
+                "0": "okay"
+              }
+            },
+            "Animation": 0,
+            "AnimationLoop": false,
+            "Delay": 4294967295,
+            "Pointers": [],
+            "ActionParams": {}
+          },
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I am well, thank you."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 1,
+          "Node": {
+            "Type": 1,
+            "Comment": "",
+            "Quest": "",
+            "Speaker": "",
+            "QuestEntry": 4294967295,
+            "ScriptAction": "",
+            "Sound": "",
+            "Text": {
+              "Strings": {
+                "0": "okay"
+              }
+            },
+            "Animation": 0,
+            "AnimationLoop": false,
+            "Delay": 4294967295,
+            "Pointers": [],
+            "ActionParams": {}
+          },
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    }
+  ],
+  "Replies": [
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Why are you alone in the woods?"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 1,
+          "Node": {
+            "Type": 0,
+            "Comment": "",
+            "Quest": "",
+            "Speaker": "",
+            "QuestEntry": 4294967295,
+            "ScriptAction": "",
+            "Sound": "",
+            "Text": {
+              "Strings": {
+                "0": "I'm not, I'm with Harvey the Rabbit."
+              }
+            },
+            "Animation": 0,
+            "AnimationLoop": false,
+            "Delay": 4294967295,
+            "Pointers": [
+              {
+                "Type": 1,
+                "Index": 1,
+                "Node": {
+                  "Type": 1,
+                  "Comment": "",
+                  "Quest": "",
+                  "Speaker": "",
+                  "QuestEntry": 4294967295,
+                  "ScriptAction": "",
+                  "Sound": "",
+                  "Text": {
+                    "Strings": {
+                      "0": "okay"
+                    }
+                  },
+                  "Animation": 0,
+                  "AnimationLoop": false,
+                  "Delay": 4294967295,
+                  "Pointers": [],
+                  "ActionParams": {}
+                },
+                "ScriptAppears": "",
+                "ConditionParams": {},
+                "IsStart": false,
+                "IsLink": false,
+                "Comment": "",
+                "LinkComment": ""
+              }
+            ],
+            "ActionParams": {}
+          },
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "okay"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Hello, how are you?"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 2,
+          "Node": {
+            "Type": 0,
+            "Comment": "",
+            "Quest": "",
+            "Speaker": "",
+            "QuestEntry": 4294967295,
+            "ScriptAction": "",
+            "Sound": "",
+            "Text": {
+              "Strings": {
+                "0": "I am well, thank you."
+              }
+            },
+            "Animation": 0,
+            "AnimationLoop": false,
+            "Delay": 4294967295,
+            "Pointers": [
+              {
+                "Type": 1,
+                "Index": 1,
+                "Node": {
+                  "Type": 1,
+                  "Comment": "",
+                  "Quest": "",
+                  "Speaker": "",
+                  "QuestEntry": 4294967295,
+                  "ScriptAction": "",
+                  "Sound": "",
+                  "Text": {
+                    "Strings": {
+                      "0": "okay"
+                    }
+                  },
+                  "Animation": 0,
+                  "AnimationLoop": false,
+                  "Delay": 4294967295,
+                  "Pointers": [],
+                  "ActionParams": {}
+                },
+                "ScriptAppears": "",
+                "ConditionParams": {},
+                "IsStart": false,
+                "IsLink": false,
+                "Comment": "",
+                "LinkComment": ""
+              }
+            ],
+            "ActionParams": {}
+          },
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    }
+  ],
+  "ScriptAbort": "nw_walk_wp",
+  "ScriptEnd": "nw_walk_wp",
+  "Starts": [
+    {
+      "Type": 0,
+      "Index": 0,
+      "Node": null,
+      "ScriptAppears": "",
+      "ConditionParams": {},
+      "IsStart": true,
+      "IsLink": false,
+      "Comment": "",
+      "LinkComment": ""
+    }
+  ],
+  "DelayEntry": 0,
+  "DelayReply": 0,
+  "NumWords": 0,
+  "PreventZoom": false,
+  "IsValid": true
+}

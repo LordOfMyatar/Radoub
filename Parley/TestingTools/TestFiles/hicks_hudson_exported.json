@@ -1,0 +1,750 @@
+{
+  "Entries": [
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "WILLIAMHUDSON",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "How do I get out of this chickenshit outfit?"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 0,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "DWAYNEHICKS",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Shut up Hudson, we're stuck here. Keep frosty. At least we're not dealing with a bug hunt. "
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 2,
+          "Node": null,
+          "ScriptAppears": "lompqj_sc",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 0,
+          "Index": 1,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "DWAYNEHICKS",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "<CUSTOM1009> Hicks and Hudson look at each other. <CUSTOM1000>Well, it looks like we got another one wanting to cross the gates."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 3,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "WILLIAMHUDSON",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I'd rather deal with a bug hunt."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 4,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "DWAYNEHICKS",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Yeah, and mostly from the wealthy with entitlement issues or people with loved ones who are near death and the Temple of Aceso can't heal."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 5,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "WILLIAMHUDSON",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "The king would have our heads, man! Or throw us in the Myatar Prison!  "
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 6,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "DWAYNEHICKS",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "That's a fate worse than death. I had to feed the prisoners there once. "
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 7,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "WILLIAMHUDSON",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Shit, I'd rather kiss a xenomorph. Fuck, I'm out of cigarettes! I'll tell you what. If you got 2 gold, I'll give you a boost over the wall."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 10,
+          "Node": null,
+          "ScriptAppears": "sc_got_gold",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 0,
+          "Index": 8,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "WILLIAMHUDSON",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Ah, to hell with it!"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 9,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "DWAYNEHICKS",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Hudson, you ass. Do you want to end up in prison?"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 11,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "WILLIAMHUDSON",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Yeah well, they're only tracking how we use our keys. None of those shits are tracking the wall."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 12,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "DWAYNEHICKS",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Your funeral, Hudson. I'll cover you."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 13,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "WILLIAMHUDSON",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Upsy Daisy!"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 15,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 0,
+          "Index": 14,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    }
+  ],
+  "Replies": [
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {}
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I'll see myself out."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Hey, how's it going?"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {}
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "This has come up a lot in the last week, hasn't it?"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "And you can't let anyone by? I've been tasked with procuring food for the refugees."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {}
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {}
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I'm broke."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {}
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "act_take_gld",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Sounds great! Here's 2 gps. "
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {}
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {}
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {}
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "<StartAction>[Leave]</Start>"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "act_jmp",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "<StartAction>[Go over the wall.]</Start>"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    }
+  ],
+  "ScriptAbort": "nw_walk_wp",
+  "ScriptEnd": "nw_walk_wp",
+  "Starts": [
+    {
+      "Type": 0,
+      "Index": 0,
+      "Node": null,
+      "ScriptAppears": "lompqj_sc",
+      "ConditionParams": {},
+      "IsStart": true,
+      "IsLink": false,
+      "Comment": "",
+      "LinkComment": ""
+    }
+  ],
+  "DelayEntry": 0,
+  "DelayReply": 0,
+  "NumWords": 0,
+  "PreventZoom": false,
+  "IsValid": true
+}

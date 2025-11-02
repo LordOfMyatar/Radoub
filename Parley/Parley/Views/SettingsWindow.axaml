@@ -1,0 +1,188 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+        x:Class="DialogEditor.Views.SettingsWindow"
+        Title="Settings - Parley"
+        Width="600" Height="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Settings" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <!-- Settings Content -->
+        <TabControl x:Name="SettingsTabControl" Grid.Row="1">
+            <!-- Resource Paths Tab -->
+            <TabItem Header="Resource Paths">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="15">
+                        <!-- Base Game Installation Path -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Base Game Installation Path (Optional)" FontWeight="Bold"/>
+                                <TextBlock Text="Path to Neverwinter Nights game installation (e.g., Steam: steamapps\common\Neverwinter Nights - contains data\ folder with base game resources)"
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBox x:Name="BaseGamePathTextBox" Grid.Column="0"
+                                            Watermark="C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights"/>
+                                    <Button Grid.Column="1" Content="Browse..." Click="OnBrowseBaseGamePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                    <Button Grid.Column="2" Content="Auto-Detect" Click="OnAutoDetectBaseGamePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                </Grid>
+
+                                <TextBlock x:Name="BaseGamePathValidation" Foreground="Green" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- User Data Directory Path -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="User Data Directory Path" FontWeight="Bold"/>
+                                <TextBlock Text="Path to user data directory (Documents\Neverwinter Nights - contains modules, custom sounds, etc.)"
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBox x:Name="GamePathTextBox" Grid.Column="0"
+                                            Watermark="C:\Users\[user]\Documents\Neverwinter Nights"/>
+                                    <Button Grid.Column="1" Content="Browse..." Click="OnBrowseGamePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                    <Button Grid.Column="2" Content="Auto-Detect" Click="OnAutoDetectGamePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                </Grid>
+
+                                <TextBlock x:Name="GamePathValidation" Foreground="Green" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Module Directory Path - DISABLED (using .dlg file location) -->
+                        <!--
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Module Directory Path" FontWeight="Bold"/>
+                                <TextBlock Text="Path to module directory (contains .mod files or extracted module folders)"
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBox x:Name="ModulePathTextBox" Grid.Column="0"
+                                            Watermark="C:\Users\[user]\Documents\Neverwinter Nights\modules"/>
+                                    <Button Grid.Column="1" Content="Browse..." Click="OnBrowseModulePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                    <Button Grid.Column="2" Content="Auto-Detect" Click="OnAutoDetectModulePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                </Grid>
+
+                                <TextBlock x:Name="ModulePathValidation" Foreground="Green" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Recent Modules" FontWeight="Bold"/>
+                                <TextBlock Text="Quickly switch between recently used module directories"
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+
+                                <ListBox x:Name="RecentModulesListBox" Height="100"
+                                        SelectionChanged="OnRecentModuleSelected"/>
+
+                                <Button Content="Clear Recent Modules" Click="OnClearRecentModulesClick"
+                                       HorizontalAlignment="Left" Padding="10,5"/>
+                            </StackPanel>
+                        </Border>
+                        -->
+
+                        <!-- Path Information -->
+                        <Border BorderBrush="LightBlue" BorderThickness="1" Padding="10" CornerRadius="5"
+                               Background="LightBlue" Opacity="0.2">
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="ℹ️ Platform-Specific Default Paths:" FontWeight="Bold" FontSize="12"/>
+                                <TextBlock x:Name="PlatformPathsInfo" TextWrapping="Wrap" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- UI Settings Tab -->
+            <TabItem Header="UI Settings">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="15">
+                        <!-- Theme -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Theme" FontWeight="Bold"/>
+                                <RadioButton x:Name="LightThemeRadio" Content="Light Theme"
+                                            GroupName="Theme" Checked="OnThemeChanged"/>
+                                <RadioButton x:Name="DarkThemeRadio" Content="Dark Theme"
+                                            GroupName="Theme" Checked="OnThemeChanged"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Font Size -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Font Size" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider x:Name="FontSizeSlider" Grid.Column="0"
+                                           Minimum="8" Maximum="24" Value="14"
+                                           TickFrequency="1" IsSnapToTickEnabled="True"
+                                           ValueChanged="OnFontSizeChanged"/>
+                                    <TextBlock x:Name="FontSizeLabel" Grid.Column="1"
+                                              Text="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Logging Tab -->
+            <TabItem Header="Logging">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="15">
+                        <!-- Log Level -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Log Level" FontWeight="Bold"/>
+                                <ComboBox x:Name="LogLevelComboBox" SelectionChanged="OnLogLevelChanged"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Log Retention -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Log Retention" FontWeight="Bold"/>
+                                <TextBlock Text="Number of recent sessions to keep (default: 3)"
+                                          FontSize="11" Foreground="Gray"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider x:Name="LogRetentionSlider" Grid.Column="0"
+                                           Minimum="1" Maximum="10" Value="3"
+                                           TickFrequency="1" IsSnapToTickEnabled="True"
+                                           ValueChanged="OnLogRetentionChanged"/>
+                                    <TextBlock x:Name="LogRetentionLabel" Grid.Column="1"
+                                              Text="3 sessions" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,10,0,0">
+            <Button Content="OK" Click="OnOkClick" Width="80" Padding="10,5"/>
+            <Button Content="Cancel" Click="OnCancelClick" Width="80" Padding="10,5"/>
+        </StackPanel>
+    </Grid>
+</Window>

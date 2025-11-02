@@ -1,0 +1,36 @@
+name: PR Build Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore LNS_DLG.sln
+
+    - name: Build solution
+      id: build
+      run: dotnet build LNS_DLG.sln --configuration Release --no-restore
+      continue-on-error: true
+
+    - name: Report status
+      if: always()
+      run: |
+        if ("${{ steps.build.outcome }}" -eq "success") {
+          Write-Host "✅ Build successful"
+        } else {
+          Write-Host "❌ Build failed"
+          exit 1
+        }

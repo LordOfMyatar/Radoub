@@ -1,0 +1,752 @@
+{
+  "Entries": [
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Chef is lost in his own world singing \"Chocolate Salty Balls.\"\n"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Hey, you're back, <FirstName>! Welcome back! Any luck with that rat? That big ol' rat?"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 5,
+          "Node": null,
+          "ScriptAppears": "lompqj_sc",
+          "ConditionParams": {
+            "sQuest": "RATS",
+            "iNPCState": "100"
+          },
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 1,
+          "Index": 4,
+          "Node": null,
+          "ScriptAppears": "lompqj_sc",
+          "ConditionParams": {
+            "sQuest": "RATS",
+            "iNPCState": "101"
+          },
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 1,
+          "Index": 2,
+          "Node": null,
+          "ScriptAppears": "lompqj_sc",
+          "ConditionParams": {
+            "iNPCState": "200",
+            "sQuest": "RATS"
+          },
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 1,
+          "Index": 0,
+          "Node": null,
+          "ScriptAppears": "lompqj_sc",
+          "ConditionParams": {
+            "iNPCState": "201",
+            "sQuest": "RATS"
+          },
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Excellent. That's good news. I was worried that the inspector might come by soon and that the rat would get us closed down. Lord mercy, we can't have that! That would be terrible since we're the only functioning kitchen in the area. We're the only game in town!\n<CUSTOM1009>Chef grabs a tray<CUSTOM1000> \n\nHow 'bout some of my special treat, my Chocolate Salty Balls?\n"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 1,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {
+            "sQuest": "RATS",
+            "iQuestState": "300"
+          },
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "A talking rat? <CUSTOM1009>Chef gets a very strange look on his face.<CUSTOM1000>  A talking rat?  Good gravy! And he didn't throw you across the room? Well, I'll be... Well, he can rest up. Gotta get him outta here, sho' nuff, before those inspectors come sniffin' around."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 3,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {
+            "sQuest": "RATS",
+            "iQuestState": "300"
+          },
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Howdy Children!"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 6,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {
+            "sQuest": "RATS",
+            "iNPCState": "0"
+          },
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Oh, I'm sorry <FirstName>. I thought they were just around the door. I came to Myatar 3 years ago. Sometimes, I think I'm still in Southpark, Colorado."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 8,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 1,
+          "Index": 7,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "<CUSTOM1009>Chef looks mournful.<CUSTOM1000>"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 9,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Yeah, there is this enormous rat in the cellar. It's huge!"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 10,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 0,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Oh, this one is big alright. I tried to tackle it but it threw me across the room!"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 1,
+          "Index": 12,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        },
+        {
+          "Type": 1,
+          "Index": 11,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    }
+  ],
+  "Replies": [
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Yes, the rat is dead.  "
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 2,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {
+        "sQuest": "RATS",
+        "iQuestState": "301",
+        "iXP": "250"
+      }
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "lompqj_qu",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I'll pass. "
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {
+        "sQuest": "RATS",
+        "iQuestState": "301",
+        "iXP": "250"
+      }
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "lompqj_qu",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Yes, I spoke with him. His name is Splinter and he's a refugee like myself. He is resting up until he can search for his four sons."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 3,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {
+        "sQuest": "RATS",
+        "iXP": "250",
+        "iQuestState": "300"
+      }
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "He's smart enough to hide if anyone comes looking. "
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {
+        "sQuest": "RATS",
+        "iQuestState": "300",
+        "iXP": "250"
+      }
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "No, I can't deal with this now. "
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "No, I'm still working on it."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I'm not a child. Or plural. I'm <FirstName>"
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 5,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I go through that sometimes, too. I miss my old home sometimes."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 6,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "That's not uncommon. My parents were from other worlds, too."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 6,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Myra said you had a rat issue you need help with."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 7,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "Rodents of Unusual Size?  I don't think they exist."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [
+        {
+          "Type": 0,
+          "Index": 8,
+          "Node": null,
+          "ScriptAppears": "",
+          "ConditionParams": {},
+          "IsStart": false,
+          "IsLink": false,
+          "Comment": "",
+          "LinkComment": ""
+        }
+      ],
+      "ActionParams": {}
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "lompqj_qu",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "I'm not sure I'm up for this today."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {
+        "sQuest": "RATS",
+        "iQuestState": "101"
+      }
+    },
+    {
+      "Type": 1,
+      "Comment": "",
+      "Quest": "",
+      "Speaker": "",
+      "QuestEntry": 4294967295,
+      "ScriptAction": "lompqj_qu",
+      "Sound": "",
+      "Text": {
+        "Strings": {
+          "0": "That doesn't sound like any rat I've ever heard of.  I'll check it out."
+        }
+      },
+      "Animation": 0,
+      "AnimationLoop": false,
+      "Delay": 4294967295,
+      "Pointers": [],
+      "ActionParams": {
+        "sQuest": "RATS",
+        "iQuestState": "100"
+      }
+    }
+  ],
+  "ScriptAbort": "nw_walk_wp",
+  "ScriptEnd": "nw_walk_wp",
+  "Starts": [
+    {
+      "Type": 0,
+      "Index": 4,
+      "Node": null,
+      "ScriptAppears": "lompqj_sc",
+      "ConditionParams": {
+        "sQuest": "RATS",
+        "iNPCState": "0"
+      },
+      "IsStart": true,
+      "IsLink": false,
+      "Comment": "",
+      "LinkComment": ""
+    },
+    {
+      "Type": 0,
+      "Index": 1,
+      "Node": null,
+      "ScriptAppears": "lompqj_scor",
+      "ConditionParams": {
+        "sQuest0": "RATS",
+        "iNPCState0": "100",
+        "sQuest1": "RATS",
+        "iNPCState1": "101"
+      },
+      "IsStart": true,
+      "IsLink": false,
+      "Comment": "",
+      "LinkComment": ""
+    },
+    {
+      "Type": 0,
+      "Index": 0,
+      "Node": null,
+      "ScriptAppears": "",
+      "ConditionParams": {},
+      "IsStart": true,
+      "IsLink": false,
+      "Comment": "",
+      "LinkComment": ""
+    }
+  ],
+  "DelayEntry": 0,
+  "DelayReply": 0,
+  "NumWords": 0,
+  "PreventZoom": false,
+  "IsValid": true
+}

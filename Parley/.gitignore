@@ -1,0 +1,151 @@
+# =============================================================================
+# LNS_DLG Project .gitignore
+# =============================================================================
+
+# ========================
+# Build & Debug Output
+# ========================
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# ========================
+# Visual Studio Files
+# ========================
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.userprefs
+
+# ========================
+# Compiled Files
+# ========================
+*.exe
+*.dll
+*.pdb
+*.obj
+*.ilk
+*.meta
+*.pch
+*.iobj
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# ========================
+# VS Code & Extensions
+# ========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# ========================
+# Node.js (for VSCode Plugin)
+# ========================
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# ========================
+# Test Directories & Files
+# ========================
+/TestExport/
+/DebugTest/
+/ExportTest/
+/ConvoEditor/test_convo/
+
+# Test output files (generated during testing)
+/TestingTools/TestFiles/*_exported.dlg
+/TestingTools/TestFiles/*_test*.dlg
+/TestingTools/TestFiles/test_*.dlg
+
+# ========================
+# Debug & Development Files
+# ========================
+DebugView
+DebugView.zip
+LaunchGUI_WithDebugCapture.bat
+convolution_debug.log
+*.debug.log
+
+# ========================
+# Documentation & Notes
+# ========================
+Bioware_Aurora_Conversation_Format.txt
+ConvoEditor/WhereClaudLeftOff.txt
+ConvoEditor/claude.md
+
+# ========================
+# Temporary & Cache Files
+# ========================
+*.tmp
+*.temp
+*.cache
+*~
+~$*
+
+# ========================
+# OS Generated Files
+# ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ========================
+# Archive Files
+# ========================
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# ========================
+# Private Development (Keep in Private Repo, Exclude from Public)
+# ========================
+# NOTE: NonPublic/ and Z_ScreenShots/ ARE committed to private repo
+# They will be excluded when creating public repo
+/Z_ScreenShots/
+CLAUDE.md
+ArcReactorSettings.json
+CorrectionsNeeded.txt
+CopyTreeStructure.txt
+/ArcReactor.bak
+replace_legal_name.py
+/.claude/settings.local.json

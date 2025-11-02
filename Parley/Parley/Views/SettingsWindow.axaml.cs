@@ -1,0 +1,741 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
+using Avalonia.Media;
+using Avalonia.Platform.Storage;
+using DialogEditor.Services;
+
+namespace DialogEditor.Views
+{
+    public partial class SettingsWindow : Window
+    {
+        private bool _isInitializing = true;
+
+        public SettingsWindow(int initialTab = 0)
+        {
+            InitializeComponent();
+            LoadSettings();
+            _isInitializing = false;
+
+            // Apply current theme immediately when dialog opens
+            ApplyThemePreview();
+
+            // Select the specified tab
+            var tabControl = this.FindControl<TabControl>("SettingsTabControl");
+            if (tabControl != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"SettingsWindow: initialTab={initialTab}, ItemCount={tabControl.ItemCount}");
+                if (initialTab >= 0 && initialTab < tabControl.ItemCount)
+                {
+                    tabControl.SelectedIndex = initialTab;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"SettingsWindow: Selected tab {initialTab}");
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"SettingsWindow: Invalid tab index {initialTab} (valid range: 0-{tabControl.ItemCount - 1})");
+                }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "SettingsWindow: Could not find SettingsTabControl");
+            }
+        }
+
+        private void InitializeComponent()
+        {
+            AvaloniaXamlLoader.Load(this);
+        }
+
+        private void LoadSettings()
+        {
+            var settings = SettingsService.Instance;
+
+            // Resource Paths
+            var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
+            var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox"); // Phase 2
+            var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
+            var recentModulesListBox = this.FindControl<ListBox>("RecentModulesListBox");
+
+            if (gamePathTextBox != null)
+            {
+                gamePathTextBox.Text = settings.NeverwinterNightsPath;
+                // Only validate if path is not empty
+                if (!string.IsNullOrEmpty(settings.NeverwinterNightsPath))
+                {
+                    ValidateGamePath(settings.NeverwinterNightsPath);
+                }
+            }
+
+            // Phase 2: Load base game installation path
+            if (baseGamePathTextBox != null)
+            {
+                baseGamePathTextBox.Text = settings.BaseGameInstallPath;
+                if (!string.IsNullOrEmpty(settings.BaseGameInstallPath))
+                {
+                    ValidateBaseGamePath(settings.BaseGameInstallPath);
+                }
+            }
+
+            if (modulePathTextBox != null)
+            {
+                modulePathTextBox.Text = settings.CurrentModulePath;
+                // Only validate if path is not empty
+                if (!string.IsNullOrEmpty(settings.CurrentModulePath))
+                {
+                    ValidateModulePath(settings.CurrentModulePath);
+                }
+            }
+
+            if (recentModulesListBox != null)
+            {
+                recentModulesListBox.ItemsSource = settings.ModulePaths;
+            }
+
+            // UI Settings
+            var lightThemeRadio = this.FindControl<RadioButton>("LightThemeRadio");
+            var darkThemeRadio = this.FindControl<RadioButton>("DarkThemeRadio");
+            var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
+            var fontSizeLabel = this.FindControl<TextBlock>("FontSizeLabel");
+
+            if (settings.IsDarkTheme)
+            {
+                if (darkThemeRadio != null) darkThemeRadio.IsChecked = true;
+            }
+            else
+            {
+                if (lightThemeRadio != null) lightThemeRadio.IsChecked = true;
+            }
+
+            if (fontSizeSlider != null)
+            {
+                fontSizeSlider.Value = settings.FontSize;
+            }
+
+            if (fontSizeLabel != null)
+            {
+                fontSizeLabel.Text = settings.FontSize.ToString("0");
+            }
+
+            // Logging Settings
+            var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
+            var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
+            var logRetentionLabel = this.FindControl<TextBlock>("LogRetentionLabel");
+
+            if (logLevelComboBox != null)
+            {
+                logLevelComboBox.ItemsSource = Enum.GetValues(typeof(LogLevel)).Cast<LogLevel>().ToList();
+                logLevelComboBox.SelectedItem = settings.CurrentLogLevel;
+            }
+
+            if (logRetentionSlider != null)
+            {
+                logRetentionSlider.Value = settings.LogRetentionSessions;
+            }
+
+            if (logRetentionLabel != null)
+            {
+                logRetentionLabel.Text = $"{settings.LogRetentionSessions} sessions";
+            }
+
+            // Platform-specific paths info
+            var platformPathsInfo = this.FindControl<TextBlock>("PlatformPathsInfo");
+            if (platformPathsInfo != null)
+            {
+                platformPathsInfo.Text = GetPlatformPathsInfo();
+            }
+        }
+
+        private string GetPlatformPathsInfo()
+        {
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                var gamePath = System.IO.Path.Combine(documents, "Neverwinter Nights");
+                var modulePath = System.IO.Path.Combine(documents, "Neverwinter Nights", "modules");
+
+                var gameExists = System.IO.Directory.Exists(gamePath);
+                var moduleExists = System.IO.Directory.Exists(modulePath);
+
+                return $"Windows (Expected Locations):\n" +
+                       $"User Data: {gamePath} {(gameExists ? "✅" : "❌")}\n" +
+                       $"Modules: {modulePath} {(moduleExists ? "✅" : "❌")}";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                var gamePath = System.IO.Path.Combine(userProfile, "Library", "Application Support", "Neverwinter Nights");
+                var modulePath = System.IO.Path.Combine(userProfile, "Library", "Application Support", "Neverwinter Nights", "modules");
+
+                var gameExists = System.IO.Directory.Exists(gamePath);
+                var moduleExists = System.IO.Directory.Exists(modulePath);
+
+                return $"macOS (Expected Locations):\n" +
+                       $"User Data: {gamePath} {(gameExists ? "✅" : "❌")}\n" +
+                       $"Modules: {modulePath} {(moduleExists ? "✅" : "❌")}";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                var gamePath = System.IO.Path.Combine(userProfile, ".local", "share", "Neverwinter Nights");
+                var modulePath = System.IO.Path.Combine(userProfile, ".local", "share", "Neverwinter Nights", "modules");
+
+                var gameExists = System.IO.Directory.Exists(gamePath);
+                var moduleExists = System.IO.Directory.Exists(modulePath);
+
+                return $"Linux (Expected Locations):\n" +
+                       $"User Data: {gamePath} {(gameExists ? "✅" : "❌")}\n" +
+                       $"Modules: {modulePath} {(moduleExists ? "✅" : "❌")}";
+            }
+
+            return "Unknown platform";
+        }
+
+        private async void OnBrowseGamePathClick(object? sender, RoutedEventArgs e)
+        {
+            // Clear previous validation errors
+            var validation = this.FindControl<TextBlock>("GamePathValidation");
+            if (validation != null)
+            {
+                validation.Text = "";
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse User Data Directory clicked");
+
+            var storageProvider = StorageProvider;
+            if (storageProvider == null) return;
+
+            // Default to Documents folder (user data location)
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var defaultPath = System.IO.Path.Combine(documentsPath, "Neverwinter Nights");
+
+            var options = new FolderPickerOpenOptions
+            {
+                Title = "Select Neverwinter Nights User Data Directory (Documents\\Neverwinter Nights)",
+                AllowMultiple = false,
+                SuggestedStartLocation = System.IO.Directory.Exists(defaultPath)
+                    ? await storageProvider.TryGetFolderFromPathAsync(new Uri(defaultPath))
+                    : await storageProvider.TryGetFolderFromPathAsync(new Uri(documentsPath))
+            };
+
+            var result = await storageProvider.OpenFolderPickerAsync(options);
+            if (result.Count > 0)
+            {
+                var path = result[0].Path.LocalPath;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"User selected game path: {path}");
+                var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
+                if (gamePathTextBox != null)
+                {
+                    gamePathTextBox.Text = path;
+                    ValidateGamePath(path);
+                }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse canceled by user");
+            }
+        }
+
+        private void OnAutoDetectGamePathClick(object? sender, RoutedEventArgs e)
+        {
+            var detectedPath = ResourcePathHelper.AutoDetectGamePath();
+            var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
+
+            if (!string.IsNullOrEmpty(detectedPath) && gamePathTextBox != null)
+            {
+                gamePathTextBox.Text = detectedPath;
+                ValidateGamePath(detectedPath);
+            }
+            else
+            {
+                var validation = this.FindControl<TextBlock>("GamePathValidation");
+                if (validation != null)
+                {
+                    validation.Text = "❌ Could not auto-detect game path. Please browse manually.";
+                    validation.Foreground = Brushes.Red;
+                }
+            }
+        }
+
+        // Base Game Installation Path handlers
+        private async void OnBrowseBaseGamePathClick(object? sender, RoutedEventArgs e)
+        {
+            // Clear previous validation errors
+            var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
+            if (validation != null)
+            {
+                validation.Text = "";
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse Base Game Installation clicked");
+
+            var storageProvider = StorageProvider;
+            if (storageProvider == null) return;
+
+            var options = new FolderPickerOpenOptions
+            {
+                Title = "Select Neverwinter Nights Base Game Installation (contains data\\ folder)",
+                AllowMultiple = false
+            };
+
+            var result = await storageProvider.OpenFolderPickerAsync(options);
+            if (result.Count > 0)
+            {
+                var path = result[0].Path.LocalPath;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"User selected base game path: {path}");
+                var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox");
+                if (baseGamePathTextBox != null)
+                {
+                    baseGamePathTextBox.Text = path;
+                    ValidateBaseGamePath(path);
+                }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse canceled by user");
+            }
+        }
+
+        private void OnAutoDetectBaseGamePathClick(object? sender, RoutedEventArgs e)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-detect Base Game Installation clicked");
+
+            // Try to detect Steam/GOG installation
+            var possiblePaths = new List<string>();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // Try common Steam locations
+                var steamPaths = new[]
+                {
+                    @"C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights",
+                    @"C:\Program Files\Steam\steamapps\common\Neverwinter Nights",
+                    @"D:\SteamLibrary\steamapps\common\Neverwinter Nights",
+                    @"E:\SteamLibrary\steamapps\common\Neverwinter Nights"
+                };
+                possiblePaths.AddRange(steamPaths);
+
+                // Try to detect Steam library folders from registry
+                try
+                {
+                    using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Valve\Steam"))
+                    {
+                        var steamPath = key?.GetValue("SteamPath") as string;
+                        if (!string.IsNullOrEmpty(steamPath))
+                        {
+                            var nwnPath = System.IO.Path.Combine(steamPath, "steamapps", "common", "Neverwinter Nights");
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found Steam path from registry: {steamPath}");
+                            possiblePaths.Insert(0, nwnPath); // Check registry path first
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not read Steam registry: {ex.Message}");
+                }
+
+                // Try GOG paths
+                var gogPaths = new[]
+                {
+                    @"C:\Program Files (x86)\GOG Galaxy\Games\Neverwinter Nights Enhanced Edition",
+                    @"C:\GOG Games\Neverwinter Nights Enhanced Edition"
+                };
+                possiblePaths.AddRange(gogPaths);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                possiblePaths.Add("/Applications/Neverwinter Nights.app/Contents/Resources");
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                possiblePaths.Add(System.IO.Path.Combine(home, ".steam", "steam", "steamapps", "common", "Neverwinter Nights"));
+            }
+
+            string? detectedPath = null;
+            foreach (var path in possiblePaths)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Checking: {path}");
+                if (System.IO.Directory.Exists(path))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Directory exists, checking for data\\ folder...");
+                    var dataPath = System.IO.Path.Combine(path, "data");
+                    if (System.IO.Directory.Exists(dataPath))
+                    {
+                        detectedPath = path;
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-detected base game path: {UnifiedLogger.SanitizePath(detectedPath)}");
+                        break;
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Missing data\\ folder");
+                    }
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Directory does not exist");
+                }
+            }
+
+            var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox");
+            if (!string.IsNullOrEmpty(detectedPath) && baseGamePathTextBox != null)
+            {
+                baseGamePathTextBox.Text = detectedPath;
+                ValidateBaseGamePath(detectedPath);
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Could not auto-detect base game installation");
+                var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
+                if (validation != null)
+                {
+                    validation.Text = "❌ Could not auto-detect base game installation. Please browse manually.";
+                    validation.Foreground = Brushes.Red;
+                }
+            }
+        }
+
+        private void ValidateBaseGamePath(string path)
+        {
+            var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
+            if (validation == null) return;
+
+            // Base game installation should have data\ folder
+            var dataPath = System.IO.Path.Combine(path, "data");
+            if (System.IO.Directory.Exists(dataPath))
+            {
+                validation.Text = "✅ Valid base game installation (contains data\\ folder)";
+                validation.Foreground = Brushes.Green;
+            }
+            else if (!string.IsNullOrEmpty(path))
+            {
+                validation.Text = "❌ Invalid path - missing data\\ folder";
+                validation.Foreground = Brushes.Red;
+            }
+            else
+            {
+                validation.Text = "";
+            }
+        }
+
+        private async void OnBrowseModulePathClick(object? sender, RoutedEventArgs e)
+        {
+            var storageProvider = StorageProvider;
+            if (storageProvider == null) return;
+
+            // Default to Documents\Neverwinter Nights\modules
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var defaultPath = System.IO.Path.Combine(documentsPath, "Neverwinter Nights", "modules");
+
+            var options = new FolderPickerOpenOptions
+            {
+                Title = "Select Module Directory (Documents\\Neverwinter Nights\\modules)",
+                AllowMultiple = false,
+                SuggestedStartLocation = System.IO.Directory.Exists(defaultPath)
+                    ? await storageProvider.TryGetFolderFromPathAsync(new Uri(defaultPath))
+                    : await storageProvider.TryGetFolderFromPathAsync(new Uri(System.IO.Path.Combine(documentsPath, "Neverwinter Nights")))
+            };
+
+            var result = await storageProvider.OpenFolderPickerAsync(options);
+            if (result.Count > 0)
+            {
+                var path = result[0].Path.LocalPath;
+                var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
+                if (modulePathTextBox != null)
+                {
+                    modulePathTextBox.Text = path;
+                    ValidateModulePath(path);
+                }
+            }
+        }
+
+        private void OnAutoDetectModulePathClick(object? sender, RoutedEventArgs e)
+        {
+            var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
+            var gamePath = gamePathTextBox?.Text;
+
+            var detectedPath = ResourcePathHelper.AutoDetectModulePath(gamePath);
+            var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
+
+            if (!string.IsNullOrEmpty(detectedPath) && modulePathTextBox != null)
+            {
+                modulePathTextBox.Text = detectedPath;
+                ValidateModulePath(detectedPath);
+            }
+            else
+            {
+                var validation = this.FindControl<TextBlock>("ModulePathValidation");
+                if (validation != null)
+                {
+                    validation.Text = "❌ Could not auto-detect module path. Please browse manually.";
+                    validation.Foreground = Brushes.Red;
+                }
+            }
+        }
+
+        private void ValidateGamePath(string path)
+        {
+            var validation = this.FindControl<TextBlock>("GamePathValidation");
+            if (validation == null) return;
+
+            if (ResourcePathHelper.ValidateGamePath(path))
+            {
+                validation.Text = "✅ Valid game installation path";
+                validation.Foreground = Brushes.Green;
+            }
+            else if (!string.IsNullOrEmpty(path))
+            {
+                validation.Text = "❌ Invalid path - missing required directories (ambient, music)";
+                validation.Foreground = Brushes.Red;
+            }
+            else
+            {
+                validation.Text = "";
+            }
+        }
+
+        private void ValidateModulePath(string path)
+        {
+            var validation = this.FindControl<TextBlock>("ModulePathValidation");
+            if (validation == null) return;
+
+            if (ResourcePathHelper.ValidateModulePath(path))
+            {
+                validation.Text = "✅ Valid module directory";
+                validation.Foreground = Brushes.Green;
+            }
+            else if (!string.IsNullOrEmpty(path))
+            {
+                validation.Text = "❌ Invalid path - no .mod files or module directories found";
+                validation.Foreground = Brushes.Red;
+            }
+            else
+            {
+                validation.Text = "";
+            }
+        }
+
+        private void OnRecentModuleSelected(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var listBox = sender as ListBox;
+            if (listBox?.SelectedItem is string selectedPath)
+            {
+                var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
+                if (modulePathTextBox != null)
+                {
+                    modulePathTextBox.Text = selectedPath;
+                    ValidateModulePath(selectedPath);
+                }
+            }
+        }
+
+        private void OnClearRecentModulesClick(object? sender, RoutedEventArgs e)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Clear Recent Modules clicked");
+            SettingsService.Instance.ClearModulePaths();
+
+            // Refresh the list box display
+            var recentModulesListBox = this.FindControl<ListBox>("RecentModulesListBox");
+            if (recentModulesListBox != null)
+            {
+                recentModulesListBox.ItemsSource = null;
+                recentModulesListBox.ItemsSource = SettingsService.Instance.ModulePaths;
+            }
+        }
+
+        private void OnThemeChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            // Determine which radio button was clicked
+            var senderRadio = sender as RadioButton;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnThemeChanged: sender={senderRadio?.Name}, IsChecked={senderRadio?.IsChecked}");
+
+            // Apply theme based on which button was checked
+            if (senderRadio?.IsChecked == true)
+            {
+                bool isDark = senderRadio.Name == "DarkThemeRadio";
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Theme applied: {(isDark ? "Dark" : "Light")} (from {senderRadio.Name})");
+
+                if (Application.Current != null)
+                {
+                    Application.Current.RequestedThemeVariant = isDark
+                        ? global::Avalonia.Styling.ThemeVariant.Dark
+                        : global::Avalonia.Styling.ThemeVariant.Light;
+                }
+            }
+        }
+
+        private void OnFontSizeChanged(object? sender, RangeBaseValueChangedEventArgs e)
+        {
+            var fontSizeLabel = this.FindControl<TextBlock>("FontSizeLabel");
+            if (fontSizeLabel != null && sender is Slider slider)
+            {
+                fontSizeLabel.Text = slider.Value.ToString("0");
+            }
+
+            // Apply font size immediately when slider changes
+            if (!_isInitializing)
+            {
+                ApplyFontSizePreview();
+            }
+        }
+
+        private void OnLogLevelChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+            // Log level change will be applied when OK or Apply is clicked
+        }
+
+        private void OnLogRetentionChanged(object? sender, RangeBaseValueChangedEventArgs e)
+        {
+            var logRetentionLabel = this.FindControl<TextBlock>("LogRetentionLabel");
+            if (logRetentionLabel != null && sender is Slider slider)
+            {
+                logRetentionLabel.Text = $"{(int)slider.Value} sessions";
+            }
+        }
+
+        private void OnOkClick(object? sender, RoutedEventArgs e)
+        {
+            ApplySettings();
+            Close();
+        }
+
+        private void OnCancelClick(object? sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void OnApplyClick(object? sender, RoutedEventArgs e)
+        {
+            ApplySettings();
+        }
+
+        private void ApplySettings()
+        {
+            var settings = SettingsService.Instance;
+
+            // Resource Paths
+            var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
+            var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox"); // Phase 2
+            var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
+
+            if (gamePathTextBox != null)
+            {
+                var gamePath = gamePathTextBox.Text ?? "";
+                if (ResourcePathHelper.ValidateGamePath(gamePath) || string.IsNullOrEmpty(gamePath))
+                {
+                    settings.NeverwinterNightsPath = gamePath;
+                }
+            }
+
+            // Phase 2: Save base game installation path
+            if (baseGamePathTextBox != null)
+            {
+                var baseGamePath = baseGamePathTextBox.Text ?? "";
+                // Validate: should have data\ folder, but allow empty
+                var dataPath = string.IsNullOrEmpty(baseGamePath) ? "" : System.IO.Path.Combine(baseGamePath, "data");
+                if (string.IsNullOrEmpty(baseGamePath) || System.IO.Directory.Exists(dataPath))
+                {
+                    settings.BaseGameInstallPath = baseGamePath;
+                }
+            }
+
+            if (modulePathTextBox != null)
+            {
+                var modulePath = modulePathTextBox.Text ?? "";
+                if (ResourcePathHelper.ValidateModulePath(modulePath) || string.IsNullOrEmpty(modulePath))
+                {
+                    settings.CurrentModulePath = modulePath;
+
+                    // Add to recent modules if valid and not empty
+                    if (!string.IsNullOrEmpty(modulePath) && ResourcePathHelper.ValidateModulePath(modulePath))
+                    {
+                        settings.AddModulePath(modulePath);
+                    }
+                }
+            }
+
+            // UI Settings
+            var darkThemeRadio = this.FindControl<RadioButton>("DarkThemeRadio");
+            var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
+
+            if (darkThemeRadio != null)
+            {
+                settings.IsDarkTheme = darkThemeRadio.IsChecked == true;
+            }
+
+            if (fontSizeSlider != null)
+            {
+                settings.FontSize = fontSizeSlider.Value;
+            }
+
+            // Logging Settings
+            var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
+            var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
+
+            if (logLevelComboBox?.SelectedItem is LogLevel logLevel)
+            {
+                settings.CurrentLogLevel = logLevel;
+            }
+
+            if (logRetentionSlider != null)
+            {
+                settings.LogRetentionSessions = (int)logRetentionSlider.Value;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Settings applied successfully");
+        }
+
+        private void ApplyThemePreview()
+        {
+            try
+            {
+                var lightThemeRadio = this.FindControl<RadioButton>("LightThemeRadio");
+                var darkThemeRadio = this.FindControl<RadioButton>("DarkThemeRadio");
+
+                bool isDark = darkThemeRadio?.IsChecked == true;
+                bool isLight = lightThemeRadio?.IsChecked == true;
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ApplyThemePreview: Light={isLight}, Dark={isDark}");
+
+                if (Application.Current != null)
+                {
+                    Application.Current.RequestedThemeVariant = isDark ? global::Avalonia.Styling.ThemeVariant.Dark : global::Avalonia.Styling.ThemeVariant.Light;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Theme applied: {(isDark ? "Dark" : "Light")}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error applying theme preview: {ex.Message}");
+            }
+        }
+
+        private void ApplyFontSizePreview()
+        {
+            try
+            {
+                var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
+                if (fontSizeSlider != null)
+                {
+                    // TODO Phase 2: Apply font size globally to main window
+                    // For now, just log it - actual font size application needs global styling system
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Font size preview: {fontSizeSlider.Value}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error applying font size preview: {ex.Message}");
+            }
+        }
+    }
+}

@@ -1,0 +1,361 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using DialogEditor.Utils;
+using DialogEditor.Services;
+
+namespace DialogEditor.Models
+{
+    /// <summary>
+    /// A wrapper for DialogNode that provides circular reference protection for WPF TreeView
+    /// without modifying the original dialog data (preserving export integrity)
+    /// </summary>
+    public class TreeViewSafeNode : INotifyPropertyChanged
+    {
+        private readonly DialogNode _originalNode;
+        private readonly DialogPtr? _sourcePointer; // The pointer that led to this node
+        private readonly HashSet<DialogNode> _ancestorNodes;
+        protected readonly int _depth;
+        private ObservableCollection<TreeViewSafeNode>? _children;
+        private bool _isExpanded;
+
+        // Global tracking of expanded nodes to show links instead of duplicating content
+        private static readonly HashSet<DialogNode> _globalExpandedNodes = new();
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public TreeViewSafeNode(DialogNode originalNode, HashSet<DialogNode>? ancestors = null, int depth = 0, DialogPtr? sourcePointer = null)
+        {
+            _originalNode = originalNode;
+            _sourcePointer = sourcePointer;
+            _ancestorNodes = ancestors ?? new HashSet<DialogNode>();
+            _depth = depth;
+
+            // Notify WPF that properties are available
+            OnPropertyChanged(nameof(DisplayText));
+            OnPropertyChanged(nameof(Speaker));
+            OnPropertyChanged(nameof(TypeDisplay));
+        }
+
+        // Expose the source pointer for properties panel
+        public DialogPtr? SourcePointer => _sourcePointer;
+
+        // Check if this node is a child/link (IsChild=1)
+        public bool IsChild
+        {
+            get
+            {
+                bool result = _sourcePointer?.IsLink ?? false;
+                if (_sourcePointer != null)
+                {
+                    DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG,
+                        $"🔍 IsChild check for '{_originalNode.DisplayText}': SourcePointer.Index={_sourcePointer.Index}, SourcePointer.IsLink={_sourcePointer.IsLink}, Result={result}");
+                }
+                return result;
+            }
+        }
+
+        // IsExpanded for TreeView expand/collapse functionality
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    OnPropertyChanged(nameof(IsExpanded));
+                }
+            }
+        }
+
+        // Reset global tracking (call when loading a new dialog)
+        public static void ResetGlobalTracking()
+        {
+            _globalExpandedNodes.Clear();
+        }
+        
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        
+        // Expose original node properties for binding (virtual for override)
+        public virtual string DisplayText
+        {
+            get
+            {
+                if (_originalNode == null) return "[CONTINUE]";
+
+                var text = string.IsNullOrEmpty(_originalNode.DisplayText) ? "[CONTINUE]" : _originalNode.DisplayText;
+
+                // Add speaker tag prefix for clarity
+                if (_originalNode.Type == DialogNodeType.Entry)
+                {
+                    // Entry nodes (NPC)
+                    var speaker = !string.IsNullOrEmpty(_originalNode.Speaker) ? _originalNode.Speaker : "Owner";
+                    return $"[{speaker}] {text}";
+                }
+                else
+                {
+                    // Reply nodes - NPC if speaker set, PC if not
+                    if (!string.IsNullOrEmpty(_originalNode.Speaker))
+                    {
+                        return $"[{_originalNode.Speaker}] {text}";
+                    }
+                    else
+                    {
+                        return $"[PC] {text}";
+                    }
+                }
+            }
+        }
+        public virtual string Speaker =>
+            !string.IsNullOrEmpty(_originalNode?.Speaker) ? _originalNode.Speaker :
+            (_originalNode?.Type == DialogNodeType.Entry ? "Owner" : "PC");
+        public virtual string TypeDisplay => _originalNode?.Type == DialogNodeType.Entry ? "Owner" : "PC";
+
+        // Node color for tree view display
+        public virtual string NodeColor
+        {
+            get
+            {
+                // Child/Link nodes are gray (matching NWN Toolset)
+                if (IsChild) return "Gray";
+
+                // Entry nodes are always NPC (orange)
+                if (_originalNode?.Type == DialogNodeType.Entry) return "#FF8A65";
+
+                // Reply nodes: NPC if Speaker is set (orange), PC if empty (blue)
+                if (_originalNode?.Type == DialogNodeType.Reply)
+                {
+                    return !string.IsNullOrEmpty(_originalNode.Speaker) ? "#FF8A65" : "#4FC3F7";
+                }
+
+                // Default fallback
+                return "#FF8A65";
+            }
+        }
+
+        // Formatted display text that matches copy tree structure format
+        public virtual string FormattedDisplayText
+        {
+            get
+            {
+                if (_originalNode == null) return "[CONTINUE]";
+
+                string speaker;
+                if (_originalNode.Type == DialogNodeType.Reply)
+                {
+                    speaker = "[PC]";
+                }
+                else
+                {
+                    // For Entry nodes (NPC dialog), honor the Speaker tag if present
+                    if (!string.IsNullOrEmpty(_originalNode.Speaker))
+                    {
+                        speaker = $"[{_originalNode.Speaker}]";
+                    }
+                    else
+                    {
+                        speaker = "[Owner]";
+                    }
+                }
+
+                var text = string.IsNullOrEmpty(_originalNode.DisplayText) ? "[CONTINUE]" : _originalNode.DisplayText;
+                return $"{speaker} \"{text}\"";
+            }
+        }
+        
+        // Access to original node for tree structure operations
+        public DialogNode OriginalNode => _originalNode;
+        
+        // Lazy-loaded children with circular reference protection (virtual for override)
+        public virtual ObservableCollection<TreeViewSafeNode>? Children
+        {
+            get
+            {
+                // Child/link nodes are terminal - return null to prevent WPF from showing expand arrow (NWN Toolset behavior)
+                if (IsChild)
+                {
+                    return null;
+                }
+
+                if (_children == null)
+                {
+                    _children = new ObservableCollection<TreeViewSafeNode>();
+
+                    // Auto-populate all levels to allow full TreeView display
+                    // Performance is handled by depth limits and virtualization
+                    PopulateChildrenInternal();
+                }
+                return _children;
+            }
+        }
+
+        
+        // Populate children on demand (called when user expands the node)
+        public void PopulateChildren()
+        {
+            if (_children != null && _children.Count == 0)
+            {
+                PopulateChildrenInternal();
+            }
+        }
+        
+        // Internal method to actually populate the children
+        // Matches copy tree function logic exactly for consistency
+        private void PopulateChildrenInternal()
+        {
+            if (_children == null || _children.Count > 0)
+                return; // Already populated or not initialized
+
+            // Add basic depth protection to prevent infinite recursion (same as copy tree)
+            if (_depth >= 50)
+            {
+                DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Hit max depth {_depth} for node '{_originalNode.DisplayText}'");
+                return;
+            }
+
+            DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Populating children for '{_originalNode.DisplayText}' at depth {_depth}, has {_originalNode.Pointers.Count} pointers");
+
+            // Track nodes already added to this parent to prevent duplicates (same as copy tree)
+            var addedNodes = new HashSet<DialogNode>();
+
+            foreach (var pointer in _originalNode.Pointers)
+            {
+                if (pointer.Node != null)
+                {
+                    DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Processing pointer to '{pointer.Node.DisplayText}' (Type: {pointer.Type}, Index: {pointer.Index})");
+
+                    // Skip if we already added this node to this parent (same as copy tree)
+                    if (addedNodes.Contains(pointer.Node))
+                    {
+                        DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Skipping duplicate node '{pointer.Node.DisplayText}'");
+                        continue;
+                    }
+
+                    // Track that we're adding this node
+                    addedNodes.Add(pointer.Node);
+
+                    // Check if node is in our ancestor chain (circular reference within this path)
+                    if (_ancestorNodes.Contains(pointer.Node))
+                    {
+                        DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating circular link for '{pointer.Node.DisplayText}' (ancestor chain protection)");
+                        var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Circular");
+                        _children.Add(linkNode);
+                    }
+                    else
+                    {
+                        // This is a real child node - expand it with updated ancestor chain
+                        DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating full child node for '{pointer.Node.DisplayText}'");
+
+                        // Pass down ancestor chain for circular detection AND the source pointer for properties display
+                        var newAncestors = new HashSet<DialogNode>(_ancestorNodes) { _originalNode };
+                        var childNode = new TreeViewSafeNode(pointer.Node, newAncestors, _depth + 1, pointer);
+                        _children.Add(childNode);
+                    }
+                }
+                else
+                {
+                    DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.WARN, $"🌳 TreeView: Pointer to Index {pointer.Index} has null Node!");
+                }
+            }
+
+            DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Finished populating '{_originalNode.DisplayText}', added {_children.Count} children");
+        }
+        
+        // For TreeView binding - determines if node should show expand arrow (virtual for override)
+        // Child/link nodes don't expand, matching NWN Toolset behavior
+        public virtual bool HasChildren
+        {
+            get
+            {
+                bool isChild = IsChild;
+                bool hasPointers = _originalNode.Pointers.Any(p => p.Node != null);
+                return !isChild && hasPointers;
+            }
+        }
+
+        // Helper method to determine if a node has multiple parents in the conversation tree
+        private bool HasMultipleParents(DialogNode node)
+        {
+            // This would require scanning the entire dialog structure
+            // For now, let's disable the global expansion tracking logic entirely
+            // and rely only on ancestor chain circular reference detection
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// A special node that represents a link to prevent circular expansion and shared content duplication
+    /// Shows a preview of the linked conversation content in a greyed-out style
+    /// </summary>
+    public class TreeViewSafeLinkNode : TreeViewSafeNode
+    {
+        private readonly DialogNode _linkedNode;
+        private readonly string _linkType;
+
+        public TreeViewSafeLinkNode(DialogNode linkedNode, int depth, string linkType = "Link") : base(linkedNode, new HashSet<DialogNode>(), depth)
+        {
+            _linkedNode = linkedNode;
+            _linkType = linkType;
+        }
+
+        public override string DisplayText => _linkedNode.DisplayText;
+        public override string TypeDisplay => $"Link ({base.TypeDisplay})";
+
+        // Links are terminal - no children shown (NWN Toolset behavior)
+        public override ObservableCollection<TreeViewSafeNode>? Children
+        {
+            get
+            {
+                // Links don't show children - return null to hide expand arrow
+                return null;
+            }
+        }
+
+        public override bool HasChildren => false; // Links don't expand
+    }
+
+    /// <summary>
+    /// A greyed-out preview node that shows linked content without allowing further expansion
+    /// </summary>
+    public class TreeViewSafePreviewNode : TreeViewSafeNode
+    {
+        private readonly string? _customText;
+
+        public TreeViewSafePreviewNode(DialogNode? previewNode, int depth, string? customText = null)
+            : base(previewNode ?? new DialogNode(), new HashSet<DialogNode>(), depth)
+        {
+            _customText = customText;
+        }
+
+        public override string DisplayText => _customText ?? base.DisplayText;
+        public override string TypeDisplay => $"Preview ({base.TypeDisplay})";
+        public override ObservableCollection<TreeViewSafeNode>? Children => null; // No children for previews
+        public override bool HasChildren => false;
+    }
+
+    /// <summary>
+    /// Special root node that represents the dialog file itself (matches NWN Toolset)
+    /// </summary>
+    public class TreeViewRootNode : TreeViewSafeNode
+    {
+        private readonly Dialog _dialog;
+
+        public TreeViewRootNode(Dialog dialog)
+            : base(new DialogNode { Type = DialogNodeType.Entry, Text = new LocString() })
+        {
+            _dialog = dialog;
+            IsExpanded = true; // Always start expanded
+        }
+
+        public override string DisplayText => "ROOT";
+        public override string NodeColor => "Gray";
+        public bool IsRoot => true;
+        public Dialog Dialog => _dialog;
+    }
+}
