@@ -1,0 +1,41 @@
+name: Parley PR Build Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Parley/**'
+      - '.github/workflows/parley-pr-build.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Parley.sln
+      working-directory: ./Parley
+
+    - name: Build solution
+      id: build
+      run: dotnet build Parley.sln --configuration Release --no-restore
+      working-directory: ./Parley
+      continue-on-error: true
+
+    - name: Report status
+      if: always()
+      run: |
+        if ("${{ steps.build.outcome }}" -eq "success") {
+          Write-Host "✅ Parley build successful"
+        } else {
+          Write-Host "❌ Parley build failed"
+          exit 1
+        }
