@@ -12,19 +12,39 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # GitVersion needs full history
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
 
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v1.1.1
+      with:
+        versionSpec: '5.x'
+
+    - name: Determine Version
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v1.1.1
+      with:
+        useConfigFile: true
+
+    - name: Display GitVersion outputs
+      run: |
+        Write-Host "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+        Write-Host "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
+
     - name: Restore dependencies
-      run: dotnet restore LNS_DLG.sln
+      run: dotnet restore Parley.sln
+      working-directory: ./Parley
 
     - name: Build solution
-      run: dotnet build LNS_DLG.sln --configuration Release --no-restore
+      run: dotnet build Parley.sln --configuration Release --no-restore /p:Version=${{ steps.gitversion.outputs.assemblySemVer }} /p:FileVersion=${{ steps.gitversion.outputs.assemblySemFileVer }} /p:InformationalVersion=${{ steps.gitversion.outputs.informationalVersion }}
+      working-directory: ./Parley
 
-    - name: Run full test suite
+    - name: Run test suite
       run: |
         $testProjects = Get-ChildItem -Path TestingTools -Recurse -Filter "*.csproj"
         $failed = $false
@@ -40,26 +60,31 @@ jobs:
           exit 1
         }
         Write-Host "✅ All tests passed"
+      working-directory: ./Parley
 
-    - name: Publish ArcReactor
-      run: dotnet publish ArcReactor/ArcReactor.csproj --configuration Release --output ./publish/ArcReactor
+    - name: Publish Parley
+      run: dotnet publish Parley/Parley.csproj --configuration Release --output ./publish/Parley /p:Version=${{ steps.gitversion.outputs.assemblySemVer }}
+      working-directory: ./Parley
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ./publish/ArcReactor/**
+          ./Parley/publish/Parley/**
         body: |
-          Release ${{ github.ref_name }}
+          # Parley ${{ steps.gitversion.outputs.semVer }}
+
+          Dialog editor for Neverwinter Nights `.dlg` files.
 
           ## Changes
-          See commit history for detailed changes.
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/Parley/CHANGELOG.md) for detailed changes.
 
           ## Installation
           1. Download the release package
           2. Extract to desired location
-          3. Run ArcReactor.exe
+          3. Run Parley.exe
 
-          🤖 Generated with GitHub Actions
+          ---
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
