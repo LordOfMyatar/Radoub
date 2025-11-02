@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.0-alpha] - 2025-11-01
+## [0.1.0-alpha] - 2025-11-02
 
 ### Initial Public Release
 
@@ -27,7 +27,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Creature tag selection (from UTC files)
 - Journal/Quest integration
 - Dark mode and light theme support
-- Font size adjustment
 - Copy tree structure to clipboard
 - Recent files menu
 - Cross-platform support (Windows, Linux, macOS)
@@ -36,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Comprehensive logging system
 
 ### Known Issues
-- Copy/paste with complex node links needs improvement
+- Copy/paste with node links can cause file corruption
 - Delete operations with multiple parent references require testing
 - macOS/Linux Steam/Beamdog path auto-detection not implemented
 - Some dialogs are modal (block main window)
