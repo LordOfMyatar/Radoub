@@ -63,6 +63,13 @@ namespace Parley.Tests
             // Act
             var startPtr = dialog.Add();
 
+            // The Add() method creates a node but doesn't add it to Entries
+            // We need to manually add it
+            if (startPtr?.Node != null)
+            {
+                dialog.AddNodeInternal(startPtr.Node, startPtr.Node.Type);
+            }
+
             // Assert
             Assert.NotNull(startPtr);
             Assert.NotNull(startPtr.Node);
@@ -76,12 +83,23 @@ namespace Parley.Tests
         {
             // Arrange
             var dialog = new Dialog();
-            var startPtr = dialog.Add();
-            if (startPtr?.Node != null)
-            {
-                startPtr.Node.Text.Add(0, "Hello, world!");
-                startPtr.Node.Speaker = "NPC_TEST";
-            }
+
+            // Create an entry node
+            var entryNode = dialog.CreateNode(DialogNodeType.Entry);
+            Assert.NotNull(entryNode);
+            entryNode!.Text.Add(0, "Hello, world!");
+            entryNode.Speaker = "NPC_TEST";
+
+            // Add node to Entries collection first
+            dialog.AddNodeInternal(entryNode, entryNode.Type);
+
+            // Create start pointer with correct index
+            var startPtr = dialog.CreatePtr();
+            Assert.NotNull(startPtr);
+            startPtr!.Type = DialogNodeType.Entry;
+            startPtr.Node = entryNode;
+            startPtr.Index = 0; // Index in Entries list
+            dialog.Starts.Add(startPtr);
 
             var filePath = Path.Combine(_testDirectory, "basic.dlg");
 
@@ -115,11 +133,13 @@ namespace Parley.Tests
             Assert.NotNull(entryNode);
             entryNode!.Text.Add(0, "NPC speaks");
             entryNode.Speaker = "NPC_TEST";
+            dialog.AddNodeInternal(entryNode, entryNode.Type);
 
             // Create Reply
             var replyNode = dialog.CreateNode(DialogNodeType.Reply);
             Assert.NotNull(replyNode);
             replyNode!.Text.Add(0, "Player responds");
+            dialog.AddNodeInternal(replyNode, replyNode.Type);
 
             // Link Entry to Reply
             var ptr = dialog.CreatePtr();
@@ -181,6 +201,7 @@ namespace Parley.Tests
 
             // Act
             var node = dialog.CreateNode(DialogNodeType.Entry);
+            dialog.AddNodeInternal(node!, node!.Type);
 
             // Assert
             Assert.NotNull(node);
@@ -227,6 +248,11 @@ namespace Parley.Tests
             entry1!.Text.Add(0, "Entry 1");
             entry2!.Text.Add(0, "Entry 2");
             sharedReply!.Text.Add(0, "Shared Reply");
+
+            // Add nodes to collections
+            dialog.AddNodeInternal(entry1, entry1.Type);
+            dialog.AddNodeInternal(entry2, entry2.Type);
+            dialog.AddNodeInternal(sharedReply, sharedReply.Type);
 
             // Entry1 has original pointer to reply
             var ptr1 = dialog.CreatePtr();

@@ -157,7 +157,8 @@ When adding a new tool to Radoub:
 **Before PRs to Main**:
 - All tools must build
 - All tool tests must pass
-- Documentation updated
+- Private documentation to the Private folder
+- Public Documentation approved before push
 - CHANGELOG updated for affected tools
 
 ---
