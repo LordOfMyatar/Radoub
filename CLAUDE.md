@@ -57,16 +57,18 @@ When working on a specific tool (e.g., Parley):
 
 ### Shared Resources
 
-**Aurora Documentation** (`Documentation/`):
+**Public Documentation** (`Documentation/`):
 - Shared across all tools
 - Contains BioWare format specifications
 - Read-only reference material
 - Updates only for format corrections or additions
+- Original and Markdown versions of Bioware File Format documentation
 
 **About Documentation** (`About/`):
 - Project history and development experience
 - AI collaboration documentation
 - Updated when major project milestones occur
+- Never edit ON_USING_CLAUDE.md; only Lord makes changes to that.
 
 ### Cross-Tool Work
 
