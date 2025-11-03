@@ -269,6 +269,35 @@ namespace DialogEditor.ViewModels
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving dialog to: {UnifiedLogger.SanitizePath(filePath)}");
 
+                // SAFETY VALIDATION: Validate all pointer indices before save (Issue #6 fix)
+                var validationErrors = CurrentDialog.ValidatePointerIndices();
+                if (validationErrors.Count > 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"⚠️ PRE-SAVE VALIDATION: Found {validationErrors.Count} index issues:");
+                    foreach (var error in validationErrors)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN, $"  - {error}");
+                    }
+
+                    // Attempt to fix by rebuilding LinkRegistry and recalculating indices
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Attempting to auto-fix index issues...");
+                    CurrentDialog.RebuildLinkRegistry();
+                    RecalculatePointerIndices();
+
+                    // Re-validate after fix attempt
+                    var errorsAfterFix = CurrentDialog.ValidatePointerIndices();
+                    if (errorsAfterFix.Count > 0)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.ERROR, $"❌ CRITICAL: {errorsAfterFix.Count} index issues remain after auto-fix!");
+                        StatusMessage = $"ERROR: Dialog has {errorsAfterFix.Count} pointer index issues. Save aborted to prevent corruption.";
+                        return;
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.INFO, "✅ All index issues resolved successfully");
+                    }
+                }
+
                 // Phase 4 Refactoring: Use DialogFileService facade instead of DialogParser directly
                 var dialogService = new DialogFileService();
 
@@ -948,7 +977,7 @@ namespace DialogEditor.ViewModels
         {
             var linkedNodes = new List<DialogNode>();
 
-            // Check this node and all descendants for incoming links
+            // Check this node and all descendants for incoming links using LinkRegistry
             CheckNodeForLinks(node, linkedNodes);
 
             return linkedNodes;
@@ -956,8 +985,11 @@ namespace DialogEditor.ViewModels
 
         private void CheckNodeForLinks(DialogNode node, List<DialogNode> linkedNodes)
         {
-            // Check if this node has more than 1 reference (incoming links)
-            if (HasOtherReferences(node))
+            // Use LinkRegistry to check for incoming links
+            var incomingLinks = CurrentDialog.LinkRegistry.GetLinksTo(node);
+
+            // If there are multiple incoming links or any are marked as IsLink, this node is referenced elsewhere
+            if (incomingLinks.Count > 1 || incomingLinks.Any(ptr => ptr.IsLink))
             {
                 linkedNodes.Add(node);
             }
@@ -993,44 +1025,51 @@ namespace DialogEditor.ViewModels
                     }
                 }
 
-                // Clear the pointers list after deleting children
+                // Unregister and clear the pointers list after deleting children
+                foreach (var ptr in pointersToDelete)
+                {
+                    CurrentDialog.LinkRegistry.UnregisterLink(ptr);
+                }
                 node.Pointers.Clear();
             }
 
-            // Now delete this node itself
-            // Remove from ALL parents that reference it (not just first one!)
+            // Get all incoming pointers to this node from LinkRegistry
+            var incomingPointers = CurrentDialog.LinkRegistry.GetLinksTo(node).ToList();
             int removedCount = 0;
 
-            // Check Starts list (root entries)
-            var startsToRemove = CurrentDialog.Starts.Where(s => s.Node == node).ToList();
-            foreach (var start in startsToRemove)
+            // Remove all incoming pointers using LinkRegistry data
+            foreach (var incomingPtr in incomingPointers)
             {
-                CurrentDialog.Starts.Remove(start);
-                removedCount++;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed from Starts list");
-            }
+                // Unregister from LinkRegistry first
+                CurrentDialog.LinkRegistry.UnregisterLink(incomingPtr);
 
-            // Remove from ALL Entry pointers (not just first match)
-            foreach (var entry in CurrentDialog.Entries)
-            {
-                var ptrsToRemove = entry.Pointers.Where(p => p.Node == node).ToList();
-                foreach (var ptr in ptrsToRemove)
+                // Remove from Starts if it's a start pointer
+                if (CurrentDialog.Starts.Contains(incomingPtr))
                 {
-                    entry.Pointers.Remove(ptr);
+                    CurrentDialog.Starts.Remove(incomingPtr);
                     removedCount++;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Entry '{entry.DisplayText}' pointers");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed from Starts list");
                 }
-            }
 
-            // Remove from ALL Reply pointers (not just first match)
-            foreach (var reply in CurrentDialog.Replies)
-            {
-                var ptrsToRemove = reply.Pointers.Where(p => p.Node == node).ToList();
-                foreach (var ptr in ptrsToRemove)
+                // Find and remove from parent node's pointers
+                foreach (var entry in CurrentDialog.Entries)
                 {
-                    reply.Pointers.Remove(ptr);
-                    removedCount++;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Reply '{reply.DisplayText}' pointers");
+                    if (entry.Pointers.Contains(incomingPtr))
+                    {
+                        entry.Pointers.Remove(incomingPtr);
+                        removedCount++;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Entry '{entry.DisplayText}' pointers");
+                    }
+                }
+
+                foreach (var reply in CurrentDialog.Replies)
+                {
+                    if (reply.Pointers.Contains(incomingPtr))
+                    {
+                        reply.Pointers.Remove(incomingPtr);
+                        removedCount++;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Reply '{reply.DisplayText}' pointers");
+                    }
                 }
             }
 
@@ -1039,20 +1078,9 @@ namespace DialogEditor.ViewModels
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed node '{node.DisplayText}' from {removedCount} parent references");
             }
 
-            // ALWAYS remove from appropriate list - don't preserve
-            if (node.Type == DialogNodeType.Entry)
-            {
-                CurrentDialog.Entries.Remove(node);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed Entry from list: {node.DisplayText}");
-            }
-            else
-            {
-                CurrentDialog.Replies.Remove(node);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed Reply from list: {node.DisplayText}");
-            }
-
-            // CRITICAL: Recalculate all pointer indices after removing from list
-            RecalculatePointerIndices();
+            // Use RemoveNodeInternal which handles LinkRegistry cleanup
+            CurrentDialog.RemoveNodeInternal(node, node.Type);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {node.Type} from list: {node.DisplayText}");
         }
 
         // Phase 2a: Node Reordering
