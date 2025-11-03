@@ -316,6 +316,7 @@ namespace DialogEditor.Models
         private static uint _nextNodeId = 0;
         private Dictionary<uint, DialogNode> _nodePool = new();
         private Dictionary<uint, DialogPtr> _ptrPool = new();
+        private LinkRegistry _linkRegistry = new();
 
         public List<DialogNode> Entries { get; } = new();
         public List<DialogNode> Replies { get; } = new();
@@ -335,6 +336,12 @@ namespace DialogEditor.Models
         // GFF uses frequency-based type assignment (Type-0 = most common pattern)
         [JsonIgnore]
         public DialogEditor.Parsers.GffStruct? OriginalRootGffStruct { get; set; }
+
+        /// <summary>
+        /// Link registry for tracking all node references (Issue #6 fix)
+        /// </summary>
+        [JsonIgnore]
+        public LinkRegistry LinkRegistry => _linkRegistry;
         
         public DialogPtr? Add()
         {
@@ -418,19 +425,73 @@ namespace DialogEditor.Models
             if (!targetList.Contains(node))
             {
                 targetList.Add(node);
+
+                // Register all pointers from this node
+                foreach (var ptr in node.Pointers)
+                {
+                    _linkRegistry.RegisterLink(ptr);
+                }
             }
         }
-        
+
         public void RemoveNodeInternal(DialogNode node, DialogNodeType type)
         {
             var targetList = type == DialogNodeType.Entry ? Entries : Replies;
+
+            // Unregister all pointers from this node
+            foreach (var ptr in node.Pointers)
+            {
+                _linkRegistry.UnregisterLink(ptr);
+            }
+
+            // Unregister all pointers to this node
+            var incomingPointers = _linkRegistry.GetLinksTo(node);
+            foreach (var ptr in incomingPointers)
+            {
+                _linkRegistry.UnregisterLink(ptr);
+            }
+
             targetList.Remove(node);
+
+            // Update indices for remaining nodes
+            UpdateNodeIndices(type);
+        }
+
+        /// <summary>
+        /// Update all pointer indices after collection changes
+        /// </summary>
+        private void UpdateNodeIndices(DialogNodeType type)
+        {
+            var targetList = type == DialogNodeType.Entry ? Entries : Replies;
+
+            for (uint i = 0; i < targetList.Count; i++)
+            {
+                var node = targetList[(int)i];
+                _linkRegistry.UpdateNodeIndex(node, i, type);
+            }
         }
         
         public int GetNodeIndex(DialogNode node, DialogNodeType type)
         {
             var targetList = type == DialogNodeType.Entry ? Entries : Replies;
             return targetList.IndexOf(node);
+        }
+
+        /// <summary>
+        /// Rebuild the LinkRegistry from current dialog structure
+        /// Used after loading from file or major structural changes
+        /// </summary>
+        public void RebuildLinkRegistry()
+        {
+            _linkRegistry.RebuildFromDialog(this);
+        }
+
+        /// <summary>
+        /// Validate all pointer indices match actual positions
+        /// </summary>
+        public List<string> ValidatePointerIndices()
+        {
+            return _linkRegistry.ValidateIndices(this);
         }
     }
 }
