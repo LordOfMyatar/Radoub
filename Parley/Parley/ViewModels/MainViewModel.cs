@@ -1009,8 +1009,7 @@ namespace DialogEditor.ViewModels
 
         private void DeleteNodeRecursive(DialogNode node)
         {
-            // Recursively delete ALL children first (depth-first)
-            // Even if children are linked elsewhere - Aurora behavior
+            // Recursively delete children, but only if they're not shared by other nodes
             if (node.Pointers != null && node.Pointers.Count > 0)
             {
                 // Make a copy of the pointers list to avoid modification during iteration
@@ -1020,12 +1019,59 @@ namespace DialogEditor.ViewModels
                 {
                     if (ptr.Node != null)
                     {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Recursively deleting child: {ptr.Node.DisplayText}");
-                        DeleteNodeRecursive(ptr.Node);
+                        // Check if this child node has other incoming links besides the one we're about to delete
+                        var incomingLinks = CurrentDialog.LinkRegistry.GetLinksTo(ptr.Node);
+
+                        // Count how many of the incoming links are NOT from the node we're deleting
+                        var otherIncomingLinks = incomingLinks.Where(link =>
+                        {
+                            // Find which node contains this link
+                            DialogNode? linkParent = null;
+                            foreach (var entry in CurrentDialog.Entries)
+                            {
+                                if (entry.Pointers.Contains(link))
+                                {
+                                    linkParent = entry;
+                                    break;
+                                }
+                            }
+                            if (linkParent == null)
+                            {
+                                foreach (var reply in CurrentDialog.Replies)
+                                {
+                                    if (reply.Pointers.Contains(link))
+                                    {
+                                        linkParent = reply;
+                                        break;
+                                    }
+                                }
+                            }
+                            // Check if it's in Starts
+                            if (linkParent == null && CurrentDialog.Starts.Contains(link))
+                            {
+                                linkParent = null; // Start link, not from a node
+                            }
+
+                            return linkParent != node;
+                        }).Count();
+
+                        if (otherIncomingLinks == 0)
+                        {
+                            // No other nodes reference this child, safe to delete recursively
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                $"Recursively deleting child (not shared): {ptr.Node.DisplayText}");
+                            DeleteNodeRecursive(ptr.Node);
+                        }
+                        else
+                        {
+                            // This child is shared by other nodes, don't delete it
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                $"Skipping deletion of shared child (has {otherIncomingLinks} other references): {ptr.Node.DisplayText}");
+                        }
                     }
                 }
 
-                // Unregister and clear the pointers list after deleting children
+                // Unregister and clear the pointers list after handling children
                 foreach (var ptr in pointersToDelete)
                 {
                     CurrentDialog.LinkRegistry.UnregisterLink(ptr);

@@ -15,17 +15,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Delete operations correctly update indices for remaining nodes
   - Added pre-save validation to detect and auto-fix index issues
   - Save operation aborts if corruption is detected to prevent data loss
+- **Delete Operation Bug**: Fixed issue where deleting nodes with shared replies incorrectly removed unrelated nodes
+  - DeleteNodeRecursive now checks if child nodes are referenced by other parents before deleting
+  - Shared reply nodes are preserved when still in use by other dialog entries
+  - Prevents cascade deletion of nodes that are still needed by other conversation branches
 
 ### Added
 - Comprehensive test suite with xUnit for parser validation
 - LinkRegistry system for tracking all DialogPtr references
 - Pre-save safety validations to prevent corrupted files
 - Automatic index recalculation using LinkRegistry
+- Delete operation tests to verify shared node handling
 
 ### Technical
 - Refactored copy/paste/delete operations to use AddNodeInternal/RemoveNodeInternal
 - All pointer operations now register with LinkRegistry for tracking
 - RecalculatePointerIndices now uses LinkRegistry for validation
+- DeleteNodeRecursive enhanced to check for shared references before deletion
 
 ---
 

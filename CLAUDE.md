@@ -103,16 +103,27 @@ Use tool prefixes in commit messages:
 
 ## Branch Workflow
 
-**Main Branches**:
-- `main` - Production-ready releases
-- `develop` - Integration branch for all tools
+**Single main branch approach** (solo developer, rapid iteration):
+
+**Main Branch**:
+- `main` - Production-ready releases (protected by PR review process)
 
 **Feature Branches**:
-- Tool-specific: `parley/feature/name`
+- Tool-specific: `parley/feature/name` or `parley/fix/name`
 - Cross-tool: `radoub/feature/name`
 - Documentation: `docs/name`
 
-**Important**: All work via Pull Requests, even for "small" changes.
+**Workflow**:
+```
+main (production)
+  └── feature/fix branches → PR → main
+```
+
+**Important**:
+- All work via Pull Requests, even for "small" changes
+- PRs protect main branch (review before merge)
+- GitHub releases mark stable milestones
+- If project grows to multiple contributors, reconsider adding a `develop` integration branch
 
 ---
 
