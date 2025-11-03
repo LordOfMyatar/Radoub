@@ -202,6 +202,9 @@ namespace DialogEditor.ViewModels
 
                 if (CurrentDialog != null)
                 {
+                    // Rebuild LinkRegistry for the loaded dialog
+                    CurrentDialog.RebuildLinkRegistry();
+
                     // Reset global tracking for link detection when loading new dialog
                     TreeViewSafeNode.ResetGlobalTracking();
 
@@ -1770,59 +1773,39 @@ namespace DialogEditor.ViewModels
         {
             if (CurrentDialog == null) return;
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Recalculating all pointer indices after list modification");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Recalculating all pointer indices using LinkRegistry");
 
-            // Fix all Start pointers
-            foreach (var start in CurrentDialog.Starts)
+            // Rebuild the LinkRegistry from current dialog state
+            CurrentDialog.RebuildLinkRegistry();
+
+            // Update all Entry node indices
+            for (uint i = 0; i < CurrentDialog.Entries.Count; i++)
             {
-                if (start.Node != null)
-                {
-                    int actualIndex = CurrentDialog.Entries.IndexOf(start.Node);
-                    if (actualIndex >= 0 && actualIndex != start.Index)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Fixing Start pointer: Index {start.Index} -> {actualIndex}");
-                        start.Index = (uint)actualIndex;
-                    }
-                }
+                var entry = CurrentDialog.Entries[(int)i];
+                CurrentDialog.LinkRegistry.UpdateNodeIndex(entry, i, DialogNodeType.Entry);
             }
 
-            // Fix all Entry child pointers
-            foreach (var entry in CurrentDialog.Entries)
+            // Update all Reply node indices
+            for (uint i = 0; i < CurrentDialog.Replies.Count; i++)
             {
-                foreach (var ptr in entry.Pointers)
-                {
-                    if (ptr.Node != null)
-                    {
-                        var list = ptr.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
-                        int actualIndex = list.IndexOf(ptr.Node);
-                        if (actualIndex >= 0 && actualIndex != ptr.Index)
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Fixing pointer in Entry '{entry.DisplayText}': Index {ptr.Index} -> {actualIndex}");
-                            ptr.Index = (uint)actualIndex;
-                        }
-                    }
-                }
+                var reply = CurrentDialog.Replies[(int)i];
+                CurrentDialog.LinkRegistry.UpdateNodeIndex(reply, i, DialogNodeType.Reply);
             }
 
-            // Fix all Reply child pointers
-            foreach (var reply in CurrentDialog.Replies)
+            // Validate all indices are correct
+            var errors = CurrentDialog.ValidatePointerIndices();
+            if (errors.Count > 0)
             {
-                foreach (var ptr in reply.Pointers)
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Index validation found {errors.Count} issues after recalculation:");
+                foreach (var error in errors)
                 {
-                    if (ptr.Node != null)
-                    {
-                        var list = ptr.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
-                        int actualIndex = list.IndexOf(ptr.Node);
-                        if (actualIndex >= 0 && actualIndex != ptr.Index)
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Fixing pointer in Reply '{reply.DisplayText}': Index {ptr.Index} -> {actualIndex}");
-                            ptr.Index = (uint)actualIndex;
-                        }
-                    }
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"  - {error}");
                 }
             }
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Pointer indices recalculated successfully");
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "All pointer indices validated successfully");
+            }
         }
 
         /// <summary>
@@ -1981,23 +1964,30 @@ namespace DialogEditor.ViewModels
                     StatusMessage = $"Auto-converted NPC Reply to Entry for ROOT level";
                 }
 
-                // Add to entries list
-                CurrentDialog.Entries.Add(duplicate);
+                // Add to entries list using AddNodeInternal for LinkRegistry tracking
+                CurrentDialog.AddNodeInternal(duplicate, duplicate.Type);
+
+                // Get the correct index after adding
+                var duplicateIndex = (uint)CurrentDialog.GetNodeIndex(duplicate, duplicate.Type);
 
                 // Create start pointer
                 var startPtr = new DialogPtr
                 {
                     Node = duplicate,
                     Type = DialogNodeType.Entry,
-                    Index = (uint)(CurrentDialog.Entries.Count - 1),
+                    Index = duplicateIndex,
                     IsLink = false,
                     IsStart = true,
                     ScriptAppears = "",
                     ConditionParams = new Dictionary<string, string>(),
-                    Comment = ""
+                    Comment = "",
+                    Parent = CurrentDialog
                 };
 
                 CurrentDialog.Starts.Add(startPtr);
+
+                // Register the start pointer with LinkRegistry
+                CurrentDialog.LinkRegistry.RegisterLink(startPtr);
 
                 // CRITICAL: Recalculate indices in case recursive cloning added multiple nodes
                 RecalculatePointerIndices();
@@ -2013,31 +2003,29 @@ namespace DialogEditor.ViewModels
             // Clone the node (deep copy)
             var duplicateNode = CloneNode(_copiedNode);
 
-            // Add to appropriate list
-            if (duplicateNode.Type == DialogNodeType.Entry)
-            {
-                CurrentDialog.Entries.Add(duplicateNode);
-            }
-            else
-            {
-                CurrentDialog.Replies.Add(duplicateNode);
-            }
+            // Add to appropriate list using AddNodeInternal for LinkRegistry tracking
+            CurrentDialog.AddNodeInternal(duplicateNode, duplicateNode.Type);
+
+            // Get the correct index after adding
+            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(duplicateNode, duplicateNode.Type);
 
             // Create pointer from parent to duplicate
             var newPtr = new DialogPtr
             {
                 Node = duplicateNode,
                 Type = duplicateNode.Type,
-                Index = duplicateNode.Type == DialogNodeType.Entry
-                    ? (uint)(CurrentDialog.Entries.Count - 1)
-                    : (uint)(CurrentDialog.Replies.Count - 1),
+                Index = nodeIndex,
                 IsLink = false,
                 ScriptAppears = "",
                 ConditionParams = new Dictionary<string, string>(),
-                Comment = ""
+                Comment = "",
+                Parent = CurrentDialog
             };
 
             parent.OriginalNode.Pointers.Add(newPtr);
+
+            // Register the new pointer with LinkRegistry
+            CurrentDialog.LinkRegistry.RegisterLink(newPtr);
 
             // CRITICAL: Recalculate indices in case recursive cloning added multiple nodes
             RecalculatePointerIndices();
@@ -2082,15 +2070,15 @@ namespace DialogEditor.ViewModels
             SaveUndoState("Paste as Link");
 
             // Normal paste link to non-ROOT parent
-            // Find index of copied node in appropriate list
-            uint nodeIndex;
-            if (_copiedNode.Type == DialogNodeType.Entry)
+            // Get the current index of copied node (LinkRegistry ensures it's accurate)
+            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(_copiedNode, _copiedNode.Type);
+
+            // Validate index is valid
+            if ((int)nodeIndex == -1)
             {
-                nodeIndex = (uint)CurrentDialog.Entries.IndexOf(_copiedNode);
-            }
-            else
-            {
-                nodeIndex = (uint)CurrentDialog.Replies.IndexOf(_copiedNode);
+                StatusMessage = "Error: Copied node no longer exists in dialog";
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "Copied node not found in dialog during paste as link");
+                return;
             }
 
             // Create link pointer (references original node)
@@ -2103,10 +2091,14 @@ namespace DialogEditor.ViewModels
                 ScriptAppears = "",
                 ConditionParams = new Dictionary<string, string>(),
                 Comment = "",
-                LinkComment = "[Link to original]"
+                LinkComment = "[Link to original]",
+                Parent = CurrentDialog
             };
 
             parent.OriginalNode.Pointers.Add(linkPtr);
+
+            // Register the link pointer with LinkRegistry
+            CurrentDialog.LinkRegistry.RegisterLink(linkPtr);
 
             RefreshTreeView();
             HasUnsavedChanges = true;
@@ -2174,32 +2166,30 @@ namespace DialogEditor.ViewModels
 
                 var clonedChild = CloneNodeWithDepth(ptr.Node, depth + 1, visited);
 
-                // Add cloned child to dialog lists
-                if (clonedChild.Type == DialogNodeType.Entry)
-                {
-                    CurrentDialog!.Entries.Add(clonedChild);
-                }
-                else
-                {
-                    CurrentDialog!.Replies.Add(clonedChild);
-                }
+                // Add cloned child to dialog lists using AddNodeInternal to update LinkRegistry
+                CurrentDialog!.AddNodeInternal(clonedChild, clonedChild.Type);
+
+                // Get the correct index after adding (LinkRegistry will track this)
+                var nodeIndex = (uint)CurrentDialog.GetNodeIndex(clonedChild, clonedChild.Type);
 
                 // Create pointer to cloned child
                 var clonedPtr = new DialogPtr
                 {
                     Node = clonedChild,
                     Type = clonedChild.Type,
-                    Index = clonedChild.Type == DialogNodeType.Entry
-                        ? (uint)(CurrentDialog.Entries.Count - 1)
-                        : (uint)(CurrentDialog.Replies.Count - 1),
+                    Index = nodeIndex,
                     IsLink = ptr.IsLink,
                     ScriptAppears = ptr.ScriptAppears,
                     ConditionParams = new Dictionary<string, string>(ptr.ConditionParams ?? new Dictionary<string, string>()),
                     Comment = ptr.Comment,
-                    LinkComment = ptr.LinkComment
+                    LinkComment = ptr.LinkComment,
+                    Parent = CurrentDialog
                 };
 
                 clone.Pointers.Add(clonedPtr);
+
+                // Register the new pointer with LinkRegistry
+                CurrentDialog.LinkRegistry.RegisterLink(clonedPtr);
             }
 
             return clone;
