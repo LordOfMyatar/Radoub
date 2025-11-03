@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **CRITICAL FIX (Issue #6)**: Copy/paste operations with node links no longer cause file corruption
+  - Implemented LinkRegistry system to track all node references and maintain correct indices
+  - Copy/paste operations now properly update pointer indices when nodes are duplicated
+  - Delete operations correctly update indices for remaining nodes
+  - Added pre-save validation to detect and auto-fix index issues
+  - Save operation aborts if corruption is detected to prevent data loss
+
+### Added
+- Comprehensive test suite with xUnit for parser validation
+- LinkRegistry system for tracking all DialogPtr references
+- Pre-save safety validations to prevent corrupted files
+- Automatic index recalculation using LinkRegistry
+
+### Technical
+- Refactored copy/paste/delete operations to use AddNodeInternal/RemoveNodeInternal
+- All pointer operations now register with LinkRegistry for tracking
+- RecalculatePointerIndices now uses LinkRegistry for validation
+
 ---
 
 ## [0.1.0-alpha] - 2025-11-02
