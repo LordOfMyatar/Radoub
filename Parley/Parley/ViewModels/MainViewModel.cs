@@ -2463,56 +2463,22 @@ namespace DialogEditor.ViewModels
 
         /// <summary>
         /// Recursively collects all nodes reachable from the tree structure
+        /// CRITICAL: Only follows TreeView children, not underlying dialog pointers
+        /// This ensures link nodes (which are terminal) don't mark their children as reachable
         /// </summary>
         private void CollectReachableNodes(TreeViewSafeNode node, HashSet<DialogNode> reachableNodes)
         {
             if (node?.OriginalNode != null && !reachableNodes.Contains(node.OriginalNode))
             {
                 reachableNodes.Add(node.OriginalNode);
-
-                // Also process the node's actual children (not TreeView children)
-                // to ensure we catch all reachable nodes even if TreeView is incomplete
-                if (node.OriginalNode.Pointers != null)
-                {
-                    foreach (var ptr in node.OriginalNode.Pointers)
-                    {
-                        if (ptr.Node != null && !reachableNodes.Contains(ptr.Node))
-                        {
-                            reachableNodes.Add(ptr.Node);
-                            // Recursively process this node's pointers too
-                            CollectReachableNodesFromDialog(ptr.Node, reachableNodes);
-                        }
-                    }
-                }
             }
 
-            // Process TreeView children
+            // ONLY process TreeView children (respects link nodes being terminal)
             if (node?.Children != null)
             {
                 foreach (var child in node.Children)
                 {
                     CollectReachableNodes(child, reachableNodes);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Recursively collects nodes from dialog structure (not TreeView)
-        /// </summary>
-        private void CollectReachableNodesFromDialog(DialogNode node, HashSet<DialogNode> reachableNodes)
-        {
-            if (node == null || reachableNodes.Contains(node)) return;
-
-            reachableNodes.Add(node);
-
-            if (node.Pointers != null)
-            {
-                foreach (var ptr in node.Pointers)
-                {
-                    if (ptr.Node != null)
-                    {
-                        CollectReachableNodesFromDialog(ptr.Node, reachableNodes);
-                    }
                 }
             }
         }
