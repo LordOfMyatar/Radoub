@@ -439,6 +439,24 @@ namespace DialogEditor.ViewModels
                 newNodes.Add(rootNode);
                 rootNode.IsExpanded = true; // Auto-expand root
 
+                // Issue #27 Fix: Detect and display orphaned nodes at the bottom
+                var orphanedNodes = FindOrphanedNodes(rootNode);
+                if (orphanedNodes.Count > 0)
+                {
+                    var orphanRoot = new TreeViewOrphanedNode("⚠️ Orphaned Nodes (unreachable from STARTs)");
+                    foreach (var orphan in orphanedNodes)
+                    {
+                        var safeNode = new TreeViewSafeNode(orphan);
+                        orphanRoot.Children?.Add(safeNode);
+                    }
+                    newNodes.Add(orphanRoot);
+
+                    // Log warning about orphans
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Found {orphanedNodes.Count} orphaned nodes - these exist in dialog but aren't reachable from any START");
+                    StatusMessage = $"⚠️ {orphanedNodes.Count} orphaned node(s) detected - may display differently in Aurora";
+                }
+
                 // 🔧 TEMPORARY DEBUGGING DISABLED - Parser workaround now provides complete conversation tree
                 // The parser workaround transfers Reply[1] and Reply[2] from Entry[1] to Entry[0] fixing the conversation flow
                 /*
@@ -702,6 +720,8 @@ namespace DialogEditor.ViewModels
             if (previousState != null)
             {
                 CurrentDialog = previousState;
+                // CRITICAL: Rebuild LinkRegistry after undo to fix Issue #28 (IsLink corruption)
+                CurrentDialog.RebuildLinkRegistry();
                 RefreshTreeView();
 
                 // Restore tree state after refresh
@@ -732,6 +752,8 @@ namespace DialogEditor.ViewModels
             if (nextState != null)
             {
                 CurrentDialog = nextState;
+                // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
+                CurrentDialog.RebuildLinkRegistry();
                 RefreshTreeView();
 
                 // Restore tree state after refresh
@@ -2407,6 +2429,92 @@ namespace DialogEditor.ViewModels
             var isLink = node.IsChild ? "LINK" : "NODE";
 
             return $"{displayText}[{nodeType}:{isLink}]";
+        }
+
+        /// <summary>
+        /// Finds all dialog nodes that exist but aren't reachable from any START
+        /// Issue #27: These orphaned nodes need to be displayed separately
+        /// </summary>
+        private List<DialogNode> FindOrphanedNodes(TreeViewRootNode rootNode)
+        {
+            if (CurrentDialog == null) return new List<DialogNode>();
+
+            // Collect all nodes reachable from STARTs
+            var reachableNodes = new HashSet<DialogNode>();
+            CollectReachableNodes(rootNode, reachableNodes);
+
+            // Find entries that aren't reachable
+            var orphanedEntries = CurrentDialog.Entries
+                .Where(e => !reachableNodes.Contains(e))
+                .ToList();
+
+            // Find replies that aren't reachable
+            var orphanedReplies = CurrentDialog.Replies
+                .Where(r => !reachableNodes.Contains(r))
+                .ToList();
+
+            // Combine and return all orphans, entries first (maintain consistent ordering)
+            var allOrphans = new List<DialogNode>();
+            allOrphans.AddRange(orphanedEntries);
+            allOrphans.AddRange(orphanedReplies);
+
+            return allOrphans;
+        }
+
+        /// <summary>
+        /// Recursively collects all nodes reachable from the tree structure
+        /// </summary>
+        private void CollectReachableNodes(TreeViewSafeNode node, HashSet<DialogNode> reachableNodes)
+        {
+            if (node?.OriginalNode != null && !reachableNodes.Contains(node.OriginalNode))
+            {
+                reachableNodes.Add(node.OriginalNode);
+
+                // Also process the node's actual children (not TreeView children)
+                // to ensure we catch all reachable nodes even if TreeView is incomplete
+                if (node.OriginalNode.Pointers != null)
+                {
+                    foreach (var ptr in node.OriginalNode.Pointers)
+                    {
+                        if (ptr.Node != null && !reachableNodes.Contains(ptr.Node))
+                        {
+                            reachableNodes.Add(ptr.Node);
+                            // Recursively process this node's pointers too
+                            CollectReachableNodesFromDialog(ptr.Node, reachableNodes);
+                        }
+                    }
+                }
+            }
+
+            // Process TreeView children
+            if (node?.Children != null)
+            {
+                foreach (var child in node.Children)
+                {
+                    CollectReachableNodes(child, reachableNodes);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Recursively collects nodes from dialog structure (not TreeView)
+        /// </summary>
+        private void CollectReachableNodesFromDialog(DialogNode node, HashSet<DialogNode> reachableNodes)
+        {
+            if (node == null || reachableNodes.Contains(node)) return;
+
+            reachableNodes.Add(node);
+
+            if (node.Pointers != null)
+            {
+                foreach (var ptr in node.Pointers)
+                {
+                    if (ptr.Node != null)
+                    {
+                        CollectReachableNodesFromDialog(ptr.Node, reachableNodes);
+                    }
+                }
+            }
         }
 
         /// <summary>
