@@ -439,21 +439,58 @@ namespace DialogEditor.ViewModels
                 newNodes.Add(rootNode);
                 rootNode.IsExpanded = true; // Auto-expand root
 
-                // Issue #27 Fix: Detect and display orphaned nodes at the bottom
+                // Issue #27 Fix: Detect and display orphaned nodes with full context
                 var orphanedNodes = FindOrphanedNodes(rootNode);
                 if (orphanedNodes.Count > 0)
                 {
                     var orphanRoot = new TreeViewOrphanedNode("⚠️ Orphaned Nodes (unreachable from STARTs)");
-                    foreach (var orphan in orphanedNodes)
+
+                    // Separate entries and replies for categorized display
+                    var orphanedEntries = orphanedNodes.Where(n => n.Type == DialogNodeType.Entry).ToList();
+                    var orphanedReplies = orphanedNodes.Where(n => n.Type == DialogNodeType.Reply).ToList();
+
+                    // Add orphaned entries with full expandable tree
+                    if (orphanedEntries.Count > 0)
                     {
-                        var safeNode = new TreeViewSafeNode(orphan);
-                        orphanRoot.Children?.Add(safeNode);
+                        var entryCategory = new TreeViewOrphanedNode("Orphaned Entries");
+                        foreach (var orphan in orphanedEntries)
+                        {
+                            // NOT gray, fully expandable to show children
+                            var safeNode = new TreeViewSafeNode(orphan, ancestors: null, depth: 0);
+                            entryCategory.Children?.Add(safeNode);
+                        }
+                        orphanRoot.Children?.Add(entryCategory);
                     }
+
+                    // Add orphaned replies with parent context
+                    if (orphanedReplies.Count > 0)
+                    {
+                        var replyCategory = new TreeViewOrphanedNode("Orphaned Replies");
+                        foreach (var orphan in orphanedReplies)
+                        {
+                            // Show parent Entry for context, then the orphaned Reply
+                            var parentEntry = FindParentEntry(orphan);
+                            if (parentEntry != null)
+                            {
+                                // Create parent node (not gray, expandable)
+                                var parentNode = new TreeViewSafeNode(parentEntry, ancestors: null, depth: 0);
+                                replyCategory.Children?.Add(parentNode);
+                            }
+                            else
+                            {
+                                // No parent found, just show the orphan
+                                var safeNode = new TreeViewSafeNode(orphan, ancestors: null, depth: 0);
+                                replyCategory.Children?.Add(safeNode);
+                            }
+                        }
+                        orphanRoot.Children?.Add(replyCategory);
+                    }
+
                     newNodes.Add(orphanRoot);
 
                     // Log warning about orphans
                     UnifiedLogger.LogApplication(LogLevel.WARN,
-                        $"Found {orphanedNodes.Count} orphaned nodes - these exist in dialog but aren't reachable from any START");
+                        $"Found {orphanedNodes.Count} orphaned nodes ({orphanedEntries.Count} entries, {orphanedReplies.Count} replies)");
                     StatusMessage = $"⚠️ {orphanedNodes.Count} orphaned node(s) detected - may display differently in Aurora";
                 }
 
@@ -2459,6 +2496,26 @@ namespace DialogEditor.ViewModels
             allOrphans.AddRange(orphanedReplies);
 
             return allOrphans;
+        }
+
+        /// <summary>
+        /// Finds the parent Entry node that contains a pointer to this Reply
+        /// Used for showing context in orphaned replies section
+        /// </summary>
+        private DialogNode? FindParentEntry(DialogNode replyNode)
+        {
+            if (CurrentDialog == null) return null;
+
+            // Search all entries for one that has a pointer to this reply
+            foreach (var entry in CurrentDialog.Entries)
+            {
+                if (entry.Pointers != null && entry.Pointers.Any(p => p.Node == replyNode))
+                {
+                    return entry;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
