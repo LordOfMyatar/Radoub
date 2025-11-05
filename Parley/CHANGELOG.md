@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.1.1-alpha] - 2025-11-04
+
 ### Fixed
 - **CRITICAL FIX (Issue #6)**: Copy/paste operations with node links no longer cause file corruption
   - Implemented LinkRegistry system to track all node references and maintain correct indices
@@ -15,10 +19,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Delete operations correctly update indices for remaining nodes
   - Added pre-save validation to detect and auto-fix index issues
   - Save operation aborts if corruption is detected to prevent data loss
+- **Issue #27**: Fixed orphaned node duplicate detection in tree view
+  - Orphaned nodes now display correctly with full subtrees instead of appearing as duplicates
+  - Root cause: CollectDialogSubtree was marking nodes as visited before recursing, breaking chain collection
+  - Split into entry point + helper method to properly collect all descendants
+  - Verified behavior matches Aurora Toolset exactly
 - **Delete Operation Bug**: Fixed issue where deleting nodes with shared replies incorrectly removed unrelated nodes
   - DeleteNodeRecursive now checks if child nodes are referenced by other parents before deleting
   - Shared reply nodes are preserved when still in use by other dialog entries
   - Prevents cascade deletion of nodes that are still needed by other conversation branches
+- **Privacy**: Removed hardcoded user paths from test files
 
 ### Added
 - Comprehensive test suite with xUnit for parser validation
@@ -32,6 +42,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - All pointer operations now register with LinkRegistry for tracking
 - RecalculatePointerIndices now uses LinkRegistry for validation
 - DeleteNodeRecursive enhanced to check for shared references before deletion
+- CollectDialogSubtree split into entry point + CollectDialogSubtreeChildren helper for proper recursion
 
 ---
 
