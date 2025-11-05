@@ -96,15 +96,12 @@ npm-debug.log*
 DebugView
 DebugView.zip
 LaunchGUI_WithDebugCapture.bat
-convolution_debug.log
 *.debug.log
 
 # ========================
 # Documentation & Notes
 # ========================
-Bioware_Aurora_Conversation_Format.txt
-ConvoEditor/WhereClaudLeftOff.txt
-ConvoEditor/claude.md
+
 
 # ========================
 # Temporary & Cache Files
@@ -141,13 +138,6 @@ Desktop.ini
 # ========================
 # NOTE: NonPublic/ and Z_ScreenShots/ ARE committed to private repo
 # They will be excluded when creating public repo
-/Z_ScreenShots/
-CLAUDE.md
-ArcReactorSettings.json
-CorrectionsNeeded.txt
-CopyTreeStructure.txt
-/ArcReactor.bak
-replace_legal_name.py
 /.claude/settings.local.json
 
 # Build test artifacts

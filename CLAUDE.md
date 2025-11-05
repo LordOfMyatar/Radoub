@@ -57,16 +57,18 @@ When working on a specific tool (e.g., Parley):
 
 ### Shared Resources
 
-**Aurora Documentation** (`Documentation/`):
+**Public Documentation** (`Documentation/`):
 - Shared across all tools
 - Contains BioWare format specifications
 - Read-only reference material
 - Updates only for format corrections or additions
+- Original and Markdown versions of Bioware File Format documentation
 
 **About Documentation** (`About/`):
 - Project history and development experience
 - AI collaboration documentation
 - Updated when major project milestones occur
+- Never edit ON_USING_CLAUDE.md; only Lord makes changes to that.
 
 ### Cross-Tool Work
 
@@ -101,16 +103,27 @@ Use tool prefixes in commit messages:
 
 ## Branch Workflow
 
-**Main Branches**:
-- `main` - Production-ready releases
-- `develop` - Integration branch for all tools
+**Single main branch approach** (solo developer, rapid iteration):
+
+**Main Branch**:
+- `main` - Production-ready releases (protected by PR review process)
 
 **Feature Branches**:
-- Tool-specific: `parley/feature/name`
+- Tool-specific: `parley/feature/name` or `parley/fix/name`
 - Cross-tool: `radoub/feature/name`
 - Documentation: `docs/name`
 
-**Important**: All work via Pull Requests, even for "small" changes.
+**Workflow**:
+```
+main (production)
+  └── feature/fix branches → PR → main
+```
+
+**Important**:
+- All work via Pull Requests, even for "small" changes
+- PRs protect main branch (review before merge)
+- GitHub releases mark stable milestones
+- If project grows to multiple contributors, reconsider adding a `develop` integration branch
 
 ---
 
@@ -155,7 +168,8 @@ When adding a new tool to Radoub:
 **Before PRs to Main**:
 - All tools must build
 - All tool tests must pass
-- Documentation updated
+- Private documentation to the Private folder
+- Public Documentation approved before push
 - CHANGELOG updated for affected tools
 
 ---

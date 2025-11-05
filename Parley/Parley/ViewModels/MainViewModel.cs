@@ -202,6 +202,9 @@ namespace DialogEditor.ViewModels
 
                 if (CurrentDialog != null)
                 {
+                    // Rebuild LinkRegistry for the loaded dialog
+                    CurrentDialog.RebuildLinkRegistry();
+
                     // Reset global tracking for link detection when loading new dialog
                     TreeViewSafeNode.ResetGlobalTracking();
 
@@ -265,6 +268,35 @@ namespace DialogEditor.ViewModels
                 StatusMessage = $"Saving {System.IO.Path.GetFileName(filePath)}...";
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving dialog to: {UnifiedLogger.SanitizePath(filePath)}");
+
+                // SAFETY VALIDATION: Validate all pointer indices before save (Issue #6 fix)
+                var validationErrors = CurrentDialog.ValidatePointerIndices();
+                if (validationErrors.Count > 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"⚠️ PRE-SAVE VALIDATION: Found {validationErrors.Count} index issues:");
+                    foreach (var error in validationErrors)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN, $"  - {error}");
+                    }
+
+                    // Attempt to fix by rebuilding LinkRegistry and recalculating indices
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Attempting to auto-fix index issues...");
+                    CurrentDialog.RebuildLinkRegistry();
+                    RecalculatePointerIndices();
+
+                    // Re-validate after fix attempt
+                    var errorsAfterFix = CurrentDialog.ValidatePointerIndices();
+                    if (errorsAfterFix.Count > 0)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.ERROR, $"❌ CRITICAL: {errorsAfterFix.Count} index issues remain after auto-fix!");
+                        StatusMessage = $"ERROR: Dialog has {errorsAfterFix.Count} pointer index issues. Save aborted to prevent corruption.";
+                        return;
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.INFO, "✅ All index issues resolved successfully");
+                    }
+                }
 
                 // Phase 4 Refactoring: Use DialogFileService facade instead of DialogParser directly
                 var dialogService = new DialogFileService();
@@ -406,6 +438,14 @@ namespace DialogEditor.ViewModels
                 // Add root to tree
                 newNodes.Add(rootNode);
                 rootNode.IsExpanded = true; // Auto-expand root
+
+                // Issue #27 Fix: Create synthetic orphan containers saved to dialog data
+                // This ensures Parley and Aurora display identically
+                var orphanedNodes = FindOrphanedNodes(rootNode);
+                if (orphanedNodes.Count > 0)
+                {
+                    CreateOrphanContainers(orphanedNodes, rootNode);
+                }
 
                 // 🔧 TEMPORARY DEBUGGING DISABLED - Parser workaround now provides complete conversation tree
                 // The parser workaround transfers Reply[1] and Reply[2] from Entry[1] to Entry[0] fixing the conversation flow
@@ -670,6 +710,8 @@ namespace DialogEditor.ViewModels
             if (previousState != null)
             {
                 CurrentDialog = previousState;
+                // CRITICAL: Rebuild LinkRegistry after undo to fix Issue #28 (IsLink corruption)
+                CurrentDialog.RebuildLinkRegistry();
                 RefreshTreeView();
 
                 // Restore tree state after refresh
@@ -700,6 +742,8 @@ namespace DialogEditor.ViewModels
             if (nextState != null)
             {
                 CurrentDialog = nextState;
+                // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
+                CurrentDialog.RebuildLinkRegistry();
                 RefreshTreeView();
 
                 // Restore tree state after refresh
@@ -945,7 +989,7 @@ namespace DialogEditor.ViewModels
         {
             var linkedNodes = new List<DialogNode>();
 
-            // Check this node and all descendants for incoming links
+            // Check this node and all descendants for incoming links using LinkRegistry
             CheckNodeForLinks(node, linkedNodes);
 
             return linkedNodes;
@@ -953,8 +997,11 @@ namespace DialogEditor.ViewModels
 
         private void CheckNodeForLinks(DialogNode node, List<DialogNode> linkedNodes)
         {
-            // Check if this node has more than 1 reference (incoming links)
-            if (HasOtherReferences(node))
+            // Use LinkRegistry to check for incoming links
+            var incomingLinks = CurrentDialog.LinkRegistry.GetLinksTo(node);
+
+            // If there are multiple incoming links or any are marked as IsLink, this node is referenced elsewhere
+            if (incomingLinks.Count > 1 || incomingLinks.Any(ptr => ptr.IsLink))
             {
                 linkedNodes.Add(node);
             }
@@ -974,8 +1021,7 @@ namespace DialogEditor.ViewModels
 
         private void DeleteNodeRecursive(DialogNode node)
         {
-            // Recursively delete ALL children first (depth-first)
-            // Even if children are linked elsewhere - Aurora behavior
+            // Recursively delete children, but only if they're not shared by other nodes
             if (node.Pointers != null && node.Pointers.Count > 0)
             {
                 // Make a copy of the pointers list to avoid modification during iteration
@@ -985,49 +1031,103 @@ namespace DialogEditor.ViewModels
                 {
                     if (ptr.Node != null)
                     {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Recursively deleting child: {ptr.Node.DisplayText}");
-                        DeleteNodeRecursive(ptr.Node);
+                        // Check if this child node has other incoming links besides the one we're about to delete
+                        var incomingLinks = CurrentDialog.LinkRegistry.GetLinksTo(ptr.Node);
+
+                        // Count how many of the incoming links are NOT from the node we're deleting
+                        var otherIncomingLinks = incomingLinks.Where(link =>
+                        {
+                            // Find which node contains this link
+                            DialogNode? linkParent = null;
+                            foreach (var entry in CurrentDialog.Entries)
+                            {
+                                if (entry.Pointers.Contains(link))
+                                {
+                                    linkParent = entry;
+                                    break;
+                                }
+                            }
+                            if (linkParent == null)
+                            {
+                                foreach (var reply in CurrentDialog.Replies)
+                                {
+                                    if (reply.Pointers.Contains(link))
+                                    {
+                                        linkParent = reply;
+                                        break;
+                                    }
+                                }
+                            }
+                            // Check if it's in Starts
+                            if (linkParent == null && CurrentDialog.Starts.Contains(link))
+                            {
+                                linkParent = null; // Start link, not from a node
+                            }
+
+                            return linkParent != node;
+                        }).Count();
+
+                        if (otherIncomingLinks == 0)
+                        {
+                            // No other nodes reference this child, safe to delete recursively
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                $"Recursively deleting child (not shared): {ptr.Node.DisplayText}");
+                            DeleteNodeRecursive(ptr.Node);
+                        }
+                        else
+                        {
+                            // This child is shared by other nodes, don't delete it
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                $"Skipping deletion of shared child (has {otherIncomingLinks} other references): {ptr.Node.DisplayText}");
+                        }
                     }
                 }
 
-                // Clear the pointers list after deleting children
+                // Unregister and clear the pointers list after handling children
+                foreach (var ptr in pointersToDelete)
+                {
+                    CurrentDialog.LinkRegistry.UnregisterLink(ptr);
+                }
                 node.Pointers.Clear();
             }
 
-            // Now delete this node itself
-            // Remove from ALL parents that reference it (not just first one!)
+            // Get all incoming pointers to this node from LinkRegistry
+            var incomingPointers = CurrentDialog.LinkRegistry.GetLinksTo(node).ToList();
             int removedCount = 0;
 
-            // Check Starts list (root entries)
-            var startsToRemove = CurrentDialog.Starts.Where(s => s.Node == node).ToList();
-            foreach (var start in startsToRemove)
+            // Remove all incoming pointers using LinkRegistry data
+            foreach (var incomingPtr in incomingPointers)
             {
-                CurrentDialog.Starts.Remove(start);
-                removedCount++;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed from Starts list");
-            }
+                // Unregister from LinkRegistry first
+                CurrentDialog.LinkRegistry.UnregisterLink(incomingPtr);
 
-            // Remove from ALL Entry pointers (not just first match)
-            foreach (var entry in CurrentDialog.Entries)
-            {
-                var ptrsToRemove = entry.Pointers.Where(p => p.Node == node).ToList();
-                foreach (var ptr in ptrsToRemove)
+                // Remove from Starts if it's a start pointer
+                if (CurrentDialog.Starts.Contains(incomingPtr))
                 {
-                    entry.Pointers.Remove(ptr);
+                    CurrentDialog.Starts.Remove(incomingPtr);
                     removedCount++;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Entry '{entry.DisplayText}' pointers");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed from Starts list");
                 }
-            }
 
-            // Remove from ALL Reply pointers (not just first match)
-            foreach (var reply in CurrentDialog.Replies)
-            {
-                var ptrsToRemove = reply.Pointers.Where(p => p.Node == node).ToList();
-                foreach (var ptr in ptrsToRemove)
+                // Find and remove from parent node's pointers
+                foreach (var entry in CurrentDialog.Entries)
                 {
-                    reply.Pointers.Remove(ptr);
-                    removedCount++;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Reply '{reply.DisplayText}' pointers");
+                    if (entry.Pointers.Contains(incomingPtr))
+                    {
+                        entry.Pointers.Remove(incomingPtr);
+                        removedCount++;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Entry '{entry.DisplayText}' pointers");
+                    }
+                }
+
+                foreach (var reply in CurrentDialog.Replies)
+                {
+                    if (reply.Pointers.Contains(incomingPtr))
+                    {
+                        reply.Pointers.Remove(incomingPtr);
+                        removedCount++;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Reply '{reply.DisplayText}' pointers");
+                    }
                 }
             }
 
@@ -1036,20 +1136,9 @@ namespace DialogEditor.ViewModels
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed node '{node.DisplayText}' from {removedCount} parent references");
             }
 
-            // ALWAYS remove from appropriate list - don't preserve
-            if (node.Type == DialogNodeType.Entry)
-            {
-                CurrentDialog.Entries.Remove(node);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed Entry from list: {node.DisplayText}");
-            }
-            else
-            {
-                CurrentDialog.Replies.Remove(node);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed Reply from list: {node.DisplayText}");
-            }
-
-            // CRITICAL: Recalculate all pointer indices after removing from list
-            RecalculatePointerIndices();
+            // Use RemoveNodeInternal which handles LinkRegistry cleanup
+            CurrentDialog.RemoveNodeInternal(node, node.Type);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {node.Type} from list: {node.DisplayText}");
         }
 
         // Phase 2a: Node Reordering
@@ -1770,59 +1859,39 @@ namespace DialogEditor.ViewModels
         {
             if (CurrentDialog == null) return;
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Recalculating all pointer indices after list modification");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Recalculating all pointer indices using LinkRegistry");
 
-            // Fix all Start pointers
-            foreach (var start in CurrentDialog.Starts)
+            // Rebuild the LinkRegistry from current dialog state
+            CurrentDialog.RebuildLinkRegistry();
+
+            // Update all Entry node indices
+            for (uint i = 0; i < CurrentDialog.Entries.Count; i++)
             {
-                if (start.Node != null)
-                {
-                    int actualIndex = CurrentDialog.Entries.IndexOf(start.Node);
-                    if (actualIndex >= 0 && actualIndex != start.Index)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Fixing Start pointer: Index {start.Index} -> {actualIndex}");
-                        start.Index = (uint)actualIndex;
-                    }
-                }
+                var entry = CurrentDialog.Entries[(int)i];
+                CurrentDialog.LinkRegistry.UpdateNodeIndex(entry, i, DialogNodeType.Entry);
             }
 
-            // Fix all Entry child pointers
-            foreach (var entry in CurrentDialog.Entries)
+            // Update all Reply node indices
+            for (uint i = 0; i < CurrentDialog.Replies.Count; i++)
             {
-                foreach (var ptr in entry.Pointers)
-                {
-                    if (ptr.Node != null)
-                    {
-                        var list = ptr.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
-                        int actualIndex = list.IndexOf(ptr.Node);
-                        if (actualIndex >= 0 && actualIndex != ptr.Index)
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Fixing pointer in Entry '{entry.DisplayText}': Index {ptr.Index} -> {actualIndex}");
-                            ptr.Index = (uint)actualIndex;
-                        }
-                    }
-                }
+                var reply = CurrentDialog.Replies[(int)i];
+                CurrentDialog.LinkRegistry.UpdateNodeIndex(reply, i, DialogNodeType.Reply);
             }
 
-            // Fix all Reply child pointers
-            foreach (var reply in CurrentDialog.Replies)
+            // Validate all indices are correct
+            var errors = CurrentDialog.ValidatePointerIndices();
+            if (errors.Count > 0)
             {
-                foreach (var ptr in reply.Pointers)
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Index validation found {errors.Count} issues after recalculation:");
+                foreach (var error in errors)
                 {
-                    if (ptr.Node != null)
-                    {
-                        var list = ptr.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
-                        int actualIndex = list.IndexOf(ptr.Node);
-                        if (actualIndex >= 0 && actualIndex != ptr.Index)
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Fixing pointer in Reply '{reply.DisplayText}': Index {ptr.Index} -> {actualIndex}");
-                            ptr.Index = (uint)actualIndex;
-                        }
-                    }
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"  - {error}");
                 }
             }
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Pointer indices recalculated successfully");
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "All pointer indices validated successfully");
+            }
         }
 
         /// <summary>
@@ -1981,23 +2050,30 @@ namespace DialogEditor.ViewModels
                     StatusMessage = $"Auto-converted NPC Reply to Entry for ROOT level";
                 }
 
-                // Add to entries list
-                CurrentDialog.Entries.Add(duplicate);
+                // Add to entries list using AddNodeInternal for LinkRegistry tracking
+                CurrentDialog.AddNodeInternal(duplicate, duplicate.Type);
+
+                // Get the correct index after adding
+                var duplicateIndex = (uint)CurrentDialog.GetNodeIndex(duplicate, duplicate.Type);
 
                 // Create start pointer
                 var startPtr = new DialogPtr
                 {
                     Node = duplicate,
                     Type = DialogNodeType.Entry,
-                    Index = (uint)(CurrentDialog.Entries.Count - 1),
+                    Index = duplicateIndex,
                     IsLink = false,
                     IsStart = true,
                     ScriptAppears = "",
                     ConditionParams = new Dictionary<string, string>(),
-                    Comment = ""
+                    Comment = "",
+                    Parent = CurrentDialog
                 };
 
                 CurrentDialog.Starts.Add(startPtr);
+
+                // Register the start pointer with LinkRegistry
+                CurrentDialog.LinkRegistry.RegisterLink(startPtr);
 
                 // CRITICAL: Recalculate indices in case recursive cloning added multiple nodes
                 RecalculatePointerIndices();
@@ -2013,31 +2089,29 @@ namespace DialogEditor.ViewModels
             // Clone the node (deep copy)
             var duplicateNode = CloneNode(_copiedNode);
 
-            // Add to appropriate list
-            if (duplicateNode.Type == DialogNodeType.Entry)
-            {
-                CurrentDialog.Entries.Add(duplicateNode);
-            }
-            else
-            {
-                CurrentDialog.Replies.Add(duplicateNode);
-            }
+            // Add to appropriate list using AddNodeInternal for LinkRegistry tracking
+            CurrentDialog.AddNodeInternal(duplicateNode, duplicateNode.Type);
+
+            // Get the correct index after adding
+            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(duplicateNode, duplicateNode.Type);
 
             // Create pointer from parent to duplicate
             var newPtr = new DialogPtr
             {
                 Node = duplicateNode,
                 Type = duplicateNode.Type,
-                Index = duplicateNode.Type == DialogNodeType.Entry
-                    ? (uint)(CurrentDialog.Entries.Count - 1)
-                    : (uint)(CurrentDialog.Replies.Count - 1),
+                Index = nodeIndex,
                 IsLink = false,
                 ScriptAppears = "",
                 ConditionParams = new Dictionary<string, string>(),
-                Comment = ""
+                Comment = "",
+                Parent = CurrentDialog
             };
 
             parent.OriginalNode.Pointers.Add(newPtr);
+
+            // Register the new pointer with LinkRegistry
+            CurrentDialog.LinkRegistry.RegisterLink(newPtr);
 
             // CRITICAL: Recalculate indices in case recursive cloning added multiple nodes
             RecalculatePointerIndices();
@@ -2082,15 +2156,15 @@ namespace DialogEditor.ViewModels
             SaveUndoState("Paste as Link");
 
             // Normal paste link to non-ROOT parent
-            // Find index of copied node in appropriate list
-            uint nodeIndex;
-            if (_copiedNode.Type == DialogNodeType.Entry)
+            // Get the current index of copied node (LinkRegistry ensures it's accurate)
+            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(_copiedNode, _copiedNode.Type);
+
+            // Validate index is valid
+            if ((int)nodeIndex == -1)
             {
-                nodeIndex = (uint)CurrentDialog.Entries.IndexOf(_copiedNode);
-            }
-            else
-            {
-                nodeIndex = (uint)CurrentDialog.Replies.IndexOf(_copiedNode);
+                StatusMessage = "Error: Copied node no longer exists in dialog";
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "Copied node not found in dialog during paste as link");
+                return;
             }
 
             // Create link pointer (references original node)
@@ -2103,10 +2177,14 @@ namespace DialogEditor.ViewModels
                 ScriptAppears = "",
                 ConditionParams = new Dictionary<string, string>(),
                 Comment = "",
-                LinkComment = "[Link to original]"
+                LinkComment = "[Link to original]",
+                Parent = CurrentDialog
             };
 
             parent.OriginalNode.Pointers.Add(linkPtr);
+
+            // Register the link pointer with LinkRegistry
+            CurrentDialog.LinkRegistry.RegisterLink(linkPtr);
 
             RefreshTreeView();
             HasUnsavedChanges = true;
@@ -2174,32 +2252,30 @@ namespace DialogEditor.ViewModels
 
                 var clonedChild = CloneNodeWithDepth(ptr.Node, depth + 1, visited);
 
-                // Add cloned child to dialog lists
-                if (clonedChild.Type == DialogNodeType.Entry)
-                {
-                    CurrentDialog!.Entries.Add(clonedChild);
-                }
-                else
-                {
-                    CurrentDialog!.Replies.Add(clonedChild);
-                }
+                // Add cloned child to dialog lists using AddNodeInternal to update LinkRegistry
+                CurrentDialog!.AddNodeInternal(clonedChild, clonedChild.Type);
+
+                // Get the correct index after adding (LinkRegistry will track this)
+                var nodeIndex = (uint)CurrentDialog.GetNodeIndex(clonedChild, clonedChild.Type);
 
                 // Create pointer to cloned child
                 var clonedPtr = new DialogPtr
                 {
                     Node = clonedChild,
                     Type = clonedChild.Type,
-                    Index = clonedChild.Type == DialogNodeType.Entry
-                        ? (uint)(CurrentDialog.Entries.Count - 1)
-                        : (uint)(CurrentDialog.Replies.Count - 1),
+                    Index = nodeIndex,
                     IsLink = ptr.IsLink,
                     ScriptAppears = ptr.ScriptAppears,
                     ConditionParams = new Dictionary<string, string>(ptr.ConditionParams ?? new Dictionary<string, string>()),
                     Comment = ptr.Comment,
-                    LinkComment = ptr.LinkComment
+                    LinkComment = ptr.LinkComment,
+                    Parent = CurrentDialog
                 };
 
                 clone.Pointers.Add(clonedPtr);
+
+                // Register the new pointer with LinkRegistry
+                CurrentDialog.LinkRegistry.RegisterLink(clonedPtr);
             }
 
             return clone;
@@ -2343,6 +2419,333 @@ namespace DialogEditor.ViewModels
             var isLink = node.IsChild ? "LINK" : "NODE";
 
             return $"{displayText}[{nodeType}:{isLink}]";
+        }
+
+        /// <summary>
+        /// Finds all dialog nodes that exist but aren't reachable from any START
+        /// Issue #27: These orphaned nodes need to be displayed separately
+        /// </summary>
+        private List<DialogNode> FindOrphanedNodes(TreeViewRootNode rootNode)
+        {
+            if (CurrentDialog == null) return new List<DialogNode>();
+
+            // Collect all nodes reachable from STARTs via TreeView traversal
+            var reachableNodes = new HashSet<DialogNode>();
+            CollectReachableNodes(rootNode, reachableNodes);
+
+            // Find entries that aren't reachable, EXCLUDING orphan containers
+            var orphanedEntries = CurrentDialog.Entries
+                .Where(e => !reachableNodes.Contains(e))
+                .Where(e => e.Comment?.Contains("PARLEY: Orphaned") != true)
+                .ToList();
+
+            // Find replies that aren't reachable
+            var orphanedReplies = CurrentDialog.Replies
+                .Where(r => !reachableNodes.Contains(r))
+                .ToList();
+
+            // Collect subtrees from orphaned Entries to identify descendant nodes
+            // Only process Entries as roots; Replies will be found as descendants
+            var orphanSubtreeNodes = new HashSet<DialogNode>();
+            foreach (var orphan in orphanedEntries)
+            {
+                CollectDialogSubtree(orphan, orphanSubtreeNodes);
+            }
+
+            // Filter out nodes that are descendants of other orphans (keep only root orphans)
+            var rootOrphanedEntries = orphanedEntries
+                .Where(e => !orphanSubtreeNodes.Contains(e))
+                .ToList();
+            var rootOrphanedReplies = orphanedReplies
+                .Where(r => !orphanSubtreeNodes.Contains(r))
+                .ToList();
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found {rootOrphanedEntries.Count} root orphaned entries, {rootOrphanedReplies.Count} root orphaned replies");
+
+            // Combine and return only root orphans
+            var allOrphans = new List<DialogNode>();
+            allOrphans.AddRange(rootOrphanedEntries);
+            allOrphans.AddRange(rootOrphanedReplies);
+
+            return allOrphans;
+        }
+
+        /// <summary>
+        /// Collects all nodes reachable from a node via dialog pointers (not TreeView)
+        /// Used to find descendants of orphaned nodes for filtering
+        /// </summary>
+        private void CollectDialogSubtree(DialogNode node, HashSet<DialogNode> visited)
+        {
+            if (node == null || visited.Contains(node)) return;
+            CollectDialogSubtreeChildren(node, visited);
+        }
+
+        /// <summary>
+        /// Recursively collects all descendants of a node via dialog pointers
+        /// Node is marked as visited BEFORE recursing to prevent infinite loops,
+        /// then we call this helper to process children without the visited check
+        /// </summary>
+        private void CollectDialogSubtreeChildren(DialogNode node, HashSet<DialogNode> visited)
+        {
+            foreach (var ptr in node.Pointers)
+            {
+                if (ptr.Node == null) continue;
+
+                if (!visited.Contains(ptr.Node))
+                {
+                    visited.Add(ptr.Node);
+                    // Recursively collect descendants (node already in visited, so use Children helper)
+                    CollectDialogSubtreeChildren(ptr.Node, visited);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates synthetic container nodes for orphaned dialog nodes
+        /// These containers are saved to the dialog file with sc_false scripts
+        /// Ensures identical display in Parley and Aurora
+        /// </summary>
+        private void CreateOrphanContainers(List<DialogNode> orphanedNodes, TreeViewRootNode rootNode)
+        {
+            if (CurrentDialog == null) return;
+
+            // Check if orphan container already exists - if so, don't create new one
+            var existingOrphanContainer = CurrentDialog.Entries
+                .FirstOrDefault(e => e.Comment?.Contains("PARLEY: Orphaned nodes root container") == true);
+
+            if (existingOrphanContainer != null)
+            {
+                // Container already exists, don't create duplicate
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    "Orphan container already exists, skipping creation");
+                return;
+            }
+
+            // Filter out any containers from orphaned nodes (shouldn't happen, but defensive)
+            var orphanedNodesFiltered = orphanedNodes
+                .Where(n => n.Comment?.Contains("PARLEY: Orphaned") != true)
+                .ToList();
+
+            if (orphanedNodesFiltered.Count == 0)
+            {
+                // No real orphans to containerize
+                return;
+            }
+
+            // Separate entries and replies
+            var orphanedEntries = orphanedNodesFiltered.Where(n => n.Type == DialogNodeType.Entry).ToList();
+            var orphanedReplies = orphanedNodesFiltered.Where(n => n.Type == DialogNodeType.Reply).ToList();
+
+            if (orphanedEntries.Count == 0 && orphanedReplies.Count == 0)
+            {
+                return;
+            }
+
+            // Create single root container (NPC Entry)
+            var rootContainer = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Comment = "PARLEY: Orphaned nodes root container - never appears in-game (sc_false)",
+                Speaker = "",
+                Parent = CurrentDialog
+            };
+            rootContainer.Text.Add(0, "!!! Orphaned Nodes");
+            CurrentDialog.Entries.Add(rootContainer);
+
+            // Create PC Reply category node under root container (for orphaned NPC Entries)
+            if (orphanedEntries.Count > 0)
+            {
+                var npcCategoryReply = new DialogNode
+                {
+                    Type = DialogNodeType.Reply,
+                    Text = new LocString(),
+                    Comment = "PARLEY: Orphaned NPC entries category",
+                    Speaker = "",
+                    Parent = CurrentDialog
+                };
+                npcCategoryReply.Text.Add(0, "!!! Orphaned NPC Nodes");
+
+                // Point to all orphaned entries (NOT as links - show full subtree)
+                foreach (var orphan in orphanedEntries)
+                {
+                    var orphanIndex = (uint)CurrentDialog.Entries.IndexOf(orphan);
+                    var ptr = new DialogPtr
+                    {
+                        Node = orphan,
+                        Type = DialogNodeType.Entry,
+                        Index = orphanIndex,
+                        IsLink = false, // NOT a link - show full subtree
+                        ScriptAppears = "",
+                        ConditionParams = new Dictionary<string, string>(),
+                        Comment = "Pointer to orphaned NPC entry",
+                        Parent = CurrentDialog
+                    };
+                    npcCategoryReply.Pointers.Add(ptr);
+                    CurrentDialog.LinkRegistry.RegisterLink(ptr);
+                }
+
+                // Add category reply to dialog and link from root container
+                CurrentDialog.Replies.Add(npcCategoryReply);
+                var npcCategoryIndex = (uint)(CurrentDialog.Replies.Count - 1);
+
+                var npcCategoryPtr = new DialogPtr
+                {
+                    Node = npcCategoryReply,
+                    Type = DialogNodeType.Reply,
+                    Index = npcCategoryIndex,
+                    IsLink = false,
+                    Parent = CurrentDialog
+                };
+                rootContainer.Pointers.Add(npcCategoryPtr);
+                CurrentDialog.LinkRegistry.RegisterLink(npcCategoryPtr);
+            }
+
+            // Create PC Reply category - need intermediate NPC Entry for valid structure
+            if (orphanedReplies.Count > 0)
+            {
+                // Create intermediate NPC Entry under root (Owner > PC > Owner pattern)
+                var pcCategoryReply = new DialogNode
+                {
+                    Type = DialogNodeType.Reply,
+                    Text = new LocString(),
+                    Comment = "PARLEY: Orphaned PC replies category label",
+                    Speaker = "",
+                    Parent = CurrentDialog
+                };
+                pcCategoryReply.Text.Add(0, "!!! Orphaned PC Nodes");
+
+                // Create NPC Entry to hold the orphaned PC replies
+                var pcContainerEntry = new DialogNode
+                {
+                    Type = DialogNodeType.Entry,
+                    Text = new LocString(),
+                    Comment = "PARLEY: Orphaned PC replies container entry",
+                    Speaker = "",
+                    Parent = CurrentDialog
+                };
+                pcContainerEntry.Text.Add(0, "[CONTINUE]");
+
+                // Point to all orphaned PC replies from the container entry (NOT as links)
+                foreach (var orphan in orphanedReplies)
+                {
+                    var orphanIndex = (uint)CurrentDialog.Replies.IndexOf(orphan);
+                    var ptr = new DialogPtr
+                    {
+                        Node = orphan,
+                        Type = DialogNodeType.Reply,
+                        Index = orphanIndex,
+                        IsLink = false, // NOT a link - show full subtree
+                        ScriptAppears = "",
+                        ConditionParams = new Dictionary<string, string>(),
+                        Comment = "Pointer to orphaned PC reply",
+                        Parent = CurrentDialog
+                    };
+                    pcContainerEntry.Pointers.Add(ptr);
+                    CurrentDialog.LinkRegistry.RegisterLink(ptr);
+                }
+
+                // Add container entry to dialog
+                CurrentDialog.Entries.Add(pcContainerEntry);
+                var containerEntryIndex = (uint)(CurrentDialog.Entries.Count - 1);
+
+                // Link category reply to container entry
+                var containerEntryPtr = new DialogPtr
+                {
+                    Node = pcContainerEntry,
+                    Type = DialogNodeType.Entry,
+                    Index = containerEntryIndex,
+                    IsLink = false,
+                    Parent = CurrentDialog
+                };
+                pcCategoryReply.Pointers.Add(containerEntryPtr);
+                CurrentDialog.LinkRegistry.RegisterLink(containerEntryPtr);
+
+                // Add category reply to dialog and link from root container
+                CurrentDialog.Replies.Add(pcCategoryReply);
+                var pcCategoryIndex = (uint)(CurrentDialog.Replies.Count - 1);
+
+                var pcCategoryPtr = new DialogPtr
+                {
+                    Node = pcCategoryReply,
+                    Type = DialogNodeType.Reply,
+                    Index = pcCategoryIndex,
+                    IsLink = false,
+                    Parent = CurrentDialog
+                };
+                rootContainer.Pointers.Add(pcCategoryPtr);
+                CurrentDialog.LinkRegistry.RegisterLink(pcCategoryPtr);
+            }
+
+            // Create START pointer to root container
+            var rootIndex = (uint)(CurrentDialog.Entries.Count - 1);
+            var rootStart = new DialogPtr
+            {
+                Node = rootContainer,
+                Type = DialogNodeType.Entry,
+                Index = rootIndex,
+                IsLink = false,
+                IsStart = true,
+                ScriptAppears = "sc_false",
+                ConditionParams = new Dictionary<string, string>(),
+                Comment = "Orphan container - requires sc_false.nss in module",
+                Parent = CurrentDialog
+            };
+            CurrentDialog.Starts.Add(rootStart);
+            CurrentDialog.LinkRegistry.RegisterLink(rootStart);
+
+            // Add to TreeView
+            var rootSafeNode = new TreeViewSafeNode(rootContainer, ancestors: null, depth: 0, sourcePointer: rootStart);
+            rootNode.Children.Add(rootSafeNode);
+
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Created orphan container with {orphanedEntries.Count} NPC entries, {orphanedReplies.Count} PC replies - requires sc_false.nss");
+
+            StatusMessage = $"!!! {orphanedNodes.Count} orphaned node(s) - added container (requires sc_false.nss)";
+        }
+
+        /// <summary>
+        /// Finds the parent Entry node that contains a pointer to this Reply
+        /// Used for showing context in orphaned replies section
+        /// </summary>
+        private DialogNode? FindParentEntry(DialogNode replyNode)
+        {
+            if (CurrentDialog == null) return null;
+
+            // Search all entries for one that has a pointer to this reply
+            foreach (var entry in CurrentDialog.Entries)
+            {
+                if (entry.Pointers != null && entry.Pointers.Any(p => p.Node == replyNode))
+                {
+                    return entry;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Recursively collects all nodes reachable from the tree structure
+        /// CRITICAL: Only follows TreeView children, not underlying dialog pointers
+        /// This ensures link nodes (which are terminal) don't mark their children as reachable
+        /// </summary>
+        private void CollectReachableNodes(TreeViewSafeNode node, HashSet<DialogNode> reachableNodes)
+        {
+            // Don't add terminal link nodes - they're not expandable in TreeView
+            // so their children are effectively orphaned
+            if (node?.OriginalNode != null && !reachableNodes.Contains(node.OriginalNode) && !node.IsChild)
+            {
+                reachableNodes.Add(node.OriginalNode);
+            }
+
+            // ONLY process TreeView children (respects link nodes being terminal)
+            if (node?.Children != null)
+            {
+                foreach (var child in node.Children)
+                {
+                    CollectReachableNodes(child, reachableNodes);
+                }
+            }
         }
 
         /// <summary>
