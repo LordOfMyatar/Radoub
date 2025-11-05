@@ -439,59 +439,12 @@ namespace DialogEditor.ViewModels
                 newNodes.Add(rootNode);
                 rootNode.IsExpanded = true; // Auto-expand root
 
-                // Issue #27 Fix: Detect and display orphaned nodes with full context
+                // Issue #27 Fix: Create synthetic orphan containers saved to dialog data
+                // This ensures Parley and Aurora display identically
                 var orphanedNodes = FindOrphanedNodes(rootNode);
                 if (orphanedNodes.Count > 0)
                 {
-                    var orphanRoot = new TreeViewOrphanedNode("⚠️ Orphaned Nodes (unreachable from STARTs)");
-
-                    // Separate entries and replies for categorized display
-                    var orphanedEntries = orphanedNodes.Where(n => n.Type == DialogNodeType.Entry).ToList();
-                    var orphanedReplies = orphanedNodes.Where(n => n.Type == DialogNodeType.Reply).ToList();
-
-                    // Add orphaned entries with full expandable tree
-                    if (orphanedEntries.Count > 0)
-                    {
-                        var entryCategory = new TreeViewOrphanedNode("Orphaned Entries");
-                        foreach (var orphan in orphanedEntries)
-                        {
-                            // NOT gray, fully expandable to show children
-                            var safeNode = new TreeViewSafeNode(orphan, ancestors: null, depth: 0);
-                            entryCategory.Children?.Add(safeNode);
-                        }
-                        orphanRoot.Children?.Add(entryCategory);
-                    }
-
-                    // Add orphaned replies with parent context
-                    if (orphanedReplies.Count > 0)
-                    {
-                        var replyCategory = new TreeViewOrphanedNode("Orphaned Replies");
-                        foreach (var orphan in orphanedReplies)
-                        {
-                            // Show parent Entry for context, then the orphaned Reply
-                            var parentEntry = FindParentEntry(orphan);
-                            if (parentEntry != null)
-                            {
-                                // Create parent node (not gray, expandable)
-                                var parentNode = new TreeViewSafeNode(parentEntry, ancestors: null, depth: 0);
-                                replyCategory.Children?.Add(parentNode);
-                            }
-                            else
-                            {
-                                // No parent found, just show the orphan
-                                var safeNode = new TreeViewSafeNode(orphan, ancestors: null, depth: 0);
-                                replyCategory.Children?.Add(safeNode);
-                            }
-                        }
-                        orphanRoot.Children?.Add(replyCategory);
-                    }
-
-                    newNodes.Add(orphanRoot);
-
-                    // Log warning about orphans
-                    UnifiedLogger.LogApplication(LogLevel.WARN,
-                        $"Found {orphanedNodes.Count} orphaned nodes ({orphanedEntries.Count} entries, {orphanedReplies.Count} replies)");
-                    StatusMessage = $"⚠️ {orphanedNodes.Count} orphaned node(s) detected - may display differently in Aurora";
+                    CreateOrphanContainers(orphanedNodes, rootNode);
                 }
 
                 // 🔧 TEMPORARY DEBUGGING DISABLED - Parser workaround now provides complete conversation tree
@@ -2476,13 +2429,14 @@ namespace DialogEditor.ViewModels
         {
             if (CurrentDialog == null) return new List<DialogNode>();
 
-            // Collect all nodes reachable from STARTs
+            // Collect all nodes reachable from STARTs via TreeView traversal
             var reachableNodes = new HashSet<DialogNode>();
             CollectReachableNodes(rootNode, reachableNodes);
 
-            // Find entries that aren't reachable
+            // Find entries that aren't reachable, EXCLUDING orphan containers
             var orphanedEntries = CurrentDialog.Entries
                 .Where(e => !reachableNodes.Contains(e))
+                .Where(e => e.Comment?.Contains("PARLEY: Orphaned") != true)
                 .ToList();
 
             // Find replies that aren't reachable
@@ -2490,12 +2444,264 @@ namespace DialogEditor.ViewModels
                 .Where(r => !reachableNodes.Contains(r))
                 .ToList();
 
-            // Combine and return all orphans, entries first (maintain consistent ordering)
+            // Collect subtrees from orphaned Entries to identify descendant nodes
+            // Only process Entries as roots; Replies will be found as descendants
+            var orphanSubtreeNodes = new HashSet<DialogNode>();
+            foreach (var orphan in orphanedEntries)
+            {
+                CollectDialogSubtree(orphan, orphanSubtreeNodes);
+            }
+
+            // Filter out nodes that are descendants of other orphans (keep only root orphans)
+            var rootOrphanedEntries = orphanedEntries
+                .Where(e => !orphanSubtreeNodes.Contains(e))
+                .ToList();
+            var rootOrphanedReplies = orphanedReplies
+                .Where(r => !orphanSubtreeNodes.Contains(r))
+                .ToList();
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found {rootOrphanedEntries.Count} root orphaned entries, {rootOrphanedReplies.Count} root orphaned replies");
+
+            // Combine and return only root orphans
             var allOrphans = new List<DialogNode>();
-            allOrphans.AddRange(orphanedEntries);
-            allOrphans.AddRange(orphanedReplies);
+            allOrphans.AddRange(rootOrphanedEntries);
+            allOrphans.AddRange(rootOrphanedReplies);
 
             return allOrphans;
+        }
+
+        /// <summary>
+        /// Collects all nodes reachable from a node via dialog pointers (not TreeView)
+        /// Used to find descendants of orphaned nodes for filtering
+        /// </summary>
+        private void CollectDialogSubtree(DialogNode node, HashSet<DialogNode> visited)
+        {
+            if (node == null || visited.Contains(node)) return;
+            CollectDialogSubtreeChildren(node, visited);
+        }
+
+        /// <summary>
+        /// Recursively collects all descendants of a node via dialog pointers
+        /// Node is marked as visited BEFORE recursing to prevent infinite loops,
+        /// then we call this helper to process children without the visited check
+        /// </summary>
+        private void CollectDialogSubtreeChildren(DialogNode node, HashSet<DialogNode> visited)
+        {
+            foreach (var ptr in node.Pointers)
+            {
+                if (ptr.Node == null) continue;
+
+                if (!visited.Contains(ptr.Node))
+                {
+                    visited.Add(ptr.Node);
+                    // Recursively collect descendants (node already in visited, so use Children helper)
+                    CollectDialogSubtreeChildren(ptr.Node, visited);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates synthetic container nodes for orphaned dialog nodes
+        /// These containers are saved to the dialog file with sc_false scripts
+        /// Ensures identical display in Parley and Aurora
+        /// </summary>
+        private void CreateOrphanContainers(List<DialogNode> orphanedNodes, TreeViewRootNode rootNode)
+        {
+            if (CurrentDialog == null) return;
+
+            // Check if orphan container already exists - if so, don't create new one
+            var existingOrphanContainer = CurrentDialog.Entries
+                .FirstOrDefault(e => e.Comment?.Contains("PARLEY: Orphaned nodes root container") == true);
+
+            if (existingOrphanContainer != null)
+            {
+                // Container already exists, don't create duplicate
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    "Orphan container already exists, skipping creation");
+                return;
+            }
+
+            // Filter out any containers from orphaned nodes (shouldn't happen, but defensive)
+            var orphanedNodesFiltered = orphanedNodes
+                .Where(n => n.Comment?.Contains("PARLEY: Orphaned") != true)
+                .ToList();
+
+            if (orphanedNodesFiltered.Count == 0)
+            {
+                // No real orphans to containerize
+                return;
+            }
+
+            // Separate entries and replies
+            var orphanedEntries = orphanedNodesFiltered.Where(n => n.Type == DialogNodeType.Entry).ToList();
+            var orphanedReplies = orphanedNodesFiltered.Where(n => n.Type == DialogNodeType.Reply).ToList();
+
+            if (orphanedEntries.Count == 0 && orphanedReplies.Count == 0)
+            {
+                return;
+            }
+
+            // Create single root container (NPC Entry)
+            var rootContainer = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Comment = "PARLEY: Orphaned nodes root container - never appears in-game (sc_false)",
+                Speaker = "",
+                Parent = CurrentDialog
+            };
+            rootContainer.Text.Add(0, "!!! Orphaned Nodes");
+            CurrentDialog.Entries.Add(rootContainer);
+
+            // Create PC Reply category node under root container (for orphaned NPC Entries)
+            if (orphanedEntries.Count > 0)
+            {
+                var npcCategoryReply = new DialogNode
+                {
+                    Type = DialogNodeType.Reply,
+                    Text = new LocString(),
+                    Comment = "PARLEY: Orphaned NPC entries category",
+                    Speaker = "",
+                    Parent = CurrentDialog
+                };
+                npcCategoryReply.Text.Add(0, "!!! Orphaned NPC Nodes");
+
+                // Point to all orphaned entries (NOT as links - show full subtree)
+                foreach (var orphan in orphanedEntries)
+                {
+                    var orphanIndex = (uint)CurrentDialog.Entries.IndexOf(orphan);
+                    var ptr = new DialogPtr
+                    {
+                        Node = orphan,
+                        Type = DialogNodeType.Entry,
+                        Index = orphanIndex,
+                        IsLink = false, // NOT a link - show full subtree
+                        ScriptAppears = "",
+                        ConditionParams = new Dictionary<string, string>(),
+                        Comment = "Pointer to orphaned NPC entry",
+                        Parent = CurrentDialog
+                    };
+                    npcCategoryReply.Pointers.Add(ptr);
+                    CurrentDialog.LinkRegistry.RegisterLink(ptr);
+                }
+
+                // Add category reply to dialog and link from root container
+                CurrentDialog.Replies.Add(npcCategoryReply);
+                var npcCategoryIndex = (uint)(CurrentDialog.Replies.Count - 1);
+
+                var npcCategoryPtr = new DialogPtr
+                {
+                    Node = npcCategoryReply,
+                    Type = DialogNodeType.Reply,
+                    Index = npcCategoryIndex,
+                    IsLink = false,
+                    Parent = CurrentDialog
+                };
+                rootContainer.Pointers.Add(npcCategoryPtr);
+                CurrentDialog.LinkRegistry.RegisterLink(npcCategoryPtr);
+            }
+
+            // Create PC Reply category - need intermediate NPC Entry for valid structure
+            if (orphanedReplies.Count > 0)
+            {
+                // Create intermediate NPC Entry under root (Owner > PC > Owner pattern)
+                var pcCategoryReply = new DialogNode
+                {
+                    Type = DialogNodeType.Reply,
+                    Text = new LocString(),
+                    Comment = "PARLEY: Orphaned PC replies category label",
+                    Speaker = "",
+                    Parent = CurrentDialog
+                };
+                pcCategoryReply.Text.Add(0, "!!! Orphaned PC Nodes");
+
+                // Create NPC Entry to hold the orphaned PC replies
+                var pcContainerEntry = new DialogNode
+                {
+                    Type = DialogNodeType.Entry,
+                    Text = new LocString(),
+                    Comment = "PARLEY: Orphaned PC replies container entry",
+                    Speaker = "",
+                    Parent = CurrentDialog
+                };
+                pcContainerEntry.Text.Add(0, "[CONTINUE]");
+
+                // Point to all orphaned PC replies from the container entry (NOT as links)
+                foreach (var orphan in orphanedReplies)
+                {
+                    var orphanIndex = (uint)CurrentDialog.Replies.IndexOf(orphan);
+                    var ptr = new DialogPtr
+                    {
+                        Node = orphan,
+                        Type = DialogNodeType.Reply,
+                        Index = orphanIndex,
+                        IsLink = false, // NOT a link - show full subtree
+                        ScriptAppears = "",
+                        ConditionParams = new Dictionary<string, string>(),
+                        Comment = "Pointer to orphaned PC reply",
+                        Parent = CurrentDialog
+                    };
+                    pcContainerEntry.Pointers.Add(ptr);
+                    CurrentDialog.LinkRegistry.RegisterLink(ptr);
+                }
+
+                // Add container entry to dialog
+                CurrentDialog.Entries.Add(pcContainerEntry);
+                var containerEntryIndex = (uint)(CurrentDialog.Entries.Count - 1);
+
+                // Link category reply to container entry
+                var containerEntryPtr = new DialogPtr
+                {
+                    Node = pcContainerEntry,
+                    Type = DialogNodeType.Entry,
+                    Index = containerEntryIndex,
+                    IsLink = false,
+                    Parent = CurrentDialog
+                };
+                pcCategoryReply.Pointers.Add(containerEntryPtr);
+                CurrentDialog.LinkRegistry.RegisterLink(containerEntryPtr);
+
+                // Add category reply to dialog and link from root container
+                CurrentDialog.Replies.Add(pcCategoryReply);
+                var pcCategoryIndex = (uint)(CurrentDialog.Replies.Count - 1);
+
+                var pcCategoryPtr = new DialogPtr
+                {
+                    Node = pcCategoryReply,
+                    Type = DialogNodeType.Reply,
+                    Index = pcCategoryIndex,
+                    IsLink = false,
+                    Parent = CurrentDialog
+                };
+                rootContainer.Pointers.Add(pcCategoryPtr);
+                CurrentDialog.LinkRegistry.RegisterLink(pcCategoryPtr);
+            }
+
+            // Create START pointer to root container
+            var rootIndex = (uint)(CurrentDialog.Entries.Count - 1);
+            var rootStart = new DialogPtr
+            {
+                Node = rootContainer,
+                Type = DialogNodeType.Entry,
+                Index = rootIndex,
+                IsLink = false,
+                IsStart = true,
+                ScriptAppears = "sc_false",
+                ConditionParams = new Dictionary<string, string>(),
+                Comment = "Orphan container - requires sc_false.nss in module",
+                Parent = CurrentDialog
+            };
+            CurrentDialog.Starts.Add(rootStart);
+            CurrentDialog.LinkRegistry.RegisterLink(rootStart);
+
+            // Add to TreeView
+            var rootSafeNode = new TreeViewSafeNode(rootContainer, ancestors: null, depth: 0, sourcePointer: rootStart);
+            rootNode.Children.Add(rootSafeNode);
+
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Created orphan container with {orphanedEntries.Count} NPC entries, {orphanedReplies.Count} PC replies - requires sc_false.nss");
+
+            StatusMessage = $"!!! {orphanedNodes.Count} orphaned node(s) - added container (requires sc_false.nss)";
         }
 
         /// <summary>
@@ -2525,7 +2731,9 @@ namespace DialogEditor.ViewModels
         /// </summary>
         private void CollectReachableNodes(TreeViewSafeNode node, HashSet<DialogNode> reachableNodes)
         {
-            if (node?.OriginalNode != null && !reachableNodes.Contains(node.OriginalNode))
+            // Don't add terminal link nodes - they're not expandable in TreeView
+            // so their children are effectively orphaned
+            if (node?.OriginalNode != null && !reachableNodes.Contains(node.OriginalNode) && !node.IsChild)
             {
                 reachableNodes.Add(node.OriginalNode);
             }
