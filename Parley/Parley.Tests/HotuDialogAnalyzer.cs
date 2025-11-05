@@ -28,7 +28,8 @@ namespace Parley.Tests
         [Fact]
         public async Task AnalyzeHotuChapter2Dialogs()
         {
-            var hotuPath = @"C:\Users\Sheri\Documents\Neverwinter Nights\modules\XP2_Chapter2";
+            var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var hotuPath = Path.Combine(homeDir, "Documents", "Neverwinter Nights", "modules", "XP2_Chapter2");
 
             // Select key dialogs - major NPCs and complex conversations
             var keyDialogs = new[]
