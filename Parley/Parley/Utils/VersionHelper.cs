@@ -11,12 +11,24 @@ namespace DialogEditor.Utils
         private static readonly Assembly _assembly = Assembly.GetExecutingAssembly();
 
         /// <summary>
-        /// Gets the semantic version (e.g., "1.0.0")
+        /// Gets the semantic version (e.g., "0.1.0-alpha")
+        /// Uses AssemblyInformationalVersion which GitVersion sets correctly
         /// </summary>
         public static string Version
         {
             get
             {
+                // Try InformationalVersion first (set by GitVersion)
+                var informationalVersion = _assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+                if (!string.IsNullOrEmpty(informationalVersion))
+                {
+                    // InformationalVersion may include commit hash (e.g., "0.1.0-alpha+123")
+                    // Strip everything after '+' to get clean version
+                    var plusIndex = informationalVersion.IndexOf('+');
+                    return plusIndex >= 0 ? informationalVersion.Substring(0, plusIndex) : informationalVersion;
+                }
+
+                // Fallback to AssemblyVersion if InformationalVersion not set
                 var version = _assembly.GetName().Version;
                 return version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "Unknown";
             }

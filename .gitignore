@@ -24,3 +24,4 @@ Desktop.ini
 *.temp
 *.cache
 ~$*
+/.claude/settings.local.json

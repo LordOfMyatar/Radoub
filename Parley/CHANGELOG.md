@@ -10,6 +10,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.2-alpha] - 2025-11-06
+
+### Fixed
+- **Issue #2**: Version now displays correctly in title bar
+  - Removed hardcoded InformationalVersion from .csproj
+  - GitVersion now sets semantic version during build (e.g., "v0.1.2-alpha")
+  - Fixed issue where title bar showed "v1.0.0" instead of actual release version
+- **Issue #7**: CTRL+D auto-expansion after collapse all
+  - Added ExpandToNode() to expand all ancestors, not just immediate parent
+  - New nodes now visible even after full tree collapse
+  - Entire path from root to new node expands automatically
+- **Issue #10**: PC (Reply) nodes no longer allow invalid Speaker tag selection
+  - Disabled Speaker dropdown and Browse button for Reply nodes
+  - Prevents confusing UI interaction with field that doesn't save
+  - Enforces Aurora format rule: Reply nodes have no Speaker tag
+- **Issue #17**: Delete ROOT node no longer shows confirmation dialog
+  - Added ROOT check before showing dialog
+  - Now displays status message only: "Cannot delete ROOT node"
+  - Silent blocking as intended in original design
+- **Issue #19**: All node properties disabled when ROOT selected
+  - Properties panel now returns early for ROOT node
+  - Conversation settings (prevent zoom, on end, on abort) remain enabled
+  - Animation dropdown and all node-specific fields disabled for ROOT
+
+### Technical
+- VersionHelper.Version now reads AssemblyInformationalVersion attribute
+- PopulatePropertiesPanel checks for ROOT node and returns early
+- OnDeleteNodeClick checks for ROOT before showing confirmation dialog
+- ExpandToNode() recursively expands all ancestor nodes
+- FindParentNode() and FindParentNodeRecursive() helpers added for tree traversal
+
+---
+
 ## [0.1.1-alpha] - 2025-11-04
 
 ### Fixed
