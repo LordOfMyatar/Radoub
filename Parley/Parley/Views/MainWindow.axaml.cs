@@ -1172,9 +1172,7 @@ namespace DialogEditor.Views
             // CRITICAL FIX: Clear all fields FIRST to prevent stale data
             ClearPropertiesPanel();
 
-            var dialogNode = node.OriginalNode;
-
-            // Populate Conversation Settings (dialog-level properties)
+            // Populate Conversation Settings (dialog-level properties) - always populate these
             if (_viewModel.CurrentDialog != null)
             {
                 var preventZoomCheckBox = this.FindControl<CheckBox>("PreventZoomCheckBox");
@@ -1195,6 +1193,16 @@ namespace DialogEditor.Views
                     scriptAbortTextBox.Text = _viewModel.CurrentDialog.ScriptAbort ?? "";
                 }
             }
+
+            // Issue #19: If ROOT node selected, keep only conversation settings enabled
+            // All node-specific properties should remain disabled
+            if (node is TreeViewRootNode)
+            {
+                _isPopulatingProperties = false;
+                return; // Node fields remain disabled from ClearPropertiesPanel
+            }
+
+            var dialogNode = node.OriginalNode;
 
             // Basic info
             var nodeTypeTextBox = this.FindControl<TextBox>("NodeTypeTextBox");
@@ -3015,13 +3023,8 @@ namespace DialogEditor.Views
                     var newNode = FindLastAddedNode(treeView, entryAdded, replyAdded);
                     if (newNode != null)
                     {
-                        // Expand parent node if it exists (Issue #7)
-                        var parentNode = FindParentNode(treeView, newNode);
-                        if (parentNode != null)
-                        {
-                            parentNode.IsExpanded = true;
-                            UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Expanded parent node to show new child");
-                        }
+                        // Expand all ancestor nodes to make new node visible (Issue #7)
+                        ExpandToNode(treeView, newNode);
 
                         treeView.SelectedItem = newNode;
                         UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Selected new node in tree");
@@ -3097,6 +3100,43 @@ namespace DialogEditor.Views
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Expands all ancestor nodes to make target node visible (Issue #7)
+        /// Handles "collapse all" scenario by expanding entire path from root to node
+        /// </summary>
+        private void ExpandToNode(TreeView treeView, TreeViewSafeNode targetNode)
+        {
+            // Collect all ancestors from target to root
+            var ancestors = new List<TreeViewSafeNode>();
+            var currentNode = targetNode;
+
+            while (currentNode != null)
+            {
+                var parent = FindParentNode(treeView, currentNode);
+                if (parent != null)
+                {
+                    ancestors.Add(parent);
+                    currentNode = parent;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            // Expand from root down to target (reverse order)
+            ancestors.Reverse();
+            foreach (var ancestor in ancestors)
+            {
+                ancestor.IsExpanded = true;
+            }
+
+            if (ancestors.Count > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"OnAddSmartNodeClick: Expanded {ancestors.Count} ancestor nodes to show new child");
+            }
         }
 
         /// <summary>

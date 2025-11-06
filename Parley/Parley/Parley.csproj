@@ -8,10 +8,10 @@
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
 
     <!-- Version Configuration -->
-    <Version>1.0.0</Version>
+    <!-- Version properties are set by GitVersion during build -->
+    <!-- InformationalVersion will be set to semantic version (e.g., "0.1.1-alpha") -->
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
-    <InformationalVersion>$(Version)</InformationalVersion>
 
     <!-- Product Information -->
     <Product>Parley - Dialog Editor for Neverwinter Nights</Product>
