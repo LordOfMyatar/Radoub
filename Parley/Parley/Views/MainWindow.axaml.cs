@@ -1221,12 +1221,16 @@ namespace DialogEditor.Views
             }
 
             var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
+            var recentCreatureComboBox = this.FindControl<ComboBox>("RecentCreatureTagsComboBox");
+            var browseCreatureButton = this.FindControl<Button>("BrowseCreatureButton");
+
+            bool isPC = (dialogNode.Type == DialogNodeType.Reply);
+
             if (speakerTextBox != null)
             {
                 speakerTextBox.Text = dialogNode.Speaker ?? "";
 
                 // Phase 1 Bug Fix: Reply nodes (PC) never have Speaker - it's read-only
-                bool isPC = (dialogNode.Type == DialogNodeType.Reply);
                 speakerTextBox.IsReadOnly = isPC;
 
                 if (isPC)
@@ -1237,6 +1241,17 @@ namespace DialogEditor.Views
                 {
                     speakerTextBox.Watermark = "Character tag or empty for Owner";
                 }
+            }
+
+            // Issue #10: Disable Speaker dropdown and Browse button for PC nodes
+            if (recentCreatureComboBox != null)
+            {
+                recentCreatureComboBox.IsEnabled = !isPC;
+            }
+
+            if (browseCreatureButton != null)
+            {
+                browseCreatureButton.IsEnabled = !isPC;
             }
 
             var textTextBox = this.FindControl<TextBox>("TextTextBox");
@@ -1546,7 +1561,7 @@ namespace DialogEditor.Views
                 delayTextBox.IsReadOnly = true; // Disable when no selection
             }
 
-            // Clear Animation dropdown
+            // Clear Animation dropdown (Issue #19)
             var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
             if (animationComboBox != null)
             {
@@ -3000,6 +3015,14 @@ namespace DialogEditor.Views
                     var newNode = FindLastAddedNode(treeView, entryAdded, replyAdded);
                     if (newNode != null)
                     {
+                        // Expand parent node if it exists (Issue #7)
+                        var parentNode = FindParentNode(treeView, newNode);
+                        if (parentNode != null)
+                        {
+                            parentNode.IsExpanded = true;
+                            UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Expanded parent node to show new child");
+                        }
+
                         treeView.SelectedItem = newNode;
                         UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Selected new node in tree");
                     }
@@ -3076,6 +3099,44 @@ namespace DialogEditor.Views
             return null;
         }
 
+        /// <summary>
+        /// Finds the parent node of a given child node in the tree (Issue #7)
+        /// </summary>
+        private TreeViewSafeNode? FindParentNode(TreeView treeView, TreeViewSafeNode targetNode)
+        {
+            if (treeView.ItemsSource == null) return null;
+
+            foreach (var item in treeView.ItemsSource)
+            {
+                if (item is TreeViewSafeNode node)
+                {
+                    var parent = FindParentNodeRecursive(node, targetNode);
+                    if (parent != null) return parent;
+                }
+            }
+            return null;
+        }
+
+        private TreeViewSafeNode? FindParentNodeRecursive(TreeViewSafeNode currentNode, TreeViewSafeNode targetNode)
+        {
+            if (currentNode.Children == null) return null;
+
+            // Check if targetNode is a direct child
+            if (currentNode.Children.Contains(targetNode))
+            {
+                return currentNode;
+            }
+
+            // Recurse through children
+            foreach (var child in currentNode.Children)
+            {
+                var found = FindParentNodeRecursive(child, targetNode);
+                if (found != null) return found;
+            }
+
+            return null;
+        }
+
         private void OnAddEntryClick(object? sender, RoutedEventArgs e)
         {
             // Phase 1 Bug Fix: Entry nodes can be root-level OR child of Reply nodes
@@ -3116,6 +3177,13 @@ namespace DialogEditor.Views
             if (selectedNode == null)
             {
                 _viewModel.StatusMessage = "Please select a node to delete";
+                return;
+            }
+
+            // Issue #17: Block ROOT deletion silently with status message only (no dialog)
+            if (selectedNode is TreeViewRootNode)
+            {
+                _viewModel.StatusMessage = "Cannot delete ROOT node";
                 return;
             }
 
