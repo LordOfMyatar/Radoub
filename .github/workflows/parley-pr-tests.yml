@@ -29,15 +29,5 @@ jobs:
       working-directory: ./Parley
 
     - name: Run tests
-      run: |
-        $testProjects = Get-ChildItem -Path TestingTools -Recurse -Filter "*.csproj"
-        foreach ($project in $testProjects) {
-          Write-Host "Testing: $($project.Name)"
-          dotnet test $project.FullName --configuration Release --no-build --verbosity normal
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Tests failed in $($project.Name)"
-            exit 1
-          }
-        }
-        Write-Host "✅ All Parley tests passed"
+      run: dotnet test Parley.Tests/Parley.Tests.csproj --configuration Release --no-build --verbosity normal --logger "console;verbosity=normal"
       working-directory: ./Parley
