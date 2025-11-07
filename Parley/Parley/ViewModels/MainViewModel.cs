@@ -1049,7 +1049,7 @@ namespace DialogEditor.ViewModels
                             }
                             if (linkParent == null)
                             {
-                                foreach (var reply in CurrentDialog.Replies)
+                                foreach (var reply in CurrentDialog?.Replies ?? new List<DialogNode>())
                                 {
                                     if (reply.Pointers.Contains(link))
                                     {
@@ -1059,7 +1059,7 @@ namespace DialogEditor.ViewModels
                                 }
                             }
                             // Check if it's in Starts
-                            if (linkParent == null && CurrentDialog.Starts.Contains(link))
+                            if (linkParent == null && (CurrentDialog?.Starts.Contains(link) ?? false))
                             {
                                 linkParent = null; // Start link, not from a node
                             }
@@ -1102,15 +1102,15 @@ namespace DialogEditor.ViewModels
                 CurrentDialog?.LinkRegistry.UnregisterLink(incomingPtr);
 
                 // Remove from Starts if it's a start pointer
-                if (CurrentDialog.Starts.Contains(incomingPtr))
+                if (CurrentDialog?.Starts.Contains(incomingPtr) ?? false)
                 {
-                    CurrentDialog.Starts.Remove(incomingPtr);
+                    CurrentDialog?.Starts.Remove(incomingPtr);
                     removedCount++;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed from Starts list");
                 }
 
                 // Find and remove from parent node's pointers
-                foreach (var entry in CurrentDialog.Entries)
+                foreach (var entry in CurrentDialog?.Entries ?? new List<DialogNode>())
                 {
                     if (entry.Pointers.Contains(incomingPtr))
                     {
@@ -1120,7 +1120,7 @@ namespace DialogEditor.ViewModels
                     }
                 }
 
-                foreach (var reply in CurrentDialog.Replies)
+                foreach (var reply in CurrentDialog?.Replies ?? new List<DialogNode>())
                 {
                     if (reply.Pointers.Contains(incomingPtr))
                     {
