@@ -125,17 +125,27 @@ namespace DialogEditor.Models
                 // Child/Link nodes are gray (matching NWN Toolset)
                 if (IsChild) return "Gray";
 
-                // Entry nodes are always NPC (orange)
-                if (_originalNode?.Type == DialogNodeType.Entry) return "#FF8A65";
+                bool isPC = _originalNode?.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_originalNode.Speaker);
+                string speaker = _originalNode?.Speaker ?? "";
 
-                // Reply nodes: NPC if Speaker is set (orange), PC if empty (blue)
-                if (_originalNode?.Type == DialogNodeType.Reply)
-                {
-                    return !string.IsNullOrEmpty(_originalNode.Speaker) ? "#FF8A65" : "#4FC3F7";
-                }
+                return Utils.SpeakerVisualHelper.GetSpeakerColor(speaker, isPC);
+            }
+        }
 
-                // Default fallback
-                return "#FF8A65";
+        // Node shape for tree view display
+        public virtual string NodeShapeGeometry
+        {
+            get
+            {
+                // Child/Link nodes get circle (default)
+                if (IsChild)
+                    return Utils.SpeakerVisualHelper.GetShapeGeometry(Utils.SpeakerVisualHelper.SpeakerShape.Circle);
+
+                bool isPC = _originalNode?.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_originalNode.Speaker);
+                string speaker = _originalNode?.Speaker ?? "";
+
+                var shape = Utils.SpeakerVisualHelper.GetSpeakerShape(speaker, isPC);
+                return Utils.SpeakerVisualHelper.GetShapeGeometry(shape);
             }
         }
 
