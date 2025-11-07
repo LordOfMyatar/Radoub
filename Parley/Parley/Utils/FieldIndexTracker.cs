@@ -142,9 +142,9 @@ namespace DialogEditor.Utils
 
     public class FieldAllocation
     {
-        public FieldRange Range { get; set; }
-        public string Purpose { get; set; }
-        public string Details { get; set; }
-        public DateTime AllocatedAt { get; set; }
+        public required FieldRange Range { get; set; }
+        public required string Purpose { get; set; }
+        public required string Details { get; set; }
+        public DateTime AllocatedAt { get; set; } = DateTime.Now;
     }
 }
