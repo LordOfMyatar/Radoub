@@ -29,7 +29,7 @@ namespace DialogEditor.Parsers
                 dialog.NumWords = rootStruct.GetFieldValue<uint>("NumWords", 0); // Bioware spec: word count
                 dialog.ScriptAbort = rootStruct.GetFieldValue<string>("EndConverAbort", string.Empty);
                 dialog.ScriptEnd = rootStruct.GetFieldValue<string>("EndConversation", string.Empty);
-                dialog.PreventZoom = rootStruct.GetFieldValue<byte>("PreventZoom", 0) != 0;
+                dialog.PreventZoom = rootStruct.GetFieldValue<byte>("PreventZoomIn", 0) != 0;
 
                 // Parse entry list
                 var entriesField = rootStruct.GetField("EntryList");

@@ -448,7 +448,7 @@ namespace DialogEditor.Parsers
             }
 
             // Field 5: PreventZoomIn
-            AddLabelAndField(allFields, allLabels, "PreventZoomIn", GffField.BYTE, 0);
+            AddLabelAndField(allFields, allLabels, "PreventZoomIn", GffField.BYTE, dialog.PreventZoom ? (byte)1 : (byte)0);
 
             // 📐 ARCHITECTURE FIX: Use pre-calculated offsets (no placeholders, no patching)
             // List fields now have correct offsets from creation
