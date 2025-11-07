@@ -44,7 +44,7 @@ namespace Parley.Tests
         #region Field Index Mapping Tests (Critical 4:1 Aurora Pattern)
 
         [Fact]
-        public void FieldIndices_AuroraPattern_4To1Ratio()
+        public async Task FieldIndices_AuroraPattern_4To1Ratio()
         {
             // This tests the critical Aurora pattern: FieldIndicesCount should be ~4x FieldCount
             // This is the most important structural invariant in GFF files
@@ -65,7 +65,7 @@ namespace Parley.Tests
             var filePath = Path.Combine(_testDirectory, "field_indices_test.dlg");
 
             // Act - Save and inspect the raw GFF structure
-            _dialogService.SaveToFileAsync(dialog, filePath).Wait();
+            await _dialogService.SaveToFileAsync(dialog, filePath);
 
             // Read the GFF header to check field indices ratio
             using (var fs = File.OpenRead(filePath))
@@ -108,6 +108,7 @@ namespace Parley.Tests
             // Act - Round trip
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Data preserved correctly (proves field indices mapped correctly)
             Assert.Single(loaded.Entries);
@@ -139,6 +140,7 @@ namespace Parley.Tests
             // Act
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - All data preserved
             Assert.Equal(entryCount, loaded.Entries.Count);
@@ -195,6 +197,7 @@ namespace Parley.Tests
             // Act - Round trip
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Entry preserved with correct type
             Assert.Single(loaded.Entries);
@@ -216,6 +219,7 @@ namespace Parley.Tests
             // Act - Round trip
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Reply preserved with correct type
             Assert.Single(loaded.Replies);
@@ -246,6 +250,7 @@ namespace Parley.Tests
             // Act - Round trip
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - CResRef preserved
             Assert.Equal(resref, loaded.Entries[0].ScriptAction);
@@ -267,6 +272,7 @@ namespace Parley.Tests
             // Act - Round trip
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Empty preserved
             Assert.Equal("", loaded.Entries[0].ScriptAction);
@@ -288,6 +294,7 @@ namespace Parley.Tests
             // Act - Round trip
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Truncated to 16 chars
             Assert.True(loaded.Entries[0].ScriptAction.Length <= 16,
@@ -332,6 +339,7 @@ namespace Parley.Tests
             // Act - Should not hang or crash
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Structure preserved
             Assert.Single(loaded.Entries);
@@ -386,6 +394,7 @@ namespace Parley.Tests
             // Act - Should complete without stack overflow
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Got here without crashing
             Assert.Equal(2, loaded.Entries.Count);
@@ -526,6 +535,7 @@ namespace Parley.Tests
             // Act - Round trip
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Dialog loaded successfully
             Assert.NotNull(loaded);
@@ -564,6 +574,7 @@ namespace Parley.Tests
             // Act - Round trip
             await _dialogService.SaveToFileAsync(dialog, filePath);
             var loaded = await _dialogService.LoadFromFileAsync(filePath);
+            Assert.NotNull(loaded);
 
             // Assert - Empty fields preserved as empty, not null or garbage
             Assert.Equal("", loaded.Entries[0].Speaker);
