@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.1.3-alpha] - 2025-11-08
+
 ### Added
 - **Issue #16**: Color-blind friendly speaker visual system
   - Shape + color combo for NPC identification
@@ -40,6 +44,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Malformed GFF security tests
 - Fixed xUnit test warnings (blocking operations, assertion style)
 - Test coverage significantly improved for binary format handling
+- Disabled parallel test execution to prevent logger file conflicts
+- Fixed HotU analyzer to skip when game files not present (CI compatibility)
+- Removed non-functional duplicate workflows from Parley/.github/
 
 ---
 
