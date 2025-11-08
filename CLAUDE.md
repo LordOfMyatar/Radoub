@@ -171,6 +171,7 @@ When adding a new tool to Radoub:
 - Private documentation to the Private folder
 - Public Documentation approved before push
 - CHANGELOG updated for affected tools
+- **CHANGELOG version finalized**: Move `[Unreleased]` entries to versioned section with date (e.g., `[0.1.3-alpha] - 2025-11-08`)
 
 ---
 
@@ -210,9 +211,13 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 **Pull Requests**:
 - Fill out PR template completely
-- Reference related issues
+- Reference related issues (`Closes #X`, `Relates to #Y`)
 - Include testing checklist
 - Tag tool-specific reviewers if applicable
+- **Before creating PR**: Update CHANGELOG to move `[Unreleased]` entries to new version section with date
+  - Example: `[0.1.3-alpha] - 2025-11-08`
+  - Commit with: `chore: Prepare vX.Y.Z release`
+  - This ensures CHANGELOG is ready for tagging/release after merge
 
 ---
 
