@@ -712,10 +712,20 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = previousState;
                 // CRITICAL: Rebuild LinkRegistry after undo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
-                RefreshTreeView();
 
-                // Restore tree state after refresh
-                RestoreTreeState(treeState);
+                // CRITICAL FIX (Issue #28): Don't use RefreshTreeView - it tries to restore
+                // expansion state using old node references that don't exist after undo.
+                // Instead, rebuild tree without expansion logic, then restore using paths.
+                Dispatcher.UIThread.Post(() =>
+                {
+                    PopulateDialogNodes();
+
+                    // Restore expansion after tree rebuilt using path-based state
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        RestoreTreeState(treeState);
+                    }, global::Avalonia.Threading.DispatcherPriority.Loaded);
+                });
 
                 HasUnsavedChanges = true;
                 StatusMessage = "Undo successful";
@@ -744,10 +754,20 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = nextState;
                 // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
-                RefreshTreeView();
 
-                // Restore tree state after refresh
-                RestoreTreeState(treeState);
+                // CRITICAL FIX (Issue #28): Don't use RefreshTreeView - it tries to restore
+                // expansion state using old node references that don't exist after redo.
+                // Instead, rebuild tree without expansion logic, then restore using paths.
+                Dispatcher.UIThread.Post(() =>
+                {
+                    PopulateDialogNodes();
+
+                    // Restore expansion after tree rebuilt using path-based state
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        RestoreTreeState(treeState);
+                    }, global::Avalonia.Threading.DispatcherPriority.Loaded);
+                });
 
                 HasUnsavedChanges = true;
                 StatusMessage = "Redo successful";
