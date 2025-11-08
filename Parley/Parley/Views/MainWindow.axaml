@@ -184,7 +184,20 @@
                         </TreeView.Styles>
                         <TreeView.DataTemplates>
                             <TreeDataTemplate DataType="models:TreeViewSafeNode" ItemsSource="{Binding Children}">
-                                <TextBlock Text="{Binding DisplayText}" TextWrapping="Wrap" Foreground="{Binding NodeColor}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <!-- Speaker icon shape -->
+                                    <Path Data="{Binding NodeShapeGeometry}"
+                                          Fill="{Binding NodeColor}"
+                                          Width="16" Height="16"
+                                          Stretch="Uniform"
+                                          VerticalAlignment="Center"
+                                          Margin="0,2,0,0"/>
+                                    <!-- Node text -->
+                                    <TextBlock Text="{Binding DisplayText}"
+                                               TextWrapping="Wrap"
+                                               Foreground="{Binding NodeColor}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
                             </TreeDataTemplate>
                         </TreeView.DataTemplates>
                     </TreeView>

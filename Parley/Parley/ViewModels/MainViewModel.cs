@@ -415,7 +415,7 @@ namespace DialogEditor.ViewModels
                         // Pass the start DialogPtr as the source pointer so conditional scripts and parameters work
                         var safeNode = new TreeViewSafeNode(entry, ancestors: null, depth: 0, sourcePointer: start);
                         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🎯 Created TreeViewSafeNode with DisplayText: '{safeNode.DisplayText}', SourcePointer: {start != null}");
-                        rootNode.Children.Add(safeNode);
+                        rootNode.Children?.Add(safeNode);
                         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to Root: '{entry.DisplayText}'");
                     }
                     else
@@ -425,7 +425,7 @@ namespace DialogEditor.ViewModels
                 }
 
                 // If no starts found, show all entries under root
-                if (rootNode.Children.Count == 0 && CurrentDialog.Entries.Count > 0)
+                if (rootNode.Children?.Count == 0 && CurrentDialog.Entries.Count > 0)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"No start nodes found, showing all {CurrentDialog.Entries.Count} entries under root");
                     foreach (var entry in CurrentDialog.Entries)
@@ -998,7 +998,7 @@ namespace DialogEditor.ViewModels
         private void CheckNodeForLinks(DialogNode node, List<DialogNode> linkedNodes)
         {
             // Use LinkRegistry to check for incoming links
-            var incomingLinks = CurrentDialog.LinkRegistry.GetLinksTo(node);
+            var incomingLinks = CurrentDialog?.LinkRegistry.GetLinksTo(node) ?? new List<DialogPtr>();
 
             // If there are multiple incoming links or any are marked as IsLink, this node is referenced elsewhere
             if (incomingLinks.Count > 1 || incomingLinks.Any(ptr => ptr.IsLink))
@@ -1032,14 +1032,14 @@ namespace DialogEditor.ViewModels
                     if (ptr.Node != null)
                     {
                         // Check if this child node has other incoming links besides the one we're about to delete
-                        var incomingLinks = CurrentDialog.LinkRegistry.GetLinksTo(ptr.Node);
+                        var incomingLinks = CurrentDialog?.LinkRegistry.GetLinksTo(ptr.Node) ?? new List<DialogPtr>();
 
                         // Count how many of the incoming links are NOT from the node we're deleting
                         var otherIncomingLinks = incomingLinks.Where(link =>
                         {
                             // Find which node contains this link
                             DialogNode? linkParent = null;
-                            foreach (var entry in CurrentDialog.Entries)
+                            foreach (var entry in CurrentDialog?.Entries ?? new List<DialogNode>())
                             {
                                 if (entry.Pointers.Contains(link))
                                 {
@@ -1049,7 +1049,7 @@ namespace DialogEditor.ViewModels
                             }
                             if (linkParent == null)
                             {
-                                foreach (var reply in CurrentDialog.Replies)
+                                foreach (var reply in CurrentDialog?.Replies ?? new List<DialogNode>())
                                 {
                                     if (reply.Pointers.Contains(link))
                                     {
@@ -1059,7 +1059,7 @@ namespace DialogEditor.ViewModels
                                 }
                             }
                             // Check if it's in Starts
-                            if (linkParent == null && CurrentDialog.Starts.Contains(link))
+                            if (linkParent == null && (CurrentDialog?.Starts.Contains(link) ?? false))
                             {
                                 linkParent = null; // Start link, not from a node
                             }
@@ -1086,31 +1086,31 @@ namespace DialogEditor.ViewModels
                 // Unregister and clear the pointers list after handling children
                 foreach (var ptr in pointersToDelete)
                 {
-                    CurrentDialog.LinkRegistry.UnregisterLink(ptr);
+                    CurrentDialog?.LinkRegistry.UnregisterLink(ptr);
                 }
                 node.Pointers.Clear();
             }
 
             // Get all incoming pointers to this node from LinkRegistry
-            var incomingPointers = CurrentDialog.LinkRegistry.GetLinksTo(node).ToList();
+            var incomingPointers = CurrentDialog?.LinkRegistry.GetLinksTo(node).ToList() ?? new List<DialogPtr>();
             int removedCount = 0;
 
             // Remove all incoming pointers using LinkRegistry data
             foreach (var incomingPtr in incomingPointers)
             {
                 // Unregister from LinkRegistry first
-                CurrentDialog.LinkRegistry.UnregisterLink(incomingPtr);
+                CurrentDialog?.LinkRegistry.UnregisterLink(incomingPtr);
 
                 // Remove from Starts if it's a start pointer
-                if (CurrentDialog.Starts.Contains(incomingPtr))
+                if (CurrentDialog?.Starts.Contains(incomingPtr) ?? false)
                 {
-                    CurrentDialog.Starts.Remove(incomingPtr);
+                    CurrentDialog?.Starts.Remove(incomingPtr);
                     removedCount++;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed from Starts list");
                 }
 
                 // Find and remove from parent node's pointers
-                foreach (var entry in CurrentDialog.Entries)
+                foreach (var entry in CurrentDialog?.Entries ?? new List<DialogNode>())
                 {
                     if (entry.Pointers.Contains(incomingPtr))
                     {
@@ -1120,7 +1120,7 @@ namespace DialogEditor.ViewModels
                     }
                 }
 
-                foreach (var reply in CurrentDialog.Replies)
+                foreach (var reply in CurrentDialog?.Replies ?? new List<DialogNode>())
                 {
                     if (reply.Pointers.Contains(incomingPtr))
                     {
@@ -1137,7 +1137,7 @@ namespace DialogEditor.ViewModels
             }
 
             // Use RemoveNodeInternal which handles LinkRegistry cleanup
-            CurrentDialog.RemoveNodeInternal(node, node.Type);
+            CurrentDialog?.RemoveNodeInternal(node, node.Type);
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {node.Type} from list: {node.DisplayText}");
         }
 
@@ -1263,14 +1263,14 @@ namespace DialogEditor.ViewModels
         private DialogNode? FindParentNode(DialogNode childNode)
         {
             // Search all entries for this child in their Pointers
-            foreach (var entry in CurrentDialog.Entries)
+            foreach (var entry in CurrentDialog?.Entries ?? new List<DialogNode>())
             {
                 if (entry.Pointers.Any(p => p.Node == childNode))
                     return entry;
             }
 
             // Search all replies for this child in their Pointers
-            foreach (var reply in CurrentDialog.Replies)
+            foreach (var reply in CurrentDialog?.Replies ?? new List<DialogNode>())
             {
                 if (reply.Pointers.Any(p => p.Node == childNode))
                     return reply;
@@ -2696,7 +2696,7 @@ namespace DialogEditor.ViewModels
 
             // Add to TreeView
             var rootSafeNode = new TreeViewSafeNode(rootContainer, ancestors: null, depth: 0, sourcePointer: rootStart);
-            rootNode.Children.Add(rootSafeNode);
+            rootNode.Children?.Add(rootSafeNode);
 
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"Created orphan container with {orphanedEntries.Count} NPC entries, {orphanedReplies.Count} PC replies - requires sc_false.nss");

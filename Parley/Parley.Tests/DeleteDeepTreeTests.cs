@@ -112,7 +112,8 @@ namespace Parley.Tests
             // Use reflection to call the private DeleteNodeRecursive method
             var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            deleteMethod?.Invoke(viewModel, new object[] { firstEntry });
+            Assert.NotNull(deleteMethod);
+            deleteMethod.Invoke(viewModel, new object?[] { firstEntry });
 
             dialog.RemoveNodeInternal(firstEntry!, firstEntry!.Type);
 
@@ -129,14 +130,14 @@ namespace Parley.Tests
             Assert.True(true, $"Successfully handled tree of depth {depth} without stack overflow");
 
             // Secondary validation: All entries should be deleted (cascade delete works)
-            Assert.Equal(0, dialog.Entries.Count);
+            Assert.Empty(dialog.Entries);
 
             // Known limitation (documented in DEEP_TREE_LIMITATION.md):
             // At depths 10+, shared nodes may be incorrectly preserved
             // For shallow trees (depth 5), we expect perfect deletion
             if (depth <= 5)
             {
-                Assert.Equal(0, dialog.Replies.Count);
+                Assert.Empty(dialog.Replies);
             }
             else
             {

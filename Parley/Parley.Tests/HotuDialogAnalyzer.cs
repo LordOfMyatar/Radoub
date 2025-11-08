@@ -31,6 +31,13 @@ namespace Parley.Tests
             var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             var hotuPath = Path.Combine(homeDir, "Documents", "Neverwinter Nights", "modules", "XP2_Chapter2");
 
+            // Skip if HotU game files are not installed (e.g., in CI environment)
+            if (!Directory.Exists(hotuPath))
+            {
+                _output.WriteLine($"Skipping HotU analysis - game files not found at {hotuPath}");
+                return;
+            }
+
             // Select key dialogs - major NPCs and complex conversations
             var keyDialogs = new[]
             {

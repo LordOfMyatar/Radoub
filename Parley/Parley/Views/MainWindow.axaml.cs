@@ -3530,7 +3530,7 @@ namespace DialogEditor.Views
                 node.IsExpanded = true;
 
                 // Copy children list to avoid collection modification issues
-                var children = node.Children.ToList();
+                var children = node.Children?.ToList() ?? new List<TreeViewSafeNode>();
                 foreach (var child in children)
                 {
                     if (child != null)
@@ -3563,7 +3563,7 @@ namespace DialogEditor.Views
                 node.IsExpanded = false;
 
                 // Copy children list to avoid collection modification issues
-                var children = node.Children.ToList();
+                var children = node.Children?.ToList() ?? new List<TreeViewSafeNode>();
                 foreach (var child in children)
                 {
                     if (child != null)

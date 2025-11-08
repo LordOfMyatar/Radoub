@@ -44,10 +44,10 @@ namespace DialogEditor.Models
             if (EvaluateEntries(_dialog.Starts, out var activeEntry))
             {
                 _currentEntry = activeEntry;
-                EvaluateReplies(_currentEntry.Pointers, _currentReplies);
+                EvaluateReplies(_currentEntry?.Pointers ?? new List<DialogPtr>(), _currentReplies);
 
                 // Run entry scripts
-                RunScript(_currentEntry.ScriptAction);
+                RunScript(_currentEntry?.ScriptAction ?? string.Empty);
             }
 
             _ended = false;
@@ -95,10 +95,10 @@ namespace DialogEditor.Models
                 _currentReplies.Clear();
 
                 // Run entry scripts
-                RunScript(_currentEntry.ScriptAction);
+                RunScript(_currentEntry?.ScriptAction ?? string.Empty);
 
                 // Evaluate available replies for the new entry
-                EvaluateReplies(_currentEntry.Pointers, _currentReplies);
+                EvaluateReplies(_currentEntry?.Pointers ?? new List<DialogPtr>(), _currentReplies);
             }
             else
             {
