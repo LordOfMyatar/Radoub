@@ -43,6 +43,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.3-alpha] - 2025-11-08
+
+### Added
+- **Issue #16**: Color-blind friendly speaker visual system
+  - Shape + color combo for NPC identification
+  - PC: Circle (blue), Owner: Square (orange)
+  - Other NPCs: 4 shapes × 5 colors = 20 combinations (hash-assigned)
+  - Fully accessible for protanopia, deuteranopia, tritanopia users
+  - Shape icons display next to node text in tree view
+  - SpeakerVisualHelper utility class for consistent visual assignment
+
+### Fixed
+- **Issue #25**: Eliminated all nullable reference warnings
+  - Fixed 26 warnings in main production code
+  - Fixed 14 warnings in test code
+  - Improved null safety across DialogViewModel, ConversationManager, MainWindow
+  - Added null-conditional operators and Assert.NotNull checks throughout
+- **PreventZoom field bug**: Dialog zoom setting now persists correctly
+  - Fixed field name mismatch: "PreventZoom" → "PreventZoomIn"
+  - Changed from hardcoded 0 to actual dialog.PreventZoom value
+
+### Technical
+- **Issue #24**: Added comprehensive XML documentation to SpeakerVisualHelper
+  - All public methods documented with param/return descriptions
+  - Enum members documented for IntelliSense
+  - Accessibility context included in summaries
+- **Issue #22**: Added 23 comprehensive GFF parser tests
+  - Field index mapping validation (4:1 Aurora pattern)
+  - Struct type validation (root, entry, reply)
+  - CResRef format validation
+  - Circular reference detection
+  - Malformed GFF security tests
+- Fixed xUnit test warnings (blocking operations, assertion style)
+- Test coverage significantly improved for binary format handling
+- Disabled parallel test execution to prevent logger file conflicts
+- Fixed HotU analyzer to skip when game files not present (CI compatibility)
+- Removed non-functional duplicate workflows from Parley/.github/
+
+---
+
 ## [0.1.2-alpha] - 2025-11-06
 
 ### Fixed
