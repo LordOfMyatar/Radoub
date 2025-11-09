@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+option csharp_namespace = "DialogEditor.Plugins.Proto";
+
+package parley.plugin;
+
+// Plugin host service (C# → Python communication)
+service PluginHost {
+  // Health check
+  rpc Ping (PingRequest) returns (PingResponse);
+
+  // Lifecycle events
+  rpc Initialize (InitializeRequest) returns (InitializeResponse);
+  rpc Shutdown (ShutdownRequest) returns (ShutdownResponse);
+}
+
+// Plugin service (Python → C# communication)
+service Plugin {
+  // Health check
+  rpc Ping (PingRequest) returns (PingResponse);
+
+  // Lifecycle notifications
+  rpc OnDialogChanged (DialogChangedEvent) returns (EventResponse);
+  rpc OnNodeSelected (NodeSelectedEvent) returns (EventResponse);
+}
+
+// Messages
+message PingRequest {
+  int64 timestamp = 1;
+}
+
+message PingResponse {
+  int64 timestamp = 1;
+  string status = 2;
+}
+
+message InitializeRequest {
+  string plugin_id = 1;
+  string parley_version = 2;
+  map<string, string> config = 3;
+}
+
+message InitializeResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message ShutdownRequest {
+  string reason = 1;
+}
+
+message ShutdownResponse {
+  bool success = 1;
+}
+
+message DialogChangedEvent {
+  string dialog_id = 1;
+  string change_type = 2;
+}
+
+message NodeSelectedEvent {
+  string node_id = 1;
+}
+
+message EventResponse {
+  bool handled = 1;
+}

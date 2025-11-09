@@ -68,6 +68,11 @@ namespace DialogEditor.Services
             Log(level, message, "Journal", "Journal");
         }
 
+        public static void LogPlugin(LogLevel level, string message)
+        {
+            Log(level, message, "Plugin", "Plugin");
+        }
+
         /// <summary>
         /// Set the current file context for per-file logging
         /// </summary>
