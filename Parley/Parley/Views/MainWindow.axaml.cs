@@ -35,6 +35,7 @@ namespace DialogEditor.Views
         // DEBOUNCED NODE CREATION: Prevent rapid Ctrl+D causing focus misplacement (Issue #76)
         private DateTime _lastAddNodeTime = DateTime.MinValue;
         private const int ADD_NODE_DEBOUNCE_MS = 150; // Minimum delay between Ctrl+D operations
+        private bool _isAddingNode = false; // Prevents overlapping node creation operations
 
         // Session cache for recently used creature tags
         private readonly List<string> _recentCreatureTags = new();
@@ -3007,12 +3008,24 @@ namespace DialogEditor.Views
                     $"OnAddSmartNodeClick: Debounced (only {timeSinceLastAdd:F0}ms since last add, minimum {ADD_NODE_DEBOUNCE_MS}ms required)");
                 return;
             }
-            _lastAddNodeTime = DateTime.Now;
 
-            // IMPORTANT: Save current node properties before creating new node
-            // This ensures any typed text is saved before moving to next node
-            SaveCurrentNodeProperties();
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Saved current node properties");
+            // OVERLAP CHECK: Prevent concurrent node creation operations (Issue #76)
+            if (_isAddingNode)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    "OnAddSmartNodeClick: Operation already in progress, rejecting concurrent call");
+                return;
+            }
+
+            _lastAddNodeTime = DateTime.Now;
+            _isAddingNode = true;
+
+            try
+            {
+                // IMPORTANT: Save current node properties before creating new node
+                // This ensures any typed text is saved before moving to next node
+                SaveCurrentNodeProperties();
+                UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Saved current node properties");
 
             var selectedNode = GetSelectedTreeNode();
 
@@ -3071,6 +3084,12 @@ namespace DialogEditor.Views
 
             // Trigger auto-save after node creation
             TriggerDebouncedAutoSave();
+            }
+            finally
+            {
+                // Reset flag to allow next operation (Issue #76)
+                _isAddingNode = false;
+            }
         }
 
         private TreeViewSafeNode? FindLastAddedNode(TreeView treeView, bool entryAdded, bool replyAdded)
