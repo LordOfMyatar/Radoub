@@ -38,7 +38,7 @@ Parley supports Python plugins that can extend the dialog editor's functionality
 
 ### Prerequisites
 
-- Python 3.8 or newer
+- Python 3.10 or newer (3.12+ recommended)
 - Parley 0.1.5-alpha or newer
 
 ### Creating Your First Plugin

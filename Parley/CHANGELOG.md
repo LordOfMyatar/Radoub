@@ -53,12 +53,37 @@ Complete plugin architecture with Python support, process isolation, and compreh
   - Integrated across all plugin services
   - Sandbox path validation prevents directory traversal
 - **Issue #51**: Security testing framework
-  - 46 security tests (45 passing, 97.8%)
-  - PermissionEnforcementTests: 13 tests for permission system
+  - 46 security tests (100% passing)
+  - PermissionEnforcementTests: 13 tests for permission system (includes case-insensitive matching)
   - SandboxTests: 6 tests for file sandboxing
   - RateLimitTests: 10 tests for rate limiting
   - TimeoutTests: 7 tests for timeout protection
   - MaliciousPluginTests: 10 tests for attack scenarios
+- **Issue #85**: Plugin settings UI integration
+  - New "Plugins" tab in Settings window
+  - Lists all discovered plugins with trust level badges (Official/Verified/Unverified)
+  - Enable/disable toggles per plugin with live preview
+  - Safe Mode checkbox to disable all plugins on next launch
+  - "Open Plugins Folder" and "Refresh Plugin List" buttons
+  - Settings persist to ParleySettings.json
+  - Plugin manager passed to SettingsWindow for live plugin scanning
+- **Issue #86**: Plugin crash recovery system
+  - Tracks plugin crash count and last crash timestamp per plugin
+  - Auto-disables plugins after 3 crashes
+  - CrashRecoveryDialog shown on startup after crash
+  - Records loaded plugins during session for crash attribution
+  - "Dirty shutdown" detection via lastSessionCrashed flag
+  - Session lifecycle management (SetSessionStarted/SetSessionEnded)
+  - Integrated with PluginManager.OnPluginCrashed handler
+- **Issue #56**: Plugin documentation
+  - Comprehensive Plugin_Development_Guide.md
+  - Getting started guide with minimal working example
+  - Detailed API reference (Audio, UI, Dialog, File)
+  - Security documentation (permissions, rate limiting, sandbox)
+  - Best practices and error handling patterns
+  - Testing and troubleshooting guides
+  - Distribution and versioning guidance
+  - Python 3.10+ requirement (3.12+ recommended)
 
 ### Technical
 - gRPC over named pipes for cross-platform IPC
