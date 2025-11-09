@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.5-alpha] - TBD
+**Branch**: `parley/feat/epic-0-gff-parser` | **PR**: #TBD
+
+### Epic 0: Native GFF Parser
+
+---
+
 ## [0.1.4-alpha] - 2025-11-08
 
 ### Fixed
