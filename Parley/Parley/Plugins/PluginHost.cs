@@ -134,7 +134,8 @@ namespace DialogEditor.Plugins
         {
             if (!string.IsNullOrEmpty(e.Data))
             {
-                UnifiedLogger.LogPlugin(LogLevel.INFO, $"[{PluginId}] {e.Data}");
+                var sanitized = UnifiedLogger.SanitizePath(e.Data);
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"[{PluginId}] {sanitized}");
             }
         }
 
@@ -142,7 +143,8 @@ namespace DialogEditor.Plugins
         {
             if (!string.IsNullOrEmpty(e.Data))
             {
-                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"[{PluginId}] {e.Data}");
+                var sanitized = UnifiedLogger.SanitizePath(e.Data);
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"[{PluginId}] {sanitized}");
             }
         }
 
