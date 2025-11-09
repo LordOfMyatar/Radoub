@@ -10,10 +10,66 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.5-alpha] - TBD
+## [0.1.5-alpha] - 2025-01-09
 **Branch**: `parley/feat/epic-0-plugins` | **PR**: #84
 
 ### Epic 0: Plugin Foundation
+
+Complete plugin architecture with Python support, process isolation, and comprehensive security.
+
+### Added
+- **Issue #45**: Process isolation infrastructure
+  - PluginProcess manages single plugin lifecycle with health monitoring
+  - PluginManager coordinates multiple plugins
+  - Cross-platform named pipes (Windows: npipe, Unix: unix:/tmp/)
+  - 10-second health checks with automatic crash detection
+  - 5-second gRPC timeout protection
+- **Issue #46**: Plugin manifest system
+  - JSON manifest validation (id, version, permissions, trust level)
+  - Semantic version matching with operators (>=, ^, ~)
+  - PermissionChecker enforces manifest-based permissions
+  - Trust levels: official, verified, unverified
+- **Issue #47**: Plugin discovery with MEF
+  - Scans Official and Community plugin directories
+  - Version compatibility validation (parley_version checks)
+  - Trust level assignment based on source directory
+- **Issue #48**: Core plugin APIs
+  - AudioService: Play/stop audio with permission checks
+  - UIService: Notifications and dialogs
+  - DialogService: Read current dialog and selected node
+  - FileService: Sandboxed file access (~/Parley/PluginData/)
+  - All services use gRPC over named pipes
+- **Issue #49**: Python bootstrap library
+  - pip-installable `parley-plugin` package
+  - Plugin base class with lifecycle hooks (on_initialize, on_shutdown)
+  - Event handlers (on_dialog_changed, on_node_selected)
+  - Service wrappers for all APIs with async/await
+  - @requires_permission decorator for permission enforcement
+  - Comprehensive documentation and examples
+- **Issue #50**: Security implementation
+  - RateLimiter: 1000 calls/minute per plugin per operation
+  - SecurityAuditLog: Tracks all security events
+  - PluginSecurityContext: Unified security enforcement
+  - Integrated across all plugin services
+  - Sandbox path validation prevents directory traversal
+- **Issue #51**: Security testing framework
+  - 46 security tests (45 passing, 97.8%)
+  - PermissionEnforcementTests: 13 tests for permission system
+  - SandboxTests: 6 tests for file sandboxing
+  - RateLimitTests: 10 tests for rate limiting
+  - TimeoutTests: 7 tests for timeout protection
+  - MaliciousPluginTests: 10 tests for attack scenarios
+
+### Technical
+- gRPC over named pipes for cross-platform IPC
+- Permission-based security model (audio.*, ui.*, dialog.*, file.*)
+- Wildcard permissions with category scoping
+- Sandboxed file system (all operations restricted to plugin data directory)
+- Rate limiting with sliding time windows
+- Comprehensive security audit logging (permission denials, rate limits, sandbox violations, timeouts, crashes)
+- Python async/await plugin development
+- Minimal example plugin demonstrates basic structure
+- All plugin infrastructure ready for Epic 2 (themes), Epic 3 (flowchart), Epic 7 (voice)
 
 ---
 
