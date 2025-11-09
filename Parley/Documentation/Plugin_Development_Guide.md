@@ -18,16 +18,23 @@ Guide for creating plugins that extend Parley's functionality with Python.
 
 ## Overview
 
-Parley supports Python plugins that can extend the dialog editor's functionality. Plugins run in isolated processes and communicate with Parley via gRPC over named pipes.
+Parley supports Python plugins that can extend the dialog editor's functionality. Plugins run in isolated processes for security and stability.
 
-**What plugins can do:**
+**Current POC Phase:**
+- Plugins run as separate Python processes
+- Output logged to Parley's plugin log
+- Crash recovery with auto-disable after 3 crashes
+- Permission-based manifest system
+
+**Future Phase (gRPC):**
+- Bidirectional communication with Parley
 - Play audio files
 - Show UI notifications and dialogs
 - Read and analyze dialog data
 - Read files from sandboxed storage
 
 **What plugins cannot do:**
-- Access arbitrary files on the system
+- Access arbitrary files outside plugin directory
 - Make network requests (unless granted permission in future)
 - Modify Parley's core functionality
 - Access other plugins' data
@@ -77,7 +84,7 @@ my-plugin/
     └── images/
 ```
 
-### Minimal Example
+### Minimal Example (POC Phase)
 
 **plugin.json:**
 ```json
@@ -91,9 +98,7 @@ my-plugin/
     "description": "Does something useful",
     "parleyVersion": ">=0.1.5"
   },
-  "permissions": [
-    "ui.show_notification"
-  ],
+  "permissions": [],
   "entry_point": "main.py",
   "trust_level": "unverified"
 }
@@ -101,21 +106,33 @@ my-plugin/
 
 **main.py:**
 ```python
-from parley_plugin import ParleyPlugin
+"""
+Simple POC plugin - output goes to Parley's plugin log
+"""
+import time
 
-plugin = ParleyPlugin()
+print("=" * 50)
+print("MY FIRST PLUGIN STARTED")
+print("=" * 50)
+print("Plugin ID: com.example.myplugin")
+print("This output appears in Parley's plugin log")
+print("=" * 50)
 
-@plugin.on_activate()
-async def on_activate():
-    await plugin.ui.show_notification(
-        "My First Plugin",
-        "Plugin activated successfully!"
-    )
-    print("Plugin is running")
+# Do some work
+for i in range(5):
+    print(f"Working... ({i+1}/5)")
+    time.sleep(1)
 
-if __name__ == "__main__":
-    plugin.run()
+print("=" * 50)
+print("MY FIRST PLUGIN EXITING")
+print("=" * 50)
 ```
+
+**What happens:**
+- Parley launches your plugin when it starts
+- All `print()` output goes to `~/Parley/Logs/Session_*/Plugin_*.log`
+- Plugin runs once and exits
+- If plugin crashes 3 times, it auto-disables
 
 [Back to TOC](#table-of-contents)
 
