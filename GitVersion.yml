@@ -25,6 +25,7 @@ branches:
     regex: ^fix[/-]
     tag: alpha
     increment: Patch
+    source-branches: ['main', 'develop']
     prevent-increment-of-merged-branch-version: false
     track-merge-target: false
     is-mainline: false
