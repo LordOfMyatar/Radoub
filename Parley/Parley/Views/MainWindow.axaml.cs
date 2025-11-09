@@ -32,6 +32,10 @@ namespace DialogEditor.Views
         // Flag to prevent auto-save during programmatic updates
         private bool _isPopulatingProperties = false;
 
+        // DEBOUNCED NODE CREATION: Prevent rapid Ctrl+D causing focus misplacement (Issue #76)
+        private DateTime _lastAddNodeTime = DateTime.MinValue;
+        private const int ADD_NODE_DEBOUNCE_MS = 150; // Minimum delay between Ctrl+D operations
+
         // Session cache for recently used creature tags
         private readonly List<string> _recentCreatureTags = new();
 
@@ -2994,6 +2998,16 @@ namespace DialogEditor.Views
         private async void OnAddSmartNodeClick(object? sender, RoutedEventArgs e)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "=== OnAddSmartNodeClick CALLED ===");
+
+            // DEBOUNCE CHECK: Prevent rapid Ctrl+D causing focus misplacement (Issue #76)
+            var timeSinceLastAdd = (DateTime.Now - _lastAddNodeTime).TotalMilliseconds;
+            if (timeSinceLastAdd < ADD_NODE_DEBOUNCE_MS)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"OnAddSmartNodeClick: Debounced (only {timeSinceLastAdd:F0}ms since last add, minimum {ADD_NODE_DEBOUNCE_MS}ms required)");
+                return;
+            }
+            _lastAddNodeTime = DateTime.Now;
 
             // IMPORTANT: Save current node properties before creating new node
             // This ensures any typed text is saved before moving to next node
