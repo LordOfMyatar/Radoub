@@ -21,6 +21,13 @@ branches:
     prevent-increment-of-merged-branch-version: false
     track-merge-target: false
     is-mainline: false
+  fix:
+    regex: ^fix[/-]
+    tag: alpha
+    increment: Patch
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    is-mainline: false
   pull-request:
     regex: ^(pull|pull\-requests|pr)[/-]
     tag: pr
