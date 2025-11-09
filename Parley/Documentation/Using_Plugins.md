@@ -102,16 +102,20 @@ After restarting Parley with the plugin enabled:
 
 **Note:** Changes require restarting Parley to take effect.
 
-### Disabling All Plugins
+### Disabling All Plugins (Safe Mode)
 
 If Parley behaves unexpectedly after installing a plugin:
 
+**Option 1 - Using Settings:**
+1. Open Settings → Plugins tab
+2. Check "Disable all plugins on next launch (Safe Mode)"
+3. Restart Parley
+4. Enable plugins one at a time to identify the problem
+
+**Option 2 - Manual (if Parley won't start):**
 1. Close Parley
 2. Delete `~/Parley/PluginSettings.json`
 3. Restart Parley - all plugins will be disabled
-4. Enable plugins one at a time to identify the problem
-
-**Note:** Safe Mode toggle will be added in a future release.
 
 ### Viewing Plugin Information
 
@@ -214,12 +218,22 @@ During alpha development, plugin security features are limited. Trust levels and
 
 ### Reporting Problems
 
-If you encounter:
-- Malicious plugin behavior
-- Crashes or instability
-- Security concerns
+**Support Scope:**
+- We only provide support for plugins created by the Parley team
+- Community plugins are not officially supported
+- Plugin developers should provide their own support channels
 
-Report to: [Parley GitHub Issues](https://github.com/LordOfMyatar/Radoub/issues)
+**What to Report:**
+- **Malicious behavior** from any plugin (we want to know!)
+- **Parley crashes or bugs** caused by the plugin system itself
+- **Security vulnerabilities** in the plugin infrastructure
+
+**What NOT to Report:**
+- Issues with community plugins (contact plugin author)
+- Feature requests for specific plugins (contact plugin author)
+- Plugin compatibility problems (contact plugin author)
+
+Report plugin system issues to: [Parley GitHub Issues](https://github.com/LordOfMyatar/Radoub/issues)
 
 [Back to TOC](#table-of-contents)
 
