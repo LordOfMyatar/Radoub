@@ -6,10 +6,19 @@ on:
     paths:
       - 'Parley/**'
       - '.github/workflows/parley-pr-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'Parley/**'
+      - '.github/workflows/parley-pr-tests.yml'
 
 jobs:
   test:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
     - name: Checkout code
@@ -29,5 +38,22 @@ jobs:
       working-directory: ./Parley
 
     - name: Run tests
-      run: dotnet test Parley.Tests/Parley.Tests.csproj --configuration Release --no-build --verbosity normal --logger "console;verbosity=normal"
+      run: dotnet test Parley.Tests/Parley.Tests.csproj --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=normal"
       working-directory: ./Parley
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: ./Parley/Parley.Tests/TestResults/test-results.trx
+        retention-days: 30
+
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Test Results
+        path: './Parley/Parley.Tests/TestResults/test-results.trx'
+        reporter: dotnet-trx
+        fail-on-error: true

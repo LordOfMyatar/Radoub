@@ -8,38 +8,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Added
-- **Issue #16**: Color-blind friendly speaker visual system
-  - Shape + color combo for NPC identification
-  - PC: Circle (blue), Owner: Square (orange)
-  - Other NPCs: 4 shapes × 5 colors = 20 combinations (hash-assigned)
-  - Fully accessible for protanopia, deuteranopia, tritanopia users
-  - Shape icons display next to node text in tree view
-  - SpeakerVisualHelper utility class for consistent visual assignment
+---
+
+## [0.1.4-alpha] - 2025-11-08
 
 ### Fixed
-- **Issue #25**: Eliminated all nullable reference warnings
-  - Fixed 26 warnings in main production code
-  - Fixed 14 warnings in test code
-  - Improved null safety across DialogViewModel, ConversationManager, MainWindow
-  - Added null-conditional operators and Assert.NotNull checks throughout
-- **PreventZoom field bug**: Dialog zoom setting now persists correctly
-  - Fixed field name mismatch: "PreventZoom" → "PreventZoomIn"
-  - Changed from hardcoded 0 to actual dialog.PreventZoom value
+- **Issue #28**: Undo operations no longer corrupt IsLink flags on DialogPtr
+  - Fixed deep cloning to properly copy IsLink state from source pointers
+  - TreeView expansion state now preserved correctly across undo/redo
+  - Added 11 comprehensive undo/redo tests to prevent regression
+- **Issue #82**: Lazy loading eliminates exponential performance degradation
+  - TreeView children no longer auto-populated on creation (lazy loading)
+  - Performance improved from O(2^depth) to O(visible nodes)
+  - Eliminated "One Million Objects" memory pressure at depth 20+
+  - Orphan node detection fixed to traverse dialog model instead of TreeView
+  - Link nodes handled correctly as terminal nodes
+  - Added 8 comprehensive lazy loading tests
 
 ### Technical
-- **Issue #24**: Added comprehensive XML documentation to SpeakerVisualHelper
-  - All public methods documented with param/return descriptions
-  - Enum members documented for IntelliSense
-  - Accessibility context included in summaries
-- **Issue #22**: Added 23 comprehensive GFF parser tests
-  - Field index mapping validation (4:1 Aurora pattern)
-  - Struct type validation (root, entry, reply)
-  - CResRef format validation
-  - Circular reference detection
-  - Malformed GFF security tests
-- Fixed xUnit test warnings (blocking operations, assertion style)
-- Test coverage significantly improved for binary format handling
+- TreeViewSafeNode.Children getter no longer auto-populates
+- TreeViewSafeNode.IsExpanded setter populates children on-demand
+- MainViewModel.CollectReachableNodes traverses DialogNode.Pointers
+- TreeViewRootNode no longer auto-expands on creation
+- HasChildren property checks underlying DialogNode.Pointers
+- Added LazyLoadingOrphanDetectionTests.cs (3 tests)
+- Added LazyLoadingPerformanceTests.cs (5 tests)
+- All 70 tests passing (65 existing + 3 orphan + 5 performance - 3 duplicate)
 
 ---
 

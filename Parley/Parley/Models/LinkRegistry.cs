@@ -49,10 +49,14 @@ namespace DialogEditor.Models
             if (!_incomingLinks[ptr.Node].Contains(ptr))
                 _incomingLinks[ptr.Node].Add(ptr);
 
-            // Track original vs link status
-            if (!ptr.IsLink && !_originalPointers.ContainsKey(ptr.Node))
+            // Track original vs link status - respect existing IsLink flags
+            // CRITICAL FIX (Issue #28): Don't infer from registration order, trust the flags
+            if (!_originalPointers.ContainsKey(ptr.Node))
             {
-                _originalPointers[ptr.Node] = ptr;
+                if (!ptr.IsLink)
+                {
+                    _originalPointers[ptr.Node] = ptr;
+                }
             }
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG,

@@ -712,10 +712,20 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = previousState;
                 // CRITICAL: Rebuild LinkRegistry after undo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
-                RefreshTreeView();
 
-                // Restore tree state after refresh
-                RestoreTreeState(treeState);
+                // CRITICAL FIX (Issue #28): Don't use RefreshTreeView - it tries to restore
+                // expansion state using old node references that don't exist after undo.
+                // Instead, rebuild tree without expansion logic, then restore using paths.
+                Dispatcher.UIThread.Post(() =>
+                {
+                    PopulateDialogNodes();
+
+                    // Restore expansion after tree rebuilt using path-based state
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        RestoreTreeState(treeState);
+                    }, global::Avalonia.Threading.DispatcherPriority.Loaded);
+                });
 
                 HasUnsavedChanges = true;
                 StatusMessage = "Undo successful";
@@ -744,10 +754,20 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = nextState;
                 // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
-                RefreshTreeView();
 
-                // Restore tree state after refresh
-                RestoreTreeState(treeState);
+                // CRITICAL FIX (Issue #28): Don't use RefreshTreeView - it tries to restore
+                // expansion state using old node references that don't exist after redo.
+                // Instead, rebuild tree without expansion logic, then restore using paths.
+                Dispatcher.UIThread.Post(() =>
+                {
+                    PopulateDialogNodes();
+
+                    // Restore expansion after tree rebuilt using path-based state
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        RestoreTreeState(treeState);
+                    }, global::Avalonia.Threading.DispatcherPriority.Loaded);
+                });
 
                 HasUnsavedChanges = true;
                 StatusMessage = "Redo successful";
@@ -2429,9 +2449,18 @@ namespace DialogEditor.ViewModels
         {
             if (CurrentDialog == null) return new List<DialogNode>();
 
-            // Collect all nodes reachable from STARTs via TreeView traversal
+            // Collect all nodes reachable from STARTs via dialog model traversal
             var reachableNodes = new HashSet<DialogNode>();
-            CollectReachableNodes(rootNode, reachableNodes);
+
+            // ISSUE #82 FIX: Traverse from root's children (start nodes), not root itself
+            // Root is a dummy node with no pointers, so we must start from its children
+            if (rootNode.Children != null)
+            {
+                foreach (var startNode in rootNode.Children)
+                {
+                    CollectReachableNodes(startNode, reachableNodes);
+                }
+            }
 
             // Find entries that aren't reachable, EXCLUDING orphan containers
             var orphanedEntries = CurrentDialog.Entries
@@ -2726,24 +2755,34 @@ namespace DialogEditor.ViewModels
 
         /// <summary>
         /// Recursively collects all nodes reachable from the tree structure
-        /// CRITICAL: Only follows TreeView children, not underlying dialog pointers
-        /// This ensures link nodes (which are terminal) don't mark their children as reachable
+        /// CRITICAL: Traverses dialog model pointers, not TreeView children (Issue #82 lazy loading fix)
+        /// This ensures we find all reachable nodes even when TreeView children aren't populated yet
+        /// Links are terminal (don't expand) but the nodes they point to ARE still reachable
         /// </summary>
         private void CollectReachableNodes(TreeViewSafeNode node, HashSet<DialogNode> reachableNodes)
         {
-            // Don't add terminal link nodes - they're not expandable in TreeView
-            // so their children are effectively orphaned
-            if (node?.OriginalNode != null && !reachableNodes.Contains(node.OriginalNode) && !node.IsChild)
-            {
-                reachableNodes.Add(node.OriginalNode);
-            }
+            if (node?.OriginalNode == null || reachableNodes.Contains(node.OriginalNode))
+                return;
 
-            // ONLY process TreeView children (respects link nodes being terminal)
-            if (node?.Children != null)
+            // Add this node to reachable set (even if it's a link target)
+            reachableNodes.Add(node.OriginalNode);
+
+            // ISSUE #82 FIX: Traverse dialog model pointers, not TreeView children
+            // With lazy loading, TreeView children aren't populated until node is expanded
+            // Must traverse the underlying DialogNode.Pointers to find all reachable nodes
+
+            // Don't traverse THROUGH link nodes (they're terminal in TreeView)
+            // But the nodes they point to are still marked as reachable (above)
+            if (node.IsChild)
+                return;
+
+            foreach (var pointer in node.OriginalNode.Pointers)
             {
-                foreach (var child in node.Children)
+                if (pointer.Node != null)
                 {
-                    CollectReachableNodes(child, reachableNodes);
+                    // Create temporary TreeViewSafeNode with pointer to check if it's a link
+                    var childSafeNode = new TreeViewSafeNode(pointer.Node, sourcePointer: pointer);
+                    CollectReachableNodes(childSafeNode, reachableNodes);
                 }
             }
         }

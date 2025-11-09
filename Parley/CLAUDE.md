@@ -53,6 +53,25 @@ Check recent commits and GitHub issues for active priorities.
 - always scrub user info from logs and UI  use ~ even for windows for user path.
 - Always be theme aware.  We do not want to overwrite user color preferences
 
+### Path Handling (Privacy & Cross-Platform)
+**NEVER use hardcoded user paths** - Use `Environment.GetFolderPath()` with `Environment.SpecialFolder` constants:
+
+```csharp
+// ❌ WRONG - Privacy leak and platform-specific
+string path = @"C:\Users\...\Documents\file.txt";
+
+// ✅ CORRECT - Cross-platform and privacy-safe
+string path = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+    "file.txt");
+```
+
+**Common SpecialFolders**:
+- `MyDocuments` - User's Documents folder
+- `ApplicationData` - Roaming app data
+- `LocalApplicationData` - Local app data
+- `UserProfile` - User's home directory
+
 ## Quick Commands
 
 ### Development
@@ -410,4 +429,104 @@ Via foxxy-bridge:
 ---
 
 **Testing**: Use `TestingTools/Scripts/QuickRegressionCheck.ps1` before parser changes
+
+
+### File Naming Constraints (CRITICAL FOR TEST FILE GENERATION)
+**Aurora Engine enforces strict filename limitations - violations cause silent file rejection:**
+
+**Filename Rules**:
+- **Maximum**: 12 characters (excluding `.dlg` extension)
+- **Case**: Lowercase recommended for compatibility
+- **Characters**: Alphanumeric and underscore only (`a-z`, `0-9`, `_`)
+- **Examples**:
+  - ✅ `test1_link.dlg` (10 chars)
+  - ✅ `merchant_01.dlg` (11 chars)
+  - ❌ `Test1_SharedReply.dlg` (17 chars - TOO LONG, game will not load)
+  - ❌ `my-dialog.dlg` (hyphen not allowed)
+
+**Why This Matters**:
+- Parley can open files with long names or invalid characters
+- Aurora Engine silently rejects them - files appear "missing" in-game
+- NWN toolset may also fail to display them in resource lists
+- This is a **game engine limitation**, not a Parley bug
+
+### Speaker Tag Validation (CRITICAL FOR IN-GAME FUNCTIONALITY)
+**Aurora Engine validates speaker tags against creatures in the current area:**
+
+**Speaker Tag Rules**:
+1. **Empty speaker (`Speaker = ""`)**: Dialog works with any NPC (safest for test files)
+2. **Tagged speaker (`Speaker = "Merchant"`)**: Aurora validates tag exists in area
+   - If creature with tag "Merchant" exists → dialog works
+   - If creature does NOT exist → **entire conversation discarded by game engine**
+   - Engine protection: prevents dead NPCs from speaking, maintains immersion
+
+**For Test Dialog Generation**:
+- **ALWAYS use empty speaker tags (`Speaker = ""`)** unless testing specific speaker validation
+- Tagged speakers require actual creature placement in test area
+- Invalid speaker tags cause silent conversation failure in-game (no error message)
+
+**Real-World Example** (2025-11-08 debugging session):
+```csharp
+// ❌ BAD - Will fail in-game if no creature tagged "Merchant" exists
+var entry = new DialogNode {
+    Type = DialogNodeType.Entry,
+    Text = new LocString(),
+    Speaker = "Merchant"  // Aurora validates this!
+};
+
+// ✅ GOOD - Works in any conversation context
+var entry = new DialogNode {
+    Type = DialogNodeType.Entry,
+    Text = new LocString(),
+    Speaker = ""  // No validation required
+};
+```
+
+**Debugging Symptoms**:
+- Dialog loads in Parley ✅
+- Dialog appears in Aurora Toolset ✅
+- Conversation **does not appear in-game** ❌ (silent failure)
+- No error messages or logs
+- Root cause: Invalid speaker tag validation
+
+### Test File Generation Best Practices
+When creating test dialogs in `TestingTools/CreateTest*Dialog/`:
+
+1. **Filename validation**:
+   ```csharp
+   // ALWAYS check filename length before saving
+   string filename = "test1_link.dlg";  // 10 chars ✅
+   if (Path.GetFileNameWithoutExtension(filename).Length > 12) {
+       Console.WriteLine("❌ Filename too long for Aurora Engine!");
+   }
+   ```
+
+2. **Speaker tag safety**:
+   ```csharp
+   // Use empty speaker for test files
+   var node = new DialogNode {
+       Speaker = ""  // Safe default
+   };
+   ```
+
+3. **Multiple entry points and in-game testing**:
+   - Dialogs with multiple starting entries (disconnected branches) create independent conversation flows
+   - NWN fires one starting entry per conversation interaction sequentially
+   - Comprehensive testing requires state management scripts (.nss) to cycle through all branches
+   - **Pattern**: "Do-once" system using local variables (GetLocalInt/SetLocalInt)
+   - **Example**: Track which starting entry was shown, fire next entry on subsequent interactions
+   - **Future improvement**: Create reusable test scaffolding scripts in `TestingTools/Scripts/`
+   ```csharp
+   // Multiple starting entries - each fires once per conversation interaction
+   dialog.Starts.Add(new DialogPtr { Node = entry0, ... });
+   dialog.Starts.Add(new DialogPtr { Node = entry2, ... });  // Requires .nss to test both
+   dialog.Starts.Add(new DialogPtr { Node = entry3, ... });
+   ```
+
+4. **Validation checklist**:
+   - [ ] Filename ≤12 characters (excluding `.dlg`)
+   - [ ] Lowercase, alphanumeric + underscore only
+   - [ ] All speaker tags empty OR valid creatures exist in test area
+   - [ ] Multiple entry points documented for tester (requires state management scripts)
+   - [ ] Test in actual NWN game, not just Parley/Aurora Toolset
 

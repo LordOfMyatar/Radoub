@@ -67,6 +67,22 @@ namespace DialogEditor.Models
                 {
                     _isExpanded = value;
                     OnPropertyChanged(nameof(IsExpanded));
+
+                    // LAZY LOADING FIX (Issue #82): Populate children when node is expanded
+                    if (_isExpanded)
+                    {
+                        // Ensure _children collection exists
+                        if (_children == null)
+                        {
+                            _children = new ObservableCollection<TreeViewSafeNode>();
+                        }
+
+                        // Populate if empty
+                        if (_children.Count == 0)
+                        {
+                            PopulateChildrenInternal();
+                        }
+                    }
                 }
             }
         }
@@ -197,9 +213,9 @@ namespace DialogEditor.Models
                 {
                     _children = new ObservableCollection<TreeViewSafeNode>();
 
-                    // Auto-populate all levels to allow full TreeView display
-                    // Performance is handled by depth limits and virtualization
-                    PopulateChildrenInternal();
+                    // LAZY LOADING FIX (Issue #82): Don't auto-populate children
+                    // Children are populated on-demand when user expands the node
+                    // This eliminates exponential memory/CPU usage at deep tree levels
                 }
                 return _children;
             }
@@ -283,9 +299,13 @@ namespace DialogEditor.Models
         {
             get
             {
-                bool isChild = IsChild;
-                bool hasPointers = _originalNode.Pointers.Any(p => p.Node != null);
-                return !isChild && hasPointers;
+                // Link nodes are terminal - no expand arrow
+                if (IsChild) return false;
+
+                // Check if underlying dialog node has any pointers
+                if (_originalNode?.Pointers == null) return false;
+
+                return _originalNode.Pointers.Any(p => p.Node != null);
             }
         }
 
@@ -360,7 +380,7 @@ namespace DialogEditor.Models
             : base(new DialogNode { Type = DialogNodeType.Entry, Text = new LocString() })
         {
             _dialog = dialog;
-            IsExpanded = true; // Always start expanded
+            // NOTE: Don't set IsExpanded here - PopulateDialogNodes will set it after adding children
         }
 
         public override string DisplayText => "ROOT";
