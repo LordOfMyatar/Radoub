@@ -173,14 +173,16 @@ namespace Parley.Tests.Security
         }
 
         [Fact]
-        public void PermissionChecker_CaseSensitive_MatchesExactly()
+        public void PermissionChecker_CaseInsensitive_MatchesRegardlessOfCase()
         {
-            // Arrange
-            var manifest = CreateManifest("test.case", "Audio.Play"); // Wrong case
+            // Arrange - Permission declared with mixed case
+            var manifest = CreateManifest("test.case", "Audio.Play");
             var permissions = new PermissionChecker(manifest);
 
-            // Act & Assert - Should be case-sensitive
-            Assert.False(permissions.HasPermission("audio.play"));
+            // Act & Assert - Should match case-insensitively (better UX)
+            Assert.True(permissions.HasPermission("audio.play"));
+            Assert.True(permissions.HasPermission("AUDIO.PLAY"));
+            Assert.True(permissions.HasPermission("Audio.Play"));
         }
 
         [Fact]
