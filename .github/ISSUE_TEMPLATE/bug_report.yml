@@ -1,20 +1,49 @@
 name: "🐛 Bug Report"
-description: "Report a bug found during testing"
+description: "Report a bug or issue"
 labels: ["bug"]
 body:
-  - type: dropdown
-    id: phase
+  - type: markdown
     attributes:
-      label: "Testing Phase"
-      options:
-        - "Phase 0 - Avalonia Migration"
-        - "Phase 1 - Core Editing"
-        - "Phase 2 - Resource Integration"
-        - "Phase 3 - Script & Parameters"
-        - "Phase 4 - UI/UX Enhancements"
-        - "Phase 5 - Advanced Visualization"
-        - "Phase 6 - Testing & Validation"
-        - "Unphased"
+      value: |
+        Report bugs with clear reproduction steps and expected behavior.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "Clear description of the bug"
+      placeholder: "Brief summary of the issue..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: "Reproduction Steps"
+      description: "Steps to reproduce the behavior"
+      placeholder: |
+        1. Open dialog file
+        2. Select node
+        3. Perform action
+        4. Observe issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected Behavior"
+      description: "What should happen"
+      placeholder: "The application should..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "Actual Behavior"
+      description: "What actually happens"
+      placeholder: "Instead, the application..."
     validations:
       required: true
 
@@ -22,6 +51,7 @@ body:
     id: priority
     attributes:
       label: "Priority"
+      description: "Severity of the issue"
       options:
         - "Critical - Crash/data loss"
         - "High - Core functionality broken"
@@ -31,47 +61,36 @@ body:
       required: true
 
   - type: textarea
-    id: description
+    id: environment
     attributes:
-      label: "Description"
-      description: "Brief description of the bug"
-    validations:
-      required: true
-
-  - type: textarea
-    id: reproduction
-    attributes:
-      label: "Reproduction Steps"
-      placeholder: |
-        1. Open [file]
-        2. Select [node]
-        3. Perform [action]
-        4. Expected: [behavior]
-        5. Actual: [behavior]
-    validations:
-      required: true
+      label: "Environment"
+      description: "System information"
+      value: |
+        - OS: Windows
+        - Version: [version or commit hash]
+        - Branch: [branch name]
+      render: markdown
 
   - type: checkboxes
     id: testing
     attributes:
-      label: "Testing Notes"
+      label: "Testing Details"
       options:
         - label: "Reproduces consistently"
-        - label: "Aurora compatibility issue"
-        - label: "Round-trip tested"
-        - label: "Multiple files tested"
+        - label: "Tested with multiple files"
+        - label: "Aurora Engine compatibility issue"
+        - label: "Data corruption risk"
 
   - type: textarea
-    id: environment
+    id: logs
     attributes:
-      label: "Environment"
-      value: |
-        - OS: Windows
-        - Build: [commit hash]
-      render: markdown
+      label: "Logs/Screenshots"
+      description: "Error messages, stack traces, or screenshots"
+      placeholder: "Paste logs or attach screenshots..."
 
   - type: textarea
-    id: additional
+    id: related
     attributes:
-      label: "Additional Context"
-      description: "Logs, screenshots, or related issues"
+      label: "Related Issues"
+      description: "Links to related issues or PRs"
+      placeholder: "Relates to #123, blocks #456"
