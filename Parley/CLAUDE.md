@@ -53,6 +53,25 @@ Check recent commits and GitHub issues for active priorities.
 - always scrub user info from logs and UI  use ~ even for windows for user path.
 - Always be theme aware.  We do not want to overwrite user color preferences
 
+### Path Handling (Privacy & Cross-Platform)
+**NEVER use hardcoded user paths** - Use `Environment.GetFolderPath()` with `Environment.SpecialFolder` constants:
+
+```csharp
+// ❌ WRONG - Privacy leak and platform-specific
+string path = @"C:\Users\...\Documents\file.txt";
+
+// ✅ CORRECT - Cross-platform and privacy-safe
+string path = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+    "file.txt");
+```
+
+**Common SpecialFolders**:
+- `MyDocuments` - User's Documents folder
+- `ApplicationData` - Roaming app data
+- `LocalApplicationData` - Local app data
+- `UserProfile` - User's home directory
+
 ## Quick Commands
 
 ### Development

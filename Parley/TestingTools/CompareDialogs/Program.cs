@@ -19,7 +19,9 @@ class Program
         Console.WriteLine();
 
         // Load known-good dialog
-        string goodPath = @"C:\Users\Sheri\Documents\Neverwinter Nights\modules\LNS_DLG\dlg_shady_vendor.dlg";
+        string goodPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "Neverwinter Nights", "modules", "LNS_DLG", "dlg_shady_vendor.dlg");
         Console.WriteLine($"Loading known-good: {Path.GetFileName(goodPath)}");
 
         var fileService = new DialogFileService();
