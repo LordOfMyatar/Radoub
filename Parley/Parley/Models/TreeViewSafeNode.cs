@@ -69,9 +69,19 @@ namespace DialogEditor.Models
                     OnPropertyChanged(nameof(IsExpanded));
 
                     // LAZY LOADING FIX (Issue #82): Populate children when node is expanded
-                    if (_isExpanded && _children != null && _children.Count == 0)
+                    if (_isExpanded)
                     {
-                        PopulateChildrenInternal();
+                        // Ensure _children collection exists
+                        if (_children == null)
+                        {
+                            _children = new ObservableCollection<TreeViewSafeNode>();
+                        }
+
+                        // Populate if empty
+                        if (_children.Count == 0)
+                        {
+                            PopulateChildrenInternal();
+                        }
                     }
                 }
             }
