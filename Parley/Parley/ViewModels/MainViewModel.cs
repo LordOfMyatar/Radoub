@@ -2748,27 +2748,32 @@ namespace DialogEditor.ViewModels
         /// Recursively collects all nodes reachable from the tree structure
         /// CRITICAL: Traverses dialog model pointers, not TreeView children (Issue #82 lazy loading fix)
         /// This ensures we find all reachable nodes even when TreeView children aren't populated yet
+        /// Links are terminal (don't expand) but the nodes they point to ARE still reachable
         /// </summary>
         private void CollectReachableNodes(TreeViewSafeNode node, HashSet<DialogNode> reachableNodes)
         {
-            // Don't add terminal link nodes - they're not expandable in TreeView
-            // so their children are effectively orphaned
-            if (node?.OriginalNode != null && !reachableNodes.Contains(node.OriginalNode) && !node.IsChild)
-            {
-                reachableNodes.Add(node.OriginalNode);
+            if (node?.OriginalNode == null || reachableNodes.Contains(node.OriginalNode))
+                return;
 
-                // ISSUE #82 FIX: Traverse dialog model pointers, not TreeView children
-                // With lazy loading, TreeView children aren't populated until node is expanded
-                // Must traverse the underlying DialogNode.Pointers to find all reachable nodes
-                foreach (var pointer in node.OriginalNode.Pointers)
+            // Add this node to reachable set (even if it's a link target)
+            reachableNodes.Add(node.OriginalNode);
+
+            // ISSUE #82 FIX: Traverse dialog model pointers, not TreeView children
+            // With lazy loading, TreeView children aren't populated until node is expanded
+            // Must traverse the underlying DialogNode.Pointers to find all reachable nodes
+
+            // Don't traverse THROUGH link nodes (they're terminal in TreeView)
+            // But the nodes they point to are still marked as reachable (above)
+            if (node.IsChild)
+                return;
+
+            foreach (var pointer in node.OriginalNode.Pointers)
+            {
+                if (pointer.Node != null)
                 {
-                    if (pointer.Node != null)
-                    {
-                        // Create temporary TreeViewSafeNode to check if it's a link
-                        // Don't traverse links (they're terminal in TreeView)
-                        var childSafeNode = new TreeViewSafeNode(pointer.Node, sourcePointer: pointer);
-                        CollectReachableNodes(childSafeNode, reachableNodes);
-                    }
+                    // Create temporary TreeViewSafeNode with pointer to check if it's a link
+                    var childSafeNode = new TreeViewSafeNode(pointer.Node, sourcePointer: pointer);
+                    CollectReachableNodes(childSafeNode, reachableNodes);
                 }
             }
         }
