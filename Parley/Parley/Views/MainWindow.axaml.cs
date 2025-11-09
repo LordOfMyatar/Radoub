@@ -16,6 +16,7 @@ using DialogEditor.Models;
 using DialogEditor.Utils;
 using DialogEditor.Services;
 using DialogEditor.Parsers;
+using DialogEditor.Plugins;
 
 namespace DialogEditor.Views
 {
@@ -25,6 +26,7 @@ namespace DialogEditor.Views
         private readonly AudioService _audioService;
         private readonly JournalService _journalService;
         private readonly CreatureService _creatureService;
+        private readonly PluginManager _pluginManager;
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -52,6 +54,7 @@ namespace DialogEditor.Views
             _audioService = new AudioService();
             _journalService = new JournalService();
             _creatureService = new CreatureService();
+            _pluginManager = new PluginManager();
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -1003,7 +1006,7 @@ namespace DialogEditor.Views
         {
             try
             {
-                var settingsWindow = new SettingsWindow();
+                var settingsWindow = new SettingsWindow(pluginManager: _pluginManager);
                 await settingsWindow.ShowDialog(this);
 
                 // Reload theme in case it changed
@@ -1023,7 +1026,7 @@ namespace DialogEditor.Views
             try
             {
                 // Open preferences with Resource Paths tab selected (tab 0)
-                var settingsWindow = new SettingsWindow(initialTab: 0);
+                var settingsWindow = new SettingsWindow(initialTab: 0, pluginManager: _pluginManager);
                 await settingsWindow.ShowDialog(this);
                 ApplySavedTheme();
                 _viewModel.StatusMessage = "Settings updated";
@@ -1040,7 +1043,7 @@ namespace DialogEditor.Views
             try
             {
                 // Open preferences with Logging tab selected (tab 2)
-                var settingsWindow = new SettingsWindow(initialTab: 2);
+                var settingsWindow = new SettingsWindow(initialTab: 2, pluginManager: _pluginManager);
                 await settingsWindow.ShowDialog(this);
                 ApplySavedTheme();
                 _viewModel.StatusMessage = "Settings updated";
