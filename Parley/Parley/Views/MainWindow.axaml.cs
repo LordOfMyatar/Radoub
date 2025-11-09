@@ -93,7 +93,7 @@ namespace DialogEditor.Views
                             TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
                         }
                     };
-                    await msgBox.ShowDialog(this);
+                    msgBox.Show(); // Non-modal - doesn't block main window
                 }
             };
             this.Closing += OnWindowClosing;

@@ -271,6 +271,29 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ---
 
+## UI/UX Guidelines
+
+**Dialog and Window Behavior**:
+- **NEVER use modal dialogs** (`ShowDialog()`) that block the main application
+- **ALWAYS use non-modal windows** (`Show()`) for informational messages
+- Users must be able to interact with the main application while notifications/messages are visible
+- Exception: Confirmation dialogs for destructive actions (delete, overwrite) may be modal
+- Prefer toast notifications or status bar messages over popup windows
+
+**Examples**:
+```csharp
+// ❌ BAD - Blocks main window
+await msgBox.ShowDialog(this);
+
+// ✅ GOOD - Non-blocking
+msgBox.Show();
+
+// ✅ ALSO GOOD - Auto-closing notification
+ShowToastNotification("Plugin started", 3000);
+```
+
+---
+
 ## Aurora Engine File Naming Constraints
 
 **CRITICAL**: Aurora Engine (Neverwinter Nights) has strict filename limitations:
