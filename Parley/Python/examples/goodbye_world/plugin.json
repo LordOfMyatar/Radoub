@@ -1,0 +1,16 @@
+{
+  "manifestVersion": "1.0",
+  "plugin": {
+    "id": "org.parley.examples.goodbyeworld",
+    "name": "Goodbye World (Unstable)",
+    "version": "1.0.0",
+    "author": "Parley Team",
+    "description": "Test plugin that simulates crashes and misbehavior - DO NOT USE IN PRODUCTION",
+    "parleyVersion": ">=0.1.5"
+  },
+  "permissions": [
+    "ui.show_notification"
+  ],
+  "entryPoint": "main.py",
+  "trustLevel": "unverified"
+}
