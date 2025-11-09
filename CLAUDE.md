@@ -127,6 +127,45 @@ main (production)
 
 ---
 
+## Starting a New Feature Branch
+
+**Command**: "Init a new feature for [tool] epic/issue #[number]"
+
+**Example**: "Init a new feature for Parley epic #37"
+
+**Process**:
+1. Sync with main branch (`git checkout main && git pull`)
+2. Create feature branch following naming convention:
+   - Epic: `[tool]/feat/epic-[N]-[short-name]`
+   - Feature: `[tool]/feat/[short-name]`
+   - Fix: `[tool]/fix/[short-name]`
+3. Update tool's CHANGELOG.md:
+   - Add new version section after `[Unreleased]`
+   - Include branch name and `PR: #TBD` placeholder
+   - Add epic/feature heading
+4. Commit and push branch
+5. Create draft PR on GitHub
+6. Update CHANGELOG.md with actual PR number
+7. Commit and push PR number update
+
+**Example CHANGELOG Section**:
+```markdown
+## [0.1.5-alpha] - TBD
+**Branch**: `parley/feat/epic-0-plugins` | **PR**: #84
+
+### Epic 0: Plugin Foundation
+
+---
+```
+
+**Benefits**:
+- CHANGELOG tracks branch/PR numbers to prevent version collisions
+- Draft PR created early for visibility and discussion
+- Clear connection between version, branch, PR, and epic/issue
+- Prevents accidental version number reuse across branches
+
+---
+
 ## Adding New Tools
 
 When adding a new tool to Radoub:
