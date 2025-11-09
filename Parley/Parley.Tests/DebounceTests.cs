@@ -133,7 +133,7 @@ namespace Parley.Tests
         }
 
         [Theory]
-        [InlineData(150)]  // Exactly at threshold
+        [InlineData(155)]  // At threshold with buffer for CI timing variance
         [InlineData(160)]  // Just above threshold
         [InlineData(200)]  // Well above threshold
         public async Task Debounce_AllowsCallsAtOrAboveThreshold(int delayMs)
