@@ -1,144 +1,150 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using DialogEditor.Models;
+using DialogEditor.Services;
 
-class DialogComparison
+namespace CompareDialogs;
+
+/// <summary>
+/// Compares structure of known-good dialog vs generated test dialog
+/// to identify what makes Aurora Engine fail to load our generated files.
+/// </summary>
+class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
-        var baseDir = @"~\Documents\Neverwinter Nights\modules\LNS_DLG";
-        var files = new Dictionary<string, string>
-        {
-            ["chef_aurora"] = Path.Combine(baseDir, "chef.dlg"),
-            ["chef_export"] = Path.Combine(baseDir, "chef01.dlg"),
-            ["lista_aurora"] = Path.Combine(baseDir, "lista_new.dlg"),
-            ["lista_export"] = Path.Combine(baseDir, "lista01.dlg"),
-            ["myra_aurora"] = Path.Combine(baseDir, "myra_james.dlg"),
-            ["myra_export"] = Path.Combine(baseDir, "myra01.dlg")
-        };
+        Console.WriteLine("=== Dialog Structure Comparison ===");
+        Console.WriteLine();
 
-        Console.WriteLine("=== DIALOG FILE COMPARISON ===\n");
-        Console.WriteLine("File                  | Size    | Structs | Fields | Labels | FieldData | ListIndices | Struct Types");
-        Console.WriteLine("----------------------|---------|---------|--------|--------|-----------|-------------|-------------");
+        // Load known-good dialog
+        string goodPath = @"C:\Users\Sheri\Documents\Neverwinter Nights\modules\LNS_DLG\dlg_shady_vendor.dlg";
+        Console.WriteLine($"Loading known-good: {Path.GetFileName(goodPath)}");
 
-        foreach (var kvp in files)
+        var fileService = new DialogFileService();
+        var goodDialog = await fileService.LoadFromFileAsync(goodPath);
+
+        if (goodDialog == null)
         {
-            if (!File.Exists(kvp.Value))
+            Console.WriteLine("❌ Failed to load known-good dialog!");
+            return;
+        }
+
+        Console.WriteLine("✅ Loaded known-good dialog");
+        PrintDialogStats("KNOWN-GOOD (dlg_shady_vendor.dlg)", goodDialog);
+
+        Console.WriteLine();
+        Console.WriteLine("---");
+        Console.WriteLine();
+
+        // Load generated test dialog
+        string testPath = @"D:\LOM\TestingTools\TestFiles\test1_link.dlg";
+        Console.WriteLine($"Loading generated test: {Path.GetFileName(testPath)}");
+
+        var testDialog = await fileService.LoadFromFileAsync(testPath);
+
+        if (testDialog == null)
+        {
+            Console.WriteLine("❌ Failed to load test dialog!");
+            return;
+        }
+
+        Console.WriteLine("✅ Loaded test dialog");
+        PrintDialogStats("GENERATED (test1_link.dlg)", testDialog);
+
+        Console.WriteLine();
+        Console.WriteLine("---");
+        Console.WriteLine();
+        Console.WriteLine("=== KEY DIFFERENCES ===");
+        Console.WriteLine();
+
+        // Compare starting entries
+        Console.WriteLine($"Starting Entries:");
+        Console.WriteLine($"  Good: {goodDialog.Starts.Count}");
+        Console.WriteLine($"  Test: {testDialog.Starts.Count}");
+
+        if (goodDialog.Starts.Count > 0)
+        {
+            Console.WriteLine($"  Good Start[0]: Index={goodDialog.Starts[0].Index}, IsLink={goodDialog.Starts[0].IsLink}");
+        }
+        if (testDialog.Starts.Count > 0)
+        {
+            Console.WriteLine($"  Test Start[0]: Index={testDialog.Starts[0].Index}, IsLink={testDialog.Starts[0].IsLink}");
+        }
+
+        Console.WriteLine();
+
+        // Compare entries
+        Console.WriteLine($"Entry Structure:");
+        for (int i = 0; i < Math.Min(3, Math.Min(goodDialog.Entries.Count, testDialog.Entries.Count)); i++)
+        {
+            Console.WriteLine($"  Entry {i}:");
+            if (i < goodDialog.Entries.Count)
             {
-                Console.WriteLine($"{kvp.Key,-20} | FILE NOT FOUND");
-                continue;
+                var ge = goodDialog.Entries[i];
+                Console.WriteLine($"    Good: Speaker='{ge.Speaker}', Text='{GetFirstText(ge.Text)}', Pointers={ge.Pointers.Count}");
             }
-
-            var info = AnalyzeGffFile(kvp.Value);
-            Console.WriteLine($"{kvp.Key,-20} | {info.FileSize,7} | {info.StructCount,7} | {info.FieldCount,6} | {info.LabelCount,6} | {info.FieldDataSize,9} | {info.ListIndicesSize,11} | {string.Join(",", info.UniqueStructTypes.OrderBy(x => x).Take(5))}");
-        }
-
-        Console.WriteLine("\n=== STRUCT TYPE FREQUENCY ===");
-        foreach (var kvp in files)
-        {
-            if (!File.Exists(kvp.Value)) continue;
-
-            var info = AnalyzeGffFile(kvp.Value);
-            Console.WriteLine($"\n{kvp.Key}:");
-            foreach (var typeCount in info.StructTypeFrequency.OrderByDescending(x => x.Value).Take(10))
+            if (i < testDialog.Entries.Count)
             {
-                Console.WriteLine($"  Type {typeCount.Key,5}: {typeCount.Value,3} structs");
+                var te = testDialog.Entries[i];
+                Console.WriteLine($"    Test: Speaker='{te.Speaker}', Text='{GetFirstText(te.Text)}', Pointers={te.Pointers.Count}");
             }
         }
 
-        Console.WriteLine("\n=== FIELD COUNT PER STRUCT ===");
-        foreach (var kvp in files)
+        Console.WriteLine();
+
+        // Compare replies
+        Console.WriteLine($"Reply Structure:");
+        for (int i = 0; i < Math.Min(3, Math.Min(goodDialog.Replies.Count, testDialog.Replies.Count)); i++)
         {
-            if (!File.Exists(kvp.Value)) continue;
-
-            var info = AnalyzeGffFile(kvp.Value);
-            Console.WriteLine($"\n{kvp.Key}: Avg={info.AverageFieldsPerStruct:F1}, Min={info.MinFieldsPerStruct}, Max={info.MaxFieldsPerStruct}");
-        }
-
-        Console.WriteLine("\n=== SECTION SIZE BREAKDOWN ===");
-        Console.WriteLine("File                  | Structs | Fields  | Labels | FldIdx | FldData | LstIdx | Total");
-        Console.WriteLine("----------------------|---------|---------|--------|--------|---------|--------|-------");
-        foreach (var kvp in files)
-        {
-            if (!File.Exists(kvp.Value)) continue;
-
-            var info = AnalyzeGffFile(kvp.Value);
-            Console.WriteLine($"{kvp.Key,-20} | {info.StructSectionSize,7} | {info.FieldSectionSize,7} | {info.LabelSectionSize,6} | {info.FieldIndicesSize,6} | {info.FieldDataSize,7} | {info.ListIndicesSize,6} | {info.FileSize,6}");
+            Console.WriteLine($"  Reply {i}:");
+            if (i < goodDialog.Replies.Count)
+            {
+                var gr = goodDialog.Replies[i];
+                Console.WriteLine($"    Good: Speaker='{gr.Speaker}', Text='{GetFirstText(gr.Text)}', Pointers={gr.Pointers.Count}");
+            }
+            if (i < testDialog.Replies.Count)
+            {
+                var tr = testDialog.Replies[i];
+                Console.WriteLine($"    Test: Speaker='{tr.Speaker}', Text='{GetFirstText(tr.Text)}', Pointers={tr.Pointers.Count}");
+            }
         }
     }
 
-    static GffInfo AnalyzeGffFile(string path)
+    static void PrintDialogStats(string label, Dialog dialog)
     {
-        var bytes = File.ReadAllBytes(path);
-        var info = new GffInfo { FileSize = bytes.Length };
+        Console.WriteLine($"{label}:");
+        Console.WriteLine($"  Entries: {dialog.Entries.Count}");
+        Console.WriteLine($"  Replies: {dialog.Replies.Count}");
+        Console.WriteLine($"  Starting Entries: {dialog.Starts.Count}");
 
-        // Read header
-        int structOffset = BitConverter.ToInt32(bytes, 0x08);
-        int structCount = BitConverter.ToInt32(bytes, 0x0C);
-        int fieldOffset = BitConverter.ToInt32(bytes, 0x10);
-        int fieldCount = BitConverter.ToInt32(bytes, 0x14);
-        int labelOffset = BitConverter.ToInt32(bytes, 0x18);
-        int labelCount = BitConverter.ToInt32(bytes, 0x1C);
-        int fieldDataOffset = BitConverter.ToInt32(bytes, 0x20);
-        int fieldDataCount = BitConverter.ToInt32(bytes, 0x24);
-        int fieldIndicesOffset = BitConverter.ToInt32(bytes, 0x28);
-        int fieldIndicesCount = BitConverter.ToInt32(bytes, 0x2C);
-        int listIndicesOffset = BitConverter.ToInt32(bytes, 0x30);
-        int listIndicesCount = BitConverter.ToInt32(bytes, 0x34);
+        int totalEntryPointers = 0;
+        int totalReplyPointers = 0;
 
-        info.StructCount = structCount;
-        info.FieldCount = fieldCount;
-        info.LabelCount = labelCount;
-        info.FieldDataSize = fieldDataCount;
-        info.ListIndicesSize = listIndicesCount;
-        info.FieldIndicesSize = fieldIndicesCount;
-        info.StructSectionSize = structCount * 12; // Each struct = 12 bytes
-        info.FieldSectionSize = fieldCount * 12; // Each field = 12 bytes
-        info.LabelSectionSize = labelCount * 16; // Each label = 16 bytes
-
-        // Read struct types and field counts
-        for (int i = 0; i < structCount; i++)
+        foreach (var entry in dialog.Entries)
         {
-            int pos = structOffset + (i * 12);
-            uint type = BitConverter.ToUInt32(bytes, pos);
-            uint fieldCountForStruct = BitConverter.ToUInt32(bytes, pos + 8);
-
-            info.UniqueStructTypes.Add(type);
-            if (!info.StructTypeFrequency.ContainsKey(type))
-                info.StructTypeFrequency[type] = 0;
-            info.StructTypeFrequency[type]++;
-
-            info.FieldCountsPerStruct.Add(fieldCountForStruct);
+            totalEntryPointers += entry.Pointers.Count;
         }
 
-        if (info.FieldCountsPerStruct.Count > 0)
+        foreach (var reply in dialog.Replies)
         {
-            info.AverageFieldsPerStruct = info.FieldCountsPerStruct.Select(x => (double)x).Average();
-            info.MinFieldsPerStruct = info.FieldCountsPerStruct.Min();
-            info.MaxFieldsPerStruct = info.FieldCountsPerStruct.Max();
+            totalReplyPointers += reply.Pointers.Count;
         }
 
-        return info;
+        Console.WriteLine($"  Total Entry Pointers: {totalEntryPointers}");
+        Console.WriteLine($"  Total Reply Pointers: {totalReplyPointers}");
     }
-}
 
-class GffInfo
-{
-    public int FileSize;
-    public int StructCount;
-    public int FieldCount;
-    public int LabelCount;
-    public int FieldDataSize;
-    public int ListIndicesSize;
-    public int FieldIndicesSize;
-    public int StructSectionSize;
-    public int FieldSectionSize;
-    public int LabelSectionSize;
-    public HashSet<uint> UniqueStructTypes = new HashSet<uint>();
-    public Dictionary<uint, int> StructTypeFrequency = new Dictionary<uint, int>();
-    public List<uint> FieldCountsPerStruct = new List<uint>();
-    public double AverageFieldsPerStruct;
-    public uint MinFieldsPerStruct;
-    public uint MaxFieldsPerStruct;
+    static string GetFirstText(LocString locString)
+    {
+        if (locString == null || locString.Strings.Count == 0)
+            return "(empty)";
+
+        // LocString.Strings is Dictionary<int, string>
+        var firstValue = locString.Strings.Values.First();
+        if (firstValue.Length > 40)
+            return firstValue.Substring(0, 40) + "...";
+        return firstValue;
+    }
 }

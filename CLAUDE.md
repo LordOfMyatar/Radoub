@@ -232,6 +232,31 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ---
 
+## Aurora Engine File Naming Constraints
+
+**CRITICAL**: Aurora Engine (Neverwinter Nights) has strict filename limitations:
+
+- **Maximum filename length**: 12 characters (excluding extension)
+- **Case**: Lowercase recommended for compatibility
+- **Characters**: Alphanumeric and underscore only
+- **Examples**:
+  - ✅ `test1_link.dlg` (10 chars)
+  - ✅ `merchant_01.dlg` (11 chars)
+  - ❌ `Test1_SharedReply.dlg` (17 chars - too long)
+  - ❌ `my-dialog.dlg` (hyphen not recommended)
+
+**Why this matters**:
+- Parley can open files with long names
+- Aurora Engine and NWN game cannot load them
+- Files appear "missing" in-game despite being valid
+
+**Tools must**:
+- Validate filename length before saving
+- Warn users when filenames exceed 12 characters
+- Suggest shortened alternatives
+
+---
+
 ## Resources
 
 - **BioWare Aurora Specs**: `Documentation/`

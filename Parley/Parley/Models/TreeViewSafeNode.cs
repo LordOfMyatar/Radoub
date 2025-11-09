@@ -67,6 +67,12 @@ namespace DialogEditor.Models
                 {
                     _isExpanded = value;
                     OnPropertyChanged(nameof(IsExpanded));
+
+                    // LAZY LOADING FIX (Issue #82): Populate children when node is expanded
+                    if (_isExpanded && _children != null && _children.Count == 0)
+                    {
+                        PopulateChildrenInternal();
+                    }
                 }
             }
         }
@@ -197,9 +203,9 @@ namespace DialogEditor.Models
                 {
                     _children = new ObservableCollection<TreeViewSafeNode>();
 
-                    // Auto-populate all levels to allow full TreeView display
-                    // Performance is handled by depth limits and virtualization
-                    PopulateChildrenInternal();
+                    // LAZY LOADING FIX (Issue #82): Don't auto-populate children
+                    // Children are populated on-demand when user expands the node
+                    // This eliminates exponential memory/CPU usage at deep tree levels
                 }
                 return _children;
             }
@@ -360,7 +366,7 @@ namespace DialogEditor.Models
             : base(new DialogNode { Type = DialogNodeType.Entry, Text = new LocString() })
         {
             _dialog = dialog;
-            IsExpanded = true; // Always start expanded
+            // NOTE: Don't set IsExpanded here - PopulateDialogNodes will set it after adding children
         }
 
         public override string DisplayText => "ROOT";
