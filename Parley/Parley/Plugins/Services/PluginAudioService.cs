@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Grpc.Core;
 using DialogEditor.Plugins.Proto;
+using DialogEditor.Plugins.Security;
 using DialogEditor.Services;
 
 namespace DialogEditor.Plugins.Services
@@ -12,12 +13,12 @@ namespace DialogEditor.Plugins.Services
     /// </summary>
     public class PluginAudioService : Proto.AudioService.AudioServiceBase
     {
-        private readonly PermissionChecker _permissions;
+        private readonly PluginSecurityContext _security;
         private readonly global::DialogEditor.Services.AudioService _audioService;
 
-        public PluginAudioService(PermissionChecker permissions, global::DialogEditor.Services.AudioService audioService)
+        public PluginAudioService(PluginSecurityContext security, global::DialogEditor.Services.AudioService audioService)
         {
-            _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+            _security = security ?? throw new ArgumentNullException(nameof(security));
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
         }
 
@@ -25,8 +26,8 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("audio.play");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("audio.play", "PlayAudio");
 
                 // Validate file path
                 if (string.IsNullOrWhiteSpace(request.FilePath))
@@ -59,7 +60,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
             catch (Exception ex)
             {
@@ -76,8 +82,8 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("audio.play");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("audio.play", "StopAudio");
 
                 _audioService.Stop();
 
@@ -90,7 +96,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
         }
     }

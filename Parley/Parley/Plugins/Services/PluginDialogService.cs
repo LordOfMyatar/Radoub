@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Grpc.Core;
 using DialogEditor.Plugins.Proto;
+using DialogEditor.Plugins.Security;
 using DialogEditor.Services;
 
 namespace DialogEditor.Plugins.Services
@@ -11,19 +12,19 @@ namespace DialogEditor.Plugins.Services
     /// </summary>
     public class PluginDialogService : DialogService.DialogServiceBase
     {
-        private readonly PermissionChecker _permissions;
+        private readonly PluginSecurityContext _security;
 
-        public PluginDialogService(PermissionChecker permissions)
+        public PluginDialogService(PluginSecurityContext security)
         {
-            _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+            _security = security ?? throw new ArgumentNullException(nameof(security));
         }
 
         public override Task<GetCurrentDialogResponse> GetCurrentDialog(GetCurrentDialogRequest request, ServerCallContext context)
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("dialog.read");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("dialog.read", "GetCurrentDialog");
 
                 // TODO: Implement actual dialog access when MainViewModel integration is available
                 // For now, return placeholder data
@@ -38,7 +39,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
         }
 
@@ -46,8 +52,8 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("dialog.read");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("dialog.read", "GetSelectedNode");
 
                 // TODO: Implement actual node selection access when MainViewModel integration is available
                 // For now, return placeholder data
@@ -62,7 +68,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
         }
     }

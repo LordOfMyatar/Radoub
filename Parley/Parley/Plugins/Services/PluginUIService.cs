@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Grpc.Core;
 using DialogEditor.Plugins.Proto;
+using DialogEditor.Plugins.Security;
 using DialogEditor.Services;
 
 namespace DialogEditor.Plugins.Services
@@ -11,19 +12,19 @@ namespace DialogEditor.Plugins.Services
     /// </summary>
     public class PluginUIService : UIService.UIServiceBase
     {
-        private readonly PermissionChecker _permissions;
+        private readonly PluginSecurityContext _security;
 
-        public PluginUIService(PermissionChecker permissions)
+        public PluginUIService(PluginSecurityContext security)
         {
-            _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+            _security = security ?? throw new ArgumentNullException(nameof(security));
         }
 
         public override Task<ShowNotificationResponse> ShowNotification(ShowNotificationRequest request, ServerCallContext context)
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("ui.show_notification");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("ui.show_notification", "ShowNotification");
 
                 // Log notification (UI implementation would show actual notification)
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin notification: [{request.Title}] {request.Message}");
@@ -38,7 +39,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
         }
 
@@ -46,8 +52,8 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("ui.show_dialog");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("ui.show_dialog", "ShowDialog");
 
                 // Log dialog request
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin dialog: [{request.Title}] {request.Message}");
@@ -62,7 +68,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
         }
     }

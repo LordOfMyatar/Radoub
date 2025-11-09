@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DialogEditor.Services;
+using DialogEditor.Plugins.Security;
 
 namespace DialogEditor.Plugins
 {
@@ -18,6 +19,8 @@ namespace DialogEditor.Plugins
         private bool _isDisposed;
 
         public PluginDiscovery Discovery { get; } = new();
+        public RateLimiter RateLimiter { get; } = new();
+        public SecurityAuditLog SecurityLog { get; } = new();
 
         public IReadOnlyList<string> LoadedPlugins
         {
@@ -234,6 +237,9 @@ namespace DialogEditor.Plugins
         {
             UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Plugin {e.PluginId} crashed: {e.Reason}");
 
+            // Log to security audit
+            SecurityLog.LogCrash(e.PluginId, e.Reason);
+
             // TODO: Implement crash recovery strategy
             // For now, just log and remove
             lock (_lock)
@@ -241,6 +247,7 @@ namespace DialogEditor.Plugins
                 if (_plugins.TryGetValue(e.PluginId, out var process))
                 {
                     _plugins.Remove(e.PluginId);
+                    _pluginManifests.Remove(e.PluginId);
                     process.Crashed -= OnPluginCrashed;
                     process.HealthChanged -= OnPluginHealthChanged;
                     process.Dispose();

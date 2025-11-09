@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Grpc.Core;
 using DialogEditor.Plugins.Proto;
+using DialogEditor.Plugins.Security;
 using DialogEditor.Services;
 
 namespace DialogEditor.Plugins.Services
@@ -12,12 +13,12 @@ namespace DialogEditor.Plugins.Services
     /// </summary>
     public class PluginFileService : FileService.FileServiceBase
     {
-        private readonly PermissionChecker _permissions;
+        private readonly PluginSecurityContext _security;
         private readonly string _sandboxPath;
 
-        public PluginFileService(PermissionChecker permissions)
+        public PluginFileService(PluginSecurityContext security)
         {
-            _permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+            _security = security ?? throw new ArgumentNullException(nameof(security));
 
             // Sandbox plugins to their own data directory
             var userDataDir = Path.Combine(
@@ -36,8 +37,8 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("file.dialog");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("file.dialog", "OpenFileDialog");
 
                 // TODO: Implement actual file dialog when UI framework is available
                 // For now, return cancelled
@@ -52,7 +53,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
         }
 
@@ -60,8 +66,8 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("file.dialog");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("file.dialog", "SaveFileDialog");
 
                 // TODO: Implement actual file dialog when UI framework is available
                 // For now, return cancelled
@@ -76,7 +82,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
         }
 
@@ -84,13 +95,14 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("file.read");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("file.read", "ReadFile");
 
                 // Validate and sanitize path
                 var sanitizedPath = SanitizePath(request.FilePath);
                 if (sanitizedPath == null)
                 {
+                    _security.LogSandboxViolation(request.FilePath);
                     return new ReadFileResponse
                     {
                         Success = false,
@@ -119,7 +131,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
             catch (Exception ex)
             {
@@ -136,13 +153,14 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // Check permission
-                _permissions.RequirePermission("file.write");
+                // Check security (permission + rate limit)
+                _security.CheckSecurity("file.write", "WriteFile");
 
                 // Validate and sanitize path
                 var sanitizedPath = SanitizePath(request.FilePath);
                 if (sanitizedPath == null)
                 {
+                    _security.LogSandboxViolation(request.FilePath);
                     return new WriteFileResponse
                     {
                         Success = false,
@@ -168,7 +186,12 @@ namespace DialogEditor.Plugins.Services
             }
             catch (PermissionDeniedException ex)
             {
+                // Permission denial already logged by CheckSecurity
                 throw new RpcException(new Status(StatusCode.PermissionDenied, ex.Message));
+            }
+            catch (RateLimitExceededException ex)
+            {
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, ex.Message));
             }
             catch (Exception ex)
             {
