@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.5-alpha] - TBD
-**Branch**: `parley/feat/epic-0-plugins` | **PR**: #TBD
+**Branch**: `parley/feat/epic-0-plugins` | **PR**: #84
 
 ### Epic 0: Plugin Foundation
 
