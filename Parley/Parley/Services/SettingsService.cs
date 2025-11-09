@@ -8,15 +8,6 @@ using System.Runtime.CompilerServices;
 
 namespace DialogEditor.Services
 {
-    /// <summary>
-    /// Plugin crash information for recovery
-    /// </summary>
-    public class PluginCrashInfo
-    {
-        public int CrashCount { get; set; }
-        public DateTime LastCrash { get; set; }
-    }
-
     public class SettingsService : INotifyPropertyChanged
     {
         public static SettingsService Instance { get; } = new SettingsService();
@@ -67,16 +58,6 @@ namespace DialogEditor.Services
         // Auto-save settings - Phase 1 Step 6
         private bool _autoSaveEnabled = true; // Default: ON
         private int _autoSaveDelayMs = 2000; // Default: 2 seconds
-
-        // Plugin settings
-        private List<string> _enabledPlugins = new List<string>();
-        private List<string> _disabledPlugins = new List<string>();
-        private bool _pluginSafeMode = false;
-
-        // Crash recovery
-        private bool _lastSessionCrashed = false;
-        private List<string> _pluginsLoadedDuringCrash = new List<string>();
-        private Dictionary<string, PluginCrashInfo> _pluginCrashHistory = new Dictionary<string, PluginCrashInfo>();
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -292,129 +273,6 @@ namespace DialogEditor.Services
             }
         }
 
-        // Plugin Settings Properties
-        public List<string> EnabledPlugins
-        {
-            get => _enabledPlugins.ToList(); // Return a copy
-        }
-
-        public List<string> DisabledPlugins
-        {
-            get => _disabledPlugins.ToList(); // Return a copy
-        }
-
-        public bool PluginSafeMode
-        {
-            get => _pluginSafeMode;
-            set
-            {
-                if (SetProperty(ref _pluginSafeMode, value))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Plugin safe mode {(value ? "enabled" : "disabled")}");
-                }
-            }
-        }
-
-        public void SetPluginEnabled(string pluginId, bool enabled)
-        {
-            if (enabled)
-            {
-                if (!_enabledPlugins.Contains(pluginId))
-                {
-                    _enabledPlugins.Add(pluginId);
-                }
-                _disabledPlugins.Remove(pluginId);
-            }
-            else
-            {
-                if (!_disabledPlugins.Contains(pluginId))
-                {
-                    _disabledPlugins.Add(pluginId);
-                }
-                _enabledPlugins.Remove(pluginId);
-            }
-
-            OnPropertyChanged(nameof(EnabledPlugins));
-            OnPropertyChanged(nameof(DisabledPlugins));
-            SaveSettings();
-        }
-
-        public bool IsPluginEnabled(string pluginId)
-        {
-            // If in disabled list, it's disabled
-            if (_disabledPlugins.Contains(pluginId))
-                return false;
-
-            // If in enabled list or not in any list (default enabled), it's enabled
-            return true;
-        }
-
-        // Crash Recovery Properties and Methods
-        public bool LastSessionCrashed
-        {
-            get => _lastSessionCrashed;
-            set
-            {
-                if (SetProperty(ref _lastSessionCrashed, value))
-                {
-                    SaveSettings();
-                }
-            }
-        }
-
-        public List<string> PluginsLoadedDuringCrash => _pluginsLoadedDuringCrash.ToList();
-
-        public void SetSessionStarted(List<string> loadedPlugins)
-        {
-            _lastSessionCrashed = true; // Will be cleared on clean shutdown
-            _pluginsLoadedDuringCrash = loadedPlugins.ToList();
-            SaveSettings();
-        }
-
-        public void SetSessionEnded()
-        {
-            _lastSessionCrashed = false;
-            _pluginsLoadedDuringCrash.Clear();
-            SaveSettings();
-        }
-
-        public void RecordPluginCrash(string pluginId)
-        {
-            if (!_pluginCrashHistory.ContainsKey(pluginId))
-            {
-                _pluginCrashHistory[pluginId] = new PluginCrashInfo
-                {
-                    CrashCount = 0,
-                    LastCrash = DateTime.MinValue
-                };
-            }
-
-            var crashInfo = _pluginCrashHistory[pluginId];
-            crashInfo.CrashCount++;
-            crashInfo.LastCrash = DateTime.Now;
-
-            SaveSettings();
-            UnifiedLogger.LogPlugin(LogLevel.WARN, $"Plugin {pluginId} crashed (total crashes: {crashInfo.CrashCount})");
-
-            // Auto-disable plugin after 3 crashes
-            if (crashInfo.CrashCount >= 3)
-            {
-                SetPluginEnabled(pluginId, false);
-                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Plugin {pluginId} auto-disabled after {crashInfo.CrashCount} crashes");
-            }
-        }
-
-        public PluginCrashInfo? GetPluginCrashInfo(string pluginId)
-        {
-            return _pluginCrashHistory.TryGetValue(pluginId, out var info) ? info : null;
-        }
-
-        public Dictionary<string, PluginCrashInfo> GetAllCrashHistory()
-        {
-            return new Dictionary<string, PluginCrashInfo>(_pluginCrashHistory);
-        }
-
         private void LoadSettings()
         {
             try
@@ -474,17 +332,7 @@ namespace DialogEditor.Services
                         _autoSaveEnabled = settings.AutoSaveEnabled;
                         _autoSaveDelayMs = Math.Max(1000, Math.Min(10000, settings.AutoSaveDelayMs));
 
-                        // Load plugin settings
-                        _enabledPlugins = settings.EnabledPlugins?.ToList() ?? new List<string>();
-                        _disabledPlugins = settings.DisabledPlugins?.ToList() ?? new List<string>();
-                        _pluginSafeMode = settings.PluginSafeMode;
-
-                        // Load crash recovery
-                        _lastSessionCrashed = settings.LastSessionCrashed;
-                        _pluginsLoadedDuringCrash = settings.PluginsLoadedDuringCrash?.ToList() ?? new List<string>();
-                        _pluginCrashHistory = settings.PluginCrashHistory ?? new Dictionary<string, PluginCrashInfo>();
-
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}, theme={(_isDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, plugins={_enabledPlugins.Count} enabled, {_disabledPlugins.Count} disabled, safeMode={_pluginSafeMode}, lastCrashed={_lastSessionCrashed}");
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}, theme={(_isDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms");
                     }
                     else
                     {
@@ -524,13 +372,7 @@ namespace DialogEditor.Services
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
                     AutoSaveEnabled = AutoSaveEnabled,
-                    AutoSaveDelayMs = AutoSaveDelayMs,
-                    EnabledPlugins = _enabledPlugins.ToList(),
-                    DisabledPlugins = _disabledPlugins.ToList(),
-                    PluginSafeMode = PluginSafeMode,
-                    LastSessionCrashed = LastSessionCrashed,
-                    PluginsLoadedDuringCrash = _pluginsLoadedDuringCrash.ToList(),
-                    PluginCrashHistory = _pluginCrashHistory
+                    AutoSaveDelayMs = AutoSaveDelayMs
                 };
                 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions 
@@ -653,16 +495,6 @@ namespace DialogEditor.Services
             // Auto-save settings - Phase 1 Step 6
             public bool AutoSaveEnabled { get; set; } = true;
             public int AutoSaveDelayMs { get; set; } = 2000;
-
-            // Plugin settings
-            public List<string> EnabledPlugins { get; set; } = new List<string>();
-            public List<string> DisabledPlugins { get; set; } = new List<string>();
-            public bool PluginSafeMode { get; set; } = false;
-
-            // Crash recovery
-            public bool LastSessionCrashed { get; set; } = false;
-            public List<string> PluginsLoadedDuringCrash { get; set; } = new List<string>();
-            public Dictionary<string, PluginCrashInfo> PluginCrashHistory { get; set; } = new Dictionary<string, PluginCrashInfo>();
         }
     }
 }

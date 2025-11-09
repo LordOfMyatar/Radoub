@@ -242,7 +242,7 @@ namespace DialogEditor.Plugins
             SecurityLog.LogCrash(e.PluginId, e.Reason);
 
             // Record crash in settings (auto-disables after 3 crashes)
-            SettingsService.Instance.RecordPluginCrash(e.PluginId);
+            PluginSettingsService.Instance.RecordPluginCrash(e.PluginId);
 
             // Clean up crashed plugin
             lock (_lock)
@@ -278,7 +278,7 @@ namespace DialogEditor.Plugins
             var startedPlugins = new List<string>();
 
             // Check if safe mode is enabled
-            if (SettingsService.Instance.PluginSafeMode)
+            if (PluginSettingsService.Instance.SafeMode)
             {
                 UnifiedLogger.LogPlugin(LogLevel.INFO, "Safe mode enabled - skipping plugin startup");
                 return startedPlugins;
@@ -292,7 +292,7 @@ namespace DialogEditor.Plugins
             {
                 var pluginId = discovered.Manifest.Plugin.Id;
 
-                if (!SettingsService.Instance.IsPluginEnabled(pluginId))
+                if (!PluginSettingsService.Instance.IsPluginEnabled(pluginId))
                 {
                     UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin {pluginId} is disabled - skipping");
                     continue;

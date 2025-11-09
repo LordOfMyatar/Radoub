@@ -182,7 +182,7 @@ namespace DialogEditor.Views
             var safeModeCheckBox = this.FindControl<CheckBox>("SafeModeCheckBox");
             if (safeModeCheckBox != null)
             {
-                safeModeCheckBox.IsChecked = settings.PluginSafeMode;
+                safeModeCheckBox.IsChecked = PluginSettingsService.Instance.SafeMode;
             }
 
             LoadPluginList();
@@ -197,7 +197,7 @@ namespace DialogEditor.Views
             // Scan for plugins
             _pluginManager.Discovery.ScanForPlugins();
 
-            var settings = SettingsService.Instance;
+            var pluginSettings = PluginSettingsService.Instance;
             var pluginItems = new List<Control>();
 
             foreach (var discoveredPlugin in _pluginManager.Discovery.DiscoveredPlugins)
@@ -207,7 +207,7 @@ namespace DialogEditor.Views
                     ? string.Join(", ", manifest.Permissions)
                     : "none";
 
-                var isEnabled = settings.IsPluginEnabled(manifest.Plugin.Id);
+                var isEnabled = pluginSettings.IsPluginEnabled(manifest.Plugin.Id);
                 var trustBadge = manifest.TrustLevel.ToUpperInvariant() switch
                 {
                     "OFFICIAL" => "[OFFICIAL]",
@@ -293,8 +293,7 @@ namespace DialogEditor.Views
         {
             if (_isInitializing) return;
 
-            var settings = SettingsService.Instance;
-            settings.SetPluginEnabled(pluginId, enabled);
+            PluginSettingsService.Instance.SetPluginEnabled(pluginId, enabled);
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Plugin {pluginId} {(enabled ? "enabled" : "disabled")}");
         }
@@ -758,8 +757,7 @@ namespace DialogEditor.Views
             var safeModeCheckBox = this.FindControl<CheckBox>("SafeModeCheckBox");
             if (safeModeCheckBox != null)
             {
-                var settings = SettingsService.Instance;
-                settings.PluginSafeMode = safeModeCheckBox.IsChecked == true;
+                PluginSettingsService.Instance.SafeMode = safeModeCheckBox.IsChecked == true;
             }
         }
 

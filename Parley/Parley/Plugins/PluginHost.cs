@@ -158,7 +158,7 @@ namespace DialogEditor.Plugins
             {
                 UnifiedLogger.LogPlugin(LogLevel.ERROR,
                     $"Plugin {PluginId} exited with code {exitCode}");
-                SettingsService.Instance.RecordPluginCrash(PluginId);
+                PluginSettingsService.Instance.RecordPluginCrash(PluginId);
             }
             else
             {
