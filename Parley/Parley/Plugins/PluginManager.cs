@@ -240,8 +240,10 @@ namespace DialogEditor.Plugins
             // Log to security audit
             SecurityLog.LogCrash(e.PluginId, e.Reason);
 
-            // TODO: Implement crash recovery strategy
-            // For now, just log and remove
+            // Record crash in settings (auto-disables after 3 crashes)
+            SettingsService.Instance.RecordPluginCrash(e.PluginId);
+
+            // Clean up crashed plugin
             lock (_lock)
             {
                 if (_plugins.TryGetValue(e.PluginId, out var process))

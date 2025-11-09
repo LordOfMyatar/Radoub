@@ -1,26 +1,53 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using DialogEditor.Plugins;
 using DialogEditor.Services;
 
 namespace DialogEditor.Views
 {
+    /// <summary>
+    /// View model for plugin list item
+    /// </summary>
+    public class PluginListItemViewModel
+    {
+        public string PluginId { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Version { get; set; } = "";
+        public string Author { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string TrustLevel { get; set; } = "";
+        public string Permissions { get; set; } = "";
+        public bool IsEnabled { get; set; } = true;
+        public string TrustBadge => TrustLevel.ToUpperInvariant() switch
+        {
+            "OFFICIAL" => "[OFFICIAL]",
+            "VERIFIED" => "[VERIFIED]",
+            _ => "[UNVERIFIED]"
+        };
+        public string DisplayText => $"{Name} v{Version} by {Author} {TrustBadge}";
+    }
+
     public partial class SettingsWindow : Window
     {
         private bool _isInitializing = true;
+        private PluginManager? _pluginManager;
 
-        public SettingsWindow(int initialTab = 0)
+        public SettingsWindow(int initialTab = 0, PluginManager? pluginManager = null)
         {
             InitializeComponent();
+            _pluginManager = pluginManager;
             LoadSettings();
             _isInitializing = false;
 
@@ -150,6 +177,126 @@ namespace DialogEditor.Views
             {
                 platformPathsInfo.Text = GetPlatformPathsInfo();
             }
+
+            // Plugin settings
+            var safeModeCheckBox = this.FindControl<CheckBox>("SafeModeCheckBox");
+            if (safeModeCheckBox != null)
+            {
+                safeModeCheckBox.IsChecked = settings.PluginSafeMode;
+            }
+
+            LoadPluginList();
+        }
+
+        private void LoadPluginList()
+        {
+            var pluginsListBox = this.FindControl<ListBox>("PluginsListBox");
+            if (pluginsListBox == null || _pluginManager == null)
+                return;
+
+            // Scan for plugins
+            _pluginManager.Discovery.ScanForPlugins();
+
+            var settings = SettingsService.Instance;
+            var pluginItems = new List<Control>();
+
+            foreach (var discoveredPlugin in _pluginManager.Discovery.DiscoveredPlugins)
+            {
+                var manifest = discoveredPlugin.Manifest;
+                var permissions = manifest.Permissions != null && manifest.Permissions.Count > 0
+                    ? string.Join(", ", manifest.Permissions)
+                    : "none";
+
+                var isEnabled = settings.IsPluginEnabled(manifest.Plugin.Id);
+                var trustBadge = manifest.TrustLevel.ToUpperInvariant() switch
+                {
+                    "OFFICIAL" => "[OFFICIAL]",
+                    "VERIFIED" => "[VERIFIED]",
+                    _ => "[UNVERIFIED]"
+                };
+
+                // Create item UI directly
+                var panel = new StackPanel
+                {
+                    Spacing = 5,
+                    Margin = new Thickness(5)
+                };
+
+                var headerPanel = new Grid
+                {
+                    ColumnDefinitions = new ColumnDefinitions("*,Auto")
+                };
+
+                var titleBlock = new TextBlock
+                {
+                    Text = $"{manifest.Plugin.Name} v{manifest.Plugin.Version} by {manifest.Plugin.Author} {trustBadge}",
+                    FontWeight = FontWeight.Bold
+                };
+                Grid.SetColumn(titleBlock, 0);
+
+                var toggleSwitch = new CheckBox
+                {
+                    IsChecked = isEnabled,
+                    Content = isEnabled ? "Enabled" : "Disabled"
+                };
+                var pluginId = manifest.Plugin.Id; // Capture for lambda
+                toggleSwitch.IsCheckedChanged += (s, e) =>
+                {
+                    var checkbox = s as CheckBox;
+                    if (checkbox != null && !_isInitializing)
+                    {
+                        OnPluginToggled(pluginId, checkbox.IsChecked == true);
+                        checkbox.Content = checkbox.IsChecked == true ? "Enabled" : "Disabled";
+                    }
+                };
+                Grid.SetColumn(toggleSwitch, 1);
+
+                headerPanel.Children.Add(titleBlock);
+                headerPanel.Children.Add(toggleSwitch);
+
+                var descBlock = new TextBlock
+                {
+                    Text = manifest.Plugin.Description ?? "",
+                    TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                    FontSize = 11,
+                    Foreground = Brushes.Gray
+                };
+
+                var permBlock = new TextBlock
+                {
+                    Text = $"Permissions: {permissions}",
+                    FontSize = 11,
+                    Foreground = Brushes.DarkGray
+                };
+
+                panel.Children.Add(headerPanel);
+                panel.Children.Add(descBlock);
+                panel.Children.Add(permBlock);
+
+                var border = new Border
+                {
+                    BorderBrush = Brushes.LightGray,
+                    BorderThickness = new Thickness(1),
+                    Padding = new Thickness(8),
+                    CornerRadius = new CornerRadius(3),
+                    Margin = new Thickness(2),
+                    Child = panel
+                };
+
+                pluginItems.Add(border);
+            }
+
+            pluginsListBox.ItemsSource = pluginItems;
+        }
+
+        private void OnPluginToggled(string pluginId, bool enabled)
+        {
+            if (_isInitializing) return;
+
+            var settings = SettingsService.Instance;
+            settings.SetPluginEnabled(pluginId, enabled);
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Plugin {pluginId} {(enabled ? "enabled" : "disabled")}");
         }
 
         private string GetPlatformPathsInfo()
@@ -602,6 +749,62 @@ namespace DialogEditor.Views
             {
                 logRetentionLabel.Text = $"{(int)slider.Value} sessions";
             }
+        }
+
+        private void OnSafeModeChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var safeModeCheckBox = this.FindControl<CheckBox>("SafeModeCheckBox");
+            if (safeModeCheckBox != null)
+            {
+                var settings = SettingsService.Instance;
+                settings.PluginSafeMode = safeModeCheckBox.IsChecked == true;
+            }
+        }
+
+        private void OnOpenPluginsFolderClick(object? sender, RoutedEventArgs e)
+        {
+            var userDataDir = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Parley",
+                "Plugins",
+                "Community"
+            );
+
+            // Create directory if it doesn't exist
+            if (!System.IO.Directory.Exists(userDataDir))
+            {
+                System.IO.Directory.CreateDirectory(userDataDir);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Created plugins directory: {userDataDir}");
+            }
+
+            // Open in file explorer
+            try
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Process.Start("explorer.exe", userDataDir);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Process.Start("open", userDataDir);
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    Process.Start("xdg-open", userDataDir);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open plugins folder: {ex.Message}");
+            }
+        }
+
+        private void OnRefreshPluginsClick(object? sender, RoutedEventArgs e)
+        {
+            LoadPluginList();
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Plugin list refreshed");
         }
 
         private void OnOkClick(object? sender, RoutedEventArgs e)
