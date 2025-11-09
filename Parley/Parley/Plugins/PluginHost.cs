@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using DialogEditor.Plugins.Security;
+using DialogEditor.Plugins.Services;
 using DialogEditor.Services;
 using DialogEditor.Utils;
 
@@ -14,6 +15,7 @@ namespace DialogEditor.Plugins
     {
         private readonly DiscoveredPlugin _plugin;
         private Process? _process;
+        private PluginGrpcServer? _grpcServer;
         private bool _isRunning;
 
         public string PluginId => _plugin.Manifest.Plugin.Id;
@@ -45,6 +47,10 @@ namespace DialogEditor.Plugins
                     return false;
                 }
 
+                // Start gRPC server
+                _grpcServer = new PluginGrpcServer();
+                _grpcServer.Start();
+
                 // Set up Python path to include parley_plugin library
                 var pythonLibPath = GetParleyPythonLibPath();
 
@@ -72,6 +78,9 @@ namespace DialogEditor.Plugins
                         : $"{pythonLibPath}{Path.PathSeparator}{existingPythonPath}";
                     _process.StartInfo.EnvironmentVariables["PYTHONPATH"] = newPythonPath;
                 }
+
+                // Pass gRPC port to plugin via environment variable
+                _process.StartInfo.EnvironmentVariables["PARLEY_GRPC_PORT"] = _grpcServer.Port.ToString();
 
                 // Wire up output handlers
                 _process.OutputDataReceived += OnOutputReceived;
@@ -127,6 +136,11 @@ namespace DialogEditor.Plugins
                 _isRunning = false;
                 _process?.Dispose();
                 _process = null;
+
+                // Stop gRPC server
+                _grpcServer?.StopAsync().Wait();
+                _grpcServer?.Dispose();
+                _grpcServer = null;
             }
         }
 
