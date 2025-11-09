@@ -55,8 +55,12 @@ Parley supports Python plugins that can extend the dialog editor's functionality
 
 3. Install Parley's Python library:
    ```bash
-   pip install parley-plugin
+   # From Parley installation directory
+   cd Parley/Python
+   pip install -e .
    ```
+
+   Or download the Python library from the Parley repository.
 
 [Back to TOC](#table-of-contents)
 
