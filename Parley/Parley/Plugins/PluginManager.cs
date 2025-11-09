@@ -13,8 +13,11 @@ namespace DialogEditor.Plugins
     public class PluginManager : IDisposable
     {
         private readonly Dictionary<string, PluginProcess> _plugins = new();
+        private readonly Dictionary<string, PluginManifest> _pluginManifests = new();
         private readonly object _lock = new();
         private bool _isDisposed;
+
+        public PluginDiscovery Discovery { get; } = new();
 
         public IReadOnlyList<string> LoadedPlugins
         {
@@ -28,12 +31,45 @@ namespace DialogEditor.Plugins
         }
 
         /// <summary>
+        /// Load a discovered plugin by ID
+        /// </summary>
+        public async Task<bool> LoadDiscoveredPluginAsync(
+            string pluginId,
+            string pythonPath = "python",
+            CancellationToken cancellationToken = default)
+        {
+            var discovered = Discovery.GetPluginById(pluginId);
+            if (discovered == null)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Plugin not found in discovery: {pluginId}");
+                return false;
+            }
+
+            return await LoadPluginAsync(
+                pluginId,
+                pythonPath,
+                discovered.EntryPointPath,
+                discovered.Manifest,
+                cancellationToken);
+        }
+
+        /// <summary>
         /// Load and start a plugin
         /// </summary>
         public async Task<bool> LoadPluginAsync(
             string pluginId,
             string pythonPath,
             string entryPoint,
+            CancellationToken cancellationToken = default)
+        {
+            return await LoadPluginAsync(pluginId, pythonPath, entryPoint, null, cancellationToken);
+        }
+
+        private async Task<bool> LoadPluginAsync(
+            string pluginId,
+            string pythonPath,
+            string entryPoint,
+            PluginManifest? manifest,
             CancellationToken cancellationToken = default)
         {
             lock (_lock)
@@ -56,6 +92,10 @@ namespace DialogEditor.Plugins
                 lock (_lock)
                 {
                     _plugins[pluginId] = process;
+                    if (manifest != null)
+                    {
+                        _pluginManifests[pluginId] = manifest;
+                    }
                 }
 
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin {pluginId} loaded successfully");
@@ -88,6 +128,7 @@ namespace DialogEditor.Plugins
                 }
 
                 _plugins.Remove(pluginId);
+                _pluginManifests.Remove(pluginId);
             }
 
             process.Crashed -= OnPluginCrashed;
@@ -98,6 +139,18 @@ namespace DialogEditor.Plugins
 
             UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin {pluginId} unloaded");
             return true;
+        }
+
+        /// <summary>
+        /// Get manifest for a loaded plugin
+        /// </summary>
+        public PluginManifest? GetPluginManifest(string pluginId)
+        {
+            lock (_lock)
+            {
+                _pluginManifests.TryGetValue(pluginId, out var manifest);
+                return manifest;
+            }
         }
 
         /// <summary>
