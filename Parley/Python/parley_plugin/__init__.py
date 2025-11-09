@@ -9,6 +9,7 @@ __version__ = "0.1.0"
 from .plugin import Plugin, PluginBase
 from .decorators import requires_permission, event_handler
 from .services import AudioService, UIService, DialogService, FileService
+from .client import ParleyClient
 
 __all__ = [
     "Plugin",
@@ -19,4 +20,5 @@ __all__ = [
     "UIService",
     "DialogService",
     "FileService",
+    "ParleyClient",
 ]

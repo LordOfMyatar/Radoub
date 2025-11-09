@@ -134,6 +134,61 @@ print("=" * 50)
 - Plugin runs once and exits
 - If plugin crashes 3 times, it auto-disables
 
+### gRPC Communication Example
+
+Plugins can communicate with Parley using gRPC. Here's a working example:
+
+**main.py with gRPC:**
+```python
+"""
+Plugin with gRPC communication
+"""
+import time
+from parley_plugin import ParleyClient
+
+print("=" * 50)
+print("MY PLUGIN STARTED")
+print("=" * 50)
+
+try:
+    # Connect to Parley's gRPC server
+    with ParleyClient() as client:
+        print("[OK] Connected to Parley")
+
+        # Show notification
+        success = client.show_notification(
+            "My Plugin",
+            "Plugin is running with gRPC!"
+        )
+
+        if success:
+            print("[OK] Notification sent")
+
+        # Query current dialog (returns empty if no dialog loaded)
+        dialog_id, dialog_name = client.get_current_dialog()
+        if dialog_id:
+            print(f"Current dialog: {dialog_name}")
+        else:
+            print("No dialog loaded")
+
+except Exception as e:
+    print(f"[ERROR] {e}")
+    import traceback
+    traceback.print_exc()
+
+print("=" * 50)
+print("MY PLUGIN EXITING")
+print("=" * 50)
+```
+
+**gRPC Features (POC Phase):**
+- `show_notification(title, message)` - Show notification window
+- `get_current_dialog()` - Query current dialog (returns empty in POC)
+- Auto-connection via `PARLEY_GRPC_PORT` environment variable
+- Context manager handles connection cleanup
+
+**Note:** Full gRPC API (audio playback, file dialogs, etc.) coming in future updates.
+
 [Back to TOC](#table-of-contents)
 
 ## Manifest Format
