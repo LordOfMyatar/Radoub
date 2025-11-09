@@ -299,9 +299,13 @@ namespace DialogEditor.Models
         {
             get
             {
-                bool isChild = IsChild;
-                bool hasPointers = _originalNode.Pointers.Any(p => p.Node != null);
-                return !isChild && hasPointers;
+                // Link nodes are terminal - no expand arrow
+                if (IsChild) return false;
+
+                // Check if underlying dialog node has any pointers
+                if (_originalNode?.Pointers == null) return false;
+
+                return _originalNode.Pointers.Any(p => p.Node != null);
             }
         }
 

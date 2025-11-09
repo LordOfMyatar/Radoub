@@ -2449,9 +2449,18 @@ namespace DialogEditor.ViewModels
         {
             if (CurrentDialog == null) return new List<DialogNode>();
 
-            // Collect all nodes reachable from STARTs via TreeView traversal
+            // Collect all nodes reachable from STARTs via dialog model traversal
             var reachableNodes = new HashSet<DialogNode>();
-            CollectReachableNodes(rootNode, reachableNodes);
+
+            // ISSUE #82 FIX: Traverse from root's children (start nodes), not root itself
+            // Root is a dummy node with no pointers, so we must start from its children
+            if (rootNode.Children != null)
+            {
+                foreach (var startNode in rootNode.Children)
+                {
+                    CollectReachableNodes(startNode, reachableNodes);
+                }
+            }
 
             // Find entries that aren't reachable, EXCLUDING orphan containers
             var orphanedEntries = CurrentDialog.Entries
