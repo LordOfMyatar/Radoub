@@ -11,6 +11,6 @@
   "permissions": [
     "ui.show_notification"
   ],
-  "entryPoint": "main.py",
-  "trustLevel": "official"
+  "entry_point": "main.py",
+  "trust_level": "official"
 }

@@ -94,8 +94,8 @@ my-plugin/
   "permissions": [
     "ui.show_notification"
   ],
-  "entryPoint": "main.py",
-  "trustLevel": "unverified"
+  "entry_point": "main.py",
+  "trust_level": "unverified"
 }
 ```
 
@@ -140,8 +140,8 @@ The `plugin.json` file describes your plugin:
     "dialog.read",
     "file.read"
   ],
-  "entryPoint": "main.py",
-  "trustLevel": "unverified"
+  "entry_point": "main.py",
+  "trust_level": "unverified"
 }
 ```
 
@@ -157,8 +157,8 @@ The `plugin.json` file describes your plugin:
 | `plugin.description` | Yes | Brief description |
 | `plugin.parleyVersion` | Yes | Compatible Parley versions (e.g., ">=0.1.5", "^0.1.0") |
 | `permissions` | No | Required permissions (see [Security](#security)) |
-| `entryPoint` | Yes | Python file to execute (e.g., "main.py") |
-| `trustLevel` | Yes | "unverified", "verified", or "official" |
+| `entry_point` | Yes | Python file to execute (e.g., "main.py") |
+| `trust_level` | Yes | "unverified", "verified", or "official" |
 
 ### Version Matching
 
