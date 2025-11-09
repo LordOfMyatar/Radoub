@@ -2746,8 +2746,8 @@ namespace DialogEditor.ViewModels
 
         /// <summary>
         /// Recursively collects all nodes reachable from the tree structure
-        /// CRITICAL: Only follows TreeView children, not underlying dialog pointers
-        /// This ensures link nodes (which are terminal) don't mark their children as reachable
+        /// CRITICAL: Traverses dialog model pointers, not TreeView children (Issue #82 lazy loading fix)
+        /// This ensures we find all reachable nodes even when TreeView children aren't populated yet
         /// </summary>
         private void CollectReachableNodes(TreeViewSafeNode node, HashSet<DialogNode> reachableNodes)
         {
@@ -2756,14 +2756,19 @@ namespace DialogEditor.ViewModels
             if (node?.OriginalNode != null && !reachableNodes.Contains(node.OriginalNode) && !node.IsChild)
             {
                 reachableNodes.Add(node.OriginalNode);
-            }
 
-            // ONLY process TreeView children (respects link nodes being terminal)
-            if (node?.Children != null)
-            {
-                foreach (var child in node.Children)
+                // ISSUE #82 FIX: Traverse dialog model pointers, not TreeView children
+                // With lazy loading, TreeView children aren't populated until node is expanded
+                // Must traverse the underlying DialogNode.Pointers to find all reachable nodes
+                foreach (var pointer in node.OriginalNode.Pointers)
                 {
-                    CollectReachableNodes(child, reachableNodes);
+                    if (pointer.Node != null)
+                    {
+                        // Create temporary TreeViewSafeNode to check if it's a link
+                        // Don't traverse links (they're terminal in TreeView)
+                        var childSafeNode = new TreeViewSafeNode(pointer.Node, sourcePointer: pointer);
+                        CollectReachableNodes(childSafeNode, reachableNodes);
+                    }
                 }
             }
         }
