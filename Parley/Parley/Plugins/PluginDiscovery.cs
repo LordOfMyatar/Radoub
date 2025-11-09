@@ -58,7 +58,7 @@ namespace DialogEditor.Plugins
         {
             if (!Directory.Exists(directory))
             {
-                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin directory does not exist: {UnifiedLogger.SanitizePath(directory)}");
+                // Directory doesn't exist - skip silently (expected for Official plugins in dev builds)
                 return;
             }
 

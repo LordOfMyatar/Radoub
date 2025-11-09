@@ -73,7 +73,29 @@ namespace DialogEditor.Views
             HideDebugConsoleByDefault();
 
             // Hook up menu events
-            this.Opened += (s, e) => PopulateRecentFilesMenu();
+            this.Opened += async (s, e) =>
+            {
+                PopulateRecentFilesMenu();
+                // Start enabled plugins after window opens
+                var startedPlugins = await _pluginManager.StartEnabledPluginsAsync();
+                if (startedPlugins.Count > 0)
+                {
+                    var message = $"Plugins started:\n• {string.Join("\n• ", startedPlugins)}";
+                    var msgBox = new Window
+                    {
+                        Title = "Plugins Active",
+                        Width = 400,
+                        Height = 200,
+                        Content = new TextBlock
+                        {
+                            Text = message,
+                            Margin = new Thickness(20),
+                            TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
+                        }
+                    };
+                    await msgBox.ShowDialog(this);
+                }
+            };
             this.Closing += OnWindowClosing;
 
             // Phase 1 Fix: Set up keyboard shortcuts

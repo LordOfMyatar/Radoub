@@ -15,6 +15,7 @@ namespace DialogEditor.Plugins
     {
         private readonly Dictionary<string, PluginProcess> _plugins = new();
         private readonly Dictionary<string, PluginManifest> _pluginManifests = new();
+        private readonly Dictionary<string, PluginHost> _pluginHosts = new(); // Simple hosts for POC
         private readonly object _lock = new();
         private bool _isDisposed;
 
@@ -269,6 +270,73 @@ namespace DialogEditor.Plugins
             }
         }
 
+        /// <summary>
+        /// Start all enabled plugins (simple POC implementation)
+        /// </summary>
+        public async Task<List<string>> StartEnabledPluginsAsync()
+        {
+            var startedPlugins = new List<string>();
+
+            // Check if safe mode is enabled
+            if (SettingsService.Instance.PluginSafeMode)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.INFO, "Safe mode enabled - skipping plugin startup");
+                return startedPlugins;
+            }
+
+            // Scan for plugins
+            Discovery.ScanForPlugins();
+
+            // Start each enabled plugin
+            foreach (var discovered in Discovery.DiscoveredPlugins)
+            {
+                var pluginId = discovered.Manifest.Plugin.Id;
+
+                if (!SettingsService.Instance.IsPluginEnabled(pluginId))
+                {
+                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin {pluginId} is disabled - skipping");
+                    continue;
+                }
+
+                try
+                {
+                    var host = new PluginHost(discovered);
+                    if (host.Start())
+                    {
+                        lock (_lock)
+                        {
+                            _pluginHosts[pluginId] = host;
+                        }
+                        startedPlugins.Add(discovered.Manifest.Plugin.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogPlugin(LogLevel.ERROR,
+                        $"Failed to start plugin {pluginId}: {ex.Message}");
+                    SecurityLog.LogCrash(pluginId, $"Startup failed: {ex.Message}");
+                }
+            }
+
+            await Task.CompletedTask;
+            return startedPlugins;
+        }
+
+        /// <summary>
+        /// Stop all simple plugin hosts
+        /// </summary>
+        public void StopAllPluginHosts()
+        {
+            lock (_lock)
+            {
+                foreach (var host in _pluginHosts.Values)
+                {
+                    host.Dispose();
+                }
+                _pluginHosts.Clear();
+            }
+        }
+
         public void Dispose()
         {
             if (_isDisposed)
@@ -276,6 +344,7 @@ namespace DialogEditor.Plugins
                 return;
             }
 
+            StopAllPluginHosts();
             ShutdownAllAsync().Wait();
             _isDisposed = true;
 
