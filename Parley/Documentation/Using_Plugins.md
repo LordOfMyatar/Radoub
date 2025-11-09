@@ -43,7 +43,7 @@ Parley looks for plugins in two places:
 
 **Community Plugins** (installed by you):
 - Located in `~/Parley/Plugins/Community/`
-  - Windows: `C:\Users\YourName\Parley\Plugins\Community\`
+  - Windows: `~\Parley\Plugins\Community\`
   - macOS/Linux: `~/Parley/Plugins/Community/`
 
 ### Installing a Community Plugin
