@@ -31,8 +31,8 @@ namespace DialogEditor.Plugins
             );
             _communityPluginsPath = Path.Combine(userDataDir, "Plugins", "Community");
 
+            // Only log the community path - official path is app-relative and not useful to users
             UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin paths configured:");
-            UnifiedLogger.LogPlugin(LogLevel.INFO, $"  Official: {UnifiedLogger.SanitizePath(_officialPluginsPath)}");
             UnifiedLogger.LogPlugin(LogLevel.INFO, $"  Community: {UnifiedLogger.SanitizePath(_communityPluginsPath)}");
         }
 
