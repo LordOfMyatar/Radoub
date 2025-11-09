@@ -30,6 +30,10 @@ namespace DialogEditor.Plugins
                 "Parley"
             );
             _communityPluginsPath = Path.Combine(userDataDir, "Plugins", "Community");
+
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin paths configured:");
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"  Official: {UnifiedLogger.SanitizePath(_officialPluginsPath)}");
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"  Community: {UnifiedLogger.SanitizePath(_communityPluginsPath)}");
         }
 
         /// <summary>
@@ -54,18 +58,18 @@ namespace DialogEditor.Plugins
         {
             if (!Directory.Exists(directory))
             {
-                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin directory does not exist: {directory}");
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin directory does not exist: {UnifiedLogger.SanitizePath(directory)}");
                 return;
             }
 
-            UnifiedLogger.LogPlugin(LogLevel.INFO, $"Scanning: {directory}");
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"Scanning: {UnifiedLogger.SanitizePath(directory)}");
 
             try
             {
                 // Search for plugin.json files recursively
                 var manifestFiles = Directory.GetFiles(directory, "plugin.json", SearchOption.AllDirectories);
 
-                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Found {manifestFiles.Length} manifest files in {directory}");
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Found {manifestFiles.Length} manifest files in {UnifiedLogger.SanitizePath(directory)}");
 
                 foreach (var manifestPath in manifestFiles)
                 {
@@ -74,7 +78,7 @@ namespace DialogEditor.Plugins
             }
             catch (Exception ex)
             {
-                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Error scanning directory {directory}: {ex.Message}");
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Error scanning directory {UnifiedLogger.SanitizePath(directory)}: {ex.Message}");
             }
         }
 
@@ -98,7 +102,7 @@ namespace DialogEditor.Plugins
                 var pluginDir = Path.GetDirectoryName(manifestPath);
                 if (string.IsNullOrEmpty(pluginDir))
                 {
-                    UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Could not determine plugin directory for {manifestPath}");
+                    UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Could not determine plugin directory for {UnifiedLogger.SanitizePath(manifestPath)}");
                     return;
                 }
 
@@ -107,7 +111,7 @@ namespace DialogEditor.Plugins
                 if (!File.Exists(entryPointPath))
                 {
                     UnifiedLogger.LogPlugin(LogLevel.ERROR,
-                        $"Entry point not found for plugin {manifest.Plugin.Id}: {entryPointPath}");
+                        $"Entry point not found for plugin {manifest.Plugin.Id}: {UnifiedLogger.SanitizePath(entryPointPath)}");
                     return;
                 }
 
@@ -124,7 +128,7 @@ namespace DialogEditor.Plugins
                 if (_discoveredPlugins.Any(p => p.Manifest.Plugin.Id == manifest.Plugin.Id))
                 {
                     UnifiedLogger.LogPlugin(LogLevel.WARN,
-                        $"Duplicate plugin ID found: {manifest.Plugin.Id} at {manifestPath}");
+                        $"Duplicate plugin ID found: {manifest.Plugin.Id} at {UnifiedLogger.SanitizePath(manifestPath)}");
                     return;
                 }
 
@@ -146,7 +150,7 @@ namespace DialogEditor.Plugins
             catch (Exception ex)
             {
                 UnifiedLogger.LogPlugin(LogLevel.ERROR,
-                    $"Error processing manifest {manifestPath}: {ex.Message}");
+                    $"Error processing manifest {UnifiedLogger.SanitizePath(manifestPath)}: {ex.Message}");
             }
         }
 
