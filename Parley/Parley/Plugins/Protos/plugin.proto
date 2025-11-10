@@ -1,0 +1,189 @@
+syntax = "proto3";
+
+option csharp_namespace = "DialogEditor.Plugins.Proto";
+
+package parley.plugin;
+
+// Plugin host service (C# → Python communication)
+service PluginHost {
+  // Health check
+  rpc Ping (PingRequest) returns (PingResponse);
+
+  // Lifecycle events
+  rpc Initialize (InitializeRequest) returns (InitializeResponse);
+  rpc Shutdown (ShutdownRequest) returns (ShutdownResponse);
+}
+
+// Plugin service (Python → C# communication)
+service Plugin {
+  // Health check
+  rpc Ping (PingRequest) returns (PingResponse);
+
+  // Lifecycle notifications
+  rpc OnDialogChanged (DialogChangedEvent) returns (EventResponse);
+  rpc OnNodeSelected (NodeSelectedEvent) returns (EventResponse);
+}
+
+// Audio service (Plugin → Host)
+service AudioService {
+  rpc PlayAudio (PlayAudioRequest) returns (PlayAudioResponse);
+  rpc StopAudio (StopAudioRequest) returns (StopAudioResponse);
+}
+
+// UI service (Plugin → Host)
+service UIService {
+  rpc ShowNotification (ShowNotificationRequest) returns (ShowNotificationResponse);
+  rpc ShowDialog (ShowDialogRequest) returns (ShowDialogResponse);
+}
+
+// Dialog service (Plugin → Host)
+service DialogService {
+  rpc GetCurrentDialog (GetCurrentDialogRequest) returns (GetCurrentDialogResponse);
+  rpc GetSelectedNode (GetSelectedNodeRequest) returns (GetSelectedNodeResponse);
+}
+
+// File service (Plugin → Host)
+service FileService {
+  rpc OpenFileDialog (OpenFileDialogRequest) returns (OpenFileDialogResponse);
+  rpc SaveFileDialog (SaveFileDialogRequest) returns (SaveFileDialogResponse);
+  rpc ReadFile (ReadFileRequest) returns (ReadFileResponse);
+  rpc WriteFile (WriteFileRequest) returns (WriteFileResponse);
+}
+
+// Messages
+message PingRequest {
+  int64 timestamp = 1;
+}
+
+message PingResponse {
+  int64 timestamp = 1;
+  string status = 2;
+}
+
+message InitializeRequest {
+  string plugin_id = 1;
+  string parley_version = 2;
+  map<string, string> config = 3;
+}
+
+message InitializeResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message ShutdownRequest {
+  string reason = 1;
+}
+
+message ShutdownResponse {
+  bool success = 1;
+}
+
+message DialogChangedEvent {
+  string dialog_id = 1;
+  string change_type = 2;
+}
+
+message NodeSelectedEvent {
+  string node_id = 1;
+}
+
+message EventResponse {
+  bool handled = 1;
+}
+
+// Audio service messages
+message PlayAudioRequest {
+  string file_path = 1;
+}
+
+message PlayAudioResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message StopAudioRequest {
+}
+
+message StopAudioResponse {
+  bool success = 1;
+}
+
+// UI service messages
+message ShowNotificationRequest {
+  string message = 1;
+  string title = 2;
+}
+
+message ShowNotificationResponse {
+  bool success = 1;
+}
+
+message ShowDialogRequest {
+  string message = 1;
+  string title = 2;
+  repeated string buttons = 3;
+}
+
+message ShowDialogResponse {
+  int32 button_index = 1;
+}
+
+// Dialog service messages
+message GetCurrentDialogRequest {
+}
+
+message GetCurrentDialogResponse {
+  string dialog_id = 1;
+  string dialog_name = 2;
+}
+
+message GetSelectedNodeRequest {
+}
+
+message GetSelectedNodeResponse {
+  string node_id = 1;
+  string node_text = 2;
+}
+
+// File service messages
+message OpenFileDialogRequest {
+  string title = 1;
+  string filter = 2;
+}
+
+message OpenFileDialogResponse {
+  string file_path = 1;
+  bool cancelled = 2;
+}
+
+message SaveFileDialogRequest {
+  string title = 1;
+  string filter = 2;
+  string default_name = 3;
+}
+
+message SaveFileDialogResponse {
+  string file_path = 1;
+  bool cancelled = 2;
+}
+
+message ReadFileRequest {
+  string file_path = 1;
+}
+
+message ReadFileResponse {
+  bytes content = 1;
+  bool success = 2;
+  string error_message = 3;
+}
+
+message WriteFileRequest {
+  string file_path = 1;
+  bytes content = 2;
+}
+
+message WriteFileResponse {
+  bool success = 1;
+  string error_message = 2;
+}

@@ -27,6 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Protobuf Include="Plugins\Protos\plugin.proto" GrpcServices="Both" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.6" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.6" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.6" />
@@ -46,5 +50,12 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="System.Text.Json" Version="9.0.9" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
+    <PackageReference Include="Grpc.AspNetCore.Server" Version="2.70.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.70.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Google.Protobuf" Version="3.29.3" />
   </ItemGroup>
 </Project>
