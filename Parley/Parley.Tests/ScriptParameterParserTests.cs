@@ -325,5 +325,50 @@ VALUE3
             Assert.Contains("VALUE3", values);
             Assert.Empty(emptyValues);
         }
+
+        [Fact]
+        public void Parse_WithDeclarationsAtBottom_ParsesCorrectly()
+        {
+            // Arrange
+            var nssContent = @"
+// Script body comes first
+void main()
+{
+    string sParam = GetScriptParam(""BASE_ITEM"");
+    // Do something with param
+}
+
+int StartingConditional()
+{
+    return TRUE;
+}
+
+/*
+----KeyList----
+BASE_ITEM
+INVENTORY_SLOT
+
+----ValueList-BASE_ITEM----
+BASE_ITEM_SHORTSWORD
+BASE_ITEM_LONGSWORD
+
+----ValueList-INVENTORY_SLOT----
+INVENTORY_SLOT_RIGHTHAND
+INVENTORY_SLOT_LEFTHAND
+*/
+";
+
+            // Act
+            var result = _parser.Parse(nssContent);
+
+            // Assert
+            Assert.Equal(2, result.Keys.Count);
+            Assert.Contains("BASE_ITEM", result.Keys);
+            Assert.Contains("INVENTORY_SLOT", result.Keys);
+
+            Assert.Equal(2, result.ValuesByKey.Count);
+            Assert.Equal(2, result.ValuesByKey["BASE_ITEM"].Count);
+            Assert.Equal(2, result.ValuesByKey["INVENTORY_SLOT"].Count);
+        }
     }
 }
