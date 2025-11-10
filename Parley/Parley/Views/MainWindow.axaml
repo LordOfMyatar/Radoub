@@ -346,7 +346,11 @@
                                 <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
                                     <Button Content="+ Add Parameter"
                                             x:Name="AddConditionsParamButton" Click="OnAddConditionsParamClick"
-                                            Margin="0,0,10,0"/>
+                                            Margin="0,0,5,0"/>
+                                    <Button Content="💡 Suggest"
+                                            x:Name="SuggestConditionsParamButton" Click="OnSuggestConditionsParamClick"
+                                            Margin="0,0,10,0"
+                                            ToolTip.Tip="Show available parameter keys and values from script"/>
                                     <CheckBox x:Name="AutoTrimConditionsCheckBox"
                                               Content="Auto-Trim whitespace"
                                               IsChecked="True"
@@ -400,7 +404,11 @@
                                 <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
                                     <Button Content="+ Add Parameter"
                                             x:Name="AddActionsParamButton" Click="OnAddActionsParamClick"
-                                            Margin="0,0,10,0"/>
+                                            Margin="0,0,5,0"/>
+                                    <Button Content="💡 Suggest"
+                                            x:Name="SuggestActionsParamButton" Click="OnSuggestActionsParamClick"
+                                            Margin="0,0,10,0"
+                                            ToolTip.Tip="Show available parameter keys and values from script"/>
                                     <CheckBox x:Name="AutoTrimActionsCheckBox"
                                               Content="Auto-Trim whitespace"
                                               IsChecked="True"

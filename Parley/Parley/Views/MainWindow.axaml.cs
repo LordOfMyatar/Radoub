@@ -42,6 +42,10 @@ namespace DialogEditor.Views
         // Session cache for recently used creature tags
         private readonly List<string> _recentCreatureTags = new();
 
+        // Parameter autocomplete: Cache of script parameter declarations
+        private ScriptParameterDeclarations? _currentConditionDeclarations;
+        private ScriptParameterDeclarations? _currentActionDeclarations;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -1351,6 +1355,12 @@ namespace DialogEditor.Views
                 scriptTextBox.Text = dialogNode.ScriptAction ?? "";
                 scriptTextBox.IsReadOnly = false;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateProperties: Set Script Action field to '{dialogNode.ScriptAction}' for node '{dialogNode.DisplayText}'");
+
+                // Load parameter declarations for action script
+                if (!string.IsNullOrWhiteSpace(dialogNode.ScriptAction))
+                {
+                    _ = LoadParameterDeclarationsAsync(dialogNode.ScriptAction, isCondition: false);
+                }
             }
             else
             {
@@ -1367,6 +1377,12 @@ namespace DialogEditor.Views
                     scriptAppearsTextBox.Text = node.SourcePointer.ScriptAppears ?? "";
                     scriptAppearsTextBox.IsReadOnly = false;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateProperties: Set Conditional Script to '{node.SourcePointer.ScriptAppears}' from SourcePointer");
+
+                    // Load parameter declarations for conditional script
+                    if (!string.IsNullOrWhiteSpace(node.SourcePointer.ScriptAppears))
+                    {
+                        _ = LoadParameterDeclarationsAsync(node.SourcePointer.ScriptAppears, isCondition: true);
+                    }
                 }
                 else
                 {
@@ -2154,6 +2170,95 @@ namespace DialogEditor.Views
             }
         }
 
+        private async void OnSuggestConditionsParamClick(object? sender, RoutedEventArgs e)
+        {
+            // Load declarations if not already loaded
+            if (_selectedNode?.SourcePointer?.ScriptAppears != null && _currentConditionDeclarations == null)
+            {
+                await LoadParameterDeclarationsAsync(_selectedNode.SourcePointer.ScriptAppears, true);
+            }
+
+            ShowParameterSuggestions(_currentConditionDeclarations, true);
+        }
+
+        private async void OnSuggestActionsParamClick(object? sender, RoutedEventArgs e)
+        {
+            // Load declarations if not already loaded
+            if (_selectedNode?.OriginalNode?.ScriptAction != null && _currentActionDeclarations == null)
+            {
+                await LoadParameterDeclarationsAsync(_selectedNode.OriginalNode.ScriptAction, false);
+            }
+
+            ShowParameterSuggestions(_currentActionDeclarations, false);
+        }
+
+        private void ShowParameterSuggestions(ScriptParameterDeclarations? declarations, bool isCondition)
+        {
+            if (declarations == null || !declarations.HasDeclarations)
+            {
+                _viewModel.StatusMessage = $"No parameter suggestions available for {(isCondition ? "conditional" : "action")} script";
+                return;
+            }
+
+            var message = new System.Text.StringBuilder();
+            message.AppendLine($"Available Parameters for {(isCondition ? "Conditional" : "Action")} Script:");
+            message.AppendLine();
+
+            if (declarations.Keys.Count > 0)
+            {
+                message.AppendLine("Keys:");
+                foreach (var key in declarations.Keys.Take(10))
+                {
+                    message.AppendLine($"  • {key}");
+                }
+                if (declarations.Keys.Count > 10)
+                {
+                    message.AppendLine($"  ... and {declarations.Keys.Count - 10} more");
+                }
+                message.AppendLine();
+            }
+
+            if (declarations.ValuesByKey.Count > 0)
+            {
+                message.AppendLine("Values by Key:");
+                foreach (var kvp in declarations.ValuesByKey.Take(3))
+                {
+                    message.AppendLine($"  {kvp.Key}:");
+                    foreach (var value in kvp.Value.Take(5))
+                    {
+                        message.AppendLine($"    • {value}");
+                    }
+                    if (kvp.Value.Count > 5)
+                    {
+                        message.AppendLine($"    ... and {kvp.Value.Count - 5} more");
+                    }
+                }
+                if (declarations.ValuesByKey.Count > 3)
+                {
+                    message.AppendLine($"  ... and {declarations.ValuesByKey.Count - 3} more keys");
+                }
+            }
+
+            // Show in a simple dialog
+            var dialog = new Window
+            {
+                Title = "Parameter Suggestions",
+                Width = 500,
+                Height = 400,
+                Content = new ScrollViewer
+                {
+                    Content = new TextBlock
+                    {
+                        Text = message.ToString(),
+                        Margin = new Thickness(10),
+                        FontFamily = new global::Avalonia.Media.FontFamily("Consolas,Courier New,monospace")
+                    }
+                }
+            };
+
+            dialog.ShowDialog(this);
+        }
+
         private void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
         {
             // Create grid: [Key TextBox] [=] [Value TextBox] [Delete Button]
@@ -2212,6 +2317,48 @@ namespace DialogEditor.Views
             grid.Children.Add(deleteButton);
 
             parent.Children.Add(grid);
+        }
+
+        private async Task LoadParameterDeclarationsAsync(string scriptName, bool isCondition)
+        {
+            if (string.IsNullOrWhiteSpace(scriptName))
+            {
+                if (isCondition)
+                {
+                    _currentConditionDeclarations = null;
+                }
+                else
+                {
+                    _currentActionDeclarations = null;
+                }
+                return;
+            }
+
+            try
+            {
+                var declarations = await ScriptService.Instance.GetParameterDeclarationsAsync(scriptName);
+
+                if (isCondition)
+                {
+                    _currentConditionDeclarations = declarations;
+                }
+                else
+                {
+                    _currentActionDeclarations = declarations;
+                }
+
+                if (declarations.HasDeclarations)
+                {
+                    var totalValues = declarations.ValuesByKey.Values.Sum(list => list.Count);
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Loaded parameter declarations for {(isCondition ? "condition" : "action")} script '{scriptName}': {declarations.Keys.Count} keys, {totalValues} values");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Failed to load parameter declarations for '{scriptName}': {ex.Message}");
+            }
         }
 
         private void OnParameterChanged(bool isCondition)
