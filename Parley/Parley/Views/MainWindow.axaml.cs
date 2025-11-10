@@ -2251,6 +2251,38 @@ namespace DialogEditor.Views
             TriggerDebouncedAutoSave();
         }
 
+        /// <summary>
+        /// Shows visual feedback when parameter text is trimmed.
+        /// Briefly flashes the TextBox border to indicate successful trim operation.
+        /// </summary>
+        private async void ShowTrimFeedback(TextBox textBox)
+        {
+            // Store original border properties
+            var originalBrush = textBox.BorderBrush;
+            var originalThickness = textBox.BorderThickness;
+
+            try
+            {
+                // Flash green border to indicate trim occurred
+                textBox.BorderBrush = Avalonia.Media.Brushes.LightGreen;
+                textBox.BorderThickness = new Thickness(2);
+
+                // Wait briefly for visual feedback
+                await Task.Delay(300);
+
+                // Restore original appearance
+                textBox.BorderBrush = originalBrush;
+                textBox.BorderThickness = originalThickness;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"ShowTrimFeedback: Error showing visual feedback - {ex.Message}");
+                // Ensure we restore original state even if error occurs
+                textBox.BorderBrush = originalBrush;
+                textBox.BorderThickness = originalThickness;
+            }
+        }
+
         private void UpdateConditionParamsFromUI(DialogPtr ptr)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: ENTRY - ptr has {ptr.ConditionParams.Count} existing params");
@@ -2296,6 +2328,9 @@ namespace DialogEditor.Views
                         // Apply trimming if Auto-Trim is enabled
                         if (autoTrim)
                         {
+                            string originalKey = key;
+                            string originalValue = value;
+
                             key = key.Trim();
                             value = value.Trim();
 
@@ -2305,6 +2340,16 @@ namespace DialogEditor.Views
                             // This ensures visual feedback that whitespace was removed
                             keyTextBox.Text = key;
                             valueTextBox.Text = value;
+
+                            // Show visual feedback if text was actually trimmed
+                            if (originalKey != key)
+                            {
+                                ShowTrimFeedback(keyTextBox);
+                            }
+                            if (originalValue != value)
+                            {
+                                ShowTrimFeedback(valueTextBox);
+                            }
                         }
 
                         ptr.ConditionParams[key] = value;
@@ -2360,6 +2405,9 @@ namespace DialogEditor.Views
                         // Apply trimming if Auto-Trim is enabled
                         if (autoTrim)
                         {
+                            string originalKey = key;
+                            string originalValue = value;
+
                             key = key.Trim();
                             value = value.Trim();
 
@@ -2369,6 +2417,16 @@ namespace DialogEditor.Views
                             // This ensures visual feedback that whitespace was removed
                             keyTextBox.Text = key;
                             valueTextBox.Text = value;
+
+                            // Show visual feedback if text was actually trimmed
+                            if (originalKey != key)
+                            {
+                                ShowTrimFeedback(keyTextBox);
+                            }
+                            if (originalValue != value)
+                            {
+                                ShowTrimFeedback(valueTextBox);
+                            }
                         }
 
                         node.ActionParams[key] = value;
