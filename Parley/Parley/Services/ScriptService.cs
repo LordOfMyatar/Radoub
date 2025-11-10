@@ -231,8 +231,9 @@ namespace DialogEditor.Services
 
                 if (declarations.HasDeclarations)
                 {
+                    var totalKeyedValues = declarations.ValuesByKey.Values.Sum(list => list.Count);
                     UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"Extracted parameter declarations from '{scriptName}': {declarations.Keys.Count} keys, {declarations.Values.Count} values");
+                        $"Extracted parameter declarations from '{scriptName}': {declarations.Keys.Count} keys, {declarations.ValuesByKey.Count} keyed value lists ({totalKeyedValues} total values), {declarations.Values.Count} legacy values");
                 }
 
                 return declarations;

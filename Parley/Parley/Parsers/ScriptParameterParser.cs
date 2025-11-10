@@ -20,6 +20,9 @@ namespace DialogEditor.Parsers
         private static readonly Regex ValueListRegex =
             new(@"----ValueList----\s*(.*?)\s*(?:----|/\*|\*/)", RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
+        private static readonly Regex KeyedValueListRegex =
+            new(@"----ValueList-(\w+)----\s*(.*?)(?=----|\*/|$)", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
         /// <summary>
         /// Parses NWScript content to extract parameter declarations.
         /// </summary>
@@ -46,13 +49,29 @@ namespace DialogEditor.Parsers
                         $"ScriptParameterParser: Found {declarations.Keys.Count} keys in KeyList");
                 }
 
-                // Extract ValueList section
+                // Extract legacy ValueList section (without key suffix)
                 var valueMatch = ValueListRegex.Match(nssContent);
                 if (valueMatch.Success)
                 {
                     declarations.Values = ParseList(valueMatch.Groups[1].Value);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG,
                         $"ScriptParameterParser: Found {declarations.Values.Count} values in ValueList");
+                }
+
+                // Extract keyed ValueList sections (e.g., ----ValueList-BASE_ITEM----)
+                var keyedMatches = KeyedValueListRegex.Matches(nssContent);
+                foreach (Match match in keyedMatches)
+                {
+                    string key = match.Groups[1].Value; // Parameter key name
+                    string content = match.Groups[2].Value; // Values content
+                    var values = ParseList(content);
+
+                    if (values.Count > 0)
+                    {
+                        declarations.ValuesByKey[key] = values;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"ScriptParameterParser: Found {values.Count} values for key '{key}'");
+                    }
                 }
 
                 if (!declarations.HasDeclarations)
