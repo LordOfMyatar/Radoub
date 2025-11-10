@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.5-alpha] - 2025-01-09
+## [0.1.5-alpha] - 2025-11-09
 **Branch**: `parley/feat/epic-0-plugins` | **PR**: #84
 
 ### Epic 0: Plugin Foundation
