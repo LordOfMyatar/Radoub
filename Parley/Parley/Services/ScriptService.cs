@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DialogEditor.Utils;
+using DialogEditor.Models;
+using DialogEditor.Parsers;
 
 namespace DialogEditor.Services
 {
@@ -12,8 +14,10 @@ namespace DialogEditor.Services
         public static ScriptService Instance { get; } = new ScriptService();
 
         private Dictionary<string, string> _scriptCache = new Dictionary<string, string>();
+        private Dictionary<string, ScriptParameterDeclarations> _parameterCache = new Dictionary<string, ScriptParameterDeclarations>();
         private DateTime _lastCacheUpdate = DateTime.MinValue;
         private readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(5);
+        private readonly ScriptParameterParser _parameterParser = new ScriptParameterParser();
 
         private ScriptService()
         {
@@ -192,13 +196,64 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Clears the script cache
+        /// Gets parameter declarations from a script's comment blocks
+        /// </summary>
+        /// <param name="scriptName">Name of the script (without .nss extension)</param>
+        /// <returns>Parameter declarations or empty if not found</returns>
+        public async Task<ScriptParameterDeclarations> GetParameterDeclarationsAsync(string scriptName)
+        {
+            if (string.IsNullOrWhiteSpace(scriptName))
+                return ScriptParameterDeclarations.Empty;
+
+            try
+            {
+                // Check cache first
+                var cacheKey = scriptName.ToLower();
+                if (_parameterCache.ContainsKey(cacheKey) && DateTime.Now - _lastCacheUpdate < _cacheExpiry)
+                {
+                    return _parameterCache[cacheKey];
+                }
+
+                // Get script content
+                var scriptContent = await GetScriptContentAsync(scriptName);
+                if (string.IsNullOrEmpty(scriptContent))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"No script content found for '{scriptName}' - cannot extract parameter declarations");
+                    return ScriptParameterDeclarations.Empty;
+                }
+
+                // Parse parameter declarations
+                var declarations = _parameterParser.Parse(scriptContent);
+
+                // Cache the result
+                _parameterCache[cacheKey] = declarations;
+
+                if (declarations.HasDeclarations)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Extracted parameter declarations from '{scriptName}': {declarations.Keys.Count} keys, {declarations.Values.Count} values");
+                }
+
+                return declarations;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Error getting parameter declarations for '{scriptName}': {ex.Message}");
+                return ScriptParameterDeclarations.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Clears the script and parameter caches
         /// </summary>
         public void ClearCache()
         {
             _scriptCache.Clear();
+            _parameterCache.Clear();
             _lastCacheUpdate = DateTime.MinValue;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Script cache cleared");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Script and parameter caches cleared");
         }
 
         /// <summary>
