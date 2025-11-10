@@ -492,22 +492,12 @@ Check if your plugin is enabled before performing actions:
 Parley detects plugin crashes and offers recovery:
 - After 3 crashes, plugin is auto-disabled
 - Crash recovery dialog appears on next startup
-- Users can choose Safe Mode (all plugins disabled)
 
 **Test crash handling:**
 ```python
 # Force a crash to test recovery
 raise Exception("Test crash")
 ```
-
-### Safe Mode
-
-Test your plugin's behavior when disabled:
-- Settings → Plugins → Enable "Disable all plugins on next launch (Safe Mode)"
-- Restart Parley
-- Verify your plugin doesn't cause issues
-
-[Back to TOC](#table-of-contents)
 
 ## Distribution
 
@@ -532,7 +522,6 @@ Test your plugin's behavior when disabled:
 
 3. **Distribution options:**
    - GitHub repository
-   - Parley Community Plugins directory (future)
    - Direct download ZIP
 
 ### Installation Instructions (for users)
@@ -640,12 +629,6 @@ async def on_error(error):
 - Verify all dependencies are installed
 - Test with `python main.py` outside Parley
 - After 3 crashes, plugin is auto-disabled
-
-### Safe Mode Issues
-
-- Disable Safe Mode in Settings → Plugins
-- Uncheck "Disable all plugins on next launch (Safe Mode)"
-- Restart Parley
 
 [Back to TOC](#table-of-contents)
 

@@ -30,7 +30,7 @@ Plugins extend Parley's functionality without modifying the core application. Th
 
 **Safety features:**
 - Plugins run as separate programs (isolated from Parley)
-- If a plugin crashes, Parley continues running normally
+- If a plugin crashes, Parley should continue running normally
 - Plugins that crash 3 times are automatically disabled
 
 [Back to TOC](#table-of-contents)
@@ -53,6 +53,7 @@ All plugins are installed to `~/Parley/Plugins/Community/`
 
 2. **Extract to Community folder**
    - Create the folder if it doesn't exist: `~/Parley/Plugins/Community/`
+   - You can also open the plugin folder from the plugin settings interface
    - Extract the plugin so the structure looks like:
      ```
      ~/Parley/Plugins/Community/
@@ -102,15 +103,15 @@ After restarting Parley with the plugin enabled:
 
 **Note:** Changes require restarting Parley to take effect.
 
-### Disabling All Plugins (Safe Mode)
+### Disabling All Plugins
 
 If Parley behaves unexpectedly after installing a plugin:
 
 **Option 1 - Using Settings:**
 1. Open Settings → Plugins tab
-2. Check "Disable all plugins on next launch (Safe Mode)"
+2. Uncheck the problematic plugin
 3. Restart Parley
-4. Enable plugins one at a time to identify the problem
+4. Enable plugins one at a time to identify if there is a conflict between them
 
 **Option 2 - Manual (if Parley won't start):**
 1. Close Parley
@@ -199,7 +200,7 @@ The log shows:
 ## Safety and Security
 
 **Alpha Status:**
-During alpha development, plugin security features are limited. Trust levels and permission systems will be implemented in future releases.
+During alpha development, plugin security features are limited. Trust levels and permission systems will be implemented in future releases. At this time, only use plugins that are available from [Radoub / Parley github](https://github.com/LordOfMyatar/Radoub).
 
 ### What Plugins Can Access
 
@@ -224,7 +225,7 @@ During alpha development, plugin security features are limited. Trust levels and
 - Plugin developers should provide their own support channels
 
 **What to Report:**
-- **Malicious behavior** from any plugin (we want to know!)
+- **Malicious behavior** from any parley plugin (we want to know!)
 - **Parley crashes or bugs** caused by the plugin system itself
 - **Security vulnerabilities** in the plugin infrastructure
 
