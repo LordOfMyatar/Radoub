@@ -33,6 +33,8 @@ Known Issues:
 - ✅ Copy tree structure to clipboard
 - ✅ Recent files menu
 - ✅ Cross-platform (Windows, Linux, macOS)
+- ✅ **Plugin system** (Python-based, process-isolated, gRPC communication)
+- ✅ Color-blind accessible speaker visuals
 
 ### Roadmap
 See [parent README](../README.md) for full roadmap.
@@ -137,6 +139,26 @@ After editing:
 2. Open module in Aurora Toolset
 3. Test conversation in-game or via toolset preview
 4. Report any issues to GitHub
+
+### Using Plugins
+
+Parley supports Python-based plugins for extended functionality:
+
+**Installing Plugins**:
+1. Extract plugin to `~/Parley/Plugins/Community/`
+2. Open Settings → Plugins tab
+3. Enable the plugin and restart Parley
+
+**Creating Plugins**:
+See [Plugin Development Guide](Documentation/Plugin_Development_Guide.md) and [Using Plugins](Documentation/Using_Plugins.md)
+
+**Current Capabilities**:
+- Show notifications and dialogs
+- Query dialog data
+- Audio playback requests
+- File operations (sandboxed to plugin data directory)
+
+**Security**: Plugins run as isolated processes with permission-based access control and rate limiting.
 
 ---
 

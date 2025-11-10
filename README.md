@@ -12,10 +12,17 @@ A collection of cross-platform tools for creating and editing Neverwinter Nights
 
 ### Parley - Dialog Editor
 
-Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI and Aurora Engine compatibility.
+Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI, plugin system, and Aurora Engine compatibility.
 
-**Status**: Alpha
+**Status**: Alpha (v0.1.5)
 **Platforms**: Windows, Linux, macOS
+**Key Features**:
+- Dialog tree editing with undo/redo
+- Sound and script browsers
+- Python plugin system with gRPC
+- Color-blind accessible UI
+- Dark mode and font scaling
+
 **Learn more**: [Parley/README.md](Parley/README.md)
 
 ---
