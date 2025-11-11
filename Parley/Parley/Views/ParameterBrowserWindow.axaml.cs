@@ -466,14 +466,88 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Parameter caching {(checkBox.IsChecked.Value ? "enabled" : "disabled")} from browser");
 
-                // Refresh the current view to show/hide cached values
+                // Refresh the keys list to show/hide cached keys
+                RefreshKeysList();
+
+                // Refresh the values list if a key is selected
                 if (_selectedKey != null)
                 {
-                    // Re-trigger key selection to refresh values list
-                    var values = ResolveValuesForKey(_selectedKey);
-                    ValuesList.ItemsSource = values;
-                    ValueCountText.Text = values.Count > 0 ? $"{values.Count} total values" : "No values available";
+                    RefreshValuesListForSelectedKey();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the keys list with current declarations and cache state
+        /// </summary>
+        private void RefreshKeysList()
+        {
+            var noKeysMessage = this.FindControl<TextBlock>("NoKeysMessage");
+            var allKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // Add keys from script declarations
+            if (_declarations != null && _declarations.Keys.Count > 0)
+            {
+                foreach (var key in _declarations.Keys)
+                {
+                    allKeys.Add(key);
+                }
+            }
+
+            // Add keys from cache (only if caching enabled)
+            if (!string.IsNullOrWhiteSpace(_currentScriptName) && ParameterCacheService.Instance.EnableCaching)
+            {
+                var cachedKeys = ParameterCacheService.Instance.GetParameterKeys(_currentScriptName);
+                foreach (var key in cachedKeys)
+                {
+                    allKeys.Add(key);
+                }
+            }
+
+            if (allKeys.Count > 0)
+            {
+                KeysList.ItemsSource = allKeys.OrderBy(k => k).ToList();
+                if (noKeysMessage != null) noKeysMessage.IsVisible = false;
+            }
+            else
+            {
+                KeysList.ItemsSource = new List<string>();
+                if (noKeysMessage != null) noKeysMessage.IsVisible = true;
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the values list for the currently selected key
+        /// </summary>
+        private void RefreshValuesListForSelectedKey()
+        {
+            if (_selectedKey == null) return;
+
+            var values = ResolveValuesForKey(_selectedKey);
+
+            // Update header with counts
+            var cachedCount = 0;
+            var declCount = 0;
+            if (!string.IsNullOrWhiteSpace(_currentScriptName) && ParameterCacheService.Instance.EnableCaching)
+            {
+                cachedCount = ParameterCacheService.Instance.GetValues(_currentScriptName, _selectedKey).Count;
+            }
+            var declValues = _declarations?.GetValuesForKey(_selectedKey) ?? new List<string>();
+            declCount = declValues.Count;
+
+            ValuesHeaderText.Text = $"Values for '{_selectedKey}' (🔵 {cachedCount} cached, 📋 {declCount} declared)";
+
+            // Update list
+            if (values.Count > 0)
+            {
+                ValuesList.ItemsSource = values;
+                ValueCountText.Text = $"{values.Count} total values";
+            }
+            else
+            {
+                ValuesList.ItemsSource = new List<string>();
+                ValueCountText.Text = "No values available";
+                ValuesHeaderText.Text = $"No values for '{_selectedKey}'";
             }
         }
 
@@ -488,24 +562,13 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Cleared parameter cache for script: {_currentScriptName}");
 
-                // Refresh the keys and values lists to remove cached items
+                // Refresh both keys and values lists
+                RefreshKeysList();
+
                 if (_selectedKey != null)
                 {
-                    var values = ResolveValuesForKey(_selectedKey);
-                    ValuesList.ItemsSource = values;
-                    ValueCountText.Text = values.Count > 0 ? $"{values.Count} total values" : "No values available";
+                    RefreshValuesListForSelectedKey();
                 }
-
-                // Refresh keys list to remove cached-only keys
-                var allKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                if (_declarations != null && _declarations.Keys.Count > 0)
-                {
-                    foreach (var key in _declarations.Keys)
-                    {
-                        allKeys.Add(key);
-                    }
-                }
-                KeysList.ItemsSource = allKeys.OrderBy(k => k).ToList();
             }
         }
     }
