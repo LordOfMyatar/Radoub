@@ -32,6 +32,13 @@ namespace DialogEditor.Views
             // Set up double-click handlers
             KeysList.DoubleTapped += OnKeysListDoubleTapped;
             ValuesList.DoubleTapped += OnValuesListDoubleTapped;
+
+            // Initialize enable cache checkbox to current setting
+            var enableCacheCheckBox = this.FindControl<CheckBox>("EnableCacheCheckBox");
+            if (enableCacheCheckBox != null)
+            {
+                enableCacheCheckBox.IsChecked = ParameterCacheService.Instance.EnableCaching;
+            }
         }
 
         /// <summary>
@@ -216,31 +223,32 @@ namespace DialogEditor.Views
 
             // Get cached values for this script and parameter (MRU order)
             var cachedValues = new List<string>();
-            if (!string.IsNullOrWhiteSpace(_currentScriptName))
+            if (!string.IsNullOrWhiteSpace(_currentScriptName) && ParameterCacheService.Instance.EnableCaching)
             {
                 cachedValues = ParameterCacheService.Instance.GetValues(_currentScriptName, key);
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
                     $"ParameterBrowserWindow: Found {cachedValues.Count} cached values for '{_currentScriptName}.{key}'");
             }
 
-            // Merge cached values (priority) + script declarations (secondary)
-            // Cached values come first (MRU order), then script declarations that aren't already in cache
+            // Merge script declarations (priority - less likely to have typos) + cached values (secondary - may have typos)
+            // Declaration values come first, then cached values that aren't already in declarations
             var mergedValues = new List<string>();
 
-            // Add cached values first (already in MRU order)
-            mergedValues.AddRange(cachedValues);
+            // Add script declaration values first
+            mergedValues.AddRange(declarationValues);
 
-            // Add script declaration values that aren't in cache
-            foreach (var declValue in declarationValues)
+            // Add cached values that aren't in declarations (mark with 🔵 to indicate cached-only)
+            foreach (var cachedValue in cachedValues)
             {
-                if (!cachedValues.Contains(declValue, StringComparer.OrdinalIgnoreCase))
+                if (!declarationValues.Contains(cachedValue, StringComparer.OrdinalIgnoreCase))
                 {
-                    mergedValues.Add(declValue);
+                    // Mark cached-only values with visual indicator
+                    mergedValues.Add($"🔵 {cachedValue}");
                 }
             }
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"ParameterBrowserWindow: Merged {cachedValues.Count} cached + {declarationValues.Count} declaration values = {mergedValues.Count} total");
+                $"ParameterBrowserWindow: Merged {declarationValues.Count} declaration + {cachedValues.Count} cached values = {mergedValues.Count} total");
 
             return mergedValues;
         }
@@ -252,7 +260,8 @@ namespace DialogEditor.Views
         {
             if (ValuesList.SelectedItem is string selectedValue)
             {
-                _selectedValue = selectedValue;
+                // Strip the 🔵 marker if present (cached-only values)
+                _selectedValue = selectedValue.StartsWith("🔵 ") ? selectedValue.Substring(2) : selectedValue;
                 CopyValueButton.IsEnabled = true;
                 AddParameterButton.IsEnabled = !string.IsNullOrEmpty(_selectedKey);
             }
@@ -443,6 +452,60 @@ namespace DialogEditor.Views
             {
                 DialogResult = true;
                 Close();
+            }
+        }
+
+        /// <summary>
+        /// Handles enable/disable caching checkbox changes
+        /// </summary>
+        private void OnEnableCacheChanged(object? sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkBox && checkBox.IsChecked.HasValue)
+            {
+                ParameterCacheService.Instance.EnableCaching = checkBox.IsChecked.Value;
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Parameter caching {(checkBox.IsChecked.Value ? "enabled" : "disabled")} from browser");
+
+                // Refresh the current view to show/hide cached values
+                if (_selectedKey != null)
+                {
+                    // Re-trigger key selection to refresh values list
+                    var values = ResolveValuesForKey(_selectedKey);
+                    ValuesList.ItemsSource = values;
+                    ValueCountText.Text = values.Count > 0 ? $"{values.Count} total values" : "No values available";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Clears parameter cache for current script
+        /// </summary>
+        private void OnClearCacheClick(object? sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(_currentScriptName))
+            {
+                ParameterCacheService.Instance.ClearScriptCache(_currentScriptName);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Cleared parameter cache for script: {_currentScriptName}");
+
+                // Refresh the keys and values lists to remove cached items
+                if (_selectedKey != null)
+                {
+                    var values = ResolveValuesForKey(_selectedKey);
+                    ValuesList.ItemsSource = values;
+                    ValueCountText.Text = values.Count > 0 ? $"{values.Count} total values" : "No values available";
+                }
+
+                // Refresh keys list to remove cached-only keys
+                var allKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (_declarations != null && _declarations.Keys.Count > 0)
+                {
+                    foreach (var key in _declarations.Keys)
+                    {
+                        allKeys.Add(key);
+                    }
+                }
+                KeysList.ItemsSource = allKeys.OrderBy(k => k).ToList();
             }
         }
     }

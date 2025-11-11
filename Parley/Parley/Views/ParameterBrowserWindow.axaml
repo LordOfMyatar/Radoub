@@ -120,28 +120,49 @@
         </Grid>
 
         <!-- Button Panel -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button x:Name="RefreshJournalButton"
-                    Content="Refresh Journal Cache"
-                    Click="OnRefreshJournalClick"
-                    Margin="0,0,10,0"
-                    ToolTip.Tip="Reload journal data from module.jrl"/>
-            <Button x:Name="CopyKeyButton"
-                    Content="Copy Key"
-                    Click="OnCopyKeyClick"
-                    IsEnabled="False"
-                    Margin="0,0,5,0"/>
-            <Button x:Name="CopyValueButton"
-                    Content="Copy Value"
-                    Click="OnCopyValueClick"
-                    IsEnabled="False"
-                    Margin="0,0,5,0"/>
-            <Button x:Name="AddParameterButton"
-                    Content="Add Parameter"
-                    Click="OnAddParameterClick"
-                    IsEnabled="False"
-                    Margin="0,0,10,0"/>
-            <Button Content="Close" Click="OnCloseClick"/>
-        </StackPanel>
+        <Grid Grid.Row="3" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left side: Cache controls -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
+                <CheckBox x:Name="EnableCacheCheckBox"
+                          Content="Enable Cache"
+                          Checked="OnEnableCacheChanged"
+                          Unchecked="OnEnableCacheChanged"
+                          Margin="0,0,10,0"
+                          ToolTip.Tip="Show/hide recently used parameter values"/>
+                <Button Content="Clear Cache"
+                        Click="OnClearCacheClick"
+                        Margin="0,0,10,0"
+                        ToolTip.Tip="Clear cached values for this script"/>
+                <Button x:Name="RefreshJournalButton"
+                        Content="Refresh Journal"
+                        Click="OnRefreshJournalClick"
+                        ToolTip.Tip="Reload journal data from module.jrl"/>
+            </StackPanel>
+
+            <!-- Right side: Action buttons -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CopyKeyButton"
+                        Content="Copy Key"
+                        Click="OnCopyKeyClick"
+                        IsEnabled="False"
+                        Margin="0,0,5,0"/>
+                <Button x:Name="CopyValueButton"
+                        Content="Copy Value"
+                        Click="OnCopyValueClick"
+                        IsEnabled="False"
+                        Margin="0,0,5,0"/>
+                <Button x:Name="AddParameterButton"
+                        Content="Add Parameter"
+                        Click="OnAddParameterClick"
+                        IsEnabled="False"
+                        Margin="0,0,10,0"/>
+                <Button Content="Close" Click="OnCloseClick"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
