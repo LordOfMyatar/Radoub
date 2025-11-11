@@ -66,7 +66,7 @@ OTHER_VALUE_2
 */
 ```
 
-### Example
+### Example: Static Values
 
 See `Documentation/parameter_example.nss` for a complete working example. Here's a simplified version:
 
@@ -96,6 +96,38 @@ int StartingConditional()
 }
 ```
 
+### Example: Dynamic Journal Values
+
+This example loads quest tags dynamically from your module's journal file:
+
+```nwscript
+/*
+----KeyList----
+sQuest
+iEntryID
+
+----ValueList-sQuest----FROM_JOURNAL_TAGS----
+
+----ValueList-iEntryID----FROM_JOURNAL_ENTRIES(sQuest)----
+
+----
+*/
+
+int StartingConditional()
+{
+    object oPC = GetPCSpeaker();
+    string sQuest = GetScriptParam("sQuest");
+    int iQuestState = GetCampaignInt(CAMPAIGN, sQuest, oPC);
+    int iEntryID = StringToInt(GetScriptParam("iEntryID"));
+
+    return (iQuestState == iEntryID);
+}
+```
+
+When you browse parameters:
+- `sQuest` will show all quest tags from module.jrl (e.g., "QUEST_001", "QUEST_MERCHANT")
+- `iEntryID` will show only entry IDs for the selected quest (e.g., if `sQuest="LISTA"`, shows "1", "2", "3", "4")
+
 ### Format Rules
 
 **KeyList Section**:
@@ -108,6 +140,12 @@ int StartingConditional()
 - Lists valid values for that specific key
 - One value per line
 - Must match the key name exactly
+
+**Dynamic Value Sources**:
+- Use special markers to load values from runtime data
+- `FROM_JOURNAL_TAGS` - Loads all quest tags from module.jrl
+- `FROM_JOURNAL_ENTRIES(keyname)` - Loads all unique entry IDs across all quests
+- If journal is empty or not loaded, shows "No journal entries found"
 
 **Closing**:
 - End with `----` on its own line

@@ -101,6 +101,21 @@
                         </Border>
                         -->
 
+                        <!-- External Script Editor -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="External Script Editor (Optional)" FontWeight="Bold"/>
+                                <TextBlock Text="Path to external text editor for viewing .nss scripts (VS Code, Notepad++, etc.). Leave empty to use system default."
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBox x:Name="ExternalEditorPathTextBox" Grid.Column="0"
+                                            Watermark="C:\Program Files\Microsoft VS Code\Code.exe"/>
+                                    <Button Grid.Column="1" Content="Browse..." Click="OnBrowseExternalEditorClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Path Information -->
                         <Border BorderBrush="LightBlue" BorderThickness="1" Padding="10" CornerRadius="5"
                                Background="LightBlue" Opacity="0.2">
@@ -172,6 +187,73 @@
                                     <TextBlock x:Name="LogRetentionLabel" Grid.Column="1"
                                               Text="3 sessions" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                 </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Parameters Tab -->
+            <TabItem Header="Parameters">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="15">
+                        <!-- Enable Parameter Cache -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <CheckBox x:Name="EnableParameterCacheCheckBox"
+                                         Content="Enable Parameter Value Caching"
+                                         FontWeight="Bold"
+                                         Checked="OnParameterCacheSettingChanged"
+                                         Unchecked="OnParameterCacheSettingChanged"/>
+                                <TextBlock Text="Cache recently used parameter values for faster entry. Values are stored per script and sorted by most recently used."
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Max Values Per Parameter -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Max Cached Values Per Parameter" FontWeight="Bold"/>
+                                <TextBlock Text="Maximum number of values to cache for each parameter (range: 5-50, default: 10)"
+                                          FontSize="11" Foreground="Gray"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider x:Name="MaxCachedValuesSlider" Grid.Column="0"
+                                           Minimum="5" Maximum="50" Value="10"
+                                           TickFrequency="5" IsSnapToTickEnabled="True"
+                                           ValueChanged="OnMaxCachedValuesChanged"/>
+                                    <TextBlock x:Name="MaxCachedValuesLabel" Grid.Column="1"
+                                              Text="10 values" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Max Cached Scripts -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Max Cached Scripts" FontWeight="Bold"/>
+                                <TextBlock Text="Maximum number of scripts to cache parameters for (range: 100-10000, default: 1000)"
+                                          FontSize="11" Foreground="Gray"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider x:Name="MaxCachedScriptsSlider" Grid.Column="0"
+                                           Minimum="100" Maximum="10000" Value="1000"
+                                           TickFrequency="100" IsSnapToTickEnabled="True"
+                                           ValueChanged="OnMaxCachedScriptsChanged"/>
+                                    <TextBlock x:Name="MaxCachedScriptsLabel" Grid.Column="1"
+                                              Text="1000 scripts" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Cache Statistics -->
+                        <Border BorderBrush="LightBlue" BorderThickness="1" Padding="10" CornerRadius="5"
+                               Background="LightBlue" Opacity="0.2">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Cache Statistics" FontWeight="Bold"/>
+                                <TextBlock x:Name="CacheStatsText" TextWrapping="Wrap" FontSize="11"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                                    <Button Content="Clear Cache" Click="OnClearParameterCacheClick" Padding="10,5"/>
+                                    <Button Content="Refresh Stats" Click="OnRefreshCacheStatsClick" Padding="10,5"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>

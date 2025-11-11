@@ -2,13 +2,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:DialogEditor.ViewModels"
         xmlns:models="using:DialogEditor.Models"
+        xmlns:services="using:DialogEditor.Services"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="DialogEditor.Views.MainWindow"
         Title="{Binding WindowTitle}"
         Icon="avares://Parley/Assets/parley.ico"
-        Width="1200" Height="800"
+        Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=WindowWidth, Mode=TwoWay}"
+        Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=WindowHeight, Mode=TwoWay}"
         MinWidth="800" MinHeight="600">
 
     <Design.DataContext>
@@ -144,7 +146,8 @@
                     </StackPanel>
 
                     <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
-                              SelectionChanged="OnDialogTreeViewSelectionChanged">
+                              SelectionChanged="OnDialogTreeViewSelectionChanged"
+                              DoubleTapped="OnTreeViewItemDoubleTapped">
                         <TreeView.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Add Node" Click="OnAddSmartNodeClick"/>
@@ -323,10 +326,15 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas"
                                      TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
-                            <Button x:Name="BrowseConditionalScriptButton" Grid.Column="2" Content="Browse..."
+                            <Button x:Name="EditConditionalScriptButton" Grid.Column="2" Content="Edit Script"
+                                    MinWidth="70" Padding="5,0" Click="OnEditConditionalScriptClick"
+                                    ToolTip.Tip="Open script in external editor"/>
+                            <Button x:Name="BrowseConditionalScriptButton" Grid.Column="4" Content="Browse..."
                                     MinWidth="70" Padding="5,0" Click="OnBrowseConditionalScriptClick"/>
                         </Grid>
 
@@ -381,10 +389,15 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="5"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas"
                                      TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
-                            <Button x:Name="BrowseActionScriptButton" Grid.Column="2" Content="Browse..."
+                            <Button x:Name="EditActionScriptButton" Grid.Column="2" Content="Edit Script"
+                                    MinWidth="70" Padding="5,0" Click="OnEditActionScriptClick"
+                                    ToolTip.Tip="Open script in external editor"/>
+                            <Button x:Name="BrowseActionScriptButton" Grid.Column="4" Content="Browse..."
                                     MinWidth="70" Padding="5,0" Click="OnBrowseActionScriptClick"/>
                         </Grid>
 
@@ -434,15 +447,20 @@
                         <TextBlock Text="Quest System:" FontWeight="Bold" Margin="0,5,0,5"/>
 
                         <TextBlock Text="Quest Tag:"/>
-                        <ComboBox x:Name="QuestTagComboBox" Margin="0,0,0,5"
-                                  SelectionChanged="OnQuestTagChanged"
-                                  ToolTip.Tip="Select a quest from the module's journal">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding DisplayName}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            <ComboBox x:Name="QuestTagComboBox" MinWidth="200"
+                                      SelectionChanged="OnQuestTagChanged"
+                                      ToolTip.Tip="Select a quest from the module's journal">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayName}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Button Content="✕" Width="24" Height="24" Padding="0" Margin="5,0,0,0"
+                                    Click="OnClearQuestTagClick"
+                                    ToolTip.Tip="Clear quest tag"/>
+                        </StackPanel>
 
                         <!-- Quest Name Display (read-only info) -->
                         <TextBlock x:Name="QuestNameTextBlock"
@@ -453,16 +471,21 @@
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Text="Quest Entry:"/>
-                        <ComboBox x:Name="QuestEntryComboBox" Margin="0,0,0,5"
-                                  SelectionChanged="OnQuestEntryChanged"
-                                  ToolTip.Tip="Select a quest entry">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding DisplayText}"
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            <ComboBox x:Name="QuestEntryComboBox" MinWidth="200"
+                                      SelectionChanged="OnQuestEntryChanged"
+                                      ToolTip.Tip="Select a quest entry">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayText}"
                                                ToolTip.Tip="{Binding FullText}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <Button Content="✕" Width="24" Height="24" Padding="0" Margin="5,0,0,0"
+                                    Click="OnClearQuestEntryClick"
+                                    ToolTip.Tip="Clear quest entry"/>
+                        </StackPanel>
 
                         <!-- Quest Entry Details (text preview and end status) -->
                         <StackPanel Orientation="Horizontal" Margin="5,0,0,10">

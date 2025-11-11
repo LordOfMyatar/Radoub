@@ -13,15 +13,65 @@ namespace DialogEditor.Services
     {
         public static ScriptService Instance { get; } = new ScriptService();
 
-        private Dictionary<string, string> _scriptCache = new Dictionary<string, string>();
-        private Dictionary<string, ScriptParameterDeclarations> _parameterCache = new Dictionary<string, ScriptParameterDeclarations>();
-        private DateTime _lastCacheUpdate = DateTime.MinValue;
-        private readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(5);
+        private class CacheEntry<T>
+        {
+            public T Value { get; set; }
+            public DateTime Timestamp { get; set; }
+
+            public CacheEntry(T value)
+            {
+                Value = value;
+                Timestamp = DateTime.Now;
+            }
+        }
+
+        private Dictionary<string, CacheEntry<string>> _scriptCache = new Dictionary<string, CacheEntry<string>>();
+        private Dictionary<string, CacheEntry<ScriptParameterDeclarations>> _parameterCache = new Dictionary<string, CacheEntry<ScriptParameterDeclarations>>();
         private readonly ScriptParameterParser _parameterParser = new ScriptParameterParser();
 
         private ScriptService()
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "ScriptService initialized");
+        }
+
+        /// <summary>
+        /// Gets the file path of a script by name
+        /// </summary>
+        /// <param name="scriptName">Name of the script (without .nss extension)</param>
+        /// <returns>Full file path or null if not found</returns>
+        public string? GetScriptFilePath(string scriptName)
+        {
+            if (string.IsNullOrWhiteSpace(scriptName))
+                return null;
+
+            try
+            {
+                var scriptFileName = scriptName.EndsWith(".nss", StringComparison.OrdinalIgnoreCase)
+                    ? scriptName
+                    : $"{scriptName}.nss";
+
+                var searchPaths = GetScriptSearchPaths();
+
+                foreach (var searchPath in searchPaths)
+                {
+                    if (!Directory.Exists(searchPath))
+                        continue;
+
+                    var scriptFiles = Directory.GetFiles(searchPath, scriptFileName, SearchOption.AllDirectories);
+
+                    if (scriptFiles.Length > 0)
+                    {
+                        return scriptFiles[0]; // Return the first match
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error finding script file path for '{scriptName}': {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -36,20 +86,23 @@ namespace DialogEditor.Services
 
             try
             {
-                // Check cache first
+                // Check cache first (session-duration cache, no expiry)
                 var cacheKey = scriptName.ToLower();
-                if (_scriptCache.ContainsKey(cacheKey) && DateTime.Now - _lastCacheUpdate < _cacheExpiry)
+                if (_scriptCache.TryGetValue(cacheKey, out var cachedEntry))
                 {
-                    return _scriptCache[cacheKey];
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"ScriptService: Returning cached script content for '{scriptName}' ({cachedEntry.Value.Length} bytes)");
+                    return cachedEntry.Value;
                 }
 
                 // Search for script in known locations
                 var scriptContent = await SearchForScriptAsync(scriptName);
-                
+
                 if (scriptContent != null)
                 {
-                    _scriptCache[cacheKey] = scriptContent;
-                    _lastCacheUpdate = DateTime.Now;
+                    _scriptCache[cacheKey] = new CacheEntry<string>(scriptContent);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"ScriptService: Cached script content for '{scriptName}' ({scriptContent.Length} bytes)");
                 }
 
                 return scriptContent;
@@ -207,11 +260,15 @@ namespace DialogEditor.Services
 
             try
             {
-                // Check cache first
+                // Check cache first (session-duration cache, no expiry)
                 var cacheKey = scriptName.ToLower();
-                if (_parameterCache.ContainsKey(cacheKey) && DateTime.Now - _lastCacheUpdate < _cacheExpiry)
+                if (_parameterCache.TryGetValue(cacheKey, out var cachedEntry))
                 {
-                    return _parameterCache[cacheKey];
+                    var keysCount = cachedEntry.Value.Keys.Count;
+                    var valuesCount = cachedEntry.Value.ValuesByKey.Values.Sum(list => list.Count);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"ScriptService: Returning cached parameter declarations for '{scriptName}' ({keysCount} keys, {valuesCount} values)");
+                    return cachedEntry.Value;
                 }
 
                 // Get script content
@@ -227,13 +284,13 @@ namespace DialogEditor.Services
                 var declarations = _parameterParser.Parse(scriptContent);
 
                 // Cache the result
-                _parameterCache[cacheKey] = declarations;
+                _parameterCache[cacheKey] = new CacheEntry<ScriptParameterDeclarations>(declarations);
 
                 if (declarations.HasDeclarations)
                 {
                     var totalKeyedValues = declarations.ValuesByKey.Values.Sum(list => list.Count);
                     UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"Extracted parameter declarations from '{scriptName}': {declarations.Keys.Count} keys, {declarations.ValuesByKey.Count} keyed value lists ({totalKeyedValues} total values), {declarations.Values.Count} legacy values");
+                        $"Extracted and cached parameter declarations from '{scriptName}': {declarations.Keys.Count} keys, {declarations.ValuesByKey.Count} keyed value lists ({totalKeyedValues} total values), {declarations.Values.Count} legacy values");
                 }
 
                 return declarations;
@@ -251,10 +308,22 @@ namespace DialogEditor.Services
         /// </summary>
         public void ClearCache()
         {
+            var scriptCount = _scriptCache.Count;
+            var paramCount = _parameterCache.Count;
+
             _scriptCache.Clear();
             _parameterCache.Clear();
-            _lastCacheUpdate = DateTime.MinValue;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Script and parameter caches cleared");
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"ScriptService: Cleared caches - {scriptCount} script(s), {paramCount} parameter declaration(s)");
+        }
+
+        /// <summary>
+        /// Gets cache statistics for debugging
+        /// </summary>
+        public (int ScriptCount, int ParameterCount) GetCacheStats()
+        {
+            return (_scriptCache.Count, _parameterCache.Count);
         }
 
         /// <summary>

@@ -28,6 +28,14 @@ namespace DialogEditor.Models
         public List<string> Values { get; set; } = new List<string>();
 
         /// <summary>
+        /// Tracks dependencies between parameters for dynamic value resolution.
+        /// Key: Parameter name that has a dependency (e.g., "iNPCState")
+        /// Value: Name of the parameter it depends on (e.g., "sQuest")
+        /// Used for FROM_JOURNAL_ENTRIES(paramKey) syntax
+        /// </summary>
+        public Dictionary<string, string> Dependencies { get; set; } = new Dictionary<string, string>();
+
+        /// <summary>
         /// Indicates whether any declarations were found
         /// </summary>
         public bool HasDeclarations => Keys.Count > 0 || Values.Count > 0 || ValuesByKey.Count > 0;

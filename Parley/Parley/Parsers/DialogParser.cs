@@ -32,10 +32,9 @@ namespace DialogEditor.Parsers
                 // Set per-file logging context
                 UnifiedLogger.SetFileContext(filePath);
 
-                var version = $"v{DialogEditor.Utils.VersionHelper.Version} (Build: {DialogEditor.Utils.VersionHelper.BuildDate} {DialogEditor.Utils.VersionHelper.Commit})";
                 UnifiedLogger.LogParser(LogLevel.INFO, "═══════════════════════════════════════════════════════════");
                 UnifiedLogger.LogParser(LogLevel.INFO, $"📂 OPENING FILE: {UnifiedLogger.SanitizePath(filePath)}");
-                UnifiedLogger.LogParser(LogLevel.INFO, $"   Parley {version}");
+                UnifiedLogger.LogParser(LogLevel.INFO, $"   Parley v{DialogEditor.Utils.VersionHelper.FullVersion}");
                 UnifiedLogger.LogParser(LogLevel.INFO, "═══════════════════════════════════════════════════════════");
 
                 if (!IsValidDlgFile(filePath))
@@ -116,10 +115,9 @@ namespace DialogEditor.Parsers
                 // Set per-file logging context
                 UnifiedLogger.SetFileContext(filePath);
 
-                var version = $"v{DialogEditor.Utils.VersionHelper.Version} (Build: {DialogEditor.Utils.VersionHelper.BuildDate} {DialogEditor.Utils.VersionHelper.Commit})";
                 UnifiedLogger.LogParser(LogLevel.INFO, "═══════════════════════════════════════════════════════════");
                 UnifiedLogger.LogParser(LogLevel.INFO, $"📝 SAVING FILE: {UnifiedLogger.SanitizePath(filePath)}");
-                UnifiedLogger.LogParser(LogLevel.INFO, $"   Parley {version}");
+                UnifiedLogger.LogParser(LogLevel.INFO, $"   Parley v{DialogEditor.Utils.VersionHelper.FullVersion}");
                 UnifiedLogger.LogParser(LogLevel.INFO, "═══════════════════════════════════════════════════════════");
 
                 var buffer = CreateDlgBuffer(dialog);

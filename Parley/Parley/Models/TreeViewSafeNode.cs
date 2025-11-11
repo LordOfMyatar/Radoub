@@ -77,7 +77,14 @@ namespace DialogEditor.Models
                             _children = new ObservableCollection<TreeViewSafeNode>();
                         }
 
-                        // Populate if empty
+                        // Remove placeholder if present
+                        var placeholder = _children.OfType<TreeViewPlaceholderNode>().FirstOrDefault();
+                        if (placeholder != null)
+                        {
+                            _children.Remove(placeholder);
+                        }
+
+                        // Populate if empty (after removing placeholder)
                         if (_children.Count == 0)
                         {
                             PopulateChildrenInternal();
@@ -216,6 +223,13 @@ namespace DialogEditor.Models
                     // LAZY LOADING FIX (Issue #82): Don't auto-populate children
                     // Children are populated on-demand when user expands the node
                     // This eliminates exponential memory/CPU usage at deep tree levels
+
+                    // Add placeholder to show expander chevron if node has potential children
+                    if (HasChildren)
+                    {
+                        // Empty placeholder - will be replaced when node is expanded
+                        _children.Add(new TreeViewPlaceholderNode());
+                    }
                 }
                 return _children;
             }
@@ -225,9 +239,20 @@ namespace DialogEditor.Models
         // Populate children on demand (called when user expands the node)
         public void PopulateChildren()
         {
-            if (_children != null && _children.Count == 0)
+            if (_children != null)
             {
-                PopulateChildrenInternal();
+                // Remove placeholder if present
+                var placeholder = _children.OfType<TreeViewPlaceholderNode>().FirstOrDefault();
+                if (placeholder != null)
+                {
+                    _children.Remove(placeholder);
+                }
+
+                // Only populate if empty (after removing placeholder)
+                if (_children.Count == 0)
+                {
+                    PopulateChildrenInternal();
+                }
             }
         }
         
@@ -387,5 +412,21 @@ namespace DialogEditor.Models
         public override string NodeColor => "Gray";
         public bool IsRoot => true;
         public Dialog Dialog => _dialog;
+    }
+
+    /// <summary>
+    /// Placeholder node to show expander chevron for lazy-loaded children
+    /// </summary>
+    public class TreeViewPlaceholderNode : TreeViewSafeNode
+    {
+        public TreeViewPlaceholderNode()
+            : base(new DialogNode { Type = DialogNodeType.Entry, Text = new LocString() })
+        {
+        }
+
+        public override string DisplayText => "Loading...";
+        public override string NodeColor => "Gray";
+        public override ObservableCollection<TreeViewSafeNode>? Children => null;
+        public override bool HasChildren => false;
     }
 }

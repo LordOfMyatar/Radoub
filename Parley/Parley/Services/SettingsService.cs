@@ -59,6 +59,16 @@ namespace DialogEditor.Services
         private bool _autoSaveEnabled = true; // Default: ON
         private int _autoSaveDelayMs = 2000; // Default: 2 seconds
 
+        // Script editor settings
+        private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
+        private List<string> _scriptSearchPaths = new List<string>(); // Additional directories to search for scripts
+        private bool _warnMissingScriptInDialogDirectory = true; // Warn if script not in same directory as dialog
+
+        // Parameter cache settings
+        private bool _enableParameterCache = true; // Default: ON
+        private int _maxCachedValuesPerParameter = 10; // Default: 10 MRU values
+        private int _maxCachedScripts = 1000; // Default: 1000 scripts
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private SettingsService()
@@ -273,6 +283,75 @@ namespace DialogEditor.Services
             }
         }
 
+        // Script Editor Settings Properties
+        public string ExternalEditorPath
+        {
+            get => _externalEditorPath;
+            set { if (SetProperty(ref _externalEditorPath, value ?? "")) SaveSettings(); }
+        }
+
+        public List<string> ScriptSearchPaths
+        {
+            get => _scriptSearchPaths;
+            set
+            {
+                _scriptSearchPaths = value ?? new List<string>();
+                OnPropertyChanged(nameof(ScriptSearchPaths));
+                SaveSettings();
+            }
+        }
+
+        public bool WarnMissingScriptInDialogDirectory
+        {
+            get => _warnMissingScriptInDialogDirectory;
+            set { if (SetProperty(ref _warnMissingScriptInDialogDirectory, value)) SaveSettings(); }
+        }
+
+        // Parameter Cache Settings Properties
+        public bool EnableParameterCache
+        {
+            get => _enableParameterCache;
+            set
+            {
+                if (SetProperty(ref _enableParameterCache, value))
+                {
+                    ParameterCacheService.Instance.EnableCaching = value;
+                    SaveSettings();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Parameter cache {(value ? "enabled" : "disabled")}");
+                }
+            }
+        }
+
+        public int MaxCachedValuesPerParameter
+        {
+            get => _maxCachedValuesPerParameter;
+            set
+            {
+                // Clamp between 5-50 values
+                if (SetProperty(ref _maxCachedValuesPerParameter, Math.Max(5, Math.Min(50, value))))
+                {
+                    ParameterCacheService.Instance.MaxValuesPerParameter = value;
+                    SaveSettings();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Max cached values per parameter set to {value}");
+                }
+            }
+        }
+
+        public int MaxCachedScripts
+        {
+            get => _maxCachedScripts;
+            set
+            {
+                // Clamp between 100-10000 scripts
+                if (SetProperty(ref _maxCachedScripts, Math.Max(100, Math.Min(10000, value))))
+                {
+                    ParameterCacheService.Instance.MaxScriptsInCache = value;
+                    SaveSettings();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Max cached scripts set to {value}");
+                }
+            }
+        }
+
         private void LoadSettings()
         {
             try
@@ -332,7 +411,17 @@ namespace DialogEditor.Services
                         _autoSaveEnabled = settings.AutoSaveEnabled;
                         _autoSaveDelayMs = Math.Max(1000, Math.Min(10000, settings.AutoSaveDelayMs));
 
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}, theme={(_isDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms");
+                        // Load parameter cache settings
+                        _enableParameterCache = settings.EnableParameterCache;
+                        _maxCachedValuesPerParameter = Math.Max(5, Math.Min(50, settings.MaxCachedValuesPerParameter));
+                        _maxCachedScripts = Math.Max(100, Math.Min(10000, settings.MaxCachedScripts));
+
+                        // Apply parameter cache settings
+                        ParameterCacheService.Instance.EnableCaching = _enableParameterCache;
+                        ParameterCacheService.Instance.MaxValuesPerParameter = _maxCachedValuesPerParameter;
+                        ParameterCacheService.Instance.MaxScriptsInCache = _maxCachedScripts;
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}, theme={(_isDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
                     }
                     else
                     {
@@ -372,7 +461,10 @@ namespace DialogEditor.Services
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
                     AutoSaveEnabled = AutoSaveEnabled,
-                    AutoSaveDelayMs = AutoSaveDelayMs
+                    AutoSaveDelayMs = AutoSaveDelayMs,
+                    EnableParameterCache = EnableParameterCache,
+                    MaxCachedValuesPerParameter = MaxCachedValuesPerParameter,
+                    MaxCachedScripts = MaxCachedScripts
                 };
                 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions 
@@ -495,6 +587,11 @@ namespace DialogEditor.Services
             // Auto-save settings - Phase 1 Step 6
             public bool AutoSaveEnabled { get; set; } = true;
             public int AutoSaveDelayMs { get; set; } = 2000;
+
+            // Parameter cache settings
+            public bool EnableParameterCache { get; set; } = true;
+            public int MaxCachedValuesPerParameter { get; set; } = 10;
+            public int MaxCachedScripts { get; set; } = 1000;
         }
     }
 }
