@@ -193,6 +193,22 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Gets all parameter keys cached for a script
+        /// </summary>
+        public List<string> GetParameterKeys(string scriptName)
+        {
+            if (!EnableCaching || string.IsNullOrWhiteSpace(scriptName))
+                return new List<string>();
+
+            scriptName = scriptName.ToLowerInvariant();
+
+            if (!_cache.Scripts.ContainsKey(scriptName))
+                return new List<string>();
+
+            return _cache.Scripts[scriptName].Parameters.Keys.ToList();
+        }
+
+        /// <summary>
         /// Clears cache for a specific script
         /// </summary>
         public void ClearScriptCache(string scriptName)

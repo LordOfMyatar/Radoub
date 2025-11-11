@@ -60,14 +60,39 @@ namespace DialogEditor.Views
                 ScriptNameText.Text = "No script loaded";
             }
 
-            // Populate keys list
+            // Populate keys list - merge declaration keys + cached keys
             var noKeysMessage = this.FindControl<TextBlock>("NoKeysMessage");
+            var allKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // Add keys from script declarations
             if (declarations != null && declarations.Keys.Count > 0)
             {
-                KeysList.ItemsSource = declarations.Keys.OrderBy(k => k).ToList();
+                foreach (var key in declarations.Keys)
+                {
+                    allKeys.Add(key);
+                }
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"ParameterBrowserWindow: Found {declarations.Keys.Count} declaration keys for {scriptName}");
+            }
+
+            // Add keys from cache
+            if (!string.IsNullOrWhiteSpace(scriptName))
+            {
+                var cachedKeys = ParameterCacheService.Instance.GetParameterKeys(scriptName);
+                foreach (var key in cachedKeys)
+                {
+                    allKeys.Add(key);
+                }
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"ParameterBrowserWindow: Found {cachedKeys.Count} cached keys for {scriptName}");
+            }
+
+            if (allKeys.Count > 0)
+            {
+                KeysList.ItemsSource = allKeys.OrderBy(k => k).ToList();
                 if (noKeysMessage != null) noKeysMessage.IsVisible = false;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"ParameterBrowserWindow: Loaded {declarations.Keys.Count} keys for {scriptName}");
+                    $"ParameterBrowserWindow: Displaying {allKeys.Count} total keys (declarations + cache) for {scriptName}");
             }
             else
             {
@@ -106,13 +131,24 @@ namespace DialogEditor.Views
                 }
                 else
                 {
-                    ValuesHeaderText.Text = $"Values for '{selectedKey}'";
+                    // Count cached vs declaration values
+                    var cachedCount = 0;
+                    var declCount = 0;
+                    if (!string.IsNullOrWhiteSpace(_currentScriptName))
+                    {
+                        cachedCount = ParameterCacheService.Instance.GetValues(_currentScriptName, selectedKey).Count;
+                    }
+                    var declValues = _declarations?.GetValuesForKey(selectedKey) ?? new List<string>();
+                    declCount = declValues.Count;
+
+                    ValuesHeaderText.Text = $"Values for '{selectedKey}' (🔵 {cachedCount} recent, 📋 {declCount} declared)";
                 }
 
                 if (values.Count > 0)
                 {
-                    ValuesList.ItemsSource = values.OrderBy(v => v).ToList();
-                    ValueCountText.Text = $"{values.Count} values";
+                    // Keep MRU order (cached first, then declarations)
+                    ValuesList.ItemsSource = values;
+                    ValueCountText.Text = $"{values.Count} total values";
                     UnifiedLogger.LogApplication(LogLevel.DEBUG,
                         $"ParameterBrowserWindow: Loaded {values.Count} values for key '{selectedKey}'");
                 }
@@ -120,7 +156,7 @@ namespace DialogEditor.Views
                 {
                     ValuesList.ItemsSource = new List<string>();
                     ValueCountText.Text = "No values available";
-                    ValuesHeaderText.Text = $"No values defined for '{selectedKey}'";
+                    ValuesHeaderText.Text = $"No values for '{selectedKey}'";
                 }
 
                 // Reset value selection
@@ -138,13 +174,14 @@ namespace DialogEditor.Views
 
         /// <summary>
         /// Resolves values for a key, handling dependencies on other parameters.
+        /// Merges script declarations with cached values (MRU priority).
         /// If the key depends on another parameter (e.g., FROM_JOURNAL_ENTRIES(sQuest)),
         /// filters the values based on the existing parameter value.
         /// </summary>
         private List<string> ResolveValuesForKey(string key)
         {
-            // Get base values for this key
-            var values = _declarations?.GetValuesForKey(key) ?? new List<string>();
+            // Get base values from script declarations
+            var declarationValues = _declarations?.GetValuesForKey(key) ?? new List<string>();
 
             // Check if this key has a dependency
             if (_declarations?.Dependencies != null && _declarations.Dependencies.ContainsKey(key))
@@ -173,11 +210,39 @@ namespace DialogEditor.Views
                 {
                     UnifiedLogger.LogApplication(LogLevel.WARN,
                         $"ParameterBrowserWindow: Dependency '{dependsOnKey}' not found in existing parameters - showing all entries");
-                    // Fall back to showing all values (already loaded in values)
+                    // Fall back to showing all values (already loaded in declarationValues)
                 }
             }
 
-            return values;
+            // Get cached values for this script and parameter (MRU order)
+            var cachedValues = new List<string>();
+            if (!string.IsNullOrWhiteSpace(_currentScriptName))
+            {
+                cachedValues = ParameterCacheService.Instance.GetValues(_currentScriptName, key);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"ParameterBrowserWindow: Found {cachedValues.Count} cached values for '{_currentScriptName}.{key}'");
+            }
+
+            // Merge cached values (priority) + script declarations (secondary)
+            // Cached values come first (MRU order), then script declarations that aren't already in cache
+            var mergedValues = new List<string>();
+
+            // Add cached values first (already in MRU order)
+            mergedValues.AddRange(cachedValues);
+
+            // Add script declaration values that aren't in cache
+            foreach (var declValue in declarationValues)
+            {
+                if (!cachedValues.Contains(declValue, StringComparer.OrdinalIgnoreCase))
+                {
+                    mergedValues.Add(declValue);
+                }
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"ParameterBrowserWindow: Merged {cachedValues.Count} cached + {declarationValues.Count} declaration values = {mergedValues.Count} total");
+
+            return mergedValues;
         }
 
         /// <summary>
