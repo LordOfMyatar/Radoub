@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.6-alpha] - TBD
-**Branch**: `parley/feat/epic-1-parameters` | **PR**: #TBD
+**Branch**: `parley/feat/epic-1-parameters` | **PR**: #93
 
 ### Epic 1: Script Parameters
 
