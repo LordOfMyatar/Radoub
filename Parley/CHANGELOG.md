@@ -13,9 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.6-alpha] - TBD
 **Branch**: `parley/feat/epic-1-parameters` | **PR**: #93
 
-### Epic 1: Script Parameters
+### Epic 1: Script Parameters (COMPLETE)
 
-Parameter browsing, caching, and intelligent suggestions for dialog script parameters.
+Parameter browsing, caching, and intelligent suggestions for dialog script parameters. Full cache UI integration complete with live refresh and visual indicators for cached values.
 
 ### Added
 - **Issue #53**: Script parameter declaration parsing
@@ -47,18 +47,21 @@ Parameter browsing, caching, and intelligent suggestions for dialog script param
 
 ### New UI Components
 - **ParameterBrowserWindow**: Dual-pane parameter browser
-  - Left pane: Parameter keys list
-  - Right pane: Values for selected key
+  - Left pane: Parameter keys list (declarations + cached keys)
+  - Right pane: Values for selected key (declarations first, cached second with 🔵 marker)
+  - Values prioritize script declarations (curated, less likely typos) over cached values
   - "Copy Key", "Copy Value", "Add Parameter" buttons
-  - "Refresh Journal Cache" button for journal data integration
+  - "Enable Cache" checkbox with live refresh (show/hide cached values immediately)
+  - "Clear Cache" button (clears cache for current script)
+  - "Refresh Journal" button for journal data integration
   - Non-modal window design (doesn't block main window)
   - Dark mode selection visibility fixes
-- **Settings → Parameters Tab**: Cache management UI
+- **Settings → Parameters Tab**: Global cache management UI
   - Enable/disable parameter caching checkbox
   - Max values per parameter slider (5-50)
   - Max cached scripts slider (100-5000)
   - Cache statistics display (scripts cached, parameters cached, total values)
-  - Clear cache and refresh stats buttons
+  - Clear all cache and refresh stats buttons
 
 ### New Services
 - **ParameterCacheService**: Manages parameter value caching
@@ -79,14 +82,26 @@ Parameter browsing, caching, and intelligent suggestions for dialog script param
   - GetCacheStats(): Returns cache statistics
   - Prevents redundant file reads for same scripts
 
-### Technical
+###Technical
 - Script declarations loaded on-demand when suggestion button clicked
 - Script preview uses cached content to minimize file I/O
 - Parameter browser integrates with JournalService for FROM_JOURNAL_ENTRIES support
+- Cache integration: Browser merges script declarations (priority) + cached values (secondary)
+  - Declarations first (less likely to contain typos)
+  - Cached values marked with 🔵 when not in declarations
+  - Marker automatically stripped when value selected
+- Cache enable/disable toggles in browser with immediate UI refresh
+  - RefreshKeysList() rebuilds keys based on EnableCaching state
+  - RefreshValuesListForSelectedKey() updates values and header counts
 - Cache saves automatically when values added (debounced)
 - Window position persistence (main window location saved across sessions)
 - Double-tap to toggle TreeView node expansion
 - ScriptServiceCacheTests verify caching behavior
+
+### Known Issues
+- **Test Failures**: 5 tests currently failing (4 LazyLoadingPerformanceTests, 1 ScriptServiceCacheTests)
+  - LazyLoadingPerformanceTests: Pre-existing failures from main branch (issue #82 follow-up)
+  - ScriptServiceCacheTests: Test references missing script file, needs test data setup
 
 ### Documentation
 - **Script_Parameter_Browser.md**: User guide for parameter browser
