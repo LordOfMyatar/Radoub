@@ -84,6 +84,7 @@ namespace DialogEditor.Views
             {
                 _selectedScript = scriptName;
                 SelectedScriptLabel.Text = scriptName;
+                OpenInEditorButton.IsEnabled = true;
 
                 // Load script preview
                 try
@@ -116,6 +117,7 @@ namespace DialogEditor.Views
                 SelectedScriptLabel.Text = "(none)";
                 PreviewHeaderLabel.Text = "Script Preview";
                 PreviewTextBox.Text = "";
+                OpenInEditorButton.IsEnabled = false;
             }
         }
 
@@ -136,6 +138,52 @@ namespace DialogEditor.Views
         private void OnCancelClick(object? sender, RoutedEventArgs e)
         {
             Close(null);
+        }
+
+        private void OnOpenInEditorClick(object? sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(_selectedScript))
+                return;
+
+            try
+            {
+                var scriptPath = _scriptService.GetScriptFilePath(_selectedScript);
+                if (scriptPath == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not locate script file: {_selectedScript}.nss");
+                    return;
+                }
+
+                var editorPath = SettingsService.Instance.ExternalEditorPath;
+
+                if (string.IsNullOrWhiteSpace(editorPath))
+                {
+                    // No editor configured - open with default system editor
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = scriptPath,
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened script in default editor: {UnifiedLogger.SanitizePath(scriptPath)}");
+                }
+                else
+                {
+                    // Open with configured external editor
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = editorPath,
+                        Arguments = $"\"{scriptPath}\"",
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened script in external editor: {UnifiedLogger.SanitizePath(scriptPath)}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open script in editor: {ex.Message}");
+            }
         }
     }
 }

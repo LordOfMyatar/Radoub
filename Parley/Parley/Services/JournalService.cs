@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Parsers;
@@ -14,6 +15,9 @@ namespace DialogEditor.Services
     /// </summary>
     public class JournalService
     {
+        private static readonly Lazy<JournalService> _instance = new Lazy<JournalService>(() => new JournalService());
+        public static JournalService Instance => _instance.Value;
+
         private List<JournalCategory>? _cachedCategories;
         private string? _cachedFilePath;
 
@@ -70,6 +74,9 @@ namespace DialogEditor.Services
 
                 _cachedCategories = categories;
                 _cachedFilePath = filePath;
+
+                // Write cache file for script parameter browser
+                WriteCacheFile(categories);
 
                 UnifiedLogger.LogJournal(LogLevel.INFO, $"Parsed {categories.Count} quest categories from journal");
                 return categories;
@@ -237,6 +244,27 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Get all unique entry IDs across all quests (for parameter browser)
+        /// Returns formatted strings like "0", "1", "2", etc.
+        /// </summary>
+        public List<string> GetAllEntryIDs()
+        {
+            if (_cachedCategories == null)
+                return new List<string>();
+
+            var allIDs = new HashSet<uint>();
+            foreach (var category in _cachedCategories)
+            {
+                foreach (var entry in category.Entries)
+                {
+                    allIDs.Add(entry.ID);
+                }
+            }
+
+            return allIDs.OrderBy(id => id).Select(id => id.ToString()).ToList();
+        }
+
+        /// <summary>
         /// Clear cached journal data
         /// </summary>
         public void ClearCache()
@@ -244,6 +272,61 @@ namespace DialogEditor.Services
             _cachedCategories = null;
             _cachedFilePath = null;
             UnifiedLogger.LogJournal(LogLevel.DEBUG, "Journal cache cleared");
+        }
+
+        /// <summary>
+        /// Write journal cache file for script parameter browser.
+        /// Format: { "quest_tag": ["0", "1", "2", ...], ... }
+        /// </summary>
+        private void WriteCacheFile(List<JournalCategory> categories)
+        {
+            try
+            {
+                var cacheFilePath = GetCacheFilePath();
+                var cacheDir = Path.GetDirectoryName(cacheFilePath);
+
+                if (!string.IsNullOrEmpty(cacheDir) && !Directory.Exists(cacheDir))
+                {
+                    Directory.CreateDirectory(cacheDir);
+                }
+
+                // Build cache dictionary: quest_tag -> entry_ids
+                var cache = new Dictionary<string, List<string>>();
+                foreach (var category in categories)
+                {
+                    var entryIds = category.Entries
+                        .Select(e => e.ID.ToString())
+                        .ToList();
+                    cache[category.Tag] = entryIds;
+                }
+
+                // Write JSON
+                var json = JsonSerializer.Serialize(cache, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+                File.WriteAllText(cacheFilePath, json);
+
+                UnifiedLogger.LogJournal(LogLevel.DEBUG,
+                    $"Wrote journal cache file: {UnifiedLogger.SanitizePath(cacheFilePath)} ({cache.Count} quests)");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogJournal(LogLevel.WARN,
+                    $"Failed to write journal cache file: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Get path to journal cache file (in user's temp/app data directory)
+        /// </summary>
+        public static string GetCacheFilePath()
+        {
+            var userDataDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Parley",
+                "Cache");
+            return Path.Combine(userDataDir, "journal_cache.json");
         }
 
         /// <summary>

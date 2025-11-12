@@ -130,6 +130,7 @@ namespace DialogEditor.Views
             var darkThemeRadio = this.FindControl<RadioButton>("DarkThemeRadio");
             var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
             var fontSizeLabel = this.FindControl<TextBlock>("FontSizeLabel");
+            var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
 
             if (settings.IsDarkTheme)
             {
@@ -148,6 +149,11 @@ namespace DialogEditor.Views
             if (fontSizeLabel != null)
             {
                 fontSizeLabel.Text = settings.FontSize.ToString("0");
+            }
+
+            if (externalEditorPathTextBox != null)
+            {
+                externalEditorPathTextBox.Text = settings.ExternalEditorPath;
             }
 
             // Logging Settings
@@ -170,6 +176,41 @@ namespace DialogEditor.Views
             {
                 logRetentionLabel.Text = $"{settings.LogRetentionSessions} sessions";
             }
+
+            // Parameter Cache Settings
+            var enableParameterCacheCheckBox = this.FindControl<CheckBox>("EnableParameterCacheCheckBox");
+            var maxCachedValuesSlider = this.FindControl<Slider>("MaxCachedValuesSlider");
+            var maxCachedValuesLabel = this.FindControl<TextBlock>("MaxCachedValuesLabel");
+            var maxCachedScriptsSlider = this.FindControl<Slider>("MaxCachedScriptsSlider");
+            var maxCachedScriptsLabel = this.FindControl<TextBlock>("MaxCachedScriptsLabel");
+
+            if (enableParameterCacheCheckBox != null)
+            {
+                enableParameterCacheCheckBox.IsChecked = settings.EnableParameterCache;
+            }
+
+            if (maxCachedValuesSlider != null)
+            {
+                maxCachedValuesSlider.Value = settings.MaxCachedValuesPerParameter;
+            }
+
+            if (maxCachedValuesLabel != null)
+            {
+                maxCachedValuesLabel.Text = $"{settings.MaxCachedValuesPerParameter} values";
+            }
+
+            if (maxCachedScriptsSlider != null)
+            {
+                maxCachedScriptsSlider.Value = settings.MaxCachedScripts;
+            }
+
+            if (maxCachedScriptsLabel != null)
+            {
+                maxCachedScriptsLabel.Text = $"{settings.MaxCachedScripts} scripts";
+            }
+
+            // Load cache statistics
+            UpdateCacheStats();
 
             // Platform-specific paths info
             var platformPathsInfo = this.FindControl<TextBlock>("PlatformPathsInfo");
@@ -406,6 +447,46 @@ namespace DialogEditor.Views
                     validation.Text = "❌ Could not auto-detect game path. Please browse manually.";
                     validation.Foreground = Brushes.Red;
                 }
+            }
+        }
+
+        private async void OnBrowseExternalEditorClick(object? sender, RoutedEventArgs e)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse External Editor clicked");
+
+            var storageProvider = StorageProvider;
+            if (storageProvider == null) return;
+
+            var options = new FilePickerOpenOptions
+            {
+                Title = "Select External Text Editor",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Executable Files")
+                    {
+                        Patterns = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                            ? new[] { "*.exe" }
+                            : new[] { "*" }
+                    },
+                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+                }
+            };
+
+            var result = await storageProvider.OpenFilePickerAsync(options);
+            if (result.Count > 0)
+            {
+                var path = result[0].Path.LocalPath;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"User selected external editor: {UnifiedLogger.SanitizePath(path)}");
+                var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
+                if (externalEditorPathTextBox != null)
+                {
+                    externalEditorPathTextBox.Text = path;
+                }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse canceled by user");
             }
         }
 
@@ -869,6 +950,7 @@ namespace DialogEditor.Views
             // UI Settings
             var darkThemeRadio = this.FindControl<RadioButton>("DarkThemeRadio");
             var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
+            var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
 
             if (darkThemeRadio != null)
             {
@@ -878,6 +960,11 @@ namespace DialogEditor.Views
             if (fontSizeSlider != null)
             {
                 settings.FontSize = fontSizeSlider.Value;
+            }
+
+            if (externalEditorPathTextBox != null)
+            {
+                settings.ExternalEditorPath = externalEditorPathTextBox.Text ?? "";
             }
 
             // Logging Settings
@@ -937,6 +1024,139 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error applying font size preview: {ex.Message}");
             }
+        }
+
+        // Parameter Cache Event Handlers
+
+        private void OnParameterCacheSettingChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var checkbox = sender as CheckBox;
+            if (checkbox != null)
+            {
+                SettingsService.Instance.EnableParameterCache = checkbox.IsChecked ?? true;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Parameter cache {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
+            }
+        }
+
+        private void OnMaxCachedValuesChanged(object? sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var slider = sender as Slider;
+            var label = this.FindControl<TextBlock>("MaxCachedValuesLabel");
+
+            if (slider != null && label != null)
+            {
+                int value = (int)slider.Value;
+                label.Text = $"{value} values";
+                SettingsService.Instance.MaxCachedValuesPerParameter = value;
+            }
+        }
+
+        private void OnMaxCachedScriptsChanged(object? sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var slider = sender as Slider;
+            var label = this.FindControl<TextBlock>("MaxCachedScriptsLabel");
+
+            if (slider != null && label != null)
+            {
+                int value = (int)slider.Value;
+                label.Text = $"{value} scripts";
+                SettingsService.Instance.MaxCachedScripts = value;
+            }
+        }
+
+        private void UpdateCacheStats()
+        {
+            try
+            {
+                var stats = ParameterCacheService.Instance.GetStats();
+                var statsText = this.FindControl<TextBlock>("CacheStatsText");
+
+                if (statsText != null)
+                {
+                    statsText.Text = $"Cached Scripts: {stats.ScriptCount}\n" +
+                                   $"Total Parameters: {stats.ParameterCount}\n" +
+                                   $"Total Values: {stats.ValueCount}";
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error updating cache stats: {ex.Message}");
+            }
+        }
+
+        private async void OnClearParameterCacheClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Show confirmation (non-modal)
+                var result = await ShowConfirmationAsync("Clear Parameter Cache",
+                    "This will delete all cached parameter values. Are you sure?");
+
+                if (result)
+                {
+                    ParameterCacheService.Instance.ClearAllCache();
+                    UpdateCacheStats();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Parameter cache cleared");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error clearing parameter cache: {ex.Message}");
+            }
+        }
+
+        private void OnRefreshCacheStatsClick(object? sender, RoutedEventArgs e)
+        {
+            UpdateCacheStats();
+        }
+
+        private async Task<bool> ShowConfirmationAsync(string title, string message)
+        {
+            var dialog = new Window
+            {
+                Title = title,
+                Width = 400,
+                Height = 150,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false
+            };
+
+            var result = false;
+            var panel = new StackPanel { Margin = new Thickness(20), Spacing = 15 };
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = message,
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap
+            });
+
+            var buttonPanel = new StackPanel
+            {
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                Spacing = 10
+            };
+
+            var yesButton = new Button { Content = "Yes", Width = 80 };
+            yesButton.Click += (s, e) => { result = true; dialog.Close(); };
+
+            var noButton = new Button { Content = "No", Width = 80 };
+            noButton.Click += (s, e) => { result = false; dialog.Close(); };
+
+            buttonPanel.Children.Add(yesButton);
+            buttonPanel.Children.Add(noButton);
+            panel.Children.Add(buttonPanel);
+
+            dialog.Content = panel;
+            await dialog.ShowDialog(this);
+
+            return result;
         }
     }
 }

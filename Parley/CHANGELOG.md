@@ -10,6 +10,112 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.6-alpha] - TBD
+**Branch**: `parley/feat/epic-1-parameters` | **PR**: #93
+
+### Epic 1: Script Parameters (COMPLETE)
+
+Parameter browsing, caching, and intelligent suggestions for dialog script parameters. Full cache UI integration complete with live refresh and visual indicators for cached values.
+
+### Added
+- **Issue #53**: Script parameter declaration parsing
+  - Parses `----KeyList----` and `----ValueList----` blocks from NWScript comments
+  - Supports keyed ValueList format: `----ValueList-KEYNAME----`
+  - Parameter declarations can appear anywhere in script file
+  - ScriptParameterParser extracts parameter hints from .nss files
+  - ScriptParameterDeclarations model with Keys, Values, ValuesByKey
+  - Comprehensive test coverage in ScriptParameterParserTests.cs
+- **Issue #54**: Parameter suggestion helper buttons
+  - 💡 "Suggest" buttons next to parameter add buttons (Actions and Conditions)
+  - Launches Parameter Browser window showing available keys and values
+  - Automatically loads declarations when scripts are selected/changed
+  - Script preview panel shows first 30 lines of script source code
+  - Preview updates when script names change in textboxes
+  - Non-blocking UI - browser doesn't block main window
+- **Issue #55**: Parameter value caching system
+  - JSON-based cache: `parameter_cache.json`
+  - Cross-platform cache location:
+    - Windows: `%APPDATA%/Parley/parameter_cache.json`
+    - macOS: `~/Library/Application Support/Parley/parameter_cache.json`
+    - Linux: `~/.config/Parley/parameter_cache.json`
+  - MRU (Most Recently Used) ordering
+  - Configurable limits: MaxValuesPerParameter (5-50, default 10), MaxScriptsInCache (default 1000)
+  - Cache statistics display in Settings → Parameters tab
+  - "Clear Cache" and "Refresh Stats" buttons
+  - Cross-session persistence (loads on startup, saves on changes)
+  - ParameterCacheService singleton with thread-safe operations
+
+### New UI Components
+- **ParameterBrowserWindow**: Dual-pane parameter browser
+  - Left pane: Parameter keys list (declarations + cached keys)
+  - Right pane: Values for selected key (declarations first, cached second with 🔵 marker)
+  - Values prioritize script declarations (curated, less likely typos) over cached values
+  - "Copy Key", "Copy Value", "Add Parameter" buttons
+  - "Enable Cache" checkbox with live refresh (show/hide cached values immediately)
+  - "Clear Cache" button (clears cache for current script)
+  - "Refresh Journal" button for journal data integration
+  - Non-modal window design (doesn't block main window)
+  - Dark mode selection visibility fixes
+- **Settings → Parameters Tab**: Global cache management UI
+  - Enable/disable parameter caching checkbox
+  - Max values per parameter slider (5-50)
+  - Max cached scripts slider (100-5000)
+  - Cache statistics display (scripts cached, parameters cached, total values)
+  - Clear all cache and refresh stats buttons
+
+### New Services
+- **ParameterCacheService**: Manages parameter value caching
+  - AddValue(): Adds value to cache with MRU ordering
+  - GetValues(): Retrieves cached values for parameter
+  - ClearCache(): Clears all or per-script cache
+  - GetCacheStats(): Returns cache statistics
+  - Platform-specific cache file path resolution
+- **ExternalEditorService**: Opens scripts in external editors
+  - Detects VS Code, Notepad++, Sublime Text on Windows
+  - Falls back to system default editor if no editor configured
+  - Settings integration for custom editor path
+  - FindScriptPath() locates .nss files in module directories
+- **ScriptService Enhancements**: Script content caching
+  - GetScriptContentAsync(): Loads and caches full script text
+  - GetParameterDeclarationsAsync(): Caches parsed declarations
+  - ClearCache(): Clears script content and declaration cache
+  - GetCacheStats(): Returns cache statistics
+  - Prevents redundant file reads for same scripts
+
+###Technical
+- Script declarations loaded on-demand when suggestion button clicked
+- Script preview uses cached content to minimize file I/O
+- Parameter browser integrates with JournalService for FROM_JOURNAL_ENTRIES support
+- Cache integration: Browser merges script declarations (priority) + cached values (secondary)
+  - Declarations first (less likely to contain typos)
+  - Cached values marked with 🔵 when not in declarations
+  - Marker automatically stripped when value selected
+- Cache enable/disable toggles in browser with immediate UI refresh
+  - RefreshKeysList() rebuilds keys based on EnableCaching state
+  - RefreshValuesListForSelectedKey() updates values and header counts
+- Cache saves automatically when values added (debounced)
+- Window position persistence (main window location saved across sessions)
+- Double-tap to toggle TreeView node expansion
+- ScriptServiceCacheTests verify caching behavior
+
+### Known Issues
+- **Test Failures**: 5 tests currently failing (4 LazyLoadingPerformanceTests, 1 ScriptServiceCacheTests)
+  - LazyLoadingPerformanceTests: Pre-existing failures from main branch (issue #82 follow-up)
+  - ScriptServiceCacheTests: Test references missing script file, needs test data setup
+
+### Documentation
+- **Script_Parameter_Browser.md**: User guide for parameter browser
+  - Parameter declaration format examples
+  - Using suggestion buttons and browser window
+  - Cache management instructions
+  - Journal integration notes
+- **parameter_example.nss**: Example script with parameter declarations
+  - Demonstrates KeyList and ValueList formats
+  - Shows keyed ValueList syntax
+  - Includes FROM_JOURNAL_ENTRIES example
+
+---
+
 ## [0.1.5-alpha] - 2025-11-09
 **Branch**: `parley/feat/epic-0-plugins` | **PR**: #84
 

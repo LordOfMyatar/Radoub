@@ -133,6 +133,11 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Spacing="10">
+            <Button x:Name="OpenInEditorButton"
+                    Content="Open in Editor"
+                    Width="120"
+                    Click="OnOpenInEditorClick"
+                    IsEnabled="False"/>
             <Button Content="OK"
                     Width="80"
                     Click="OnOkClick"

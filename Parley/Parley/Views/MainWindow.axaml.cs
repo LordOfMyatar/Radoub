@@ -24,7 +24,6 @@ namespace DialogEditor.Views
     {
         private readonly MainViewModel _viewModel;
         private readonly AudioService _audioService;
-        private readonly JournalService _journalService;
         private readonly CreatureService _creatureService;
         private readonly PluginManager _pluginManager;
 
@@ -42,6 +41,10 @@ namespace DialogEditor.Views
         // Session cache for recently used creature tags
         private readonly List<string> _recentCreatureTags = new();
 
+        // Parameter autocomplete: Cache of script parameter declarations
+        private ScriptParameterDeclarations? _currentConditionDeclarations;
+        private ScriptParameterDeclarations? _currentActionDeclarations;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -52,7 +55,6 @@ namespace DialogEditor.Views
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
             _audioService = new AudioService();
-            _journalService = new JournalService();
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
 
@@ -75,6 +77,13 @@ namespace DialogEditor.Views
             // Hook up menu events
             this.Opened += async (s, e) =>
             {
+                // Restore window position from settings
+                var settings = SettingsService.Instance;
+                if (settings.WindowLeft >= 0 && settings.WindowTop >= 0)
+                {
+                    Position = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
+                }
+
                 PopulateRecentFilesMenu();
                 // Start enabled plugins after window opens
                 var startedPlugins = await _pluginManager.StartEnabledPluginsAsync();
@@ -97,6 +106,7 @@ namespace DialogEditor.Views
                 }
             };
             this.Closing += OnWindowClosing;
+            this.PositionChanged += OnWindowPositionChanged;
 
             // Phase 1 Fix: Set up keyboard shortcuts
             SetupKeyboardShortcuts();
@@ -329,6 +339,26 @@ namespace DialogEditor.Views
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
             _audioService.Dispose();
+
+            // Save window position on close
+            SaveWindowPosition();
+        }
+
+        private void OnWindowPositionChanged(object? sender, PixelPointEventArgs e)
+        {
+            // Save position when window is moved (debounced by SettingsService)
+            SaveWindowPosition();
+        }
+
+        private void SaveWindowPosition()
+        {
+            // Save current window position to settings
+            var settings = SettingsService.Instance;
+            if (Position.X >= 0 && Position.Y >= 0)
+            {
+                settings.WindowLeft = Position.X;
+                settings.WindowTop = Position.Y;
+            }
         }
 
         // Phase 1 Step 4: Removed UnsavedChangesDialog - auto-save provides safety
@@ -1194,6 +1224,16 @@ namespace DialogEditor.Views
             }
         }
 
+        private void OnTreeViewItemDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+        {
+            // Toggle expansion of the selected node when double-tapped
+            if (_selectedNode != null)
+            {
+                _selectedNode.IsExpanded = !_selectedNode.IsExpanded;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Double-tap toggled node expansion: {_selectedNode.IsExpanded}");
+            }
+        }
+
         private void PopulatePropertiesPanel(TreeViewSafeNode node)
         {
             // CRITICAL FIX: Prevent auto-save during programmatic updates
@@ -1351,6 +1391,17 @@ namespace DialogEditor.Views
                 scriptTextBox.Text = dialogNode.ScriptAction ?? "";
                 scriptTextBox.IsReadOnly = false;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateProperties: Set Script Action field to '{dialogNode.ScriptAction}' for node '{dialogNode.DisplayText}'");
+
+                // Load parameter declarations and preview for action script
+                if (!string.IsNullOrWhiteSpace(dialogNode.ScriptAction))
+                {
+                    _ = LoadParameterDeclarationsAsync(dialogNode.ScriptAction, isCondition: false);
+                    _ = LoadScriptPreviewAsync(dialogNode.ScriptAction, isCondition: false);
+                }
+                else
+                {
+                    ClearScriptPreview(isCondition: false);
+                }
             }
             else
             {
@@ -1367,11 +1418,23 @@ namespace DialogEditor.Views
                     scriptAppearsTextBox.Text = node.SourcePointer.ScriptAppears ?? "";
                     scriptAppearsTextBox.IsReadOnly = false;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateProperties: Set Conditional Script to '{node.SourcePointer.ScriptAppears}' from SourcePointer");
+
+                    // Load parameter declarations and preview for conditional script
+                    if (!string.IsNullOrWhiteSpace(node.SourcePointer.ScriptAppears))
+                    {
+                        _ = LoadParameterDeclarationsAsync(node.SourcePointer.ScriptAppears, isCondition: true);
+                        _ = LoadScriptPreviewAsync(node.SourcePointer.ScriptAppears, isCondition: true);
+                    }
+                    else
+                    {
+                        ClearScriptPreview(isCondition: true);
+                    }
                 }
                 else
                 {
                     scriptAppearsTextBox.Text = "(No pointer context - root level entry)";
                     scriptAppearsTextBox.IsReadOnly = true;
+                    ClearScriptPreview(isCondition: true);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "PopulateProperties: No SourcePointer for conditional script");
                 }
             }
@@ -1796,6 +1859,16 @@ namespace DialogEditor.Views
                         _selectedNode.SourcePointer.ScriptAppears = scriptAppearsTextBox.Text ?? "";
                         saved = true;
                         displayName = "Conditional Script";
+
+                        // Reload script preview when script name changes
+                        if (!string.IsNullOrWhiteSpace(scriptAppearsTextBox.Text))
+                        {
+                            _ = LoadScriptPreviewAsync(scriptAppearsTextBox.Text, isCondition: true);
+                        }
+                        else
+                        {
+                            ClearScriptPreview(isCondition: true);
+                        }
                     }
                     break;
 
@@ -1807,6 +1880,16 @@ namespace DialogEditor.Views
                         dialogNode.ScriptAction = scriptTextBox.Text ?? "";
                         saved = true;
                         displayName = "Script Action";
+
+                        // Reload script preview when script name changes
+                        if (!string.IsNullOrWhiteSpace(scriptTextBox.Text))
+                        {
+                            _ = LoadScriptPreviewAsync(scriptTextBox.Text, isCondition: false);
+                        }
+                        else
+                        {
+                            ClearScriptPreview(isCondition: false);
+                        }
                     }
                     break;
 
@@ -2154,6 +2237,147 @@ namespace DialogEditor.Views
             }
         }
 
+        private async void OnSuggestConditionsParamClick(object? sender, RoutedEventArgs e)
+        {
+            // Always reload declarations from current textbox to avoid caching wrong script
+            var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
+            var currentScript = scriptTextBox?.Text?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(currentScript))
+            {
+                await LoadParameterDeclarationsAsync(currentScript, true);
+            }
+
+            ShowParameterBrowser(_currentConditionDeclarations, true);
+        }
+
+        private async void OnSuggestActionsParamClick(object? sender, RoutedEventArgs e)
+        {
+            // Always reload declarations from current textbox to avoid caching wrong script
+            var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
+            var currentScript = scriptTextBox?.Text?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(currentScript))
+            {
+                await LoadParameterDeclarationsAsync(currentScript, false);
+            }
+
+            ShowParameterBrowser(_currentActionDeclarations, false);
+        }
+
+        /// <summary>
+        /// Extracts existing parameters from the UI panel for dependency resolution.
+        /// Returns a dictionary of key-value pairs currently in the parameter panel.
+        /// </summary>
+        private Dictionary<string, string> GetExistingParametersFromPanel(bool isCondition)
+        {
+            var parameters = new Dictionary<string, string>();
+
+            try
+            {
+                var panelName = isCondition ? "ConditionsParametersPanel" : "ActionsParametersPanel";
+                var panel = this.FindControl<StackPanel>(panelName);
+
+                if (panel == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"GetExistingParametersFromPanel: {panelName} not found");
+                    return parameters;
+                }
+
+                foreach (var child in panel.Children)
+                {
+                    if (child is Grid paramGrid && paramGrid.Children.Count >= 2)
+                    {
+                        var keyTextBox = paramGrid.Children[0] as TextBox;
+                        var valueTextBox = paramGrid.Children[1] as TextBox; // Value is at index 1, not 2!
+
+                        if (keyTextBox != null && valueTextBox != null &&
+                            !string.IsNullOrWhiteSpace(keyTextBox.Text))
+                        {
+                            string key = keyTextBox.Text.Trim();
+                            string value = (valueTextBox.Text ?? "").Trim();
+
+                            if (!parameters.ContainsKey(key))
+                            {
+                                parameters[key] = value;
+                                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                    $"GetExistingParametersFromPanel: Found parameter '{key}' = '{value}'");
+                            }
+                        }
+                    }
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"GetExistingParametersFromPanel: Extracted {parameters.Count} existing parameters");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"GetExistingParametersFromPanel: Error extracting parameters - {ex.Message}");
+            }
+
+            return parameters;
+        }
+
+        /// <summary>
+        /// Shows parameter browser window for selecting parameters
+        /// </summary>
+        private async void ShowParameterBrowser(ScriptParameterDeclarations? declarations, bool isCondition)
+        {
+            try
+            {
+                // Get script name from the appropriate textbox
+                string scriptName = "";
+                if (isCondition)
+                {
+                    var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
+                    scriptName = scriptTextBox?.Text ?? "";
+                }
+                else
+                {
+                    var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
+                    scriptName = scriptTextBox?.Text ?? "";
+                }
+
+                // Get existing parameters from the node for dependency resolution
+                var existingParameters = GetExistingParametersFromPanel(isCondition);
+
+                var browser = new ParameterBrowserWindow();
+                browser.SetDeclarations(declarations, scriptName, isCondition, existingParameters);
+
+                await browser.ShowDialog(this);
+
+                if (browser.DialogResult && !string.IsNullOrEmpty(browser.SelectedKey))
+                {
+                    // Add the parameter to the appropriate panel
+                    var key = browser.SelectedKey;
+                    var value = browser.SelectedValue ?? "";
+
+                    // Find the appropriate panel
+                    var panelName = isCondition ? "ConditionsParametersPanel" : "ActionsParametersPanel";
+                    var panel = this.FindControl<StackPanel>(panelName);
+
+                    if (panel != null)
+                    {
+                        AddParameterRow(panel, key, value, isCondition);
+                        OnParameterChanged(isCondition);
+
+                        var paramType = isCondition ? "condition" : "action";
+                        _viewModel.StatusMessage = $"Added {paramType} parameter: {key}={value}";
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"Added parameter from browser - Type: {paramType}, Key: '{key}', Value: '{value}'");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Error showing parameter browser: {ex.Message}");
+                _viewModel.StatusMessage = "Error showing parameter browser";
+            }
+        }
+
         private void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
         {
             // Create grid: [Key TextBox] [=] [Value TextBox] [Delete Button]
@@ -2214,6 +2438,107 @@ namespace DialogEditor.Views
             parent.Children.Add(grid);
         }
 
+        private async Task LoadParameterDeclarationsAsync(string scriptName, bool isCondition)
+        {
+            if (string.IsNullOrWhiteSpace(scriptName))
+            {
+                if (isCondition)
+                {
+                    _currentConditionDeclarations = null;
+                }
+                else
+                {
+                    _currentActionDeclarations = null;
+                }
+                return;
+            }
+
+            try
+            {
+                var declarations = await ScriptService.Instance.GetParameterDeclarationsAsync(scriptName);
+
+                if (isCondition)
+                {
+                    _currentConditionDeclarations = declarations;
+                }
+                else
+                {
+                    _currentActionDeclarations = declarations;
+                }
+
+                if (declarations.HasDeclarations)
+                {
+                    var totalValues = declarations.ValuesByKey.Values.Sum(list => list.Count);
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Loaded parameter declarations for {(isCondition ? "condition" : "action")} script '{scriptName}': {declarations.Keys.Count} keys, {totalValues} values");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Failed to load parameter declarations for '{scriptName}': {ex.Message}");
+            }
+        }
+
+        private async Task LoadScriptPreviewAsync(string scriptName, bool isCondition)
+        {
+            if (string.IsNullOrWhiteSpace(scriptName))
+            {
+                ClearScriptPreview(isCondition);
+                return;
+            }
+
+            try
+            {
+                var previewTextBox = isCondition
+                    ? this.FindControl<TextBox>("ConditionalScriptPreviewTextBox")
+                    : this.FindControl<TextBox>("ActionScriptPreviewTextBox");
+
+                if (previewTextBox == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"LoadScriptPreviewAsync: Preview TextBox not found for {(isCondition ? "conditional" : "action")} script");
+                    return;
+                }
+
+                previewTextBox.Text = "Loading...";
+
+                var scriptContent = await ScriptService.Instance.GetScriptContentAsync(scriptName);
+
+                if (!string.IsNullOrEmpty(scriptContent))
+                {
+                    previewTextBox.Text = scriptContent;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"LoadScriptPreviewAsync: Loaded preview for {(isCondition ? "conditional" : "action")} script '{scriptName}'");
+                }
+                else
+                {
+                    previewTextBox.Text = $"// Script '{scriptName}.nss' not found or could not be loaded.\n" +
+                                          "// Make sure the .nss file exists in your module directory.";
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"LoadScriptPreviewAsync: No content for script '{scriptName}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"LoadScriptPreviewAsync: Error loading preview for '{scriptName}': {ex.Message}");
+                ClearScriptPreview(isCondition);
+            }
+        }
+
+        private void ClearScriptPreview(bool isCondition)
+        {
+            var previewTextBox = isCondition
+                ? this.FindControl<TextBox>("ConditionalScriptPreviewTextBox")
+                : this.FindControl<TextBox>("ActionScriptPreviewTextBox");
+
+            if (previewTextBox != null)
+            {
+                previewTextBox.Text = $"// {(isCondition ? "Conditional" : "Action")} script preview will appear here";
+            }
+        }
+
         private void OnParameterChanged(bool isCondition)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, $"OnParameterChanged: ENTRY - isCondition={isCondition}, _selectedNode={((_selectedNode == null) ? "null" : _selectedNode.OriginalNode.DisplayText)}, _isPopulatingProperties={_isPopulatingProperties}");
@@ -2251,7 +2576,39 @@ namespace DialogEditor.Views
             TriggerDebouncedAutoSave();
         }
 
-        private void UpdateConditionParamsFromUI(DialogPtr ptr)
+        /// <summary>
+        /// Shows visual feedback when parameter text is trimmed.
+        /// Briefly flashes the TextBox border to indicate successful trim operation.
+        /// </summary>
+        private async void ShowTrimFeedback(TextBox textBox)
+        {
+            // Store original border properties
+            var originalBrush = textBox.BorderBrush;
+            var originalThickness = textBox.BorderThickness;
+
+            try
+            {
+                // Flash green border to indicate trim occurred
+                textBox.BorderBrush = Avalonia.Media.Brushes.LightGreen;
+                textBox.BorderThickness = new Thickness(2);
+
+                // Wait briefly for visual feedback
+                await Task.Delay(300);
+
+                // Restore original appearance
+                textBox.BorderBrush = originalBrush;
+                textBox.BorderThickness = originalThickness;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"ShowTrimFeedback: Error showing visual feedback - {ex.Message}");
+                // Ensure we restore original state even if error occurs
+                textBox.BorderBrush = originalBrush;
+                textBox.BorderThickness = originalThickness;
+            }
+        }
+
+        private void UpdateConditionParamsFromUI(DialogPtr ptr, string? scriptName = null)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: ENTRY - ptr has {ptr.ConditionParams.Count} existing params");
 
@@ -2261,6 +2618,13 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"UpdateConditionParamsFromUI: ConditionsParametersPanel NOT FOUND - parameters will be empty!");
                 return;
+            }
+
+            // Get script name from UI if not provided
+            if (string.IsNullOrEmpty(scriptName))
+            {
+                var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
+                scriptName = scriptTextBox?.Text;
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: Found ConditionsParametersPanel with {conditionsPanel.Children.Count} children");
@@ -2296,6 +2660,9 @@ namespace DialogEditor.Views
                         // Apply trimming if Auto-Trim is enabled
                         if (autoTrim)
                         {
+                            string originalKey = key;
+                            string originalValue = value;
+
                             key = key.Trim();
                             value = value.Trim();
 
@@ -2305,10 +2672,26 @@ namespace DialogEditor.Views
                             // This ensures visual feedback that whitespace was removed
                             keyTextBox.Text = key;
                             valueTextBox.Text = value;
+
+                            // Show visual feedback if text was actually trimmed
+                            if (originalKey != key)
+                            {
+                                ShowTrimFeedback(keyTextBox);
+                            }
+                            if (originalValue != value)
+                            {
+                                ShowTrimFeedback(valueTextBox);
+                            }
                         }
 
                         ptr.ConditionParams[key] = value;
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: Added param '{key}' = '{value}'");
+
+                        // Cache parameter value if script name is known
+                        if (!string.IsNullOrWhiteSpace(scriptName) && !string.IsNullOrWhiteSpace(value))
+                        {
+                            ParameterCacheService.Instance.AddValue(scriptName, key, value);
+                        }
                         }
                     }
                 }
@@ -2321,7 +2704,7 @@ namespace DialogEditor.Views
             UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: EXIT - ptr now has {ptr.ConditionParams.Count} params");
         }
 
-        private void UpdateActionParamsFromUI(DialogNode node)
+        private void UpdateActionParamsFromUI(DialogNode node, string? scriptName = null)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateActionParamsFromUI: ENTRY - node '{node.DisplayText}' has {node.ActionParams.Count} existing params");
 
@@ -2331,6 +2714,13 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"UpdateActionParamsFromUI: ActionsParametersPanel NOT FOUND - parameters will be empty!");
                 return;
+            }
+
+            // Get script name from UI if not provided
+            if (string.IsNullOrEmpty(scriptName))
+            {
+                var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
+                scriptName = scriptTextBox?.Text;
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateActionParamsFromUI: Found ActionsParametersPanel with {actionsPanel.Children.Count} children");
@@ -2360,6 +2750,9 @@ namespace DialogEditor.Views
                         // Apply trimming if Auto-Trim is enabled
                         if (autoTrim)
                         {
+                            string originalKey = key;
+                            string originalValue = value;
+
                             key = key.Trim();
                             value = value.Trim();
 
@@ -2369,10 +2762,26 @@ namespace DialogEditor.Views
                             // This ensures visual feedback that whitespace was removed
                             keyTextBox.Text = key;
                             valueTextBox.Text = value;
+
+                            // Show visual feedback if text was actually trimmed
+                            if (originalKey != key)
+                            {
+                                ShowTrimFeedback(keyTextBox);
+                            }
+                            if (originalValue != value)
+                            {
+                                ShowTrimFeedback(valueTextBox);
+                            }
                         }
 
                         node.ActionParams[key] = value;
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateActionParamsFromUI: Added param '{key}' = '{value}'");
+
+                        // Cache parameter value if script name is known
+                        if (!string.IsNullOrWhiteSpace(scriptName) && !string.IsNullOrWhiteSpace(value))
+                        {
+                            ParameterCacheService.Instance.AddValue(scriptName, key, value);
+                        }
                     }
                 }
             }
@@ -2878,6 +3287,34 @@ namespace DialogEditor.Views
             }
         }
 
+        private void OnClearQuestTagClick(object? sender, RoutedEventArgs e)
+        {
+            if (_selectedNode == null) return;
+
+            var questTagComboBox = this.FindControl<ComboBox>("QuestTagComboBox");
+            if (questTagComboBox != null)
+            {
+                questTagComboBox.SelectedIndex = -1; // Clears selection, triggers OnQuestTagChanged
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Quest tag cleared");
+            _viewModel.StatusMessage = "Quest tag cleared";
+        }
+
+        private void OnClearQuestEntryClick(object? sender, RoutedEventArgs e)
+        {
+            if (_selectedNode == null) return;
+
+            var questEntryComboBox = this.FindControl<ComboBox>("QuestEntryComboBox");
+            if (questEntryComboBox != null)
+            {
+                questEntryComboBox.SelectedIndex = -1; // Clears selection, triggers OnQuestEntryChanged
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Quest entry cleared");
+            _viewModel.StatusMessage = "Quest entry cleared";
+        }
+
         /// <summary>
         /// Find a sound file by searching all configured paths and categories.
         /// Same logic as SoundBrowserWindow for consistency.
@@ -3014,6 +3451,52 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening script browser: {ex.Message}");
                 _viewModel.StatusMessage = $"Error opening script browser: {ex.Message}";
+            }
+        }
+
+        private void OnEditConditionalScriptClick(object? sender, RoutedEventArgs e)
+        {
+            var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
+            string? scriptName = scriptTextBox?.Text;
+
+            if (string.IsNullOrWhiteSpace(scriptName))
+            {
+                _viewModel.StatusMessage = "No conditional script assigned";
+                return;
+            }
+
+            bool success = ExternalEditorService.Instance.OpenScript(scriptName, _viewModel.CurrentFileName);
+
+            if (success)
+            {
+                _viewModel.StatusMessage = $"Opened '{scriptName}' in editor";
+            }
+            else
+            {
+                _viewModel.StatusMessage = $"Could not find script '{scriptName}.nss'";
+            }
+        }
+
+        private void OnEditActionScriptClick(object? sender, RoutedEventArgs e)
+        {
+            var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
+            string? scriptName = scriptTextBox?.Text;
+
+            if (string.IsNullOrWhiteSpace(scriptName))
+            {
+                _viewModel.StatusMessage = "No action script assigned";
+                return;
+            }
+
+            bool success = ExternalEditorService.Instance.OpenScript(scriptName, _viewModel.CurrentFileName);
+
+            if (success)
+            {
+                _viewModel.StatusMessage = $"Opened '{scriptName}' in editor";
+            }
+            else
+            {
+                _viewModel.StatusMessage = $"Could not find script '{scriptName}.nss'";
             }
         }
 
@@ -3376,7 +3859,7 @@ namespace DialogEditor.Views
                 }
 
                 // Parse journal file
-                var categories = await _journalService.ParseJournalFileAsync(journalPath);
+                var categories = await JournalService.Instance.ParseJournalFileAsync(journalPath);
 
                 // Populate Quest Tag dropdown
                 var questTagComboBox = this.FindControl<ComboBox>("QuestTagComboBox");
