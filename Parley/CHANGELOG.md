@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.7-alpha] - TBD
-**Branch**: `parley/fix/housekeeping` | **PR**: #TBD
+**Branch**: `parley/fix/housekeeping` | **PR**: #106
 
 ### Housekeeping: Code Quality & Technical Debt
 
