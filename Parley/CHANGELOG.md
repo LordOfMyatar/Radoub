@@ -10,6 +10,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.7-alpha] - TBD
+**Branch**: `parley/fix/housekeeping` | **PR**: #TBD
+
+### Housekeeping: Code Quality & Technical Debt
+
+Comprehensive codebase cleanup addressing security, code quality, test failures, and technical debt. No new user-facing features.
+
+### Fixed
+- **Issue #94**: LazyLoadingPerformanceTests failures (4 tests)
+- **Issue #95**: Hardcoded paths and path handling security
+  - Removed developer paths from ScriptService, MainViewModel, CompareDialogs
+  - Fixed command injection risk in AudioService
+  - Improved path validation and sanitization
+- **Issue #96**: Silent exception handling with proper logging
+- **Issue #97**: All compiler and Avalonia warnings (8 warnings)
+- **Issue #98**: Removed commented code and unused methods
+
+### Changed
+- Updated CLAUDE.md with preventive guidelines for security and code quality
+- Added "Code Quality & Security Guidelines" section to project docs
+
+### Related Issues
+- #99 - Refactor MainViewModel (future work)
+- #100 - Convert TODOs to GitHub issues (future work)
+
+---
+
 ## [0.1.6-alpha] - TBD
 **Branch**: `parley/feat/epic-1-parameters` | **PR**: #93
 

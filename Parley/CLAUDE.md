@@ -428,6 +428,56 @@ Via foxxy-bridge:
 
 ---
 
+## Code Quality & Security Guidelines
+
+### Prevent Common Security Issues
+
+**Path Handling**:
+- NEVER hardcode absolute paths (e.g., `D:\LOM\Modules\`)
+- ALWAYS use `Environment.GetFolderPath()` with SpecialFolder constants
+- ALWAYS validate file paths with `Path.GetFullPath()` for path traversal prevention
+- Use `ProcessStartInfo.ArgumentList` instead of string concatenation for process arguments
+
+**Exception Handling**:
+- NEVER use bare `catch` blocks - always catch specific exception types
+- ALWAYS log exceptions with `UnifiedLogger.LogApplication(LogLevel.WARN, ...)`
+- NEVER silently swallow exceptions - at minimum log them
+
+**Input Validation**:
+- ALWAYS use `TryParse()` methods instead of `Parse()` for user input
+- ALWAYS validate plugin paths stay within plugin directory
+- ALWAYS sanitize file paths before logging (use `~` for user directories)
+
+### Prevent Code Quality Issues
+
+**Avoid Dead Code**:
+- NEVER commit commented-out code blocks - use git history instead
+- ALWAYS remove test/debug code before committing (e.g., `AutoLoadTestFileAsync()`)
+- Use `#if DEBUG` directives for debug-only code, not comments
+
+**TODO Management**:
+- ALWAYS create GitHub issues for TODOs instead of leaving them in code
+- If TODO must stay, include issue number: `// TODO (#123): Implement feature`
+
+**Method Size**:
+- Keep methods under 100 lines - extract helper methods for clarity
+- Split "God classes" into focused managers (e.g., CopyPasteManager, UndoRedoManager)
+
+**Testing Requirements**:
+- Fix failing tests before creating PR (LazyLoadingPerformanceTests currently failing)
+- Address all compiler warnings before PR
+- No hardcoded test paths in production code
+
+### Build Warnings to Fix
+
+**Current warnings that need attention**:
+1. `CA2022` - Inexact read in CreatureParser.cs - use ReadExactly()
+2. `AVLN3001` - Missing public constructors for XAML windows
+3. `CS0219` - Unused variable in TimeoutTests.cs
+4. `CS8625/CS8600` - Nullable reference warnings in tests
+
+---
+
 **Testing**: Use `TestingTools/Scripts/QuickRegressionCheck.ps1` before parser changes
 
 
