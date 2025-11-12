@@ -48,9 +48,6 @@ namespace DialogEditor.Views
         public MainWindow()
         {
             InitializeComponent();
-//#if DEBUG
-//            this.AttachDevTools();
-//#endif
 
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
