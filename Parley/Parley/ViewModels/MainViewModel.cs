@@ -128,27 +128,6 @@ namespace DialogEditor.ViewModels
             }
         }
 
-        private async Task AutoLoadTestFileAsync()
-        {
-            try
-            {
-                var testFilePath = @"D:\LOM\Tools\LNS_DLG\TestFiles\chef.dlg";
-                if (System.IO.File.Exists(testFilePath))
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-loading test file: {UnifiedLogger.SanitizePath(testFilePath)}");
-                    await LoadDialogAsync(testFilePath);
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Test file not found: {UnifiedLogger.SanitizePath(testFilePath)}");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to auto-load test file: {ex.Message}");
-            }
-        }
-
         public void AddDebugMessage(string message)
         {
             try

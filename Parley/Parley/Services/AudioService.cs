@@ -172,15 +172,17 @@ namespace DialogEditor.Services
         {
             Stop();
 
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "aplay",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            startInfo.ArgumentList.Add(filePath); // Safe argument passing
+
             _process = new System.Diagnostics.Process
             {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "aplay",
-                    Arguments = $"\"{filePath}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
+                StartInfo = startInfo
             };
 
             _process.Start();
@@ -213,15 +215,17 @@ namespace DialogEditor.Services
         {
             Stop();
 
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "afplay",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            startInfo.ArgumentList.Add(filePath); // Safe argument passing
+
             _process = new System.Diagnostics.Process
             {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "afplay",
-                    Arguments = $"\"{filePath}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
+                StartInfo = startInfo
             };
 
             _process.Start();
