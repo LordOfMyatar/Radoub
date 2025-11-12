@@ -19,6 +19,11 @@ namespace DialogEditor.Views
         public string? SelectedTag => _selectedCreature?.Tag;
         public bool HasSelection => _selectedCreature != null;
 
+        // Parameterless constructor for XAML/Avalonia runtime
+        public CreaturePickerWindow() : this(new List<CreatureInfo>(), null)
+        {
+        }
+
         public CreaturePickerWindow(List<CreatureInfo> creatures, List<string>? recentTags = null)
         {
             InitializeComponent();

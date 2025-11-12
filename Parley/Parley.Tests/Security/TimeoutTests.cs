@@ -104,10 +104,9 @@ namespace Parley.Tests.Security
             var entryPoint = "nonexistent.py";
             var process = new PluginProcess(pluginId, pythonPath, entryPoint);
 
-            bool crashEventFired = false;
             process.Crashed += (sender, args) =>
             {
-                crashEventFired = true;
+                // Crash event registered but not expected to fire during startup failure
                 Assert.Equal(pluginId, args.PluginId);
             };
 

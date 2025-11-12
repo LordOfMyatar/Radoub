@@ -231,7 +231,7 @@ namespace Parley.Tests
         private Dialog CreateDeepDialog(int depth)
         {
             var dialog = new Dialog();
-            DialogNode previousNode = null;
+            DialogNode? previousNode = null;
             DialogNodeType currentType = DialogNodeType.Entry;
 
             for (int i = 0; i < depth; i++)

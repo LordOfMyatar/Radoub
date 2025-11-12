@@ -44,6 +44,11 @@ namespace DialogEditor.Views
         private bool _isInitializing = true;
         private PluginManager? _pluginManager;
 
+        // Parameterless constructor for XAML/Avalonia runtime
+        public SettingsWindow() : this(0, null)
+        {
+        }
+
         public SettingsWindow(int initialTab = 0, PluginManager? pluginManager = null)
         {
             InitializeComponent();
