@@ -1020,7 +1020,7 @@ namespace DialogEditor.Views
                 var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
                 if (fontSizeSlider != null)
                 {
-                    // TODO Phase 2: Apply font size globally to main window
+                    // See Epic 2 (#39), specifically #58 and #59 - Font sizing and selection
                     // For now, just log it - actual font size application needs global styling system
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Font size preview: {fontSizeSlider.Value}");
                 }

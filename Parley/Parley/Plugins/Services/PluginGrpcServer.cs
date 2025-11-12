@@ -109,7 +109,7 @@ namespace DialogEditor.Plugins.Services
             {
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin requested audio playback: {request.FilePath}");
 
-                // TODO: Implement actual audio playback
+                // See #102 - Wire AudioService to plugin gRPC API
                 // For now, just log the request
 
                 return Task.FromResult(new PlayAudioResponse
@@ -134,7 +134,7 @@ namespace DialogEditor.Plugins.Services
             {
                 UnifiedLogger.LogPlugin(LogLevel.INFO, "Plugin requested audio stop");
 
-                // TODO: Implement actual audio stop
+                // See #102 - Wire AudioService to plugin gRPC API
 
                 return Task.FromResult(new StopAudioResponse
                 {
@@ -202,7 +202,7 @@ namespace DialogEditor.Plugins.Services
             {
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin dialog: {request.Title} - {request.Message}");
 
-                // TODO: Implement actual dialog with buttons
+                // See #105 - Complete plugin UI notification and dialog APIs
                 // For now, just show message and return 0
 
                 await Dispatcher.UIThread.InvokeAsync(() =>
@@ -247,7 +247,7 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // TODO: Get actual current dialog from MainWindow
+                // See #103 - Implement GetCurrentDialog and GetSelectedNode APIs
                 // For now, return empty response
 
                 return Task.FromResult(new GetCurrentDialogResponse
@@ -267,7 +267,7 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // TODO: Get actual selected node from MainWindow
+                // See #103 - Implement GetCurrentDialog and GetSelectedNode APIs
                 // For now, return empty response
 
                 return Task.FromResult(new GetSelectedNodeResponse
@@ -293,7 +293,7 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // TODO: Implement actual file dialog
+                // See #104 - Implement sandboxed file I/O for plugins
 
                 return Task.FromResult(new OpenFileDialogResponse
                 {
@@ -315,7 +315,7 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // TODO: Implement actual file dialog
+                // See #104 - Implement sandboxed file I/O for plugins
 
                 return Task.FromResult(new SaveFileDialogResponse
                 {
@@ -337,7 +337,7 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // TODO: Implement sandboxed file reading
+                // See #104 - Implement sandboxed file I/O for plugins
 
                 UnifiedLogger.LogPlugin(LogLevel.WARN, $"Plugin attempted to read file: {request.FilePath}");
 
@@ -362,7 +362,7 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // TODO: Implement sandboxed file writing
+                // See #104 - Implement sandboxed file I/O for plugins
 
                 UnifiedLogger.LogPlugin(LogLevel.WARN, $"Plugin attempted to write file: {request.FilePath}");
 

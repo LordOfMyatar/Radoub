@@ -29,7 +29,7 @@ namespace DialogEditor.Plugins.Services
                 // Log notification (UI implementation would show actual notification)
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin notification: [{request.Title}] {request.Message}");
 
-                // TODO: Implement actual UI notification when UI framework is available
+                // See #105 - Complete plugin UI notification and dialog APIs
                 // For now, just log it
 
                 return Task.FromResult(new ShowNotificationResponse
@@ -58,7 +58,7 @@ namespace DialogEditor.Plugins.Services
                 // Log dialog request
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin dialog: [{request.Title}] {request.Message}");
 
-                // TODO: Implement actual UI dialog when UI framework is available
+                // See #105 - Complete plugin UI notification and dialog APIs
                 // For now, default to button index 0
 
                 return Task.FromResult(new ShowDialogResponse
