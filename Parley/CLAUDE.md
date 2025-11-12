@@ -421,10 +421,13 @@ Via foxxy-bridge:
 
 ### Workflow Tips
 - Use issue templates for consistent bug tracking
-- Link issues in commits: `fix #123`, `relates to #456`
+- **Link issues in commits**: Use magic keywords (`Closes #123`, `Fixes #456`, `Resolves #789`) to auto-close issues when PR merges
+- **CHANGELOG references**: Reference both commit hash and GitHub issue (e.g., `Fixed #123 in commit abc1234`)
 - Apply labels for easy filtering
 - PRs auto-run build/test checks
 - Tag releases: `git tag v1.0.0 && git push --tags`
+- **Create GitHub issues for new work**: Track all tasks, bugs, and features as issues (not just TODOs in code)
+- **Verify issues closed**: Before closing epics, ensure all related issues are closed (unless explicitly discussed)
 
 ---
 
