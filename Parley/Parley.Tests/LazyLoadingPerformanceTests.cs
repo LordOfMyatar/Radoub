@@ -30,10 +30,11 @@ namespace Parley.Tests
 
             var startNode = rootNode.Children?[0];
 
-            // Assert: Start node exists but its children collection is empty (lazy)
+            // Assert: Start node exists, children collection has only placeholder (lazy)
             Assert.NotNull(startNode);
             Assert.NotNull(startNode.Children);
-            Assert.Empty(startNode!.Children!); // Children not populated until expanded
+            Assert.Single(startNode!.Children!); // Should have only placeholder
+            Assert.IsType<TreeViewPlaceholderNode>(startNode.Children![0]); // Placeholder for lazy loading
         }
 
         [Fact]
@@ -53,16 +54,18 @@ namespace Parley.Tests
             }
             var startNode = rootNode.Children?[0];
 
-            // Assert: Before expansion - no children
+            // Assert: Before expansion - only placeholder
             Assert.NotNull(startNode);
-            Assert.Empty(startNode!.Children!);
+            Assert.Single(startNode!.Children!); // Placeholder
+            Assert.IsType<TreeViewPlaceholderNode>(startNode.Children![0]);
 
             // Act: Expand the node
             startNode!.IsExpanded = true;
 
-            // Assert: After expansion - children populated
+            // Assert: After expansion - placeholder replaced with actual child
             Assert.NotEmpty(startNode.Children!);
             Assert.Single(startNode.Children!); // Should have 1 reply child
+            Assert.IsNotType<TreeViewPlaceholderNode>(startNode.Children![0]); // No longer placeholder
         }
 
         [Fact]
@@ -82,10 +85,11 @@ namespace Parley.Tests
             }
             var startNode = rootNode.Children?[0];
 
-            // Assert: HasChildren is true even though Children collection is empty
+            // Assert: HasChildren is true and placeholder present, but real children not populated
             Assert.NotNull(startNode);
-            Assert.Empty(startNode!.Children!); // Children not populated
-            Assert.True(startNode.HasChildren); // But HasChildren correctly reports true
+            Assert.Single(startNode!.Children!); // Has placeholder
+            Assert.IsType<TreeViewPlaceholderNode>(startNode.Children![0]); // Only placeholder, no real children
+            Assert.True(startNode.HasChildren); // HasChildren correctly reports true
         }
 
         [Fact]
@@ -185,7 +189,7 @@ namespace Parley.Tests
         {
             // Arrange: Create a deep conversation (20 levels)
             // Without lazy loading, this creates 2^20 = 1,048,576 objects
-            // With lazy loading, should create only ~20 objects
+            // With lazy loading, should create only ~20 objects + placeholders
             var dialog = CreateDeepDialog(depth: 20);
             var rootNode = new TreeViewRootNode(dialog);
 
@@ -205,17 +209,20 @@ namespace Parley.Tests
             Assert.Single(rootNode.Children); // One start node
 
             var startNode = rootNode.Children[0];
-            Assert.Empty(startNode.Children!); // No grandchildren created
+            Assert.Single(startNode.Children!); // Only placeholder, no real children
+            Assert.IsType<TreeViewPlaceholderNode>(startNode.Children![0]);
 
             // Expand first level only
             startNode.IsExpanded = true;
-            Assert.Single(startNode.Children!); // One reply child created
+            Assert.Single(startNode.Children!); // One reply child created (placeholder replaced)
+            Assert.IsNotType<TreeViewPlaceholderNode>(startNode.Children![0]);
 
             var replyChild = startNode.Children![0];
-            Assert.Empty(replyChild.Children!); // No great-grandchildren created
+            Assert.Single(replyChild.Children!); // Only placeholder at next level
+            Assert.IsType<TreeViewPlaceholderNode>(replyChild.Children![0]);
 
             // Performance win: Without lazy loading, we'd have 1M+ objects
-            // With lazy loading, we have exactly 3 objects (root + start + reply)
+            // With lazy loading, we have only a few objects (root + start + reply + placeholders)
         }
 
         /// <summary>
@@ -224,7 +231,7 @@ namespace Parley.Tests
         private Dialog CreateDeepDialog(int depth)
         {
             var dialog = new Dialog();
-            DialogNode previousNode = null;
+            DialogNode? previousNode = null;
             DialogNodeType currentType = DialogNodeType.Entry;
 
             for (int i = 0; i < depth; i++)

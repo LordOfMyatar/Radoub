@@ -48,9 +48,6 @@ namespace DialogEditor.Views
         public MainWindow()
         {
             InitializeComponent();
-//#if DEBUG
-//            this.AttachDevTools();
-//#endif
 
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
@@ -971,7 +968,7 @@ namespace DialogEditor.Views
             await aboutWindow.ShowDialog(this);
         }
 
-        // Font size handlers - TODO: Phase 0.6
+        // Font size handlers - See Epic 2 (#39), specifically #58 and #59
         private void OnFontSizeClick(object? sender, RoutedEventArgs e)
         {
             if (sender is MenuItem menuItem && menuItem.Tag is string sizeStr)
@@ -979,7 +976,7 @@ namespace DialogEditor.Views
                 if (double.TryParse(sizeStr, out double fontSize))
                 {
                     SettingsService.Instance.FontSize = fontSize;
-                    _viewModel.StatusMessage = $"Font size: {fontSize}pt - TODO: Apply to all controls";
+                    _viewModel.StatusMessage = $"Font size: {fontSize}pt - See #58 and #59 for global application";
                 }
             }
         }

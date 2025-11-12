@@ -114,7 +114,7 @@ namespace Parley.Tests
             var service = ScriptService.Instance;
 
             // Act
-            var nullResult = await service.GetScriptContentAsync(null);
+            var nullResult = await service.GetScriptContentAsync(null!);
             var emptyResult = await service.GetScriptContentAsync("");
             var whitespaceResult = await service.GetScriptContentAsync("   ");
 

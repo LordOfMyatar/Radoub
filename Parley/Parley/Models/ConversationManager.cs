@@ -199,9 +199,11 @@ namespace DialogEditor.Models
             {
                 return _scriptEngine.EvaluateCondition(scriptName);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Script evaluation failed - log warning and assume condition fails
+                DialogEditor.Services.UnifiedLogger.LogApplication(
+                    DialogEditor.Services.LogLevel.WARN,
+                    $"Script evaluation failed for '{scriptName}': {ex.Message}");
                 return false;
             }
         }
@@ -238,9 +240,11 @@ namespace DialogEditor.Models
             {
                 _scriptEngine.RunAction(scriptName);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Script execution failed - log warning but continue
+                DialogEditor.Services.UnifiedLogger.LogApplication(
+                    DialogEditor.Services.LogLevel.WARN,
+                    $"Script execution failed for '{scriptName}': {ex.Message}");
             }
         }
 

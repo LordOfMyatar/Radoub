@@ -18,10 +18,18 @@ class Program
         Console.WriteLine("=== Dialog Structure Comparison ===");
         Console.WriteLine();
 
+        // Parse command line arguments
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: CompareDialogs <known-good-path> <test-path>");
+            Console.WriteLine("Example: CompareDialogs goodfile.dlg testfile.dlg");
+            return;
+        }
+
+        string goodPath = args[0];
+        string testPath = args[1];
+
         // Load known-good dialog
-        string goodPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "Neverwinter Nights", "modules", "LNS_DLG", "dlg_shady_vendor.dlg");
         Console.WriteLine($"Loading known-good: {Path.GetFileName(goodPath)}");
 
         var fileService = new DialogFileService();
@@ -29,31 +37,30 @@ class Program
 
         if (goodDialog == null)
         {
-            Console.WriteLine("❌ Failed to load known-good dialog!");
+            Console.WriteLine($"❌ Failed to load known-good dialog from: {goodPath}");
             return;
         }
 
         Console.WriteLine("✅ Loaded known-good dialog");
-        PrintDialogStats("KNOWN-GOOD (dlg_shady_vendor.dlg)", goodDialog);
+        PrintDialogStats($"KNOWN-GOOD ({Path.GetFileName(goodPath)})", goodDialog);
 
         Console.WriteLine();
         Console.WriteLine("---");
         Console.WriteLine();
 
         // Load generated test dialog
-        string testPath = @"D:\LOM\TestingTools\TestFiles\test1_link.dlg";
-        Console.WriteLine($"Loading generated test: {Path.GetFileName(testPath)}");
+        Console.WriteLine($"Loading test: {Path.GetFileName(testPath)}");
 
         var testDialog = await fileService.LoadFromFileAsync(testPath);
 
         if (testDialog == null)
         {
-            Console.WriteLine("❌ Failed to load test dialog!");
+            Console.WriteLine($"❌ Failed to load test dialog from: {testPath}");
             return;
         }
 
         Console.WriteLine("✅ Loaded test dialog");
-        PrintDialogStats("GENERATED (test1_link.dlg)", testDialog);
+        PrintDialogStats($"TEST ({Path.GetFileName(testPath)})", testDialog);
 
         Console.WriteLine();
         Console.WriteLine("---");

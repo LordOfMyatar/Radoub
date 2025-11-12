@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using DialogEditor.Utils;
+using System;
 using System.Diagnostics;
 
 namespace DialogEditor.Views
@@ -30,9 +31,11 @@ namespace DialogEditor.Views
                     UseShellExecute = true
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                // Silently fail if browser can't be opened
+                DialogEditor.Services.UnifiedLogger.LogApplication(
+                    DialogEditor.Services.LogLevel.WARN,
+                    $"Failed to open browser for GitHub link: {ex.Message}");
             }
         }
 

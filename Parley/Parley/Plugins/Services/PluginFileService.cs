@@ -40,7 +40,7 @@ namespace DialogEditor.Plugins.Services
                 // Check security (permission + rate limit)
                 _security.CheckSecurity("file.dialog", "OpenFileDialog");
 
-                // TODO: Implement actual file dialog when UI framework is available
+                // See #104 - Implement sandboxed file I/O for plugins (file dialogs)
                 // For now, return cancelled
 
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin requested file open dialog: {request.Title}");
@@ -69,7 +69,7 @@ namespace DialogEditor.Plugins.Services
                 // Check security (permission + rate limit)
                 _security.CheckSecurity("file.dialog", "SaveFileDialog");
 
-                // TODO: Implement actual file dialog when UI framework is available
+                // See #104 - Implement sandboxed file I/O for plugins (file dialogs)
                 // For now, return cancelled
 
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin requested file save dialog: {request.Title}");

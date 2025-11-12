@@ -12,6 +12,11 @@ namespace DialogEditor.Views
         public bool StartInSafeMode { get; private set; } = true;
         public bool DisableOnlyCrashedPlugins { get; private set; } = false;
 
+        // Parameterless constructor for XAML/Avalonia runtime
+        public CrashRecoveryDialog() : this(new List<string>())
+        {
+        }
+
         public CrashRecoveryDialog(List<string> pluginsLoadedDuringCrash)
         {
             InitializeComponent();

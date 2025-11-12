@@ -194,20 +194,6 @@ namespace DialogEditor.Services
                 }
             }
 
-            // Add LOM project paths (from user's development environment)
-            var lomPaths = new[]
-            {
-                @"D:\LOM\Modules\Lords-Neverwinter-Scripts",
-                @"D:\LOM\Modules\LordOfMyatar",
-                @"D:\LOM\Modules\LNS"
-            };
-
-            foreach (var lomPath in lomPaths)
-            {
-                if (Directory.Exists(lomPath))
-                    paths.Add(lomPath);
-            }
-
             // Remove duplicates and return
             return paths.Distinct().ToList();
         }

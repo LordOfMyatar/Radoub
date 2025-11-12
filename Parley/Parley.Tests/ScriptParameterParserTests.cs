@@ -173,7 +173,7 @@ VALUE2
         public void Parse_WithNullContent_ReturnsEmpty()
         {
             // Act
-            var result = _parser.Parse(null);
+            var result = _parser.Parse(null!);
 
             // Assert
             Assert.Empty(result.Keys);

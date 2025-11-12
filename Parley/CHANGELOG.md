@@ -10,6 +10,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.7-alpha] - TBD
+**Branch**: `parley/fix/housekeeping` | **PR**: #106
+
+### Housekeeping: Code Quality & Technical Debt
+
+Comprehensive codebase cleanup addressing security, code quality, test failures, and technical debt. No new user-facing features.
+
+### Fixed
+- **Issue #94**: LazyLoadingPerformanceTests failures (4 tests) - commit 09d12ea
+- **Issue #95**: Hardcoded paths and path handling security - commit a6ab3cd
+  - Removed developer paths from ScriptService, MainViewModel, CompareDialogs
+  - Fixed command injection risk in AudioService
+  - Improved path validation and sanitization
+- **Issue #96**: Silent exception handling with proper logging - commit 4493d80
+- **Issue #97**: All compiler and Avalonia warnings (8 warnings) - commit 43a11b6
+- **Issue #98**: Removed commented code and unused methods - commit b084f83
+- **Issue #100**: Converted TODOs to GitHub issues - commit 3992472
+  - Created Epic #101 - Complete Core Plugin APIs
+  - Created issues #102-#105 for plugin API implementation
+  - Updated font TODOs to reference Epic 2 issues
+
+### Changed
+- Updated CLAUDE.md with preventive guidelines for security and code quality - commit 9ae6d73
+- Added "Code Quality & Security Guidelines" section to project docs
+- Added GitHub workflow guidelines (magic keywords, CHANGELOG references) - commit 4d47732
+
+### Related Issues
+- #99 - Refactor MainViewModel (future work)
+- #101 - Complete Core Plugin APIs (new epic, tracked issues #102-#105)
+
+---
+
 ## [0.1.6-alpha] - TBD
 **Branch**: `parley/feat/epic-1-parameters` | **PR**: #93
 

@@ -74,7 +74,7 @@ namespace DialogEditor.Parsers
                     return false;
 
                 var buffer = new byte[8];
-                stream.Read(buffer, 0, 8);
+                stream.ReadExactly(buffer, 0, 8);
 
                 // Check for "UTC V3.2" header
                 var fileType = System.Text.Encoding.ASCII.GetString(buffer, 0, 4);

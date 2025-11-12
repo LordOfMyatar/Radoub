@@ -26,7 +26,7 @@ namespace DialogEditor.Plugins.Services
                 // Check security (permission + rate limit)
                 _security.CheckSecurity("dialog.read", "GetCurrentDialog");
 
-                // TODO: Implement actual dialog access when MainViewModel integration is available
+                // See #103 - Implement GetCurrentDialog and GetSelectedNode APIs
                 // For now, return placeholder data
 
                 UnifiedLogger.LogPlugin(LogLevel.INFO, "Plugin requested current dialog");
@@ -55,7 +55,7 @@ namespace DialogEditor.Plugins.Services
                 // Check security (permission + rate limit)
                 _security.CheckSecurity("dialog.read", "GetSelectedNode");
 
-                // TODO: Implement actual node selection access when MainViewModel integration is available
+                // See #103 - Implement GetCurrentDialog and GetSelectedNode APIs
                 // For now, return placeholder data
 
                 UnifiedLogger.LogPlugin(LogLevel.INFO, "Plugin requested selected node");

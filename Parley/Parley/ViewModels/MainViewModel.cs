@@ -19,7 +19,6 @@ namespace DialogEditor.ViewModels
         private string _statusMessage = "Ready";
         private ObservableCollection<string> _debugMessages = new();
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
-        private ObservableCollection<DialogNode> _treeSafeDialogNodes = new();
         private bool _hasUnsavedChanges;
         private DialogNode? _copiedNode = null; // Phase 1 Step 7: Copy/Paste system
         private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
@@ -84,70 +83,12 @@ namespace DialogEditor.ViewModels
             set => SetProperty(ref _dialogNodes, value);
         }
 
-        public ObservableCollection<DialogNode> TreeSafeDialogNodes
-        {
-            get => _treeSafeDialogNodes;
-            set => SetProperty(ref _treeSafeDialogNodes, value);
-        }
-
         public MainViewModel()
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainViewModel initialized");
 
-            // Check for command line file loading
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(500); // Brief delay to ensure UI is ready
-                await CheckCommandLineFileAsync();
-            });
         }
 
-        private async Task CheckCommandLineFileAsync()
-        {
-            try
-            {
-                // TODO: Avalonia migration - implement command line argument handling
-                // Check if a command line file was provided
-                // var commandLineFile = System.Windows.Application.Current?.Properties["CommandLineFile"] as string;
-
-                // if (!string.IsNullOrEmpty(commandLineFile))
-                // {
-                //     UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading command line file: {commandLineFile}");
-                //     await LoadDialogAsync(commandLineFile);
-                // }
-                // else
-                // {
-                //     UnifiedLogger.LogApplication(LogLevel.DEBUG, "No command line file provided");
-                // }
-
-                await Task.CompletedTask; // Temporary placeholder
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load command line file: {ex.Message}");
-            }
-        }
-
-        private async Task AutoLoadTestFileAsync()
-        {
-            try
-            {
-                var testFilePath = @"D:\LOM\Tools\LNS_DLG\TestFiles\chef.dlg";
-                if (System.IO.File.Exists(testFilePath))
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-loading test file: {UnifiedLogger.SanitizePath(testFilePath)}");
-                    await LoadDialogAsync(testFilePath);
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Test file not found: {UnifiedLogger.SanitizePath(testFilePath)}");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to auto-load test file: {ex.Message}");
-            }
-        }
 
         public void AddDebugMessage(string message)
         {
