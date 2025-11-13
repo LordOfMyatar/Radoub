@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.8-alpha] - TBD
-**Branch**: `parley/feat/epic-2-ui-ux` | **PR**: #TBD
+**Branch**: `parley/feat/epic-2-ui-ux` | **PR**: #107
 
 ### Epic 2: UI/UX Enhancements
 
