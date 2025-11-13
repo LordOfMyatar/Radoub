@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.8-alpha] - TBD
+**Branch**: `parley/feat/epic-2-ui-ux` | **PR**: #TBD
+
+### Epic 2: UI/UX Enhancements
+
+Comprehensive UI/UX improvements including font customization (README promised), enhanced themes, autosave enhancements, and visual feedback improvements.
+
+**Note**: Epic 2 contains many work items. Implementation will be broken into focused increments.
+
+### Planned Features
+- Font sizing and custom font selection (#58, #59)
+- Enhanced theme system with plugin architecture (#60)
+- Color-blind accessible themes (#61)
+- Rainbow brackets for nesting visualization (#70)
+- Autosave improvements (#62)
+- Scrollbar usability enhancements (#63)
+- Additional UX polish items
+
+---
+
 ## [0.1.7-alpha] - TBD
 **Branch**: `parley/fix/housekeeping` | **PR**: #106
 
