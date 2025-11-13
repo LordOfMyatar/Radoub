@@ -51,8 +51,12 @@ Comprehensive UI/UX improvements including font customization (README promised),
   - Parameter Browser: 700→900 width, MinWidth 600→800
   - Script Browser: 900→1000 width, MinWidth 700→900
 
+### Infrastructure Added
+- **Layout Feature Flag**: Added UseNewLayout setting infrastructure for future layout experiments
+- **UI Converters**: Added BoolToTextWrappingConverter and NotNullConverter for enhanced UI binding
+
 ### Planned Features
-- Layout redesign with resizable panels (#108)
+- Layout redesign with resizable panels (#108) - infrastructure ready, implementation pending
 - Enhanced theme system with plugin architecture (#60)
 - Color-blind accessible themes (#61)
 - Rainbow brackets for nesting visualization (#70)
