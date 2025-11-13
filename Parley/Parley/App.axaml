@@ -8,8 +8,71 @@
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
     <Application.Styles>
         <FluentTheme />
+
+        <!-- Global font styles that respond to settings changes -->
+        <!-- These will be updated dynamically from code-behind -->
+        <Style Selector="TextBlock">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="Button">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="MenuItem">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="CheckBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="RadioButton">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="ListBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="TreeView">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="TabControl">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="Label">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
     </Application.Styles>
+
+    <Application.Resources>
+        <!-- Default font size and family - will be updated from settings -->
+        <x:Double x:Key="GlobalFontSize">14</x:Double>
+        <FontFamily x:Key="GlobalFontFamily">$Default</FontFamily>
+    </Application.Resources>
 </Application>

@@ -43,6 +43,7 @@ namespace DialogEditor.Services
         
         // UI settings
         private double _fontSize = 14;
+        private string _fontFamily = ""; // Empty string = use system default
         private bool _isDarkTheme = false;
         
         // Game settings
@@ -164,7 +165,13 @@ namespace DialogEditor.Services
             get => _fontSize;
             set { if (SetProperty(ref _fontSize, Math.Max(8, Math.Min(24, value)))) SaveSettings(); }
         }
-        
+
+        public string FontFamily
+        {
+            get => _fontFamily;
+            set { if (SetProperty(ref _fontFamily, value ?? "")) SaveSettings(); }
+        }
+
         public bool IsDarkTheme
         {
             get => _isDarkTheme;
@@ -384,6 +391,7 @@ namespace DialogEditor.Services
                         
                         // Load UI settings
                         _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
+                        _fontFamily = settings.FontFamily ?? "";
                         _isDarkTheme = settings.IsDarkTheme;
                         
                         // Load game settings
@@ -453,6 +461,7 @@ namespace DialogEditor.Services
                     WindowHeight = WindowHeight,
                     WindowMaximized = WindowMaximized,
                     FontSize = FontSize,
+                    FontFamily = FontFamily,
                     IsDarkTheme = IsDarkTheme,
                     NeverwinterNightsPath = NeverwinterNightsPath,
                     BaseGameInstallPath = BaseGameInstallPath, // Phase 2
@@ -572,6 +581,7 @@ namespace DialogEditor.Services
             
             // UI settings
             public double FontSize { get; set; } = 14;
+            public string FontFamily { get; set; } = "";
             public bool IsDarkTheme { get; set; } = false;
             
             // Game settings

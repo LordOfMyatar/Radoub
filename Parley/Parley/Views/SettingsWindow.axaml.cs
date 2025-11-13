@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -155,6 +156,10 @@ namespace DialogEditor.Views
             {
                 fontSizeLabel.Text = settings.FontSize.ToString("0");
             }
+
+            // Load available fonts and current font selection
+            LoadFontFamilies(settings.FontFamily);
+            UpdateFontPreview();
 
             if (externalEditorPathTextBox != null)
             {
@@ -818,6 +823,7 @@ namespace DialogEditor.Views
             if (!_isInitializing)
             {
                 ApplyFontSizePreview();
+                UpdateFontPreview();
             }
         }
 
@@ -967,6 +973,13 @@ namespace DialogEditor.Views
                 settings.FontSize = fontSizeSlider.Value;
             }
 
+            // Save font family
+            var fontFamilyComboBox = this.FindControl<ComboBox>("FontFamilyComboBox");
+            if (fontFamilyComboBox?.SelectedItem is string selectedFont)
+            {
+                settings.FontFamily = selectedFont == "System Default" ? "" : selectedFont;
+            }
+
             if (externalEditorPathTextBox != null)
             {
                 settings.ExternalEditorPath = externalEditorPathTextBox.Text ?? "";
@@ -1020,14 +1033,129 @@ namespace DialogEditor.Views
                 var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
                 if (fontSizeSlider != null)
                 {
-                    // See Epic 2 (#39), specifically #58 and #59 - Font sizing and selection
-                    // For now, just log it - actual font size application needs global styling system
+                    // Fixed in #58 - Apply font size globally using App.ApplyFontSize
+                    App.ApplyFontSize(fontSizeSlider.Value);
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Font size preview: {fontSizeSlider.Value}");
                 }
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error applying font size preview: {ex.Message}");
+            }
+        }
+
+        private void LoadFontFamilies(string currentFontFamily)
+        {
+            try
+            {
+                var fontFamilyComboBox = this.FindControl<ComboBox>("FontFamilyComboBox");
+                if (fontFamilyComboBox == null) return;
+
+                // Get available system fonts
+                var fonts = new ObservableCollection<string> { "System Default" };
+
+                // Add common cross-platform fonts
+                var commonFonts = new[]
+                {
+                    "Arial", "Calibri", "Cambria", "Consolas", "Courier New",
+                    "Georgia", "Helvetica", "Segoe UI", "Tahoma", "Times New Roman",
+                    "Trebuchet MS", "Verdana",
+                    // Platform-specific fonts that may be available
+                    "San Francisco", "Ubuntu", "Noto Sans", "Roboto"
+                };
+
+                foreach (var font in commonFonts)
+                {
+                    try
+                    {
+                        // Test if font exists
+                        var testFamily = new FontFamily(font);
+                        fonts.Add(font);
+                    }
+                    catch
+                    {
+                        // Font not available on this system
+                    }
+                }
+
+                fontFamilyComboBox.ItemsSource = fonts;
+
+                // Select current font
+                if (string.IsNullOrWhiteSpace(currentFontFamily))
+                {
+                    fontFamilyComboBox.SelectedIndex = 0; // System Default
+                }
+                else
+                {
+                    var index = fonts.IndexOf(currentFontFamily);
+                    fontFamilyComboBox.SelectedIndex = index >= 0 ? index : 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading font families: {ex.Message}");
+            }
+        }
+
+        private void OnFontFamilyChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var fontFamilyComboBox = sender as ComboBox;
+            if (fontFamilyComboBox?.SelectedItem is string selectedFont)
+            {
+                // Apply font family immediately
+                if (selectedFont == "System Default")
+                {
+                    App.ApplyFontFamily("");
+                }
+                else
+                {
+                    App.ApplyFontFamily(selectedFont);
+                }
+
+                UpdateFontPreview();
+            }
+        }
+
+        private void UpdateFontPreview()
+        {
+            try
+            {
+                var fontPreviewText = this.FindControl<TextBlock>("FontPreviewText");
+                var fontFamilyComboBox = this.FindControl<ComboBox>("FontFamilyComboBox");
+                var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
+
+                if (fontPreviewText != null)
+                {
+                    if (fontSizeSlider != null)
+                    {
+                        fontPreviewText.FontSize = fontSizeSlider.Value;
+                    }
+
+                    if (fontFamilyComboBox?.SelectedItem is string selectedFont)
+                    {
+                        if (selectedFont == "System Default")
+                        {
+                            fontPreviewText.FontFamily = FontFamily.Default;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                fontPreviewText.FontFamily = new FontFamily(selectedFont);
+                            }
+                            catch
+                            {
+                                fontPreviewText.FontFamily = FontFamily.Default;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error updating font preview: {ex.Message}");
             }
         }
 

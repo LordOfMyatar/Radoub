@@ -19,8 +19,25 @@ Comprehensive UI/UX improvements including font customization (README promised),
 
 **Note**: Epic 2 contains many work items. Implementation will be broken into focused increments.
 
+### Added
+- **Issue #58**: Font sizing now works globally across all UI elements
+  - Global styles in App.axaml apply font size to all controls
+  - Dynamic resource binding for instant font size updates
+  - Font size changes apply immediately from Settings window slider
+  - Font size changes apply from View menu options
+  - Persists across sessions via SettingsService
+
+- **Issue #59**: Font selection now available for custom UI fonts
+  - Font family dropdown in Settings → Appearance with live preview
+  - Detects and lists available system fonts
+  - "System Default" option for platform-specific defaults
+  - Real-time font preview showing sample text
+  - Global application to all UI elements via dynamic resources
+  - Persists across sessions via SettingsService
+  - Graceful fallback to system default if font unavailable
+
 ### Planned Features
-- Font sizing and custom font selection (#58, #59)
+- Layout redesign with resizable panels (#108)
 - Enhanced theme system with plugin architecture (#60)
 - Color-blind accessible themes (#61)
 - Rainbow brackets for nesting visualization (#70)
