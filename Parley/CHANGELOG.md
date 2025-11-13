@@ -45,6 +45,11 @@ Comprehensive UI/UX improvements including font customization (README promised),
   - Popup windows (Script Browser, Parameter Browser) scale correctly
   - Button padding adjusts with font size for better touch targets
   - All TextBlocks now inherit from global font settings
+- **UI overlap issues**: Fixed button overlapping in parameter sections
+  - Corrected Grid.Row indices for suggest buttons (was 3, should be 2)
+  - Increased popup window widths to accommodate larger fonts
+  - Parameter Browser: 700→900 width, MinWidth 600→800
+  - Script Browser: 900→1000 width, MinWidth 700→900
 
 ### Planned Features
 - Layout redesign with resizable panels (#108)
