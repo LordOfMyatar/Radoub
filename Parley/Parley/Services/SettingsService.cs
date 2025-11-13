@@ -45,6 +45,7 @@ namespace DialogEditor.Services
         private double _fontSize = 14;
         private string _fontFamily = ""; // Empty string = use system default
         private bool _isDarkTheme = false;
+        private bool _useNewLayout = false; // Feature flag for new layout (#108)
         
         // Game settings
         private string _neverwinterNightsPath = "";
@@ -176,6 +177,12 @@ namespace DialogEditor.Services
         {
             get => _isDarkTheme;
             set { if (SetProperty(ref _isDarkTheme, value)) SaveSettings(); }
+        }
+
+        public bool UseNewLayout
+        {
+            get => _useNewLayout;
+            set { if (SetProperty(ref _useNewLayout, value)) SaveSettings(); }
         }
 
         // Game Settings Properties
@@ -393,6 +400,7 @@ namespace DialogEditor.Services
                         _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
                         _fontFamily = settings.FontFamily ?? "";
                         _isDarkTheme = settings.IsDarkTheme;
+                        _useNewLayout = settings.UseNewLayout;
                         
                         // Load game settings
                         _neverwinterNightsPath = settings.NeverwinterNightsPath ?? "";
@@ -463,6 +471,7 @@ namespace DialogEditor.Services
                     FontSize = FontSize,
                     FontFamily = FontFamily,
                     IsDarkTheme = IsDarkTheme,
+                    UseNewLayout = UseNewLayout,
                     NeverwinterNightsPath = NeverwinterNightsPath,
                     BaseGameInstallPath = BaseGameInstallPath, // Phase 2
                     CurrentModulePath = CurrentModulePath,
@@ -583,6 +592,7 @@ namespace DialogEditor.Services
             public double FontSize { get; set; } = 14;
             public string FontFamily { get; set; } = "";
             public bool IsDarkTheme { get; set; } = false;
+            public bool UseNewLayout { get; set; } = false;
             
             // Game settings
             public string NeverwinterNightsPath { get; set; } = "";

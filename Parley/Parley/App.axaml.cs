@@ -35,7 +35,16 @@ public partial class App : Application
             DisableAvaloniaDataAnnotationValidation();
 
             // Don't set DataContext here - MainWindow sets its own ViewModel in constructor
-            desktop.MainWindow = new MainWindow();
+            // Use new layout if feature flag is enabled
+            if (SettingsService.Instance.UseNewLayout)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Using new resizable panel layout");
+                desktop.MainWindow = new MainWindowNewLayout();
+            }
+            else
+            {
+                desktop.MainWindow = new MainWindow();
+            }
         }
 
         base.OnFrameworkInitializationCompleted();

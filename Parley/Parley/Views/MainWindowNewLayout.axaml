@@ -1,0 +1,301 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DialogEditor.ViewModels"
+        xmlns:models="using:DialogEditor.Models"
+        xmlns:services="using:DialogEditor.Services"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="DialogEditor.Views.MainWindowNewLayout"
+        Title="{Binding WindowTitle}"
+        Icon="avares://Parley/Assets/parley.ico"
+        Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=WindowWidth, Mode=TwoWay}"
+        Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=WindowHeight, Mode=TwoWay}"
+        MinWidth="800" MinHeight="600">
+
+    <Design.DataContext>
+        <vm:MainViewModel/>
+    </Design.DataContext>
+
+    <Window.Resources>
+        <!-- Converter for End flag: true = 0.5 opacity (faded), false = 1.0 opacity (normal) -->
+        <models:BoolToOpacityConverter x:Key="BoolToOpacityConverter"/>
+    </Window.Resources>
+
+    <Grid x:Name="MainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New" InputGesture="Ctrl+N" Click="OnNewClick"/>
+                <Separator/>
+                <MenuItem Header="_Open..." InputGesture="Ctrl+O" Click="OnOpenClick"/>
+                <MenuItem Name="RecentFilesMenuItem" Header="Recent _Files"/>
+                <Separator/>
+                <MenuItem Header="_Save" InputGesture="Ctrl+S" Click="OnSaveClick"/>
+                <MenuItem Header="Save _As..." Click="OnSaveAsClick"/>
+                <Separator/>
+                <MenuItem Header="_Close" Click="OnCloseClick"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="OnExitClick"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" Click="OnUndoClick"/>
+                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" Click="OnRedoClick"/>
+                <Separator/>
+                <MenuItem Header="Add _Node" InputGesture="Ctrl+D" Click="OnAddSmartNodeClick"/>
+                <Separator/>
+                <MenuItem Header="_Save" InputGesture="Ctrl+S" Click="OnSaveClick"/>
+                <Separator/>
+                <MenuItem Header="Move _Up" InputGesture="Ctrl+Shift+Up" Click="OnMoveNodeUpClick"/>
+                <MenuItem Header="Move _Down" InputGesture="Ctrl+Shift+Down" Click="OnMoveNodeDownClick"/>
+                <Separator/>
+                <MenuItem Header="_Expand This and Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
+                <MenuItem Header="_Collapse This and Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
+                <Separator/>
+                <MenuItem Header="_Delete Node" InputGesture="Delete" Click="OnDeleteNodeClick"/>
+                <Separator/>
+                <MenuItem Header="Cu_t Node" InputGesture="Ctrl+X" Click="OnCutNodeClick"/>
+                <MenuItem Header="_Copy Node" InputGesture="Ctrl+C" Click="OnCopyNodeClick"/>
+                <MenuItem Header="_Paste" InputGesture="Ctrl+V" Click="OnPasteAsDuplicateClick"/>
+                <MenuItem Header="Paste as _Link" InputGesture="Ctrl+L" Click="OnPasteAsLinkClick"/>
+                <Separator/>
+                <MenuItem Header="Copy Node _Text" InputGesture="Ctrl+Shift+T" Click="OnCopyNodeTextClick"/>
+                <MenuItem Header="Copy Node _Properties" InputGesture="Ctrl+Shift+P" Click="OnCopyNodePropertiesClick"/>
+                <MenuItem Header="Copy Tree _Structure" InputGesture="Ctrl+Shift+S" Click="OnCopyTreeStructureClick"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem x:Name="ShowDebugMenuItem" Header="Show _Debug Console" Click="OnToggleDebugConsoleClick">
+                    <MenuItem.Icon>
+                        <CheckBox IsChecked="True" IsHitTestVisible="False" Focusable="False"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Clear _Debug Output" Click="OnClearDebugClick"/>
+                <Separator/>
+                <MenuItem Header="Font Size">
+                    <MenuItem Header="Small (10pt)" Click="OnFontSizeClick" Tag="10"/>
+                    <MenuItem Header="Normal (12pt)" Click="OnFontSizeClick" Tag="12"/>
+                    <MenuItem Header="Large (14pt)" Click="OnFontSizeClick" Tag="14"/>
+                    <MenuItem Header="Extra Large (16pt)" Click="OnFontSizeClick" Tag="16"/>
+                    <MenuItem Header="Reader Friendly (18pt)" Click="OnFontSizeClick" Tag="18"/>
+                    <MenuItem Header="Super Reader (20pt)" Click="OnFontSizeClick" Tag="20"/>
+                    <MenuItem Header="Maximum (24pt)" Click="OnFontSizeClick" Tag="24"/>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Settings">
+                <MenuItem Header="_Preferences..." Click="OnPreferencesClick"/>
+                <Separator/>
+                <MenuItem Header="_Game Directories..." Click="OnGameDirectoriesClick"/>
+                <MenuItem Header="_Logging Settings..." Click="OnLogSettingsClick"/>
+                <Separator/>
+                <MenuItem Header="_Refresh Script Cache" Click="OnRefreshScriptCacheClick"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About Parley..." Click="OnAboutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Main Content Area with Resizable Panels -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" MinHeight="200"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="150" MinHeight="100" MaxHeight="300"/>
+            </Grid.RowDefinitions>
+
+            <!-- Top Section: Main work area -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300" MinWidth="200" MaxWidth="500"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="*" MinWidth="300"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="250" MinWidth="200" MaxWidth="400"/>
+                    <ColumnDefinition Width="5"/>
+                    <ColumnDefinition Width="200" MinWidth="150" MaxWidth="350"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Panel: Dialog Tree -->
+                <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="2">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Dialog Structure" FontWeight="Bold"
+                                   Margin="5" Background="LightGray" Padding="3"/>
+
+                        <TreeView Grid.Row="1" x:Name="DialogTreeView"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ItemsSource="{Binding DialogStructure.DialogNodes}"
+                                  SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+                            <TreeView.ItemTemplate>
+                                <TreeDataTemplate ItemsSource="{Binding Children}">
+                                    <Border Padding="2">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBlock Text="{Binding NodeId}" FontWeight="Bold"
+                                                       Foreground="{Binding NodeIdColor}"/>
+                                            <TextBlock Text="{Binding NodeTypeSymbol}" Foreground="{Binding NodeTypeColor}"/>
+                                            <TextBlock Text="{Binding PreviewText}" TextTrimming="CharacterEllipsis"
+                                                       MaxWidth="200" Opacity="{Binding IsEnd, Converter={StaticResource BoolToOpacityConverter}}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </TreeDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+                    </Grid>
+                </Border>
+
+                <!-- Vertical Splitter 1 -->
+                <GridSplitter Grid.Column="1" ResizeDirection="Columns" HorizontalAlignment="Stretch"/>
+
+                <!-- Center Panel: Node Properties -->
+                <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Margin="2">
+                    <ScrollViewer>
+                        <Grid Margin="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Node Properties" FontWeight="Bold"
+                                       Margin="0,0,0,10" Background="LightGray" Padding="3"/>
+
+                            <!-- Node properties content will be dynamically loaded here based on node type -->
+                            <ContentControl Grid.Row="1" x:Name="NodePropertiesContent"/>
+                        </Grid>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- Vertical Splitter 2 -->
+                <GridSplitter Grid.Column="3" ResizeDirection="Columns" HorizontalAlignment="Stretch"/>
+
+                <!-- Right Panel: Module Info -->
+                <Border Grid.Column="4" BorderBrush="Gray" BorderThickness="1" Margin="2">
+                    <ScrollViewer>
+                        <StackPanel Margin="10" Spacing="10">
+                            <TextBlock Text="Module Info" FontWeight="Bold"
+                                       Background="LightGray" Padding="3"/>
+
+                            <TextBlock Text="File:" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding CurrentFilePath}" TextWrapping="Wrap"/>
+
+                            <TextBlock Text="Module ID:" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding DialogStructure.ModuleID}"/>
+
+                            <TextBlock Text="Type:" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding DialogStructure.DlgData.Type, FallbackValue='Standard'}"/>
+
+                            <TextBlock Text="Delay Entry:" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding DialogStructure.DlgData.DelayEntry, FallbackValue='0'}"/>
+
+                            <TextBlock Text="Delay Reply:" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding DialogStructure.DlgData.DelayReply, FallbackValue='0'}"/>
+
+                            <TextBlock Text="Prevent Zoom:" FontWeight="Bold"/>
+                            <CheckBox IsChecked="{Binding DialogStructure.DlgData.PreventZoomIn}"
+                                      IsEnabled="False"/>
+
+                            <TextBlock Text="Word Count:" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding DialogStructure.DlgData.WordCount, FallbackValue='0'}"/>
+
+                            <TextBlock Text="Script:" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding DialogStructure.DlgData.EndScript, FallbackValue='(none)'}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- Vertical Splitter 3 -->
+                <GridSplitter Grid.Column="5" ResizeDirection="Columns" HorizontalAlignment="Stretch"/>
+
+                <!-- Plugin Dock Panel (collapsible) -->
+                <Border Grid.Column="6" BorderBrush="Gray" BorderThickness="1" Margin="2">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Background="LightGray">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Plugins" FontWeight="Bold"
+                                       Margin="5" Padding="3"/>
+                            <Button Grid.Column="1" Content="≪" Width="20" Height="20"
+                                    Click="OnTogglePluginPanel" ToolTip.Tip="Hide Plugin Panel"/>
+                        </Grid>
+
+                        <TabControl Grid.Row="1" x:Name="PluginTabs">
+                            <!-- Plugin tabs will be dynamically added here -->
+                            <TabItem Header="No Plugins">
+                                <TextBlock Text="No plugins loaded"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="Gray"/>
+                            </TabItem>
+                        </TabControl>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Horizontal Splitter -->
+            <GridSplitter Grid.Row="1" ResizeDirection="Rows" HorizontalAlignment="Stretch"/>
+
+            <!-- Bottom Section: Text Entry Panel -->
+            <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" Margin="2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Background="LightGray">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Text Entry" FontWeight="Bold"
+                                   Margin="5" Padding="3"/>
+                        <CheckBox Grid.Column="1" x:Name="WordWrapCheckBox"
+                                  Content="Word Wrap" Margin="5"
+                                  IsChecked="True"/>
+                    </Grid>
+
+                    <TextBox Grid.Row="1" x:Name="TextEntryBox"
+                             AcceptsReturn="True"
+                             TextWrapping="{Binding ElementName=WordWrapCheckBox, Path=IsChecked, Converter={StaticResource BoolToTextWrappingConverter}}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             Text="{Binding SelectedNode.Text, Mode=TwoWay}"
+                             IsEnabled="{Binding SelectedNode, Converter={StaticResource NotNullConverter}}"
+                             Margin="5"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="3" Background="LightGray" Padding="5,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding NodeCount}" Margin="10,0" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Text="{Binding Modified}" Margin="10,0" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

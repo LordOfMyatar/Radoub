@@ -161,6 +161,13 @@ namespace DialogEditor.Views
             LoadFontFamilies(settings.FontFamily);
             UpdateFontPreview();
 
+            // Load layout settings
+            var useNewLayoutCheckBox = this.FindControl<CheckBox>("UseNewLayoutCheckBox");
+            if (useNewLayoutCheckBox != null)
+            {
+                useNewLayoutCheckBox.IsChecked = settings.UseNewLayout;
+            }
+
             if (externalEditorPathTextBox != null)
             {
                 externalEditorPathTextBox.Text = settings.ExternalEditorPath;
@@ -1115,6 +1122,19 @@ namespace DialogEditor.Views
                 }
 
                 UpdateFontPreview();
+            }
+        }
+
+        private void OnNewLayoutToggled(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var checkBox = sender as CheckBox;
+            if (checkBox != null)
+            {
+                // Just update the setting - UI will show restart message
+                SettingsService.Instance.UseNewLayout = checkBox.IsChecked ?? false;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"New layout feature flag set to: {checkBox.IsChecked}");
             }
         }
 

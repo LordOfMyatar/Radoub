@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DialogEditor.App"
              xmlns:local="using:DialogEditor"
+             xmlns:models="using:DialogEditor.Models"
              RequestedThemeVariant="Light">
              <!-- Light theme by default. Users can switch via View menu. -->
 
@@ -76,5 +77,9 @@
         <!-- Default font size and family - will be updated from settings -->
         <x:Double x:Key="GlobalFontSize">14</x:Double>
         <FontFamily x:Key="GlobalFontFamily">$Default</FontFamily>
+
+        <!-- Global converters for UI -->
+        <models:BoolToTextWrappingConverter x:Key="BoolToTextWrappingConverter"/>
+        <models:NotNullConverter x:Key="NotNullConverter"/>
     </Application.Resources>
 </Application>
