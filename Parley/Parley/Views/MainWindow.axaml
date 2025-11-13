@@ -349,7 +349,7 @@
                                 <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40">
                                     <StackPanel x:Name="ConditionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
-                                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
                                     <Button Content="+ Add Parameter"
                                             x:Name="AddConditionsParamButton" Click="OnAddConditionsParamClick"
                                             Margin="0,0,5,0"/>
@@ -412,7 +412,7 @@
                                 <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40">
                                     <StackPanel x:Name="ActionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
-                                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="5">
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
                                     <Button Content="+ Add Parameter"
                                             x:Name="AddActionsParamButton" Click="OnAddActionsParamClick"
                                             Margin="0,0,5,0"/>
