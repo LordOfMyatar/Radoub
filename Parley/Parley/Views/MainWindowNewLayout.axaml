@@ -17,10 +17,7 @@
         <vm:MainViewModel/>
     </Design.DataContext>
 
-    <Window.Resources>
-        <!-- Converter for End flag: true = 0.5 opacity (faded), false = 1.0 opacity (normal) -->
-        <models:BoolToOpacityConverter x:Key="BoolToOpacityConverter"/>
-    </Window.Resources>
+    <!-- Resources are inherited from App.axaml, no need to redefine converters -->
 
     <Grid x:Name="MainGrid">
         <Grid.RowDefinitions>
