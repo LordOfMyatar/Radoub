@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="DialogEditor.Views.ParameterBrowserWindow"
         Title="Parameter Browser"
-        MinWidth="600" MinHeight="400"
-        Width="700" Height="500"
+        MinWidth="800" MinHeight="400"
+        Width="900" Height="500"
         SizeToContent="Manual"
         WindowStartupLocation="CenterOwner">
 
@@ -123,6 +123,7 @@
         <!-- Button Panel -->
         <Grid Grid.Row="3" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
@@ -146,7 +147,7 @@
             </StackPanel>
 
             <!-- Right side: Action buttons -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="CopyKeyButton"
                         Content="Copy Key"
                         Click="OnCopyKeyClick"

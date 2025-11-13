@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="DialogEditor.Views.ScriptBrowserWindow"
         Title="Script Browser"
-        MinWidth="700" MinHeight="500"
-        Width="900" Height="600"
+        MinWidth="900" MinHeight="500"
+        Width="1000" Height="600"
         SizeToContent="Manual"
         WindowStartupLocation="CenterOwner">
 
