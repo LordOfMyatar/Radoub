@@ -36,6 +36,16 @@ Comprehensive UI/UX improvements including font customization (README promised),
   - Persists across sessions via SettingsService
   - Graceful fallback to system default if font unavailable
 
+### Fixed
+- **Font sizing improvements**: Removed all hardcoded font sizes
+  - Module info bar now respects global font size
+  - Debug output panel scales with font settings
+  - Script preview windows use dynamic font sizes
+  - Dialog tree headers scale properly
+  - Popup windows (Script Browser, Parameter Browser) scale correctly
+  - Button padding adjusts with font size for better touch targets
+  - All TextBlocks now inherit from global font settings
+
 ### Planned Features
 - Layout redesign with resizable panels (#108)
 - Enhanced theme system with plugin architecture (#60)

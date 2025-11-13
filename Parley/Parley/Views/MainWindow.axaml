@@ -109,7 +109,6 @@
                 <TextBlock x:Name="ModuleNameTextBlock"
                            Text="No module loaded"
                            FontWeight="Bold"
-                           FontSize="14"
                            VerticalAlignment="Center"/>
                 <TextBlock Text="|"
                            Foreground="Gray"
@@ -117,7 +116,6 @@
                 <TextBlock x:Name="ModulePathTextBlock"
                            Text=""
                            Foreground="Gray"
-                           FontSize="12"
                            VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
@@ -134,7 +132,7 @@
             <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
                 <DockPanel>
                     <!-- Header -->
-                    <TextBlock DockPanel.Dock="Top" Text="Dialog Tree" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
+                    <TextBlock DockPanel.Dock="Top" Text="Dialog Tree" FontWeight="Bold" Margin="0,0,0,5"/>
 
                     <!-- Tree Control Buttons -->
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
@@ -215,7 +213,7 @@
                 <ScrollViewer>
                     <StackPanel Margin="5">
                         <!-- Conversation Settings (dialog-level properties) -->
-                        <TextBlock Text="Conversation Settings" FontWeight="Bold" FontSize="15" Margin="0,0,0,5"/>
+                        <TextBlock Text="Conversation Settings" FontWeight="Bold" Margin="0,0,0,5"/>
 
                         <CheckBox x:Name="PreventZoomCheckBox" Content="Prevent Camera Zoom (Cutscene Mode)"
                                   Margin="0,0,0,5" Checked="OnConversationSettingChanged" Unchecked="OnConversationSettingChanged"
@@ -251,7 +249,7 @@
 
                         <Separator Margin="0,5,0,10"/>
 
-                        <TextBlock Text="Node Properties" FontWeight="Bold" FontSize="15" Margin="0,0,0,10"/>
+                        <TextBlock Text="Node Properties" FontWeight="Bold" Margin="0,0,0,10"/>
 
                         <!-- Basic Node Info -->
                         <TextBlock Text="Type:" FontWeight="Bold"/>
@@ -371,7 +369,7 @@
                         <Border x:Name="ConditionalScriptPreviewGrid" MinHeight="100" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer">
                                 <TextBox x:Name="ConditionalScriptPreviewTextBox"
-                                         FontFamily="Consolas" FontSize="11"
+                                         FontFamily="Consolas"
                                          Background="Transparent" BorderThickness="0"
                                          IsReadOnly="True" TextWrapping="Wrap"
                                          Text="// Conditional script preview will appear here"
@@ -434,7 +432,7 @@
                         <Border x:Name="ActionScriptPreviewGrid" MinHeight="100" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <ScrollViewer x:Name="ActionScriptPreviewScrollViewer">
                                 <TextBox x:Name="ActionScriptPreviewTextBox"
-                                         FontFamily="Consolas" FontSize="11"
+                                         FontFamily="Consolas"
                                          Background="Transparent" BorderThickness="0"
                                          IsReadOnly="True" TextWrapping="Wrap"
                                          Text="// Action script preview will appear here"
@@ -527,13 +525,13 @@
         <!-- Debug Output -->
         <Border x:Name="DebugConsoleGroupBox" Grid.Row="4" BorderBrush="Gray" BorderThickness="1" Margin="5,0,5,5" Padding="5">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Debug Output" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
+                <TextBlock DockPanel.Dock="Top" Text="Debug Output" FontWeight="Bold" Margin="0,0,0,5"/>
                 <ListBox x:Name="DebugListBox"
                          ItemsSource="{Binding DebugMessages}"
                          Background="Transparent">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="13" Padding="2"/>
+                            <TextBlock Text="{Binding}" FontFamily="Consolas" Padding="2"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>

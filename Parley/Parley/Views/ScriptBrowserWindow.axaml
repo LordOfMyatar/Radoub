@@ -2,8 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="DialogEditor.Views.ScriptBrowserWindow"
         Title="Script Browser"
-        Width="900" Height="600"
         MinWidth="700" MinHeight="500"
+        Width="900" Height="600"
+        SizeToContent="Manual"
         WindowStartupLocation="CenterOwner">
 
     <Window.Styles>
@@ -94,7 +95,6 @@
                                  IsReadOnly="True"
                                  TextWrapping="NoWrap"
                                  FontFamily="Consolas,Courier New,monospace"
-                                 FontSize="11"
                                  AcceptsReturn="True"
                                  BorderThickness="0"
                                  Background="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
