@@ -375,7 +375,7 @@ namespace Parley.Tests
             // Container should only show Orphan A (root), not both A and B
 
             // Arrange: Create dialog with nested orphan structure
-            var dialog = new Dialog { Name = "nested_orphan_test" };
+            var dialog = new Dialog();
             dialog.RebuildLinkRegistry();
 
             // START → Entry 1 (will be deleted, causing orphans)
