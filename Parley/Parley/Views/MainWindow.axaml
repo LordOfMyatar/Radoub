@@ -29,10 +29,14 @@
             <RowDefinition Height="1*" MinHeight="200"/>
             <RowDefinition Height="5"/>
             <RowDefinition Height="3*" MinHeight="200"/>
-            <RowDefinition Height="0"/>
-            <RowDefinition Height="0" MinHeight="0"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" MinHeight="0"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
         <!-- Menu Bar -->
         <Menu Grid.Row="0">
@@ -122,16 +126,22 @@
             </StackPanel>
         </Border>
 
-<!-- Main Content Area -->
-        <Grid Grid.Row="2">
+<!-- Main Content Area (spans rows 2-4 for left/right layout) -->
+        <Grid Grid.Row="2" Grid.RowSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*" MinWidth="400"/>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="1*" MinWidth="250"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Dialog Tree View -->
-            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*" MinHeight="200"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="1*" MinHeight="150"/>
+            </Grid.RowDefinitions>
+
+            <!-- Dialog Tree View (top left) -->
+            <Border Grid.Row="0" Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
                 <DockPanel>
                     <!-- Header -->
                     <TextBlock DockPanel.Dock="Top" Text="Dialog Tree" FontWeight="Bold" Margin="0,0,0,5"/>
@@ -207,12 +217,53 @@
                 </DockPanel>
             </Border>
 
-            <!-- Splitter 1 -->
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+            <!-- Horizontal splitter between Dialog Tree and Text Entry -->
+            <GridSplitter Grid.Row="1" Grid.Column="0" Height="5" HorizontalAlignment="Stretch"
+                          ResizeDirection="Rows" Background="Gray"/>
+
+            <!-- Text Entry Panel (bottom left) -->
+            <Border Grid.Row="2" Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Node Text" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                    <!-- Speaker field at top of text panel -->
+                    <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Speaker:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox x:Name="SpeakerTextBox" Grid.Column="1"
+                                 TextWrapping="Wrap" AcceptsReturn="True"
+                                 LostFocus="OnFieldLostFocus"/>
+                        <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="3"
+                                  MinWidth="100" MaxWidth="150"
+                                  PlaceholderText="Recent..."
+                                  SelectionChanged="OnRecentCreatureTagSelected">
+                            <!-- Populated dynamically -->
+                        </ComboBox>
+                        <Button x:Name="BrowseCreatureButton" Grid.Column="5" Content="Browse..."
+                                MinWidth="70" Padding="5,0" Click="OnBrowseCreatureClick"/>
+                    </Grid>
+
+                    <TextBox x:Name="TextTextBox" AcceptsReturn="True"
+                            TextWrapping="Wrap"
+                            LostFocus="OnFieldLostFocus"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                </DockPanel>
+            </Border>
+
+            <!-- Vertical splitter between left panels and properties -->
+            <GridSplitter Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
                           ResizeDirection="Columns" Background="Gray"/>
 
-            <!-- Stacked Properties Panels -->
-            <StackPanel Grid.Column="2" Margin="5" Orientation="Vertical">
+            <!-- Stacked Properties Panels (full height right side) -->
+            <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Margin="5" Orientation="Vertical">
 
                 <!-- Scripts & Parameters -->
                 <Expander Header="Scripts &amp; Parameters" IsExpanded="True">
@@ -511,70 +562,35 @@
             </StackPanel>
         </Grid>
 
-        <!-- Splitter between main content and text entry -->
-        <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" Background="Gray"/>
+        <!-- Debug Panel (left column only, collapsible) -->
+        <Grid Grid.Row="5" Grid.RowSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" MinWidth="400"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="1*" MinWidth="250"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Text Entry Panel (full width) -->
-        <Border Grid.Row="4" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Node Text" FontWeight="Bold" Margin="0,0,0,5"/>
-
-                <!-- Speaker field at top of text panel -->
-                <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="5"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="5"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Speaker:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBox x:Name="SpeakerTextBox" Grid.Column="1"
-                             TextWrapping="Wrap" AcceptsReturn="True"
-                             LostFocus="OnFieldLostFocus"/>
-                    <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="3"
-                              MinWidth="100" MaxWidth="150"
-                              PlaceholderText="Recent..."
-                              SelectionChanged="OnRecentCreatureTagSelected">
-                        <!-- Populated dynamically -->
-                    </ComboBox>
-                    <Button x:Name="BrowseCreatureButton" Grid.Column="5" Content="Browse..."
-                            MinWidth="70" Padding="5,0" Click="OnBrowseCreatureClick"/>
-                </Grid>
-
-                <TextBox x:Name="TextTextBox" AcceptsReturn="True"
-                        TextWrapping="Wrap"
-                        LostFocus="OnFieldLostFocus"
-                        ScrollViewer.VerticalScrollBarVisibility="Auto"
-                        ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
-            </DockPanel>
-        </Border>
-
-        <!-- Splitter between text entry and debug -->
-        <GridSplitter x:Name="DebugConsoleSplitter" Grid.Row="5" Height="5" HorizontalAlignment="Stretch" Background="Gray" IsVisible="False"/>
-
-        <!-- Debug Output -->
-        <Border x:Name="DebugConsoleGroupBox" Grid.Row="6" BorderBrush="Gray" BorderThickness="1" Margin="5,0,5,5" Padding="5" IsVisible="False">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="Debug Output" FontWeight="Bold" Margin="0,0,0,5"/>
-                <ListBox x:Name="DebugListBox"
-                         ItemsSource="{Binding DebugMessages}"
-                         Background="Transparent">
-                    <ListBox.Styles>
-                        <Style Selector="ListBoxItem">
-                            <Setter Property="Padding" Value="2,0"/>
-                            <Setter Property="MinHeight" Value="0"/>
-                        </Style>
-                    </ListBox.Styles>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding}" FontFamily="Consolas" Padding="0"/>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </DockPanel>
-        </Border>
+            <!-- Debug Expander (left column only) -->
+            <Expander x:Name="DebugExpander" Grid.Column="0" Header="Debug Output" IsExpanded="False" Margin="5,0,5,0" IsVisible="False">
+                <Border BorderBrush="Gray" BorderThickness="1" Padding="5" MinHeight="100" MaxHeight="200">
+                    <ListBox x:Name="DebugListBox"
+                             ItemsSource="{Binding DebugMessages}"
+                             Background="Transparent">
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="Padding" Value="2,0"/>
+                                <Setter Property="MinHeight" Value="0"/>
+                            </Style>
+                        </ListBox.Styles>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontFamily="Consolas" Padding="0"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+            </Expander>
+        </Grid>
 
         <!-- Status Bar -->
         <Border Grid.Row="7" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="5,2">

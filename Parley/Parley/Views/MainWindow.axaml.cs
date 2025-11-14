@@ -909,25 +909,14 @@ namespace DialogEditor.Views
         {
             try
             {
-                var mainGrid = this.FindControl<Grid>("MainGrid");
-                if (mainGrid != null && mainGrid.RowDefinitions.Count > 4)
-                {
-                    var debugRow = mainGrid.RowDefinitions[4]; // Row 4 is debug panel
-                    var splitterRow = mainGrid.RowDefinitions[3]; // Row 3 is GridSplitter
-                    var debugGroupBox = this.FindControl<Border>("DebugConsoleGroupBox");
-                    var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
+                var debugExpander = this.FindControl<Expander>("DebugExpander");
+                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
 
-                    var mainContentRow = mainGrid.RowDefinitions[2]; // Row 2 is main content
-                    
-                    if (debugRow != null && debugGroupBox != null && mainContentRow != null)
-                    {
-                        debugRow.Height = new GridLength(0);
-                        splitterRow.Height = new GridLength(0); // Hide splitter when debug hidden
-                        mainContentRow.Height = new GridLength(1, GridUnitType.Star); // Main content takes all space
-                        debugGroupBox.IsVisible = false;
-                        if (showDebugMenuItem != null)
-                            showDebugMenuItem.Header = "Show _Debug Console";
-                    }
+                if (debugExpander != null)
+                {
+                    debugExpander.IsVisible = false;
+                    if (showDebugMenuItem != null)
+                        showDebugMenuItem.Header = "Show _Debug Console";
                 }
             }
             catch (Exception ex)
@@ -940,36 +929,24 @@ namespace DialogEditor.Views
         {
             try
             {
-                var mainGrid = this.FindControl<Grid>("MainGrid");
-                if (mainGrid != null && mainGrid.RowDefinitions.Count > 6)
-                {
-                    var debugRow = mainGrid.RowDefinitions[6]; // Row 6 is debug panel
-                    var splitterRow = mainGrid.RowDefinitions[5]; // Row 5 is GridSplitter
-                    var debugGroupBox = this.FindControl<Border>("DebugConsoleGroupBox");
-                    var debugSplitter = this.FindControl<GridSplitter>("DebugConsoleSplitter");
-                    var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
+                var debugExpander = this.FindControl<Expander>("DebugExpander");
+                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
 
-                    if (debugRow != null && debugGroupBox != null)
+                if (debugExpander != null)
+                {
+                    bool isVisible = debugExpander.IsVisible;
+                    if (isVisible)
                     {
-                        bool isVisible = debugRow.Height.Value > 0;
-                        if (isVisible)
-                        {
-                            debugRow.Height = new GridLength(0);
-                            splitterRow.Height = new GridLength(0);
-                            debugGroupBox.IsVisible = false;
-                            if (debugSplitter != null) debugSplitter.IsVisible = false;
-                            if (showDebugMenuItem != null)
-                                showDebugMenuItem.Header = "Show _Debug Console";
-                        }
-                        else
-                        {
-                            debugRow.Height = new GridLength(150);
-                            splitterRow.Height = new GridLength(5);
-                            debugGroupBox.IsVisible = true;
-                            if (debugSplitter != null) debugSplitter.IsVisible = true;
-                            if (showDebugMenuItem != null)
-                                showDebugMenuItem.Header = "Hide _Debug Console";
-                        }
+                        debugExpander.IsVisible = false;
+                        if (showDebugMenuItem != null)
+                            showDebugMenuItem.Header = "Show _Debug Console";
+                    }
+                    else
+                    {
+                        debugExpander.IsVisible = true;
+                        debugExpander.IsExpanded = true;
+                        if (showDebugMenuItem != null)
+                            showDebugMenuItem.Header = "Hide _Debug Console";
                     }
                 }
             }
