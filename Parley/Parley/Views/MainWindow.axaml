@@ -214,9 +214,9 @@
             <!-- Stacked Properties Panels -->
             <Grid Grid.Column="2" Margin="5">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="1*"/>
-                    <RowDefinition Height="5"/>
-                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="1*" MinHeight="100"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="1*" MinHeight="100"/>
                 </Grid.RowDefinitions>
 
                 <!-- Scripts & Parameters (top half) -->
@@ -353,8 +353,9 @@
                     </ScrollViewer>
                 </Expander>
 
-                <!-- Splitter between panels -->
-                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Background="Gray"/>
+                <!-- Splitter between panels (only visible when at least one panel expanded) -->
+                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
+                              ResizeDirection="Rows" Background="Gray"/>
 
                 <!-- Node Properties (bottom half) -->
                 <Expander Grid.Row="2" Header="Node Properties" IsExpanded="True">
