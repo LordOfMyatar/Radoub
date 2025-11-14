@@ -215,10 +215,9 @@
 
             <!-- Left Properties Panel (Scripts) -->
             <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
-                <ScrollViewer>
-                    <StackPanel Margin="5">
-                        <!-- Scripts Header -->
-                        <TextBlock Text="Scripts &amp; Parameters" FontWeight="Bold" Margin="0,0,0,10"/>
+                <Expander Header="Scripts &amp; Parameters" IsExpanded="True">
+                    <ScrollViewer>
+                        <StackPanel Margin="5">
 
                         <!-- Conditional Scripts -->
                         <TextBlock Text="Conditional Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
@@ -345,8 +344,9 @@
                             </ScrollViewer>
                         </Border>
 
-                    </StackPanel>
-                </ScrollViewer>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Expander>
             </Border>
 
             <!-- Splitter 2 -->
@@ -355,11 +355,12 @@
 
             <!-- Right Properties Panel (Node Properties) -->
             <Border Grid.Column="4" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
-                <ScrollViewer>
-                    <StackPanel Margin="5">
-                        <!-- Conversation Settings (shown only for ROOT node) -->
-                        <StackPanel x:Name="ConversationSettingsPanel">
-                            <TextBlock Text="Conversation Settings" FontWeight="Bold" Margin="0,0,0,5"/>
+                <Expander Header="Node Properties" IsExpanded="True">
+                    <ScrollViewer>
+                        <StackPanel Margin="5">
+                            <!-- Conversation Settings (shown only for ROOT node) -->
+                            <StackPanel x:Name="ConversationSettingsPanel">
+                                <TextBlock Text="Conversation Settings" FontWeight="Bold" Margin="0,0,0,5"/>
 
                             <CheckBox x:Name="PreventZoomCheckBox" Content="Prevent Camera Zoom (Cutscene Mode)"
                                       Margin="0,0,0,5" Checked="OnConversationSettingChanged" Unchecked="OnConversationSettingChanged"
@@ -404,28 +405,6 @@
                             <TextBlock Text="Type:" FontWeight="Bold"/>
                             <TextBox x:Name="NodeTypeTextBox" IsReadOnly="True" Margin="0,0,0,5"
                                      TextWrapping="Wrap" AcceptsReturn="True"/>
-
-                            <TextBlock Text="Speaker:"/>
-                            <Grid Margin="0,0,0,5">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="5"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="5"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox x:Name="SpeakerTextBox" Grid.Column="0"
-                                         TextWrapping="Wrap" AcceptsReturn="True"
-                                         LostFocus="OnFieldLostFocus"/>
-                                <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="2"
-                                          MinWidth="100" MaxWidth="150"
-                                          PlaceholderText="Recent..."
-                                          SelectionChanged="OnRecentCreatureTagSelected">
-                                    <!-- Populated dynamically -->
-                                </ComboBox>
-                                <Button x:Name="BrowseCreatureButton" Grid.Column="4" Content="Browse..."
-                                        MinWidth="70" Padding="5,0" Click="OnBrowseCreatureClick"/>
-                            </Grid>
 
                             <!-- Animation and Audio -->
                             <Separator Margin="0,5"/>
@@ -531,9 +510,10 @@
                             <TextBox x:Name="CommentTextBox" AcceptsReturn="True" MinHeight="50"
                                     TextWrapping="Wrap" Margin="0,0,0,5"
                                     LostFocus="OnFieldLostFocus"/>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
+                    </ScrollViewer>
+                </Expander>
             </Border>
         </Grid>
 
@@ -544,6 +524,31 @@
         <Border Grid.Row="4" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Node Text" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                <!-- Speaker field at top of text panel -->
+                <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Speaker:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBox x:Name="SpeakerTextBox" Grid.Column="1"
+                             TextWrapping="Wrap" AcceptsReturn="True"
+                             LostFocus="OnFieldLostFocus"/>
+                    <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="3"
+                              MinWidth="100" MaxWidth="150"
+                              PlaceholderText="Recent..."
+                              SelectionChanged="OnRecentCreatureTagSelected">
+                        <!-- Populated dynamically -->
+                    </ComboBox>
+                    <Button x:Name="BrowseCreatureButton" Grid.Column="5" Content="Browse..."
+                            MinWidth="70" Padding="5,0" Click="OnBrowseCreatureClick"/>
+                </Grid>
+
                 <TextBox x:Name="TextTextBox" AcceptsReturn="True"
                         TextWrapping="Wrap"
                         LostFocus="OnFieldLostFocus"
