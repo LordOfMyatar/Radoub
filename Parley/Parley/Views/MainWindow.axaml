@@ -321,7 +321,7 @@
                         </Border>
 
                         <TextBlock Text="Conditional Script Preview:" Margin="0,5,0,2"/>
-                        <Border x:Name="ConditionalScriptPreviewGrid" MinHeight="100" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ConditionalScriptPreviewGrid" MinHeight="100" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer">
                                 <TextBox x:Name="ConditionalScriptPreviewTextBox"
                                          FontFamily="Consolas"
@@ -384,7 +384,7 @@
                         </Border>
 
                         <TextBlock Text="Action Script Preview:" Margin="0,5,0,2"/>
-                        <Border x:Name="ActionScriptPreviewGrid" MinHeight="100" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ActionScriptPreviewGrid" MinHeight="100" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <ScrollViewer x:Name="ActionScriptPreviewScrollViewer">
                                 <TextBox x:Name="ActionScriptPreviewTextBox"
                                          FontFamily="Consolas"
