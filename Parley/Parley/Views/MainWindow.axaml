@@ -212,9 +212,15 @@
                           ResizeDirection="Columns" Background="Gray"/>
 
             <!-- Stacked Properties Panels -->
-            <DockPanel Grid.Column="2" Margin="5">
-                <!-- Scripts & Parameters (top) -->
-                <Expander DockPanel.Dock="Top" Header="Scripts &amp; Parameters" IsExpanded="True" Margin="0,0,0,5">
+            <Grid Grid.Column="2" Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Scripts & Parameters (top half) -->
+                <Expander Grid.Row="0" Header="Scripts &amp; Parameters" IsExpanded="True">
                     <ScrollViewer>
                         <StackPanel Margin="5">
 
@@ -347,8 +353,11 @@
                     </ScrollViewer>
                 </Expander>
 
-                <!-- Node Properties (bottom, fills remaining space) -->
-                <Expander Header="Node Properties" IsExpanded="True">
+                <!-- Splitter between panels -->
+                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Background="Gray"/>
+
+                <!-- Node Properties (bottom half) -->
+                <Expander Grid.Row="2" Header="Node Properties" IsExpanded="True">
                     <ScrollViewer>
                         <StackPanel Margin="5">
                             <!-- Conversation Settings (shown only for ROOT node) -->
@@ -507,7 +516,7 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Expander>
-            </DockPanel>
+            </Grid>
         </Grid>
 
         <!-- Splitter between main content and text entry -->
