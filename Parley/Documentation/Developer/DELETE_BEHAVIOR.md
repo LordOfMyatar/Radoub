@@ -149,15 +149,115 @@ else
 - Shared nodes appear under multiple parents (via link indicators)
 - Properties panel shows incoming reference count (future enhancement)
 
+## Orphan Node Handling
+
+**CRITICAL FILE INTEGRITY FEATURE**: When nodes become orphaned (unreachable from any START), Parley moves them to a special container instead of deleting them. This preserves complex dialog subtrees and prevents data loss.
+
+### What Are Orphaned Nodes?
+
+A node is orphaned when:
+- It loses its connection to all START points
+- But it's still referenced by other nodes (via `IsLink=true` pointers)
+- Deleting it would break links in other parts of the dialog
+
+### Orphan Detection Algorithm
+
+**Key Principle**: Traverse from STARTs following ONLY regular pointers (`IsLink=false`)
+
+```csharp
+// MainViewModel.cs:CollectReachableNodesForOrphanDetection
+private void CollectReachableNodesForOrphanDetection(DialogNode node, HashSet<DialogNode> reachableNodes)
+{
+    // Only traverse IsLink=false pointers
+    // IsLink=true are back-references and should NOT prevent orphaning
+    foreach (var pointer in node.Pointers.Where(p => !p.IsLink))
+    {
+        CollectReachableNodesForOrphanDetection(pointer.Node, reachableNodes);
+    }
+}
+```
+
+**Why this matters**:
+- `IsLink=false`: Regular conversation flow (parent → child)
+- `IsLink=true`: Back-reference from link child to shared parent
+- If we traversed `IsLink=true` pointers, link parents would always appear reachable, preventing proper orphan detection
+
+### Example: Link Parents Becoming Orphaned
+
+```
+START 1: "Hey, keep it down..." → "I need gear" (parent)
+START 2: "Anything else?" → [grey link] → "I need gear" (IsLink=true back-reference)
+                         → "The shady stuff" (parent, has links elsewhere)
+```
+
+**Delete START 2**:
+- "I need gear" link is removed (just a reference)
+- "I need gear" parent stays under START 1 (still reachable)
+- "The shady stuff" becomes ORPHANED (no regular path from START)
+- BUT "The shady stuff" has `IsLink=true` pointers from other nodes
+- SO we preserve it in orphan container (don't delete)
+
+### Orphan Container Structure
+
+```
+!!! Orphaned Nodes (Entry, sc_false script)
+  ├─ !!! Orphaned NPC Nodes (Reply category)
+  │   ├─ [CONTINUE] → Orphaned Entry 1
+  │   ├─ [CONTINUE] → Orphaned Entry 2
+  │   └─ [CONTINUE] → Orphaned Entry 3
+  └─ Orphaned PC Reply 1 (direct children)
+```
+
+**ROOT ORPHAN FILTERING** (CRITICAL):
+- Only add orphans that are NOT descendants of other orphans
+- Prevents duplicate display in tree
+- Uses recursive subtree traversal to check
+
+```csharp
+// MainViewModel.cs:2897-2908
+var rootOrphanedEntries = orphanedEntries.Where(orphan =>
+{
+    foreach (var otherOrphan in orphanedEntries)
+    {
+        if (otherOrphan != orphan && IsNodeInSubtree(orphan, otherOrphan))
+            return false; // Orphan is descendant of another orphan
+    }
+    return true; // This is a root orphan
+}).ToList();
+```
+
+### Bug Pattern: Duplicate Orphans
+
+**Symptom**: Orphaned nodes appear multiple times in container
+- Once as direct child
+- Again as grandchild/descendant of another orphan
+
+**Root Cause**: Orphan subtrees contain cross-references
+- Orphan A → Reply X → Orphan B
+- Without filtering, both A and B added to container
+- Expanding A shows B again as descendant
+
+**Fix**: `IsNodeInSubtree()` recursively checks if node appears anywhere in another orphan's subtree (MainViewModel.cs:3031-3062)
+
+**Test**: `OrphanNodeTests.cs` should include test for nested orphan structures
+
+### When Orphan Container Appears
+
+- **sc_false script**: Container START has `ScriptAppears="sc_false"`
+- **Never in-game**: Requires `sc_false.nss` module script (always returns FALSE)
+- **Writer decision**: Move subtrees back to conversation or delete permanently
+
 ## Testing
 
-See `Parley.Tests/DeleteOperationTests.cs` for comprehensive test coverage:
-- `Delete_NodeWithSharedReplies_PreservesOtherNodes`
-- `Delete_MultipleStartsPointingToSameNode_PreservesNode`
-- `Delete_LinearChain_RemovesAllNodes`
+See `Parley.Tests/` for test coverage:
+- `DeleteOperationTests.cs`: Reference counting and shared node preservation
+- `OrphanNodeTests.cs`: Orphan detection and container creation
+  - **MUST include**: Nested orphan subtrees (cross-referencing orphans)
+- `OrphanContainerIntegrationTests.cs`: Round-trip file persistence
 
 ## Related Documentation
 
 - [DEEP_TREE_LIMITATION.md](DEEP_TREE_LIMITATION.md) - Depth limitation details
 - Issue #6 - Original bug report and fix
+- Issue #27 - Orphan node handling
 - LinkRegistry system - Reference tracking implementation
