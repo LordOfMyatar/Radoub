@@ -5,6 +5,10 @@ Project guidance for Claude Code sessions working with Parley, the dialog editor
 ## Get-Date
 - Be sure to check what date it is. Get-Date on windows. It is not January 2025
 
+## Logging
+- Make sure logs are scrubbed for privacy
+- Don't ask the user to log-dive. You review the logs.
+
 ## Session Continuity System
 
 ### Starting a New Session
@@ -24,12 +28,8 @@ Project guidance for Claude Code sessions working with Parley, the dialog editor
 ### Current Focus Areas
 Check recent commits and GitHub issues for active priorities.
 
-**Project Status**: Public Alpha Release (v0.1.0-alpha)
-- Core dialog editing - ✅ COMPLETE
-- DLG import/export - ✅ COMPLETE (Aurora-compatible)
-- Resource browsers - ✅ COMPLETE (Sound/Script/Character/Journal)
-- Copy/paste/delete fixes - ✅ COMPLETE (Issue #6 resolved)
-- Current focus: Bug fixes and stability improvements
+**Project Status**:
+
 
 ## Project Overview
 
@@ -40,14 +40,27 @@ Check recent commits and GitHub issues for active priorities.
 ### Core Architecture
 - **Parley/** - Main application (.NET 9.0, Avalonia UI for cross-platform)
 - **Documentation/** - Technical specifications and analysis (public)
+  - **Developer/** - Technical docs for code maintenance (DELETE_BEHAVIOR.md, CODE_PATH_MAP.md, etc.)
+  - **User/** - End-user documentation (plugin guides, script browser, etc.)
 - **TestingTools/** - All test projects and debugging tools
 
 ### Key Components
 - `Parley/Parsers/DialogParser.cs` - Core DLG parser with Aurora compatibility
 - `Parley/Models/` - Dialog, DialogNode, DialogPtr data structures
-- `Parley/ViewModels/` - MVVM pattern with MainViewModel
+- `Parley/ViewModels/MainViewModel.cs` - MVVM pattern with deletion logic and **orphan handling**
 - `Parley/Handlers/` - UI event handlers (refactored from MainWindow for maintainability)
 - `Parley/Services/` - Sound, Script, Settings services
+
+### Critical File Integrity Features
+**Orphan Node Handling** - When nodes become unreachable from START points (e.g., deleting a parent node), Parley moves them to a special container instead of deleting them. This prevents data loss in complex dialog structures.
+
+**Key Rules** (see [Documentation/Developer/DELETE_BEHAVIOR.md](Documentation/Developer/DELETE_BEHAVIOR.md)):
+- **IsLink=false**: Regular conversation flow (parent → child) - traversed for orphan detection
+- **IsLink=true**: Back-reference from link child to shared parent - NEVER traversed for orphan detection
+- Orphan detection uses graph traversal from START nodes following ONLY regular pointers
+- Only root orphans added to container (prevents duplicates when orphan subtrees contain nested orphans)
+- Link parents with IsLink=true back-references become orphaned when owning START is deleted
+- See `MainViewModel.cs:CollectReachableNodesForOrphanDetection()` and `IsNodeInSubtree()` for implementation
 
 ## UI & Logging Rules
 - always scrub user info from logs and UI  use ~ even for windows for user path.
@@ -161,6 +174,11 @@ dotnet run --project TestingTools/BoundaryProject/BoundaryProject.csproj
 - Debug scripts in `DebugScripts/`
 - Test files in `TestingTools/TestFiles/`
 - Run tests: `dotnet test Parley.Tests/Parley.Tests.csproj`
+
+**Critical Tests for Orphan Handling**:
+- `OrphanNodeTests.cs:OrphanContainer_ShouldNotDuplicateNestedOrphans` - Tests root orphan filtering (prevents duplicates)
+- `OrphanNodeTests.cs:DeletingLinkParent_ShouldOrphanLinkedNodes` - Tests link parent orphaning when START deleted
+- `OrphanContainerIntegrationTests.cs:DeletingParentEntry_CreatesOrphanContainer_AndPersistsToFile` - Tests full orphan flow with file persistence
 
 ### Testing Workflow (IMPORTANT)
 **Feature-by-Feature Testing Approach**:
@@ -367,6 +385,7 @@ MainWindow.xaml.cs now acts as a thin coordinator between XAML events and handle
 - Aurora files have file name limit for compatibility with FAT16 - use compliant names
 - Entry and reply structs will be different conversation file to conversation file
 - Conversations can be very long, loopy, and have lots of links
+- Link structures create shared content (IsLink=true pointers) - critical for orphan detection logic
 
 ### Cross-Platform Considerations (NEW)
 - File paths must work on Windows, macOS, and Linux
