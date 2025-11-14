@@ -110,6 +110,19 @@ namespace DialogEditor.Views
 
             // Phase 2a: Watch for node re-selection requests after tree refresh
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+            // Auto-scroll debug console to end when new messages added
+            _viewModel.DebugMessages.CollectionChanged += (s, e) =>
+            {
+                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+                {
+                    var debugListBox = this.FindControl<ListBox>("DebugListBox");
+                    if (debugListBox != null && debugListBox.ItemCount > 0)
+                    {
+                        debugListBox.ScrollIntoView(debugListBox.ItemCount - 1);
+                    }
+                }
+            };
         }
 
         private void SetupKeyboardShortcuts()
@@ -928,11 +941,12 @@ namespace DialogEditor.Views
             try
             {
                 var mainGrid = this.FindControl<Grid>("MainGrid");
-                if (mainGrid != null && mainGrid.RowDefinitions.Count > 4)
+                if (mainGrid != null && mainGrid.RowDefinitions.Count > 6)
                 {
-                    var debugRow = mainGrid.RowDefinitions[4]; // Row 4 is debug panel
-                    var splitterRow = mainGrid.RowDefinitions[3]; // Row 3 is GridSplitter
+                    var debugRow = mainGrid.RowDefinitions[6]; // Row 6 is debug panel
+                    var splitterRow = mainGrid.RowDefinitions[5]; // Row 5 is GridSplitter
                     var debugGroupBox = this.FindControl<Border>("DebugConsoleGroupBox");
+                    var debugSplitter = this.FindControl<GridSplitter>("DebugConsoleSplitter");
                     var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
 
                     if (debugRow != null && debugGroupBox != null)
@@ -941,14 +955,18 @@ namespace DialogEditor.Views
                         if (isVisible)
                         {
                             debugRow.Height = new GridLength(0);
+                            splitterRow.Height = new GridLength(0);
                             debugGroupBox.IsVisible = false;
+                            if (debugSplitter != null) debugSplitter.IsVisible = false;
                             if (showDebugMenuItem != null)
                                 showDebugMenuItem.Header = "Show _Debug Console";
                         }
                         else
                         {
-                            debugRow.Height = new GridLength(200);
+                            debugRow.Height = new GridLength(150);
+                            splitterRow.Height = new GridLength(5);
                             debugGroupBox.IsVisible = true;
+                            if (debugSplitter != null) debugSplitter.IsVisible = true;
                             if (showDebugMenuItem != null)
                                 showDebugMenuItem.Header = "Hide _Debug Console";
                         }
@@ -1211,6 +1229,23 @@ namespace DialogEditor.Views
 
             var treeView = sender as TreeView;
             _selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
+
+            // Show/hide panels based on node type
+            var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");
+            var nodePropertiesPanel = this.FindControl<StackPanel>("NodePropertiesPanel");
+
+            if (_selectedNode is TreeViewRootNode)
+            {
+                // ROOT node: Show conversation settings, hide node properties
+                if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = true;
+                if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = false;
+            }
+            else
+            {
+                // Regular node: Hide conversation settings, show node properties
+                if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = false;
+                if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = true;
+            }
 
             if (_selectedNode != null)
             {
