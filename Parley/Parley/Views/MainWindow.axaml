@@ -125,11 +125,9 @@
 <!-- Main Content Area -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" MinWidth="400"/>
+                <ColumnDefinition Width="3*" MinWidth="400"/>
                 <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="0.67*" MinWidth="200"/>
-                <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="0.33*" MinWidth="150"/>
+                <ColumnDefinition Width="1*" MinWidth="250"/>
             </Grid.ColumnDefinitions>
 
             <!-- Dialog Tree View -->
@@ -213,9 +211,10 @@
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
                           ResizeDirection="Columns" Background="Gray"/>
 
-            <!-- Left Properties Panel (Scripts) -->
-            <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
-                <Expander Header="Scripts &amp; Parameters" IsExpanded="True">
+            <!-- Stacked Properties Panels -->
+            <DockPanel Grid.Column="2" Margin="5">
+                <!-- Scripts & Parameters (top) -->
+                <Expander DockPanel.Dock="Top" Header="Scripts &amp; Parameters" IsExpanded="True" Margin="0,0,0,5">
                     <ScrollViewer>
                         <StackPanel Margin="5">
 
@@ -347,14 +346,8 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Expander>
-            </Border>
 
-            <!-- Splitter 2 -->
-            <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch"
-                          ResizeDirection="Columns" Background="Gray"/>
-
-            <!-- Right Properties Panel (Node Properties) -->
-            <Border Grid.Column="4" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
+                <!-- Node Properties (bottom, fills remaining space) -->
                 <Expander Header="Node Properties" IsExpanded="True">
                     <ScrollViewer>
                         <StackPanel Margin="5">
@@ -514,7 +507,7 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Expander>
-            </Border>
+            </DockPanel>
         </Grid>
 
         <!-- Splitter between main content and text entry -->
