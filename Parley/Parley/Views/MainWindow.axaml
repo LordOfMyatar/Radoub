@@ -28,7 +28,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="1*" MinHeight="200"/>
             <RowDefinition Height="5"/>
-            <RowDefinition Height="2*" MinHeight="150"/>
+            <RowDefinition Height="3*" MinHeight="200"/>
             <RowDefinition Height="0"/>
             <RowDefinition Height="0" MinHeight="0"/>
             <RowDefinition Height="Auto"/>
