@@ -15,10 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Issue #99: MainViewModel Refactoring
 
-Refactoring MainViewModel to improve maintainability and separation of concerns.
+Refactoring MainViewModel (3,501 lines) to improve maintainability and separation of concerns.
 
-### Changed
-- TBD
+### Analysis Complete
+- Identified service extraction opportunities:
+  - Dialog editing operations (~800 lines)
+  - Clipboard operations (~600 lines)
+  - Tree management (~900 lines)
+- Refactoring plan documented (NonPublic folder)
+- Next: Design services matching existing architecture (uint/int types, undo/redo integration)
 
 ---
 
