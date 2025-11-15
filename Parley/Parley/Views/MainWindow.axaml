@@ -571,12 +571,20 @@
 
                 <!-- Debug Output Tab -->
                 <TabItem Header="Debug" x:Name="DebugTab" IsVisible="False">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <Border BorderBrush="Gray" BorderThickness="1" Padding="5" Margin="5">
+                    <DockPanel Margin="5">
+                        <!-- Debug Controls -->
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
+                            <Button Content="Clear" Click="OnClearDebugClick" Padding="8,3" MinWidth="70"/>
+                            <TextBlock Text="(Last 1000 entries)" VerticalAlignment="Center"
+                                      Foreground="Gray" FontSize="11" Margin="10,0,0,0"/>
+                        </StackPanel>
+
+                        <!-- Debug ListBox (virtualized by default for performance) -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="5">
                             <ListBox x:Name="DebugListBox"
                                      ItemsSource="{Binding DebugMessages}"
                                      Background="Transparent"
-                                     MinHeight="200">
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <ListBox.Styles>
                                     <Style Selector="ListBoxItem">
                                         <Setter Property="Padding" Value="2,0"/>
@@ -590,7 +598,7 @@
                                 </ListBox.ItemTemplate>
                             </ListBox>
                         </Border>
-                    </ScrollViewer>
+                    </DockPanel>
                 </TabItem>
             </TabControl>
         </Grid>
