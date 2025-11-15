@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.1.9-alpha] - TBD
+**Branch**: `parley/refactor/issue-99-mainviewmodel` | **PR**: #TBD
+
+### Issue #99: MainViewModel Refactoring
+
+Refactoring MainViewModel to improve maintainability and separation of concerns.
+
+### Changed
+- TBD
+
+---
+
+## [0.1.8-alpha] - 2025-11-15
+**Branch**: `parley/feat/epic-2-ui-ux` | **PR**: #114
+
 ### Epic 112: Scrap Tab - Node Recovery System
 
 Implemented complete scrap tab functionality replacing broken orphan container system, following Aurora's user-controlled approach.
