@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.9-alpha] - TBD
-**Branch**: `parley/refactor/issue-99-mainviewmodel` | **PR**: #TBD
+**Branch**: `parley/refactor/issue-99-mainviewmodel` | **PR**: #115
 
 ### Issue #99: MainViewModel Refactoring
 
