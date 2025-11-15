@@ -47,9 +47,16 @@ namespace DialogEditor.ViewModels
             get => _currentFileName;
             set
             {
-                SetProperty(ref _currentFileName, value);
-                OnPropertyChanged(nameof(LoadedFileName));
-                OnPropertyChanged(nameof(WindowTitle));
+                if (SetProperty(ref _currentFileName, value))
+                {
+                    OnPropertyChanged(nameof(LoadedFileName));
+                    OnPropertyChanged(nameof(WindowTitle));
+
+                    // Update scrap entries to show only entries for the current file
+                    _scrapManager.UpdateScrapEntriesForFile(value);
+                    OnPropertyChanged(nameof(ScrapCount));
+                    OnPropertyChanged(nameof(ScrapTabHeader));
+                }
             }
         }
 
@@ -646,7 +653,7 @@ namespace DialogEditor.ViewModels
 
                 // Create blank dialog with root structure
                 CurrentDialog = new Dialog();
-                CurrentFileName = null; // No filename until user saves
+                CurrentFileName = null; // No filename until user saves (this will also clear scrap via setter)
                 HasUnsavedChanges = false; // Start clean
                 SelectedTreeNode = null; // Clear selection
                 SelectedScrapEntry = null; // Clear scrap selection
@@ -3358,6 +3365,28 @@ namespace DialogEditor.ViewModels
                 StatusMessage = "Only NPC Entry nodes can be restored to root level";
                 UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore PC Reply to root level");
                 return false;
+            }
+
+            // Validate dialog structure rules
+            if (!(selectedParent is TreeViewRootNode) && selectedParent?.OriginalNode != null)
+            {
+                var parentNode = selectedParent.OriginalNode;
+
+                // NPC Entry can only be child of PC Reply (not another NPC Entry)
+                if (node.Type == DialogNodeType.Entry && parentNode.Type == DialogNodeType.Entry)
+                {
+                    StatusMessage = "NPC Entry nodes cannot be children of other NPC Entry nodes";
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "Invalid structure: Entry under Entry");
+                    return false;
+                }
+
+                // PC Reply can only be child of NPC Entry
+                if (node.Type == DialogNodeType.Reply && parentNode.Type == DialogNodeType.Reply)
+                {
+                    StatusMessage = "PC Reply nodes cannot be children of other PC Reply nodes";
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "Invalid structure: Reply under Reply");
+                    return false;
+                }
             }
 
             // ALL validations passed - now make the changes

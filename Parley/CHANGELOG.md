@@ -61,6 +61,19 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
   - Restore button disabled when no dialog loaded
   - Prevents confusing error messages by disabling invalid actions upfront
 
+- **Scrap File Isolation**: Fixed scrap entries showing across different files
+  - Scrap now shows only entries for the current file
+  - Scrap clears when creating new dialog
+  - Scrap updates correctly after Save As operations
+  - Each file maintains its own scrap entries
+
+- **Dialog Structure Validation**: Enforced proper node placement rules
+  - NPC Entry nodes cannot be children of other NPC Entry nodes
+  - PC Reply nodes cannot be children of other PC Reply nodes
+  - NPC Entry can only go to root or under PC Reply
+  - PC Reply can only go under NPC Entry
+  - Prevents invalid dialog structures that cause issues in Aurora
+
 ### Next Steps
 - Complete method migration to services
 - Extract tree management to DialogTreeService

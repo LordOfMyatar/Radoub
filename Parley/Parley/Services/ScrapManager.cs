@@ -183,8 +183,37 @@ namespace Parley.Services
             return _scrapData.Entries.Count(e => e.FilePath == sanitizedPath);
         }
 
+        /// <summary>
+        /// Update the visible scrap entries for a specific file
+        /// </summary>
+        public void UpdateScrapEntriesForFile(string? filePath)
+        {
+            ScrapEntries.Clear();
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // No file loaded, show no entries
+                ScrapCountChanged?.Invoke(this, 0);
+                return;
+            }
+
+            var sanitizedPath = SanitizePath(filePath);
+
+            // Only show entries for the current file
+            foreach (var entry in _scrapData.Entries
+                .Where(e => e.FilePath == sanitizedPath)
+                .OrderByDescending(e => e.Timestamp))
+            {
+                ScrapEntries.Add(entry);
+            }
+
+            ScrapCountChanged?.Invoke(this, ScrapEntries.Count);
+        }
+
         private void UpdateScrapEntries()
         {
+            // This is now just for internal use when loading data
+            // The UI should call UpdateScrapEntriesForFile instead
             ScrapEntries.Clear();
             foreach (var entry in _scrapData.Entries.OrderByDescending(e => e.Timestamp))
             {
