@@ -1285,8 +1285,9 @@ namespace DialogEditor.Views
             var dialogNode = node.OriginalNode;
 
             // Basic info
-            var nodeTypeTextBox = this.FindControl<TextBox>("NodeTypeTextBox");
-            if (nodeTypeTextBox != null)
+            // Updated for Mockup 1: NodeTypeTextBox is now a Border, text goes in NodeTypeTextBlock
+            var nodeTypeTextBlock = this.FindControl<TextBlock>("NodeTypeTextBlock");
+            if (nodeTypeTextBlock != null)
             {
                 // Phase 1 Bug Fix: Simplified labels "NPC" / "PC"
                 // Format: Entry = NPC speaking, Reply = PC speaking
@@ -1295,16 +1296,16 @@ namespace DialogEditor.Views
                     // Entry node = NPC speaking
                     if (!string.IsNullOrWhiteSpace(dialogNode.Speaker))
                     {
-                        nodeTypeTextBox.Text = $"NPC ({dialogNode.Speaker})";
+                        nodeTypeTextBlock.Text = $"NPC ({dialogNode.Speaker})";
                     }
                     else
                     {
-                        nodeTypeTextBox.Text = "NPC (Owner)";
+                        nodeTypeTextBlock.Text = "NPC (Owner)";
                     }
                 }
                 else // Reply node - always PC (Reply structs have no Speaker field)
                 {
-                    nodeTypeTextBox.Text = "PC";
+                    nodeTypeTextBlock.Text = "PC";
                 }
             }
 
@@ -1594,8 +1595,9 @@ namespace DialogEditor.Views
             // CRITICAL FIX: Clear ALL fields including Animation and AnimationLoop
             // Also DISABLE all editable fields to prevent typing without selection
 
-            var nodeTypeTextBox = this.FindControl<TextBox>("NodeTypeTextBox");
-            if (nodeTypeTextBox != null) nodeTypeTextBox.Clear();
+            // Updated for Mockup 1: NodeTypeTextBox is now a Border, clear the TextBlock inside
+            var nodeTypeTextBlock = this.FindControl<TextBlock>("NodeTypeTextBlock");
+            if (nodeTypeTextBlock != null) nodeTypeTextBlock.Text = "";
 
             var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
             if (speakerTextBox != null)

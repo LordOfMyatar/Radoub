@@ -38,7 +38,8 @@ Radoub/
 │   ├── CHANGELOG.md
 │   ├── Parley/ (source code)
 │   ├── TestingTools/
-│   ├── Documentation/ (Parley-specific docs)
+│   ├── Documentation/ (Approved Parley-specific docs)
+│   ├── NonPublic/ (To be approved documents)
 │   └── .github/
 └── [Future tools will be added here]
 ```
@@ -69,6 +70,10 @@ When working on a specific tool (e.g., Parley):
 - AI collaboration documentation
 - Updated when major project milestones occur
 - Never edit ON_USING_CLAUDE.md; only Lord makes changes to that.
+
+**NonPublic Docs**
+- When you right something put it in the project's NonPublic docs folder.
+- The human will move it to public after review
 
 ### Cross-Tool Work
 

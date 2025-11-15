@@ -127,11 +127,12 @@
         </Border>
 
 <!-- Main Content Area (spans rows 2-4 for left/right layout) -->
+        <!-- DRAGON: Grid layout only - tree data binding in TreeView below -->
         <Grid Grid.Row="2" Grid.RowSpan="3">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" MinWidth="400"/>
+                <ColumnDefinition Width="7*" MinWidth="500"/>  <!-- Tree+Text area (70%) -->
                 <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="1*" MinWidth="250"/>
+                <ColumnDefinition Width="3*" MinWidth="350"/>  <!-- Properties area (30%) -->
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
@@ -155,6 +156,8 @@
                         <Button Name="DeleteNodeButton" Content="Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
                     </StackPanel>
 
+                    <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
+                    <!-- DRAGON: Do not modify ItemsSource binding, SelectionChanged, or context menu Click handlers -->
                     <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
                               SelectionChanged="OnDialogTreeViewSelectionChanged"
                               DoubleTapped="OnTreeViewItemDoubleTapped">
@@ -262,12 +265,13 @@
             <GridSplitter Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
                           ResizeDirection="Columns" Background="Gray"/>
 
-            <!-- Stacked Properties Panels (full height right side) -->
-            <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Margin="5" Orientation="Vertical">
+            <!-- Tabbed Properties Panel (full height right side) -->
+            <!-- DRAGON: Do not modify x:Name attributes or event handlers - only visual layout -->
+            <TabControl Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Margin="5">
 
-                <!-- Scripts & Parameters -->
-                <Expander Header="Scripts &amp; Parameters" IsExpanded="True">
-                    <ScrollViewer>
+                <!-- Scripts & Parameters Tab -->
+                <TabItem Header="Scripts">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="5">
 
                         <!-- Conditional Scripts -->
@@ -397,11 +401,11 @@
 
                         </StackPanel>
                     </ScrollViewer>
-                </Expander>
+                </TabItem>
 
-                <!-- Node Properties -->
-                <Expander Header="Node Properties" IsExpanded="True">
-                    <ScrollViewer>
+                <!-- Node Properties Tab -->
+                <TabItem Header="Node">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="5">
                             <!-- Conversation Settings (shown only for ROOT node) -->
                             <StackPanel x:Name="ConversationSettingsPanel">
@@ -447,9 +451,13 @@
                             <TextBlock Text="Node Properties" FontWeight="Bold" Margin="0,0,0,10"/>
 
                             <!-- Basic Node Info -->
-                            <TextBlock Text="Type:" FontWeight="Bold"/>
-                            <TextBox x:Name="NodeTypeTextBox" IsReadOnly="True" Margin="0,0,0,5"
-                                     TextWrapping="Wrap" AcceptsReturn="True"/>
+                            <!-- DRAGON: NodeTypeTextBox x:Name must remain for code-behind references -->
+                            <TextBlock Text="Type:" FontWeight="Bold" FontSize="11"/>
+                            <Border x:Name="NodeTypeTextBox" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                    BorderThickness="1" Padding="5,2" Margin="0,0,0,5"
+                                    Background="{DynamicResource SystemControlBackgroundAltMediumLowBrush}">
+                                <TextBlock x:Name="NodeTypeTextBlock" Text="" FontSize="11" TextWrapping="Wrap"/>
+                            </Border>
 
                             <!-- Animation and Audio -->
                             <Separator Margin="0,5"/>
@@ -558,8 +566,8 @@
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
-                </Expander>
-            </StackPanel>
+                </TabItem>
+            </TabControl>
         </Grid>
 
         <!-- Debug Panel (left column only, collapsible) -->
