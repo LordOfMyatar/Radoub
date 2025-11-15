@@ -585,7 +585,7 @@
                                     Click="OnRestoreScrapClick"
                                     Padding="8,3"
                                     MinWidth="70"
-                                    IsEnabled="{Binding SelectedScrapEntry, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                    IsEnabled="{Binding CanRestoreFromScrap}"/>
                             <Button x:Name="ClearScrapButton"
                                     Content="Clear All"
                                     Click="OnClearScrapClick"

@@ -54,6 +54,13 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
   - Clear user feedback when no parent selected or invalid restore target
   - Prevents loss of scrap entries when user hasn't selected a valid parent
 
+- **Restore Button Enable/Disable**: Improved UI to prevent invalid restore attempts
+  - Added `CanRestoreFromScrap` property that checks all preconditions
+  - Restore button disabled when no tree node selected
+  - Restore button disabled when no scrap entry selected
+  - Restore button disabled when no dialog loaded
+  - Prevents confusing error messages by disabling invalid actions upfront
+
 ### Next Steps
 - Complete method migration to services
 - Extract tree management to DialogTreeService

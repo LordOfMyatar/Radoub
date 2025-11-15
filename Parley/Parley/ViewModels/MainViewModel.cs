@@ -28,6 +28,7 @@ namespace DialogEditor.ViewModels
         private readonly DialogEditorService _editorService = new(); // Service for node editing operations
         private readonly DialogClipboardService _clipboardService = new(); // Service for clipboard operations
         private ScrapEntry? _selectedScrapEntry;
+        private TreeViewSafeNode? _selectedTreeNode;
 
         public Dialog? CurrentDialog
         {
@@ -94,8 +95,31 @@ namespace DialogEditor.ViewModels
         public ScrapEntry? SelectedScrapEntry
         {
             get => _selectedScrapEntry;
-            set => SetProperty(ref _selectedScrapEntry, value);
+            set
+            {
+                if (SetProperty(ref _selectedScrapEntry, value))
+                {
+                    OnPropertyChanged(nameof(CanRestoreFromScrap));
+                }
+            }
         }
+
+        public TreeViewSafeNode? SelectedTreeNode
+        {
+            get => _selectedTreeNode;
+            set
+            {
+                if (SetProperty(ref _selectedTreeNode, value))
+                {
+                    OnPropertyChanged(nameof(CanRestoreFromScrap));
+                }
+            }
+        }
+
+        public bool CanRestoreFromScrap =>
+            SelectedScrapEntry != null &&
+            SelectedTreeNode != null &&
+            CurrentDialog != null;
 
         public int ScrapCount => CurrentFileName != null ? _scrapManager.GetScrapCount(CurrentFileName) : 0;
 

@@ -1449,6 +1449,12 @@ namespace DialogEditor.Views
             var treeView = sender as TreeView;
             _selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
 
+            // Update ViewModel's selected tree node for Restore button enabling
+            if (_viewModel != null)
+            {
+                _viewModel.SelectedTreeNode = _selectedNode;
+            }
+
             // Show/hide panels based on node type
             var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");
             var nodePropertiesPanel = this.FindControl<StackPanel>("NodePropertiesPanel");
