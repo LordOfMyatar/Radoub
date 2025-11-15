@@ -25,6 +25,8 @@ namespace DialogEditor.ViewModels
         private bool _wasCut = false; // Track if clipboard node came from Cut (move) vs Copy (duplicate)
         private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
         private readonly ScrapManager _scrapManager = new(); // Manages deleted/cut nodes
+        private readonly DialogEditorService _editorService = new(); // Service for node editing operations
+        private readonly DialogClipboardService _clipboardService = new(); // Service for clipboard operations
         private ScrapEntry? _selectedScrapEntry;
 
         public Dialog? CurrentDialog
@@ -1782,10 +1784,17 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
-            _copiedNode = nodeToCopy.OriginalNode;
-            _wasCut = false; // Mark as copy operation (duplicate, not move)
-            StatusMessage = $"Node copied: {_copiedNode.DisplayText}";
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied node: {_copiedNode.DisplayText}");
+            if (CurrentDialog == null) return;
+
+            var node = nodeToCopy.OriginalNode;
+            _clipboardService.CopyNode(node, CurrentDialog);
+
+            // Keep local references for compatibility during refactoring
+            _copiedNode = node;
+            _wasCut = false;
+
+            StatusMessage = $"Node copied: {node.DisplayText}";
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied node: {node.DisplayText}");
         }
 
         public void CutNode(TreeViewSafeNode? nodeToCut)
@@ -1801,9 +1810,15 @@ namespace DialogEditor.ViewModels
             // Save state for undo before cutting
             SaveUndoState("Cut Node");
 
-            // Store node for pasting
+            // Store node for pasting in clipboard service
+            if (CurrentDialog != null)
+            {
+                _clipboardService.CutNode(node, CurrentDialog);
+            }
+
+            // Keep local references for compatibility during refactoring
             _copiedNode = node;
-            _wasCut = true; // Mark as cut operation (move, not copy)
+            _wasCut = true;
 
             // CRITICAL: Check for other references BEFORE detaching
             // We need to count while the current reference is still there

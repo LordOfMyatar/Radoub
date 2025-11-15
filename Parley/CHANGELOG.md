@@ -17,13 +17,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Refactoring MainViewModel (3,501 lines) to improve maintainability and separation of concerns.
 
-### Analysis Complete
-- Identified service extraction opportunities:
-  - Dialog editing operations (~800 lines)
-  - Clipboard operations (~600 lines)
-  - Tree management (~900 lines)
-- Refactoring plan documented (NonPublic folder)
-- Next: Design services matching existing architecture (uint/int types, undo/redo integration)
+### Phase 2: Service Implementation Complete
+- **Created DialogEditorService** (~320 lines):
+  - AddSmartNode, AddEntryNode, AddPCReplyNode operations
+  - DeleteNode with hierarchy tracking and scrap integration
+  - MoveNodeUp/MoveNodeDown for reordering
+  - Proper uint/int type handling for DialogPtr.Index
+  - Index recalculation after modifications
+
+- **Created DialogClipboardService** (~330 lines):
+  - CopyNode with deep clone support
+  - CutNode for move operations
+  - PasteAsDuplicate with cut/copy distinction
+  - PasteAsLink for reference creation
+  - Recursive node cloning with circular reference handling
+
+- **Initial MainViewModel Integration**:
+  - Added service instances to MainViewModel
+  - Updated CopyNode and CutNode to use clipboard service
+  - Maintaining backward compatibility during refactoring
+  - Preserved undo/redo coordination in ViewModel
+
+- **Results**:
+  - Services build successfully
+  - Parley runs without errors
+  - ~650 lines extracted into services
+  - MainViewModel reduced from 3,501 to ~3,000 lines (14% reduction)
+  - Clear separation of concerns achieved
+
+### Next Steps
+- Complete method migration to services
+- Extract tree management to DialogTreeService
+- Remove redundant fields from MainViewModel
+- Target: Further reduce MainViewModel to ~1,500 lines
 
 ---
 
