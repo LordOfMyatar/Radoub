@@ -52,6 +52,9 @@ namespace DialogEditor.Views
 
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
+
+            // Initialize selected tree node to null (no selection on startup)
+            _viewModel.SelectedTreeNode = null;
             _audioService = new AudioService();
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();

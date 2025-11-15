@@ -33,7 +33,13 @@ namespace DialogEditor.ViewModels
         public Dialog? CurrentDialog
         {
             get => _currentDialog;
-            set => SetProperty(ref _currentDialog, value);
+            set
+            {
+                if (SetProperty(ref _currentDialog, value))
+                {
+                    OnPropertyChanged(nameof(CanRestoreFromScrap));
+                }
+            }
         }
 
         public string? CurrentFileName
@@ -200,6 +206,9 @@ namespace DialogEditor.ViewModels
 
                     // Clear undo history when loading new file
                     _undoManager.Clear();
+
+                    // Clear tree selection when loading new file
+                    SelectedTreeNode = null;
 
                     CurrentFileName = filePath;
                     HasUnsavedChanges = false; // Clear dirty flag when loading
@@ -639,6 +648,8 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = new Dialog();
                 CurrentFileName = null; // No filename until user saves
                 HasUnsavedChanges = false; // Start clean
+                SelectedTreeNode = null; // Clear selection
+                SelectedScrapEntry = null; // Clear scrap selection
 
                 // Populate empty tree with just ROOT node
                 Dispatcher.UIThread.Post(() =>
