@@ -568,37 +568,31 @@
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
+
+                <!-- Debug Output Tab -->
+                <TabItem Header="Debug" x:Name="DebugTab" IsVisible="False">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="5" Margin="5">
+                            <ListBox x:Name="DebugListBox"
+                                     ItemsSource="{Binding DebugMessages}"
+                                     Background="Transparent"
+                                     MinHeight="200">
+                                <ListBox.Styles>
+                                    <Style Selector="ListBoxItem">
+                                        <Setter Property="Padding" Value="2,0"/>
+                                        <Setter Property="MinHeight" Value="0"/>
+                                    </Style>
+                                </ListBox.Styles>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontFamily="Consolas" Padding="0"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+                    </ScrollViewer>
+                </TabItem>
             </TabControl>
-        </Grid>
-
-        <!-- Debug Panel (left column only, collapsible) -->
-        <Grid Grid.Row="5" Grid.RowSpan="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*" MinWidth="400"/>
-                <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="1*" MinWidth="250"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Debug Expander (left column only) -->
-            <Expander x:Name="DebugExpander" Grid.Column="0" Header="Debug Output" IsExpanded="False" Margin="5,0,5,0" IsVisible="False">
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="5" MinHeight="100" MaxHeight="200">
-                    <ListBox x:Name="DebugListBox"
-                             ItemsSource="{Binding DebugMessages}"
-                             Background="Transparent">
-                        <ListBox.Styles>
-                            <Style Selector="ListBoxItem">
-                                <Setter Property="Padding" Value="2,0"/>
-                                <Setter Property="MinHeight" Value="0"/>
-                            </Style>
-                        </ListBox.Styles>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding}" FontFamily="Consolas" Padding="0"/>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Border>
-            </Expander>
         </Grid>
 
         <!-- Status Bar -->

@@ -909,12 +909,12 @@ namespace DialogEditor.Views
         {
             try
             {
-                var debugExpander = this.FindControl<Expander>("DebugExpander");
+                var debugTab = this.FindControl<TabItem>("DebugTab");
                 var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
 
-                if (debugExpander != null)
+                if (debugTab != null)
                 {
-                    debugExpander.IsVisible = false;
+                    debugTab.IsVisible = false;
                     if (showDebugMenuItem != null)
                         showDebugMenuItem.Header = "Show _Debug Console";
                 }
@@ -929,22 +929,21 @@ namespace DialogEditor.Views
         {
             try
             {
-                var debugExpander = this.FindControl<Expander>("DebugExpander");
+                var debugTab = this.FindControl<TabItem>("DebugTab");
                 var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
 
-                if (debugExpander != null)
+                if (debugTab != null)
                 {
-                    bool isVisible = debugExpander.IsVisible;
+                    bool isVisible = debugTab.IsVisible;
                     if (isVisible)
                     {
-                        debugExpander.IsVisible = false;
+                        debugTab.IsVisible = false;
                         if (showDebugMenuItem != null)
                             showDebugMenuItem.Header = "Show _Debug Console";
                     }
                     else
                     {
-                        debugExpander.IsVisible = true;
-                        debugExpander.IsExpanded = true;
+                        debugTab.IsVisible = true;
                         if (showDebugMenuItem != null)
                             showDebugMenuItem.Header = "Hide _Debug Console";
                     }
