@@ -89,7 +89,7 @@ namespace RoundTripTest
                 var parser = new DialogParser();
 
                 Console.WriteLine("=== STEP 1: PARSE ORIGINAL FILE ===");
-                Console.WriteLine($"File: {inputFile}");
+                Console.WriteLine($"File: {UnifiedLogger.SanitizePath(inputFile)}");
                 var originalDialog = await parser.ParseFromFileAsync(inputFile);
 
                 if (originalDialog == null)
@@ -123,7 +123,7 @@ namespace RoundTripTest
 
                 Console.WriteLine("\n=== STEP 2: EXPORT WITH AURORA GLOBAL INDICES ===");
                 await parser.WriteToFileAsync(originalDialog, exportPath);
-                Console.WriteLine($"Exported to: {exportPath}");
+                Console.WriteLine($"Exported to: {UnifiedLogger.SanitizePath(exportPath)}");
 
                 Console.WriteLine("\n=== STEP 3: RE-IMPORT AND TEST ROUND-TRIP ===");
                 var importedDialog = await parser.ParseFromFileAsync(exportPath);
@@ -190,7 +190,7 @@ namespace RoundTripTest
                     Console.WriteLine("❌ FAILURE: Conversation structure was not preserved in round-trip");
                 }
 
-                Console.WriteLine($"\n📁 Export location: {exportPath}");
+                Console.WriteLine($"\n📁 Export location: {UnifiedLogger.SanitizePath(exportPath)}");
                 return structurePreserved;
             }
             catch (Exception ex)

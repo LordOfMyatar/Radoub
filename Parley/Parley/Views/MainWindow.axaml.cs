@@ -110,6 +110,19 @@ namespace DialogEditor.Views
 
             // Phase 2a: Watch for node re-selection requests after tree refresh
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+            // Auto-scroll debug console to end when new messages added
+            _viewModel.DebugMessages.CollectionChanged += (s, e) =>
+            {
+                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+                {
+                    var debugListBox = this.FindControl<ListBox>("DebugListBox");
+                    if (debugListBox != null && debugListBox.ItemCount > 0)
+                    {
+                        debugListBox.ScrollIntoView(debugListBox.ItemCount - 1);
+                    }
+                }
+            };
         }
 
         private void SetupKeyboardShortcuts()
@@ -896,25 +909,14 @@ namespace DialogEditor.Views
         {
             try
             {
-                var mainGrid = this.FindControl<Grid>("MainGrid");
-                if (mainGrid != null && mainGrid.RowDefinitions.Count > 4)
-                {
-                    var debugRow = mainGrid.RowDefinitions[4]; // Row 4 is debug panel
-                    var splitterRow = mainGrid.RowDefinitions[3]; // Row 3 is GridSplitter
-                    var debugGroupBox = this.FindControl<Border>("DebugConsoleGroupBox");
-                    var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
+                var debugTab = this.FindControl<TabItem>("DebugTab");
+                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
 
-                    var mainContentRow = mainGrid.RowDefinitions[2]; // Row 2 is main content
-                    
-                    if (debugRow != null && debugGroupBox != null && mainContentRow != null)
-                    {
-                        debugRow.Height = new GridLength(0);
-                        splitterRow.Height = new GridLength(0); // Hide splitter when debug hidden
-                        mainContentRow.Height = new GridLength(1, GridUnitType.Star); // Main content takes all space
-                        debugGroupBox.IsVisible = false;
-                        if (showDebugMenuItem != null)
-                            showDebugMenuItem.Header = "Show _Debug Console";
-                    }
+                if (debugTab != null)
+                {
+                    debugTab.IsVisible = false;
+                    if (showDebugMenuItem != null)
+                        showDebugMenuItem.Header = "Show _Debug Console";
                 }
             }
             catch (Exception ex)
@@ -927,31 +929,23 @@ namespace DialogEditor.Views
         {
             try
             {
-                var mainGrid = this.FindControl<Grid>("MainGrid");
-                if (mainGrid != null && mainGrid.RowDefinitions.Count > 4)
-                {
-                    var debugRow = mainGrid.RowDefinitions[4]; // Row 4 is debug panel
-                    var splitterRow = mainGrid.RowDefinitions[3]; // Row 3 is GridSplitter
-                    var debugGroupBox = this.FindControl<Border>("DebugConsoleGroupBox");
-                    var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
+                var debugTab = this.FindControl<TabItem>("DebugTab");
+                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
 
-                    if (debugRow != null && debugGroupBox != null)
+                if (debugTab != null)
+                {
+                    bool isVisible = debugTab.IsVisible;
+                    if (isVisible)
                     {
-                        bool isVisible = debugRow.Height.Value > 0;
-                        if (isVisible)
-                        {
-                            debugRow.Height = new GridLength(0);
-                            debugGroupBox.IsVisible = false;
-                            if (showDebugMenuItem != null)
-                                showDebugMenuItem.Header = "Show _Debug Console";
-                        }
-                        else
-                        {
-                            debugRow.Height = new GridLength(200);
-                            debugGroupBox.IsVisible = true;
-                            if (showDebugMenuItem != null)
-                                showDebugMenuItem.Header = "Hide _Debug Console";
-                        }
+                        debugTab.IsVisible = false;
+                        if (showDebugMenuItem != null)
+                            showDebugMenuItem.Header = "Show _Debug Console";
+                    }
+                    else
+                    {
+                        debugTab.IsVisible = true;
+                        if (showDebugMenuItem != null)
+                            showDebugMenuItem.Header = "Hide _Debug Console";
                     }
                 }
             }
@@ -968,7 +962,7 @@ namespace DialogEditor.Views
             await aboutWindow.ShowDialog(this);
         }
 
-        // Font size handlers - See Epic 2 (#39), specifically #58 and #59
+        // Font size handlers - Fixed in #58 (font sizing) and #59 (font selection)
         private void OnFontSizeClick(object? sender, RoutedEventArgs e)
         {
             if (sender is MenuItem menuItem && menuItem.Tag is string sizeStr)
@@ -976,7 +970,8 @@ namespace DialogEditor.Views
                 if (double.TryParse(sizeStr, out double fontSize))
                 {
                     SettingsService.Instance.FontSize = fontSize;
-                    _viewModel.StatusMessage = $"Font size: {fontSize}pt - See #58 and #59 for global application";
+                    _viewModel.StatusMessage = $"Font size changed to {fontSize}pt";
+                    // Global application now handled via App.xaml styles and App.ApplyFontSize()
                 }
             }
         }
@@ -1211,6 +1206,23 @@ namespace DialogEditor.Views
             var treeView = sender as TreeView;
             _selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
 
+            // Show/hide panels based on node type
+            var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");
+            var nodePropertiesPanel = this.FindControl<StackPanel>("NodePropertiesPanel");
+
+            if (_selectedNode is TreeViewRootNode)
+            {
+                // ROOT node: Show conversation settings, hide node properties
+                if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = true;
+                if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = false;
+            }
+            else
+            {
+                // Regular node: Hide conversation settings, show node properties
+                if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = false;
+                if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = true;
+            }
+
             if (_selectedNode != null)
             {
                 PopulatePropertiesPanel(_selectedNode);
@@ -1272,8 +1284,9 @@ namespace DialogEditor.Views
             var dialogNode = node.OriginalNode;
 
             // Basic info
-            var nodeTypeTextBox = this.FindControl<TextBox>("NodeTypeTextBox");
-            if (nodeTypeTextBox != null)
+            // Updated for Mockup 1: NodeTypeTextBox is now a Border, text goes in NodeTypeTextBlock
+            var nodeTypeTextBlock = this.FindControl<TextBlock>("NodeTypeTextBlock");
+            if (nodeTypeTextBlock != null)
             {
                 // Phase 1 Bug Fix: Simplified labels "NPC" / "PC"
                 // Format: Entry = NPC speaking, Reply = PC speaking
@@ -1282,16 +1295,16 @@ namespace DialogEditor.Views
                     // Entry node = NPC speaking
                     if (!string.IsNullOrWhiteSpace(dialogNode.Speaker))
                     {
-                        nodeTypeTextBox.Text = $"NPC ({dialogNode.Speaker})";
+                        nodeTypeTextBlock.Text = $"NPC ({dialogNode.Speaker})";
                     }
                     else
                     {
-                        nodeTypeTextBox.Text = "NPC (Owner)";
+                        nodeTypeTextBlock.Text = "NPC (Owner)";
                     }
                 }
                 else // Reply node - always PC (Reply structs have no Speaker field)
                 {
-                    nodeTypeTextBox.Text = "PC";
+                    nodeTypeTextBlock.Text = "PC";
                 }
             }
 
@@ -1581,8 +1594,9 @@ namespace DialogEditor.Views
             // CRITICAL FIX: Clear ALL fields including Animation and AnimationLoop
             // Also DISABLE all editable fields to prevent typing without selection
 
-            var nodeTypeTextBox = this.FindControl<TextBox>("NodeTypeTextBox");
-            if (nodeTypeTextBox != null) nodeTypeTextBox.Clear();
+            // Updated for Mockup 1: NodeTypeTextBox is now a Border, clear the TextBlock inside
+            var nodeTypeTextBlock = this.FindControl<TextBlock>("NodeTypeTextBlock");
+            if (nodeTypeTextBlock != null) nodeTypeTextBlock.Text = "";
 
             var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
             if (speakerTextBox != null)

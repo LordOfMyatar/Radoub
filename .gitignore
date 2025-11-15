@@ -25,3 +25,4 @@ Desktop.ini
 *.cache
 ~$*
 /.claude/settings.local.json
+NonPublic

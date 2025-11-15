@@ -21,6 +21,7 @@ namespace DialogEditor.ViewModels
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
         private DialogNode? _copiedNode = null; // Phase 1 Step 7: Copy/Paste system
+        private bool _wasCut = false; // Track if clipboard node came from Cut (move) vs Copy (duplicate)
         private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
 
         public Dialog? CurrentDialog
@@ -383,10 +384,8 @@ namespace DialogEditor.ViewModels
                 // Issue #27 Fix: Create synthetic orphan containers saved to dialog data
                 // This ensures Parley and Aurora display identically
                 var orphanedNodes = FindOrphanedNodes(rootNode);
-                if (orphanedNodes.Count > 0)
-                {
-                    CreateOrphanContainers(orphanedNodes, rootNode);
-                }
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateDialogNodes: Found {orphanedNodes.Count} orphaned nodes");
+                CreateOrUpdateOrphanContainers(orphanedNodes, rootNode);
 
                 // 🔧 TEMPORARY DEBUGGING DISABLED - Parser workaround now provides complete conversation tree
                 // The parser workaround transfers Reply[1] and Reply[2] from Entry[1] to Entry[0] fixing the conversation flow
@@ -938,6 +937,10 @@ namespace DialogEditor.ViewModels
             RecalculatePointerIndices();
             RemoveOrphanedPointers();
 
+            // CRITICAL: Immediately detect and containerize orphans BEFORE UI refresh
+            // This ensures orphan containers are in the model when user saves
+            DetectAndContainerizeOrphansSync();
+
             // Refresh tree
             RefreshTreeView();
 
@@ -1028,7 +1031,12 @@ namespace DialogEditor.ViewModels
                             return linkParent != node;
                         }).Count();
 
-                        if (otherIncomingLinks == 0)
+                        // CRITICAL: Check if this node is a parent in parent-child link(s)
+                        // Child links (IsLink=true) point TO the parent, and children should not be deleted
+                        // when their parent loses a regular incoming pointer
+                        var hasChildLinks = incomingLinks.Any(link => link.IsLink);
+
+                        if (otherIncomingLinks == 0 && !hasChildLinks)
                         {
                             // No other nodes reference this child, safe to delete recursively
                             UnifiedLogger.LogApplication(LogLevel.DEBUG,
@@ -1037,9 +1045,12 @@ namespace DialogEditor.ViewModels
                         }
                         else
                         {
-                            // This child is shared by other nodes, don't delete it
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                                $"Skipping deletion of shared child (has {otherIncomingLinks} other references): {ptr.Node.DisplayText}");
+                            // This child is shared by other nodes OR is a parent in parent-child links
+                            var reason = hasChildLinks ?
+                                $"is parent in parent-child link(s) ({incomingLinks.Count(link => link.IsLink)} child links)" :
+                                $"has {otherIncomingLinks} other references";
+                            UnifiedLogger.LogApplication(LogLevel.INFO,
+                                $"🔒 PRESERVING node (will become orphaned): '{ptr.Node.DisplayText}' ({reason})");
                         }
                     }
                 }
@@ -1732,6 +1743,7 @@ namespace DialogEditor.ViewModels
             }
 
             _copiedNode = nodeToCopy.OriginalNode;
+            _wasCut = false; // Mark as copy operation (duplicate, not move)
             StatusMessage = $"Node copied: {_copiedNode.DisplayText}";
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied node: {_copiedNode.DisplayText}");
         }
@@ -1749,8 +1761,9 @@ namespace DialogEditor.ViewModels
             // Save state for undo before cutting
             SaveUndoState("Cut Node");
 
-            // Store node for pasting (Paste will clone it)
+            // Store node for pasting
             _copiedNode = node;
+            _wasCut = true; // Mark as cut operation (move, not copy)
 
             // CRITICAL: Check for other references BEFORE detaching
             // We need to count while the current reference is still there
@@ -1998,8 +2011,8 @@ namespace DialogEditor.ViewModels
                     return;
                 }
 
-                // Clone the node (deep copy)
-                var duplicate = CloneNode(_copiedNode);
+                // For Cut operation, reuse the node; for Copy, clone it
+                var duplicate = _wasCut ? _copiedNode : CloneNode(_copiedNode);
 
                 // Convert NPC Reply nodes to Entry when pasting to ROOT (GFF requirement)
                 if (duplicate.Type == DialogNodeType.Reply)
@@ -2011,8 +2024,21 @@ namespace DialogEditor.ViewModels
                     StatusMessage = $"Auto-converted NPC Reply to Entry for ROOT level";
                 }
 
-                // Add to entries list using AddNodeInternal for LinkRegistry tracking
-                CurrentDialog.AddNodeInternal(duplicate, duplicate.Type);
+                // If cut, ensure node is in the appropriate list (may have been removed during cut)
+                if (_wasCut)
+                {
+                    var list = duplicate.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
+                    if (!list.Contains(duplicate))
+                    {
+                        CurrentDialog.AddNodeInternal(duplicate, duplicate.Type);
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Re-added cut node to list: {duplicate.DisplayText}");
+                    }
+                }
+                else
+                {
+                    // For copy, always add (will be a new clone)
+                    CurrentDialog.AddNodeInternal(duplicate, duplicate.Type);
+                }
 
                 // Get the correct index after adding
                 var duplicateIndex = (uint)CurrentDialog.GetNodeIndex(duplicate, duplicate.Type);
@@ -2041,17 +2067,34 @@ namespace DialogEditor.ViewModels
 
                 RefreshTreeView();
                 HasUnsavedChanges = true;
-                StatusMessage = $"Pasted duplicate Entry at ROOT: {duplicate.DisplayText}";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted duplicate Entry to ROOT: {duplicate.DisplayText}");
+                var opType = _wasCut ? "Moved" : "Pasted duplicate";
+                StatusMessage = $"{opType} Entry at ROOT: {duplicate.DisplayText}";
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"{opType} Entry to ROOT: {duplicate.DisplayText}");
+
+                // Clear cut flag after paste completes
+                _wasCut = false;
                 return;
             }
 
             // Normal paste to non-ROOT parent
-            // Clone the node (deep copy)
-            var duplicateNode = CloneNode(_copiedNode);
+            // For Cut operation, reuse the node; for Copy, clone it
+            var duplicateNode = _wasCut ? _copiedNode : CloneNode(_copiedNode);
 
-            // Add to appropriate list using AddNodeInternal for LinkRegistry tracking
-            CurrentDialog.AddNodeInternal(duplicateNode, duplicateNode.Type);
+            // If cut, ensure node is in the appropriate list (may have been removed during cut)
+            if (_wasCut)
+            {
+                var list = duplicateNode.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
+                if (!list.Contains(duplicateNode))
+                {
+                    CurrentDialog.AddNodeInternal(duplicateNode, duplicateNode.Type);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Re-added cut node to list: {duplicateNode.DisplayText}");
+                }
+            }
+            else
+            {
+                // For copy, always add (will be a new clone)
+                CurrentDialog.AddNodeInternal(duplicateNode, duplicateNode.Type);
+            }
 
             // Get the correct index after adding
             var nodeIndex = (uint)CurrentDialog.GetNodeIndex(duplicateNode, duplicateNode.Type);
@@ -2079,7 +2122,11 @@ namespace DialogEditor.ViewModels
 
             RefreshTreeView();
             HasUnsavedChanges = true;
-            StatusMessage = $"Pasted duplicate node under {parent.DisplayText}: {duplicateNode.DisplayText}";
+            var operation = _wasCut ? "Moved" : "Pasted duplicate";
+            StatusMessage = $"{operation} node under {parent.DisplayText}: {duplicateNode.DisplayText}";
+
+            // Clear cut flag after paste completes
+            _wasCut = false;
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted duplicate: {duplicateNode.DisplayText} under {parent.DisplayText}");
         }
 
@@ -2393,25 +2440,27 @@ namespace DialogEditor.ViewModels
             // Collect all nodes reachable from STARTs via dialog model traversal
             var reachableNodes = new HashSet<DialogNode>();
 
-            // ISSUE #82 FIX: Traverse from root's children (start nodes), not root itself
-            // Root is a dummy node with no pointers, so we must start from its children
-            if (rootNode.Children != null)
+            // Traverse directly from CurrentDialog.Starts using dialog model (not TreeView)
+            // This ensures we follow ALL pointers including parent-child links (IsLink=true)
+            // TreeView-based traversal would stop at IsChild nodes, causing false orphan detection
+            foreach (var start in CurrentDialog.Starts)
             {
-                foreach (var startNode in rootNode.Children)
+                if (start.Node != null)
                 {
-                    CollectReachableNodes(startNode, reachableNodes);
+                    CollectReachableNodesForOrphanDetection(start.Node, reachableNodes);
                 }
             }
 
-            // Find entries that aren't reachable, EXCLUDING orphan containers
+            // Find entries that aren't reachable, EXCLUDING orphan containers and their children
             var orphanedEntries = CurrentDialog.Entries
                 .Where(e => !reachableNodes.Contains(e))
                 .Where(e => e.Comment?.Contains("PARLEY: Orphaned") != true)
                 .ToList();
 
-            // Find replies that aren't reachable
+            // Find replies that aren't reachable, EXCLUDING orphan container category nodes
             var orphanedReplies = CurrentDialog.Replies
                 .Where(r => !reachableNodes.Contains(r))
+                .Where(r => r.Comment?.Contains("PARLEY: Orphaned") != true)
                 .ToList();
 
             // Collect subtrees from orphaned Entries to identify descendant nodes
@@ -2471,34 +2520,83 @@ namespace DialogEditor.ViewModels
         }
 
         /// <summary>
-        /// Creates synthetic container nodes for orphaned dialog nodes
+        /// Creates or updates synthetic container nodes for orphaned dialog nodes
         /// These containers are saved to the dialog file with sc_false scripts
         /// Ensures identical display in Parley and Aurora
+        /// Reuses existing containers to preserve any external links pointing to them
         /// </summary>
-        private void CreateOrphanContainers(List<DialogNode> orphanedNodes, TreeViewRootNode rootNode)
+        private void CreateOrUpdateOrphanContainers(List<DialogNode> orphanedNodes, TreeViewRootNode rootNode)
         {
             if (CurrentDialog == null) return;
-
-            // Check if orphan container already exists - if so, don't create new one
-            var existingOrphanContainer = CurrentDialog.Entries
-                .FirstOrDefault(e => e.Comment?.Contains("PARLEY: Orphaned nodes root container") == true);
-
-            if (existingOrphanContainer != null)
-            {
-                // Container already exists, don't create duplicate
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    "Orphan container already exists, skipping creation");
-                return;
-            }
 
             // Filter out any containers from orphaned nodes (shouldn't happen, but defensive)
             var orphanedNodesFiltered = orphanedNodes
                 .Where(n => n.Comment?.Contains("PARLEY: Orphaned") != true)
                 .ToList();
 
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"CreateOrUpdateOrphanContainers: {orphanedNodes.Count} orphans detected, {orphanedNodesFiltered.Count} after filtering containers");
+
+            // Find existing orphan containers
+            var existingRootContainer = CurrentDialog.Entries
+                .FirstOrDefault(e => e.Comment?.Contains("PARLEY: Orphaned nodes root container") == true);
+            var existingNpcCategory = CurrentDialog.Replies
+                .FirstOrDefault(r => r.Comment?.Contains("PARLEY: Orphaned NPC entries category") == true);
+
+            // If no orphans exist, remove containers entirely
             if (orphanedNodesFiltered.Count == 0)
             {
-                // No real orphans to containerize
+                bool removedContainers = false;
+
+                // Remove START pointer to orphan container
+                var orphanStart = CurrentDialog.Starts
+                    .FirstOrDefault(s => s.Comment?.Contains("Orphan container") == true);
+                if (orphanStart != null)
+                {
+                    CurrentDialog.Starts.Remove(orphanStart);
+                    CurrentDialog.LinkRegistry.UnregisterLink(orphanStart);
+                    removedContainers = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed orphan START pointer");
+                }
+
+                // Remove NPC category reply and its link from root container
+                if (existingNpcCategory != null)
+                {
+                    // Remove pointer from root container to NPC category
+                    if (existingRootContainer != null)
+                    {
+                        var categoryPtr = existingRootContainer.Pointers.FirstOrDefault(p => p.Node == existingNpcCategory);
+                        if (categoryPtr != null)
+                        {
+                            existingRootContainer.Pointers.Remove(categoryPtr);
+                            CurrentDialog.LinkRegistry.UnregisterLink(categoryPtr);
+                        }
+                    }
+
+                    CurrentDialog.Replies.Remove(existingNpcCategory);
+                    removedContainers = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed NPC category container");
+                }
+
+                // Remove root container
+                if (existingRootContainer != null)
+                {
+                    CurrentDialog.Entries.Remove(existingRootContainer);
+                    removedContainers = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed root orphan container");
+                }
+
+                if (removedContainers)
+                {
+                    // Recalculate indices after removal
+                    RecalculatePointerIndices();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Removed empty orphan containers after nodes were re-linked");
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - no containers to remove");
+                }
+
                 return;
             }
 
@@ -2506,35 +2604,72 @@ namespace DialogEditor.ViewModels
             var orphanedEntries = orphanedNodesFiltered.Where(n => n.Type == DialogNodeType.Entry).ToList();
             var orphanedReplies = orphanedNodesFiltered.Where(n => n.Type == DialogNodeType.Reply).ToList();
 
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Orphan breakdown: {orphanedEntries.Count} entries, {orphanedReplies.Count} replies");
+
             if (orphanedEntries.Count == 0 && orphanedReplies.Count == 0)
             {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans to containerize after filtering");
                 return;
             }
 
-            // Create single root container (NPC Entry)
-            var rootContainer = new DialogNode
+            // Create or reuse root container (NPC Entry)
+            // ALWAYS move to end of Entries list to prevent game evaluation
+            DialogNode rootContainer;
+            if (existingRootContainer != null)
             {
-                Type = DialogNodeType.Entry,
-                Text = new LocString(),
-                Comment = "PARLEY: Orphaned nodes root container - never appears in-game (sc_false)",
-                Speaker = "",
-                Parent = CurrentDialog
-            };
-            rootContainer.Text.Add(0, "!!! Orphaned Nodes");
-            CurrentDialog.Entries.Add(rootContainer);
+                rootContainer = existingRootContainer;
+                rootContainer.Pointers.Clear(); // Clear old pointers
 
-            // Create PC Reply category node under root container (for orphaned NPC Entries)
-            if (orphanedEntries.Count > 0)
+                // Move to end of Entries list
+                CurrentDialog.Entries.Remove(rootContainer);
+                CurrentDialog.Entries.Add(rootContainer);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Reusing existing orphan root container (moved to end)");
+            }
+            else
             {
-                var npcCategoryReply = new DialogNode
+                rootContainer = new DialogNode
                 {
-                    Type = DialogNodeType.Reply,
+                    Type = DialogNodeType.Entry,
                     Text = new LocString(),
-                    Comment = "PARLEY: Orphaned NPC entries category",
+                    Comment = "PARLEY: Orphaned nodes root container - never appears in-game (sc_false)",
                     Speaker = "",
                     Parent = CurrentDialog
                 };
-                npcCategoryReply.Text.Add(0, "!!! Orphaned NPC Nodes");
+                rootContainer.Text.Add(0, "!!! Orphaned Nodes");
+                CurrentDialog.Entries.Add(rootContainer); // Added at end automatically
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Created new orphan root container at end");
+            }
+
+            // Create or reuse PC Reply category node under root container (for orphaned NPC Entries)
+            // ALWAYS move to end of Replies list to prevent game evaluation
+            if (orphanedEntries.Count > 0)
+            {
+                DialogNode npcCategoryReply;
+                if (existingNpcCategory != null)
+                {
+                    npcCategoryReply = existingNpcCategory;
+                    npcCategoryReply.Pointers.Clear(); // Clear old pointers
+
+                    // Move to end of Replies list
+                    CurrentDialog.Replies.Remove(npcCategoryReply);
+                    CurrentDialog.Replies.Add(npcCategoryReply);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Reusing existing NPC category container (moved to end)");
+                }
+                else
+                {
+                    npcCategoryReply = new DialogNode
+                    {
+                        Type = DialogNodeType.Reply,
+                        Text = new LocString(),
+                        Comment = "PARLEY: Orphaned NPC entries category",
+                        Speaker = "",
+                        Parent = CurrentDialog
+                    };
+                    npcCategoryReply.Text.Add(0, "!!! Orphaned NPC Nodes");
+                    CurrentDialog.Replies.Add(npcCategoryReply); // Added at end automatically
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Created new NPC category container at end");
+                }
 
                 // Point to all orphaned entries (NOT as links - show full subtree)
                 foreach (var orphan in orphanedEntries)
@@ -2555,49 +2690,29 @@ namespace DialogEditor.ViewModels
                     CurrentDialog.LinkRegistry.RegisterLink(ptr);
                 }
 
-                // Add category reply to dialog and link from root container
-                CurrentDialog.Replies.Add(npcCategoryReply);
-                var npcCategoryIndex = (uint)(CurrentDialog.Replies.Count - 1);
-
-                var npcCategoryPtr = new DialogPtr
+                // Link from root container (if not already linked)
+                if (!rootContainer.Pointers.Any(p => p.Node == npcCategoryReply))
                 {
-                    Node = npcCategoryReply,
-                    Type = DialogNodeType.Reply,
-                    Index = npcCategoryIndex,
-                    IsLink = false,
-                    Parent = CurrentDialog
-                };
-                rootContainer.Pointers.Add(npcCategoryPtr);
-                CurrentDialog.LinkRegistry.RegisterLink(npcCategoryPtr);
+                    var npcCategoryIndex = (uint)CurrentDialog.Replies.IndexOf(npcCategoryReply);
+                    var npcCategoryPtr = new DialogPtr
+                    {
+                        Node = npcCategoryReply,
+                        Type = DialogNodeType.Reply,
+                        Index = npcCategoryIndex,
+                        IsLink = false,
+                        Parent = CurrentDialog
+                    };
+                    rootContainer.Pointers.Add(npcCategoryPtr);
+                    CurrentDialog.LinkRegistry.RegisterLink(npcCategoryPtr);
+                }
             }
 
-            // Create PC Reply category - need intermediate NPC Entry for valid structure
-            if (orphanedReplies.Count > 0)
+            // Handle orphaned PC replies - link directly to root container
+            // Root container is Entry, so it can point directly to Reply nodes (no intermediate needed)
+            foreach (var orphan in orphanedReplies)
             {
-                // Create intermediate NPC Entry under root (Owner > PC > Owner pattern)
-                var pcCategoryReply = new DialogNode
-                {
-                    Type = DialogNodeType.Reply,
-                    Text = new LocString(),
-                    Comment = "PARLEY: Orphaned PC replies category label",
-                    Speaker = "",
-                    Parent = CurrentDialog
-                };
-                pcCategoryReply.Text.Add(0, "!!! Orphaned PC Nodes");
-
-                // Create NPC Entry to hold the orphaned PC replies
-                var pcContainerEntry = new DialogNode
-                {
-                    Type = DialogNodeType.Entry,
-                    Text = new LocString(),
-                    Comment = "PARLEY: Orphaned PC replies container entry",
-                    Speaker = "",
-                    Parent = CurrentDialog
-                };
-                pcContainerEntry.Text.Add(0, "[CONTINUE]");
-
-                // Point to all orphaned PC replies from the container entry (NOT as links)
-                foreach (var orphan in orphanedReplies)
+                // Link directly from root container to orphaned reply
+                if (!rootContainer.Pointers.Any(p => p.Node == orphan))
                 {
                     var orphanIndex = (uint)CurrentDialog.Replies.IndexOf(orphan);
                     var ptr = new DialogPtr
@@ -2605,73 +2720,391 @@ namespace DialogEditor.ViewModels
                         Node = orphan,
                         Type = DialogNodeType.Reply,
                         Index = orphanIndex,
-                        IsLink = false, // NOT a link - show full subtree
+                        IsLink = false,
                         ScriptAppears = "",
                         ConditionParams = new Dictionary<string, string>(),
                         Comment = "Pointer to orphaned PC reply",
                         Parent = CurrentDialog
                     };
-                    pcContainerEntry.Pointers.Add(ptr);
+                    rootContainer.Pointers.Add(ptr);
                     CurrentDialog.LinkRegistry.RegisterLink(ptr);
                 }
-
-                // Add container entry to dialog
-                CurrentDialog.Entries.Add(pcContainerEntry);
-                var containerEntryIndex = (uint)(CurrentDialog.Entries.Count - 1);
-
-                // Link category reply to container entry
-                var containerEntryPtr = new DialogPtr
-                {
-                    Node = pcContainerEntry,
-                    Type = DialogNodeType.Entry,
-                    Index = containerEntryIndex,
-                    IsLink = false,
-                    Parent = CurrentDialog
-                };
-                pcCategoryReply.Pointers.Add(containerEntryPtr);
-                CurrentDialog.LinkRegistry.RegisterLink(containerEntryPtr);
-
-                // Add category reply to dialog and link from root container
-                CurrentDialog.Replies.Add(pcCategoryReply);
-                var pcCategoryIndex = (uint)(CurrentDialog.Replies.Count - 1);
-
-                var pcCategoryPtr = new DialogPtr
-                {
-                    Node = pcCategoryReply,
-                    Type = DialogNodeType.Reply,
-                    Index = pcCategoryIndex,
-                    IsLink = false,
-                    Parent = CurrentDialog
-                };
-                rootContainer.Pointers.Add(pcCategoryPtr);
-                CurrentDialog.LinkRegistry.RegisterLink(pcCategoryPtr);
             }
 
-            // Create START pointer to root container
-            var rootIndex = (uint)(CurrentDialog.Entries.Count - 1);
-            var rootStart = new DialogPtr
+            // Create or reuse START pointer to root container
+            var existingOrphanStart = CurrentDialog.Starts
+                .FirstOrDefault(s => s.Comment?.Contains("Orphan container") == true);
+
+            DialogPtr rootStart;
+            if (existingOrphanStart != null)
             {
-                Node = rootContainer,
-                Type = DialogNodeType.Entry,
-                Index = rootIndex,
-                IsLink = false,
-                IsStart = true,
-                ScriptAppears = "sc_false",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = "Orphan container - requires sc_false.nss in module",
-                Parent = CurrentDialog
-            };
-            CurrentDialog.Starts.Add(rootStart);
-            CurrentDialog.LinkRegistry.RegisterLink(rootStart);
+                rootStart = existingOrphanStart;
+                // Update index in case container was moved
+                var rootIndex = (uint)CurrentDialog.Entries.IndexOf(rootContainer);
+                rootStart.Index = rootIndex;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Reusing existing orphan START pointer");
+            }
+            else
+            {
+                var rootIndex = (uint)CurrentDialog.Entries.IndexOf(rootContainer);
+                rootStart = new DialogPtr
+                {
+                    Node = rootContainer,
+                    Type = DialogNodeType.Entry,
+                    Index = rootIndex,
+                    IsLink = false,
+                    IsStart = true,
+                    ScriptAppears = "sc_false",
+                    ConditionParams = new Dictionary<string, string>(),
+                    Comment = "Orphan container - requires sc_false.nss in module",
+                    Parent = CurrentDialog
+                };
+                CurrentDialog.Starts.Add(rootStart);
+                CurrentDialog.LinkRegistry.RegisterLink(rootStart);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Created new orphan START pointer");
+            }
 
             // Add to TreeView
             var rootSafeNode = new TreeViewSafeNode(rootContainer, ancestors: null, depth: 0, sourcePointer: rootStart);
             rootNode.Children?.Add(rootSafeNode);
 
             UnifiedLogger.LogApplication(LogLevel.WARN,
-                $"Created orphan container with {orphanedEntries.Count} NPC entries, {orphanedReplies.Count} PC replies - requires sc_false.nss");
+                $"Updated orphan container with {orphanedEntries.Count} NPC entries, {orphanedReplies.Count} PC replies - requires sc_false.nss");
 
-            StatusMessage = $"!!! {orphanedNodes.Count} orphaned node(s) - added container (requires sc_false.nss)";
+            StatusMessage = $"!!! {orphanedNodes.Count} orphaned node(s) - container updated (requires sc_false.nss)";
+        }
+
+        /// <summary>
+        /// Synchronously detects orphans and creates/updates containers
+        /// Called immediately after deletion to ensure orphans are containerized before save
+        /// </summary>
+        private void DetectAndContainerizeOrphansSync()
+        {
+            if (CurrentDialog == null) return;
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "🔍 SYNC: DetectAndContainerizeOrphansSync called");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"🔍 SYNC: Total nodes in dialog: {CurrentDialog.Entries.Count} entries, {CurrentDialog.Replies.Count} replies");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"🔍 SYNC: Total STARTs: {CurrentDialog.Starts.Count}");
+
+            // Find all orphaned nodes by traversing from STARTs
+            var reachableNodes = new HashSet<DialogNode>();
+            foreach (var start in CurrentDialog.Starts)
+            {
+                if (start.Node != null)
+                {
+                    CollectReachableNodesForOrphanDetection(start.Node, reachableNodes);
+                }
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"🔍 SYNC: Reachable from STARTs: {reachableNodes.Count} nodes");
+
+            // Find entries that aren't reachable, EXCLUDING existing orphan containers
+            var orphanedEntries = CurrentDialog.Entries
+                .Where(e => !reachableNodes.Contains(e))
+                .Where(e => e.Comment?.Contains("PARLEY: Orphaned") != true)
+                .ToList();
+
+            // Find replies that aren't reachable, EXCLUDING orphan container nodes
+            var orphanedReplies = CurrentDialog.Replies
+                .Where(r => !reachableNodes.Contains(r))
+                .Where(r => r.Comment?.Contains("PARLEY: Orphaned") != true)
+                .ToList();
+
+            var allOrphans = new List<DialogNode>();
+            allOrphans.AddRange(orphanedEntries);
+            allOrphans.AddRange(orphanedReplies);
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"🔍 SYNC: Found {orphanedEntries.Count} orphaned entries, {orphanedReplies.Count} orphaned replies");
+
+            if (orphanedEntries.Count > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"🔍 SYNC: Orphaned entries: {string.Join(", ", orphanedEntries.Select(e => $"'{e.DisplayText}'"))}");
+            }
+            if (orphanedReplies.Count > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"🔍 SYNC: Orphaned replies: {string.Join(", ", orphanedReplies.Select(r => $"'{r.DisplayText}'"))}");
+            }
+
+            if (allOrphans.Count > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Detected {allOrphans.Count} orphaned nodes after deletion ({orphanedEntries.Count} entries, {orphanedReplies.Count} replies)");
+
+                // Create/update containers in the model
+                CreateOrUpdateOrphanContainersInModel(allOrphans);
+            }
+        }
+
+        /// <summary>
+        /// Helper to collect reachable nodes during orphan detection
+        /// ONLY traverses regular pointers (IsLink=false) from START points
+        /// IsLink=true pointers are "back references" from children to shared parents
+        /// and should NOT prevent orphaning when the parent's owning START is deleted
+        /// </summary>
+        private void CollectReachableNodesForOrphanDetection(DialogNode node, HashSet<DialogNode> reachableNodes)
+        {
+            if (node == null || reachableNodes.Contains(node))
+                return;
+
+            reachableNodes.Add(node);
+
+            // ONLY traverse regular pointers (IsLink=false) for orphan detection
+            // IsLink=true pointers are back-references from link children to their shared parent
+            // If we traverse IsLink pointers, link parents appear reachable even when their
+            // owning START is deleted, preventing proper orphan detection
+            foreach (var pointer in node.Pointers.Where(p => !p.IsLink))
+            {
+                if (pointer.Node != null)
+                {
+                    CollectReachableNodesForOrphanDetection(pointer.Node, reachableNodes);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates or updates orphan containers directly in the dialog model
+        /// WITHOUT adding to TreeView (that happens during RefreshTreeView)
+        /// </summary>
+        private void CreateOrUpdateOrphanContainersInModel(List<DialogNode> orphanedNodes)
+        {
+            if (CurrentDialog == null || orphanedNodes.Count == 0) return;
+
+            // Filter out any containers from orphaned nodes
+            var orphanedNodesFiltered = orphanedNodes
+                .Where(n => n.Comment?.Contains("PARLEY: Orphaned") != true)
+                .ToList();
+
+            if (orphanedNodesFiltered.Count == 0) return;
+
+            // Find existing orphan containers
+            var existingRootContainer = CurrentDialog.Entries
+                .FirstOrDefault(e => e.Comment?.Contains("PARLEY: Orphaned nodes root container") == true);
+            var existingNpcCategory = CurrentDialog.Replies
+                .FirstOrDefault(r => r.Comment?.Contains("PARLEY: Orphaned NPC entries category") == true);
+
+            // Separate entries and replies
+            var orphanedEntries = orphanedNodesFiltered.Where(n => n.Type == DialogNodeType.Entry).ToList();
+            var orphanedReplies = orphanedNodesFiltered.Where(n => n.Type == DialogNodeType.Reply).ToList();
+
+            // Create or reuse root container
+            DialogNode rootContainer;
+            if (existingRootContainer != null)
+            {
+                rootContainer = existingRootContainer;
+                rootContainer.Pointers.Clear();
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Sync: Reusing existing orphan root container");
+            }
+            else
+            {
+                rootContainer = new DialogNode
+                {
+                    Type = DialogNodeType.Entry,
+                    Text = new LocString(),
+                    Comment = "PARLEY: Orphaned nodes root container - never appears in-game (sc_false)",
+                    Speaker = "",
+                    Parent = CurrentDialog
+                };
+                rootContainer.Text.Add(0, "!!! Orphaned Nodes");
+                CurrentDialog.Entries.Add(rootContainer);
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Sync: Created new orphan root container");
+            }
+
+            // Handle orphaned entries (NPC nodes)
+            if (orphanedEntries.Count > 0)
+            {
+                DialogNode npcCategoryReply;
+                if (existingNpcCategory != null)
+                {
+                    npcCategoryReply = existingNpcCategory;
+                    npcCategoryReply.Pointers.Clear();
+                }
+                else
+                {
+                    npcCategoryReply = new DialogNode
+                    {
+                        Type = DialogNodeType.Reply,
+                        Text = new LocString(),
+                        Comment = "PARLEY: Orphaned NPC entries category",
+                        Speaker = "",
+                        Parent = CurrentDialog
+                    };
+                    npcCategoryReply.Text.Add(0, "!!! Orphaned NPC Nodes");
+                    CurrentDialog.Replies.Add(npcCategoryReply);
+                }
+
+                // Only point to ROOT orphaned entries (not descendants of other orphaned entries)
+                // This prevents orphaned entries from appearing multiple times in the tree
+                var rootOrphanedEntries = orphanedEntries.Where(orphan =>
+                {
+                    // Check if this orphan appears anywhere in another orphan's subtree
+                    foreach (var otherOrphan in orphanedEntries)
+                    {
+                        if (otherOrphan != orphan && IsNodeInSubtree(orphan, otherOrphan))
+                        {
+                            return false; // This orphan is a descendant of another orphan
+                        }
+                    }
+                    return true; // This is a root orphan
+                }).ToList();
+
+                foreach (var orphan in rootOrphanedEntries)
+                {
+                    var orphanIndex = (uint)CurrentDialog.Entries.IndexOf(orphan);
+                    var ptr = new DialogPtr
+                    {
+                        Node = orphan,
+                        Type = DialogNodeType.Entry,
+                        Index = orphanIndex,
+                        IsLink = false,
+                        ScriptAppears = "",
+                        ConditionParams = new Dictionary<string, string>(),
+                        Comment = "Pointer to orphaned NPC entry",
+                        Parent = CurrentDialog
+                    };
+                    npcCategoryReply.Pointers.Add(ptr);
+                    CurrentDialog.LinkRegistry.RegisterLink(ptr);
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Filtered {orphanedEntries.Count} orphaned entries to {rootOrphanedEntries.Count} root orphans");
+
+                // Link from root container
+                if (!rootContainer.Pointers.Any(p => p.Node == npcCategoryReply))
+                {
+                    var npcCategoryIndex = (uint)CurrentDialog.Replies.IndexOf(npcCategoryReply);
+                    var npcCategoryPtr = new DialogPtr
+                    {
+                        Node = npcCategoryReply,
+                        Type = DialogNodeType.Reply,
+                        Index = npcCategoryIndex,
+                        IsLink = false,
+                        Parent = CurrentDialog
+                    };
+                    rootContainer.Pointers.Add(npcCategoryPtr);
+                    CurrentDialog.LinkRegistry.RegisterLink(npcCategoryPtr);
+                }
+            }
+
+            // Handle orphaned replies (PC nodes) - link directly to root container
+            // Only add ROOT orphaned replies (not descendants of other orphans)
+            var rootOrphanedReplies = orphanedReplies.Where(orphan =>
+            {
+                // Check if this orphan reply appears in any orphaned entry's subtree
+                foreach (var orphanEntry in orphanedEntries)
+                {
+                    if (IsNodeInSubtree(orphan, orphanEntry))
+                    {
+                        return false; // This orphan is a descendant of an orphaned entry
+                    }
+                }
+                // Check if this orphan reply appears in any other orphaned reply's subtree
+                foreach (var otherOrphan in orphanedReplies)
+                {
+                    if (otherOrphan != orphan && IsNodeInSubtree(orphan, otherOrphan))
+                    {
+                        return false; // This orphan is a descendant of another orphan
+                    }
+                }
+                return true; // This is a root orphan
+            }).ToList();
+
+            foreach (var orphan in rootOrphanedReplies)
+            {
+                // Link directly from root container to orphaned reply
+                if (!rootContainer.Pointers.Any(p => p.Node == orphan))
+                {
+                    var orphanIndex = (uint)CurrentDialog.Replies.IndexOf(orphan);
+                    var ptr = new DialogPtr
+                    {
+                        Node = orphan,
+                        Type = DialogNodeType.Reply,
+                        Index = orphanIndex,
+                        IsLink = false,
+                        ScriptAppears = "",
+                        ConditionParams = new Dictionary<string, string>(),
+                        Comment = "Pointer to orphaned PC reply",
+                        Parent = CurrentDialog
+                    };
+                    rootContainer.Pointers.Add(ptr);
+                    CurrentDialog.LinkRegistry.RegisterLink(ptr);
+                }
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Filtered {orphanedReplies.Count} orphaned replies to {rootOrphanedReplies.Count} root orphans");
+
+            // Create or update START pointer to root container
+            var existingOrphanStart = CurrentDialog.Starts
+                .FirstOrDefault(s => s.Comment?.Contains("Orphan container") == true);
+
+            if (existingOrphanStart != null)
+            {
+                // Update index in case container was moved
+                var rootIndex = (uint)CurrentDialog.Entries.IndexOf(rootContainer);
+                existingOrphanStart.Index = rootIndex;
+                existingOrphanStart.Node = rootContainer;
+            }
+            else
+            {
+                var rootIndex = (uint)CurrentDialog.Entries.IndexOf(rootContainer);
+                var rootStart = new DialogPtr
+                {
+                    Node = rootContainer,
+                    Type = DialogNodeType.Entry,
+                    Index = rootIndex,
+                    IsLink = false,
+                    IsStart = true,
+                    ScriptAppears = "sc_false",
+                    ConditionParams = new Dictionary<string, string>(),
+                    Comment = "Orphan container - requires sc_false.nss in module",
+                    Parent = CurrentDialog
+                };
+                CurrentDialog.Starts.Add(rootStart);
+                CurrentDialog.LinkRegistry.RegisterLink(rootStart);
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Sync: Created orphan START pointer with sc_false");
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Sync: Orphan container updated in model with {orphanedEntries.Count} entries, {orphanedReplies.Count} replies");
+        }
+
+        /// <summary>
+        /// Checks if targetNode appears anywhere in the subtree rooted at rootNode
+        /// Uses recursive traversal following regular pointers only (not IsLink)
+        /// </summary>
+        private bool IsNodeInSubtree(DialogNode targetNode, DialogNode rootNode)
+        {
+            if (rootNode == null || targetNode == null) return false;
+
+            var visited = new HashSet<DialogNode>();
+            return IsNodeInSubtreeRecursive(targetNode, rootNode, visited);
+        }
+
+        private bool IsNodeInSubtreeRecursive(DialogNode targetNode, DialogNode currentNode, HashSet<DialogNode> visited)
+        {
+            if (currentNode == null || visited.Contains(currentNode))
+                return false;
+
+            visited.Add(currentNode);
+
+            // Check each child (following regular pointers only, not IsLink)
+            foreach (var pointer in currentNode.Pointers.Where(p => !p.IsLink))
+            {
+                if (pointer.Node == targetNode)
+                    return true; // Found it!
+
+                // Recursively check this child's subtree
+                if (pointer.Node != null && IsNodeInSubtreeRecursive(targetNode, pointer.Node, visited))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>

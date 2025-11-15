@@ -33,7 +33,7 @@ namespace SharedTestUtils
             var config = GetConfig();
             if (config.TestFiles.TryGetValue(testFileKey, out var testFile))
             {
-                return Path.Combine(config.TestFilesDirectory, testFile.Filename);
+                return Path.Combine(ExpandHomeDirectory(config.TestFilesDirectory), testFile.Filename);
             }
             throw new ArgumentException($"Test file key '{testFileKey}' not found in TestFiles.json");
         }
@@ -51,8 +51,9 @@ namespace SharedTestUtils
         public static List<string> GetAllTestFiles()
         {
             var config = GetConfig();
+            var baseDir = ExpandHomeDirectory(config.TestFilesDirectory);
             return config.TestFiles.Values
-                .Select(tf => Path.Combine(config.TestFilesDirectory, tf.Filename))
+                .Select(tf => Path.Combine(baseDir, tf.Filename))
                 .ToList();
         }
 
@@ -73,6 +74,28 @@ namespace SharedTestUtils
             {
                 Console.WriteLine($"  {kvp.Key,-20} - {string.Join(", ", kvp.Value)}");
             }
+        }
+
+        private static string ExpandHomeDirectory(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            // Handle "C:~\" notation - replace with user profile directory
+            if (path.StartsWith("C:~", StringComparison.OrdinalIgnoreCase))
+            {
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                return path.Replace("C:~", userProfile);
+            }
+
+            // Handle standard "~/" notation (Unix-style)
+            if (path.StartsWith("~/") || path.StartsWith("~\\"))
+            {
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                return path.Replace("~", userProfile);
+            }
+
+            return path;
         }
 
         private static string GetTestingToolsRoot()

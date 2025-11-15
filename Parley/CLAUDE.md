@@ -5,14 +5,18 @@ Project guidance for Claude Code sessions working with Parley, the dialog editor
 ## Get-Date
 - Be sure to check what date it is. Get-Date on windows. It is not January 2025
 
+## Logging
+- Make sure logs are scrubbed for privacy
+- Don't ask the user to log-dive. You review the logs.
+
 ## Session Continuity System
 
 ### Starting a New Session
 **ALWAYS read these files first to understand current state:**
 
 1. **`CLAUDE_SESSION_CHECKLIST.md`** - Session start/end checklist (if present)
-2. **`Documentation/CODE_PATH_MAP.md`** - Active code paths for read/write operations (prevents working in dead code)
-3. **Recent git commits** - Check latest progress with `git log --online -10`
+2. **`Documentation/Developer/CODE_PATH_MAP.md`** - Active code paths for read/write operations (prevents working in dead code)
+3. **Recent git commits** - Check latest progress with `git log --oneline -10`
 4. **This file (CLAUDE.md)** - Project structure and commands
 
 **Session Checklist enforces**:
@@ -24,13 +28,6 @@ Project guidance for Claude Code sessions working with Parley, the dialog editor
 ### Current Focus Areas
 Check recent commits and GitHub issues for active priorities.
 
-**Project Status**: Public Alpha Release (v0.1.0-alpha)
-- Core dialog editing - ✅ COMPLETE
-- DLG import/export - ✅ COMPLETE (Aurora-compatible)
-- Resource browsers - ✅ COMPLETE (Sound/Script/Character/Journal)
-- Copy/paste/delete fixes - ✅ COMPLETE (Issue #6 resolved)
-- Current focus: Bug fixes and stability improvements
-
 ## Project Overview
 
 **Parley** - Aurora-compatible dialog editor for Neverwinter Nights DLG files
@@ -40,14 +37,27 @@ Check recent commits and GitHub issues for active priorities.
 ### Core Architecture
 - **Parley/** - Main application (.NET 9.0, Avalonia UI for cross-platform)
 - **Documentation/** - Technical specifications and analysis (public)
+  - **Developer/** - Technical docs for code maintenance (DELETE_BEHAVIOR.md, CODE_PATH_MAP.md, etc.)
+  - **User/** - End-user documentation (plugin guides, script browser, etc.)
 - **TestingTools/** - All test projects and debugging tools
 
 ### Key Components
 - `Parley/Parsers/DialogParser.cs` - Core DLG parser with Aurora compatibility
 - `Parley/Models/` - Dialog, DialogNode, DialogPtr data structures
-- `Parley/ViewModels/` - MVVM pattern with MainViewModel
+- `Parley/ViewModels/MainViewModel.cs` - MVVM pattern with deletion logic and **orphan handling**
 - `Parley/Handlers/` - UI event handlers (refactored from MainWindow for maintainability)
 - `Parley/Services/` - Sound, Script, Settings services
+
+### Critical File Integrity Features
+**Orphan Node Handling** - When nodes become unreachable from START points (e.g., deleting a parent node), Parley moves them to a special container instead of deleting them. This prevents data loss in complex dialog structures.
+
+**Key Rules** (see [Documentation/Developer/DELETE_BEHAVIOR.md](Documentation/Developer/DELETE_BEHAVIOR.md)):
+- **IsLink=false**: Regular conversation flow (parent → child) - traversed for orphan detection
+- **IsLink=true**: Back-reference from link child to shared parent - NEVER traversed for orphan detection
+- Orphan detection uses graph traversal from START nodes following ONLY regular pointers
+- Only root orphans added to container (prevents duplicates when orphan subtrees contain nested orphans)
+- Link parents with IsLink=true back-references become orphaned when owning START is deleted
+- See `MainViewModel.cs:CollectReachableNodesForOrphanDetection()` and `IsNodeInSubtree()` for implementation
 
 ## UI & Logging Rules
 - always scrub user info from logs and UI  use ~ even for windows for user path.
@@ -99,17 +109,10 @@ dotnet run --project TestingTools/FieldIndicesProject/FieldIndicesProject.csproj
 dotnet run --project TestingTools/BoundaryProject/BoundaryProject.csproj
 ```
 
-## File Format & Documentation
-
-### Aurora Engine Binary Format
+## Aurora Engine Binary Format
 - **Format**: Neverwinter Nights DLG v3.28+ (Aurora GFF binary)
-- **Official Docs**: `Documentation/BioWare_Original_PDFs/`
-- **Format Analysis**: `Documentation/DLG_FORMAT_SPECIFICATION.md`
-
-### Key Models
-- `Dialog` - Root conversation container
-- `DialogNode` - Individual entries/replies with text and metadata
-- `DialogPtr` - Pointer structures linking dialog nodes
+- **Official Docs**: `../Documentation/BioWare_Original_PDFs/` (Radoub repo root)
+- **Key Models**: Dialog, DialogNode, DialogPtr
 
 ## Technical Stack
 
@@ -123,21 +126,16 @@ dotnet run --project TestingTools/BoundaryProject/BoundaryProject.csproj
 - **MVVM Pattern**: ViewModels inherit from `BaseViewModel`
 - **Circular Reference Protection**: TreeViewSafeNode prevents infinite loops
 - **Session-based Logging**: Organized by date/time for debugging
-- **Handler Pattern**: UI concerns separated into specialized handler classes (Oct 2025 refactor)
+- **Handler Pattern**: UI concerns separated into specialized handler classes (October 2024 refactor)
 - **Cross-platform Paths**: Platform-agnostic file/directory handling
 - **Quality First**: It uses fewer tokens to do it right the first time than to do it quick and fix it later
 
-## Nature of Conversation Files
-
-### Content Characteristics
-- **Storytelling Tool**: Dialog files vary significantly based on narrative content
-- **Conversation Loops**: Many files resemble 'phone trees' with intentional branching
-- **Dynamic Structure**: Field counts and complexity depend on conversation design
-
-### Aurora Compatibility Requirements
-- Exact binary format adherence for game engine compatibility
-- Proper conversation flow order preservation
-- Complete field structure matching Aurora's expectations
+## Aurora Compatibility Requirements
+- **Exact binary format adherence** for game engine compatibility
+- **Proper conversation flow** order preservation
+- **Complete field structure** matching Aurora's expectations
+- **Filename constraints**: 12 character max (excluding `.dlg`), lowercase, alphanumeric + underscore only
+- **Link structures**: IsLink=true pointers create shared content (critical for orphan detection)
 
 ## Development Guidelines
 
@@ -161,6 +159,11 @@ dotnet run --project TestingTools/BoundaryProject/BoundaryProject.csproj
 - Debug scripts in `DebugScripts/`
 - Test files in `TestingTools/TestFiles/`
 - Run tests: `dotnet test Parley.Tests/Parley.Tests.csproj`
+
+**Critical Tests for Orphan Handling**:
+- `OrphanNodeTests.cs:OrphanContainer_ShouldNotDuplicateNestedOrphans` - Tests root orphan filtering (prevents duplicates)
+- `OrphanNodeTests.cs:DeletingLinkParent_ShouldOrphanLinkedNodes` - Tests link parent orphaning when START deleted
+- `OrphanContainerIntegrationTests.cs:DeletingParentEntry_CreatesOrphanContainer_AndPersistsToFile` - Tests full orphan flow with file persistence
 
 ### Testing Workflow (IMPORTANT)
 **Feature-by-Feature Testing Approach**:
@@ -268,7 +271,7 @@ main (production)
 
 **✅ DO**:
 - Always work on feature branches
-- Create PRs for all merges (feature → develop, develop → main)
+- Create PRs for all merges to main
 - Fill out PR template checklist completely
 - Test thoroughly before merging
 - Delete feature branches after merge
@@ -276,13 +279,12 @@ main (production)
 
 **❌ NEVER**:
 - Commit directly to `main` (production-only)
-- Commit directly to `develop` (use feature branches)
 - Skip PR process (even for "small" changes)
 - Merge without testing
 - Leave feature branches open after merge
 
 **Claude's Role**:
-- **Remind user** if about to commit to main/develop
+- **Remind user** if about to commit to main
 - **Suggest** creating feature branch instead
 - **Warn** if PR checklist incomplete
 - **Encourage** proper commit messages
@@ -290,32 +292,18 @@ main (production)
 
 **Quick Start**:
 ```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/my-feature
+git checkout main
+git pull origin main
+git checkout -b parley/feat/my-feature
 # ... do work, commit ...
-git push origin feature/my-feature
-# Create PR on GitHub: feature/my-feature → develop
+git push origin parley/feat/my-feature
+# Create PR on GitHub: parley/feat/my-feature → main
 ```
 
-## Aurora Engine Specifics
-
-### Critical Discoveries
-- Complex field index mapping (not simple 4:1 sequential)
-- Root struct must use type 65535 (not 0)
-- All 9 BioWare required fields must be present in correct order
-
 ## Session Management
-
-### Progress Tracking
 - Use `TodoWrite` tool frequently for task tracking
 - Commit regularly with technical context
-
-### Debugging Tools
-- Comprehensive logging system for binary format analysis
-- Hex dump comparison tools for Aurora compatibility
-- Round-trip testing for validation
-- Boundary analysis for format compliance
+- Check logs for Warn/Error before committing parser changes
 
 ## Architecture Notes
 
@@ -337,45 +325,21 @@ MainWindow.xaml.cs now acts as a thin coordinator between XAML events and handle
 
 ### Binary Format Development
 - Never trust "it looks right" - require byte-perfect validation
-- Round-trip testing is essential for catching silent corruption
+- Round-trip testing catches silent corruption
 - Field-by-field validation prevents mystery bugs
 
-### Project Organization
-- Keep test files in `TestingTools/`
-- Archive outdated documentation in `OldDocumentation/`
-- Maintain clean separation between core code and testing
-- Use unified debugger for consistent logging
+## Project Status
 
-## Development Roadmap
-
-### Project Status
-
-**Released**: v0.1.0-alpha (November 2, 2025)
+**Released**: v0.1.0-alpha (November 2, 2024)
 - Core dialog editing - ✅ **COMPLETE**
 - DLG import/export (Aurora-compatible) - ✅ **COMPLETE**
 - Resource browsers (sounds, scripts, characters, journals) - ✅ **COMPLETE**
-- Copy/paste/delete operations - ✅ **COMPLETE** (Issue #6 fixed)
+- Copy/paste/delete operations - ✅ **COMPLETE**
 - Undo/redo system - ✅ **COMPLETE**
 
-**Current Focus**: Bug fixes and stability improvements based on community feedback
+**Current Focus**: Epic #2 - UI/UX improvements (resizable panels, layout enhancements)
 
 ---
-
-## Important Reminders
-
-### Aurora File Constraints
-- Aurora files have file name limit for compatibility with FAT16 - use compliant names
-- Entry and reply structs will be different conversation file to conversation file
-- Conversations can be very long, loopy, and have lots of links
-
-### Cross-Platform Considerations (NEW)
-- File paths must work on Windows, macOS, and Linux
-- Default game locations vary by platform:
-  - Windows: `C:\Users\...\Neverwinter Nights`
-  - macOS: `~/Library/Application Support/Neverwinter Nights`
-  - Linux: `~/.local/share/Neverwinter Nights`
-- Keyboard shortcuts differ (Ctrl vs Cmd)
-- Path separators handled by .NET automatically
 
 ## GitHub Issue Tracking
 
@@ -397,12 +361,12 @@ Configured in `../.github/labels.yml` (Radoub repository):
 Located in `../.github/workflows/` (Radoub repository level):
 
 **PR Build Check** (`pr-build.yml`):
-- Triggers on PRs to main/develop
+- Triggers on PRs to main
 - Validates solution builds successfully
 - Catches build breaks before merge
 
 **PR Test Suite** (`pr-tests.yml`):
-- Triggers on PRs to main/develop
+- Triggers on PRs to main
 - Runs all tests in TestingTools/
 - Ensures no regressions introduced
 
@@ -411,13 +375,6 @@ Located in `../.github/workflows/` (Radoub repository level):
 - Builds + full test suite
 - Creates GitHub release with binaries
 - Automated release notes
-
-### GitHub MCP Integration
-Via foxxy-bridge:
-- Create/manage issues programmatically
-- Auto-update checklists from test results
-- Link commits to issues
-- Generate testing reports
 
 ### Workflow Tips
 - Use issue templates for consistent bug tracking
@@ -467,21 +424,9 @@ Via foxxy-bridge:
 - Split "God classes" into focused managers (e.g., CopyPasteManager, UndoRedoManager)
 
 **Testing Requirements**:
-- Fix failing tests before creating PR (LazyLoadingPerformanceTests currently failing)
+- Fix failing tests before creating PR
 - Address all compiler warnings before PR
 - No hardcoded test paths in production code
-
-### Build Warnings to Fix
-
-**Current warnings that need attention**:
-1. `CA2022` - Inexact read in CreatureParser.cs - use ReadExactly()
-2. `AVLN3001` - Missing public constructors for XAML windows
-3. `CS0219` - Unused variable in TimeoutTests.cs
-4. `CS8625/CS8600` - Nullable reference warnings in tests
-
----
-
-**Testing**: Use `TestingTools/Scripts/QuickRegressionCheck.ps1` before parser changes
 
 
 ### File Naming Constraints (CRITICAL FOR TEST FILE GENERATION)
@@ -518,68 +463,22 @@ Via foxxy-bridge:
 - Tagged speakers require actual creature placement in test area
 - Invalid speaker tags cause silent conversation failure in-game (no error message)
 
-**Real-World Example** (2025-11-08 debugging session):
+**Example**:
 ```csharp
-// ❌ BAD - Will fail in-game if no creature tagged "Merchant" exists
-var entry = new DialogNode {
-    Type = DialogNodeType.Entry,
-    Text = new LocString(),
-    Speaker = "Merchant"  // Aurora validates this!
-};
+// ❌ BAD - Fails if no creature tagged "Merchant"
+Speaker = "Merchant"  // Aurora validates this!
 
-// ✅ GOOD - Works in any conversation context
-var entry = new DialogNode {
-    Type = DialogNodeType.Entry,
-    Text = new LocString(),
-    Speaker = ""  // No validation required
-};
+// ✅ GOOD - Works in any context
+Speaker = ""  // No validation required
 ```
-
-**Debugging Symptoms**:
-- Dialog loads in Parley ✅
-- Dialog appears in Aurora Toolset ✅
-- Conversation **does not appear in-game** ❌ (silent failure)
-- No error messages or logs
-- Root cause: Invalid speaker tag validation
 
 ### Test File Generation Best Practices
 When creating test dialogs in `TestingTools/CreateTest*Dialog/`:
 
-1. **Filename validation**:
-   ```csharp
-   // ALWAYS check filename length before saving
-   string filename = "test1_link.dlg";  // 10 chars ✅
-   if (Path.GetFileNameWithoutExtension(filename).Length > 12) {
-       Console.WriteLine("❌ Filename too long for Aurora Engine!");
-   }
-   ```
-
-2. **Speaker tag safety**:
-   ```csharp
-   // Use empty speaker for test files
-   var node = new DialogNode {
-       Speaker = ""  // Safe default
-   };
-   ```
-
-3. **Multiple entry points and in-game testing**:
-   - Dialogs with multiple starting entries (disconnected branches) create independent conversation flows
-   - NWN fires one starting entry per conversation interaction sequentially
-   - Comprehensive testing requires state management scripts (.nss) to cycle through all branches
-   - **Pattern**: "Do-once" system using local variables (GetLocalInt/SetLocalInt)
-   - **Example**: Track which starting entry was shown, fire next entry on subsequent interactions
-   - **Future improvement**: Create reusable test scaffolding scripts in `TestingTools/Scripts/`
-   ```csharp
-   // Multiple starting entries - each fires once per conversation interaction
-   dialog.Starts.Add(new DialogPtr { Node = entry0, ... });
-   dialog.Starts.Add(new DialogPtr { Node = entry2, ... });  // Requires .nss to test both
-   dialog.Starts.Add(new DialogPtr { Node = entry3, ... });
-   ```
-
-4. **Validation checklist**:
-   - [ ] Filename ≤12 characters (excluding `.dlg`)
-   - [ ] Lowercase, alphanumeric + underscore only
-   - [ ] All speaker tags empty OR valid creatures exist in test area
-   - [ ] Multiple entry points documented for tester (requires state management scripts)
-   - [ ] Test in actual NWN game, not just Parley/Aurora Toolset
+**Validation checklist**:
+- [ ] Filename ≤12 characters (excluding `.dlg`)
+- [ ] Lowercase, alphanumeric + underscore only
+- [ ] All speaker tags empty (`Speaker = ""`) for generic tests
+- [ ] Multiple entry points documented (requires .nss scripts to test all branches)
+- [ ] Test in actual NWN game, not just Parley/Aurora Toolset
 
