@@ -19,8 +19,8 @@
       "complexity": "medium",
       "features": ["multiple_starts", "complex_branching", "loops"]
     },
-    "convolutedconvo": {
-      "filename": "convolutedconvo.dlg",
+    "dlg_shady_vendor": {
+      "filename": "dlg_shady_vendor.dlg",
       "description": "Complex conversation with loops",
       "complexity": "high",
       "features": ["complex_branching", "loops", "multiple_paths"]
@@ -47,7 +47,7 @@
   "testSuites": {
     "quick": ["chef", "hicks_hudson"],
     "medium": ["chef", "hicks_hudson", "lista"],
-    "full": ["chef", "hicks_hudson", "lista", "convolutedconvo", "generic_hench"],
+    "full": ["chef", "hicks_hudson", "lista", "dlg_shady_vendor", "generic_hench"],
     "edge_cases": ["blank"],
     "bioware": ["generic_hench", "x2_associate"]
   }
