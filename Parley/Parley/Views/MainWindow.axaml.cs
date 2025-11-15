@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
@@ -903,6 +904,248 @@ namespace DialogEditor.Views
         private void OnClearDebugClick(object? sender, RoutedEventArgs e)
         {
             ClearDebugOutput();
+        }
+
+        private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var logFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Parley", "Logs");
+
+                if (!Directory.Exists(logFolder))
+                {
+                    _viewModel.StatusMessage = "Log folder does not exist yet";
+                    return;
+                }
+
+                // Open folder in explorer
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = logFolder,
+                    UseShellExecute = true
+                });
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened log folder: {logFolder}");
+            }
+            catch (Exception ex)
+            {
+                _viewModel.StatusMessage = $"Failed to open log folder: {ex.Message}";
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open log folder: {ex.Message}");
+            }
+        }
+
+        private async void OnExportLogsClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var logFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    "Parley", "Logs");
+
+                if (!Directory.Exists(logFolder))
+                {
+                    _viewModel.StatusMessage = "No logs to export";
+                    return;
+                }
+
+                var storageProvider = StorageProvider;
+                if (storageProvider == null)
+                {
+                    _viewModel.StatusMessage = "Storage provider not available";
+                    return;
+                }
+
+                // Show save dialog for zip file
+                var options = new FilePickerSaveOptions
+                {
+                    Title = "Export Logs for Support",
+                    SuggestedFileName = $"Parley_Logs_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
+                    FileTypeChoices = new[]
+                    {
+                        new FilePickerFileType("ZIP Archive")
+                        {
+                            Patterns = new[] { "*.zip" }
+                        }
+                    }
+                };
+
+                var file = await storageProvider.SaveFilePickerAsync(options);
+                if (file == null) return;
+
+                var result = file.Path.LocalPath;
+
+                // Create zip archive
+                if (File.Exists(result))
+                {
+                    File.Delete(result);
+                }
+
+                System.IO.Compression.ZipFile.CreateFromDirectory(logFolder, result);
+
+                _viewModel.StatusMessage = $"Logs exported to: {result}";
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Exported logs to: {result}");
+
+                // Offer to open folder
+                var openFolderWindow = new Window
+                {
+                    Title = "Logs Exported",
+                    Width = 400,
+                    Height = 150,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Content = new StackPanel
+                    {
+                        Margin = new Thickness(20),
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = "Logs exported successfully. Open the folder?",
+                                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                                Margin = new Thickness(0, 0, 0, 20)
+                            },
+                            new StackPanel
+                            {
+                                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                                Children =
+                                {
+                                    new Button
+                                    {
+                                        Content = "Yes",
+                                        Padding = new Thickness(15, 5),
+                                        Margin = new Thickness(0, 0, 10, 0)
+                                    },
+                                    new Button
+                                    {
+                                        Content = "No",
+                                        Padding = new Thickness(15, 5)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+
+                var yesButton = ((StackPanel)((StackPanel)openFolderWindow.Content).Children[1]).Children[0] as Button;
+                var noButton = ((StackPanel)((StackPanel)openFolderWindow.Content).Children[1]).Children[1] as Button;
+
+                yesButton!.Click += (s, args) =>
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = Path.GetDirectoryName(result)!,
+                        UseShellExecute = true
+                    });
+                    openFolderWindow.Close();
+                };
+
+                noButton!.Click += (s, args) => openFolderWindow.Close();
+
+                openFolderWindow.Show();
+            }
+            catch (Exception ex)
+            {
+                _viewModel.StatusMessage = $"Failed to export logs: {ex.Message}";
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export logs: {ex.Message}");
+            }
+        }
+
+        // Scrap tab handlers
+        private void OnRestoreScrapClick(object? sender, RoutedEventArgs e)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnRestoreScrapClick called");
+
+            if (_viewModel.SelectedScrapEntry == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "No scrap entry selected");
+                return;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Selected scrap entry: {_viewModel.SelectedScrapEntry.NodeText}");
+
+            // Get the selected node from the tree view
+            var treeView = this.FindControl<TreeView>("DialogTreeView");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeView found: {treeView != null}");
+
+            var selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Selected tree node: {selectedNode?.DisplayText ?? "null"} (Type: {selectedNode?.GetType().Name ?? "null"})");
+
+            var restored = _viewModel.RestoreFromScrap(_viewModel.SelectedScrapEntry.Id, selectedNode);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restore result: {restored}");
+
+            if (!restored)
+            {
+                // The RestoreFromScrap method will set an appropriate status message
+            }
+        }
+
+        private async void OnClearScrapClick(object? sender, RoutedEventArgs e)
+        {
+            var messageBox = new Window
+            {
+                Title = "Clear All Scrap",
+                Width = 400,
+                Height = 150,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(20),
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = "Are you sure you want to clear all scrap entries?",
+                            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                            Margin = new Thickness(0, 0, 0, 20)
+                        },
+                        new StackPanel
+                        {
+                            Orientation = Avalonia.Layout.Orientation.Horizontal,
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                            Children =
+                            {
+                                new Button
+                                {
+                                    Content = "Yes",
+                                    Width = 80,
+                                    Margin = new Thickness(0, 0, 10, 0),
+                                    Name = "YesButton"
+                                },
+                                new Button
+                                {
+                                    Content = "No",
+                                    Width = 80,
+                                    IsDefault = true,
+                                    Name = "NoButton"
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var stackPanel = messageBox.Content as StackPanel;
+            var buttonPanel = stackPanel?.Children[1] as StackPanel;
+            var yesButton = buttonPanel?.Children[0] as Button;
+            var noButton = buttonPanel?.Children[1] as Button;
+
+            if (yesButton != null)
+            {
+                yesButton.Click += (s, args) =>
+                {
+                    _viewModel.ClearAllScrap();
+                    messageBox.Close();
+                };
+            }
+
+            if (noButton != null)
+            {
+                noButton.Click += (s, args) => messageBox.Close();
+            }
+
+            await messageBox.ShowDialog(this);
         }
 
         private void HideDebugConsoleByDefault()

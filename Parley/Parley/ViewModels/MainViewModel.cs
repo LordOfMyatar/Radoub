@@ -8,6 +8,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using DialogEditor.Utils;
 using Parley.Models;
+using Parley.Services;
 
 namespace DialogEditor.ViewModels
 {
@@ -23,6 +24,8 @@ namespace DialogEditor.ViewModels
         private DialogNode? _copiedNode = null; // Phase 1 Step 7: Copy/Paste system
         private bool _wasCut = false; // Track if clipboard node came from Cut (move) vs Copy (duplicate)
         private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
+        private readonly ScrapManager _scrapManager = new(); // Manages deleted/cut nodes
+        private ScrapEntry? _selectedScrapEntry;
 
         public Dialog? CurrentDialog
         {
@@ -84,10 +87,29 @@ namespace DialogEditor.ViewModels
             set => SetProperty(ref _dialogNodes, value);
         }
 
+        public ObservableCollection<ScrapEntry> ScrapEntries => _scrapManager.ScrapEntries;
+
+        public ScrapEntry? SelectedScrapEntry
+        {
+            get => _selectedScrapEntry;
+            set => SetProperty(ref _selectedScrapEntry, value);
+        }
+
+        public int ScrapCount => CurrentFileName != null ? _scrapManager.GetScrapCount(CurrentFileName) : 0;
+
+        public string ScrapTabHeader => ScrapCount > 0 ? $"Scrap ({ScrapCount})" : "Scrap";
+
         public MainViewModel()
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainViewModel initialized");
 
+            // Hook up scrap count changed event
+            _scrapManager.ScrapCountChanged += (s, count) =>
+            {
+                OnPropertyChanged(nameof(ScrapCount));
+                OnPropertyChanged(nameof(ScrapTabHeader));
+                UpdateScrapBadgeVisibility();
+            };
         }
 
 
@@ -165,6 +187,9 @@ namespace DialogEditor.ViewModels
                     {
                         PopulateDialogNodes();
                     });
+
+                    // Update scrap entries for the newly loaded file
+                    UpdateScrapForCurrentFile();
 
                     // Validate the loaded dialog
                     var validation = dialogService.ValidateStructure(CurrentDialog);
@@ -381,11 +406,12 @@ namespace DialogEditor.ViewModels
                 newNodes.Add(rootNode);
                 rootNode.IsExpanded = true; // Auto-expand root
 
-                // Issue #27 Fix: Create synthetic orphan containers saved to dialog data
-                // This ensures Parley and Aurora display identically
-                var orphanedNodes = FindOrphanedNodes(rootNode);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateDialogNodes: Found {orphanedNodes.Count} orphaned nodes");
-                CreateOrUpdateOrphanContainers(orphanedNodes, rootNode);
+                // No longer creating orphan containers - using Scrap Tab instead
+                // Orphaned nodes are now managed via the ScrapManager service
+                // Commented out old orphan container system:
+                // var orphanedNodes = FindOrphanedNodes(rootNode);
+                // UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateDialogNodes: Found {orphanedNodes.Count} orphaned nodes");
+                // CreateOrUpdateOrphanContainers(orphanedNodes, rootNode);
 
                 // 🔧 TEMPORARY DEBUGGING DISABLED - Parser workaround now provides complete conversation tree
                 // The parser workaround transfers Reply[1] and Reply[2] from Entry[1] to Entry[0] fixing the conversation flow
@@ -611,6 +637,7 @@ namespace DialogEditor.ViewModels
             CurrentFileName = null;
             HasUnsavedChanges = false;
             DialogNodes.Clear();
+            SelectedScrapEntry = null; // Clear scrap selection
             StatusMessage = "Dialog closed";
             UnifiedLogger.LogApplication(LogLevel.INFO, "Dialog file closed");
         }
@@ -929,6 +956,19 @@ namespace DialogEditor.ViewModels
                 // Continue with delete - user was warned
             }
 
+            // Collect all nodes that will be deleted (including the node and its children)
+            var nodesToDelete = new List<DialogNode>();
+            var hierarchyInfo = new Dictionary<DialogNode, (int level, DialogNode? parent)>();
+            CollectNodeAndChildren(node, nodesToDelete, hierarchyInfo);
+
+            // Add deleted nodes to scrap BEFORE deleting them
+            if (nodesToDelete.Count > 0 && CurrentFileName != null)
+            {
+                _scrapManager.AddToScrap(CurrentFileName, nodesToDelete, "deleted", hierarchyInfo);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Added {nodesToDelete.Count} deleted nodes to scrap");
+            }
+
             // CRITICAL: Recursively delete all children - even if linked elsewhere
             // This matches Aurora behavior - deleting parent removes entire subtree
             DeleteNodeRecursive(node);
@@ -936,10 +976,6 @@ namespace DialogEditor.ViewModels
             // CRITICAL: After deletion, recalculate indices AND check for orphaned links
             RecalculatePointerIndices();
             RemoveOrphanedPointers();
-
-            // CRITICAL: Immediately detect and containerize orphans BEFORE UI refresh
-            // This ensures orphan containers are in the model when user saves
-            DetectAndContainerizeOrphansSync();
 
             // Refresh tree
             RefreshTreeView();
@@ -1793,6 +1829,10 @@ namespace DialogEditor.ViewModels
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Kept cut node in list (has {hasOtherReferences} other references): {node.DisplayText}");
             }
+
+            // NOTE: Do NOT add the cut node to scrap - it's stored in _copiedNode for pasting
+            // Cut is a move operation, not a delete operation
+            // The node is intentionally detached and will be reattached on paste
 
             RefreshTreeView();
             HasUnsavedChanges = true;
@@ -2836,8 +2876,8 @@ namespace DialogEditor.ViewModels
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Detected {allOrphans.Count} orphaned nodes after deletion ({orphanedEntries.Count} entries, {orphanedReplies.Count} replies)");
 
-                // Create/update containers in the model
-                CreateOrUpdateOrphanContainersInModel(allOrphans);
+                // No longer creating orphan containers - using Scrap Tab instead
+                // CreateOrUpdateOrphanContainersInModel(allOrphans);
             }
         }
 
@@ -3221,5 +3261,237 @@ namespace DialogEditor.ViewModels
             public HashSet<string> ExpandedNodePaths { get; set; } = new();
             public string? SelectedNodePath { get; set; }
         }
+
+        #region Scrap Management
+
+        /// <summary>
+        /// Restore a node from the scrap back to the dialog
+        /// </summary>
+        public bool RestoreFromScrap(string entryId, TreeViewSafeNode? selectedParent)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"RestoreFromScrap called - entryId: {entryId}");
+
+            if (CurrentDialog == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore - no dialog loaded");
+                return false;
+            }
+
+            // Check if a parent is selected
+            if (selectedParent == null)
+            {
+                StatusMessage = "Select a location in the tree to restore to (root or parent node)";
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Restore failed - no parent selected");
+                return false;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring to parent: {selectedParent.DisplayText} (Type: {selectedParent.GetType().Name})");
+
+            var node = _scrapManager.RestoreFromScrap(entryId);
+            if (node == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "Failed to restore node from scrap manager");
+                return false;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node restored from scrap: Type={node.Type}, Text={node.Text?.Strings.Values.FirstOrDefault()}");
+
+            // Save state for undo
+            SaveUndoState("Restore from Scrap");
+
+            // Add the restored node to the appropriate list
+            if (node.Type == DialogNodeType.Entry)
+            {
+                CurrentDialog.Entries.Add(node);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to Entries list (index {CurrentDialog.Entries.Count - 1})");
+            }
+            else
+            {
+                CurrentDialog.Replies.Add(node);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to Replies list (index {CurrentDialog.Replies.Count - 1})");
+            }
+
+            // Get the index of the restored node
+            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(node, node.Type);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node index: {nodeIndex}");
+
+            // Create pointer to restored node
+            var ptr = new DialogPtr
+            {
+                Node = node,
+                Type = node.Type,
+                Index = nodeIndex,
+                IsLink = false,
+                ScriptAppears = "",
+                ConditionParams = new Dictionary<string, string>(),
+                Comment = "[Restored from scrap]",
+                Parent = CurrentDialog
+            };
+
+            // Add to root level or under selected parent
+            if (selectedParent is TreeViewRootNode)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Restoring to root level");
+                // Restore to root level - only Entries allowed
+                if (node.Type == DialogNodeType.Entry)
+                {
+                    ptr.IsStart = true;
+                    CurrentDialog.Starts.Add(ptr);
+                    StatusMessage = "Restored node to root level";
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Node restored to root level");
+                }
+                else
+                {
+                    StatusMessage = "Only NPC Entry nodes can be restored to root level";
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore PC Reply to root level");
+                    return false;
+                }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring as child of {selectedParent.DisplayText}");
+                // Restore as child of selected node
+                selectedParent.OriginalNode.Pointers.Add(ptr);
+                selectedParent.IsExpanded = true;
+                StatusMessage = $"Restored node under {selectedParent.DisplayText}";
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Node restored under {selectedParent.DisplayText}");
+            }
+
+            // Register the pointer
+            CurrentDialog.LinkRegistry.RegisterLink(ptr);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Pointer registered in LinkRegistry");
+
+            // Recalculate indices
+            RecalculatePointerIndices();
+
+            // Refresh UI
+            RefreshTreeView();
+            HasUnsavedChanges = true;
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Restore completed successfully");
+            return true;
+        }
+
+        /// <summary>
+        /// Clear all scrap entries
+        /// </summary>
+        public void ClearAllScrap()
+        {
+            _scrapManager.ClearAllScrap();
+            OnPropertyChanged(nameof(ScrapCount));
+            OnPropertyChanged(nameof(ScrapTabHeader));
+            UpdateScrapBadgeVisibility();
+        }
+
+        /// <summary>
+        /// Update scrap entries when file changes
+        /// </summary>
+        private void UpdateScrapForCurrentFile()
+        {
+            if (CurrentFileName == null) return;
+
+            var entries = _scrapManager.GetScrapForFile(CurrentFileName);
+
+            // Update the collection on UI thread
+            Dispatcher.UIThread.Post(() =>
+            {
+                ScrapEntries.Clear();
+                foreach (var entry in entries)
+                {
+                    ScrapEntries.Add(entry);
+                }
+                OnPropertyChanged(nameof(ScrapCount));
+                OnPropertyChanged(nameof(ScrapTabHeader));
+                UpdateScrapBadgeVisibility();
+            });
+        }
+
+        /// <summary>
+        /// Update the visibility of the scrap badge in the UI
+        /// </summary>
+        private void UpdateScrapBadgeVisibility()
+        {
+            // This will be handled by binding in the UI based on ScrapCount > 0
+            // The badge visibility is controlled by the IsVisible binding in XAML
+        }
+
+        /// <summary>
+        /// Find orphaned nodes after a delete/cut operation
+        /// </summary>
+        private List<DialogNode> FindOrphanedNodes()
+        {
+            if (CurrentDialog == null) return new List<DialogNode>();
+
+            var orphaned = new List<DialogNode>();
+            var reachable = new HashSet<DialogNode>();
+
+            // Mark all nodes reachable from STARTs
+            foreach (var start in CurrentDialog.Starts)
+            {
+                if (start.Node != null)
+                {
+                    MarkReachable(start.Node, reachable);
+                }
+            }
+
+            // Find all nodes not marked as reachable
+            foreach (var entry in CurrentDialog.Entries)
+            {
+                if (!reachable.Contains(entry) &&
+                    !entry.Comment?.Contains("PARLEY: Orphaned") == true)
+                {
+                    orphaned.Add(entry);
+                }
+            }
+
+            foreach (var reply in CurrentDialog.Replies)
+            {
+                if (!reachable.Contains(reply) &&
+                    !reply.Comment?.Contains("PARLEY: Orphaned") == true)
+                {
+                    orphaned.Add(reply);
+                }
+            }
+
+            return orphaned;
+        }
+
+        private void MarkReachable(DialogNode node, HashSet<DialogNode> reachable)
+        {
+            if (!reachable.Add(node)) return; // Already visited
+
+            foreach (var ptr in node.Pointers)
+            {
+                if (ptr.Node != null)
+                {
+                    MarkReachable(ptr.Node, reachable);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Collect a node and all its children recursively with hierarchy info
+        /// </summary>
+        private void CollectNodeAndChildren(DialogNode node, List<DialogNode> collected,
+            Dictionary<DialogNode, (int level, DialogNode? parent)>? hierarchyInfo = null,
+            int level = 0, DialogNode? parent = null)
+        {
+            collected.Add(node);
+
+            if (hierarchyInfo != null)
+            {
+                hierarchyInfo[node] = (level, parent);
+            }
+
+            foreach (var ptr in node.Pointers)
+            {
+                if (ptr.Node != null && !ptr.IsLink && !collected.Contains(ptr.Node))
+                {
+                    CollectNodeAndChildren(ptr.Node, collected, hierarchyInfo, level + 1, node);
+                }
+            }
+        }
+
+        #endregion
     }
 }

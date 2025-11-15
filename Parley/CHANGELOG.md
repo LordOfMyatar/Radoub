@@ -8,6 +8,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Epic 112: Scrap Tab - Node Recovery System
+
+Implemented complete scrap tab functionality replacing broken orphan container system, following Aurora's user-controlled approach.
+
+### Added
+- **Issue #112**: Scrap Tab for deleted/cut node recovery
+  - Stores deleted nodes in `~/Parley/scrap.json` instead of polluting DLG files
+  - Theme-aware badge showing scrap count with system accent color
+  - Node type labels: "NPC Entry", "PC Reply", "NPC Reply" for clarity
+  - Hierarchy information showing parent relationships and nesting level
+  - Restore functionality with parent selection (root or specific node)
+  - Auto-cleanup of entries older than 30 days
+  - Per-file scrap tracking with sanitized paths
+  - Timestamp display ("just now", "5m ago", "2h ago", etc.)
+
+- **View Menu Enhancements**:
+  - "Open Log Folder" menu item (View → Logging)
+  - "Export Logs for Support" with ZIP creation and folder open prompt
+  - Reorganized debug-related items into "Logging" submenu
+
+- **GitHub Issue #113**: Created issue for future log level filtering in Debug tab
+
+### Fixed
+- **Issue #112**: Scrap deserialization uint overflow
+  - Changed `GetInt32()` to `GetUInt32()` for Delay and QuestEntry fields
+  - Fixes "One of the identified items was in an invalid format" error
+
+- **Font Size Inheritance**: Scrap tab header now properly inherits global font size
+  - Explicit `FontSize="{DynamicResource GlobalFontSize}"` binding on TabItem element
+  - "Scrap" label inherits from parent TabItem
+  - Badge counter remains fixed at 10pt for readability
+
+- **File Close Behavior**: Properties and scrap panels now clear when closing a file
+  - `SelectedScrapEntry` cleared in `CloseDialog()` method
+
+### Changed
+- Scrap storage location: `~/Parley/scrap.json` (consistent with other settings)
+- Comprehensive logging throughout ScrapManager for diagnostics
+
 ---
 
 ## [0.1.8-alpha] - 2025-11-15
