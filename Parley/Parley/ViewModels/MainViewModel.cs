@@ -2543,24 +2543,36 @@ namespace DialogEditor.ViewModels
             var existingNpcCategory = CurrentDialog.Replies
                 .FirstOrDefault(r => r.Comment?.Contains("PARLEY: Orphaned NPC entries category") == true);
 
-            // If no orphans exist but containers already exist with pointers, preserve them
-            // This handles the case where DetectAndContainerizeOrphansSync() already ran
+            // If no orphans exist, clear any existing containers
             if (orphanedNodesFiltered.Count == 0)
             {
-                if (existingRootContainer != null)
+                bool clearedContainers = false;
+
+                if (existingRootContainer != null && existingRootContainer.Pointers.Count > 0)
                 {
-                    // Only clear if container exists but is truly empty
-                    // Don't clear if orphans were already containerized by sync method
-                    if (existingRootContainer.Pointers.Count == 0)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - container already empty");
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                            $"No orphans found but container has {existingRootContainer.Pointers.Count} pointers - preserving (likely from sync detection)");
-                    }
+                    existingRootContainer.Pointers.Clear();
+                    clearedContainers = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - cleared root container pointers");
                 }
+
+                if (existingNpcCategory != null && existingNpcCategory.Pointers.Count > 0)
+                {
+                    existingNpcCategory.Pointers.Clear();
+                    clearedContainers = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - cleared NPC category container pointers");
+                }
+
+                if (clearedContainers)
+                {
+                    // Recalculate indices after clearing pointers
+                    RecalculatePointerIndices();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared orphan containers after nodes were re-linked (Cut/Paste operation)");
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - containers already empty");
+                }
+
                 return;
             }
 
