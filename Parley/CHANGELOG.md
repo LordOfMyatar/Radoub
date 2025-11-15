@@ -8,6 +8,124 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Epic 112: Scrap Tab - Node Recovery System
+
+Implemented complete scrap tab functionality replacing broken orphan container system, following Aurora's user-controlled approach.
+
+### Added
+- **Issue #112**: Scrap Tab for deleted/cut node recovery
+  - Stores deleted nodes in `~/Parley/scrap.json` instead of polluting DLG files
+  - Theme-aware badge showing scrap count with system accent color
+  - Node type labels: "NPC Entry", "PC Reply", "NPC Reply" for clarity
+  - Hierarchy information showing parent relationships and nesting level
+  - Restore functionality with parent selection (root or specific node)
+  - Auto-cleanup of entries older than 30 days
+  - Per-file scrap tracking with sanitized paths
+  - Timestamp display ("just now", "5m ago", "2h ago", etc.)
+
+- **View Menu Enhancements**:
+  - "Open Log Folder" menu item (View → Logging)
+  - "Export Logs for Support" with ZIP creation and folder open prompt
+  - Reorganized debug-related items into "Logging" submenu
+
+- **GitHub Issue #113**: Created issue for future log level filtering in Debug tab
+
+### Fixed
+- **Issue #112**: Scrap deserialization uint overflow
+  - Changed `GetInt32()` to `GetUInt32()` for Delay and QuestEntry fields
+  - Fixes "One of the identified items was in an invalid format" error
+
+- **Font Size Inheritance**: Scrap tab header now properly inherits global font size
+  - Explicit `FontSize="{DynamicResource GlobalFontSize}"` binding on TabItem element
+  - "Scrap" label inherits from parent TabItem
+  - Badge counter remains fixed at 10pt for readability
+
+- **File Close Behavior**: Properties and scrap panels now clear when closing a file
+  - `SelectedScrapEntry` cleared in `CloseDialog()` method
+
+### Changed
+- Scrap storage location: `~/Parley/scrap.json` (consistent with other settings)
+- Comprehensive logging throughout ScrapManager for diagnostics
+
+---
+
+## [0.1.8-alpha] - 2025-11-15
+**Branch**: `parley/feat/epic-2-ui-ux` | **PR**: #107
+
+### Epic 2: UI/UX Enhancements (In Progress)
+
+Comprehensive UI/UX improvements including font customization, layout redesign, enhanced themes, autosave enhancements, and visual feedback improvements.
+
+**Note**: Epic 2 contains many work items. This release covers initial font customization and layout improvements. Additional Epic 2 work continues in subsequent releases.
+
+### Added
+- **Issue #58**: Font sizing now works globally across all UI elements
+  - Global styles in App.axaml apply font size to all controls
+  - Dynamic resource binding for instant font size updates
+  - Font size changes apply immediately from Settings window slider
+  - Font size changes apply from View menu options
+  - Persists across sessions via SettingsService
+
+- **Issue #59**: Font selection now available for custom UI fonts
+  - Font family dropdown in Settings → Appearance with live preview
+  - Detects and lists available system fonts
+  - "System Default" option for platform-specific defaults
+  - Real-time font preview showing sample text
+  - Global application to all UI elements via dynamic resources
+  - Persists across sessions via SettingsService
+  - Graceful fallback to system default if font unavailable
+
+- **Issue #108**: Layout redesign with 70/30 split and tabbed properties
+  - Implemented Mockup 1 "Compact Properties Tabs" design
+  - Main workspace (tree + text) gets 70% width, properties 30%
+  - Tree to text vertical ratio: 2:1
+  - Replaced Expander-based properties with TabControl for cleaner UI
+  - Scripts and Node Properties now in separate tabs (right panel)
+  - Debug output moved to third tab in properties panel
+  - Type field (PC/NPC) converted to display-only TextBlock for font scaling
+  - All layouts use proportional star sizing for accessibility (no hardcoded sizes)
+  - DRAGON comments added to protect orphan handling and node relationship code
+  - Clear button added to Debug tab with performance improvements
+
+### Fixed
+- **Font sizing improvements**: Removed all hardcoded font sizes
+  - Module info bar now respects global font size
+  - Debug output panel scales with font settings
+  - Script preview windows use dynamic font sizes
+  - Dialog tree headers scale properly
+  - Popup windows (Script Browser, Parameter Browser) scale correctly
+  - Button padding adjusts with font size for better touch targets
+  - All TextBlocks now inherit from global font settings
+- **UI overlap issues**: Fixed button overlapping in parameter sections
+  - Corrected Grid.Row indices for suggest buttons (was 3, should be 2)
+  - Increased popup window widths to accommodate larger fonts
+  - Parameter Browser: 700→900 width, MinWidth 600→800
+  - Script Browser: 900→1000 width, MinWidth 700→900
+
+### Infrastructure Added
+- **Layout Feature Flag**: Added UseNewLayout setting infrastructure for future layout experiments
+- **UI Converters**: Added BoolToTextWrappingConverter and NotNullConverter for enhanced UI binding
+- **Testing Tools Enhancements**:
+  - Home directory expansion support (C:~\ and ~/ notation)
+  - Path sanitization in test output for privacy
+  - Updated test suite configuration (replaced missing files)
+  - All automated tests passing (146 unit tests, 5 round-trip tests)
+
+### Known Issues
+- **Issue #110**: Log level reclassification needed (INFO too verbose)
+- **Issue #111**: Second delete of node with parent/child links causes nodes to disappear
+
+### Planned Features (Remaining Epic 2 Work)
+- Flow chart view tabbed interface (#108 continued)
+- Inline tree editing with preference setting (#108 continued)
+- Panel size/position persistence (#108 continued)
+- Enhanced theme system with plugin architecture (#60)
+- Color-blind accessible themes (#61)
+- Rainbow brackets for nesting visualization (#70)
+- Autosave improvements (#62)
+- Scrollbar usability enhancements (#63)
+- Additional UX polish items
+
 ---
 
 ## [0.1.8-alpha] - 2025-11-15
