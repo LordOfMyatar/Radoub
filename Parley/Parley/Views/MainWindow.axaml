@@ -452,14 +452,13 @@
                         <StackPanel x:Name="NodePropertiesPanel">
                             <TextBlock Text="Node Properties" FontWeight="Bold" Margin="0,0,0,10"/>
 
-                            <!-- Basic Node Info -->
-                            <!-- DRAGON: NodeTypeTextBox x:Name must remain for code-behind references -->
-                            <TextBlock Text="Type:" FontWeight="Bold" FontSize="11"/>
-                            <Border x:Name="NodeTypeTextBox" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                    BorderThickness="1" Padding="5,2" Margin="0,0,0,5"
-                                    Background="{DynamicResource SystemControlBackgroundAltMediumLowBrush}">
-                                <TextBlock x:Name="NodeTypeTextBlock" Text="" FontSize="11" TextWrapping="Wrap"/>
-                            </Border>
+                            <!-- Basic Node Info (display only) -->
+                            <!-- DRAGON: NodeTypeTextBlock x:Name must remain for code-behind references -->
+                            <TextBlock x:Name="NodeTypeTextBlock" Text=""
+                                       FontStyle="Italic"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Margin="0,0,0,10"
+                                       TextWrapping="Wrap"/>
 
                             <!-- Animation and Audio -->
                             <Separator Margin="0,5"/>
