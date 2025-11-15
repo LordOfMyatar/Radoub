@@ -2543,34 +2543,58 @@ namespace DialogEditor.ViewModels
             var existingNpcCategory = CurrentDialog.Replies
                 .FirstOrDefault(r => r.Comment?.Contains("PARLEY: Orphaned NPC entries category") == true);
 
-            // If no orphans exist, clear any existing containers
+            // If no orphans exist, remove containers entirely
             if (orphanedNodesFiltered.Count == 0)
             {
-                bool clearedContainers = false;
+                bool removedContainers = false;
 
-                if (existingRootContainer != null && existingRootContainer.Pointers.Count > 0)
+                // Remove START pointer to orphan container
+                var orphanStart = CurrentDialog.Starts
+                    .FirstOrDefault(s => s.Comment?.Contains("Orphan container") == true);
+                if (orphanStart != null)
                 {
-                    existingRootContainer.Pointers.Clear();
-                    clearedContainers = true;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - cleared root container pointers");
+                    CurrentDialog.Starts.Remove(orphanStart);
+                    CurrentDialog.LinkRegistry.UnregisterLink(orphanStart);
+                    removedContainers = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed orphan START pointer");
                 }
 
-                if (existingNpcCategory != null && existingNpcCategory.Pointers.Count > 0)
+                // Remove NPC category reply and its link from root container
+                if (existingNpcCategory != null)
                 {
-                    existingNpcCategory.Pointers.Clear();
-                    clearedContainers = true;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - cleared NPC category container pointers");
+                    // Remove pointer from root container to NPC category
+                    if (existingRootContainer != null)
+                    {
+                        var categoryPtr = existingRootContainer.Pointers.FirstOrDefault(p => p.Node == existingNpcCategory);
+                        if (categoryPtr != null)
+                        {
+                            existingRootContainer.Pointers.Remove(categoryPtr);
+                            CurrentDialog.LinkRegistry.UnregisterLink(categoryPtr);
+                        }
+                    }
+
+                    CurrentDialog.Replies.Remove(existingNpcCategory);
+                    removedContainers = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed NPC category container");
                 }
 
-                if (clearedContainers)
+                // Remove root container
+                if (existingRootContainer != null)
                 {
-                    // Recalculate indices after clearing pointers
+                    CurrentDialog.Entries.Remove(existingRootContainer);
+                    removedContainers = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed root orphan container");
+                }
+
+                if (removedContainers)
+                {
+                    // Recalculate indices after removal
                     RecalculatePointerIndices();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared orphan containers after nodes were re-linked (Cut/Paste operation)");
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Removed empty orphan containers after nodes were re-linked");
                 }
                 else
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - containers already empty");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "No orphans found - no containers to remove");
                 }
 
                 return;
@@ -2590,12 +2614,17 @@ namespace DialogEditor.ViewModels
             }
 
             // Create or reuse root container (NPC Entry)
+            // ALWAYS move to end of Entries list to prevent game evaluation
             DialogNode rootContainer;
             if (existingRootContainer != null)
             {
                 rootContainer = existingRootContainer;
                 rootContainer.Pointers.Clear(); // Clear old pointers
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Reusing existing orphan root container");
+
+                // Move to end of Entries list
+                CurrentDialog.Entries.Remove(rootContainer);
+                CurrentDialog.Entries.Add(rootContainer);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Reusing existing orphan root container (moved to end)");
             }
             else
             {
@@ -2608,11 +2637,12 @@ namespace DialogEditor.ViewModels
                     Parent = CurrentDialog
                 };
                 rootContainer.Text.Add(0, "!!! Orphaned Nodes");
-                CurrentDialog.Entries.Add(rootContainer);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Created new orphan root container");
+                CurrentDialog.Entries.Add(rootContainer); // Added at end automatically
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Created new orphan root container at end");
             }
 
             // Create or reuse PC Reply category node under root container (for orphaned NPC Entries)
+            // ALWAYS move to end of Replies list to prevent game evaluation
             if (orphanedEntries.Count > 0)
             {
                 DialogNode npcCategoryReply;
@@ -2620,7 +2650,11 @@ namespace DialogEditor.ViewModels
                 {
                     npcCategoryReply = existingNpcCategory;
                     npcCategoryReply.Pointers.Clear(); // Clear old pointers
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Reusing existing NPC category container");
+
+                    // Move to end of Replies list
+                    CurrentDialog.Replies.Remove(npcCategoryReply);
+                    CurrentDialog.Replies.Add(npcCategoryReply);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Reusing existing NPC category container (moved to end)");
                 }
                 else
                 {
@@ -2633,8 +2667,8 @@ namespace DialogEditor.ViewModels
                         Parent = CurrentDialog
                     };
                     npcCategoryReply.Text.Add(0, "!!! Orphaned NPC Nodes");
-                    CurrentDialog.Replies.Add(npcCategoryReply);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Created new NPC category container");
+                    CurrentDialog.Replies.Add(npcCategoryReply); // Added at end automatically
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Created new NPC category container at end");
                 }
 
                 // Point to all orphaned entries (NOT as links - show full subtree)
