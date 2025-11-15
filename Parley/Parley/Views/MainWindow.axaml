@@ -664,6 +664,7 @@
                                       Foreground="Gray" FontSize="11" Margin="10,0,0,0"/>
                         </StackPanel>
 
+
                         <!-- Debug ListBox (virtualized by default for performance) -->
                         <Border BorderBrush="Gray" BorderThickness="1" Padding="5">
                             <ListBox x:Name="DebugListBox"

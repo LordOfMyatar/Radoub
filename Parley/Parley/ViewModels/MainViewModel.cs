@@ -977,6 +977,10 @@ namespace DialogEditor.ViewModels
             RecalculatePointerIndices();
             RemoveOrphanedPointers();
 
+            // CRITICAL: Immediately detect and containerize orphans BEFORE UI refresh
+            // This ensures orphan containers are in the model when user saves
+            DetectAndContainerizeOrphansSync();
+
             // Refresh tree
             RefreshTreeView();
 
