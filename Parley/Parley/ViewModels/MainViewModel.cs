@@ -3317,13 +3317,15 @@ namespace DialogEditor.ViewModels
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node retrieved from scrap: Type={node.Type}, Text={node.Text?.Strings.Values.FirstOrDefault()}");
 
-            // Validate restoration target BEFORE making any changes
+            // Validate restoration target BEFORE making ANY changes
             if (selectedParent is TreeViewRootNode && node.Type != DialogNodeType.Entry)
             {
                 StatusMessage = "Only NPC Entry nodes can be restored to root level";
                 UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore PC Reply to root level");
                 return false;
             }
+
+            // ALL validations passed - now make the changes
 
             // Save state for undo
             SaveUndoState("Restore from Scrap");
@@ -3361,7 +3363,7 @@ namespace DialogEditor.ViewModels
             if (selectedParent is TreeViewRootNode)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "Restoring to root level");
-                // We already validated this is an Entry node
+                // We already validated this is an Entry node above
                 ptr.IsStart = true;
                 CurrentDialog.Starts.Add(ptr);
                 StatusMessage = "Restored node to root level";

@@ -49,7 +49,9 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
 - **Scrap Restore Bug**: Fixed issue where scrap entries were deleted even when restore failed
   - Separated `GetNodeFromScrap` (retrieves without removing) from `RemoveFromScrap`
   - Only removes from scrap after successful restoration
-  - Validates restore target (e.g., PC Reply to root) before making changes
+  - Validates restore target (e.g., PC Reply to root) before making ANY changes
+  - No dialog modifications occur if validation fails (no orphaned nodes)
+  - Clear user feedback when no parent selected or invalid restore target
   - Prevents loss of scrap entries when user hasn't selected a valid parent
 
 ### Next Steps
