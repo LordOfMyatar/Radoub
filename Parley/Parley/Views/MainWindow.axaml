@@ -230,6 +230,7 @@
                     <TextBlock DockPanel.Dock="Top" Text="Node Text" FontWeight="Bold" Margin="0,0,0,5"/>
 
                     <!-- Speaker field at top of text panel -->
+                    <!-- DRAGON: Do not modify x:Name attributes or OnFieldLostFocus handler -->
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -253,6 +254,7 @@
                                 MinWidth="70" Padding="5,0" Click="OnBrowseCreatureClick"/>
                     </Grid>
 
+                    <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <TextBox x:Name="TextTextBox" AcceptsReturn="True"
                             TextWrapping="Wrap"
                             LostFocus="OnFieldLostFocus"
