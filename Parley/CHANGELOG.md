@@ -45,6 +45,13 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
   - MainViewModel reduced from 3,501 to ~3,000 lines (14% reduction)
   - Clear separation of concerns achieved
 
+### Fixed
+- **Scrap Restore Bug**: Fixed issue where scrap entries were deleted even when restore failed
+  - Separated `GetNodeFromScrap` (retrieves without removing) from `RemoveFromScrap`
+  - Only removes from scrap after successful restoration
+  - Validates restore target (e.g., PC Reply to root) before making changes
+  - Prevents loss of scrap entries when user hasn't selected a valid parent
+
 ### Next Steps
 - Complete method migration to services
 - Extract tree management to DialogTreeService

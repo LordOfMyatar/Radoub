@@ -3306,14 +3306,24 @@ namespace DialogEditor.ViewModels
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring to parent: {selectedParent.DisplayText} (Type: {selectedParent.GetType().Name})");
 
-            var node = _scrapManager.RestoreFromScrap(entryId);
+            // Get the node from scrap WITHOUT removing it yet
+            var node = _scrapManager.GetNodeFromScrap(entryId);
             if (node == null)
             {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "Failed to restore node from scrap manager");
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "Failed to retrieve node from scrap manager");
+                StatusMessage = "Failed to retrieve node from scrap";
                 return false;
             }
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node restored from scrap: Type={node.Type}, Text={node.Text?.Strings.Values.FirstOrDefault()}");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node retrieved from scrap: Type={node.Type}, Text={node.Text?.Strings.Values.FirstOrDefault()}");
+
+            // Validate restoration target BEFORE making any changes
+            if (selectedParent is TreeViewRootNode && node.Type != DialogNodeType.Entry)
+            {
+                StatusMessage = "Only NPC Entry nodes can be restored to root level";
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore PC Reply to root level");
+                return false;
+            }
 
             // Save state for undo
             SaveUndoState("Restore from Scrap");
@@ -3351,20 +3361,11 @@ namespace DialogEditor.ViewModels
             if (selectedParent is TreeViewRootNode)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "Restoring to root level");
-                // Restore to root level - only Entries allowed
-                if (node.Type == DialogNodeType.Entry)
-                {
-                    ptr.IsStart = true;
-                    CurrentDialog.Starts.Add(ptr);
-                    StatusMessage = "Restored node to root level";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Node restored to root level");
-                }
-                else
-                {
-                    StatusMessage = "Only NPC Entry nodes can be restored to root level";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore PC Reply to root level");
-                    return false;
-                }
+                // We already validated this is an Entry node
+                ptr.IsStart = true;
+                CurrentDialog.Starts.Add(ptr);
+                StatusMessage = "Restored node to root level";
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Node restored to root level");
             }
             else
             {
@@ -3386,6 +3387,9 @@ namespace DialogEditor.ViewModels
             // Refresh UI
             RefreshTreeView();
             HasUnsavedChanges = true;
+
+            // Only remove from scrap after successful restoration
+            _scrapManager.RemoveFromScrap(entryId);
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "Restore completed successfully");
             return true;
