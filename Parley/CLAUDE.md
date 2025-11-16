@@ -42,11 +42,12 @@ Check recent commits and GitHub issues for active priorities.
 - **TestingTools/** - All test projects and debugging tools
 
 ### Key Components
-- `Parley/Parsers/DialogParser.cs` - Core DLG parser with Aurora compatibility
+- `Parley/Parsers/` - DLG file parsing (DialogParser delegates to DialogBuilder/DialogWriter)
 - `Parley/Models/` - Dialog, DialogNode, DialogPtr data structures
-- `Parley/ViewModels/MainViewModel.cs` - MVVM pattern with deletion logic and **orphan handling**
+- `Parley/ViewModels/MainViewModel.cs` - **ACTIVELY REFACTORING - DO NOT ADD NEW LOGIC HERE**
 - `Parley/Handlers/` - UI event handlers (refactored from MainWindow for maintainability)
-- `Parley/Services/` - Sound, Script, Settings services
+- `Parley/Services/` - Sound, Script, Settings, File operations (DialogFileService)
+- `Parley/Utils/` - DebugLogger (handles log filtering), other utilities
 
 ### Critical File Integrity Features
 **Orphan Node Handling** - When nodes become unreachable from START points (e.g., deleting a parent node), Parley moves them to a special container instead of deleting them. This prevents data loss in complex dialog structures.
@@ -307,8 +308,41 @@ git push origin parley/feat/my-feature
 
 ## Architecture Notes
 
-### MainWindow Refactoring (October 2025)
-**IMPORTANT: MainWindow.xaml.cs has been refactored to ~370 lines (down from 1736 lines)**
+### MainViewModel Refactoring (Issue #99 - IN PROGRESS)
+**CRITICAL: MainViewModel is being actively refactored - DO NOT add new logic here**
+
+**Current Status**:
+- MainViewModel.cs is ~3,500+ lines and needs to be broken down
+- Goal: Extract services and managers into separate classes
+- Pattern: Services handle business logic, ViewModel coordinates UI state
+
+**Refactoring Progress**:
+- ✅ Phase 1: File operations → DialogFileService
+- ✅ Phase 2: Undo/redo → UndoManager
+- ✅ Phase 3: Clipboard → DialogClipboardService
+- ✅ Phase 4: Scrap/delete → ScrapManager
+- 🔄 Phase 5: Node editing → DialogEditorService (in progress)
+- ⏳ Phase 6-8: Tree operations, search, validation (pending)
+
+**RULES FOR NEW FEATURES**:
+1. **DO NOT add new methods/logic to MainViewModel**
+2. **DO** create new service classes in `Parley/Services/`
+3. **DO** create new managers in appropriate locations
+4. **DO** keep UI coordination minimal in ViewModel
+5. **ASK** user if unsure where new logic should go
+
+**Example Pattern**:
+```csharp
+// ❌ BAD - Adding logic to MainViewModel
+public void DoComplexThing() { /* 100 lines */ }
+
+// ✅ GOOD - Extract to service
+private readonly ComplexThingService _complexService = new();
+public void DoComplexThing() => _complexService.Execute(CurrentDialog);
+```
+
+### MainWindow Refactoring (October 2024 - COMPLETE)
+**MainWindow.xaml.cs refactored to ~370 lines (down from 1736 lines)**
 
 Handler classes in `Parley/Handlers/`:
 - **FileOperationsHandler** - Open, save, recent files operations
