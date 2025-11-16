@@ -835,31 +835,25 @@ namespace DialogEditor.ViewModels
             // Save state for undo
             SaveUndoState("Add Smart Node");
 
-            // Determine what type of node to create based on selection
-            if (selectedNode == null || selectedNode is TreeViewRootNode)
-            {
-                // Root level → Create Entry
-                AddEntryNode(selectedNode);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Smart Add: Created Entry at root");
-            }
-            else
-            {
-                var parentNode = selectedNode.OriginalNode;
+            // Get the parent node and pointer
+            DialogNode? parentNode = null;
+            DialogPtr? parentPtr = null;
 
-                if (parentNode.Type == DialogNodeType.Entry)
-                {
-                    // Entry → PC Reply
-                    AddPCReplyNode(selectedNode);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Smart Add: Created Reply after Entry");
-                }
-                else // Reply node
-                {
-                    // Reply → Entry (NPC response)
-                    AddEntryNode(selectedNode);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Smart Add: Created Entry after Reply");
-                }
+            if (selectedNode != null && !(selectedNode is TreeViewRootNode))
+            {
+                parentNode = selectedNode.OriginalNode;
+                // Note: parentPtr would be needed if we're adding under a link, but for now passing null
             }
 
+            // Delegate to service
+            var newNode = _editorService.AddSmartNode(CurrentDialog, parentNode, parentPtr);
+
+            // Refresh the tree
+            RefreshTreeView(expandedNodes: GetExpandedNodePaths());
+
+            // Update status message
+            StatusMessage = $"Added new {newNode.Type} node";
+            HasUnsavedChanges = true;
         }
 
         public void AddEntryNode(TreeViewSafeNode? parentNode = null)
@@ -869,71 +863,32 @@ namespace DialogEditor.ViewModels
             // Save state for undo
             SaveUndoState("Add Entry Node");
 
-            var newEntry = new DialogNode
+            // Get the parent dialog node
+            DialogNode? parentDialogNode = null;
+            DialogPtr? parentPtr = null;
+
+            if (parentNode != null && !(parentNode is TreeViewRootNode))
             {
-                Type = DialogNodeType.Entry,
-                Text = new LocString(),
-                Speaker = "",
-                Comment = "",
-                Sound = "",
-                ScriptAction = "",
-                Delay = uint.MaxValue,
-                Animation = DialogAnimation.Default,
-                AnimationLoop = false,
-                Quest = "",
-                QuestEntry = uint.MaxValue,
-                Pointers = new List<DialogPtr>(),
-                ActionParams = new Dictionary<string, string>()
-            };
+                parentDialogNode = parentNode.OriginalNode;
+                // Expand parent in tree view
+                parentNode.IsExpanded = true;
+            }
 
-            newEntry.Text.Add(0, ""); // Empty text - user will type immediately
+            // Delegate to service
+            var newEntry = _editorService.AddEntryNode(CurrentDialog, parentDialogNode, parentPtr);
 
-            // Add to dialog's entry list
-            CurrentDialog.Entries.Add(newEntry);
+            // Refresh tree display
+            RefreshTreeView(expandedNodes: GetExpandedNodePaths());
 
-            // Create pointer for this entry
-            var entryPtr = new DialogPtr
+            // Update status message
+            if (parentDialogNode == null)
             {
-                Node = newEntry,
-                Type = DialogNodeType.Entry,
-                Index = (uint)(CurrentDialog.Entries.Count - 1),
-                IsLink = false,
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = ""
-            };
-
-            if (parentNode == null || parentNode is TreeViewRootNode)
-            {
-                // Root level - add to starting list
-                entryPtr.IsStart = true;
-                CurrentDialog.Starts.Add(entryPtr);
-                StatusMessage = $"Added new Entry node at root level";
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Created new Entry node at root");
+                StatusMessage = "Added new Entry node at root level";
             }
             else
             {
-                // Child of Reply node - add to parent's EntriesList
-                var parentDialogNode = parentNode.OriginalNode;
-
-                // Validate: Entries should only come after PC Replies
-                if (parentDialogNode.Type == DialogNodeType.Reply && string.IsNullOrEmpty(parentDialogNode.Speaker))
-                {
-                    parentDialogNode.Pointers.Add(entryPtr);
-                    parentNode.IsExpanded = true;
-                    StatusMessage = $"Added new Entry node after Reply";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Created new Entry node as child of Reply");
-                }
-                else
-                {
-                    StatusMessage = "Cannot add Entry after Entry node. Use PC Reply instead.";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Invalid: Entry after Entry node");
-                    return;
-                }
+                StatusMessage = "Added new Entry node after Reply";
             }
-
-            // Refresh tree display
-            RefreshTreeView();
 
             HasUnsavedChanges = true;
         }
@@ -942,56 +897,26 @@ namespace DialogEditor.ViewModels
 
         public void AddPCReplyNode(TreeViewSafeNode parent)
         {
-            if (CurrentDialog == null) return;
+            if (CurrentDialog == null || parent == null) return;
 
             // Save state for undo
             SaveUndoState("Add PC Reply");
 
-            var newReply = new DialogNode
-            {
-                Type = DialogNodeType.Reply,
-                Text = new LocString(),
-                Speaker = "",
-                Comment = "",
-                Sound = "",
-                ScriptAction = "",
-                Delay = uint.MaxValue,
-                Animation = DialogAnimation.Default,
-                AnimationLoop = false,
-                Quest = "",
-                QuestEntry = uint.MaxValue,
-                Pointers = new List<DialogPtr>(),
-                ActionParams = new Dictionary<string, string>()
-            };
+            // Get the parent dialog node
+            var parentDialogNode = parent.OriginalNode;
+            if (parentDialogNode == null) return;
 
-            newReply.Text.Add(0, ""); // Empty text - user will type immediately
-
-            // Add to parent's underlying DialogNode
-            var newPtr = new DialogPtr
-            {
-                Node = newReply,
-                Type = DialogNodeType.Reply,
-                Index = (uint)CurrentDialog.Replies.Count, // Temporary index
-                IsLink = false,
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = ""
-            };
-
-            parent.OriginalNode.Pointers.Add(newPtr);
-
-            // Add to dialog's reply list
-            CurrentDialog.Replies.Add(newReply);
+            // Delegate to service
+            var newReply = _editorService.AddPCReplyNode(CurrentDialog, parentDialogNode, null);
 
             // Auto-expand parent node before refresh
             parent.IsExpanded = true;
 
             // Refresh tree display
-            RefreshTreeView();
+            RefreshTreeView(expandedNodes: GetExpandedNodePaths());
 
             HasUnsavedChanges = true;
-            StatusMessage = $"Added new PC Reply node";
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Created new PC Reply node");
+            StatusMessage = "Added new PC Reply node";
         }
 
         public void DeleteNode(TreeViewSafeNode nodeToDelete)
@@ -1238,15 +1163,17 @@ namespace DialogEditor.ViewModels
             if (CurrentDialog == null) return;
             if (nodeToMove == null || nodeToMove is TreeViewRootNode) return;
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MoveNodeUp: node={nodeToMove.DisplayText}");
             var node = nodeToMove.OriginalNode;
+
+            // Save state for undo
+            SaveUndoState("Move Node Up");
 
             // Check if root-level node (in StartingList)
             int startIndex = CurrentDialog.Starts.FindIndex(s => s.Node == node);
 
             if (startIndex != -1)
             {
-                // Root-level node
+                // Root-level node - handle directly in ViewModel
                 if (startIndex == 0)
                 {
                     StatusMessage = "Node is already first";
@@ -1260,25 +1187,19 @@ namespace DialogEditor.ViewModels
                 HasUnsavedChanges = true;
                 RefreshTreeViewAndSelectNode(node);
                 StatusMessage = $"Moved '{node.Text?.GetDefault()}' up";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Moved root node up: {startIndex} → {startIndex - 1}");
                 return;
             }
 
-            // Child node - find parent and reorder within parent's Pointers
+            // Child node - find parent and use service
             DialogNode? parent = FindParentNode(node);
             if (parent != null)
             {
-                int ptrIndex = parent.Pointers.FindIndex(p => p.Node == node);
-                if (ptrIndex > 0)
+                bool moved = _editorService.MoveNodeUp(parent, node);
+                if (moved)
                 {
-                    var temp = parent.Pointers[ptrIndex];
-                    parent.Pointers[ptrIndex] = parent.Pointers[ptrIndex - 1];
-                    parent.Pointers[ptrIndex - 1] = temp;
-
                     HasUnsavedChanges = true;
                     RefreshTreeViewAndSelectNode(node);
                     StatusMessage = $"Moved '{node.Text?.GetDefault()}' up";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Moved child node up in parent '{parent.Text?.GetDefault()}': {ptrIndex} → {ptrIndex - 1}");
                 }
                 else
                 {
@@ -1288,7 +1209,6 @@ namespace DialogEditor.ViewModels
             else
             {
                 StatusMessage = "Cannot find parent node";
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"No parent found for '{node.Text?.GetDefault()}'");
             }
         }
 
@@ -1297,15 +1217,17 @@ namespace DialogEditor.ViewModels
             if (CurrentDialog == null) return;
             if (nodeToMove == null || nodeToMove is TreeViewRootNode) return;
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MoveNodeDown: node={nodeToMove.DisplayText}");
             var node = nodeToMove.OriginalNode;
+
+            // Save state for undo
+            SaveUndoState("Move Node Down");
 
             // Check if root-level node (in StartingList)
             int startIndex = CurrentDialog.Starts.FindIndex(s => s.Node == node);
 
             if (startIndex != -1)
             {
-                // Root-level node
+                // Root-level node - handle directly in ViewModel
                 if (startIndex >= CurrentDialog.Starts.Count - 1)
                 {
                     StatusMessage = "Node is already last";
@@ -1319,25 +1241,19 @@ namespace DialogEditor.ViewModels
                 HasUnsavedChanges = true;
                 RefreshTreeViewAndSelectNode(node);
                 StatusMessage = $"Moved '{node.Text?.GetDefault()}' down";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Moved root node down: {startIndex} → {startIndex + 1}");
                 return;
             }
 
-            // Child node - find parent and reorder within parent's Pointers
+            // Child node - find parent and use service
             DialogNode? parent = FindParentNode(node);
             if (parent != null)
             {
-                int ptrIndex = parent.Pointers.FindIndex(p => p.Node == node);
-                if (ptrIndex >= 0 && ptrIndex < parent.Pointers.Count - 1)
+                bool moved = _editorService.MoveNodeDown(parent, node);
+                if (moved)
                 {
-                    var temp = parent.Pointers[ptrIndex];
-                    parent.Pointers[ptrIndex] = parent.Pointers[ptrIndex + 1];
-                    parent.Pointers[ptrIndex + 1] = temp;
-
                     HasUnsavedChanges = true;
                     RefreshTreeViewAndSelectNode(node);
                     StatusMessage = $"Moved '{node.Text?.GetDefault()}' down";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Moved child node down in parent '{parent.Text?.GetDefault()}': {ptrIndex} → {ptrIndex + 1}");
                 }
                 else
                 {
@@ -1347,7 +1263,6 @@ namespace DialogEditor.ViewModels
             else
             {
                 StatusMessage = "Cannot find parent node";
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"No parent found for '{node.Text?.GetDefault()}'");
             }
         }
 
