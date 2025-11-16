@@ -26,6 +26,15 @@ Comprehensive logging system improvements including log level filtering, structu
   - 20 comprehensive tests covering all sanitization scenarios
   - 100% backward compatible with existing manual sanitization calls
 
+- **Issue #89**: Settings files now use `~` for portability and privacy
+  - ParleySettings.json stores paths with `~` instead of full home directory
+  - Automatically expands `~` when loading settings
+  - Automatically contracts paths when saving settings
+  - Makes config files safe to share for support without exposing usernames
+  - Portable across different user accounts and machines
+  - 9 comprehensive tests for path expansion/contraction
+  - Fully backward compatible with existing settings files
+
 ### Fixed
 - **Privacy Improvement**: UnifiedLogger now automatically sanitizes all logged paths
   - Replaces user home directory with `~` in all log messages

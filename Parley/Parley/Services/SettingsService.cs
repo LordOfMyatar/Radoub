@@ -386,27 +386,27 @@ namespace DialogEditor.Services
                     
                     if (settings != null)
                     {
-                        _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
+                        _recentFiles = ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>());
                         _maxRecentFiles = Math.Max(1, Math.Min(20, settings.MaxRecentFiles));
-                        
+
                         // Load window settings
                         _windowLeft = settings.WindowLeft;
                         _windowTop = settings.WindowTop;
                         _windowWidth = Math.Max(400, settings.WindowWidth);
                         _windowHeight = Math.Max(300, settings.WindowHeight);
                         _windowMaximized = settings.WindowMaximized;
-                        
+
                         // Load UI settings
                         _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
                         _fontFamily = settings.FontFamily ?? "";
                         _isDarkTheme = settings.IsDarkTheme;
                         _useNewLayout = settings.UseNewLayout;
-                        
-                        // Load game settings
-                        _neverwinterNightsPath = settings.NeverwinterNightsPath ?? "";
-                        _baseGameInstallPath = settings.BaseGameInstallPath ?? ""; // Phase 2
-                        _currentModulePath = settings.CurrentModulePath ?? "";
-                        _modulePaths = settings.ModulePaths?.ToList() ?? new List<string>();
+
+                        // Load game settings (expand ~ to user home directory)
+                        _neverwinterNightsPath = ExpandPath(settings.NeverwinterNightsPath ?? "");
+                        _baseGameInstallPath = ExpandPath(settings.BaseGameInstallPath ?? ""); // Phase 2
+                        _currentModulePath = ExpandPath(settings.CurrentModulePath ?? "");
+                        _modulePaths = ExpandPaths(settings.ModulePaths?.ToList() ?? new List<string>());
 
                         // Load logging settings (backwards compatible with old LogRetentionDays)
                         if (settings.LogRetentionSessions > 0)
@@ -461,7 +461,7 @@ namespace DialogEditor.Services
             {
                 var settings = new SettingsData
                 {
-                    RecentFiles = _recentFiles.ToList(),
+                    RecentFiles = ContractPaths(_recentFiles), // Use ~ for home directory
                     MaxRecentFiles = MaxRecentFiles,
                     WindowLeft = WindowLeft,
                     WindowTop = WindowTop,
@@ -472,10 +472,10 @@ namespace DialogEditor.Services
                     FontFamily = FontFamily,
                     IsDarkTheme = IsDarkTheme,
                     UseNewLayout = UseNewLayout,
-                    NeverwinterNightsPath = NeverwinterNightsPath,
-                    BaseGameInstallPath = BaseGameInstallPath, // Phase 2
-                    CurrentModulePath = CurrentModulePath,
-                    ModulePaths = _modulePaths.ToList(),
+                    NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
+                    BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
+                    CurrentModulePath = ContractPath(CurrentModulePath), // Use ~ for home directory
+                    ModulePaths = ContractPaths(_modulePaths), // Use ~ for home directory
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
                     AutoSaveEnabled = AutoSaveEnabled,
@@ -484,12 +484,12 @@ namespace DialogEditor.Services
                     MaxCachedValuesPerParameter = MaxCachedValuesPerParameter,
                     MaxCachedScripts = MaxCachedScripts
                 };
-                
-                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions 
-                { 
-                    WriteIndented = true 
+
+                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
+                {
+                    WriteIndented = true
                 });
-                
+
                 File.WriteAllText(SettingsFilePath, json);
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Settings saved to {UnifiedLogger.SanitizePath(SettingsFilePath)}");
             }
@@ -559,6 +559,57 @@ namespace DialogEditor.Services
             {
                 _recentFiles.RemoveAt(_recentFiles.Count - 1);
             }
+        }
+
+        /// <summary>
+        /// Contracts a path for storage - replaces user home directory with ~
+        /// This makes settings files portable and privacy-safe for sharing
+        /// </summary>
+        private static string ContractPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (!string.IsNullOrEmpty(userProfile) && path.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase))
+            {
+                return "~" + path.Substring(userProfile.Length);
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Expands a path from storage - replaces ~ with user home directory
+        /// </summary>
+        private static string ExpandPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            if (path.StartsWith("~"))
+            {
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                return userProfile + path.Substring(1);
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Contracts a list of paths for storage
+        /// </summary>
+        private static List<string> ContractPaths(List<string> paths)
+        {
+            return paths.Select(ContractPath).ToList();
+        }
+
+        /// <summary>
+        /// Expands a list of paths from storage
+        /// </summary>
+        private static List<string> ExpandPaths(List<string> paths)
+        {
+            return paths.Select(ExpandPath).ToList();
         }
 
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
