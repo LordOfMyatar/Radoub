@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.10-alpha] - TBD
-**Branch**: `parley/feat/epic-126-logging` | **PR**: #TBD
+**Branch**: `parley/feat/epic-126-logging` | **PR**: #127
 
 ### Epic #126: Logging & Diagnostics
 
