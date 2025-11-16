@@ -13,7 +13,8 @@ namespace Parley.Services
     /// </summary>
     public class DialogClipboardService
     {
-        private DialogNode? _copiedNode = null;
+        private DialogNode? _originalNode = null;  // Original node reference (for PasteAsLink)
+        private DialogNode? _copiedNode = null;    // Cloned node (for PasteAsDuplicate)
         private bool _wasCut = false;
         private Dialog? _sourceDialog = null;
 
@@ -28,9 +29,14 @@ namespace Parley.Services
         public bool WasCutOperation => _wasCut;
 
         /// <summary>
-        /// Gets the copied/cut node from clipboard (null if empty)
+        /// Gets the copied/cut node clone from clipboard (null if empty)
         /// </summary>
         public DialogNode? ClipboardNode => _copiedNode;
+
+        /// <summary>
+        /// Gets the original node reference for linking (null if empty)
+        /// </summary>
+        public DialogNode? OriginalNode => _originalNode;
 
         /// <summary>
         /// Copy a node to the clipboard
@@ -42,7 +48,8 @@ namespace Parley.Services
             if (sourceDialog == null)
                 throw new ArgumentNullException(nameof(sourceDialog));
 
-            // Deep clone the node for clipboard
+            // Store both original (for PasteAsLink) and clone (for PasteAsDuplicate)
+            _originalNode = node;
             _copiedNode = CloneNode(node);
             _wasCut = false;
             _sourceDialog = sourceDialog;
@@ -52,7 +59,7 @@ namespace Parley.Services
         }
 
         /// <summary>
-        /// Cut a node to the clipboard (mark for move operation)
+        /// Cut a node to the clipboard (Copy + mark for deletion)
         /// </summary>
         public void CutNode(DialogNode node, Dialog sourceDialog)
         {
@@ -61,8 +68,10 @@ namespace Parley.Services
             if (sourceDialog == null)
                 throw new ArgumentNullException(nameof(sourceDialog));
 
-            // Store reference for move operation (not deep clone)
-            _copiedNode = node;
+            // Cut is now just Copy + mark for deletion
+            // Store both original (for PasteAsLink) and clone (for PasteAsDuplicate)
+            _originalNode = node;
+            _copiedNode = CloneNode(node);
             _wasCut = true;
             _sourceDialog = sourceDialog;
 
@@ -80,30 +89,18 @@ namespace Parley.Services
             if (dialog == null)
                 throw new ArgumentNullException(nameof(dialog));
 
-            DialogNode newNode;
+            // Always use the clone (already created in Copy/Cut)
+            // This makes Copy and Cut behavior consistent
+            DialogNode newNode = _copiedNode;
 
-            if (_wasCut && _sourceDialog == dialog)
+            // Add to appropriate list
+            if (newNode.Type == DialogNodeType.Entry)
             {
-                // Move operation within same dialog - use original node
-                newNode = _copiedNode;
-
-                // Remove from old parent (will be done by caller)
-                // Just need to add to new location
+                dialog.Entries.Add(newNode);
             }
             else
             {
-                // Copy operation or cross-dialog move - create clone
-                newNode = CloneNode(_copiedNode);
-
-                // Add to appropriate list
-                if (newNode.Type == DialogNodeType.Entry)
-                {
-                    dialog.Entries.Add(newNode);
-                }
-                else
-                {
-                    dialog.Replies.Add(newNode);
-                }
+                dialog.Replies.Add(newNode);
             }
 
             // Get the index of the new node
@@ -152,14 +149,22 @@ namespace Parley.Services
         }
 
         /// <summary>
-        /// Paste as a link (creates pointer to existing node)
+        /// Paste as a link (creates pointer to original node)
         /// </summary>
         public DialogPtr? PasteAsLink(Dialog dialog, DialogNode? parentNode)
         {
-            if (_copiedNode == null)
+            if (_originalNode == null)
                 return null;
             if (dialog == null)
                 throw new ArgumentNullException(nameof(dialog));
+
+            // CRITICAL: Cannot paste as link after Cut (source will be deleted)
+            if (_wasCut)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    "Cannot paste as link after Cut - source node will be deleted");
+                return null;
+            }
 
             // Can only link within same dialog
             if (_sourceDialog != dialog)
@@ -169,39 +174,39 @@ namespace Parley.Services
                 return null;
             }
 
-            // Find the index of the node in the dialog
+            // Find the index of the ORIGINAL node in the dialog
             uint nodeIndex;
-            if (_copiedNode.Type == DialogNodeType.Entry)
+            if (_originalNode.Type == DialogNodeType.Entry)
             {
-                int index = dialog.Entries.IndexOf(_copiedNode);
+                int index = dialog.Entries.IndexOf(_originalNode);
                 if (index < 0)
                 {
                     UnifiedLogger.LogApplication(LogLevel.ERROR,
-                        "Node not found in dialog Entries list");
+                        "Original node not found in dialog Entries list");
                     return null;
                 }
                 nodeIndex = (uint)index;
             }
             else
             {
-                int index = dialog.Replies.IndexOf(_copiedNode);
+                int index = dialog.Replies.IndexOf(_originalNode);
                 if (index < 0)
                 {
                     UnifiedLogger.LogApplication(LogLevel.ERROR,
-                        "Node not found in dialog Replies list");
+                        "Original node not found in dialog Replies list");
                     return null;
                 }
                 nodeIndex = (uint)index;
             }
 
-            // Create link pointer
+            // Create link pointer to ORIGINAL node
             var linkPtr = new DialogPtr
             {
                 Parent = dialog,
-                Type = _copiedNode.Type,
+                Type = _originalNode.Type,
                 Index = nodeIndex,
                 IsLink = true,
-                Node = _copiedNode
+                Node = _originalNode
             };
 
             // Add link to parent or START nodes
@@ -222,7 +227,7 @@ namespace Parley.Services
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Pasted node as link: Type={_copiedNode.Type}, Index={nodeIndex}");
+                $"Pasted node as link: Type={_originalNode.Type}, Index={nodeIndex}");
 
             return linkPtr;
         }
@@ -232,6 +237,7 @@ namespace Parley.Services
         /// </summary>
         public void ClearClipboard()
         {
+            _originalNode = null;
             _copiedNode = null;
             _wasCut = false;
             _sourceDialog = null;
