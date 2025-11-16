@@ -262,7 +262,7 @@ namespace Parley.Services
             // Recursively clone child nodes if needed
             if (original.Pointers.Count > 0)
             {
-                CloneChildNodes(original, clone, new Dictionary<DialogNode, DialogNode>());
+                CloneChildNodes(original, clone, new Dictionary<DialogNode, DialogNode>(), 0);
             }
 
             return clone;
@@ -272,8 +272,17 @@ namespace Parley.Services
         /// Recursively clone child nodes and rebuild pointer structure
         /// </summary>
         private void CloneChildNodes(DialogNode originalParent, DialogNode cloneParent,
-            Dictionary<DialogNode, DialogNode> cloneMap)
+            Dictionary<DialogNode, DialogNode> cloneMap, int depth)
         {
+            // Prevent stack overflow with depth limit
+            const int MAX_DEPTH = 100;
+            if (depth >= MAX_DEPTH)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Maximum clone depth ({MAX_DEPTH}) reached - stopping recursion to prevent stack overflow");
+                return;
+            }
+
             foreach (var originalPtr in originalParent.Pointers)
             {
                 if (originalPtr.Node == null)
@@ -303,10 +312,10 @@ namespace Parley.Services
                     clonedChild.Pointers = new List<DialogPtr>();
                     cloneMap[originalPtr.Node] = clonedChild;
 
-                    // Recursively clone children
+                    // Recursively clone children with incremented depth
                     if (originalPtr.Node.Pointers.Count > 0)
                     {
-                        CloneChildNodes(originalPtr.Node, clonedChild, cloneMap);
+                        CloneChildNodes(originalPtr.Node, clonedChild, cloneMap, depth + 1);
                     }
                 }
 
