@@ -306,5 +306,108 @@ namespace Parley.Tests
             // Verify second entry still exists
             Assert.Equal("Second entry", loadedDialog.Entries[1].Text.GetDefault());
         }
+
+        [Fact]
+        public void Delete_ChildLink_PreservesParentNode()
+        {
+            // CRITICAL TEST: Deleting a child link (IsLink=true pointer) should NOT delete the parent node
+            // Parent nodes in parent-child links must be preserved for other references
+
+            // Arrange - Create parent-child link structure
+            var dialog = new Dialog();
+
+            // Create parent node (the target of the link)
+            var parentNode = dialog.CreateNode(DialogNodeType.Entry);
+            parentNode!.Text.Add(0, "Parent Entry");
+            dialog.AddNodeInternal(parentNode, parentNode.Type);
+
+            // Create child node (the one with IsLink=true pointer)
+            var childNode = dialog.CreateNode(DialogNodeType.Reply);
+            childNode!.Text.Add(0, "Child Reply with link to parent");
+            dialog.AddNodeInternal(childNode, childNode.Type);
+
+            // Create another node that will hold the child link
+            var container = dialog.CreateNode(DialogNodeType.Entry);
+            container!.Text.Add(0, "Container Entry");
+            dialog.AddNodeInternal(container, container.Type);
+
+            // Container -> ChildNode (regular pointer)
+            var containerPtr = dialog.CreatePtr();
+            containerPtr!.Node = childNode;
+            containerPtr.Type = DialogNodeType.Reply;
+            containerPtr.Index = 0;
+            containerPtr.IsLink = false;
+            containerPtr.Parent = dialog;
+            container.Pointers.Add(containerPtr);
+            dialog.LinkRegistry.RegisterLink(containerPtr);
+
+            // ChildNode -> ParentNode (CHILD LINK - IsLink=true)
+            // This creates parent-child relationship where parentNode is the parent
+            var childLinkPtr = dialog.CreatePtr();
+            childLinkPtr!.Node = parentNode;
+            childLinkPtr.Type = DialogNodeType.Entry;
+            childLinkPtr.Index = 0;
+            childLinkPtr.IsLink = true; // CRITICAL: This is a child link
+            childLinkPtr.Parent = dialog;
+            childNode.Pointers.Add(childLinkPtr);
+            dialog.LinkRegistry.RegisterLink(childLinkPtr);
+
+            // Add start pointer to container
+            var start = dialog.CreatePtr();
+            start!.Node = container;
+            start.Type = DialogNodeType.Entry;
+            start.Index = 1;
+            start.Parent = dialog;
+            dialog.Starts.Add(start);
+            dialog.LinkRegistry.RegisterLink(start);
+
+            // Verify initial state
+            Assert.Equal(2, dialog.Entries.Count); // parentNode, container
+            Assert.Single(dialog.Replies); // childNode
+            Assert.Single(dialog.Starts);
+
+            // Act - Delete the container (which owns the child link)
+            // This simulates user deleting the container node
+            var viewModel = new MainViewModel();
+            viewModel.CurrentDialog = dialog;
+
+            // Remove start pointer
+            var startToRemove = dialog.Starts.FirstOrDefault(s => s.Node == container);
+            if (startToRemove != null)
+            {
+                dialog.LinkRegistry.UnregisterLink(startToRemove);
+                dialog.Starts.Remove(startToRemove);
+            }
+
+            // Use reflection to call DeleteNodeRecursive
+            var deleteMethod = typeof(MainViewModel).GetMethod("DeleteNodeRecursive",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            deleteMethod?.Invoke(viewModel, new object[] { container });
+
+            // Remove from collection
+            dialog.RemoveNodeInternal(container, container.Type);
+
+            // Update indices
+            dialog.RebuildLinkRegistry();
+
+            // Assert - CRITICAL: Parent node must be preserved!
+            // When deleting container:
+            //   - Container is deleted
+            //   - ChildNode is deleted (it's owned by container)
+            //   - ParentNode MUST BE PRESERVED (it's a parent in parent-child link)
+
+            Assert.Single(dialog.Entries); // Only parentNode should remain
+            Assert.Empty(dialog.Replies); // childNode should be deleted
+            Assert.Empty(dialog.Starts); // start was removed
+
+            // Verify parent node still exists
+            var remainingParent = dialog.Entries.FirstOrDefault(e => e.Text.GetDefault().Contains("Parent Entry"));
+            Assert.NotNull(remainingParent);
+            Assert.Equal("Parent Entry", remainingParent!.Text.GetDefault());
+
+            // Parent node should have no incoming pointers (orphaned but preserved)
+            var incomingLinks = dialog.LinkRegistry.GetLinksTo(remainingParent);
+            Assert.Empty(incomingLinks);
+        }
     }
 }
