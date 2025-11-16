@@ -87,6 +87,13 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
   - Eliminates "no selection" state that caused restore button confusion
   - TreeView SelectedItem now bound to ViewModel for programmatic control
 
+- **Enhanced Restore Button Validation**: Restore button now validates dialog structure
+  - Button disables when trying to restore PC Reply to root
+  - Button disables when trying to restore NPC Entry under NPC Entry
+  - Prevents silent validation failures - button state matches actual validity
+  - `CanRestoreFromScrap` now performs same validation as `RestoreFromScrap`
+  - Immediate visual feedback for invalid restore operations
+
 ### Next Steps
 - Complete method migration to services
 - Extract tree management to DialogTreeService

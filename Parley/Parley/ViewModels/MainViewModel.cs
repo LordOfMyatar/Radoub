@@ -129,10 +129,40 @@ namespace DialogEditor.ViewModels
             }
         }
 
-        public bool CanRestoreFromScrap =>
-            SelectedScrapEntry != null &&
-            SelectedTreeNode != null &&
-            CurrentDialog != null;
+        public bool CanRestoreFromScrap
+        {
+            get
+            {
+                // Basic requirements
+                if (SelectedScrapEntry == null || SelectedTreeNode == null || CurrentDialog == null)
+                    return false;
+
+                // Get the node from scrap to check its type
+                var node = _scrapManager.GetNodeFromScrap(SelectedScrapEntry.Id);
+                if (node == null)
+                    return false;
+
+                // Validate restoration target based on dialog structure rules
+                if (SelectedTreeNode is TreeViewRootNode)
+                {
+                    // Only NPC Entry nodes can be restored to root
+                    return node.Type == DialogNodeType.Entry;
+                }
+
+                // For non-root parents, check structure rules
+                var parentNode = SelectedTreeNode.OriginalNode;
+                if (parentNode == null)
+                    return false;
+
+                // NPC Entry can only be child of PC Reply (not another NPC Entry)
+                if (node.Type == DialogNodeType.Entry && parentNode.Type == DialogNodeType.Entry)
+                    return false;
+
+                // PC Reply can be under NPC Entry OR NPC Reply (branching PC responses)
+                // All other combinations are valid
+                return true;
+            }
+        }
 
         public int ScrapCount => CurrentFileName != null ? _scrapManager.GetScrapCount(CurrentFileName) : 0;
 
