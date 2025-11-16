@@ -909,6 +909,25 @@ namespace DialogEditor.Views
             ClearDebugOutput();
         }
 
+        private void OnLogLevelFilterChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (LogLevelFilterComboBox == null) return;
+
+            var selectedIndex = LogLevelFilterComboBox.SelectedIndex;
+            var filterLevel = selectedIndex switch
+            {
+                0 => (LogLevel?)null, // All
+                1 => LogLevel.ERROR,
+                2 => LogLevel.WARN,
+                3 => LogLevel.INFO,
+                4 => LogLevel.DEBUG,
+                5 => LogLevel.TRACE,
+                _ => null
+            };
+
+            _viewModel.SetDebugMessageFilter(filterLevel);
+        }
+
         private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
         {
             try

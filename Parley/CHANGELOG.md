@@ -35,6 +35,13 @@ Comprehensive logging system improvements including log level filtering, structu
   - 9 comprehensive tests for path expansion/contraction
   - Fully backward compatible with existing settings files
 
+- **Issue #113**: Log level filtering in Debug tab
+  - Added TRACE log level (most verbose) to UnifiedLogger
+  - Filter dropdown in Debug tab: All/Error/Warning/Info/Debug/Trace
+  - Real-time filtering of debug messages
+  - Maintains all 1000 messages in memory, filters display only
+  - Prepares for #110 log reclassification work
+
 ### Fixed
 - **Privacy Improvement**: UnifiedLogger now automatically sanitizes all logged paths
   - Replaces user home directory with `~` in all log messages

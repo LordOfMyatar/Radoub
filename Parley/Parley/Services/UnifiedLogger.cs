@@ -10,7 +10,8 @@ namespace DialogEditor.Services
         ERROR = 0,
         WARN = 1,
         INFO = 2,
-        DEBUG = 3
+        DEBUG = 3,
+        TRACE = 4
     }
 
     public static class UnifiedLogger
@@ -72,6 +73,11 @@ namespace DialogEditor.Services
         public static void LogPlugin(LogLevel level, string message)
         {
             Log(level, message, "Plugin", "Plugin");
+        }
+
+        public static void LogTrace(LogLevel level, string message)
+        {
+            Log(level, message, "Trace", "Trace");
         }
 
         /// <summary>
