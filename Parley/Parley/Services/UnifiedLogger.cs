@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace DialogEditor.Services
 {
@@ -114,16 +115,114 @@ namespace DialogEditor.Services
             return path;
         }
 
+        /// <summary>
+        /// Detects if a string appears to be a file path based on heuristics
+        /// </summary>
+        private static bool LooksLikePath(string text)
+        {
+            if (string.IsNullOrEmpty(text) || text.Length < 3)
+                return false;
+
+            // Windows absolute paths: C:\, D:\, etc.
+            if (text.Length >= 3 && char.IsLetter(text[0]) && text[1] == ':' && (text[2] == '\\' || text[2] == '/'))
+                return true;
+
+            // Unix absolute paths: /home/, /usr/, /var/, etc.
+            if (text.StartsWith("/"))
+                return true;
+
+            // Windows UNC paths: \\server\share
+            if (text.StartsWith("\\\\"))
+                return true;
+
+            // Contains user directory indicators (case-insensitive)
+            if (text.Contains("\\Users\\", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("/Users/", StringComparison.OrdinalIgnoreCase) ||
+                text.Contains("/home/", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Contains common path separators in middle of string
+            if (text.Contains("\\") || (text.Contains("/") && !text.StartsWith("http://") && !text.StartsWith("https://")))
+            {
+                // Additional validation: check if it has file extension or common directory names
+                var lastPart = text.Split(new[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+                if (lastPart != null && (lastPart.Contains(".") ||
+                    lastPart.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
+                    lastPart.Equals("Debug", StringComparison.OrdinalIgnoreCase) ||
+                    lastPart.Equals("Release", StringComparison.OrdinalIgnoreCase) ||
+                    lastPart.Equals("Plugins", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Automatically sanitizes paths in a message string
+        /// </summary>
+        private static string AutoSanitizeMessage(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return message;
+
+            // Check if the entire message looks like a path
+            if (LooksLikePath(message))
+                return SanitizePath(message);
+
+            // For messages with potential paths embedded, we need more sophisticated handling
+            // Split on common delimiters and check each part
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (string.IsNullOrEmpty(userProfile))
+                return message;
+
+            // Simple replacement approach: if message contains the user profile path, sanitize it
+            if (message.Contains(userProfile, StringComparison.OrdinalIgnoreCase))
+            {
+                // Use case-insensitive replacement
+                var startIndex = message.IndexOf(userProfile, StringComparison.OrdinalIgnoreCase);
+                while (startIndex != -1)
+                {
+                    var actualPath = message.Substring(startIndex, userProfile.Length);
+                    var endIndex = startIndex + userProfile.Length;
+
+                    // Find the end of the path (next space, quote, or end of string)
+                    while (endIndex < message.Length &&
+                           message[endIndex] != ' ' &&
+                           message[endIndex] != '"' &&
+                           message[endIndex] != '\'' &&
+                           message[endIndex] != '\n' &&
+                           message[endIndex] != '\r')
+                    {
+                        endIndex++;
+                    }
+
+                    var fullPath = message.Substring(startIndex, endIndex - startIndex);
+                    var sanitized = SanitizePath(fullPath);
+                    message = message.Substring(0, startIndex) + sanitized + message.Substring(endIndex);
+
+                    // Look for next occurrence
+                    startIndex = message.IndexOf(userProfile, startIndex + sanitized.Length, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            return message;
+        }
+
         private static void Log(LogLevel level, string message, string component, string consolePrefix)
         {
             if (level > _currentLogLevel) return;
 
             EnsureInitialized();
 
+            // Automatically sanitize paths in message
+            var sanitizedMessage = AutoSanitizeMessage(message);
+
             var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
             var levelStr = level.ToString().PadRight(5);
-            var formattedMessage = $"[{timestamp}] [{levelStr}] [{consolePrefix}] {message}";
-            var consoleMessage = $"[{consolePrefix}] {levelStr}: {message}";
+            var formattedMessage = $"[{timestamp}] [{levelStr}] [{consolePrefix}] {sanitizedMessage}";
+            var consoleMessage = $"[{consolePrefix}] {levelStr}: {sanitizedMessage}";
 
             // Write to console (unified with file logging)
             Console.WriteLine(consoleMessage);

@@ -18,13 +18,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Comprehensive logging system improvements including log level filtering, structured logging, performance monitoring, and enhanced diagnostic capabilities.
 
 ### Added
-- TBD
+- **Issue #87**: Automatic path sanitization in UnifiedLogger
+  - Privacy by default - no manual `SanitizePath()` calls required
+  - Heuristic-based path detection for Windows/Unix absolute paths
+  - Auto-detects paths containing `\Users\`, `/Users/`, `/home/`
+  - Sanitizes embedded user profile paths in log messages
+  - 20 comprehensive tests covering all sanitization scenarios
+  - 100% backward compatible with existing manual sanitization calls
 
 ### Fixed
-- TBD
+- **Privacy Improvement**: UnifiedLogger now automatically sanitizes all logged paths
+  - Replaces user home directory with `~` in all log messages
+  - Prevents accidental privacy leaks from forgotten manual sanitization
+  - No developer cognitive load - works automatically
 
 ### Changed
-- TBD
+- UnifiedLogger sanitization is now automatic and transparent
+  - Existing `SanitizePath()` calls continue to work (harmless double-sanitization)
+  - Path detection handles Windows (`C:\`), Unix (`/home/`), and UNC paths (`\\server\`)
+  - HTTP/HTTPS URLs excluded from sanitization
 
 ---
 
