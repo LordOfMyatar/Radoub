@@ -28,6 +28,11 @@ namespace Parley.Services
         public bool WasCutOperation => _wasCut;
 
         /// <summary>
+        /// Gets the copied/cut node from clipboard (null if empty)
+        /// </summary>
+        public DialogNode? ClipboardNode => _copiedNode;
+
+        /// <summary>
         /// Copy a node to the clipboard
         /// </summary>
         public void CopyNode(DialogNode node, Dialog sourceDialog)

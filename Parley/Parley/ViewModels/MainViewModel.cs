@@ -21,8 +21,6 @@ namespace DialogEditor.ViewModels
         private ObservableCollection<string> _debugMessages = new();
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
-        private DialogNode? _copiedNode = null; // Phase 1 Step 7: Copy/Paste system
-        private bool _wasCut = false; // Track if clipboard node came from Cut (move) vs Copy (duplicate)
         private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
         private readonly ScrapManager _scrapManager = new(); // Manages deleted/cut nodes
         private readonly DialogEditorService _editorService = new(); // Service for node editing operations
@@ -849,7 +847,7 @@ namespace DialogEditor.ViewModels
             var newNode = _editorService.AddSmartNode(CurrentDialog, parentNode, parentPtr);
 
             // Refresh the tree
-            RefreshTreeView(expandedNodes: GetExpandedNodePaths());
+            RefreshTreeView();
 
             // Update status message
             StatusMessage = $"Added new {newNode.Type} node";
@@ -878,7 +876,7 @@ namespace DialogEditor.ViewModels
             var newEntry = _editorService.AddEntryNode(CurrentDialog, parentDialogNode, parentPtr);
 
             // Refresh tree display
-            RefreshTreeView(expandedNodes: GetExpandedNodePaths());
+            RefreshTreeView();
 
             // Update status message
             if (parentDialogNode == null)
@@ -913,7 +911,7 @@ namespace DialogEditor.ViewModels
             parent.IsExpanded = true;
 
             // Refresh tree display
-            RefreshTreeView(expandedNodes: GetExpandedNodePaths());
+            RefreshTreeView();
 
             HasUnsavedChanges = true;
             StatusMessage = "Added new PC Reply node";
@@ -1781,10 +1779,6 @@ namespace DialogEditor.ViewModels
             var node = nodeToCopy.OriginalNode;
             _clipboardService.CopyNode(node, CurrentDialog);
 
-            // Keep local references for compatibility during refactoring
-            _copiedNode = node;
-            _wasCut = false;
-
             StatusMessage = $"Node copied: {node.DisplayText}";
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied node: {node.DisplayText}");
         }
@@ -1807,10 +1801,6 @@ namespace DialogEditor.ViewModels
             {
                 _clipboardService.CutNode(node, CurrentDialog);
             }
-
-            // Keep local references for compatibility during refactoring
-            _copiedNode = node;
-            _wasCut = true;
 
             // CRITICAL: Check for other references BEFORE detaching
             // We need to count while the current reference is still there
@@ -1841,7 +1831,7 @@ namespace DialogEditor.ViewModels
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Kept cut node in list (has {hasOtherReferences} other references): {node.DisplayText}");
             }
 
-            // NOTE: Do NOT add the cut node to scrap - it's stored in _copiedNode for pasting
+            // NOTE: Do NOT add the cut node to scrap - it's stored in clipboard service for pasting
             // Cut is a move operation, not a delete operation
             // The node is intentionally detached and will be reattached on paste
 
@@ -2037,7 +2027,7 @@ namespace DialogEditor.ViewModels
         public void PasteAsDuplicate(TreeViewSafeNode? parent)
         {
             if (CurrentDialog == null) return;
-            if (_copiedNode == null)
+            if (_clipboardService.ClipboardNode == null)
             {
                 StatusMessage = "No node copied. Use Copy Node first.";
                 return;
@@ -2055,7 +2045,7 @@ namespace DialogEditor.ViewModels
             if (parent is TreeViewRootNode)
             {
                 // PC Replies can NEVER be at ROOT (they only respond to NPCs)
-                if (_copiedNode.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_copiedNode.Speaker))
+                if (_clipboardService.ClipboardNode.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_clipboardService.ClipboardNode.Speaker))
                 {
                     StatusMessage = "Cannot paste PC Reply to ROOT - PC can only respond to NPC statements";
                     UnifiedLogger.LogApplication(LogLevel.WARN, "Blocked PC Reply paste to ROOT");
@@ -2063,7 +2053,7 @@ namespace DialogEditor.ViewModels
                 }
 
                 // For Cut operation, reuse the node; for Copy, clone it
-                var duplicate = _wasCut ? _copiedNode : CloneNode(_copiedNode);
+                var duplicate = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : CloneNode(_clipboardService.ClipboardNode);
 
                 // Convert NPC Reply nodes to Entry when pasting to ROOT (GFF requirement)
                 if (duplicate.Type == DialogNodeType.Reply)
@@ -2076,7 +2066,7 @@ namespace DialogEditor.ViewModels
                 }
 
                 // If cut, ensure node is in the appropriate list (may have been removed during cut)
-                if (_wasCut)
+                if (_clipboardService.WasCutOperation)
                 {
                     var list = duplicate.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
                     if (!list.Contains(duplicate))
@@ -2118,21 +2108,20 @@ namespace DialogEditor.ViewModels
 
                 RefreshTreeView();
                 HasUnsavedChanges = true;
-                var opType = _wasCut ? "Moved" : "Pasted duplicate";
+                var opType = _clipboardService.WasCutOperation ? "Moved" : "Pasted duplicate";
                 StatusMessage = $"{opType} Entry at ROOT: {duplicate.DisplayText}";
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"{opType} Entry to ROOT: {duplicate.DisplayText}");
 
-                // Clear cut flag after paste completes
-                _wasCut = false;
+                // Clipboard is cleared by service after cut/paste
                 return;
             }
 
             // Normal paste to non-ROOT parent
             // For Cut operation, reuse the node; for Copy, clone it
-            var duplicateNode = _wasCut ? _copiedNode : CloneNode(_copiedNode);
+            var duplicateNode = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : CloneNode(_clipboardService.ClipboardNode);
 
             // If cut, ensure node is in the appropriate list (may have been removed during cut)
-            if (_wasCut)
+            if (_clipboardService.WasCutOperation)
             {
                 var list = duplicateNode.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
                 if (!list.Contains(duplicateNode))
@@ -2173,18 +2162,17 @@ namespace DialogEditor.ViewModels
 
             RefreshTreeView();
             HasUnsavedChanges = true;
-            var operation = _wasCut ? "Moved" : "Pasted duplicate";
+            var operation = _clipboardService.WasCutOperation ? "Moved" : "Pasted duplicate";
             StatusMessage = $"{operation} node under {parent.DisplayText}: {duplicateNode.DisplayText}";
 
-            // Clear cut flag after paste completes
-            _wasCut = false;
+            // Clipboard is cleared by service after cut/paste
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted duplicate: {duplicateNode.DisplayText} under {parent.DisplayText}");
         }
 
         public void PasteAsLink(TreeViewSafeNode? parent)
         {
             if (CurrentDialog == null) return;
-            if (_copiedNode == null)
+            if (_clipboardService.ClipboardNode == null)
             {
                 StatusMessage = "No node copied. Use Copy Node first.";
                 return;
@@ -2216,7 +2204,7 @@ namespace DialogEditor.ViewModels
 
             // Normal paste link to non-ROOT parent
             // Get the current index of copied node (LinkRegistry ensures it's accurate)
-            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(_copiedNode, _copiedNode.Type);
+            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(_clipboardService.ClipboardNode, _clipboardService.ClipboardNode.Type);
 
             // Validate index is valid
             if ((int)nodeIndex == -1)
@@ -2229,8 +2217,8 @@ namespace DialogEditor.ViewModels
             // Create link pointer (references original node)
             var linkPtr = new DialogPtr
             {
-                Node = _copiedNode,
-                Type = _copiedNode.Type,
+                Node = _clipboardService.ClipboardNode,
+                Type = _clipboardService.ClipboardNode.Type,
                 Index = nodeIndex,
                 IsLink = true, // Mark as link
                 ScriptAppears = "",
@@ -2247,8 +2235,8 @@ namespace DialogEditor.ViewModels
 
             RefreshTreeView();
             HasUnsavedChanges = true;
-            StatusMessage = $"Pasted link under {parent.DisplayText}: {_copiedNode.DisplayText}";
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted link to: {_copiedNode.DisplayText} under {parent.DisplayText}");
+            StatusMessage = $"Pasted link under {parent.DisplayText}: {_clipboardService.ClipboardNode.DisplayText}";
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted link to: {_clipboardService.ClipboardNode.DisplayText} under {parent.DisplayText}");
         }
 
         private DialogNode CloneNode(DialogNode original)
