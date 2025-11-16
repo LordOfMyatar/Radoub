@@ -2250,7 +2250,7 @@ namespace DialogEditor.ViewModels
         public void PasteAsLink(TreeViewSafeNode? parent)
         {
             if (CurrentDialog == null) return;
-            if (_clipboardService.ClipboardNode == null)
+            if (!_clipboardService.HasClipboardContent)
             {
                 StatusMessage = "No node copied. Use Copy Node first.";
                 return;
@@ -2261,17 +2261,9 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
-            // NOTE: User cannot paste a node as a link under itself (would create immediate circular reference).
-            // This is expected behavior - links must point to different nodes to maintain valid conversation flow.
-            // GFF handles this naturally by creating a pointer structure that would result in an infinite loop
-            // if not prevented. Users should paste as duplicate if they want the same content in multiple places
-            // within the same branch.
-
             // Check if pasting to ROOT
             if (parent is TreeViewRootNode)
             {
-                // Format requirement: Cannot paste as link to ROOT level at all
-                // ROOT can only have new Entry nodes or duplicates, not links
                 StatusMessage = "Cannot paste as link to ROOT - use Paste as Duplicate instead";
                 UnifiedLogger.LogApplication(LogLevel.WARN, "Blocked paste as link to ROOT - links not supported at ROOT level");
                 return;
@@ -2280,41 +2272,22 @@ namespace DialogEditor.ViewModels
             // Save state for undo before creating link
             SaveUndoState("Paste as Link");
 
-            // Normal paste link to non-ROOT parent
-            // Get the current index of copied node (LinkRegistry ensures it's accurate)
-            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(_clipboardService.ClipboardNode, _clipboardService.ClipboardNode.Type);
+            // Delegate to clipboard service
+            var linkPtr = _clipboardService.PasteAsLink(CurrentDialog, parent.OriginalNode);
 
-            // Validate index is valid
-            if ((int)nodeIndex == -1)
+            if (linkPtr == null)
             {
-                StatusMessage = "Error: Copied node no longer exists in dialog";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "Copied node not found in dialog during paste as link");
+                // Service already logged the reason (Cut operation, different dialog, node not found, etc.)
+                StatusMessage = "Cannot paste as link - check logs for details";
                 return;
             }
-
-            // Create link pointer (references original node)
-            var linkPtr = new DialogPtr
-            {
-                Node = _clipboardService.ClipboardNode,
-                Type = _clipboardService.ClipboardNode.Type,
-                Index = nodeIndex,
-                IsLink = true, // Mark as link
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = "",
-                LinkComment = "[Link to original]",
-                Parent = CurrentDialog
-            };
-
-            parent.OriginalNode.Pointers.Add(linkPtr);
 
             // Register the link pointer with LinkRegistry
             CurrentDialog.LinkRegistry.RegisterLink(linkPtr);
 
             RefreshTreeView();
             HasUnsavedChanges = true;
-            StatusMessage = $"Pasted link under {parent.DisplayText}: {_clipboardService.ClipboardNode.DisplayText}";
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted link to: {_clipboardService.ClipboardNode.DisplayText} under {parent.DisplayText}");
+            StatusMessage = $"Pasted link under {parent.DisplayText}: {linkPtr.Node?.DisplayText}";
         }
 
         private DialogNode CloneNode(DialogNode original)
