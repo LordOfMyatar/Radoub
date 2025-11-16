@@ -916,13 +916,12 @@ namespace DialogEditor.Views
             var selectedIndex = LogLevelFilterComboBox.SelectedIndex;
             var filterLevel = selectedIndex switch
             {
-                0 => (LogLevel?)null, // All
-                1 => LogLevel.ERROR,
-                2 => LogLevel.WARN,
-                3 => LogLevel.INFO,
-                4 => LogLevel.DEBUG,
-                5 => LogLevel.TRACE,
-                _ => null
+                0 => LogLevel.ERROR,
+                1 => LogLevel.WARN,
+                2 => LogLevel.INFO,
+                3 => LogLevel.DEBUG,
+                4 => LogLevel.TRACE,
+                _ => LogLevel.INFO // Default to INFO if something goes wrong
             };
 
             _viewModel.SetDebugMessageFilter(filterLevel);

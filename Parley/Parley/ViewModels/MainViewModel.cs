@@ -20,7 +20,7 @@ namespace DialogEditor.ViewModels
         private string _statusMessage = "Ready";
         private ObservableCollection<string> _debugMessages = new();
         private List<(string message, LogLevel level)> _allDebugMessages = new(); // Store all messages with their levels
-        private LogLevel? _debugMessageFilter = null; // null = show all
+        private LogLevel _debugMessageFilter = LogLevel.INFO; // Default to INFO level
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
         private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
@@ -246,7 +246,7 @@ namespace DialogEditor.ViewModels
             }
         }
 
-        public void SetDebugMessageFilter(LogLevel? filterLevel)
+        public void SetDebugMessageFilter(LogLevel filterLevel)
         {
             try
             {
@@ -264,12 +264,10 @@ namespace DialogEditor.ViewModels
 
         private bool ShouldShowMessage(LogLevel messageLevel)
         {
-            // If no filter, show all
-            if (_debugMessageFilter == null)
-                return true;
-
             // Show messages at or above the selected filter level
-            return messageLevel <= _debugMessageFilter.Value;
+            // ERROR=0, WARN=1, INFO=2, DEBUG=3, TRACE=4
+            // So if filter is INFO (2), show ERROR (0), WARN (1), and INFO (2)
+            return messageLevel <= _debugMessageFilter;
         }
 
         private void RefreshDebugMessages()

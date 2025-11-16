@@ -663,10 +663,9 @@
                             <Button Content="Clear" Click="OnClearDebugClick" Padding="8,3" MinWidth="70"/>
                             <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="15,0,5,0"/>
                             <ComboBox x:Name="LogLevelFilterComboBox"
-                                     SelectedIndex="0"
+                                     SelectedIndex="2"
                                      MinWidth="100"
                                      SelectionChanged="OnLogLevelFilterChanged">
-                                <ComboBoxItem Content="All"/>
                                 <ComboBoxItem Content="Error"/>
                                 <ComboBoxItem Content="Warning"/>
                                 <ComboBoxItem Content="Info"/>
