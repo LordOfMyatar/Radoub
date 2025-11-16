@@ -1021,9 +1021,9 @@ namespace DialogEditor.ViewModels
             RecalculatePointerIndices();
             RemoveOrphanedPointers();
 
-            // CRITICAL: Immediately detect and containerize orphans BEFORE UI refresh
-            // This ensures orphan containers are in the model when user saves
-            DetectAndContainerizeOrphansSync();
+            // No longer creating orphan containers - using Scrap Tab instead
+            // Orphaned nodes are now managed via the ScrapManager service
+            // DetectAndContainerizeOrphansSync(); // Removed - was causing orphan issues in Aurora
 
             // Refresh tree
             RefreshTreeView();

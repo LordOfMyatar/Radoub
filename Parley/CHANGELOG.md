@@ -74,6 +74,13 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
   - PC Reply can only go under NPC Entry
   - Prevents invalid dialog structures that cause issues in Aurora
 
+- **Orphan Container Removal**: Fixed orphaning visible in Aurora after deletions
+  - Removed `DetectAndContainerizeOrphansSync()` call after node deletion
+  - No longer creates orphan containers in dialog files
+  - Deleted nodes now only stored in Scrap Tab (user-controlled recovery)
+  - Prevents Aurora from displaying unexpected orphan containers
+  - Aligns with Scrap Tab approach: users restore what they want, rest is pruned
+
 ### Next Steps
 - Complete method migration to services
 - Extract tree management to DialogTreeService
