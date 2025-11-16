@@ -69,9 +69,8 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
 
 - **Dialog Structure Validation**: Enforced proper node placement rules
   - NPC Entry nodes cannot be children of other NPC Entry nodes
-  - PC Reply nodes cannot be children of other PC Reply nodes
   - NPC Entry can only go to root or under PC Reply
-  - PC Reply can only go under NPC Entry
+  - PC Reply can go under NPC Entry or NPC Reply (branching PC responses)
   - Prevents invalid dialog structures that cause issues in Aurora
 
 - **Orphan Container Removal**: Fixed orphaning visible in Aurora after deletions

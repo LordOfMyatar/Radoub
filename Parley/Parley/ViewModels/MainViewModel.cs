@@ -3380,13 +3380,8 @@ namespace DialogEditor.ViewModels
                     return false;
                 }
 
-                // PC Reply can only be child of NPC Entry
-                if (node.Type == DialogNodeType.Reply && parentNode.Type == DialogNodeType.Reply)
-                {
-                    StatusMessage = "PC Reply nodes cannot be children of other PC Reply nodes";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Invalid structure: Reply under Reply");
-                    return false;
-                }
+                // PC Reply can be under NPC Entry OR NPC Reply (branching PC responses)
+                // No validation needed for PC Reply - both parent types are valid
             }
 
             // ALL validations passed - now make the changes
