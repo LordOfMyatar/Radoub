@@ -56,6 +56,8 @@ namespace DialogEditor.Services
         // Logging settings
         private int _logRetentionSessions = 3; // Default: keep 3 most recent sessions
         private LogLevel _logLevel = LogLevel.INFO;
+        private LogLevel _debugLogFilterLevel = LogLevel.INFO; // Debug window filter level
+        private bool _debugWindowVisible = false; // Debug window visibility
 
         // Auto-save settings - Phase 1 Step 6
         private bool _autoSaveEnabled = true; // Default: ON
@@ -269,6 +271,32 @@ namespace DialogEditor.Services
             }
         }
 
+        public LogLevel DebugLogFilterLevel
+        {
+            get => _debugLogFilterLevel;
+            set
+            {
+                if (SetProperty(ref _debugLogFilterLevel, value))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogSettings(LogLevel.DEBUG, $"Debug log filter level set to {value}");
+                }
+            }
+        }
+
+        public bool DebugWindowVisible
+        {
+            get => _debugWindowVisible;
+            set
+            {
+                if (SetProperty(ref _debugWindowVisible, value))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogSettings(LogLevel.DEBUG, $"Debug window visibility set to {value}");
+                }
+            }
+        }
+
         // Auto-Save Settings Properties - Phase 1 Step 6
         public bool AutoSaveEnabled
         {
@@ -423,6 +451,10 @@ namespace DialogEditor.Services
                         // (MainWindow may have set DEBUG for development)
                         // UnifiedLogger.SetLogLevel(_logLevel); // Commented out - don't override
 
+                        // Load debug window settings
+                        _debugLogFilterLevel = settings.DebugLogFilterLevel;
+                        _debugWindowVisible = settings.DebugWindowVisible;
+
                         // Load auto-save settings - Phase 1 Step 6
                         _autoSaveEnabled = settings.AutoSaveEnabled;
                         _autoSaveDelayMs = Math.Max(1000, Math.Min(10000, settings.AutoSaveDelayMs));
@@ -478,6 +510,8 @@ namespace DialogEditor.Services
                     ModulePaths = ContractPaths(_modulePaths), // Use ~ for home directory
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
+                    DebugLogFilterLevel = DebugLogFilterLevel,
+                    DebugWindowVisible = DebugWindowVisible,
                     AutoSaveEnabled = AutoSaveEnabled,
                     AutoSaveDelayMs = AutoSaveDelayMs,
                     EnableParameterCache = EnableParameterCache,
@@ -654,6 +688,8 @@ namespace DialogEditor.Services
             // Logging settings
             public int LogRetentionSessions { get; set; } = 3; // Keep 3 most recent sessions
             public LogLevel LogLevel { get; set; } = LogLevel.INFO;
+            public LogLevel DebugLogFilterLevel { get; set; } = LogLevel.INFO; // Debug window filter
+            public bool DebugWindowVisible { get; set; } = false; // Debug window visibility
 
             // Auto-save settings - Phase 1 Step 6
             public bool AutoSaveEnabled { get; set; } = true;

@@ -128,9 +128,37 @@ namespace DialogEditor.Views
                 }
             };
 
-            // Initialize log level filter to default (INFO level)
+            // Initialize log level filter from saved settings
             // SelectionChanged doesn't fire on initial XAML load, so we must set it manually
-            DebugLogger.SetLogLevelFilter(LogLevel.INFO);
+            var savedFilterLevel = SettingsService.Instance.DebugLogFilterLevel;
+            DebugLogger.SetLogLevelFilter(savedFilterLevel);
+
+            // Set ComboBox to match saved filter level
+            if (LogLevelFilterComboBox != null)
+            {
+                LogLevelFilterComboBox.SelectedIndex = savedFilterLevel switch
+                {
+                    LogLevel.ERROR => 0,
+                    LogLevel.WARN => 1,
+                    LogLevel.INFO => 2,
+                    LogLevel.DEBUG => 3,
+                    LogLevel.TRACE => 4,
+                    _ => 2 // Default to INFO
+                };
+            }
+
+            // Restore debug window visibility from settings
+            if (DebugTab != null)
+            {
+                DebugTab.IsVisible = SettingsService.Instance.DebugWindowVisible;
+
+                // Update menu item text to match visibility state
+                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
+                if (showDebugMenuItem != null)
+                {
+                    showDebugMenuItem.Header = DebugTab.IsVisible ? "Hide _Debug Console" : "Show _Debug Console";
+                }
+            }
         }
 
         private void SetupKeyboardShortcuts()
@@ -930,6 +958,9 @@ namespace DialogEditor.Views
             };
 
             DebugLogger.SetLogLevelFilter(filterLevel);
+
+            // Save the filter level to settings
+            SettingsService.Instance.DebugLogFilterLevel = filterLevel;
         }
 
         private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
@@ -1216,6 +1247,9 @@ namespace DialogEditor.Views
                         if (showDebugMenuItem != null)
                             showDebugMenuItem.Header = "Hide _Debug Console";
                     }
+
+                    // Save the visibility state to settings
+                    SettingsService.Instance.DebugWindowVisible = debugTab.IsVisible;
                 }
             }
             catch (Exception ex)
