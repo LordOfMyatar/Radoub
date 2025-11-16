@@ -21,16 +21,23 @@ namespace DialogEditor.ViewModels
         private ObservableCollection<string> _debugMessages = new();
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
-        private DialogNode? _copiedNode = null; // Phase 1 Step 7: Copy/Paste system
-        private bool _wasCut = false; // Track if clipboard node came from Cut (move) vs Copy (duplicate)
         private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
         private readonly ScrapManager _scrapManager = new(); // Manages deleted/cut nodes
+        private readonly DialogEditorService _editorService = new(); // Service for node editing operations
+        private readonly DialogClipboardService _clipboardService = new(); // Service for clipboard operations
         private ScrapEntry? _selectedScrapEntry;
+        private TreeViewSafeNode? _selectedTreeNode;
 
         public Dialog? CurrentDialog
         {
             get => _currentDialog;
-            set => SetProperty(ref _currentDialog, value);
+            set
+            {
+                if (SetProperty(ref _currentDialog, value))
+                {
+                    OnPropertyChanged(nameof(CanRestoreFromScrap));
+                }
+            }
         }
 
         public string? CurrentFileName
@@ -38,9 +45,16 @@ namespace DialogEditor.ViewModels
             get => _currentFileName;
             set
             {
-                SetProperty(ref _currentFileName, value);
-                OnPropertyChanged(nameof(LoadedFileName));
-                OnPropertyChanged(nameof(WindowTitle));
+                if (SetProperty(ref _currentFileName, value))
+                {
+                    OnPropertyChanged(nameof(LoadedFileName));
+                    OnPropertyChanged(nameof(WindowTitle));
+
+                    // Update scrap entries to show only entries for the current file
+                    _scrapManager.UpdateScrapEntriesForFile(value);
+                    OnPropertyChanged(nameof(ScrapCount));
+                    OnPropertyChanged(nameof(ScrapTabHeader));
+                }
             }
         }
 
@@ -92,7 +106,60 @@ namespace DialogEditor.ViewModels
         public ScrapEntry? SelectedScrapEntry
         {
             get => _selectedScrapEntry;
-            set => SetProperty(ref _selectedScrapEntry, value);
+            set
+            {
+                if (SetProperty(ref _selectedScrapEntry, value))
+                {
+                    OnPropertyChanged(nameof(CanRestoreFromScrap));
+                }
+            }
+        }
+
+        public TreeViewSafeNode? SelectedTreeNode
+        {
+            get => _selectedTreeNode;
+            set
+            {
+                if (SetProperty(ref _selectedTreeNode, value))
+                {
+                    OnPropertyChanged(nameof(CanRestoreFromScrap));
+                }
+            }
+        }
+
+        public bool CanRestoreFromScrap
+        {
+            get
+            {
+                // Basic requirements
+                if (SelectedScrapEntry == null || SelectedTreeNode == null || CurrentDialog == null)
+                    return false;
+
+                // Get the node from scrap to check its type
+                var node = _scrapManager.GetNodeFromScrap(SelectedScrapEntry.Id);
+                if (node == null)
+                    return false;
+
+                // Validate restoration target based on dialog structure rules
+                if (SelectedTreeNode is TreeViewRootNode)
+                {
+                    // Only NPC Entry nodes can be restored to root
+                    return node.Type == DialogNodeType.Entry;
+                }
+
+                // For non-root parents, check structure rules
+                var parentNode = SelectedTreeNode.OriginalNode;
+                if (parentNode == null)
+                    return false;
+
+                // NPC Entry can only be child of PC Reply (not another NPC Entry)
+                if (node.Type == DialogNodeType.Entry && parentNode.Type == DialogNodeType.Entry)
+                    return false;
+
+                // PC Reply can be under NPC Entry OR NPC Reply (branching PC responses)
+                // All other combinations are valid
+                return true;
+            }
         }
 
         public int ScrapCount => CurrentFileName != null ? _scrapManager.GetScrapCount(CurrentFileName) : 0;
@@ -174,6 +241,9 @@ namespace DialogEditor.ViewModels
 
                     // Clear undo history when loading new file
                     _undoManager.Clear();
+
+                    // Clear tree selection when loading new file
+                    SelectedTreeNode = null;
 
                     CurrentFileName = filePath;
                     HasUnsavedChanges = false; // Clear dirty flag when loading
@@ -406,6 +476,11 @@ namespace DialogEditor.ViewModels
                 newNodes.Add(rootNode);
                 rootNode.IsExpanded = true; // Auto-expand root
 
+                // Auto-select ROOT node for consistent initial state
+                // This ensures Restore button logic works correctly and shows conversation settings
+                SelectedTreeNode = rootNode;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-selected ROOT node");
+
                 // No longer creating orphan containers - using Scrap Tab instead
                 // Orphaned nodes are now managed via the ScrapManager service
                 // Commented out old orphan container system:
@@ -611,8 +686,10 @@ namespace DialogEditor.ViewModels
 
                 // Create blank dialog with root structure
                 CurrentDialog = new Dialog();
-                CurrentFileName = null; // No filename until user saves
+                CurrentFileName = null; // No filename until user saves (this will also clear scrap via setter)
                 HasUnsavedChanges = false; // Start clean
+                SelectedTreeNode = null; // Clear selection
+                SelectedScrapEntry = null; // Clear scrap selection
 
                 // Populate empty tree with just ROOT node
                 Dispatcher.UIThread.Post(() =>
@@ -756,31 +833,25 @@ namespace DialogEditor.ViewModels
             // Save state for undo
             SaveUndoState("Add Smart Node");
 
-            // Determine what type of node to create based on selection
-            if (selectedNode == null || selectedNode is TreeViewRootNode)
-            {
-                // Root level → Create Entry
-                AddEntryNode(selectedNode);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Smart Add: Created Entry at root");
-            }
-            else
-            {
-                var parentNode = selectedNode.OriginalNode;
+            // Get the parent node and pointer
+            DialogNode? parentNode = null;
+            DialogPtr? parentPtr = null;
 
-                if (parentNode.Type == DialogNodeType.Entry)
-                {
-                    // Entry → PC Reply
-                    AddPCReplyNode(selectedNode);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Smart Add: Created Reply after Entry");
-                }
-                else // Reply node
-                {
-                    // Reply → Entry (NPC response)
-                    AddEntryNode(selectedNode);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Smart Add: Created Entry after Reply");
-                }
+            if (selectedNode != null && !(selectedNode is TreeViewRootNode))
+            {
+                parentNode = selectedNode.OriginalNode;
+                // Note: parentPtr would be needed if we're adding under a link, but for now passing null
             }
 
+            // Delegate to service
+            var newNode = _editorService.AddSmartNode(CurrentDialog, parentNode, parentPtr);
+
+            // Refresh the tree
+            RefreshTreeView();
+
+            // Update status message
+            StatusMessage = $"Added new {newNode.Type} node";
+            HasUnsavedChanges = true;
         }
 
         public void AddEntryNode(TreeViewSafeNode? parentNode = null)
@@ -790,71 +861,32 @@ namespace DialogEditor.ViewModels
             // Save state for undo
             SaveUndoState("Add Entry Node");
 
-            var newEntry = new DialogNode
+            // Get the parent dialog node
+            DialogNode? parentDialogNode = null;
+            DialogPtr? parentPtr = null;
+
+            if (parentNode != null && !(parentNode is TreeViewRootNode))
             {
-                Type = DialogNodeType.Entry,
-                Text = new LocString(),
-                Speaker = "",
-                Comment = "",
-                Sound = "",
-                ScriptAction = "",
-                Delay = uint.MaxValue,
-                Animation = DialogAnimation.Default,
-                AnimationLoop = false,
-                Quest = "",
-                QuestEntry = uint.MaxValue,
-                Pointers = new List<DialogPtr>(),
-                ActionParams = new Dictionary<string, string>()
-            };
-
-            newEntry.Text.Add(0, ""); // Empty text - user will type immediately
-
-            // Add to dialog's entry list
-            CurrentDialog.Entries.Add(newEntry);
-
-            // Create pointer for this entry
-            var entryPtr = new DialogPtr
-            {
-                Node = newEntry,
-                Type = DialogNodeType.Entry,
-                Index = (uint)(CurrentDialog.Entries.Count - 1),
-                IsLink = false,
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = ""
-            };
-
-            if (parentNode == null || parentNode is TreeViewRootNode)
-            {
-                // Root level - add to starting list
-                entryPtr.IsStart = true;
-                CurrentDialog.Starts.Add(entryPtr);
-                StatusMessage = $"Added new Entry node at root level";
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Created new Entry node at root");
+                parentDialogNode = parentNode.OriginalNode;
+                // Expand parent in tree view
+                parentNode.IsExpanded = true;
             }
-            else
-            {
-                // Child of Reply node - add to parent's EntriesList
-                var parentDialogNode = parentNode.OriginalNode;
 
-                // Validate: Entries should only come after PC Replies
-                if (parentDialogNode.Type == DialogNodeType.Reply && string.IsNullOrEmpty(parentDialogNode.Speaker))
-                {
-                    parentDialogNode.Pointers.Add(entryPtr);
-                    parentNode.IsExpanded = true;
-                    StatusMessage = $"Added new Entry node after Reply";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Created new Entry node as child of Reply");
-                }
-                else
-                {
-                    StatusMessage = "Cannot add Entry after Entry node. Use PC Reply instead.";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Invalid: Entry after Entry node");
-                    return;
-                }
-            }
+            // Delegate to service
+            var newEntry = _editorService.AddEntryNode(CurrentDialog, parentDialogNode, parentPtr);
 
             // Refresh tree display
             RefreshTreeView();
+
+            // Update status message
+            if (parentDialogNode == null)
+            {
+                StatusMessage = "Added new Entry node at root level";
+            }
+            else
+            {
+                StatusMessage = "Added new Entry node after Reply";
+            }
 
             HasUnsavedChanges = true;
         }
@@ -863,46 +895,17 @@ namespace DialogEditor.ViewModels
 
         public void AddPCReplyNode(TreeViewSafeNode parent)
         {
-            if (CurrentDialog == null) return;
+            if (CurrentDialog == null || parent == null) return;
 
             // Save state for undo
             SaveUndoState("Add PC Reply");
 
-            var newReply = new DialogNode
-            {
-                Type = DialogNodeType.Reply,
-                Text = new LocString(),
-                Speaker = "",
-                Comment = "",
-                Sound = "",
-                ScriptAction = "",
-                Delay = uint.MaxValue,
-                Animation = DialogAnimation.Default,
-                AnimationLoop = false,
-                Quest = "",
-                QuestEntry = uint.MaxValue,
-                Pointers = new List<DialogPtr>(),
-                ActionParams = new Dictionary<string, string>()
-            };
+            // Get the parent dialog node
+            var parentDialogNode = parent.OriginalNode;
+            if (parentDialogNode == null) return;
 
-            newReply.Text.Add(0, ""); // Empty text - user will type immediately
-
-            // Add to parent's underlying DialogNode
-            var newPtr = new DialogPtr
-            {
-                Node = newReply,
-                Type = DialogNodeType.Reply,
-                Index = (uint)CurrentDialog.Replies.Count, // Temporary index
-                IsLink = false,
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = ""
-            };
-
-            parent.OriginalNode.Pointers.Add(newPtr);
-
-            // Add to dialog's reply list
-            CurrentDialog.Replies.Add(newReply);
+            // Delegate to service
+            var newReply = _editorService.AddPCReplyNode(CurrentDialog, parentDialogNode, null);
 
             // Auto-expand parent node before refresh
             parent.IsExpanded = true;
@@ -911,8 +914,7 @@ namespace DialogEditor.ViewModels
             RefreshTreeView();
 
             HasUnsavedChanges = true;
-            StatusMessage = $"Added new PC Reply node";
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Created new PC Reply node");
+            StatusMessage = "Added new PC Reply node";
         }
 
         public void DeleteNode(TreeViewSafeNode nodeToDelete)
@@ -977,9 +979,9 @@ namespace DialogEditor.ViewModels
             RecalculatePointerIndices();
             RemoveOrphanedPointers();
 
-            // CRITICAL: Immediately detect and containerize orphans BEFORE UI refresh
-            // This ensures orphan containers are in the model when user saves
-            DetectAndContainerizeOrphansSync();
+            // No longer creating orphan containers - using Scrap Tab instead
+            // Orphaned nodes are now managed via the ScrapManager service
+            // DetectAndContainerizeOrphansSync(); // Removed - was causing orphan issues in Aurora
 
             // Refresh tree
             RefreshTreeView();
@@ -1159,15 +1161,17 @@ namespace DialogEditor.ViewModels
             if (CurrentDialog == null) return;
             if (nodeToMove == null || nodeToMove is TreeViewRootNode) return;
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MoveNodeUp: node={nodeToMove.DisplayText}");
             var node = nodeToMove.OriginalNode;
+
+            // Save state for undo
+            SaveUndoState("Move Node Up");
 
             // Check if root-level node (in StartingList)
             int startIndex = CurrentDialog.Starts.FindIndex(s => s.Node == node);
 
             if (startIndex != -1)
             {
-                // Root-level node
+                // Root-level node - handle directly in ViewModel
                 if (startIndex == 0)
                 {
                     StatusMessage = "Node is already first";
@@ -1181,25 +1185,19 @@ namespace DialogEditor.ViewModels
                 HasUnsavedChanges = true;
                 RefreshTreeViewAndSelectNode(node);
                 StatusMessage = $"Moved '{node.Text?.GetDefault()}' up";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Moved root node up: {startIndex} → {startIndex - 1}");
                 return;
             }
 
-            // Child node - find parent and reorder within parent's Pointers
+            // Child node - find parent and use service
             DialogNode? parent = FindParentNode(node);
             if (parent != null)
             {
-                int ptrIndex = parent.Pointers.FindIndex(p => p.Node == node);
-                if (ptrIndex > 0)
+                bool moved = _editorService.MoveNodeUp(parent, node);
+                if (moved)
                 {
-                    var temp = parent.Pointers[ptrIndex];
-                    parent.Pointers[ptrIndex] = parent.Pointers[ptrIndex - 1];
-                    parent.Pointers[ptrIndex - 1] = temp;
-
                     HasUnsavedChanges = true;
                     RefreshTreeViewAndSelectNode(node);
                     StatusMessage = $"Moved '{node.Text?.GetDefault()}' up";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Moved child node up in parent '{parent.Text?.GetDefault()}': {ptrIndex} → {ptrIndex - 1}");
                 }
                 else
                 {
@@ -1209,7 +1207,6 @@ namespace DialogEditor.ViewModels
             else
             {
                 StatusMessage = "Cannot find parent node";
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"No parent found for '{node.Text?.GetDefault()}'");
             }
         }
 
@@ -1218,15 +1215,17 @@ namespace DialogEditor.ViewModels
             if (CurrentDialog == null) return;
             if (nodeToMove == null || nodeToMove is TreeViewRootNode) return;
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MoveNodeDown: node={nodeToMove.DisplayText}");
             var node = nodeToMove.OriginalNode;
+
+            // Save state for undo
+            SaveUndoState("Move Node Down");
 
             // Check if root-level node (in StartingList)
             int startIndex = CurrentDialog.Starts.FindIndex(s => s.Node == node);
 
             if (startIndex != -1)
             {
-                // Root-level node
+                // Root-level node - handle directly in ViewModel
                 if (startIndex >= CurrentDialog.Starts.Count - 1)
                 {
                     StatusMessage = "Node is already last";
@@ -1240,25 +1239,19 @@ namespace DialogEditor.ViewModels
                 HasUnsavedChanges = true;
                 RefreshTreeViewAndSelectNode(node);
                 StatusMessage = $"Moved '{node.Text?.GetDefault()}' down";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Moved root node down: {startIndex} → {startIndex + 1}");
                 return;
             }
 
-            // Child node - find parent and reorder within parent's Pointers
+            // Child node - find parent and use service
             DialogNode? parent = FindParentNode(node);
             if (parent != null)
             {
-                int ptrIndex = parent.Pointers.FindIndex(p => p.Node == node);
-                if (ptrIndex >= 0 && ptrIndex < parent.Pointers.Count - 1)
+                bool moved = _editorService.MoveNodeDown(parent, node);
+                if (moved)
                 {
-                    var temp = parent.Pointers[ptrIndex];
-                    parent.Pointers[ptrIndex] = parent.Pointers[ptrIndex + 1];
-                    parent.Pointers[ptrIndex + 1] = temp;
-
                     HasUnsavedChanges = true;
                     RefreshTreeViewAndSelectNode(node);
                     StatusMessage = $"Moved '{node.Text?.GetDefault()}' down";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Moved child node down in parent '{parent.Text?.GetDefault()}': {ptrIndex} → {ptrIndex + 1}");
                 }
                 else
                 {
@@ -1268,7 +1261,6 @@ namespace DialogEditor.ViewModels
             else
             {
                 StatusMessage = "Cannot find parent node";
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"No parent found for '{node.Text?.GetDefault()}'");
             }
         }
 
@@ -1288,6 +1280,57 @@ namespace DialogEditor.ViewModels
                     return reply;
             }
 
+            return null;
+        }
+
+        /// <summary>
+        /// Find a sibling node to focus after cutting/deleting a node.
+        /// Returns previous sibling if available, otherwise next sibling, otherwise parent.
+        /// </summary>
+        private DialogNode? FindSiblingForFocus(DialogNode node)
+        {
+            // Find parent to get siblings
+            var parent = FindParentNode(node);
+
+            if (parent != null)
+            {
+                // Node is a child - find sibling in parent's pointers
+                var siblings = parent.Pointers.Where(p => p.Node != null).Select(p => p.Node!).ToList();
+                int index = siblings.IndexOf(node);
+
+                if (index >= 0)
+                {
+                    // Try previous sibling first
+                    if (index > 0)
+                        return siblings[index - 1];
+
+                    // Try next sibling
+                    if (index < siblings.Count - 1)
+                        return siblings[index + 1];
+                }
+
+                // No siblings - return parent
+                return parent;
+            }
+            else if (CurrentDialog != null)
+            {
+                // Node is a START node - find sibling in START nodes
+                var startNodes = CurrentDialog.Starts.Where(p => p.Node != null).Select(p => p.Node!).ToList();
+                int index = startNodes.IndexOf(node);
+
+                if (index >= 0)
+                {
+                    // Try previous START node
+                    if (index > 0)
+                        return startNodes[index - 1];
+
+                    // Try next START node
+                    if (index < startNodes.Count - 1)
+                        return startNodes[index + 1];
+                }
+            }
+
+            // No sibling found - return null (will lose focus)
             return null;
         }
 
@@ -1782,10 +1825,13 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
-            _copiedNode = nodeToCopy.OriginalNode;
-            _wasCut = false; // Mark as copy operation (duplicate, not move)
-            StatusMessage = $"Node copied: {_copiedNode.DisplayText}";
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied node: {_copiedNode.DisplayText}");
+            if (CurrentDialog == null) return;
+
+            var node = nodeToCopy.OriginalNode;
+            _clipboardService.CopyNode(node, CurrentDialog);
+
+            StatusMessage = $"Node copied: {node.DisplayText}";
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied node: {node.DisplayText}");
         }
 
         public void CutNode(TreeViewSafeNode? nodeToCut)
@@ -1798,12 +1844,17 @@ namespace DialogEditor.ViewModels
 
             var node = nodeToCut.OriginalNode;
 
+            // Find sibling to focus BEFORE cutting
+            var siblingToFocus = FindSiblingForFocus(node);
+
             // Save state for undo before cutting
             SaveUndoState("Cut Node");
 
-            // Store node for pasting
-            _copiedNode = node;
-            _wasCut = true; // Mark as cut operation (move, not copy)
+            // Store node for pasting in clipboard service
+            if (CurrentDialog != null)
+            {
+                _clipboardService.CutNode(node, CurrentDialog);
+            }
 
             // CRITICAL: Check for other references BEFORE detaching
             // We need to count while the current reference is still there
@@ -1834,11 +1885,20 @@ namespace DialogEditor.ViewModels
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Kept cut node in list (has {hasOtherReferences} other references): {node.DisplayText}");
             }
 
-            // NOTE: Do NOT add the cut node to scrap - it's stored in _copiedNode for pasting
+            // NOTE: Do NOT add the cut node to scrap - it's stored in clipboard service for pasting
             // Cut is a move operation, not a delete operation
             // The node is intentionally detached and will be reattached on paste
 
-            RefreshTreeView();
+            // Refresh tree and restore focus to sibling
+            if (siblingToFocus != null)
+            {
+                RefreshTreeViewAndSelectNode(siblingToFocus);
+            }
+            else
+            {
+                RefreshTreeView();
+            }
+
             HasUnsavedChanges = true;
             StatusMessage = $"Cut node: {node.DisplayText}";
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Cut node (detached from parent): {node.DisplayText}");
@@ -2030,7 +2090,7 @@ namespace DialogEditor.ViewModels
         public void PasteAsDuplicate(TreeViewSafeNode? parent)
         {
             if (CurrentDialog == null) return;
-            if (_copiedNode == null)
+            if (_clipboardService.ClipboardNode == null)
             {
                 StatusMessage = "No node copied. Use Copy Node first.";
                 return;
@@ -2048,7 +2108,7 @@ namespace DialogEditor.ViewModels
             if (parent is TreeViewRootNode)
             {
                 // PC Replies can NEVER be at ROOT (they only respond to NPCs)
-                if (_copiedNode.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_copiedNode.Speaker))
+                if (_clipboardService.ClipboardNode.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_clipboardService.ClipboardNode.Speaker))
                 {
                     StatusMessage = "Cannot paste PC Reply to ROOT - PC can only respond to NPC statements";
                     UnifiedLogger.LogApplication(LogLevel.WARN, "Blocked PC Reply paste to ROOT");
@@ -2056,7 +2116,7 @@ namespace DialogEditor.ViewModels
                 }
 
                 // For Cut operation, reuse the node; for Copy, clone it
-                var duplicate = _wasCut ? _copiedNode : CloneNode(_copiedNode);
+                var duplicate = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : CloneNode(_clipboardService.ClipboardNode);
 
                 // Convert NPC Reply nodes to Entry when pasting to ROOT (GFF requirement)
                 if (duplicate.Type == DialogNodeType.Reply)
@@ -2069,7 +2129,7 @@ namespace DialogEditor.ViewModels
                 }
 
                 // If cut, ensure node is in the appropriate list (may have been removed during cut)
-                if (_wasCut)
+                if (_clipboardService.WasCutOperation)
                 {
                     var list = duplicate.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
                     if (!list.Contains(duplicate))
@@ -2111,21 +2171,35 @@ namespace DialogEditor.ViewModels
 
                 RefreshTreeView();
                 HasUnsavedChanges = true;
-                var opType = _wasCut ? "Moved" : "Pasted duplicate";
+                var opType = _clipboardService.WasCutOperation ? "Moved" : "Pasted duplicate";
                 StatusMessage = $"{opType} Entry at ROOT: {duplicate.DisplayText}";
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"{opType} Entry to ROOT: {duplicate.DisplayText}");
 
-                // Clear cut flag after paste completes
-                _wasCut = false;
+                // Clipboard is cleared by service after cut/paste
                 return;
             }
 
             // Normal paste to non-ROOT parent
+            var parentNode = parent.OriginalNode;
+
+            // CRITICAL: Validate parent/child type compatibility (Aurora rule)
+            // Entry (NPC) can only have Reply (PC) children
+            // Reply (PC) can only have Entry (NPC) children
+            if (parentNode.Type == _clipboardService.ClipboardNode.Type)
+            {
+                string parentTypeName = parentNode.Type == DialogNodeType.Entry ? "NPC" : "PC";
+                string childTypeName = _clipboardService.ClipboardNode.Type == DialogNodeType.Entry ? "NPC" : "PC";
+                StatusMessage = $"Cannot paste {childTypeName} under {parentTypeName} - conversation must alternate NPC/PC";
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Blocked invalid paste: {childTypeName} node under {parentTypeName} parent");
+                return;
+            }
+
             // For Cut operation, reuse the node; for Copy, clone it
-            var duplicateNode = _wasCut ? _copiedNode : CloneNode(_copiedNode);
+            var duplicateNode = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : CloneNode(_clipboardService.ClipboardNode);
 
             // If cut, ensure node is in the appropriate list (may have been removed during cut)
-            if (_wasCut)
+            if (_clipboardService.WasCutOperation)
             {
                 var list = duplicateNode.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
                 if (!list.Contains(duplicateNode))
@@ -2166,18 +2240,17 @@ namespace DialogEditor.ViewModels
 
             RefreshTreeView();
             HasUnsavedChanges = true;
-            var operation = _wasCut ? "Moved" : "Pasted duplicate";
+            var operation = _clipboardService.WasCutOperation ? "Moved" : "Pasted duplicate";
             StatusMessage = $"{operation} node under {parent.DisplayText}: {duplicateNode.DisplayText}";
 
-            // Clear cut flag after paste completes
-            _wasCut = false;
+            // Clipboard is cleared by service after cut/paste
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted duplicate: {duplicateNode.DisplayText} under {parent.DisplayText}");
         }
 
         public void PasteAsLink(TreeViewSafeNode? parent)
         {
             if (CurrentDialog == null) return;
-            if (_copiedNode == null)
+            if (!_clipboardService.HasClipboardContent)
             {
                 StatusMessage = "No node copied. Use Copy Node first.";
                 return;
@@ -2188,17 +2261,9 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
-            // NOTE: User cannot paste a node as a link under itself (would create immediate circular reference).
-            // This is expected behavior - links must point to different nodes to maintain valid conversation flow.
-            // GFF handles this naturally by creating a pointer structure that would result in an infinite loop
-            // if not prevented. Users should paste as duplicate if they want the same content in multiple places
-            // within the same branch.
-
             // Check if pasting to ROOT
             if (parent is TreeViewRootNode)
             {
-                // Format requirement: Cannot paste as link to ROOT level at all
-                // ROOT can only have new Entry nodes or duplicates, not links
                 StatusMessage = "Cannot paste as link to ROOT - use Paste as Duplicate instead";
                 UnifiedLogger.LogApplication(LogLevel.WARN, "Blocked paste as link to ROOT - links not supported at ROOT level");
                 return;
@@ -2207,41 +2272,22 @@ namespace DialogEditor.ViewModels
             // Save state for undo before creating link
             SaveUndoState("Paste as Link");
 
-            // Normal paste link to non-ROOT parent
-            // Get the current index of copied node (LinkRegistry ensures it's accurate)
-            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(_copiedNode, _copiedNode.Type);
+            // Delegate to clipboard service
+            var linkPtr = _clipboardService.PasteAsLink(CurrentDialog, parent.OriginalNode);
 
-            // Validate index is valid
-            if ((int)nodeIndex == -1)
+            if (linkPtr == null)
             {
-                StatusMessage = "Error: Copied node no longer exists in dialog";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "Copied node not found in dialog during paste as link");
+                // Service already logged the reason (Cut operation, different dialog, node not found, etc.)
+                StatusMessage = "Cannot paste as link - check logs for details";
                 return;
             }
-
-            // Create link pointer (references original node)
-            var linkPtr = new DialogPtr
-            {
-                Node = _copiedNode,
-                Type = _copiedNode.Type,
-                Index = nodeIndex,
-                IsLink = true, // Mark as link
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = "",
-                LinkComment = "[Link to original]",
-                Parent = CurrentDialog
-            };
-
-            parent.OriginalNode.Pointers.Add(linkPtr);
 
             // Register the link pointer with LinkRegistry
             CurrentDialog.LinkRegistry.RegisterLink(linkPtr);
 
             RefreshTreeView();
             HasUnsavedChanges = true;
-            StatusMessage = $"Pasted link under {parent.DisplayText}: {_copiedNode.DisplayText}";
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted link to: {_copiedNode.DisplayText} under {parent.DisplayText}");
+            StatusMessage = $"Pasted link under {parent.DisplayText}: {linkPtr.Node?.DisplayText}";
         }
 
         private DialogNode CloneNode(DialogNode original)
@@ -3291,14 +3337,43 @@ namespace DialogEditor.ViewModels
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring to parent: {selectedParent.DisplayText} (Type: {selectedParent.GetType().Name})");
 
-            var node = _scrapManager.RestoreFromScrap(entryId);
+            // Get the node from scrap WITHOUT removing it yet
+            var node = _scrapManager.GetNodeFromScrap(entryId);
             if (node == null)
             {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "Failed to restore node from scrap manager");
+                UnifiedLogger.LogApplication(LogLevel.ERROR, "Failed to retrieve node from scrap manager");
+                StatusMessage = "Failed to retrieve node from scrap";
                 return false;
             }
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node restored from scrap: Type={node.Type}, Text={node.Text?.Strings.Values.FirstOrDefault()}");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node retrieved from scrap: Type={node.Type}, Text={node.Text?.Strings.Values.FirstOrDefault()}");
+
+            // Validate restoration target BEFORE making ANY changes
+            if (selectedParent is TreeViewRootNode && node.Type != DialogNodeType.Entry)
+            {
+                StatusMessage = "Only NPC Entry nodes can be restored to root level";
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore PC Reply to root level");
+                return false;
+            }
+
+            // Validate dialog structure rules
+            if (!(selectedParent is TreeViewRootNode) && selectedParent?.OriginalNode != null)
+            {
+                var parentNode = selectedParent.OriginalNode;
+
+                // NPC Entry can only be child of PC Reply (not another NPC Entry)
+                if (node.Type == DialogNodeType.Entry && parentNode.Type == DialogNodeType.Entry)
+                {
+                    StatusMessage = "NPC Entry nodes cannot be children of other NPC Entry nodes";
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "Invalid structure: Entry under Entry");
+                    return false;
+                }
+
+                // PC Reply can be under NPC Entry OR NPC Reply (branching PC responses)
+                // No validation needed for PC Reply - both parent types are valid
+            }
+
+            // ALL validations passed - now make the changes
 
             // Save state for undo
             SaveUndoState("Restore from Scrap");
@@ -3336,20 +3411,11 @@ namespace DialogEditor.ViewModels
             if (selectedParent is TreeViewRootNode)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "Restoring to root level");
-                // Restore to root level - only Entries allowed
-                if (node.Type == DialogNodeType.Entry)
-                {
-                    ptr.IsStart = true;
-                    CurrentDialog.Starts.Add(ptr);
-                    StatusMessage = "Restored node to root level";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Node restored to root level");
-                }
-                else
-                {
-                    StatusMessage = "Only NPC Entry nodes can be restored to root level";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore PC Reply to root level");
-                    return false;
-                }
+                // We already validated this is an Entry node above
+                ptr.IsStart = true;
+                CurrentDialog.Starts.Add(ptr);
+                StatusMessage = "Restored node to root level";
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Node restored to root level");
             }
             else
             {
@@ -3371,6 +3437,9 @@ namespace DialogEditor.ViewModels
             // Refresh UI
             RefreshTreeView();
             HasUnsavedChanges = true;
+
+            // Only remove from scrap after successful restoration
+            _scrapManager.RemoveFromScrap(entryId);
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "Restore completed successfully");
             return true;

@@ -52,6 +52,9 @@ namespace DialogEditor.Views
 
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
+
+            // Initialize selected tree node to null (no selection on startup)
+            _viewModel.SelectedTreeNode = null;
             _audioService = new AudioService();
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
@@ -1448,6 +1451,12 @@ namespace DialogEditor.Views
 
             var treeView = sender as TreeView;
             _selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
+
+            // Update ViewModel's selected tree node for Restore button enabling
+            if (_viewModel != null)
+            {
+                _viewModel.SelectedTreeNode = _selectedNode;
+            }
 
             // Show/hide panels based on node type
             var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");

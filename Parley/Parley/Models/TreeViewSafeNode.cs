@@ -279,7 +279,7 @@ namespace DialogEditor.Models
             {
                 if (pointer.Node != null)
                 {
-                    DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Processing pointer to '{pointer.Node.DisplayText}' (Type: {pointer.Type}, Index: {pointer.Index})");
+                    DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Processing pointer to '{pointer.Node.DisplayText}' (Type: {pointer.Type}, Index: {pointer.Index}, IsLink: {pointer.IsLink})");
 
                     // Skip if we already added this node to this parent (same as copy tree)
                     if (addedNodes.Contains(pointer.Node))
@@ -291,8 +291,15 @@ namespace DialogEditor.Models
                     // Track that we're adding this node
                     addedNodes.Add(pointer.Node);
 
+                    // Links are ALWAYS shown as link nodes (gray, IsChild marked) - don't expand them
+                    if (pointer.IsLink)
+                    {
+                        DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating link node for '{pointer.Node.DisplayText}' (IsLink=true)");
+                        var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Link", pointer);
+                        _children.Add(linkNode);
+                    }
                     // Check if node is in our ancestor chain (circular reference within this path)
-                    if (_ancestorNodes.Contains(pointer.Node))
+                    else if (_ancestorNodes.Contains(pointer.Node))
                     {
                         DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating circular link for '{pointer.Node.DisplayText}' (ancestor chain protection)");
                         var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Circular");
@@ -353,7 +360,8 @@ namespace DialogEditor.Models
         private readonly DialogNode _linkedNode;
         private readonly string _linkType;
 
-        public TreeViewSafeLinkNode(DialogNode linkedNode, int depth, string linkType = "Link") : base(linkedNode, new HashSet<DialogNode>(), depth)
+        public TreeViewSafeLinkNode(DialogNode linkedNode, int depth, string linkType = "Link", DialogPtr? sourcePointer = null)
+            : base(linkedNode, new HashSet<DialogNode>(), depth, sourcePointer)
         {
             _linkedNode = linkedNode;
             _linkType = linkType;

@@ -8,6 +8,136 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.1.9-alpha] - 2025-11-16
+**Branch**: `parley/refactor/issue-99-mainviewmodel` | **PR**: #115
+
+### Issue #99: MainViewModel Refactoring
+
+Refactoring MainViewModel (3,501 lines) to improve maintainability and separation of concerns.
+
+### Phase 2: Service Implementation Complete
+- **Created DialogEditorService** (~320 lines):
+  - AddSmartNode, AddEntryNode, AddPCReplyNode operations
+  - DeleteNode with hierarchy tracking and scrap integration
+  - MoveNodeUp/MoveNodeDown for reordering
+  - Proper uint/int type handling for DialogPtr.Index
+  - Index recalculation after modifications
+
+- **Created DialogClipboardService** (~330 lines):
+  - CopyNode with deep clone support
+  - CutNode for move operations
+  - PasteAsDuplicate with cut/copy distinction
+  - PasteAsLink for reference creation
+  - Recursive node cloning with circular reference handling
+
+- **MainViewModel Integration Complete**:
+  - Added service instances to MainViewModel
+  - Refactored AddSmartNode, AddEntryNode, AddPCReplyNode to use DialogEditorService
+  - Refactored MoveNodeUp/MoveNodeDown to use DialogEditorService for child nodes
+  - Updated CopyNode and CutNode to use DialogClipboardService
+  - Preserved undo/redo coordination in ViewModel
+  - Kept complex DeleteNode logic in ViewModel (link checking, orphan detection)
+  - Kept complex Paste logic in ViewModel (LinkRegistry, node type conversion)
+
+- **Results**:
+  - Services build successfully
+  - Parley runs without errors
+  - ~650 lines extracted into services
+  - MainViewModel reduced from 3,501 to 3,361 lines (140 line reduction)
+  - Clear separation of concerns achieved
+  - Complex operations appropriately kept in ViewModel
+
+### Fixed
+- **Scrap Restore Bug**: Fixed issue where scrap entries were deleted even when restore failed
+  - Separated `GetNodeFromScrap` (retrieves without removing) from `RemoveFromScrap`
+  - Only removes from scrap after successful restoration
+  - Validates restore target (e.g., PC Reply to root) before making ANY changes
+  - No dialog modifications occur if validation fails (no orphaned nodes)
+  - Clear user feedback when no parent selected or invalid restore target
+  - Prevents loss of scrap entries when user hasn't selected a valid parent
+
+- **Restore Button Enable/Disable**: Improved UI to prevent invalid restore attempts
+  - Added `CanRestoreFromScrap` property that checks all preconditions
+  - Restore button disabled when no tree node selected
+  - Restore button disabled when no scrap entry selected
+  - Restore button disabled when no dialog loaded
+  - Prevents confusing error messages by disabling invalid actions upfront
+
+- **Scrap File Isolation**: Fixed scrap entries showing across different files
+  - Scrap now shows only entries for the current file
+  - Scrap clears when creating new dialog
+  - Scrap updates correctly after Save As operations
+  - Each file maintains its own scrap entries
+
+- **Dialog Structure Validation**: Enforced proper node placement rules
+  - NPC Entry nodes cannot be children of other NPC Entry nodes
+  - NPC Entry can only go to root or under PC Reply
+  - PC Reply can go under NPC Entry or NPC Reply (branching PC responses)
+  - Prevents invalid dialog structures that cause issues in Aurora
+
+- **Orphan Container Removal**: Fixed orphaning visible in Aurora after deletions
+  - Removed `DetectAndContainerizeOrphansSync()` call after node deletion
+  - No longer creates orphan containers in dialog files
+  - Deleted nodes now only stored in Scrap Tab (user-controlled recovery)
+  - Prevents Aurora from displaying unexpected orphan containers
+  - Aligns with Scrap Tab approach: users restore what they want, rest is pruned
+
+- **Auto-select ROOT on File Load**: Improved initial UI state consistency
+  - ROOT node automatically selected when file loads or new dialog created
+  - Shows conversation settings panel immediately
+  - Provides clear default context for restore and add operations
+  - Eliminates "no selection" state that caused restore button confusion
+  - TreeView SelectedItem now bound to ViewModel for programmatic control
+
+- **Enhanced Restore Button Validation**: Restore button now validates dialog structure
+  - Button disables when trying to restore PC Reply to root
+  - Button disables when trying to restore NPC Entry under NPC Entry
+  - Prevents silent validation failures - button state matches actual validity
+  - `CanRestoreFromScrap` now performs same validation as `RestoreFromScrap`
+  - Immediate visual feedback for invalid restore operations
+
+- **Issue #121: Copy/Cut Consistency**: Made Copy and Cut operations behave consistently
+  - Both now create deep clones immediately (no deferred cloning)
+  - Clipboard content isolated from source modifications
+  - Prevents subtle bugs from shared references
+  - All clipboard tests passing (164 total)
+
+- **Issue #111: Child Link Display**: Fixed child links not showing as gray/IsChild
+  - TreeViewSafeLinkNode now properly passes sourcePointer to base class
+  - IsChild property correctly reads pointer.IsLink flag
+  - Child links now display in gray (matching NWN Toolset)
+  - Properties panel correctly shows IsChild=1 for link nodes
+
+- **Issue #111: Child Link Deletion Behavior**: Fixed parent node deletion when deleting child link
+  - Deleting a child link now only removes the pointer (doesn't delete parent)
+  - Parent nodes properly preserved in dialog
+  - Automated test coverage added
+  - Aligns with NWN Toolset behavior
+
+### Added
+- **Developer Documentation**:
+  - `Dev_CopyPaste_System.md` - Clipboard architecture and CloneMap pattern
+  - `Dev_Orphan_Scrap_System.md` - Orphan detection with Ctrl+Z vs Scrap comparison
+
+### Changed
+- **DialogClipboardService**: Refactored PasteAsLink to use service delegation
+  - Moved link pointer creation logic from MainViewModel to service
+  - Cleaner separation of concerns
+  - Consistent with other clipboard operations
+
+### Next Steps
+- Complete method migration to services
+- Extract tree management to DialogTreeService
+- Remove redundant fields from MainViewModel
+- Target: Further reduce MainViewModel to ~1,500 lines
+
+---
+
+## [0.1.8-alpha] - 2025-11-15
+**Branch**: `parley/feat/epic-2-ui-ux` | **PR**: #114
+
 ### Epic 112: Scrap Tab - Node Recovery System
 
 Implemented complete scrap tab functionality replacing broken orphan container system, following Aurora's user-controlled approach.

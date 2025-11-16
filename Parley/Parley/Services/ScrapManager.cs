@@ -92,10 +92,9 @@ namespace Parley.Services
         }
 
         /// <summary>
-        /// Restore a specific scrap entry back to the dialog
-        /// Returns the deserialized node for re-insertion
+        /// Get a node from scrap by ID (does not remove from scrap)
         /// </summary>
-        public DialogNode? RestoreFromScrap(string entryId)
+        public DialogNode? GetNodeFromScrap(string entryId)
         {
             var entry = _scrapData.Entries.FirstOrDefault(e => e.Id == entryId);
             if (entry == null) return null;
@@ -105,20 +104,32 @@ namespace Parley.Services
                 var node = DeserializeNode(entry.SerializedNode);
                 if (node != null)
                 {
-                    // Remove from scrap after successful restoration
-                    _scrapData.Entries.Remove(entry);
-                    SaveScrapData();
-                    UpdateScrapEntries();
-
-                    UnifiedLogger.LogApplication(LogLevel.INFO,
-                        $"Restored node from scrap: {entry.NodeText}");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Retrieved node from scrap: {entry.NodeText}");
                 }
                 return node;
             }
             catch (Exception ex)
             {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to restore node from scrap: {ex.Message}");
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to get node from scrap: {ex.Message}");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Remove an entry from scrap after successful restoration
+        /// </summary>
+        public void RemoveFromScrap(string entryId)
+        {
+            var entry = _scrapData.Entries.FirstOrDefault(e => e.Id == entryId);
+            if (entry != null)
+            {
+                _scrapData.Entries.Remove(entry);
+                SaveScrapData();
+                UpdateScrapEntries();
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Removed restored node from scrap: {entry.NodeText}");
             }
         }
 
@@ -172,8 +183,37 @@ namespace Parley.Services
             return _scrapData.Entries.Count(e => e.FilePath == sanitizedPath);
         }
 
+        /// <summary>
+        /// Update the visible scrap entries for a specific file
+        /// </summary>
+        public void UpdateScrapEntriesForFile(string? filePath)
+        {
+            ScrapEntries.Clear();
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // No file loaded, show no entries
+                ScrapCountChanged?.Invoke(this, 0);
+                return;
+            }
+
+            var sanitizedPath = SanitizePath(filePath);
+
+            // Only show entries for the current file
+            foreach (var entry in _scrapData.Entries
+                .Where(e => e.FilePath == sanitizedPath)
+                .OrderByDescending(e => e.Timestamp))
+            {
+                ScrapEntries.Add(entry);
+            }
+
+            ScrapCountChanged?.Invoke(this, ScrapEntries.Count);
+        }
+
         private void UpdateScrapEntries()
         {
+            // This is now just for internal use when loading data
+            // The UI should call UpdateScrapEntriesForFile instead
             ScrapEntries.Clear();
             foreach (var entry in _scrapData.Entries.OrderByDescending(e => e.Timestamp))
             {
