@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.9-alpha] - TBD
+## [0.1.9-alpha] - 2025-11-16
 **Branch**: `parley/refactor/issue-99-mainviewmodel` | **PR**: #115
 
 ### Issue #99: MainViewModel Refactoring
@@ -97,6 +97,35 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
   - Prevents silent validation failures - button state matches actual validity
   - `CanRestoreFromScrap` now performs same validation as `RestoreFromScrap`
   - Immediate visual feedback for invalid restore operations
+
+- **Issue #121: Copy/Cut Consistency**: Made Copy and Cut operations behave consistently
+  - Both now create deep clones immediately (no deferred cloning)
+  - Clipboard content isolated from source modifications
+  - Prevents subtle bugs from shared references
+  - All clipboard tests passing (164 total)
+
+- **Issue #111: Child Link Display**: Fixed child links not showing as gray/IsChild
+  - TreeViewSafeLinkNode now properly passes sourcePointer to base class
+  - IsChild property correctly reads pointer.IsLink flag
+  - Child links now display in gray (matching NWN Toolset)
+  - Properties panel correctly shows IsChild=1 for link nodes
+
+- **Issue #111: Child Link Deletion Behavior**: Fixed parent node deletion when deleting child link
+  - Deleting a child link now only removes the pointer (doesn't delete parent)
+  - Parent nodes properly preserved in dialog
+  - Automated test coverage added
+  - Aligns with NWN Toolset behavior
+
+### Added
+- **Developer Documentation**:
+  - `Dev_CopyPaste_System.md` - Clipboard architecture and CloneMap pattern
+  - `Dev_Orphan_Scrap_System.md` - Orphan detection with Ctrl+Z vs Scrap comparison
+
+### Changed
+- **DialogClipboardService**: Refactored PasteAsLink to use service delegation
+  - Moved link pointer creation logic from MainViewModel to service
+  - Cleaner separation of concerns
+  - Consistent with other clipboard operations
 
 ### Next Steps
 - Complete method migration to services
