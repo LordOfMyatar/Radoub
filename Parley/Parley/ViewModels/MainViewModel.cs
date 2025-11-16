@@ -189,15 +189,18 @@ namespace DialogEditor.ViewModels
                 Console.WriteLine($"[AddDebugMessage CALLED] {message}"); // Explicit console verification
 
                 // Parse log level from message (format: "[Component] LEVEL: message")
+                // Note: LEVEL is padded to 5 chars (ERROR, "WARN ", "INFO ", DEBUG, TRACE)
                 var logLevel = LogLevel.INFO; // default
-                if (message.Contains("ERROR:"))
+                if (message.Contains("ERROR:") || message.Contains("ERROR :"))
                     logLevel = LogLevel.ERROR;
-                else if (message.Contains("WARN:"))
+                else if (message.Contains("WARN:") || message.Contains("WARN :"))
                     logLevel = LogLevel.WARN;
-                else if (message.Contains("DEBUG:"))
+                else if (message.Contains("DEBUG:") || message.Contains("DEBUG :"))
                     logLevel = LogLevel.DEBUG;
-                else if (message.Contains("TRACE:"))
+                else if (message.Contains("TRACE:") || message.Contains("TRACE :"))
                     logLevel = LogLevel.TRACE;
+                else if (message.Contains("INFO:") || message.Contains("INFO :"))
+                    logLevel = LogLevel.INFO;
 
                 var timestampedMessage = $"[{DateTime.Now:HH:mm:ss}] {message}";
 
