@@ -127,6 +127,10 @@ namespace DialogEditor.Views
                     }
                 }
             };
+
+            // Initialize log level filter to default (INFO level)
+            // SelectionChanged doesn't fire on initial XAML load, so we must set it manually
+            DebugLogger.SetLogLevelFilter(LogLevel.INFO);
         }
 
         private void SetupKeyboardShortcuts()
@@ -911,7 +915,8 @@ namespace DialogEditor.Views
 
         private void OnLogLevelFilterChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (LogLevelFilterComboBox == null) return;
+            if (LogLevelFilterComboBox == null)
+                return;
 
             var selectedIndex = LogLevelFilterComboBox.SelectedIndex;
             var filterLevel = selectedIndex switch
@@ -921,10 +926,10 @@ namespace DialogEditor.Views
                 2 => LogLevel.INFO,
                 3 => LogLevel.DEBUG,
                 4 => LogLevel.TRACE,
-                _ => LogLevel.INFO // Default to INFO if something goes wrong
+                _ => LogLevel.INFO
             };
 
-            _viewModel.SetDebugMessageFilter(filterLevel);
+            DebugLogger.SetLogLevelFilter(filterLevel);
         }
 
         private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)

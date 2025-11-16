@@ -19,8 +19,6 @@ namespace DialogEditor.ViewModels
         private bool _isLoading;
         private string _statusMessage = "Ready";
         private ObservableCollection<string> _debugMessages = new();
-        private List<(string message, LogLevel level)> _allDebugMessages = new(); // Store all messages with their levels
-        private LogLevel _debugMessageFilter = LogLevel.INFO; // Default to INFO level
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
         private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
@@ -186,42 +184,15 @@ namespace DialogEditor.ViewModels
         {
             try
             {
-                Console.WriteLine($"[AddDebugMessage CALLED] {message}"); // Explicit console verification
-
-                // Parse log level from message (format: "[Component] LEVEL: message")
-                // Note: LEVEL is padded to 5 chars (ERROR, "WARN ", "INFO ", DEBUG, TRACE)
-                var logLevel = LogLevel.INFO; // default
-                if (message.Contains("ERROR:") || message.Contains("ERROR :"))
-                    logLevel = LogLevel.ERROR;
-                else if (message.Contains("WARN:") || message.Contains("WARN :"))
-                    logLevel = LogLevel.WARN;
-                else if (message.Contains("DEBUG:") || message.Contains("DEBUG :"))
-                    logLevel = LogLevel.DEBUG;
-                else if (message.Contains("TRACE:") || message.Contains("TRACE :"))
-                    logLevel = LogLevel.TRACE;
-                else if (message.Contains("INFO:") || message.Contains("INFO :"))
-                    logLevel = LogLevel.INFO;
-
-                var timestampedMessage = $"[{DateTime.Now:HH:mm:ss}] {message}";
-
                 Dispatcher.UIThread.Post(() =>
                 {
-                    // Store in full message list
-                    _allDebugMessages.Add((timestampedMessage, logLevel));
+                    DebugMessages.Add(message);
 
-                    // Keep only last 1000 messages in full list to prevent memory issues
-                    if (_allDebugMessages.Count > 1000)
+                    // Keep only last 1000 messages in display to prevent memory issues
+                    if (DebugMessages.Count > 1000)
                     {
-                        _allDebugMessages.RemoveAt(0);
+                        DebugMessages.RemoveAt(0);
                     }
-
-                    // Add to visible list only if it passes the filter
-                    if (ShouldShowMessage(logLevel))
-                    {
-                        DebugMessages.Add(timestampedMessage);
-                    }
-
-                    Console.WriteLine($"[AddDebugMessage UI] Added to collection. Count={DebugMessages.Count}");
                 });
             }
             catch (Exception ex)
@@ -237,49 +208,11 @@ namespace DialogEditor.ViewModels
                 Dispatcher.UIThread.Post(() =>
                 {
                     DebugMessages.Clear();
-                    _allDebugMessages.Clear();
                 });
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to clear debug messages: {ex.Message}");
-            }
-        }
-
-        public void SetDebugMessageFilter(LogLevel filterLevel)
-        {
-            try
-            {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    _debugMessageFilter = filterLevel;
-                    RefreshDebugMessages();
-                });
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to set debug message filter: {ex.Message}");
-            }
-        }
-
-        private bool ShouldShowMessage(LogLevel messageLevel)
-        {
-            // Show messages at or above the selected filter level
-            // ERROR=0, WARN=1, INFO=2, DEBUG=3, TRACE=4
-            // So if filter is INFO (2), show ERROR (0), WARN (1), and INFO (2)
-            return messageLevel <= _debugMessageFilter;
-        }
-
-        private void RefreshDebugMessages()
-        {
-            DebugMessages.Clear();
-
-            foreach (var (message, level) in _allDebugMessages)
-            {
-                if (ShouldShowMessage(level))
-                {
-                    DebugMessages.Add(message);
-                }
             }
         }
 

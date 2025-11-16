@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using DialogEditor.Services;
 
 namespace DialogEditor.Utils
@@ -6,10 +8,11 @@ namespace DialogEditor.Utils
     public static class DebugLogger
     {
         private static dynamic? _mainWindow;
+        private static LogLevel _filterLevel = LogLevel.INFO; // Default filter
+        private static List<(string message, LogLevel level)> _allMessages = new();
 
         public static void Initialize(object mainWindow)
         {
-            Console.WriteLine($"★★★ [DebugLogger.Initialize] CALLED with mainWindow type: {mainWindow?.GetType().Name ?? "null"}");
             _mainWindow = mainWindow;
 
             // Initialize UnifiedLogger callback for UI integration
@@ -17,26 +20,32 @@ namespace DialogEditor.Utils
             {
                 try
                 {
-                    Console.WriteLine($"★★★ [DebugLogger CALLBACK] Received: {message?.Substring(0, Math.Min(50, message?.Length ?? 0)) ?? "null"}...");
-                    Console.WriteLine($"★★★ [DebugLogger CALLBACK] _mainWindow is null: {_mainWindow == null}");
+                    if (message == null) return;
 
-                    if (_mainWindow != null)
+                    // Parse log level from message (format: "[Component] LEVEL: message")
+                    var logLevel = ParseLogLevel(message);
+
+                    // Store message with level
+                    var timestampedMessage = $"[{DateTime.Now:HH:mm:ss}] {message}";
+                    _allMessages.Add((timestampedMessage, logLevel));
+
+                    // Keep only last 1000 messages
+                    if (_allMessages.Count > 1000)
                     {
-                        Console.WriteLine($"★★★ [DebugLogger CALLBACK] About to call AddDebugMessage");
-                        _mainWindow.AddDebugMessage(message);
-                        Console.WriteLine($"★★★ [DebugLogger CALLBACK] AddDebugMessage completed");
+                        _allMessages.RemoveAt(0);
                     }
 
-                    Console.WriteLine($"[Debug] {message}"); // Keep console output too
+                    // Only send to UI if it passes the filter
+                    if (ShouldShowMessage(logLevel) && _mainWindow != null)
+                    {
+                        _mainWindow.AddDebugMessage(timestampedMessage);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"★★★ [DebugLogger] ERROR in callback: {ex.Message}");
-                    Console.WriteLine($"★★★ [DebugLogger] Stack: {ex.StackTrace}");
+                    Console.WriteLine($"[DebugLogger] ERROR in callback: {ex.Message}");
                 }
             });
-
-            Console.WriteLine("★★★ [DebugLogger.Initialize] Callback registered successfully");
         }
         
         public static void Log(string message)
@@ -76,12 +85,73 @@ namespace DialogEditor.Utils
         {
             try
             {
+                _allMessages.Clear();
                 _mainWindow?.ClearDebugOutput();
                 Console.WriteLine("[Debug] Clear debug output requested");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[DEBUG LOG ERROR] Failed to clear debug output: {ex.Message}");
+            }
+        }
+
+        public static void SetLogLevelFilter(LogLevel filterLevel)
+        {
+            _filterLevel = filterLevel;
+            RefreshDisplay();
+        }
+
+        private static LogLevel ParseLogLevel(string message)
+        {
+            // Parse log level from message (format: "[Component] LEVEL: message")
+            // Note: LEVEL is padded to 5 chars (ERROR, "WARN ", "INFO ", DEBUG, TRACE)
+            if (string.IsNullOrEmpty(message))
+                return LogLevel.INFO;
+
+            if (message.Contains("ERROR:") || message.Contains("ERROR :"))
+                return LogLevel.ERROR;
+            if (message.Contains("WARN:") || message.Contains("WARN :"))
+                return LogLevel.WARN;
+            if (message.Contains("DEBUG:") || message.Contains("DEBUG :"))
+                return LogLevel.DEBUG;
+            if (message.Contains("TRACE:") || message.Contains("TRACE :"))
+                return LogLevel.TRACE;
+            if (message.Contains("INFO:") || message.Contains("INFO :"))
+                return LogLevel.INFO;
+
+            return LogLevel.INFO; // default
+        }
+
+        private static bool ShouldShowMessage(LogLevel messageLevel)
+        {
+            // Show messages at or above the selected filter level
+            // ERROR=0, WARN=1, INFO=2, DEBUG=3, TRACE=4
+            // So if filter is INFO (2), show ERROR (0), WARN (1), and INFO (2)
+            return messageLevel <= _filterLevel;
+        }
+
+        private static void RefreshDisplay()
+        {
+            if (_mainWindow == null)
+                return;
+
+            try
+            {
+                // Clear current display
+                _mainWindow.ClearDebugOutput();
+
+                // Re-add filtered messages
+                foreach (var (message, level) in _allMessages)
+                {
+                    if (ShouldShowMessage(level))
+                    {
+                        _mainWindow.AddDebugMessage(message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DebugLogger.RefreshDisplay] ERROR: {ex.Message}");
             }
         }
     }
