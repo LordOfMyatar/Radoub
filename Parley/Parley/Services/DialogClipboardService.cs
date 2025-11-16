@@ -214,7 +214,7 @@ namespace Parley.Services
             {
                 parentNode.Pointers.Add(linkPtr);
             }
-            else if (_copiedNode.Type == DialogNodeType.Entry)
+            else if (_originalNode.Type == DialogNodeType.Entry)
             {
                 linkPtr.IsStart = true;
                 dialog.Starts.Add(linkPtr);
