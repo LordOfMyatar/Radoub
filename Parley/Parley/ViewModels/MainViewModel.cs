@@ -1283,6 +1283,57 @@ namespace DialogEditor.ViewModels
             return null;
         }
 
+        /// <summary>
+        /// Find a sibling node to focus after cutting/deleting a node.
+        /// Returns previous sibling if available, otherwise next sibling, otherwise parent.
+        /// </summary>
+        private DialogNode? FindSiblingForFocus(DialogNode node)
+        {
+            // Find parent to get siblings
+            var parent = FindParentNode(node);
+
+            if (parent != null)
+            {
+                // Node is a child - find sibling in parent's pointers
+                var siblings = parent.Pointers.Where(p => p.Node != null).Select(p => p.Node!).ToList();
+                int index = siblings.IndexOf(node);
+
+                if (index >= 0)
+                {
+                    // Try previous sibling first
+                    if (index > 0)
+                        return siblings[index - 1];
+
+                    // Try next sibling
+                    if (index < siblings.Count - 1)
+                        return siblings[index + 1];
+                }
+
+                // No siblings - return parent
+                return parent;
+            }
+            else if (CurrentDialog != null)
+            {
+                // Node is a START node - find sibling in START nodes
+                var startNodes = CurrentDialog.Starts.Where(p => p.Node != null).Select(p => p.Node!).ToList();
+                int index = startNodes.IndexOf(node);
+
+                if (index >= 0)
+                {
+                    // Try previous START node
+                    if (index > 0)
+                        return startNodes[index - 1];
+
+                    // Try next START node
+                    if (index < startNodes.Count - 1)
+                        return startNodes[index + 1];
+                }
+            }
+
+            // No sibling found - return null (will lose focus)
+            return null;
+        }
+
         private void PerformMove(List<DialogNode> list, DialogNodeType nodeType, uint oldIdx, uint newIdx)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -1793,6 +1844,9 @@ namespace DialogEditor.ViewModels
 
             var node = nodeToCut.OriginalNode;
 
+            // Find sibling to focus BEFORE cutting
+            var siblingToFocus = FindSiblingForFocus(node);
+
             // Save state for undo before cutting
             SaveUndoState("Cut Node");
 
@@ -1835,7 +1889,16 @@ namespace DialogEditor.ViewModels
             // Cut is a move operation, not a delete operation
             // The node is intentionally detached and will be reattached on paste
 
-            RefreshTreeView();
+            // Refresh tree and restore focus to sibling
+            if (siblingToFocus != null)
+            {
+                RefreshTreeViewAndSelectNode(siblingToFocus);
+            }
+            else
+            {
+                RefreshTreeView();
+            }
+
             HasUnsavedChanges = true;
             StatusMessage = $"Cut node: {node.DisplayText}";
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Cut node (detached from parent): {node.DisplayText}");
