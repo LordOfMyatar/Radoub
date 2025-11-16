@@ -262,7 +262,7 @@ namespace Parley.Tests
         #region Cut Tests
 
         [Fact]
-        public void CutNode_StoresReference_NotClone()
+        public void CutNode_CreatesClone_SameAsCopy()
         {
             // Arrange
             var dialog = CreateTestDialog();
@@ -276,12 +276,13 @@ namespace Parley.Tests
             Assert.True(_clipboardService.HasClipboardContent);
             Assert.True(_clipboardService.WasCutOperation);
 
-            // Cut stores SAME reference (not clone)
-            Assert.Same(node, _clipboardService.ClipboardNode);
+            // Cut now creates clone (consistent with Copy)
+            Assert.NotSame(node, _clipboardService.ClipboardNode);
+            Assert.Same(node, _clipboardService.OriginalNode);
         }
 
         [Fact]
-        public void CutNode_ModifyOriginal_AffectsClipboard()
+        public void CutNode_ModifyOriginal_DoesNotAffectClipboard()
         {
             // Arrange
             var dialog = CreateTestDialog();
@@ -294,8 +295,8 @@ namespace Parley.Tests
             // Modify original after cut
             node.Text.Add(0, "Modified text");
 
-            // Assert - Clipboard reflects changes (same reference)
-            Assert.Equal("Modified text", _clipboardService.ClipboardNode!.Text.GetDefault());
+            // Assert - Clipboard does NOT reflect changes (now cloned)
+            Assert.Equal("Original text", _clipboardService.ClipboardNode!.Text.GetDefault());
         }
 
         #endregion
@@ -303,7 +304,7 @@ namespace Parley.Tests
         #region Copy vs Cut Behavior
 
         [Fact]
-        public void CopyVsCut_ModifyOriginal_OnlyCutReflectsChanges()
+        public void CopyVsCut_ModifyOriginal_BothIndependent()
         {
             // Arrange
             var dialog = CreateTestDialog();
@@ -325,12 +326,9 @@ namespace Parley.Tests
             node1.Text.Add(0, "Modified text");
             node2.Text.Add(0, "Modified text");
 
-            // Assert
-            // Copied node is independent (deep clone)
+            // Assert - Both are independent (both clone now)
             Assert.Equal("Original text", copiedNode!.Text.GetDefault());
-
-            // Cut node reflects changes (same reference)
-            Assert.Equal("Modified text", cutNode!.Text.GetDefault());
+            Assert.Equal("Original text", cutNode!.Text.GetDefault());
         }
 
         #endregion
@@ -357,7 +355,7 @@ namespace Parley.Tests
         }
 
         [Fact]
-        public void PasteAsDuplicate_AfterCut_SameDialog_ReturnsOriginalNode()
+        public void PasteAsDuplicate_AfterCut_CreatesNewNode()
         {
             // Arrange
             var dialog = CreateTestDialog();
@@ -371,7 +369,8 @@ namespace Parley.Tests
 
             // Assert
             Assert.NotNull(pasted);
-            Assert.Same(original, pasted); // Same instance for move operation
+            Assert.NotSame(original, pasted); // Cut now creates clone (consistent with Copy)
+            Assert.Equal(2, dialog.Entries.Count); // Original + pasted clone
         }
 
         [Fact]
@@ -415,7 +414,7 @@ namespace Parley.Tests
         #region Paste As Link Tests
 
         [Fact]
-        public void PasteAsLink_AfterCut_CreatesLinkPointer()
+        public void PasteAsLink_AfterCut_ReturnsNull()
         {
             // Arrange
             var dialog = CreateTestDialog();
@@ -426,10 +425,31 @@ namespace Parley.Tests
             dialog.Replies.Add(original);
             dialog.Entries.Add(parent);
 
-            // IMPORTANT: Cut (not Copy) preserves the original node reference
-            // PasteAsLink requires the node to be in the dialog's Replies/Entries list
-            // Copy creates a clone which is NOT in the dialog, so PasteAsLink would fail
+            // Cut now blocks PasteAsLink (source will be deleted)
             _clipboardService.CutNode(original, dialog);
+
+            // Act - Try paste as link
+            var linkPtr = _clipboardService.PasteAsLink(dialog, parent);
+
+            // Assert - Cannot link after Cut (source will be deleted)
+            Assert.Null(linkPtr);
+            Assert.Empty(parent.Pointers);
+        }
+
+        [Fact]
+        public void PasteAsLink_AfterCopy_CreatesLinkPointer()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var original = CreateTestNode(DialogNodeType.Reply, "Shared reply");
+            var parent = CreateTestNode(DialogNodeType.Entry, "Parent");
+
+            // Add nodes to dialog
+            dialog.Replies.Add(original);
+            dialog.Entries.Add(parent);
+
+            // Copy (not Cut) preserves the original node for linking
+            _clipboardService.CopyNode(original, dialog);
 
             // Act - Paste as link
             var linkPtr = _clipboardService.PasteAsLink(dialog, parent);
