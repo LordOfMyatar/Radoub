@@ -2180,6 +2180,21 @@ namespace DialogEditor.ViewModels
             }
 
             // Normal paste to non-ROOT parent
+            var parentNode = parent.OriginalNode;
+
+            // CRITICAL: Validate parent/child type compatibility (Aurora rule)
+            // Entry (NPC) can only have Reply (PC) children
+            // Reply (PC) can only have Entry (NPC) children
+            if (parentNode.Type == _clipboardService.ClipboardNode.Type)
+            {
+                string parentTypeName = parentNode.Type == DialogNodeType.Entry ? "NPC" : "PC";
+                string childTypeName = _clipboardService.ClipboardNode.Type == DialogNodeType.Entry ? "NPC" : "PC";
+                StatusMessage = $"Cannot paste {childTypeName} under {parentTypeName} - conversation must alternate NPC/PC";
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Blocked invalid paste: {childTypeName} node under {parentTypeName} parent");
+                return;
+            }
+
             // For Cut operation, reuse the node; for Copy, clone it
             var duplicateNode = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : CloneNode(_clipboardService.ClipboardNode);
 
