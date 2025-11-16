@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.10-alpha] - TBD
+**Branch**: `parley/feat/epic-126-logging` | **PR**: #TBD
+
+### Epic #126: Logging & Diagnostics
+
+Comprehensive logging system improvements including log level filtering, structured logging, performance monitoring, and enhanced diagnostic capabilities.
+
+### Added
+- TBD
+
+### Fixed
+- TBD
+
+### Changed
+- TBD
+
+---
+
 ## [0.1.9-alpha] - 2025-11-16
 **Branch**: `parley/refactor/issue-99-mainviewmodel` | **PR**: #115
 
