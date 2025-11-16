@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using DialogEditor.Utils;
@@ -19,7 +19,7 @@ namespace DialogEditor.Parsers
         public void FixCompactPointerStructFieldIndices(CompactPointerResult compactResult,
             List<GffStruct> allStructs, uint compactFieldStartIndex)
         {
-            UnifiedLogger.LogParser(LogLevel.INFO, $"🎯 FixCompactPointerStructFieldIndices: Updating {compactResult.UniquePointers.Count} compact pointer structs");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"🎯 FixCompactPointerStructFieldIndices: Updating {compactResult.UniquePointers.Count} compact pointer structs");
 
             // Calculate the base struct index where compact pointer structs start
             int compactStructStartIndex = allStructs.Count - compactResult.UniquePointers.Count;
@@ -37,7 +37,7 @@ namespace DialogEditor.Parsers
                 UnifiedLogger.LogParser(LogLevel.DEBUG, $"Fixed UniquePtr[{i}] struct[{structIndex}]: DataOrDataOffset={ptrStruct.DataOrDataOffset} (field index {fieldIndex})");
             }
 
-            UnifiedLogger.LogParser(LogLevel.INFO, $"✅ Updated {compactResult.UniquePointers.Count} compact pointer struct field indices");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"✅ Updated {compactResult.UniquePointers.Count} compact pointer struct field indices");
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace DialogEditor.Parsers
         public void FixDirectPointerStructFieldIndices(List<GffStruct> allStructs,
             int structStartIndex, int structCount, uint fieldStartIndex)
         {
-            UnifiedLogger.LogParser(LogLevel.INFO, $"🎯 FixDirectPointerStructFieldIndices: Updating {structCount} pointer structs starting at struct[{structStartIndex}]");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"🎯 FixDirectPointerStructFieldIndices: Updating {structCount} pointer structs starting at struct[{structStartIndex}]");
 
             for (int i = 0; i < structCount; i++)
             {
@@ -62,7 +62,7 @@ namespace DialogEditor.Parsers
                 }
             }
 
-            UnifiedLogger.LogParser(LogLevel.INFO, $"✅ Updated {structCount} pointer struct field indices");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"✅ Updated {structCount} pointer struct field indices");
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace DialogEditor.Parsers
         public void FixReplyPointerStructFieldIndices(Dialog dialog, List<GffStruct> allStructs,
             List<List<int>> replyPointerStructIndices, uint replyPointerFieldStartIndex)
         {
-            UnifiedLogger.LogParser(LogLevel.INFO, $"🎯 FixReplyPointerStructFieldIndices: Updating struct DataOrDataOffset values (append-only method)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"🎯 FixReplyPointerStructFieldIndices: Updating struct DataOrDataOffset values (append-only method)");
 
             // With append-only field creation, each pointer struct gets 4 consecutive fields
             // starting from replyPointerFieldStartIndex
@@ -104,7 +104,7 @@ namespace DialogEditor.Parsers
         public void FixStartWrapperStructFieldIndices(Dialog dialog, List<GffStruct> allStructs,
             List<int> startStructIndices, uint startWrapperFieldStartIndex)
         {
-            UnifiedLogger.LogParser(LogLevel.INFO, $"🎯 FixStartWrapperStructFieldIndices: Updating struct DataOrDataOffset values for Start wrapper structs");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"🎯 FixStartWrapperStructFieldIndices: Updating struct DataOrDataOffset values for Start wrapper structs");
 
             // Each start wrapper struct gets 3 consecutive fields (Index, Active, ConditionParams)
             uint currentFieldIndex = startWrapperFieldStartIndex;
@@ -133,7 +133,7 @@ namespace DialogEditor.Parsers
         public void FixEntryPointerStructFieldIndices(Dialog dialog, List<GffStruct> allStructs,
             List<List<int>> entryPointerStructIndices, System.Func<DialogNode, uint> calculateEntryFieldCount)
         {
-            UnifiedLogger.LogParser(LogLevel.INFO, $"🎯 FixEntryPointerStructFieldIndices: Updating struct DataOrDataOffset values");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"🎯 FixEntryPointerStructFieldIndices: Updating struct DataOrDataOffset values");
 
             // Calculate where entry pointer fields start in the field sequence
             // Entry pointer fields are created after: root fields (9) + entry fields (variable)
