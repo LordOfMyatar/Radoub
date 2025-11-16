@@ -32,18 +32,22 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
   - PasteAsLink for reference creation
   - Recursive node cloning with circular reference handling
 
-- **Initial MainViewModel Integration**:
+- **MainViewModel Integration Complete**:
   - Added service instances to MainViewModel
-  - Updated CopyNode and CutNode to use clipboard service
-  - Maintaining backward compatibility during refactoring
+  - Refactored AddSmartNode, AddEntryNode, AddPCReplyNode to use DialogEditorService
+  - Refactored MoveNodeUp/MoveNodeDown to use DialogEditorService for child nodes
+  - Updated CopyNode and CutNode to use DialogClipboardService
   - Preserved undo/redo coordination in ViewModel
+  - Kept complex DeleteNode logic in ViewModel (link checking, orphan detection)
+  - Kept complex Paste logic in ViewModel (LinkRegistry, node type conversion)
 
 - **Results**:
   - Services build successfully
   - Parley runs without errors
   - ~650 lines extracted into services
-  - MainViewModel reduced from 3,501 to ~3,000 lines (14% reduction)
+  - MainViewModel reduced from 3,501 to 3,361 lines (140 line reduction)
   - Clear separation of concerns achieved
+  - Complex operations appropriately kept in ViewModel
 
 ### Fixed
 - **Scrap Restore Bug**: Fixed issue where scrap entries were deleted even when restore failed
