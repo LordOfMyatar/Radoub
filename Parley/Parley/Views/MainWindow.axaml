@@ -164,6 +164,7 @@
                     <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
                     <!-- DRAGON: Do not modify ItemsSource binding, SelectionChanged, or context menu Click handlers -->
                     <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
+                              SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
                               SelectionChanged="OnDialogTreeViewSelectionChanged"
                               DoubleTapped="OnTreeViewItemDoubleTapped">
                         <TreeView.ContextMenu>

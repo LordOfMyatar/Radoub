@@ -80,6 +80,13 @@ Refactoring MainViewModel (3,501 lines) to improve maintainability and separatio
   - Prevents Aurora from displaying unexpected orphan containers
   - Aligns with Scrap Tab approach: users restore what they want, rest is pruned
 
+- **Auto-select ROOT on File Load**: Improved initial UI state consistency
+  - ROOT node automatically selected when file loads or new dialog created
+  - Shows conversation settings panel immediately
+  - Provides clear default context for restore and add operations
+  - Eliminates "no selection" state that caused restore button confusion
+  - TreeView SelectedItem now bound to ViewModel for programmatic control
+
 ### Next Steps
 - Complete method migration to services
 - Extract tree management to DialogTreeService

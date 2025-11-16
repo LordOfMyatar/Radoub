@@ -448,6 +448,11 @@ namespace DialogEditor.ViewModels
                 newNodes.Add(rootNode);
                 rootNode.IsExpanded = true; // Auto-expand root
 
+                // Auto-select ROOT node for consistent initial state
+                // This ensures Restore button logic works correctly and shows conversation settings
+                SelectedTreeNode = rootNode;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-selected ROOT node");
+
                 // No longer creating orphan containers - using Scrap Tab instead
                 // Orphaned nodes are now managed via the ScrapManager service
                 // Commented out old orphan container system:
