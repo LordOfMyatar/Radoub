@@ -245,26 +245,47 @@ namespace Parley.Services
         /// </summary>
         private DialogNode CloneNode(DialogNode original)
         {
-            // Serialize and deserialize for deep clone
-            var json = JsonSerializer.Serialize(original, new JsonSerializerOptions
+            // CRITICAL: Create shallow clone without Pointers to avoid circular serialization
+            // Pointers will be rebuilt recursively afterward
+            var shallowClone = new DialogNode
             {
-                WriteIndented = false,
-                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
-            });
-
-            var clone = JsonSerializer.Deserialize<DialogNode>(json);
-            if (clone == null)
-                throw new InvalidOperationException("Failed to clone node");
-
-            // Clear pointers - they'll be rebuilt
-            clone.Pointers = new List<DialogPtr>();
+                Type = original.Type,
+                Text = CloneLocString(original.Text),
+                Speaker = original.Speaker ?? string.Empty,
+                Comment = original.Comment ?? string.Empty,
+                Sound = original.Sound ?? string.Empty,
+                ScriptAction = original.ScriptAction ?? string.Empty,
+                Animation = original.Animation,
+                AnimationLoop = original.AnimationLoop,
+                Delay = original.Delay,
+                Quest = original.Quest ?? string.Empty,
+                QuestEntry = original.QuestEntry,
+                ActionParams = new Dictionary<string, string>(original.ActionParams ?? new Dictionary<string, string>()),
+                Pointers = new List<DialogPtr>() // Empty - will be populated below
+            };
 
             // Recursively clone child nodes if needed
             if (original.Pointers.Count > 0)
             {
-                CloneChildNodes(original, clone, new Dictionary<DialogNode, DialogNode>(), 0);
+                CloneChildNodes(original, shallowClone, new Dictionary<DialogNode, DialogNode>(), 0);
             }
 
+            return shallowClone;
+        }
+
+        /// <summary>
+        /// Clone a LocString (localized text dictionary)
+        /// </summary>
+        private LocString CloneLocString(LocString? original)
+        {
+            if (original == null)
+                return new LocString();
+
+            var clone = new LocString();
+            foreach (var kvp in original.Strings)
+            {
+                clone.Strings[kvp.Key] = kvp.Value;
+            }
             return clone;
         }
 
@@ -297,19 +318,24 @@ namespace Parley.Services
                 }
                 else
                 {
-                    // Create new clone
-                    var json = JsonSerializer.Serialize(originalPtr.Node, new JsonSerializerOptions
+                    // Create shallow clone of child node
+                    clonedChild = new DialogNode
                     {
-                        WriteIndented = false,
-                        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
-                    });
+                        Type = originalPtr.Node.Type,
+                        Text = CloneLocString(originalPtr.Node.Text),
+                        Speaker = originalPtr.Node.Speaker ?? string.Empty,
+                        Comment = originalPtr.Node.Comment ?? string.Empty,
+                        Sound = originalPtr.Node.Sound ?? string.Empty,
+                        ScriptAction = originalPtr.Node.ScriptAction ?? string.Empty,
+                        Animation = originalPtr.Node.Animation,
+                        AnimationLoop = originalPtr.Node.AnimationLoop,
+                        Delay = originalPtr.Node.Delay,
+                        Quest = originalPtr.Node.Quest ?? string.Empty,
+                        QuestEntry = originalPtr.Node.QuestEntry,
+                        ActionParams = new Dictionary<string, string>(originalPtr.Node.ActionParams ?? new Dictionary<string, string>()),
+                        Pointers = new List<DialogPtr>()
+                    };
 
-                    var deserializedChild = JsonSerializer.Deserialize<DialogNode>(json);
-                    if (deserializedChild == null)
-                        continue;
-                    clonedChild = deserializedChild;
-
-                    clonedChild.Pointers = new List<DialogPtr>();
                     cloneMap[originalPtr.Node] = clonedChild;
 
                     // Recursively clone children with incremented depth
