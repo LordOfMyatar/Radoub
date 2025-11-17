@@ -10,6 +10,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.11-alpha] - 2025-11-16
+**Branch**: `parley/feat/issue-81-gui-tests` | **PR**: #129
+
+### Issue #81: GUI Test Coverage Expansion (Phase 1)
+
+Avalonia.Headless test implementation for critical GUI workflows. Added 28 tests: **12 passing**, 16 skipped pending DialogNodes refresh mechanism investigation (Issue #130).
+
+### Added
+- **Avalonia.Headless Test Framework**: Upgraded from 11.2.2 to 11.3.6 (matches Avalonia 11.3.6)
+- **Testing Documentation**: Comprehensive [TESTING_GUIDE.md](Documentation/Developer/TESTING_GUIDE.md) for Headless test patterns
+- **12 Passing Headless Tests**:
+  - **DialogLoadingHeadlessTests** (7/7): File loading, node creation, collection management
+  - **NodeCreationHeadlessTests** (3/7): Entry creation, smart node logic, index management
+  - **NodeDeletionHeadlessTests** (0/6): All access DialogNodes (skipped)
+  - **CopyPasteHeadlessTests** (2/8): Null handling, graceful degradation
+- **16 Skipped Tests** (Issue #130): Require DialogNodes ObservableCollection refresh trigger research
+
+### Changed
+- Upgraded `Avalonia.Headless.XUnit` from 11.2.2 to 11.3.6 for compatibility
+- **Test suite total**: 222 tests (206 passing, 16 skipped)
+
+### Documentation
+- **GUI_TEST_EXPANSION_PLAN.md** (NonPublic): Comprehensive test planning for 50+ future tests
+- **GUI_TEST_FINDINGS.md** (NonPublic): DialogNodes auto-update architectural discovery
+
+---
+
 ## [0.1.10-alpha] - TBD
 **Branch**: `parley/feat/epic-126-logging` | **PR**: #127
 
