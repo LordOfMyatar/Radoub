@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.13-alpha] - TBD
+**Branch**: `parley/refactor/epic-99-orphan-manager` | **PR**: #TBD
+
+### Epic #99: MainViewModel Refactoring - Phase 3 (OrphanNodeManager)
+
+Extract orphan node detection and cleanup functionality from MainViewModel into dedicated service. Much of this code is already deprecated/commented out, making this a clean extraction opportunity.
+
+---
+
 ## [0.1.12-alpha] - TBD
 **Branch**: `parley/refactor/epic-99-undo-manager` | **PR**: #131
 
