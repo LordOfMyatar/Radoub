@@ -56,6 +56,8 @@ namespace DialogEditor.Services
         // Logging settings
         private int _logRetentionSessions = 3; // Default: keep 3 most recent sessions
         private LogLevel _logLevel = LogLevel.INFO;
+        private LogLevel _debugLogFilterLevel = LogLevel.INFO; // Debug window filter level
+        private bool _debugWindowVisible = false; // Debug window visibility
 
         // Auto-save settings - Phase 1 Step 6
         private bool _autoSaveEnabled = true; // Default: ON
@@ -269,6 +271,32 @@ namespace DialogEditor.Services
             }
         }
 
+        public LogLevel DebugLogFilterLevel
+        {
+            get => _debugLogFilterLevel;
+            set
+            {
+                if (SetProperty(ref _debugLogFilterLevel, value))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogSettings(LogLevel.DEBUG, $"Debug log filter level set to {value}");
+                }
+            }
+        }
+
+        public bool DebugWindowVisible
+        {
+            get => _debugWindowVisible;
+            set
+            {
+                if (SetProperty(ref _debugWindowVisible, value))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogSettings(LogLevel.DEBUG, $"Debug window visibility set to {value}");
+                }
+            }
+        }
+
         // Auto-Save Settings Properties - Phase 1 Step 6
         public bool AutoSaveEnabled
         {
@@ -386,27 +414,27 @@ namespace DialogEditor.Services
                     
                     if (settings != null)
                     {
-                        _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
+                        _recentFiles = ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>());
                         _maxRecentFiles = Math.Max(1, Math.Min(20, settings.MaxRecentFiles));
-                        
+
                         // Load window settings
                         _windowLeft = settings.WindowLeft;
                         _windowTop = settings.WindowTop;
                         _windowWidth = Math.Max(400, settings.WindowWidth);
                         _windowHeight = Math.Max(300, settings.WindowHeight);
                         _windowMaximized = settings.WindowMaximized;
-                        
+
                         // Load UI settings
                         _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
                         _fontFamily = settings.FontFamily ?? "";
                         _isDarkTheme = settings.IsDarkTheme;
                         _useNewLayout = settings.UseNewLayout;
-                        
-                        // Load game settings
-                        _neverwinterNightsPath = settings.NeverwinterNightsPath ?? "";
-                        _baseGameInstallPath = settings.BaseGameInstallPath ?? ""; // Phase 2
-                        _currentModulePath = settings.CurrentModulePath ?? "";
-                        _modulePaths = settings.ModulePaths?.ToList() ?? new List<string>();
+
+                        // Load game settings (expand ~ to user home directory)
+                        _neverwinterNightsPath = ExpandPath(settings.NeverwinterNightsPath ?? "");
+                        _baseGameInstallPath = ExpandPath(settings.BaseGameInstallPath ?? ""); // Phase 2
+                        _currentModulePath = ExpandPath(settings.CurrentModulePath ?? "");
+                        _modulePaths = ExpandPaths(settings.ModulePaths?.ToList() ?? new List<string>());
 
                         // Load logging settings (backwards compatible with old LogRetentionDays)
                         if (settings.LogRetentionSessions > 0)
@@ -422,6 +450,10 @@ namespace DialogEditor.Services
                         // Only set log level if it hasn't been explicitly set already
                         // (MainWindow may have set DEBUG for development)
                         // UnifiedLogger.SetLogLevel(_logLevel); // Commented out - don't override
+
+                        // Load debug window settings
+                        _debugLogFilterLevel = settings.DebugLogFilterLevel;
+                        _debugWindowVisible = settings.DebugWindowVisible;
 
                         // Load auto-save settings - Phase 1 Step 6
                         _autoSaveEnabled = settings.AutoSaveEnabled;
@@ -461,7 +493,7 @@ namespace DialogEditor.Services
             {
                 var settings = new SettingsData
                 {
-                    RecentFiles = _recentFiles.ToList(),
+                    RecentFiles = ContractPaths(_recentFiles), // Use ~ for home directory
                     MaxRecentFiles = MaxRecentFiles,
                     WindowLeft = WindowLeft,
                     WindowTop = WindowTop,
@@ -472,24 +504,26 @@ namespace DialogEditor.Services
                     FontFamily = FontFamily,
                     IsDarkTheme = IsDarkTheme,
                     UseNewLayout = UseNewLayout,
-                    NeverwinterNightsPath = NeverwinterNightsPath,
-                    BaseGameInstallPath = BaseGameInstallPath, // Phase 2
-                    CurrentModulePath = CurrentModulePath,
-                    ModulePaths = _modulePaths.ToList(),
+                    NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
+                    BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
+                    CurrentModulePath = ContractPath(CurrentModulePath), // Use ~ for home directory
+                    ModulePaths = ContractPaths(_modulePaths), // Use ~ for home directory
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
+                    DebugLogFilterLevel = DebugLogFilterLevel,
+                    DebugWindowVisible = DebugWindowVisible,
                     AutoSaveEnabled = AutoSaveEnabled,
                     AutoSaveDelayMs = AutoSaveDelayMs,
                     EnableParameterCache = EnableParameterCache,
                     MaxCachedValuesPerParameter = MaxCachedValuesPerParameter,
                     MaxCachedScripts = MaxCachedScripts
                 };
-                
-                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions 
-                { 
-                    WriteIndented = true 
+
+                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
+                {
+                    WriteIndented = true
                 });
-                
+
                 File.WriteAllText(SettingsFilePath, json);
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Settings saved to {UnifiedLogger.SanitizePath(SettingsFilePath)}");
             }
@@ -561,6 +595,57 @@ namespace DialogEditor.Services
             }
         }
 
+        /// <summary>
+        /// Contracts a path for storage - replaces user home directory with ~
+        /// This makes settings files portable and privacy-safe for sharing
+        /// </summary>
+        private static string ContractPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (!string.IsNullOrEmpty(userProfile) && path.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase))
+            {
+                return "~" + path.Substring(userProfile.Length);
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Expands a path from storage - replaces ~ with user home directory
+        /// </summary>
+        private static string ExpandPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            if (path.StartsWith("~"))
+            {
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                return userProfile + path.Substring(1);
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Contracts a list of paths for storage
+        /// </summary>
+        private static List<string> ContractPaths(List<string> paths)
+        {
+            return paths.Select(ContractPath).ToList();
+        }
+
+        /// <summary>
+        /// Expands a list of paths from storage
+        /// </summary>
+        private static List<string> ExpandPaths(List<string> paths)
+        {
+            return paths.Select(ExpandPath).ToList();
+        }
+
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -603,6 +688,8 @@ namespace DialogEditor.Services
             // Logging settings
             public int LogRetentionSessions { get; set; } = 3; // Keep 3 most recent sessions
             public LogLevel LogLevel { get; set; } = LogLevel.INFO;
+            public LogLevel DebugLogFilterLevel { get; set; } = LogLevel.INFO; // Debug window filter
+            public bool DebugWindowVisible { get; set; } = false; // Debug window visibility
 
             // Auto-save settings - Phase 1 Step 6
             public bool AutoSaveEnabled { get; set; } = true;

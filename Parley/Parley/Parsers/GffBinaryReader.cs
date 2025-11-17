@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -78,7 +78,7 @@ namespace DialogEditor.Parsers
 
         public static GffField[] ParseFields(byte[] buffer, GffHeader header)
         {
-            UnifiedLogger.LogParser(LogLevel.INFO, $"📖 READ GFF HEADER: {header.FieldCount} fields");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"📖 READ GFF HEADER: {header.FieldCount} fields");
             var fields = new GffField[header.FieldCount];
             var offset = (int)header.FieldOffset;
 
@@ -100,7 +100,7 @@ namespace DialogEditor.Parsers
                 // Debug Animation fields specifically
                 if (i < 10) // Log first 10 fields to avoid spam
                 {
-                    UnifiedLogger.LogGff(LogLevel.INFO,
+                    UnifiedLogger.LogGff(LogLevel.TRACE,
                         $"Field[{i}]: Type={type} (0x{type:X}), LabelIdx={labelIndex}, DataOrDataOffset={dataOrDataOffset} (0x{dataOrDataOffset:X})");
                 }
             }
@@ -284,7 +284,7 @@ namespace DialogEditor.Parsers
             // Debug Animation field type
             if (field.Label == "Animation")
             {
-                UnifiedLogger.LogParser(LogLevel.INFO,
+                UnifiedLogger.LogParser(LogLevel.TRACE,
                     $"ReadFieldValue Animation: field.Type={field.Type}, IsSimpleType={field.Type.IsSimpleType()}, DWORD constant={GffField.DWORD}, FLOAT constant={GffField.FLOAT}");
             }
 
@@ -482,7 +482,7 @@ namespace DialogEditor.Parsers
                         var indexField = targetStruct.Fields.FirstOrDefault(f => f.Label == "Index");
                         if (indexField != null)
                         {
-                            UnifiedLogger.LogParser(LogLevel.INFO, 
+                            UnifiedLogger.LogParser(LogLevel.TRACE, 
                                 $"🔍 STARTLIST DEBUG: List element {i} → struct[{structIndex}] Type={targetStruct.Type} IndexValue={indexField.DataOrDataOffset} (0x{indexField.DataOrDataOffset:X8})");
                         }
                     }
@@ -510,7 +510,7 @@ namespace DialogEditor.Parsers
             var result = BitConverter.Int32BitsToSingle((int)field.DataOrDataOffset);
             if (field.Label == "Index")
             {
-                UnifiedLogger.LogParser(LogLevel.INFO, 
+                UnifiedLogger.LogParser(LogLevel.TRACE, 
                     $"🔍 FLOAT DEBUG: Field '{field.Label}' raw data=0x{field.DataOrDataOffset:X8}, converted float={result}");
             }
             return result;
@@ -561,17 +561,17 @@ namespace DialogEditor.Parsers
                 compatibility = "❌ UNSUPPORTED";
             }
 
-            UnifiedLogger.LogParser(LogLevel.INFO, 
+            UnifiedLogger.LogParser(LogLevel.TRACE, 
                 $"🔍 AURORA PATTERN DETECTION:");
-            UnifiedLogger.LogParser(LogLevel.INFO, 
+            UnifiedLogger.LogParser(LogLevel.TRACE, 
                 $"   Field Count: {header.FieldCount}");
-            UnifiedLogger.LogParser(LogLevel.INFO, 
+            UnifiedLogger.LogParser(LogLevel.TRACE, 
                 $"   Field Indices Count: {header.FieldIndicesCount}");
-            UnifiedLogger.LogParser(LogLevel.INFO, 
+            UnifiedLogger.LogParser(LogLevel.TRACE, 
                 $"   Ratio: {fieldIndicesRatio:F2}:1");
-            UnifiedLogger.LogParser(LogLevel.INFO, 
+            UnifiedLogger.LogParser(LogLevel.TRACE, 
                 $"   Pattern Type: {patternType}");
-            UnifiedLogger.LogParser(LogLevel.INFO, 
+            UnifiedLogger.LogParser(LogLevel.TRACE, 
                 $"   Compatibility: {compatibility}");
 
             // Store pattern info in header for later use

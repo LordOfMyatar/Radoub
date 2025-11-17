@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using DialogEditor.Models;
@@ -48,15 +48,15 @@ namespace DialogEditor.Parsers
                 
                 // Parse reply list
                 var repliesField = rootStruct.GetField("ReplyList");
-                UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 DEBUG: Looking for ReplyList field... {(repliesField != null ? "FOUND" : "NOT FOUND")}");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DEBUG: Looking for ReplyList field... {(repliesField != null ? "FOUND" : "NOT FOUND")}");
                 if (repliesField?.Value is GffList repliesList)
                 {
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"ReplyList contains {repliesList.Elements.Count} structs");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"ReplyList contains {repliesList.Elements.Count} structs");
                     int successfulReplies = 0;
                     for (int i = 0; i < repliesList.Elements.Count; i++)
                     {
                         var replyStruct = repliesList.Elements[i];
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"ReplyList[{i}]: Struct Type={replyStruct.Type}, Fields={replyStruct.Fields.Count}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"ReplyList[{i}]: Struct Type={replyStruct.Type}, Fields={replyStruct.Fields.Count}");
                         var dialogNode = BuildDialogNodeFromStruct(replyStruct, DialogNodeType.Reply, dialog);
                         if (dialogNode != null)
                         {
@@ -69,7 +69,7 @@ namespace DialogEditor.Parsers
                             UnifiedLogger.LogParser(LogLevel.WARN, $"❌ Failed to create dialog node for ReplyList[{i}] (returned null)");
                         }
                     }
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 REPLY PARSING SUMMARY: {successfulReplies}/{repliesList.Elements.Count} replies successfully created");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 REPLY PARSING SUMMARY: {successfulReplies}/{repliesList.Elements.Count} replies successfully created");
                 }
                 else
                 {
@@ -80,17 +80,17 @@ namespace DialogEditor.Parsers
                 var startingListField = rootStruct.GetField("StartingList");
                 if (startingListField?.Value is GffList startingList)
                 {
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 STARTINGLIST FIELD: DataOrDataOffset={startingListField.DataOrDataOffset} (0x{startingListField.DataOrDataOffset:X8})");
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 START LIST: Found {startingList.Elements.Count} start structs");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 STARTINGLIST FIELD: DataOrDataOffset={startingListField.DataOrDataOffset} (0x{startingListField.DataOrDataOffset:X8})");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 START LIST: Found {startingList.Elements.Count} start structs");
                     for (int i = 0; i < startingList.Elements.Count; i++)
                     {
                         var startStruct = startingList.Elements[i];
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 START LIST: Processing start struct {i}, Type={startStruct.Type}, Fields={startStruct.Fields.Count}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 START LIST: Processing start struct {i}, Type={startStruct.Type}, Fields={startStruct.Fields.Count}");
 
                         var startPtr = BuildDialogPtrFromStruct(startStruct, dialog, DialogNodeType.Entry);
                         if (startPtr != null)
                         {
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 START LIST: Built start pointer with Index={startPtr.Index}");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 START LIST: Built start pointer with Index={startPtr.Index}");
 
                             // Note: Original file already has correct Start[0]: Index=0 for lista.dlg - no correction needed
 
@@ -112,7 +112,7 @@ namespace DialogEditor.Parsers
                     // Fallback: Create default starting entry pointing to Entry[0] if entries exist
                     if (dialog.Entries.Count > 0)
                     {
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"🔧 FALLBACK: Creating default start pointer to Entry[0]");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 FALLBACK: Creating default start pointer to Entry[0]");
                         var fallbackStart = new DialogPtr
                         {
                             Parent = dialog,
@@ -125,7 +125,7 @@ namespace DialogEditor.Parsers
                         };
 
                         dialog.Starts.Add(fallbackStart);
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"✅ FALLBACK: Added default start → Entry[0]: \"{dialog.Entries[0].DisplayText}\"");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"✅ FALLBACK: Added default start → Entry[0]: \"{dialog.Entries[0].DisplayText}\"");
                     }
                     else
                     {
@@ -136,7 +136,7 @@ namespace DialogEditor.Parsers
                 // CRITICAL: Resolve all pointer indices to actual dialog nodes
                 ResolveDialogPointers(dialog);
 
-                UnifiedLogger.LogParser(LogLevel.INFO,
+                UnifiedLogger.LogParser(LogLevel.TRACE,
                     $"Built dialog: {dialog.Entries.Count} entries, {dialog.Replies.Count} replies, {dialog.Starts.Count} starts");
 
 
@@ -151,7 +151,7 @@ namespace DialogEditor.Parsers
 
         public void ResolveDialogPointers(Dialog dialog)
         {
-            UnifiedLogger.LogParser(LogLevel.INFO, "🔗 POINTER RESOLUTION: Starting pointer-to-node linking");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "🔗 POINTER RESOLUTION: Starting pointer-to-node linking");
 
             int resolvedCount = 0;
             int failedCount = 0;
@@ -213,7 +213,7 @@ namespace DialogEditor.Parsers
                 }
             }
 
-            UnifiedLogger.LogParser(LogLevel.INFO, $"🔗 POINTER RESOLUTION: {resolvedCount} resolved, {failedCount} failed");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 POINTER RESOLUTION: {resolvedCount} resolved, {failedCount} failed");
 
             // Removed parser workaround code 2025-09-29 - was corrupting valid GFF files by modifying pointer targets
         }
@@ -230,7 +230,7 @@ namespace DialogEditor.Parsers
                 };
                 
                 // Debug: Log all available fields in this struct
-                UnifiedLogger.LogParser(LogLevel.INFO, $"BuildDialogNodeFromStruct [{nodeType}] (Struct Type={nodeStruct.Type}): Available fields: {string.Join(", ", nodeStruct.Fields.Select(f => f.Label))}");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"BuildDialogNodeFromStruct [{nodeType}] (Struct Type={nodeStruct.Type}): Available fields: {string.Join(", ", nodeStruct.Fields.Select(f => f.Label))}");
                 if (nodeStruct.Fields.Count == 0)
                 {
                     UnifiedLogger.LogParser(LogLevel.WARN, $"BuildDialogNodeFromStruct [{nodeType}] (Struct Type={nodeStruct.Type}): Struct has NO FIELDS!");
@@ -256,7 +256,7 @@ namespace DialogEditor.Parsers
                 node.AnimationLoop = animLoopValue != 0;
                 if (animLoopField != null)
                 {
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"Read {nodeType} AnimLoop: field.Value={animLoopField.Value}, field.Type={animLoopField.Type}, field.DataOrDataOffset={animLoopField.DataOrDataOffset}, converted={animLoopValue}");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"Read {nodeType} AnimLoop: field.Value={animLoopField.Value}, field.Type={animLoopField.Type}, field.DataOrDataOffset={animLoopField.DataOrDataOffset}, converted={animLoopValue}");
                 }
                 else
                 {
@@ -298,7 +298,7 @@ namespace DialogEditor.Parsers
                 var animValue = nodeStruct.GetFieldValue<uint>("Animation", 0);
                 if (animField != null)
                 {
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"Read {nodeType} Animation: field.Type={animField.Type}, field.DataOrDataOffset={animField.DataOrDataOffset}, field.Value={animField.Value}, GetFieldValue={animValue}");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"Read {nodeType} Animation: field.Type={animField.Type}, field.DataOrDataOffset={animField.DataOrDataOffset}, field.Value={animField.Value}, GetFieldValue={animValue}");
                 }
                 else
                 {
@@ -308,7 +308,7 @@ namespace DialogEditor.Parsers
                 if (Enum.IsDefined(typeof(DialogAnimation), animValue))
                 {
                     node.Animation = (DialogAnimation)animValue;
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"Read {nodeType} Animation: converted to {node.Animation}");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"Read {nodeType} Animation: converted to {node.Animation}");
                 }
                 else
                 {
@@ -318,19 +318,19 @@ namespace DialogEditor.Parsers
                 
                 // Parse localized text
                 var textField = nodeStruct.GetField("Text");
-                UnifiedLogger.LogParser(LogLevel.INFO, $"BuildDialogNodeFromStruct [{nodeType}]: textField={textField?.Label ?? "NULL"}, Value={textField?.Value?.GetType().Name ?? "NULL"}");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"BuildDialogNodeFromStruct [{nodeType}]: textField={textField?.Label ?? "NULL"}, Value={textField?.Value?.GetType().Name ?? "NULL"}");
                 if (textField?.Value is CExoLocString locString)
                 {
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"Converting CExoLocString with {locString.LocalizedStrings?.Count ?? 0} strings, StrRef={locString.StrRef}");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"Converting CExoLocString with {locString.LocalizedStrings?.Count ?? 0} strings, StrRef={locString.StrRef}");
                     if (locString.LocalizedStrings != null && locString.LocalizedStrings.Count > 0)
                     {
                         // Convert CExoLocString to our LocString format
                         foreach (var kvp in locString.LocalizedStrings)
                         {
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"Adding to node.Text: Lang {kvp.Key} = '{kvp.Value}'");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"Adding to node.Text: Lang {kvp.Key} = '{kvp.Value}'");
                             node.Text.Add((int)kvp.Key, kvp.Value);
                         }
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"After conversion, node.Text.GetDefault() = '{node.Text.GetDefault()}'");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"After conversion, node.Text.GetDefault() = '{node.Text.GetDefault()}'");
                     }
                     else if (locString.StrRef != 0xFFFFFFFF)
                     {
@@ -373,24 +373,24 @@ namespace DialogEditor.Parsers
                     var connectionField = nodeStruct.GetField(connectionFieldName);
                     if (connectionField?.Value is GffList connectionList)
                     {
-                        UnifiedLogger.LogParser(LogLevel.INFO,
+                        UnifiedLogger.LogParser(LogLevel.TRACE,
                             $"🔍 ENTRY PARSE DEBUG: Entry {connectionFieldName} has {connectionList.Elements.Count} connections");
-                        UnifiedLogger.LogParser(LogLevel.INFO,
+                        UnifiedLogger.LogParser(LogLevel.TRACE,
                             $"🔍 GFF FIELD DEBUG: Field Type={connectionField.Type}, DataOrDataOffset={connectionField.DataOrDataOffset}");
-                        UnifiedLogger.LogParser(LogLevel.INFO,
+                        UnifiedLogger.LogParser(LogLevel.TRACE,
                             $"🔍 GFF LIST DEBUG: Elements.Count={connectionList.Elements.Count}, Type={connectionList.GetType().Name}");
 
                         int connectionIdx = 0;
                         foreach (var connectionStruct in connectionList.Elements)
                         {
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 ENTRY PARSE DEBUG: Processing connectionStruct[{connectionIdx}] Type={connectionStruct.Type}, Fields={connectionStruct.Fields.Count}");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 ENTRY PARSE DEBUG: Processing connectionStruct[{connectionIdx}] Type={connectionStruct.Type}, Fields={connectionStruct.Fields.Count}");
                             var connectionPtr = BuildDialogPtrFromStruct(connectionStruct, currentDialog);
                             if (connectionPtr != null)
                             {
                                 connectionPtr.Type = DialogNodeType.Reply;
                                 node.Pointers.Add(connectionPtr);
 
-                                UnifiedLogger.LogParser(LogLevel.INFO,
+                                UnifiedLogger.LogParser(LogLevel.TRACE,
                                     $"🔍 ENTRY PARSE DEBUG: Added Reply pointer Index={connectionPtr.Index} to Entry, total pointers: {node.Pointers.Count}");
                             }
                             else
@@ -408,12 +408,12 @@ namespace DialogEditor.Parsers
                     var entriesListField = nodeStruct.GetField("EntriesList");
                     if (entriesListField?.Value is GffList entriesList)
                     {
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"Reply EntriesList contains {entriesList.Elements.Count} Sync Structs");
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 REPLY PARSE DEBUG: Reply EntriesList has {entriesList.Elements.Count} sync structs");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"Reply EntriesList contains {entriesList.Elements.Count} Sync Structs");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 REPLY PARSE DEBUG: Reply EntriesList has {entriesList.Elements.Count} sync structs");
                         int structIdx = 0;
                         foreach (var syncStruct in entriesList.Elements)
                         {
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 REPLY PARSE DEBUG: Processing syncStruct[{structIdx}] Type={syncStruct.Type}");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 REPLY PARSE DEBUG: Processing syncStruct[{structIdx}] Type={syncStruct.Type}");
                             // SAFETY CHECK: Ensure this is actually a pointer struct, not content
                             if (IsPointerStruct(syncStruct))
                             {
@@ -422,7 +422,7 @@ namespace DialogEditor.Parsers
                                 {
                                     pointer.Type = DialogNodeType.Entry;
                                     node.Pointers.Add(pointer);
-                                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 REPLY PARSE DEBUG: Added Reply->Entry pointer: Index={pointer.Index}, now have {node.Pointers.Count} total pointers");
+                                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 REPLY PARSE DEBUG: Added Reply->Entry pointer: Index={pointer.Index}, now have {node.Pointers.Count} total pointers");
                                 }
                             }
                             else
@@ -434,7 +434,7 @@ namespace DialogEditor.Parsers
                     }
                 }
 
-                UnifiedLogger.LogParser(LogLevel.INFO, $"BuildDialogNodeFromStruct [{nodeType}] FINAL: node.Text.GetDefault() = '{node.Text.GetDefault()}'");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"BuildDialogNodeFromStruct [{nodeType}] FINAL: node.Text.GetDefault() = '{node.Text.GetDefault()}'");
 
                 return node;
             }
@@ -467,7 +467,7 @@ namespace DialogEditor.Parsers
             // Log the decision for debugging
             if (hasIndex && !hasDialogueContent)
             {
-                UnifiedLogger.LogParser(LogLevel.INFO, $"✅ POINTER ACCEPTED: Type={gffStruct.Type}, Fields={string.Join(",", fieldLabels)}");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"✅ POINTER ACCEPTED: Type={gffStruct.Type}, Fields={string.Join(",", fieldLabels)}");
                 return true;
             }
             else
@@ -501,14 +501,14 @@ namespace DialogEditor.Parsers
                         if (globalIndex >= entryBaseIndex && globalIndex < replyBaseIndex)
                         {
                             uint localIndex = globalIndex - entryBaseIndex;
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"🔄 Entry conversion: global {globalIndex} → local {localIndex} (base: {entryBaseIndex})");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔄 Entry conversion: global {globalIndex} → local {localIndex} (base: {entryBaseIndex})");
                             return localIndex;
                         }
 
                         // Special case: If globalIndex is within the Entry count, it might be a local index already
                         if (globalIndex < dialog.Entries.Count)
                         {
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"🔄 Entry index {globalIndex} appears to be local (< {dialog.Entries.Count}), using as-is");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔄 Entry index {globalIndex} appears to be local (< {dialog.Entries.Count}), using as-is");
                             return globalIndex;
                         }
                         break;
@@ -518,14 +518,14 @@ namespace DialogEditor.Parsers
                         if (globalIndex >= replyBaseIndex && globalIndex < startBaseIndex)
                         {
                             uint localIndex = globalIndex - replyBaseIndex;
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"🔄 Reply conversion: global {globalIndex} → local {localIndex} (base: {replyBaseIndex})");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔄 Reply conversion: global {globalIndex} → local {localIndex} (base: {replyBaseIndex})");
                             return localIndex;
                         }
 
                         // Special case: If globalIndex is within the Reply count, it might be a local index already
                         if (globalIndex < dialog.Replies.Count)
                         {
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"🔄 Reply index {globalIndex} appears to be local (< {dialog.Replies.Count}), using as-is");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔄 Reply index {globalIndex} appears to be local (< {dialog.Replies.Count}), using as-is");
                             return globalIndex;
                         }
                         break;
@@ -555,7 +555,7 @@ namespace DialogEditor.Parsers
                 
                 // Debug: Log available fields in the pointer struct
                 var fieldNames = string.Join(", ", ptrStruct.Fields.Select(f => f.Label));
-                UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 POINTER STRUCT DEBUG: Type={ptrStruct.Type}, Fields: {fieldNames}");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 POINTER STRUCT DEBUG: Type={ptrStruct.Type}, Fields: {fieldNames}");
                 
                 // Parse pointer properties
                 // CRITICAL: For BYTE fields, the value is stored in DataOrDataOffset, not in field.Value!
@@ -568,7 +568,7 @@ namespace DialogEditor.Parsers
                 ptr.IsLink = isChildValue != 0;
                 ptr.ScriptAppears = ptrStruct.GetFieldValue<string>("Active", string.Empty);
 
-                UnifiedLogger.LogParser(LogLevel.INFO, $"🔗 Pointer IsChild={isChildValue}, IsLink={ptr.IsLink}");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 Pointer IsChild={isChildValue}, IsLink={ptr.IsLink}");
 
                 // Handle LinkComment per Bioware spec
                 // IsChild=1 (IsLink=true): LinkComment field exists
@@ -576,7 +576,7 @@ namespace DialogEditor.Parsers
                 if (ptr.IsLink)
                 {
                     ptr.LinkComment = ptrStruct.GetFieldValue<string>("LinkComment", string.Empty);
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔗 LINK DETECTED: LinkComment='{ptr.LinkComment}'");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 LINK DETECTED: LinkComment='{ptr.LinkComment}'");
                 }
                 
                 // Parse the index reference - FIXED: Read directly from raw data for DWORD fields
@@ -588,17 +588,17 @@ namespace DialogEditor.Parsers
                         // For DWORD fields, use the raw DataOrDataOffset directly to avoid float conversion bugs
                         // NOTE: Indices in RepliesList/EntriesList are already local array indices, not global struct indices
                         ptr.Index = indexField.DataOrDataOffset;
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 POINTER INDEX: Read Index={ptr.Index} as local array index");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 POINTER INDEX: Read Index={ptr.Index} as local array index");
                     }
                     else if (indexField?.Value is float floatValue)
                     {
                         ptr.Index = (uint)floatValue;
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 START DEBUG: Converted float Index {floatValue} to uint {ptr.Index}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 START DEBUG: Converted float Index {floatValue} to uint {ptr.Index}");
                     }
                     else
                     {
                         ptr.Index = ptrStruct.GetFieldValue<uint>("Index", uint.MaxValue);
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 START DEBUG: Used direct Index parsing: {ptr.Index}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 START DEBUG: Used direct Index parsing: {ptr.Index}");
                     }
                 }
                 else
@@ -618,7 +618,7 @@ namespace DialogEditor.Parsers
                         if (!string.IsNullOrEmpty(key))
                         {
                             ptr.ConditionParams[key] = value;
-                            UnifiedLogger.LogParser(LogLevel.INFO, $"Added condition parameter: {key} = {value}");
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"Added condition parameter: {key} = {value}");
                         }
                     }
                 }

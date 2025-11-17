@@ -184,13 +184,11 @@ namespace DialogEditor.ViewModels
         {
             try
             {
-                Console.WriteLine($"[AddDebugMessage CALLED] {message}"); // Explicit console verification
                 Dispatcher.UIThread.Post(() =>
                 {
-                    DebugMessages.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
-                    Console.WriteLine($"[AddDebugMessage UI] Added to collection. Count={DebugMessages.Count}");
+                    DebugMessages.Add(message);
 
-                    // Keep only last 1000 messages to prevent memory issues
+                    // Keep only last 1000 messages in display to prevent memory issues
                     if (DebugMessages.Count > 1000)
                     {
                         DebugMessages.RemoveAt(0);

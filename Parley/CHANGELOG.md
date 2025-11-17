@@ -10,6 +10,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.10-alpha] - TBD
+**Branch**: `parley/feat/epic-126-logging` | **PR**: #127
+
+### Epic #126: Logging & Diagnostics
+
+Comprehensive logging system improvements including log level filtering, structured logging, performance monitoring, and enhanced diagnostic capabilities.
+
+### Added
+- **Issue #87**: Automatic path sanitization in UnifiedLogger
+  - Privacy by default - no manual `SanitizePath()` calls required
+  - Heuristic-based path detection for Windows/Unix absolute paths
+  - Auto-detects paths containing `\Users\`, `/Users/`, `/home/`
+  - Sanitizes embedded user profile paths in log messages
+  - 20 comprehensive tests covering all sanitization scenarios
+  - 100% backward compatible with existing manual sanitization calls
+
+- **Issue #89**: Settings files now use `~` for portability and privacy
+  - ParleySettings.json stores paths with `~` instead of full home directory
+  - Automatically expands `~` when loading settings
+  - Automatically contracts paths when saving settings
+  - Makes config files safe to share for support without exposing usernames
+  - Portable across different user accounts and machines
+  - 9 comprehensive tests for path expansion/contraction
+  - Fully backward compatible with existing settings files
+
+- **Issue #113**: Log level filtering in Debug tab
+  - Added TRACE log level (most verbose) to UnifiedLogger
+  - Filter dropdown in Debug tab: All/Error/Warning/Info/Debug/Trace
+  - Real-time filtering of debug messages
+  - Maintains all 1000 messages in memory, filters display only
+  - Prepares for #110 log reclassification work
+
+### Fixed
+- **Privacy Improvement**: UnifiedLogger now automatically sanitizes all logged paths
+  - Replaces user home directory with `~` in all log messages
+  - Prevents accidental privacy leaks from forgotten manual sanitization
+  - No developer cognitive load - works automatically
+
+### Changed
+- UnifiedLogger sanitization is now automatic and transparent
+  - Existing `SanitizePath()` calls continue to work (harmless double-sanitization)
+  - Path detection handles Windows (`C:\`), Unix (`/home/`), and UNC paths (`\\server\`)
+  - HTTP/HTTPS URLs excluded from sanitization
+
+---
+
 ## [0.1.9-alpha] - 2025-11-16
 **Branch**: `parley/refactor/issue-99-mainviewmodel` | **PR**: #115
 
