@@ -26,15 +26,21 @@ Extract orphan pointer cleanup functionality from MainViewModel into dedicated s
 - Replaced inline RemoveOrphanedPointers with service call
 - Deprecated methods (FindOrphanedNodes, CreateOrUpdateOrphanContainers) preserved but no longer called
 
+### Fixed
+- **Orphaning Bug**: PC Reply nodes appearing at root level after incorrect restore workflow
+- Added `RemoveOrphanedNodes()` to detect and remove nodes with no incoming pointers
+- Cleanup runs automatically before save to ensure dialog integrity
+
 ### Notes
 - Most orphan functionality deprecated in favor of ScrapManager
-- This extraction focuses on active RemoveOrphanedPointers logic
+- This extraction focuses on active orphan cleanup (pointers + nodes)
 - Large deprecated methods kept for historical reference
 
 ### Tests
-- ✅ All 206 tests passing
+- ✅ All 211 tests passing (added 5 orphan cleanup tests)
 - ✅ 16 skipped (Issue #130 - expected)
 - ✅ Build succeeds
+- New tests: `OrphanNodeCleanupTests` (5 tests covering orphan detection/removal)
 
 ---
 
