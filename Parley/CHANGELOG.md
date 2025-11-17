@@ -13,9 +13,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.12-alpha] - TBD
 **Branch**: `parley/refactor/epic-99-undo-manager` | **PR**: #131
 
-### Epic #99: MainViewModel Refactoring - Phase 2 (UndoRedoManager)
+### Epic #99: MainViewModel Refactoring - Phase 2 (UndoRedoService)
 
 Extract undo/redo functionality from MainViewModel into dedicated service following Phase 1 patterns (DialogEditorService, DialogClipboardService).
+
+### Added
+- **UndoRedoService** (~165 lines): Wraps UndoManager with UI state handling (TreeState, status messages, result pattern)
+- **TreeState** class moved to service for reusability across undo/redo operations
+
+### Changed
+- MainViewModel reduced from 3,568 to 3,551 lines (-17 lines)
+- Undo/Redo methods refactored to use service result pattern
+- Replaced `_undoManager` field with `_undoRedoService` for better separation of concerns
+
+### Tests
+- ✅ All 206 tests passing
+- ✅ 16 skipped (Issue #130 - expected)
+- ✅ Build succeeds
 
 ---
 
