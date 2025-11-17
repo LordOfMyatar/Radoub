@@ -30,7 +30,7 @@ namespace DialogEditor.Parsers
                 var fields = GffBinaryReader.ParseFields(buffer, header);
                 var labels = GffBinaryReader.ParseLabels(buffer, header);
 
-                UnifiedLogger.LogParser(LogLevel.INFO, $"📖 READ GFF: {structs.Length} structs, {fields.Length} fields, {labels.Length} labels");
+                UnifiedLogger.LogParser(LogLevel.DEBUG, $"📖 READ GFF: {structs.Length} structs, {fields.Length} fields, {labels.Length} labels");
 
                 // Resolve field labels and values
                 GffBinaryReader.ResolveFieldLabels(fields, labels, buffer, header);

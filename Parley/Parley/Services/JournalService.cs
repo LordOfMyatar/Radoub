@@ -155,7 +155,7 @@ namespace DialogEditor.Services
                 if (entryListField != null && entryListField.Type == GffField.List && entryListField.Value is GffList entryList)
                 {
                     category.Entries = ParseEntries(entryList);
-                    UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Quest '{category.Tag}' has {category.Entries.Count} entries");
+                    UnifiedLogger.LogJournal(LogLevel.INFO, $"Quest '{category.Tag}' has {category.Entries.Count} entries");
                 }
                 else
                 {

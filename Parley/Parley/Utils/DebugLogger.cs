@@ -108,18 +108,27 @@ namespace DialogEditor.Utils
             if (string.IsNullOrEmpty(message))
                 return LogLevel.INFO;
 
-            if (message.Contains("ERROR:") || message.Contains("ERROR :"))
-                return LogLevel.ERROR;
-            if (message.Contains("WARN:") || message.Contains("WARN :"))
-                return LogLevel.WARN;
-            if (message.Contains("DEBUG:") || message.Contains("DEBUG :"))
-                return LogLevel.DEBUG;
-            if (message.Contains("TRACE:") || message.Contains("TRACE :"))
-                return LogLevel.TRACE;
-            if (message.Contains("INFO:") || message.Contains("INFO :"))
+            // Extract the level string between "] " and ":"
+            var bracketEnd = message.IndexOf("] ");
+            if (bracketEnd < 0)
                 return LogLevel.INFO;
 
-            return LogLevel.INFO; // default
+            var colonIndex = message.IndexOf(":", bracketEnd);
+            if (colonIndex < 0)
+                return LogLevel.INFO;
+
+            var levelStr = message.Substring(bracketEnd + 2, colonIndex - (bracketEnd + 2)).Trim();
+
+            // Parse the level string
+            return levelStr switch
+            {
+                "ERROR" => LogLevel.ERROR,
+                "WARN" => LogLevel.WARN,
+                "INFO" => LogLevel.INFO,
+                "DEBUG" => LogLevel.DEBUG,
+                "TRACE" => LogLevel.TRACE,
+                _ => LogLevel.INFO // default
+            };
         }
 
         private static bool ShouldShowMessage(LogLevel messageLevel)

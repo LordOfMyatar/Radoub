@@ -296,7 +296,7 @@ namespace DialogEditor.Parsers
                     
                     var dialog = BuildDialogFromGffStruct(structs[0]);
                     
-                    UnifiedLogger.LogParser(LogLevel.DEBUG,
+                    UnifiedLogger.LogParser(LogLevel.INFO,
                         $"Successfully parsed dialog with {dialog.Entries.Count} entries and {dialog.Replies.Count} replies");
                     
                     return dialog;

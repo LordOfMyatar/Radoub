@@ -113,6 +113,7 @@ namespace DialogEditor.Services
                 return path;
 
             var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
             if (!string.IsNullOrEmpty(userProfile) && path.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase))
             {
                 return "~" + path.Substring(userProfile.Length);
@@ -129,6 +130,11 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(text) || text.Length < 3)
                 return false;
 
+            // If message contains common log patterns, it's not a pure path
+            // (it contains an embedded path, not IS a path)
+            if (text.Contains(": ") || text.Contains(" = ") || text.Contains(" - "))
+                return false;
+
             // Windows absolute paths: C:\, D:\, etc.
             if (text.Length >= 3 && char.IsLetter(text[0]) && text[1] == ':' && (text[2] == '\\' || text[2] == '/'))
                 return true;
@@ -139,12 +145,6 @@ namespace DialogEditor.Services
 
             // Windows UNC paths: \\server\share
             if (text.StartsWith("\\\\"))
-                return true;
-
-            // Contains user directory indicators (case-insensitive)
-            if (text.Contains("\\Users\\", StringComparison.OrdinalIgnoreCase) ||
-                text.Contains("/Users/", StringComparison.OrdinalIgnoreCase) ||
-                text.Contains("/home/", StringComparison.OrdinalIgnoreCase))
                 return true;
 
             // Contains common path separators in middle of string
@@ -173,9 +173,18 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(message))
                 return message;
 
+            var originalMessage = message;
+
             // Check if the entire message looks like a path
             if (LooksLikePath(message))
-                return SanitizePath(message);
+            {
+                message = SanitizePath(message);
+                if (message != originalMessage)
+                {
+                    Console.WriteLine($"[AutoSanitize:FullPath] '{originalMessage}' → '{message}'");
+                }
+                return message;
+            }
 
             // For messages with potential paths embedded, we need more sophisticated handling
             // Split on common delimiters and check each part
@@ -186,6 +195,8 @@ namespace DialogEditor.Services
             // Simple replacement approach: if message contains the user profile path, sanitize it
             if (message.Contains(userProfile, StringComparison.OrdinalIgnoreCase))
             {
+                Console.WriteLine($"[AutoSanitize:Contains] Found userProfile '{userProfile}' in '{message}'");
+
                 // Use case-insensitive replacement
                 var startIndex = message.IndexOf(userProfile, StringComparison.OrdinalIgnoreCase);
                 while (startIndex != -1)
@@ -205,12 +216,19 @@ namespace DialogEditor.Services
                     }
 
                     var fullPath = message.Substring(startIndex, endIndex - startIndex);
+
                     var sanitized = SanitizePath(fullPath);
+                    Console.WriteLine($"[AutoSanitize:Replace] '{fullPath}' → '{sanitized}'");
                     message = message.Substring(0, startIndex) + sanitized + message.Substring(endIndex);
 
                     // Look for next occurrence
                     startIndex = message.IndexOf(userProfile, startIndex + sanitized.Length, StringComparison.OrdinalIgnoreCase);
                 }
+            }
+
+            if (message != originalMessage)
+            {
+                Console.WriteLine($"[AutoSanitize:Final] '{originalMessage}' → '{message}'");
             }
 
             return message;

@@ -128,15 +128,28 @@ namespace DialogEditor.Views
                 }
             };
 
+            // Restore debug settings when window is loaded (controls are available)
+            this.Loaded += OnWindowLoaded;
+        }
+
+        private void OnWindowLoaded(object? sender, RoutedEventArgs e)
+        {
+            // Controls are now available, restore settings
+            RestoreDebugSettings();
+        }
+
+        private void RestoreDebugSettings()
+        {
             // Initialize log level filter from saved settings
             // SelectionChanged doesn't fire on initial XAML load, so we must set it manually
             var savedFilterLevel = SettingsService.Instance.DebugLogFilterLevel;
             DebugLogger.SetLogLevelFilter(savedFilterLevel);
 
             // Set ComboBox to match saved filter level
-            if (LogLevelFilterComboBox != null)
+            var logLevelComboBox = this.FindControl<ComboBox>("LogLevelFilterComboBox");
+            if (logLevelComboBox != null)
             {
-                LogLevelFilterComboBox.SelectedIndex = savedFilterLevel switch
+                var selectedIndex = savedFilterLevel switch
                 {
                     LogLevel.ERROR => 0,
                     LogLevel.WARN => 1,
@@ -145,18 +158,21 @@ namespace DialogEditor.Views
                     LogLevel.TRACE => 4,
                     _ => 2 // Default to INFO
                 };
+                logLevelComboBox.SelectedIndex = selectedIndex;
             }
 
             // Restore debug window visibility from settings
-            if (DebugTab != null)
+            var debugTab = this.FindControl<TabItem>("DebugTab");
+            if (debugTab != null)
             {
-                DebugTab.IsVisible = SettingsService.Instance.DebugWindowVisible;
+                var savedVisibility = SettingsService.Instance.DebugWindowVisible;
+                debugTab.IsVisible = savedVisibility;
 
                 // Update menu item text to match visibility state
                 var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
                 if (showDebugMenuItem != null)
                 {
-                    showDebugMenuItem.Header = DebugTab.IsVisible ? "Hide _Debug Console" : "Show _Debug Console";
+                    showDebugMenuItem.Header = debugTab.IsVisible ? "Hide _Debug Console" : "Show _Debug Console";
                 }
             }
         }
@@ -557,37 +573,27 @@ namespace DialogEditor.Views
 
         private async void OnSaveClick(object? sender, RoutedEventArgs e)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"OnSaveClick: ENTRY - CurrentFileName='{_viewModel.CurrentFileName}'");
-
             if (string.IsNullOrEmpty(_viewModel.CurrentFileName))
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "OnSaveClick: No filename, calling SaveAs");
                 OnSaveAsClick(sender, e);
                 return;
             }
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnSaveClick: About to call SaveCurrentNodeProperties");
             // First, save any pending node changes
             SaveCurrentNodeProperties();
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnSaveClick: Returned from SaveCurrentNodeProperties");
 
             // Visual feedback - show saving status
             _viewModel.StatusMessage = "Saving file...";
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnSaveClick: About to call SaveDialogAsync");
             await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnSaveClick: Returned from SaveDialogAsync");
 
             _viewModel.StatusMessage = "File saved successfully";
         }
 
         private void SaveCurrentNodeProperties()
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"SaveCurrentNodeProperties: ENTRY - _selectedNode={((_selectedNode == null) ? "null" : _selectedNode.OriginalNode.DisplayText)}, isRoot={(_selectedNode is TreeViewRootNode)}");
-
             if (_selectedNode == null || _selectedNode is TreeViewRootNode)
             {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"SaveCurrentNodeProperties: Early return - _selectedNode null or ROOT");
                 return;
             }
 
@@ -647,11 +653,6 @@ namespace DialogEditor.Views
             if (animationComboBox != null && animationComboBox.SelectedItem is DialogAnimation selectedAnimation)
             {
                 dialogNode.Animation = selectedAnimation;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"SaveCurrentNodeProperties: Set Animation to {selectedAnimation} for node '{dialogNode.DisplayText}'");
-            }
-            else if (animationComboBox != null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"SaveCurrentNodeProperties: Animation ComboBox SelectedItem is not DialogAnimation! Type: {animationComboBox.SelectedItem?.GetType().Name ?? "null"}");
             }
 
             // Update AnimationLoop
@@ -659,11 +660,6 @@ namespace DialogEditor.Views
             if (animationLoopCheckBox != null && animationLoopCheckBox.IsChecked.HasValue)
             {
                 dialogNode.AnimationLoop = animationLoopCheckBox.IsChecked.Value;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"SaveCurrentNodeProperties: Set AnimationLoop to {animationLoopCheckBox.IsChecked.Value} for node '{dialogNode.DisplayText}'");
-            }
-            else if (animationLoopCheckBox != null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"SaveCurrentNodeProperties: AnimationLoop CheckBox IsChecked is null!");
             }
 
             // Update Quest Entry
@@ -697,20 +693,12 @@ namespace DialogEditor.Views
             // CRITICAL FIX: Save script parameters from UI before saving file
             // Update action parameters (on DialogNode)
             UpdateActionParamsFromUI(dialogNode);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"SaveCurrentNodeProperties: Saved {dialogNode.ActionParams.Count} action parameters for node '{dialogNode.DisplayText}'");
 
             // Update condition parameters (on DialogPtr if available)
             if (_selectedNode.SourcePointer != null)
             {
                 UpdateConditionParamsFromUI(_selectedNode.SourcePointer);
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"SaveCurrentNodeProperties: Saved {_selectedNode.SourcePointer.ConditionParams.Count} condition parameters for node '{dialogNode.DisplayText}'");
             }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"SaveCurrentNodeProperties: No SourcePointer for node '{dialogNode.DisplayText}' - cannot save condition parameters");
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Saved all node properties including parameters before file save");
         }
 
         private async void OnSaveAsClick(object? sender, RoutedEventArgs e)
@@ -943,10 +931,11 @@ namespace DialogEditor.Views
 
         private void OnLogLevelFilterChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (LogLevelFilterComboBox == null)
+            var comboBox = sender as ComboBox;
+            if (comboBox == null)
                 return;
 
-            var selectedIndex = LogLevelFilterComboBox.SelectedIndex;
+            var selectedIndex = comboBox.SelectedIndex;
             var filterLevel = selectedIndex switch
             {
                 0 => LogLevel.ERROR,
@@ -1861,25 +1850,13 @@ namespace DialogEditor.Views
             conditionsPanel?.Children.Clear();
             actionsPanel?.Children.Clear();
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"PopulateParameterGrids for node '{node.DisplayText}': ActionParams={node.ActionParams.Count}, ConditionParams={(ptr?.ConditionParams.Count ?? 0)}");
-
             // Populate condition parameters (from DialogPtr if available)
             if (ptr != null && ptr.ConditionParams.Count > 0)
             {
                 foreach (var kvp in ptr.ConditionParams)
                 {
                     AddParameterRow(conditionsPanel!, kvp.Key, kvp.Value, true);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Condition param: {kvp.Key} = {kvp.Value}");
                 }
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Populated {ptr.ConditionParams.Count} condition parameters");
-            }
-            else if (ptr != null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Node has SourcePointer but no condition parameters");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Node has no SourcePointer (root-level entry)");
             }
 
             // Populate action parameters (from DialogNode)
@@ -1888,13 +1865,7 @@ namespace DialogEditor.Views
                 foreach (var kvp in node.ActionParams)
                 {
                     AddParameterRow(actionsPanel!, kvp.Key, kvp.Value, false);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Action param: {kvp.Key} = {kvp.Value}");
                 }
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Populated {node.ActionParams.Count} action parameters");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Node has no action parameters");
             }
         }
 
@@ -2289,7 +2260,6 @@ namespace DialogEditor.Views
             {
                 _viewModel.HasUnsavedChanges = true;
                 _viewModel.StatusMessage = $"{displayName} saved";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-saved {displayName} for node: {dialogNode.DisplayText}");
 
                 // Also send to debug console
                 _viewModel.AddDebugMessage($"{displayName} saved");
@@ -2337,14 +2307,12 @@ namespace DialogEditor.Views
                 {
                     // Phase 1 Step 4: Enhanced save status indicators
                     _viewModel.StatusMessage = "💾 Auto-saving...";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Debounced auto-save: Saving file to disk");
 
                     await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
 
                     var timestamp = DateTime.Now.ToString("h:mm tt");
                     var fileName = System.IO.Path.GetFileName(_viewModel.CurrentFileName);
                     _viewModel.StatusMessage = $"✓ Auto-saved '{fileName}' at {timestamp}";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Debounced auto-save: File saved successfully at {timestamp}");
                 }
                 catch (Exception ex)
                 {
@@ -2527,12 +2495,10 @@ namespace DialogEditor.Views
         // Properties panel handlers
         private void OnAddConditionsParamClick(object? sender, RoutedEventArgs e)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddConditionsParamClick: User clicked Add Condition Parameter button");
             var conditionsPanel = this.FindControl<StackPanel>("ConditionsParametersPanel");
             if (conditionsPanel != null)
             {
                 AddParameterRow(conditionsPanel, "", "", true);
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"OnAddConditionsParamClick: Added empty parameter row, panel now has {conditionsPanel.Children.Count} rows");
                 _viewModel.StatusMessage = "Added condition parameter - enter key and value, then click elsewhere to save";
             }
             else
@@ -2543,12 +2509,10 @@ namespace DialogEditor.Views
 
         private void OnAddActionsParamClick(object? sender, RoutedEventArgs e)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddActionsParamClick: User clicked Add Action Parameter button");
             var actionsPanel = this.FindControl<StackPanel>("ActionsParametersPanel");
             if (actionsPanel != null)
             {
                 AddParameterRow(actionsPanel, "", "", false);
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"OnAddActionsParamClick: Added empty parameter row, panel now has {actionsPanel.Children.Count} rows");
                 _viewModel.StatusMessage = "Added action parameter - enter key and value, then click elsewhere to save";
             }
             else
@@ -2718,7 +2682,6 @@ namespace DialogEditor.Views
             };
             keyTextBox.LostFocus += (s, e) =>
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"AddParameterRow: Key TextBox LostFocus - calling OnParameterChanged(isCondition={isCondition})");
                 OnParameterChanged(isCondition);
             };
             grid.Children.Add(keyTextBox);
@@ -2733,7 +2696,6 @@ namespace DialogEditor.Views
             };
             valueTextBox.LostFocus += (s, e) =>
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"AddParameterRow: Value TextBox LostFocus - calling OnParameterChanged(isCondition={isCondition})");
                 OnParameterChanged(isCondition);
             };
             grid.Children.Add(valueTextBox);
@@ -2930,7 +2892,7 @@ namespace DialogEditor.Views
 
         private void UpdateConditionParamsFromUI(DialogPtr ptr, string? scriptName = null)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: ENTRY - ptr has {ptr.ConditionParams.Count} existing params");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: ENTRY - ptr has {ptr.ConditionParams.Count} existing params");
 
             ptr.ConditionParams.Clear();
             var conditionsPanel = this.FindControl<StackPanel>("ConditionsParametersPanel");
@@ -2947,7 +2909,7 @@ namespace DialogEditor.Views
                 scriptName = scriptTextBox?.Text;
             }
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: Found ConditionsParametersPanel with {conditionsPanel.Children.Count} children");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Found ConditionsParametersPanel with {conditionsPanel.Children.Count} children");
 
             var autoTrimCheckBox = this.FindControl<CheckBox>("AutoTrimConditionsCheckBox");
             bool autoTrim = autoTrimCheckBox?.IsChecked ?? true; // Default to true if checkbox not found
@@ -2956,18 +2918,18 @@ namespace DialogEditor.Views
 
             foreach (var child in conditionsPanel.Children)
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: Child type={child.GetType().Name}");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Child type={child.GetType().Name}");
 
                 if (child is Grid paramGrid)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: Grid has {paramGrid.Children.Count} children");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Grid has {paramGrid.Children.Count} children");
 
                     if (paramGrid.Children.Count >= 3)
                     {
                         var keyTextBox = paramGrid.Children[0] as TextBox;
                         var valueTextBox = paramGrid.Children[1] as TextBox; // FIXED: Index 1, not 2!
 
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: Examining param row - keyText='{keyTextBox?.Text ?? "null"}', valueText='{valueTextBox?.Text ?? "null"}'");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Examining param row - keyText='{keyTextBox?.Text ?? "null"}', valueText='{valueTextBox?.Text ?? "null"}'");
 
                         if (keyTextBox != null && valueTextBox != null &&
                             !string.IsNullOrWhiteSpace(keyTextBox.Text))
@@ -3005,7 +2967,7 @@ namespace DialogEditor.Views
                         }
 
                         ptr.ConditionParams[key] = value;
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: Added param '{key}' = '{value}'");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Added param '{key}' = '{value}'");
 
                         // Cache parameter value if script name is known
                         if (!string.IsNullOrWhiteSpace(scriptName) && !string.IsNullOrWhiteSpace(value))
@@ -3021,12 +2983,12 @@ namespace DialogEditor.Views
                 }
             }
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateConditionParamsFromUI: EXIT - ptr now has {ptr.ConditionParams.Count} params");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: EXIT - ptr now has {ptr.ConditionParams.Count} params");
         }
 
         private void UpdateActionParamsFromUI(DialogNode node, string? scriptName = null)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateActionParamsFromUI: ENTRY - node '{node.DisplayText}' has {node.ActionParams.Count} existing params");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: ENTRY - node '{node.DisplayText}' has {node.ActionParams.Count} existing params");
 
             node.ActionParams.Clear();
             var actionsPanel = this.FindControl<StackPanel>("ActionsParametersPanel");
@@ -3043,7 +3005,7 @@ namespace DialogEditor.Views
                 scriptName = scriptTextBox?.Text;
             }
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateActionParamsFromUI: Found ActionsParametersPanel with {actionsPanel.Children.Count} children");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: Found ActionsParametersPanel with {actionsPanel.Children.Count} children");
 
             var autoTrimCheckBox = this.FindControl<CheckBox>("AutoTrimActionsCheckBox");
             bool autoTrim = autoTrimCheckBox?.IsChecked ?? true; // Default to true if checkbox not found
@@ -3057,7 +3019,7 @@ namespace DialogEditor.Views
                     var keyTextBox = paramGrid.Children[0] as TextBox;
                     var valueTextBox = paramGrid.Children[1] as TextBox; // FIXED: Index 1, not 2!
 
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateActionParamsFromUI: Examining param row - keyText='{keyTextBox?.Text ?? "null"}', valueText='{valueTextBox?.Text ?? "null"}'");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: Examining param row - keyText='{keyTextBox?.Text ?? "null"}', valueText='{valueTextBox?.Text ?? "null"}'");
 
                     if (keyTextBox != null && valueTextBox != null &&
                         !string.IsNullOrWhiteSpace(keyTextBox.Text))
@@ -3095,7 +3057,7 @@ namespace DialogEditor.Views
                         }
 
                         node.ActionParams[key] = value;
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateActionParamsFromUI: Added param '{key}' = '{value}'");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: Added param '{key}' = '{value}'");
 
                         // Cache parameter value if script name is known
                         if (!string.IsNullOrWhiteSpace(scriptName) && !string.IsNullOrWhiteSpace(value))
@@ -3106,7 +3068,7 @@ namespace DialogEditor.Views
                 }
             }
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateActionParamsFromUI: EXIT - node '{node.DisplayText}' now has {node.ActionParams.Count} params");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: EXIT - node '{node.DisplayText}' now has {node.ActionParams.Count} params");
         }
 
         private async void OnBrowseSoundClick(object? sender, RoutedEventArgs e)

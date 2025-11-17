@@ -100,7 +100,7 @@ namespace DialogEditor.Parsers
                 // Debug Animation fields specifically
                 if (i < 10) // Log first 10 fields to avoid spam
                 {
-                    UnifiedLogger.LogGff(LogLevel.INFO,
+                    UnifiedLogger.LogGff(LogLevel.TRACE,
                         $"Field[{i}]: Type={type} (0x{type:X}), LabelIdx={labelIndex}, DataOrDataOffset={dataOrDataOffset} (0x{dataOrDataOffset:X})");
                 }
             }

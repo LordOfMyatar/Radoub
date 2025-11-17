@@ -56,10 +56,10 @@ namespace DialogEditor.Tests
         }
 
         [Theory]
-        [InlineData("C:\\Users\\TestUser\\Documents\\file.txt")]
-        [InlineData("D:\\Users\\TestUser\\AppData\\Local\\temp.log")]
-        [InlineData("/Users/testuser/Documents/file.txt")]
-        [InlineData("/home/testuser/.config/app.conf")]
+        [InlineData("C:\\Users\\....\\Documents\\file.txt")]
+        [InlineData("D:\\Users\\....\\AppData\\Local\\temp.log")]
+        [InlineData("/Users/..../Documents/file.txt")]
+        [InlineData("/home/..../.config/app.conf")]
         public void AutoSanitize_DetectsAndSanitizesPaths(string testPath)
         {
             // Note: This tests the private AutoSanitizeMessage indirectly through logging
