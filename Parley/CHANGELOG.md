@@ -15,7 +15,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Epic #99: MainViewModel Refactoring - Phase 3 (OrphanNodeManager)
 
-Extract orphan node detection and cleanup functionality from MainViewModel into dedicated service. Much of this code is already deprecated/commented out, making this a clean extraction opportunity.
+Extract orphan pointer cleanup functionality from MainViewModel into dedicated service.
+
+### Added
+- **OrphanNodeManager** (~150 lines): Handles orphaned pointer removal after node deletions
+- Deprecated orphan container methods documented in service (preserved for reference)
+
+### Changed
+- MainViewModel reduced from 3,551 to 3,474 lines (-77 lines)
+- Replaced inline RemoveOrphanedPointers with service call
+- Deprecated methods (FindOrphanedNodes, CreateOrUpdateOrphanContainers) preserved but no longer called
+
+### Notes
+- Most orphan functionality deprecated in favor of ScrapManager
+- This extraction focuses on active RemoveOrphanedPointers logic
+- Large deprecated methods kept for historical reference
+
+### Tests
+- ✅ All 206 tests passing
+- ✅ 16 skipped (Issue #130 - expected)
+- ✅ Build succeeds
 
 ---
 
