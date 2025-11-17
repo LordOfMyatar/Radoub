@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.11-alpha] - TBD
+**Branch**: `parley/feat/issue-81-gui-tests` | **PR**: #TBD
+
+### Issue #81: GUI Test Coverage Expansion
+
+Avalonia.Headless test implementation for critical GUI workflows to complement existing service-level tests.
+
+### Added
+- TBD
+
+---
+
 ## [0.1.10-alpha] - TBD
 **Branch**: `parley/feat/epic-126-logging` | **PR**: #127
 
