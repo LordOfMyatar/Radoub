@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.11-alpha] - TBD
+## [0.1.11-alpha] - 2025-11-16
 **Branch**: `parley/feat/issue-81-gui-tests` | **PR**: #129
 
 ### Issue #81: GUI Test Coverage Expansion (Phase 1)
