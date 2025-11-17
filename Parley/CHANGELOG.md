@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.12-alpha] - TBD
+**Branch**: `parley/refactor/epic-99-undo-manager` | **PR**: #TBD
+
+### Epic #99: MainViewModel Refactoring - Phase 2 (UndoRedoManager)
+
+Extract undo/redo functionality from MainViewModel into dedicated service following Phase 1 patterns (DialogEditorService, DialogClipboardService).
+
+---
+
 ## [0.1.11-alpha] - 2025-11-16
 **Branch**: `parley/feat/issue-81-gui-tests` | **PR**: #129
 
