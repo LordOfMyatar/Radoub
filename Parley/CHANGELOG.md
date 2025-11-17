@@ -18,7 +18,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Avalonia.Headless test implementation for critical GUI workflows to complement existing service-level tests.
 
 ### Added
-- TBD
+- **Avalonia.Headless Test Framework**: Upgraded Avalonia.Headless.XUnit from 11.2.2 to 11.3.6 (matches Avalonia 11.3.6)
+- **Dialog Loading Headless Tests** (7 tests): File loading, node creation, UI integration validation
+  - `LoadDialog_SimpleFile_ParsesSuccessfully` - Verify dialog file parsing
+  - `LoadDialog_WithLinks_PreservesLinkStructure` - Validate link registry after load
+  - `CreateDialog_InitializesCorrectly` - Test new dialog creation
+  - `CreateNode_Entry_CreatesCorrectType` - Entry node creation
+  - `CreateNode_Reply_CreatesCorrectType` - Reply node creation
+  - `AddNode_ToDialog_UpdatesCollections` - Node addition to Entries/Replies
+  - `AddStartingNode_UpdatesStartsList` - Starting list management
+
+### Changed
+- Upgraded `Avalonia.Headless.XUnit` package from 11.2.2 to 11.3.6 to match main Avalonia version and fix compatibility issues
 
 ---
 
