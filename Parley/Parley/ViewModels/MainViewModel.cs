@@ -21,7 +21,7 @@ namespace DialogEditor.ViewModels
         private ObservableCollection<string> _debugMessages = new();
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
-        private readonly UndoManager _undoManager = new(50); // Undo/redo with 50 state history
+        private readonly UndoRedoService _undoRedoService = new(50); // Undo/redo service with 50 state history
         private readonly ScrapManager _scrapManager = new(); // Manages deleted/cut nodes
         private readonly DialogEditorService _editorService = new(); // Service for node editing operations
         private readonly DialogClipboardService _clipboardService = new(); // Service for clipboard operations
@@ -238,7 +238,7 @@ namespace DialogEditor.ViewModels
                     TreeViewSafeNode.ResetGlobalTracking();
 
                     // Clear undo history when loading new file
-                    _undoManager.Clear();
+                    _undoRedoService.Clear();
 
                     // Clear tree selection when loading new file
                     SelectedTreeNode = null;
@@ -731,15 +731,15 @@ namespace DialogEditor.ViewModels
         /// </summary>
         private void SaveUndoState(string description)
         {
-            if (CurrentDialog != null && !_undoManager.IsRestoring)
+            if (CurrentDialog != null && !_undoRedoService.IsRestoring)
             {
-                _undoManager.SaveState(CurrentDialog, description);
+                _undoRedoService.SaveState(CurrentDialog, description);
             }
         }
 
         public void Undo()
         {
-            if (CurrentDialog == null || !_undoManager.CanUndo)
+            if (CurrentDialog == null || !_undoRedoService.CanUndo)
             {
                 StatusMessage = "Nothing to undo";
                 return;
@@ -748,10 +748,10 @@ namespace DialogEditor.ViewModels
             // Capture tree state before undo
             var treeState = CaptureTreeState();
 
-            var previousState = _undoManager.Undo(CurrentDialog);
-            if (previousState != null)
+            var previousState = _undoRedoService.Undo(CurrentDialog, treeState);
+            if (previousState.Success && previousState.RestoredDialog != null)
             {
-                CurrentDialog = previousState;
+                CurrentDialog = previousState.RestoredDialog;
                 // CRITICAL: Rebuild LinkRegistry after undo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
 
@@ -770,18 +770,14 @@ namespace DialogEditor.ViewModels
                 });
 
                 HasUnsavedChanges = true;
-                StatusMessage = "Undo successful";
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Undo performed");
             }
-            else
-            {
-                StatusMessage = "Undo failed";
-            }
+
+            StatusMessage = previousState.StatusMessage;
         }
 
         public void Redo()
         {
-            if (CurrentDialog == null || !_undoManager.CanRedo)
+            if (CurrentDialog == null || !_undoRedoService.CanRedo)
             {
                 StatusMessage = "Nothing to redo";
                 return;
@@ -790,10 +786,10 @@ namespace DialogEditor.ViewModels
             // Capture tree state before redo
             var treeState = CaptureTreeState();
 
-            var nextState = _undoManager.Redo(CurrentDialog);
-            if (nextState != null)
+            var nextState = _undoRedoService.Redo(CurrentDialog, treeState);
+            if (nextState.Success && nextState.RestoredDialog != null)
             {
-                CurrentDialog = nextState;
+                CurrentDialog = nextState.RestoredDialog;
                 // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
 
@@ -812,17 +808,13 @@ namespace DialogEditor.ViewModels
                 });
 
                 HasUnsavedChanges = true;
-                StatusMessage = "Redo successful";
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Redo performed");
             }
-            else
-            {
-                StatusMessage = "Redo failed";
-            }
+
+            StatusMessage = nextState.StatusMessage;
         }
 
-        public bool CanUndo => _undoManager.CanUndo;
-        public bool CanRedo => _undoManager.CanRedo;
+        public bool CanUndo => _undoRedoService.CanUndo;
+        public bool CanRedo => _undoRedoService.CanRedo;
 
         public void AddSmartNode(TreeViewSafeNode? selectedNode = null)
         {
@@ -2449,9 +2441,9 @@ namespace DialogEditor.ViewModels
         /// <summary>
         /// Captures the current tree expansion state and selected node
         /// </summary>
-        private TreeState CaptureTreeState()
+        private Parley.Services.TreeState CaptureTreeState()
         {
-            var state = new TreeState
+            var state = new Parley.Services.TreeState
             {
                 ExpandedNodePaths = new HashSet<string>(),
                 SelectedNodePath = null
@@ -3252,7 +3244,7 @@ namespace DialogEditor.ViewModels
         /// <summary>
         /// Restores tree expansion state and selection
         /// </summary>
-        private void RestoreTreeState(TreeState state)
+        private void RestoreTreeState(Parley.Services.TreeState state)
         {
             if (state == null) return;
 
@@ -3299,15 +3291,6 @@ namespace DialogEditor.ViewModels
                 // Remove from visited after processing this branch (allows same node in different branches)
                 visited.Remove(node);
             }
-        }
-
-        /// <summary>
-        /// Tree state for undo/redo preservation
-        /// </summary>
-        private class TreeState
-        {
-            public HashSet<string> ExpandedNodePaths { get; set; } = new();
-            public string? SelectedNodePath { get; set; }
         }
 
         #region Scrap Management
