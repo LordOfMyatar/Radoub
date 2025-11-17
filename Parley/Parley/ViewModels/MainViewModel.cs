@@ -305,6 +305,16 @@ namespace DialogEditor.ViewModels
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving dialog to: {UnifiedLogger.SanitizePath(filePath)}");
 
+                // CLEANUP: Remove orphaned nodes before save (nodes with no incoming pointers)
+                var orphanedNodes = _orphanManager.RemoveOrphanedNodes(CurrentDialog);
+                if (orphanedNodes.Count > 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Removed {orphanedNodes.Count} orphaned nodes before save");
+                    // Note: Orphaned nodes are removed from dialog, not added to scrap
+                    // This is cleanup, not user-initiated deletion
+                }
+
                 // SAFETY VALIDATION: Validate all pointer indices before save (Issue #6 fix)
                 var validationErrors = CurrentDialog.ValidatePointerIndices();
                 if (validationErrors.Count > 0)
