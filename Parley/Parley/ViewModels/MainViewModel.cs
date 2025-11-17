@@ -25,6 +25,7 @@ namespace DialogEditor.ViewModels
         private readonly ScrapManager _scrapManager = new(); // Manages deleted/cut nodes
         private readonly DialogEditorService _editorService = new(); // Service for node editing operations
         private readonly DialogClipboardService _clipboardService = new(); // Service for clipboard operations
+        private readonly OrphanNodeManager _orphanManager = new(); // Service for orphan pointer cleanup
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -967,7 +968,7 @@ namespace DialogEditor.ViewModels
 
             // CRITICAL: After deletion, recalculate indices AND check for orphaned links
             RecalculatePointerIndices();
-            RemoveOrphanedPointers();
+            _orphanManager.RemoveOrphanedPointers(CurrentDialog);
 
             // No longer creating orphan containers - using Scrap Tab instead
             // Orphaned nodes are now managed via the ScrapManager service
@@ -1959,84 +1960,6 @@ namespace DialogEditor.ViewModels
             else
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "All pointer indices validated successfully");
-            }
-        }
-
-        /// <summary>
-        /// Removes pointers that reference nodes no longer in the Entries/Replies lists
-        /// This prevents orphaned pointers after deletion operations
-        /// </summary>
-        private void RemoveOrphanedPointers()
-        {
-            if (CurrentDialog == null) return;
-
-            int removedCount = 0;
-
-            // Clean Start pointers
-            var startsToRemove = new List<DialogPtr>();
-            foreach (var start in CurrentDialog.Starts)
-            {
-                if (start.Node != null && !CurrentDialog.Entries.Contains(start.Node))
-                {
-                    startsToRemove.Add(start);
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Removing orphaned Start pointer to '{start.Node.DisplayText}'");
-                }
-            }
-            foreach (var start in startsToRemove)
-            {
-                CurrentDialog.Starts.Remove(start);
-                removedCount++;
-            }
-
-            // Clean Entry pointers
-            foreach (var entry in CurrentDialog.Entries)
-            {
-                var ptrsToRemove = new List<DialogPtr>();
-                foreach (var ptr in entry.Pointers)
-                {
-                    if (ptr.Node != null)
-                    {
-                        var list = ptr.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
-                        if (!list.Contains(ptr.Node))
-                        {
-                            ptrsToRemove.Add(ptr);
-                            UnifiedLogger.LogApplication(LogLevel.WARN, $"Removing orphaned pointer from Entry '{entry.DisplayText}' to '{ptr.Node.DisplayText}'");
-                        }
-                    }
-                }
-                foreach (var ptr in ptrsToRemove)
-                {
-                    entry.Pointers.Remove(ptr);
-                    removedCount++;
-                }
-            }
-
-            // Clean Reply pointers
-            foreach (var reply in CurrentDialog.Replies)
-            {
-                var ptrsToRemove = new List<DialogPtr>();
-                foreach (var ptr in reply.Pointers)
-                {
-                    if (ptr.Node != null)
-                    {
-                        var list = ptr.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
-                        if (!list.Contains(ptr.Node))
-                        {
-                            ptrsToRemove.Add(ptr);
-                            UnifiedLogger.LogApplication(LogLevel.WARN, $"Removing orphaned pointer from Reply '{reply.DisplayText}' to '{ptr.Node.DisplayText}'");
-                        }
-                    }
-                }
-                foreach (var ptr in ptrsToRemove)
-                {
-                    reply.Pointers.Remove(ptr);
-                    removedCount++;
-                }
-            }
-
-            if (removedCount > 0)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {removedCount} orphaned pointers");
             }
         }
 
