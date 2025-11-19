@@ -1245,16 +1245,15 @@ namespace DialogEditor.ViewModels
             var expandedNodeRefs = _treeNavManager.SaveTreeExpansionState(DialogNodes);
 
             // Re-populate tree to reflect changes
+            // CRITICAL: Run synchronously to ensure orphan removal is reflected immediately
+            PopulateDialogNodes();
+
+            // Restore expansion state after tree is rebuilt
+            // Use Dispatcher for expansion restore to ensure tree is fully rendered
             Dispatcher.UIThread.Post(() =>
             {
-                PopulateDialogNodes();
-
-                // Restore expansion state after tree is rebuilt
-                Dispatcher.UIThread.Post(() =>
-                {
-                    _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
-                }, global::Avalonia.Threading.DispatcherPriority.Loaded);
-            });
+                _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
+            }, global::Avalonia.Threading.DispatcherPriority.Loaded);
         }
 
         private void RefreshTreeViewAndSelectNode(DialogNode nodeToSelect)
