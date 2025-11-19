@@ -147,6 +147,10 @@ namespace Parley.Services
                     $"Removed {additionalOrphans.Count} orphaned nodes after deletion");
             }
 
+            // CRITICAL: Clean up pointers to nodes that were removed by RemoveOrphanedNodes
+            // This ensures TreeView lazy loading doesn't show orphaned nodes
+            _orphanManager.RemoveOrphanedPointers(dialog);
+
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted node tree: {node.DisplayText}");
 
             return linkedNodes;

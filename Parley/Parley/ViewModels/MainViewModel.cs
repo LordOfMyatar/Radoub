@@ -1241,12 +1241,21 @@ namespace DialogEditor.ViewModels
 
         private void RefreshTreeView()
         {
+            // Log dialog state before refresh
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"🔄 RefreshTreeView: Dialog has {CurrentDialog?.Entries.Count ?? 0} entries, " +
+                $"{CurrentDialog?.Replies.Count ?? 0} replies, {CurrentDialog?.Starts.Count ?? 0} starts");
+
             // Save expansion state before refresh
             var expandedNodeRefs = _treeNavManager.SaveTreeExpansionState(DialogNodes);
 
             // Re-populate tree to reflect changes
             // CRITICAL: Run synchronously to ensure orphan removal is reflected immediately
             PopulateDialogNodes();
+
+            // Log tree state after refresh
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"🔄 RefreshTreeView complete: DialogNodes has {DialogNodes.Count} root nodes");
 
             // Restore expansion state after tree is rebuilt
             // Use Dispatcher for expansion restore to ensure tree is fully rendered
