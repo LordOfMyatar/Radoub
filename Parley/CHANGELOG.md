@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.15-alpha] - TBD
-**Branch**: `parley/refactor/epic-99-property-panel` | **PR**: #TBD
+**Branch**: `parley/refactor/epic-99-property-panel` | **PR**: #135
 
 ### Epic #99: MainViewModel Refactoring - Phase 5 (PropertyPanelPopulator)
 
