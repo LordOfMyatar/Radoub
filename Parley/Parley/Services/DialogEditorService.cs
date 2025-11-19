@@ -114,7 +114,7 @@ namespace Parley.Services
             {
                 Type = DialogNodeType.Reply,
                 Text = new LocString(),
-                Speaker = "PC"
+                Speaker = "" // Empty = "PC" display (NWN default for Reply nodes)
             };
 
             dialog.Replies.Add(newNode);
