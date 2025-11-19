@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.14-alpha] - TBD
+**Branch**: `parley/refactor/epic-99-tree-navigation` | **PR**: #TBD
+
+### Epic #99: MainViewModel Refactoring - Phase 4 (TreeNavigationManager)
+
+Extract tree navigation and traversal functionality from MainViewModel into dedicated service.
+
+### Added
+- **TreeNavigationManager**: Tree traversal, node selection, parent/child navigation
+
+### Changed
+- MainViewModel reduced by extracting ~300 lines of navigation logic
+
+### Tests
+- ✅ All tests passing
+
+---
+
 ## [0.1.13-alpha] - TBD
 **Branch**: `parley/refactor/epic-99-orphan-manager` | **PR**: #132
 
