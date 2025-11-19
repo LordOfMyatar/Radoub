@@ -715,6 +715,374 @@ namespace Parley.Tests
 
         #endregion
 
+        #region Orphaned Node with Child Links Regression Tests (2025-11-18 Fix)
+
+        [Fact]
+        public void RemoveOrphanedNodes_RemovesNodeWithOnlyChildLinks()
+        {
+            // Regression test for chef file bug (2025-11-18)
+            // When a node has ONLY child link (IsLink=true) incoming pointers,
+            // it should be identified as orphaned and removed by RemoveOrphanedNodes
+            //
+            // Scenario from chef file:
+            // START -> "That's not uncommon..." -> "<CUSTOM1009>Chef..." (Reply)
+            //                                      ^
+            //                                      |
+            // "I go through that sometimes..." ---(IsLink=true)
+            //
+            // When "That's not uncommon..." is deleted, "<CUSTOM1009>Chef..." has
+            // ONLY the child link from "I go through...", so it should be removed
+
+            var dialog = new Dialog();
+            var orphanManager = new Parley.Services.OrphanNodeManager();
+
+            // Create "That's not uncommon..." entry
+            var parentEntry = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            parentEntry.Text.Add(0, "That's not uncommon...");
+            dialog.Entries.Add(parentEntry);
+
+            // Create "<CUSTOM1009>Chef..." reply
+            var chefReply = new DialogNode
+            {
+                Type = DialogNodeType.Reply,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            chefReply.Text.Add(0, "<CUSTOM1009>Chef looks mournful.<CUSTOM1000>");
+            dialog.Replies.Add(chefReply);
+
+            // Create "I go through that sometimes..." entry
+            var otherEntry = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            otherEntry.Text.Add(0, "I go through that sometimes...");
+            dialog.Entries.Add(otherEntry);
+
+            // Parent Entry -> Chef Reply (regular pointer)
+            var parentToChef = new DialogPtr
+            {
+                Node = chefReply,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                IsLink = false,
+                Parent = dialog
+            };
+            parentEntry.Pointers.Add(parentToChef);
+
+            // Other Entry -> Chef Reply (child link)
+            var otherToChef = new DialogPtr
+            {
+                Node = chefReply,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                IsLink = true, // Child link - back reference
+                Parent = dialog
+            };
+            otherEntry.Pointers.Add(otherToChef);
+
+            // START -> Other Entry (so Other Entry stays reachable)
+            var startPtr = new DialogPtr
+            {
+                Node = otherEntry,
+                Type = DialogNodeType.Entry,
+                Index = 1,
+                IsLink = false,
+                IsStart = true,
+                Parent = dialog
+            };
+            dialog.Starts.Add(startPtr);
+
+            dialog.RebuildLinkRegistry();
+
+            // Act: Remove Parent Entry from Entries list (simulating deletion)
+            dialog.Entries.Remove(parentEntry);
+
+            // Remove orphaned pointers
+            orphanManager.RemoveOrphanedPointers(dialog);
+
+            // Remove orphaned nodes (should remove Chef Reply)
+            var removed = orphanManager.RemoveOrphanedNodes(dialog);
+
+            // Assert: Chef Reply should be removed because it has ONLY a child link now
+            Assert.Contains(chefReply, removed);
+            Assert.DoesNotContain(chefReply, dialog.Replies);
+
+            // Other Entry should remain (it's reachable from START)
+            Assert.Contains(otherEntry, dialog.Entries);
+        }
+
+        [Fact]
+        public void RemoveOrphanedNodes_KeepsNodeWithRegularIncomingPointer()
+        {
+            // Test that nodes with at least one regular (non-child-link) incoming pointer
+            // are NOT removed, even if they also have child links
+
+            var dialog = new Dialog();
+            var orphanManager = new Parley.Services.OrphanNodeManager();
+
+            var entry1 = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            entry1.Text.Add(0, "Entry 1");
+            dialog.Entries.Add(entry1);
+
+            var entry2 = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            entry2.Text.Add(0, "Entry 2");
+            dialog.Entries.Add(entry2);
+
+            var sharedReply = new DialogNode
+            {
+                Type = DialogNodeType.Reply,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            sharedReply.Text.Add(0, "Shared Reply");
+            dialog.Replies.Add(sharedReply);
+
+            // Entry 1 -> Shared Reply (regular pointer)
+            var entry1ToShared = new DialogPtr
+            {
+                Node = sharedReply,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                IsLink = false,
+                Parent = dialog
+            };
+            entry1.Pointers.Add(entry1ToShared);
+
+            // Entry 2 -> Shared Reply (child link)
+            var entry2ToShared = new DialogPtr
+            {
+                Node = sharedReply,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                IsLink = true,
+                Parent = dialog
+            };
+            entry2.Pointers.Add(entry2ToShared);
+
+            // START -> Entry 1
+            var startPtr = new DialogPtr
+            {
+                Node = entry1,
+                Type = DialogNodeType.Entry,
+                Index = 0,
+                IsLink = false,
+                IsStart = true,
+                Parent = dialog
+            };
+            dialog.Starts.Add(startPtr);
+
+            dialog.RebuildLinkRegistry();
+
+            // Act: Remove orphaned nodes
+            var removed = orphanManager.RemoveOrphanedNodes(dialog);
+
+            // Assert: Shared Reply should NOT be removed (has regular pointer from Entry 1)
+            Assert.DoesNotContain(sharedReply, removed);
+            Assert.Contains(sharedReply, dialog.Replies);
+        }
+
+        [Fact]
+        public void CollectReachableNodes_DoesNotTraverseChildLinks()
+        {
+            // Test that CollectReachableNodes only follows regular pointers,
+            // not child links (IsLink=true)
+
+            var dialog = new Dialog();
+
+            var entry1 = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            entry1.Text.Add(0, "Entry 1");
+            dialog.Entries.Add(entry1);
+
+            var reply1 = new DialogNode
+            {
+                Type = DialogNodeType.Reply,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            reply1.Text.Add(0, "Reply 1");
+            dialog.Replies.Add(reply1);
+
+            var entry2 = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            entry2.Text.Add(0, "Entry 2");
+            dialog.Entries.Add(entry2);
+
+            // Entry 1 -> Reply 1 (regular)
+            entry1.Pointers.Add(new DialogPtr
+            {
+                Node = reply1,
+                Type = DialogNodeType.Reply,
+                IsLink = false,
+                Parent = dialog
+            });
+
+            // Reply 1 -> Entry 2 (child link - should NOT be traversed)
+            reply1.Pointers.Add(new DialogPtr
+            {
+                Node = entry2,
+                Type = DialogNodeType.Entry,
+                IsLink = true, // Child link
+                Parent = dialog
+            });
+
+            // START -> Entry 1
+            dialog.Starts.Add(new DialogPtr
+            {
+                Node = entry1,
+                Type = DialogNodeType.Entry,
+                IsLink = false,
+                IsStart = true,
+                Parent = dialog
+            });
+
+            dialog.RebuildLinkRegistry();
+
+            // Act: Remove orphaned nodes
+            var orphanManager = new Parley.Services.OrphanNodeManager();
+            var removed = orphanManager.RemoveOrphanedNodes(dialog);
+
+            // Assert: Entry 2 should be removed (only reachable via child link)
+            Assert.Contains(entry2, removed);
+            Assert.DoesNotContain(entry2, dialog.Entries);
+
+            // Entry 1 and Reply 1 should remain (reachable from START via regular pointers)
+            Assert.Contains(entry1, dialog.Entries);
+            Assert.Contains(reply1, dialog.Replies);
+        }
+
+        [Fact]
+        public void DeleteNode_DoesNotOrphanNodeWithRegularParent()
+        {
+            // Test that nodes with regular parent pointers are NOT identified as orphaned
+            // even if they also have child links (this is for IdentifyOrphanedLinkChildren,
+            // which is different from RemoveOrphanedNodes)
+
+            // Arrange: Create structure where child has both regular parent AND child link
+            var dialog = new Dialog();
+
+            var parentEntry = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            parentEntry.Text.Add(0, "Parent Entry");
+            dialog.Entries.Add(parentEntry);
+
+            var otherEntry = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            otherEntry.Text.Add(0, "Other Entry");
+            dialog.Entries.Add(otherEntry);
+
+            var childEntry = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            childEntry.Text.Add(0, "Child Entry (NOT orphaned - has regular parent)");
+            dialog.Entries.Add(childEntry);
+
+            var sharedReply = new DialogNode
+            {
+                Type = DialogNodeType.Reply,
+                Text = new LocString(),
+                Parent = dialog
+            };
+            sharedReply.Text.Add(0, "Shared Reply");
+            dialog.Replies.Add(sharedReply);
+
+            // Parent -> Shared Reply (regular pointer)
+            var parentToShared = new DialogPtr
+            {
+                Node = sharedReply,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                IsLink = false,
+                Parent = dialog
+            };
+            parentEntry.Pointers.Add(parentToShared);
+
+            // Other Entry -> Child Entry (regular pointer - NOT being deleted)
+            var otherToChild = new DialogPtr
+            {
+                Node = childEntry,
+                Type = DialogNodeType.Entry,
+                Index = 2,
+                IsLink = false,
+                Parent = dialog
+            };
+            otherEntry.Pointers.Add(otherToChild);
+
+            // Child -> Shared Reply (child link)
+            var childToShared = new DialogPtr
+            {
+                Node = sharedReply,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                IsLink = true,
+                Parent = dialog
+            };
+            childEntry.Pointers.Add(childToShared);
+
+            // START -> Other Entry
+            var startPtr = new DialogPtr
+            {
+                Node = otherEntry,
+                Type = DialogNodeType.Entry,
+                Index = 1,
+                IsLink = false,
+                IsStart = true,
+                Parent = dialog
+            };
+            dialog.Starts.Add(startPtr);
+
+            dialog.RebuildLinkRegistry();
+
+            // Act: Delete parent entry using OrphanNodeManager
+            var orphanManager = new Parley.Services.OrphanNodeManager();
+            var nodesToDelete = new HashSet<DialogNode> { parentEntry, sharedReply };
+            var orphanedLinkChildren = orphanManager.IdentifyOrphanedLinkChildren(dialog, parentEntry, nodesToDelete);
+
+            // Assert: Child Entry should NOT be identified as orphaned
+            // Because it has a regular parent pointer from Other Entry (which is NOT being deleted)
+            Assert.Empty(orphanedLinkChildren);
+            Assert.Contains(childEntry, dialog.Entries);
+        }
+
+        #endregion
+
         #region Helper Methods
 
         /// <summary>

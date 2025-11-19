@@ -100,6 +100,28 @@ namespace Parley.Services
                     $"Added {nodesToDelete.Count} deleted nodes to scrap");
             }
 
+            // CRITICAL: Identify and remove orphaned link children (PR #132 "evil twin" fix)
+            // These are nodes that have ONLY child link references and would become orphaned
+            // when their parent is deleted. They must be removed from Entries/Replies lists
+            // to prevent child link corruption in Aurora.
+            var orphanedLinkChildren = _orphanManager.IdentifyOrphanedLinkChildren(dialog, node, nodesToDelete.ToHashSet());
+            if (orphanedLinkChildren.Count > 0 && currentFileName != null)
+            {
+                // Add orphaned link children to scrap before removing
+                var orphanHierarchy = new Dictionary<DialogNode, (int level, DialogNode? parent)>();
+                foreach (var orphan in orphanedLinkChildren)
+                {
+                    orphanHierarchy[orphan] = (0, null); // Orphans have no parent after deletion
+                }
+                _scrapManager.AddToScrap(currentFileName, orphanedLinkChildren, "orphaned link child", orphanHierarchy);
+
+                // Remove from Entries/Replies lists to prevent index corruption
+                _orphanManager.RemoveOrphanedLinkChildrenFromLists(dialog, orphanedLinkChildren);
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Identified and removed {orphanedLinkChildren.Count} orphaned link children");
+            }
+
             // CRITICAL: Recursively delete all children - even if linked elsewhere
             // This matches Aurora behavior - deleting parent removes entire subtree
             DeleteNodeRecursive(dialog, node);
