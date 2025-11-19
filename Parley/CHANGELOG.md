@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.16-alpha] - TBD
+## [0.1.16-alpha] - 2025-11-18
 **Branch**: `parley/refactor/epic-99-node-operations` | **PR**: #137
 
 ### Epic #99: MainViewModel Refactoring - Phase 6 (NodeOperationsManager)
@@ -27,6 +27,8 @@ Extract node add/delete/move operations from MainViewModel into dedicated servic
   - FindParentNode - Parent node lookup
   - FindSiblingForFocus - Focus management after cut/delete
   - Private helpers: CheckForIncomingLinks, CollectNodeAndChildren, DeleteNodeRecursive, RecalculatePointerIndices
+- **TreeNavigationManagerTests.cs**: 16 new unit tests for TreeNavigationManager service
+- **Parley.Tests/README.md**: Comprehensive testing documentation (231 tests)
 
 ### Changed
 - MainViewModel reduced from 3,265 to 2,933 lines (-332 lines)
@@ -36,10 +38,24 @@ Extract node add/delete/move operations from MainViewModel into dedicated servic
 - FindSiblingForFocus delegates to NodeOperationsManager
 - Removed duplicate methods: CheckForIncomingLinks, CheckNodeForLinks, DeleteNodeRecursive, FindParentNode, CollectNodeAndChildren
 
+### Fixed
+- **Orphan handling regression (2025-11-18)**: Restored PR #132 "evil twin" fix for orphaned link children
+- **CollectReachableNodes**: Now skips child links (IsLink=true) to properly detect orphaned nodes
+- **RemoveOrphanedNodes**: Called immediately after deletion (not deferred to save)
+- **RemoveOrphanedPointers**: Called second time after RemoveOrphanedNodes to clean stale pointers
+- **RefreshTreeView**: Made synchronous to ensure orphan removal reflects immediately in UI
+- **TreeView lazy loading**: Orphaned nodes no longer appear via stale pointer references
+
 ### Tests
-- ✅ All 211 tests passing
+- ✅ All 231 tests passing (211 original + 16 TreeNavigationManager + 4 orphan regression)
 - ✅ Build succeeds
 - Added compatibility shim for DeleteNodeRecursive to support existing tests using reflection
+- Added 4 regression tests for orphaned link children scenarios
+
+### Documentation
+- Updated CODE_PATH_MAP.md with DELETE PATH call chain
+- Updated CLAUDE.md with Phase 6 completion status
+- Created comprehensive test suite README
 
 ---
 
