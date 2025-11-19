@@ -57,7 +57,7 @@ namespace Parley.Services
             {
                 Type = DialogNodeType.Entry,
                 Text = new LocString(),
-                Speaker = "NPC"
+                Speaker = "" // Empty = "Owner" display (default NWN behavior)
             };
 
             dialog.Entries.Add(newNode);
@@ -114,7 +114,7 @@ namespace Parley.Services
             {
                 Type = DialogNodeType.Reply,
                 Text = new LocString(),
-                Speaker = "PC"
+                Speaker = "" // Empty = "PC" display (NWN default for Reply nodes)
             };
 
             dialog.Replies.Add(newNode);

@@ -26,6 +26,7 @@ namespace DialogEditor.ViewModels
         private readonly DialogEditorService _editorService = new(); // Service for node editing operations
         private readonly DialogClipboardService _clipboardService = new(); // Service for clipboard operations
         private readonly OrphanNodeManager _orphanManager = new(); // Service for orphan pointer cleanup
+        private readonly TreeNavigationManager _treeNavManager = new(); // Service for tree navigation and state
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -1535,8 +1536,7 @@ namespace DialogEditor.ViewModels
         private void RefreshTreeView()
         {
             // Save expansion state before refresh
-            var expandedNodeRefs = new HashSet<DialogNode>();
-            SaveTreeExpansionState(DialogNodes, expandedNodeRefs);
+            var expandedNodeRefs = _treeNavManager.SaveTreeExpansionState(DialogNodes);
 
             // Re-populate tree to reflect changes
             Dispatcher.UIThread.Post(() =>
@@ -1546,7 +1546,7 @@ namespace DialogEditor.ViewModels
                 // Restore expansion state after tree is rebuilt
                 Dispatcher.UIThread.Post(() =>
                 {
-                    RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
+                    _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
                 }, global::Avalonia.Threading.DispatcherPriority.Loaded);
             });
         }
@@ -1554,8 +1554,7 @@ namespace DialogEditor.ViewModels
         private void RefreshTreeViewAndSelectNode(DialogNode nodeToSelect)
         {
             // Save expansion state before refresh
-            var expandedNodeRefs = new HashSet<DialogNode>();
-            SaveTreeExpansionState(DialogNodes, expandedNodeRefs);
+            var expandedNodeRefs = _treeNavManager.SaveTreeExpansionState(DialogNodes);
 
             // Store the node to re-select after refresh
             NodeToSelectAfterRefresh = nodeToSelect;
@@ -1568,7 +1567,7 @@ namespace DialogEditor.ViewModels
                 // Restore expansion state after tree is rebuilt
                 Dispatcher.UIThread.Post(() =>
                 {
-                    RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
+                    _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
                 }, global::Avalonia.Threading.DispatcherPriority.Loaded);
             });
         }
@@ -1587,140 +1586,18 @@ namespace DialogEditor.ViewModels
 
         public TreeViewSafeNode? FindTreeNodeForDialogNode(DialogNode nodeToFind)
         {
-            TreeViewSafeNode? FindNodeRecursive(ObservableCollection<TreeViewSafeNode> nodes)
-            {
-                foreach (var node in nodes)
-                {
-                    if (node.OriginalNode == nodeToFind)
-                        return node;
-
-                    if (node.Children != null && node.Children.Count > 0)
-                    {
-                        var found = FindNodeRecursive(node.Children);
-                        if (found != null)
-                            return found;
-                    }
-                }
-                return null;
-            }
-
-            return FindNodeRecursive(DialogNodes);
+            return _treeNavManager.FindTreeNodeForDialogNode(DialogNodes, nodeToFind);
         }
 
-        private void SaveTreeExpansionState(ObservableCollection<TreeViewSafeNode> nodes, HashSet<DialogNode> expandedRefs)
-        {
-            foreach (var node in nodes)
-            {
-                if (node.IsExpanded)
-                {
-                    expandedRefs.Add(node.OriginalNode);
-                }
-                if (node.Children != null && node.Children.Count > 0)
-                {
-                    SaveTreeExpansionState(node.Children, expandedRefs);
-                }
-            }
-        }
-
-        private void RestoreTreeExpansionState(ObservableCollection<TreeViewSafeNode> nodes, HashSet<DialogNode> expandedRefs)
-        {
-            foreach (var node in nodes)
-            {
-                if (expandedRefs.Contains(node.OriginalNode))
-                {
-                    node.IsExpanded = true;
-                }
-                if (node.Children != null && node.Children.Count > 0)
-                {
-                    RestoreTreeExpansionState(node.Children, expandedRefs);
-                }
-            }
-        }
 
         public string CaptureTreeStructure()
         {
             if (CurrentDialog == null)
                 return "No dialog loaded";
 
-            var treeText = new System.Text.StringBuilder();
-            treeText.AppendLine($"=== Dialog Tree Structure for {System.IO.Path.GetFileName(CurrentFileName)} ===");
-            treeText.AppendLine($"Entries: {CurrentDialog.Entries.Count}, Replies: {CurrentDialog.Replies.Count}, Starts: {CurrentDialog.Starts.Count}");
-            treeText.AppendLine();
-
-            // Track visited nodes to prevent infinite recursion
-            var visitedNodes = new HashSet<DialogNode>();
-
-            // Capture starting nodes
-            foreach (var start in CurrentDialog.Starts)
-            {
-                if (start.Index < CurrentDialog.Entries.Count)
-                {
-                    var entry = CurrentDialog.Entries[(int)start.Index];
-                    visitedNodes.Clear(); // Reset for each start tree
-                    CaptureNodeStructure(entry, treeText, 0, $"START[{start.Index}]", visitedNodes);
-                }
-            }
-
-            // If no starts, show all entries
-            if (CurrentDialog.Starts.Count == 0)
-            {
-                for (int i = 0; i < CurrentDialog.Entries.Count; i++)
-                {
-                    visitedNodes.Clear(); // Reset for each entry tree
-                    CaptureNodeStructure(CurrentDialog.Entries[i], treeText, 0, $"ENTRY[{i}]", visitedNodes);
-                }
-            }
-
-            return treeText.ToString();
+            return _treeNavManager.CaptureTreeStructure(CurrentDialog);
         }
 
-        private void CaptureNodeStructure(DialogNode node, System.Text.StringBuilder sb, int depth, string prefix, HashSet<DialogNode> visitedNodes)
-        {
-            var indent = new string(' ', depth * 2);
-
-            // Check for circular reference
-            if (visitedNodes.Contains(node))
-            {
-                sb.AppendLine($"{indent}{prefix}: [CIRCULAR REFERENCE - Already visited]");
-                return;
-            }
-
-            // Add max depth protection as well
-            if (depth > 50)  // Increased for long official campaign conversations
-            {
-                sb.AppendLine($"{indent}{prefix}: [MAX DEPTH REACHED]");
-                return;
-            }
-
-            // Mark this node as visited
-            visitedNodes.Add(node);
-
-            var typeDisplay = node.TypeDisplay;
-            var text = node.DisplayText?.Trim();
-            // No truncation - show full conversation text
-
-            sb.AppendLine($"{indent}{prefix} {typeDisplay}: \"{text}\"");
-
-            // Show pointers/children
-            foreach (var pointer in node.Pointers)
-            {
-                if (pointer.Node != null)
-                {
-                    var childPrefix = pointer.Type == DialogNodeType.Reply ? $"REPLY[{pointer.Index}]" : $"ENTRY[{pointer.Index}]";
-                    if (pointer.IsLink)
-                        childPrefix += " (LINK)";
-                    CaptureNodeStructure(pointer.Node, sb, depth + 1, childPrefix, visitedNodes);
-                }
-                else
-                {
-                    var childPrefix = pointer.Type == DialogNodeType.Reply ? $"REPLY[{pointer.Index}]" : $"ENTRY[{pointer.Index}]";
-                    sb.AppendLine($"{indent}  {childPrefix}: [UNLINKED]");
-                }
-            }
-
-            // Remove this node from visited set when backtracking (allows for legitimate revisits in different branches)
-            visitedNodes.Remove(node);
-        }
 
         public async Task<string> PerformRoundTripTestAsync(bool closeAppAfterTest = false)
         {
@@ -2378,68 +2255,11 @@ namespace DialogEditor.ViewModels
         {
             var state = new Parley.Services.TreeState
             {
-                ExpandedNodePaths = new HashSet<string>(),
+                ExpandedNodePaths = _treeNavManager.CaptureExpandedNodePaths(DialogNodes),
                 SelectedNodePath = null
             };
 
-            // Capture expanded nodes by their unique path (text chain from root)
-            CaptureExpandedNodes(DialogNodes, "", state.ExpandedNodePaths);
-
             return state;
-        }
-
-        private void CaptureExpandedNodes(ObservableCollection<TreeViewSafeNode> nodes, string parentPath, HashSet<string> expandedPaths, HashSet<TreeViewSafeNode>? visited = null)
-        {
-            if (nodes == null) return;
-
-            // Circular reference protection
-            visited ??= new HashSet<TreeViewSafeNode>();
-
-            foreach (var node in nodes)
-            {
-                if (node == null) continue;
-
-                // Circular reference check - skip if already visited
-                if (!visited.Add(node))
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Circular reference detected in tree state capture: {node.DisplayText}");
-                    continue;
-                }
-
-                // Create unique path using display text + link status
-                var nodePath = string.IsNullOrEmpty(parentPath)
-                    ? GetNodeIdentifier(node)
-                    : $"{parentPath}|{GetNodeIdentifier(node)}";
-
-                // If expanded, record it
-                if (node.IsExpanded)
-                {
-                    expandedPaths.Add(nodePath);
-                }
-
-                // Recurse into children (even for links - they can be expanded)
-                if (node.Children != null && node.Children.Count > 0)
-                {
-                    CaptureExpandedNodes(node.Children, nodePath, expandedPaths, visited);
-                }
-
-                // Remove from visited after processing this branch (allows same node in different branches)
-                visited.Remove(node);
-            }
-        }
-
-        private string GetNodeIdentifier(TreeViewSafeNode node)
-        {
-            // Use display text + type + link status as identifier
-            // This distinguishes between link nodes and duplicate nodes with same text
-            if (node is TreeViewRootNode)
-                return "ROOT";
-
-            var displayText = node.DisplayText ?? "UNKNOWN";
-            var nodeType = node.OriginalNode?.Type.ToString() ?? "UNKNOWN";
-            var isLink = node.IsChild ? "LINK" : "NODE";
-
-            return $"{displayText}[{nodeType}:{isLink}]";
         }
 
         /// <summary>
@@ -3182,48 +3002,9 @@ namespace DialogEditor.ViewModels
             if (state == null) return;
 
             // Restore expanded nodes
-            RestoreExpandedNodes(DialogNodes, "", state.ExpandedNodePaths);
+            _treeNavManager.RestoreExpandedNodePaths(DialogNodes, state.ExpandedNodePaths);
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restored {state.ExpandedNodePaths.Count} expanded nodes");
-        }
-
-        private void RestoreExpandedNodes(ObservableCollection<TreeViewSafeNode> nodes, string parentPath, HashSet<string> expandedPaths, HashSet<TreeViewSafeNode>? visited = null)
-        {
-            if (nodes == null) return;
-
-            // Circular reference protection
-            visited ??= new HashSet<TreeViewSafeNode>();
-
-            foreach (var node in nodes)
-            {
-                if (node == null) continue;
-
-                // Circular reference check - skip if already visited
-                if (!visited.Add(node))
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Circular reference detected in tree state restore: {node.DisplayText}");
-                    continue;
-                }
-
-                var nodePath = string.IsNullOrEmpty(parentPath)
-                    ? GetNodeIdentifier(node)
-                    : $"{parentPath}|{GetNodeIdentifier(node)}";
-
-                // Restore expansion state
-                if (expandedPaths.Contains(nodePath))
-                {
-                    node.IsExpanded = true;
-                }
-
-                // Recurse into children (even for links - they can be expanded)
-                if (node.Children != null && node.Children.Count > 0)
-                {
-                    RestoreExpandedNodes(node.Children, nodePath, expandedPaths, visited);
-                }
-
-                // Remove from visited after processing this branch (allows same node in different branches)
-                visited.Remove(node);
-            }
         }
 
         #region Scrap Management

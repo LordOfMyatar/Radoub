@@ -10,6 +10,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.14-alpha] - TBD
+**Branch**: `parley/refactor/epic-99-tree-navigation` | **PR**: #133
+
+### Epic #99: MainViewModel Refactoring - Phase 4 (TreeNavigationManager)
+
+Extract tree navigation and traversal functionality from MainViewModel into dedicated service.
+
+### Added
+- **TreeNavigationManager** (~270 lines): Tree navigation, state management, and traversal
+  - FindTreeNodeForDialogNode - Recursive node search
+  - SaveTreeExpansionState/RestoreTreeExpansionState - Simple expansion state
+  - CaptureExpandedNodePaths/RestoreExpandedNodePaths - Path-based state (for undo/redo)
+  - CaptureTreeStructure - Debug/logging tree representation
+
+### Changed
+- MainViewModel reduced from 3,484 to 3,265 lines (-219 lines)
+- Replaced inline tree navigation methods with service calls
+- Tree state management now centralized in dedicated service
+
+### Tests
+- ✅ All 211 tests passing
+- ✅ Build succeeds
+
+---
+
 ## [0.1.13-alpha] - TBD
 **Branch**: `parley/refactor/epic-99-orphan-manager` | **PR**: #132
 

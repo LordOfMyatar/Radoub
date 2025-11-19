@@ -9,9 +9,10 @@ namespace Parley.Services
     /// Service responsible for orphan node detection and cleanup.
     /// Extracted from MainViewModel to improve separation of concerns.
     ///
-    /// Handles two types of orphaning:
+    /// Handles three types of orphaning:
     /// 1. Orphaned pointers - pointers to deleted nodes (removed by RemoveOrphanedPointers)
     /// 2. Orphaned nodes - nodes with no incoming pointers (removed by RemoveOrphanedNodes)
+    /// 3. Orphaned link children - nodes referenced only by child links (handled during deletion)
     /// </summary>
     public class OrphanNodeManager
     {
@@ -176,6 +177,137 @@ namespace Parley.Services
                     CollectReachableNodes(ptr.Node, reachable);
                 }
             }
+        }
+
+        /// <summary>
+        /// Identifies nodes that will become orphaned when a parent node is deleted.
+        /// These are nodes that have ONLY child link references (IsLink=true) pointing to them
+        /// and no regular parent pointers, so they would become unreachable after deletion.
+        /// </summary>
+        public List<DialogNode> IdentifyOrphanedLinkChildren(Dialog dialog, DialogNode nodeBeingDeleted, HashSet<DialogNode> nodesToDelete)
+        {
+            var orphanedLinkChildren = new List<DialogNode>();
+
+            // Check all children of nodes being deleted
+            foreach (var node in nodesToDelete)
+            {
+                foreach (var ptr in node.Pointers)
+                {
+                    if (ptr.Node != null && !nodesToDelete.Contains(ptr.Node))
+                    {
+                        // This child node is not being deleted with its parent
+                        // Check if it will become orphaned (only has child link references)
+                        var incomingLinks = GetIncomingPointers(dialog, ptr.Node);
+
+                        // Filter out links from nodes that are being deleted
+                        var remainingLinks = incomingLinks.Where(link =>
+                        {
+                            var linkParent = FindPointerParent(dialog, link);
+                            return linkParent == null || !nodesToDelete.Contains(linkParent);
+                        }).ToList();
+
+                        // If all remaining incoming pointers are child links, this node will be orphaned
+                        if (remainingLinks.Count > 0 && remainingLinks.All(link => link.IsLink))
+                        {
+                            if (!orphanedLinkChildren.Contains(ptr.Node))
+                            {
+                                orphanedLinkChildren.Add(ptr.Node);
+                                UnifiedLogger.LogApplication(LogLevel.INFO,
+                                    $"Identified orphaned link child: '{ptr.Node.DisplayText}' (has {remainingLinks.Count} child link(s) only)");
+                            }
+                        }
+                    }
+                }
+            }
+
+            return orphanedLinkChildren;
+        }
+
+        /// <summary>
+        /// Removes orphaned link children from the dialog's Entries/Replies lists.
+        /// These nodes are preserved in scrap but must be removed from lists to prevent
+        /// their child links from being saved with incorrect indices.
+        /// 2025-11-18: Fix for child link corruption causing "evil twin" nodes in Aurora
+        /// </summary>
+        public void RemoveOrphanedLinkChildrenFromLists(Dialog dialog, List<DialogNode> orphanedLinkChildren)
+        {
+            foreach (var orphan in orphanedLinkChildren)
+            {
+                if (orphan.Type == DialogNodeType.Entry)
+                {
+                    dialog.Entries.Remove(orphan);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Removed orphaned link child Entry from list: '{orphan.DisplayText}'");
+                }
+                else
+                {
+                    dialog.Replies.Remove(orphan);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Removed orphaned link child Reply from list: '{orphan.DisplayText}'");
+                }
+
+                // Note: Pointers from/to this orphaned node will be cleaned up by RemoveOrphanedPointers
+            }
+        }
+
+        /// <summary>
+        /// Gets all incoming pointers to a specific node from anywhere in the dialog.
+        /// </summary>
+        private List<DialogPtr> GetIncomingPointers(Dialog dialog, DialogNode targetNode)
+        {
+            var incomingPointers = new List<DialogPtr>();
+
+            // Check Starts
+            foreach (var start in dialog.Starts)
+            {
+                if (start.Node == targetNode)
+                    incomingPointers.Add(start);
+            }
+
+            // Check Entry pointers
+            foreach (var entry in dialog.Entries)
+            {
+                foreach (var ptr in entry.Pointers)
+                {
+                    if (ptr.Node == targetNode)
+                        incomingPointers.Add(ptr);
+                }
+            }
+
+            // Check Reply pointers
+            foreach (var reply in dialog.Replies)
+            {
+                foreach (var ptr in reply.Pointers)
+                {
+                    if (ptr.Node == targetNode)
+                        incomingPointers.Add(ptr);
+                }
+            }
+
+            return incomingPointers;
+        }
+
+        /// <summary>
+        /// Finds which node contains a specific pointer.
+        /// </summary>
+        private DialogNode? FindPointerParent(Dialog dialog, DialogPtr pointer)
+        {
+            // Check Entries
+            foreach (var entry in dialog.Entries)
+            {
+                if (entry.Pointers.Contains(pointer))
+                    return entry;
+            }
+
+            // Check Replies
+            foreach (var reply in dialog.Replies)
+            {
+                if (reply.Pointers.Contains(pointer))
+                    return reply;
+            }
+
+            // Pointer is in Starts or doesn't exist
+            return null;
         }
 
         // NOTE: The following methods are DEPRECATED and preserved for reference only.
