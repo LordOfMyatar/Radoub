@@ -316,13 +316,24 @@ git push origin parley/feat/my-feature
 - Goal: Extract services and managers into separate classes
 - Pattern: Services handle business logic, ViewModel coordinates UI state
 
-**Refactoring Progress**:
-- ✅ Phase 1: File operations → DialogFileService
-- ✅ Phase 2: Undo/redo → UndoManager
-- ✅ Phase 3: Clipboard → DialogClipboardService
-- ✅ Phase 4: Scrap/delete → ScrapManager
-- 🔄 Phase 5: Node editing → DialogEditorService (in progress)
-- ⏳ Phase 6-8: Tree operations, search, validation (pending)
+**Refactoring Progress** (Epic #99):
+- ✅ Phase 1: File operations → DialogFileService (PR #122)
+- ✅ Phase 2: Undo/redo → UndoManager (PR #128)
+- ✅ Phase 3: Clipboard → DialogClipboardService (PR #129)
+- ✅ Phase 4: Scrap/orphan → ScrapManager + OrphanNodeManager (PR #130, #132)
+- ✅ Phase 5: Properties panel → PropertyPanelPopulator (PR #135)
+- 🔄 Phase 6: Node operations → NodeOperationsManager (PR #137, in review)
+- ✅ Phase 7: Tree navigation → TreeNavigationManager (PR #133, completed, pending merge after #137)
+- ⏳ Phase 8-9: Search, validation (pending)
+
+**Phase 6 Status (NodeOperationsManager)**: ~530 lines extracted, MainViewModel reduced to ~2,933 lines (-332)
+- Node add operations: AddSmartNode, AddEntryNode, AddPCReplyNode
+- Node delete operations: DeleteNode with orphan handling, scrap integration
+- Node move operations: MoveNodeUp, MoveNodeDown with START list handling
+- **Critical fixes (2025-11-18)**:
+  - Fixed orphaned link children handling (PR #132 "evil twin" fix restored)
+  - Fixed CollectReachableNodes to skip child links (IsLink=true)
+  - Added immediate orphan removal during deletion (not deferred to save)
 
 **RULES FOR NEW FEATURES**:
 1. **DO NOT add new methods/logic to MainViewModel**

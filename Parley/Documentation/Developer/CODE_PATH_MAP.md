@@ -1,7 +1,7 @@
 # Code Path Map - Parley Architecture
 
 **Purpose**: Track active code paths for file operations and UI workflows
-**Last Updated**: 2025-11-16
+**Last Updated**: 2025-11-18
 **Note**: This information was discovered and written by Claude AI.
 
 ---
@@ -15,18 +15,24 @@
 **GffBinaryReader** (~400 lines): Reads GFF binary format
 **GffIndexFixer** (~400 lines): Fixes field indices for Aurora compatibility
 
-### Services & Managers
+### Services & Managers (Epic #99 Refactoring)
 **DialogFileService** (~200 lines): Facade for file operations (load/save)
 **UndoManager** (~150 lines): Manages undo/redo state history
 **DialogClipboardService** (~300 lines): Copy/paste operations
 **ScrapManager** (~250 lines): Manages deleted/scrapped nodes
+**OrphanNodeManager** (~250 lines): Orphan detection and cleanup (2025-11-18: Fixed to skip child links)
+**NodeOperationsManager** (~530 lines): Node add/delete/move operations (Phase 6, PR #137)
+**TreeNavigationManager** (~280 lines): Tree traversal, expansion state, node finding (Phase 7, PR #133)
 **DialogEditorService** (~200 lines): Node editing operations
+**PropertyPanelPopulator** (~460 lines): Properties panel population (Phase 5, PR #135)
 **SettingsService** (~650 lines): Application settings persistence
 **UnifiedLogger** (~385 lines): Session-based logging with path sanitization
 **DebugLogger** (~180 lines): UI debug console with log level filtering
 
 ### ViewModels & UI
-**MainViewModel** (~3,500 lines): **ACTIVELY REFACTORING - DO NOT ADD LOGIC HERE**
+**MainViewModel** (~2,933 lines as of Phase 6): **ACTIVELY REFACTORING - DO NOT ADD LOGIC HERE**
+- Down from ~3,500 lines (Phase 6 NodeOperationsManager: -332 lines)
+- Target: < 2,000 lines by end of Epic #99
 **MainWindow.axaml.cs** (~370 lines): Thin coordinator - delegates to handlers
 
 ### Handlers (UI Logic Extracted from MainWindow)
@@ -123,6 +129,76 @@ DialogBuilder.BuildDialogFromGffStruct (DialogBuilder.cs:16)
 DialogBuilder.BuildDialogNodeFromStruct (DialogBuilder.cs:39)
 DialogBuilder.BuildDialogPtrFromStruct (DialogBuilder.cs:185)
 ```
+
+---
+
+## DELETE PATH (Node Deletion)
+
+**Entry Point**: User right-clicks node → Delete → MainViewModel.DeleteNode
+
+### Call Chain (Current Architecture - Phase 6)
+```
+MainViewModel.DeleteNode (MainViewModel.cs:926)
+  ↓ Save undo state
+  ↓ Delegate to NodeOperationsManager
+NodeOperationsManager.DeleteNode (NodeOperationsManager.cs:67)
+  ↓
+  ↓ Check for incoming links to deleted node
+  CheckForIncomingLinks (NodeOperationsManager.cs:320)
+  ↓
+  ↓ Collect node + all children for deletion
+  CollectNodeAndChildren (NodeOperationsManager.cs:415)
+  ↓
+  ↓ Add to scrap BEFORE deleting
+  ScrapManager.AddToScrap (ScrapManager.cs)
+  ↓
+  ↓ CRITICAL: Identify orphaned link children (PR #132 "evil twin" fix)
+  OrphanNodeManager.IdentifyOrphanedLinkChildren (OrphanNodeManager.cs:193)
+    ↓ Check children of nodes being deleted
+    ↓ Find nodes with ONLY child link (IsLink=true) references
+    ↓ These will become orphaned after deletion
+  ↓
+  ↓ Remove orphaned link children from Entries/Replies lists
+  OrphanNodeManager.RemoveOrphanedLinkChildrenFromLists (OrphanNodeManager.cs:238)
+  ↓
+  ↓ Recursively delete node + children from dialog
+  DeleteNodeRecursive (NodeOperationsManager.cs:390)
+  ↓
+  ↓ Recalculate pointer indices
+  RecalculatePointerIndices (NodeOperationsManager.cs:490)
+  ↓
+  ↓ Remove orphaned pointers (dangling references)
+  OrphanNodeManager.RemoveOrphanedPointers (OrphanNodeManager.cs:24)
+  ↓
+  ↓ CRITICAL: Remove orphaned nodes immediately (2025-11-18 fix)
+  OrphanNodeManager.RemoveOrphanedNodes (OrphanNodeManager.cs:108)
+    ↓ CollectReachableNodes from START (skips IsLink=true pointers)
+    ↓ Remove unreachable nodes from Entries/Replies
+    ↓ Add orphaned nodes to scrap
+  ↓
+  ↓ Return to MainViewModel
+  ↓
+MainViewModel.RefreshTreeView (MainViewModel.cs:1242)
+  ↓ Tree view updates to reflect deletion
+```
+
+### Key Components
+
+**Orphan Detection (2025-11-18 Fix)**:
+- `CollectReachableNodes` (OrphanNodeManager.cs:170) - **ONLY traverses regular pointers (IsLink=false)**
+- Nodes with only child link (IsLink=true) references are considered unreachable → orphaned
+- Example: Chef reply with only child link from "I go through that sometimes..." becomes orphaned
+
+**Scrap Integration**:
+- Deleted nodes added to scrap with reason "deleted"
+- Orphaned link children added with reason "orphaned link child"
+- Orphaned nodes added with reason "orphaned after deletion"
+- All recoverable from Scrap tab
+
+**Link Handling**:
+- Nodes with incoming links get warning logged
+- Links are NOT followed during deletion (Aurora behavior: delete parent = delete subtree)
+- Child links (IsLink=true) do NOT prevent orphaning (2025-11-18 fix)
 
 ---
 
