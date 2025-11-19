@@ -57,7 +57,7 @@ namespace Parley.Services
             {
                 Type = DialogNodeType.Entry,
                 Text = new LocString(),
-                Speaker = "NPC"
+                Speaker = "" // Empty = "Owner" display (default NWN behavior)
             };
 
             dialog.Entries.Add(newNode);
