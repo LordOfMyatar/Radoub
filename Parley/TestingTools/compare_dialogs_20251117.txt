@@ -1,0 +1,64 @@
+=== Dialog Structure Comparison ===
+
+Loading known-good: dlg_shady_vendor.dlg
+[Parser] INFO : ═══════════════════════════════════════════════════════════
+[Parser] INFO : 📂 OPENING FILE: C:/Users/Sheri/Documents/Neverwinter Nights/modules/lns_dlg/dlg_shady_vendor.dlg
+[Parser] INFO :    Parley v0.1.25-alpha (Build c0e0899, 2025-11-17)
+[Parser] INFO : ═══════════════════════════════════════════════════════════
+[Parser] INFO : Successfully parsed dialog with 3 entries and 7 replies
+[Parser] INFO : ✅ Successfully opened: C:/Users/Sheri/Documents/Neverwinter Nights/modules/lns_dlg/dlg_shady_vendor.dlg
+[Parser] INFO : ═══════════════════════════════════════════════════════════
+✅ Loaded known-good dialog
+KNOWN-GOOD (dlg_shady_vendor.dlg):
+  Entries: 3
+  Replies: 7
+  Starting Entries: 3
+  Total Entry Pointers: 10
+  Total Reply Pointers: 1
+
+---
+
+Loading test: __shady.dlg
+[Parser] INFO : ═══════════════════════════════════════════════════════════
+[Parser] INFO : 📂 OPENING FILE: C:/Users/Sheri/Documents/Neverwinter Nights/modules/lns_dlg/__shady.dlg
+[Parser] INFO :    Parley v0.1.25-alpha (Build c0e0899, 2025-11-17)
+[Parser] INFO : ═══════════════════════════════════════════════════════════
+[Parser] INFO : Successfully parsed dialog with 2 entries and 4 replies
+[Parser] INFO : ✅ Successfully opened: C:/Users/Sheri/Documents/Neverwinter Nights/modules/lns_dlg/__shady.dlg
+[Parser] INFO : ═══════════════════════════════════════════════════════════
+✅ Loaded test dialog
+TEST (__shady.dlg):
+  Entries: 2
+  Replies: 4
+  Starting Entries: 2
+  Total Entry Pointers: 4
+  Total Reply Pointers: 1
+
+---
+
+=== KEY DIFFERENCES ===
+
+Starting Entries:
+  Good: 3
+  Test: 2
+  Good Start[0]: Index=2, IsLink=False
+  Test Start[0]: Index=1, IsLink=False
+
+Entry Structure:
+  Entry 0:
+    Good: Speaker='', Text='Anything else?', Pointers=4
+    Test: Speaker='', Text='Sure, what kind?', Pointers=2
+  Entry 1:
+    Good: Speaker='', Text='Sure, what kind?', Pointers=4
+    Test: Speaker='', Text='Hey, keep it down and I'll show you my w...', Pointers=2
+
+Reply Structure:
+  Reply 0:
+    Good: Speaker='', Text='I'm all done.', Pointers=0
+    Test: Speaker='', Text='The shady stuff. <CUSTOM1016>[Open Store...', Pointers=0
+  Reply 1:
+    Good: Speaker='', Text='The stuff that was just sold to you. <CU...', Pointers=0
+    Test: Speaker='', Text='The regular stuff.. <CUSTOM1016>[Open St...', Pointers=0
+  Reply 2:
+    Good: Speaker='', Text='The shady stuff. <CUSTOM1016>[Open Store...', Pointers=0
+    Test: Speaker='', Text='Nothing.  Have a nice day.', Pointers=0

@@ -27,6 +27,7 @@ namespace DialogEditor.ViewModels
         private readonly DialogClipboardService _clipboardService = new(); // Service for clipboard operations
         private readonly OrphanNodeManager _orphanManager = new(); // Service for orphan pointer cleanup
         private readonly TreeNavigationManager _treeNavManager = new(); // Service for tree navigation and state
+        private readonly NodeOperationsManager _nodeOpsManager; // Service for node add/delete/move operations
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -171,6 +172,9 @@ namespace DialogEditor.ViewModels
         public MainViewModel()
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainViewModel initialized");
+
+            // Initialize NodeOperationsManager with required dependencies
+            _nodeOpsManager = new NodeOperationsManager(_editorService, _scrapManager, _orphanManager);
 
             // Hook up scrap count changed event
             _scrapManager.ScrapCountChanged += (s, count) =>
@@ -845,8 +849,8 @@ namespace DialogEditor.ViewModels
                 // Note: parentPtr would be needed if we're adding under a link, but for now passing null
             }
 
-            // Delegate to service
-            var newNode = _editorService.AddSmartNode(CurrentDialog, parentNode, parentPtr);
+            // Delegate to NodeOperationsManager
+            var newNode = _nodeOpsManager.AddSmartNode(CurrentDialog, parentNode, parentPtr);
 
             // Refresh the tree
             RefreshTreeView();
@@ -874,8 +878,8 @@ namespace DialogEditor.ViewModels
                 parentNode.IsExpanded = true;
             }
 
-            // Delegate to service
-            var newEntry = _editorService.AddEntryNode(CurrentDialog, parentDialogNode, parentPtr);
+            // Delegate to NodeOperationsManager
+            var newEntry = _nodeOpsManager.AddEntryNode(CurrentDialog, parentDialogNode, parentPtr);
 
             // Refresh tree display
             RefreshTreeView();
@@ -906,8 +910,8 @@ namespace DialogEditor.ViewModels
             var parentDialogNode = parent.OriginalNode;
             if (parentDialogNode == null) return;
 
-            // Delegate to service
-            var newReply = _editorService.AddPCReplyNode(CurrentDialog, parentDialogNode, null);
+            // Delegate to NodeOperationsManager
+            var newReply = _nodeOpsManager.AddPCReplyNode(CurrentDialog, parentDialogNode, null);
 
             // Auto-expand parent node before refresh
             parent.IsExpanded = true;
@@ -936,8 +940,10 @@ namespace DialogEditor.ViewModels
             // Save state for undo before deleting
             SaveUndoState("Delete Node");
 
-            // Check if node or its children have incoming links
-            var linkedNodes = CheckForIncomingLinks(node);
+            // Delegate to NodeOperationsManager
+            var linkedNodes = _nodeOpsManager.DeleteNode(CurrentDialog, node, CurrentFileName);
+
+            // Display warnings if there were linked nodes
             if (linkedNodes.Count > 0)
             {
                 // Check for duplicates in the linked nodes list (indicates copy/paste created duplicates)
@@ -946,216 +952,38 @@ namespace DialogEditor.ViewModels
 
                 if (hasDuplicates)
                 {
-                    foreach (var group in grouped.Where(g => g.Count() > 1))
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.ERROR,
-                            $"DUPLICATE NODE DETECTED: '{group.Key}' appears {group.Count()} times - likely from copy/paste of linked content");
-                    }
                     StatusMessage = $"ERROR: Duplicate nodes detected! This may cause orphaning. See logs.";
                 }
-
-                var nodeList = string.Join(", ", linkedNodes.Select(n => $"'{n.DisplayText}'"));
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"DELETE WARNING: Deleting node will break links to: {nodeList}");
-                StatusMessage = $"Warning: Deleting will break {linkedNodes.Count} link(s). Check logs for details.";
-                // Continue with delete - user was warned
+                else
+                {
+                    StatusMessage = $"Warning: Deleted node broke {linkedNodes.Count} link(s). Check logs for details.";
+                }
             }
-
-            // Collect all nodes that will be deleted (including the node and its children)
-            var nodesToDelete = new List<DialogNode>();
-            var hierarchyInfo = new Dictionary<DialogNode, (int level, DialogNode? parent)>();
-            CollectNodeAndChildren(node, nodesToDelete, hierarchyInfo);
-
-            // Add deleted nodes to scrap BEFORE deleting them
-            if (nodesToDelete.Count > 0 && CurrentFileName != null)
+            else
             {
-                _scrapManager.AddToScrap(CurrentFileName, nodesToDelete, "deleted", hierarchyInfo);
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"Added {nodesToDelete.Count} deleted nodes to scrap");
+                StatusMessage = $"Node and children deleted successfully";
             }
-
-            // CRITICAL: Recursively delete all children - even if linked elsewhere
-            // This matches Aurora behavior - deleting parent removes entire subtree
-            DeleteNodeRecursive(node);
-
-            // CRITICAL: After deletion, recalculate indices AND check for orphaned links
-            RecalculatePointerIndices();
-            _orphanManager.RemoveOrphanedPointers(CurrentDialog);
-
-            // No longer creating orphan containers - using Scrap Tab instead
-            // Orphaned nodes are now managed via the ScrapManager service
-            // DetectAndContainerizeOrphansSync(); // Removed - was causing orphan issues in Aurora
 
             // Refresh tree
             RefreshTreeView();
 
             HasUnsavedChanges = true;
-            StatusMessage = $"Node and children deleted successfully";
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted node tree: {node.DisplayText}");
         }
 
-        private List<DialogNode> CheckForIncomingLinks(DialogNode node)
-        {
-            var linkedNodes = new List<DialogNode>();
-
-            // Check this node and all descendants for incoming links using LinkRegistry
-            CheckNodeForLinks(node, linkedNodes);
-
-            return linkedNodes;
-        }
-
-        private void CheckNodeForLinks(DialogNode node, List<DialogNode> linkedNodes)
-        {
-            // Use LinkRegistry to check for incoming links
-            var incomingLinks = CurrentDialog?.LinkRegistry.GetLinksTo(node) ?? new List<DialogPtr>();
-
-            // If there are multiple incoming links or any are marked as IsLink, this node is referenced elsewhere
-            if (incomingLinks.Count > 1 || incomingLinks.Any(ptr => ptr.IsLink))
-            {
-                linkedNodes.Add(node);
-            }
-
-            // Recursively check all children
-            if (node.Pointers != null)
-            {
-                foreach (var ptr in node.Pointers)
-                {
-                    if (ptr.Node != null)
-                    {
-                        CheckNodeForLinks(ptr.Node, linkedNodes);
-                    }
-                }
-            }
-        }
-
+        // COMPATIBILITY: Kept for existing tests that use reflection to access this method
+        // TODO: Update tests to use public DeleteNode API instead
+        #pragma warning disable IDE0051 // Remove unused private members
         private void DeleteNodeRecursive(DialogNode node)
         {
-            // Recursively delete children, but only if they're not shared by other nodes
-            if (node.Pointers != null && node.Pointers.Count > 0)
-            {
-                // Make a copy of the pointers list to avoid modification during iteration
-                var pointersToDelete = node.Pointers.ToList();
+            if (CurrentDialog == null) return;
 
-                foreach (var ptr in pointersToDelete)
-                {
-                    if (ptr.Node != null)
-                    {
-                        // Check if this child node has other incoming links besides the one we're about to delete
-                        var incomingLinks = CurrentDialog?.LinkRegistry.GetLinksTo(ptr.Node) ?? new List<DialogPtr>();
-
-                        // Count how many of the incoming links are NOT from the node we're deleting
-                        var otherIncomingLinks = incomingLinks.Where(link =>
-                        {
-                            // Find which node contains this link
-                            DialogNode? linkParent = null;
-                            foreach (var entry in CurrentDialog?.Entries ?? new List<DialogNode>())
-                            {
-                                if (entry.Pointers.Contains(link))
-                                {
-                                    linkParent = entry;
-                                    break;
-                                }
-                            }
-                            if (linkParent == null)
-                            {
-                                foreach (var reply in CurrentDialog?.Replies ?? new List<DialogNode>())
-                                {
-                                    if (reply.Pointers.Contains(link))
-                                    {
-                                        linkParent = reply;
-                                        break;
-                                    }
-                                }
-                            }
-                            // Check if it's in Starts
-                            if (linkParent == null && (CurrentDialog?.Starts.Contains(link) ?? false))
-                            {
-                                linkParent = null; // Start link, not from a node
-                            }
-
-                            return linkParent != node;
-                        }).Count();
-
-                        // CRITICAL: Check if this node is a parent in parent-child link(s)
-                        // Child links (IsLink=true) point TO the parent, and children should not be deleted
-                        // when their parent loses a regular incoming pointer
-                        var hasChildLinks = incomingLinks.Any(link => link.IsLink);
-
-                        if (otherIncomingLinks == 0 && !hasChildLinks)
-                        {
-                            // No other nodes reference this child, safe to delete recursively
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                                $"Recursively deleting child (not shared): {ptr.Node.DisplayText}");
-                            DeleteNodeRecursive(ptr.Node);
-                        }
-                        else
-                        {
-                            // This child is shared by other nodes OR is a parent in parent-child links
-                            var reason = hasChildLinks ?
-                                $"is parent in parent-child link(s) ({incomingLinks.Count(link => link.IsLink)} child links)" :
-                                $"has {otherIncomingLinks} other references";
-                            UnifiedLogger.LogApplication(LogLevel.INFO,
-                                $"🔒 PRESERVING node (will become orphaned): '{ptr.Node.DisplayText}' ({reason})");
-                        }
-                    }
-                }
-
-                // Unregister and clear the pointers list after handling children
-                foreach (var ptr in pointersToDelete)
-                {
-                    CurrentDialog?.LinkRegistry.UnregisterLink(ptr);
-                }
-                node.Pointers.Clear();
-            }
-
-            // Get all incoming pointers to this node from LinkRegistry
-            var incomingPointers = CurrentDialog?.LinkRegistry.GetLinksTo(node).ToList() ?? new List<DialogPtr>();
-            int removedCount = 0;
-
-            // Remove all incoming pointers using LinkRegistry data
-            foreach (var incomingPtr in incomingPointers)
-            {
-                // Unregister from LinkRegistry first
-                CurrentDialog?.LinkRegistry.UnregisterLink(incomingPtr);
-
-                // Remove from Starts if it's a start pointer
-                if (CurrentDialog?.Starts.Contains(incomingPtr) ?? false)
-                {
-                    CurrentDialog?.Starts.Remove(incomingPtr);
-                    removedCount++;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Removed from Starts list");
-                }
-
-                // Find and remove from parent node's pointers
-                foreach (var entry in CurrentDialog?.Entries ?? new List<DialogNode>())
-                {
-                    if (entry.Pointers.Contains(incomingPtr))
-                    {
-                        entry.Pointers.Remove(incomingPtr);
-                        removedCount++;
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Entry '{entry.DisplayText}' pointers");
-                    }
-                }
-
-                foreach (var reply in CurrentDialog?.Replies ?? new List<DialogNode>())
-                {
-                    if (reply.Pointers.Contains(incomingPtr))
-                    {
-                        reply.Pointers.Remove(incomingPtr);
-                        removedCount++;
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed from Reply '{reply.DisplayText}' pointers");
-                    }
-                }
-            }
-
-            if (removedCount > 1)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed node '{node.DisplayText}' from {removedCount} parent references");
-            }
-
-            // Use RemoveNodeInternal which handles LinkRegistry cleanup
-            CurrentDialog?.RemoveNodeInternal(node, node.Type);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {node.Type} from list: {node.DisplayText}");
+            // Delegate to NodeOperationsManager's internal implementation via reflection
+            var managerType = _nodeOpsManager.GetType();
+            var deleteMethod = managerType.GetMethod("DeleteNodeRecursive",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            deleteMethod?.Invoke(_nodeOpsManager, new object[] { CurrentDialog, node });
         }
+        #pragma warning restore IDE0051
 
         // Phase 2a: Node Reordering
         public void MoveNodeUp(TreeViewSafeNode nodeToMove)
@@ -1168,47 +996,15 @@ namespace DialogEditor.ViewModels
             // Save state for undo
             SaveUndoState("Move Node Up");
 
-            // Check if root-level node (in StartingList)
-            int startIndex = CurrentDialog.Starts.FindIndex(s => s.Node == node);
+            // Delegate to NodeOperationsManager
+            bool moved = _nodeOpsManager.MoveNodeUp(CurrentDialog, node, out string statusMessage);
 
-            if (startIndex != -1)
+            StatusMessage = statusMessage;
+
+            if (moved)
             {
-                // Root-level node - handle directly in ViewModel
-                if (startIndex == 0)
-                {
-                    StatusMessage = "Node is already first";
-                    return;
-                }
-
-                var temp = CurrentDialog.Starts[startIndex];
-                CurrentDialog.Starts[startIndex] = CurrentDialog.Starts[startIndex - 1];
-                CurrentDialog.Starts[startIndex - 1] = temp;
-
                 HasUnsavedChanges = true;
                 RefreshTreeViewAndSelectNode(node);
-                StatusMessage = $"Moved '{node.Text?.GetDefault()}' up";
-                return;
-            }
-
-            // Child node - find parent and use service
-            DialogNode? parent = FindParentNode(node);
-            if (parent != null)
-            {
-                bool moved = _editorService.MoveNodeUp(parent, node);
-                if (moved)
-                {
-                    HasUnsavedChanges = true;
-                    RefreshTreeViewAndSelectNode(node);
-                    StatusMessage = $"Moved '{node.Text?.GetDefault()}' up";
-                }
-                else
-                {
-                    StatusMessage = "Node is already first in parent";
-                }
-            }
-            else
-            {
-                StatusMessage = "Cannot find parent node";
             }
         }
 
@@ -1222,67 +1018,16 @@ namespace DialogEditor.ViewModels
             // Save state for undo
             SaveUndoState("Move Node Down");
 
-            // Check if root-level node (in StartingList)
-            int startIndex = CurrentDialog.Starts.FindIndex(s => s.Node == node);
+            // Delegate to NodeOperationsManager
+            bool moved = _nodeOpsManager.MoveNodeDown(CurrentDialog, node, out string statusMessage);
 
-            if (startIndex != -1)
+            StatusMessage = statusMessage;
+
+            if (moved)
             {
-                // Root-level node - handle directly in ViewModel
-                if (startIndex >= CurrentDialog.Starts.Count - 1)
-                {
-                    StatusMessage = "Node is already last";
-                    return;
-                }
-
-                var temp = CurrentDialog.Starts[startIndex];
-                CurrentDialog.Starts[startIndex] = CurrentDialog.Starts[startIndex + 1];
-                CurrentDialog.Starts[startIndex + 1] = temp;
-
                 HasUnsavedChanges = true;
                 RefreshTreeViewAndSelectNode(node);
-                StatusMessage = $"Moved '{node.Text?.GetDefault()}' down";
-                return;
             }
-
-            // Child node - find parent and use service
-            DialogNode? parent = FindParentNode(node);
-            if (parent != null)
-            {
-                bool moved = _editorService.MoveNodeDown(parent, node);
-                if (moved)
-                {
-                    HasUnsavedChanges = true;
-                    RefreshTreeViewAndSelectNode(node);
-                    StatusMessage = $"Moved '{node.Text?.GetDefault()}' down";
-                }
-                else
-                {
-                    StatusMessage = "Node is already last in parent";
-                }
-            }
-            else
-            {
-                StatusMessage = "Cannot find parent node";
-            }
-        }
-
-        private DialogNode? FindParentNode(DialogNode childNode)
-        {
-            // Search all entries for this child in their Pointers
-            foreach (var entry in CurrentDialog?.Entries ?? new List<DialogNode>())
-            {
-                if (entry.Pointers.Any(p => p.Node == childNode))
-                    return entry;
-            }
-
-            // Search all replies for this child in their Pointers
-            foreach (var reply in CurrentDialog?.Replies ?? new List<DialogNode>())
-            {
-                if (reply.Pointers.Any(p => p.Node == childNode))
-                    return reply;
-            }
-
-            return null;
         }
 
         /// <summary>
@@ -1291,49 +1036,10 @@ namespace DialogEditor.ViewModels
         /// </summary>
         private DialogNode? FindSiblingForFocus(DialogNode node)
         {
-            // Find parent to get siblings
-            var parent = FindParentNode(node);
+            if (CurrentDialog == null) return null;
 
-            if (parent != null)
-            {
-                // Node is a child - find sibling in parent's pointers
-                var siblings = parent.Pointers.Where(p => p.Node != null).Select(p => p.Node!).ToList();
-                int index = siblings.IndexOf(node);
-
-                if (index >= 0)
-                {
-                    // Try previous sibling first
-                    if (index > 0)
-                        return siblings[index - 1];
-
-                    // Try next sibling
-                    if (index < siblings.Count - 1)
-                        return siblings[index + 1];
-                }
-
-                // No siblings - return parent
-                return parent;
-            }
-            else if (CurrentDialog != null)
-            {
-                // Node is a START node - find sibling in START nodes
-                var startNodes = CurrentDialog.Starts.Where(p => p.Node != null).Select(p => p.Node!).ToList();
-                int index = startNodes.IndexOf(node);
-
-                if (index >= 0)
-                {
-                    // Try previous START node
-                    if (index > 0)
-                        return startNodes[index - 1];
-
-                    // Try next START node
-                    if (index < startNodes.Count - 1)
-                        return startNodes[index + 1];
-                }
-            }
-
-            // No sibling found - return null (will lose focus)
-            return null;
+            // Delegate to NodeOperationsManager
+            return _nodeOpsManager.FindSiblingForFocus(CurrentDialog, node);
         }
 
         private void PerformMove(List<DialogNode> list, DialogNodeType nodeType, uint oldIdx, uint newIdx)
@@ -3233,29 +2939,6 @@ namespace DialogEditor.ViewModels
                 if (ptr.Node != null)
                 {
                     MarkReachable(ptr.Node, reachable);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Collect a node and all its children recursively with hierarchy info
-        /// </summary>
-        private void CollectNodeAndChildren(DialogNode node, List<DialogNode> collected,
-            Dictionary<DialogNode, (int level, DialogNode? parent)>? hierarchyInfo = null,
-            int level = 0, DialogNode? parent = null)
-        {
-            collected.Add(node);
-
-            if (hierarchyInfo != null)
-            {
-                hierarchyInfo[node] = (level, parent);
-            }
-
-            foreach (var ptr in node.Pointers)
-            {
-                if (ptr.Node != null && !ptr.IsLink && !collected.Contains(ptr.Node))
-                {
-                    CollectNodeAndChildren(ptr.Node, collected, hierarchyInfo, level + 1, node);
                 }
             }
         }

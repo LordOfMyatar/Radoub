@@ -11,20 +11,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.16-alpha] - TBD
-**Branch**: `parley/refactor/epic-99-node-operations` | **PR**: #TBD
+**Branch**: `parley/refactor/epic-99-node-operations` | **PR**: #137
 
 ### Epic #99: MainViewModel Refactoring - Phase 6 (NodeOperationsManager)
 
 Extract node add/delete/move operations from MainViewModel into dedicated service.
 
 ### Added
-- **NodeOperationsManager**: Service for tree node manipulation operations
+- **NodeOperationsManager** (~530 lines): Service for tree node manipulation operations
+  - AddSmartNode - Smart node addition based on context
+  - AddEntryNode - NPC dialog node addition
+  - AddPCReplyNode - Player response node addition
+  - DeleteNode - Node deletion with link checking and scrap management
+  - MoveNodeUp/MoveNodeDown - Node reordering in parent's child list
+  - FindParentNode - Parent node lookup
+  - FindSiblingForFocus - Focus management after cut/delete
+  - Private helpers: CheckForIncomingLinks, CollectNodeAndChildren, DeleteNodeRecursive, RecalculatePointerIndices
 
 ### Changed
-- MainViewModel delegates node operations to NodeOperationsManager
+- MainViewModel reduced from 3,265 to 2,933 lines (-332 lines)
+- AddSmartNode, AddEntryNode, AddPCReplyNode delegate to NodeOperationsManager
+- DeleteNode simplified from ~70 lines to ~45 lines
+- MoveNodeUp/MoveNodeDown simplified from ~50 lines each to ~20 lines each
+- FindSiblingForFocus delegates to NodeOperationsManager
+- Removed duplicate methods: CheckForIncomingLinks, CheckNodeForLinks, DeleteNodeRecursive, FindParentNode, CollectNodeAndChildren
 
 ### Tests
-- TBD
+- ✅ All 211 tests passing
+- ✅ Build succeeds
+- Added compatibility shim for DeleteNodeRecursive to support existing tests using reflection
 
 ---
 
