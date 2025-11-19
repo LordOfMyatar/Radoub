@@ -18,6 +18,7 @@ using DialogEditor.Utils;
 using DialogEditor.Services;
 using DialogEditor.Parsers;
 using DialogEditor.Plugins;
+using Parley.Views.Helpers;
 
 namespace DialogEditor.Views
 {
@@ -27,6 +28,7 @@ namespace DialogEditor.Views
         private readonly AudioService _audioService;
         private readonly CreatureService _creatureService;
         private readonly PluginManager _pluginManager;
+        private readonly PropertyPanelPopulator _propertyPopulator; // Helper for populating properties panel
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -58,6 +60,7 @@ namespace DialogEditor.Views
             _audioService = new AudioService();
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
+            _propertyPopulator = new PropertyPanelPopulator(this);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -756,7 +759,7 @@ namespace DialogEditor.Views
 
             // Clear properties panel when file closed
             _selectedNode = null;
-            ClearPropertiesPanel();
+            _propertyPopulator.ClearAllFields();
         }
 
         private void OnExitClick(object? sender, RoutedEventArgs e)
@@ -1527,7 +1530,7 @@ namespace DialogEditor.Views
             }
             else
             {
-                ClearPropertiesPanel();
+                _propertyPopulator.ClearAllFields();
             }
         }
 
@@ -1547,293 +1550,39 @@ namespace DialogEditor.Views
             _isPopulatingProperties = true;
 
             // CRITICAL FIX: Clear all fields FIRST to prevent stale data
-            ClearPropertiesPanel();
+            _propertyPopulator.ClearAllFields();
 
             // Populate Conversation Settings (dialog-level properties) - always populate these
-            if (_viewModel.CurrentDialog != null)
-            {
-                var preventZoomCheckBox = this.FindControl<CheckBox>("PreventZoomCheckBox");
-                if (preventZoomCheckBox != null)
-                {
-                    preventZoomCheckBox.IsChecked = _viewModel.CurrentDialog.PreventZoom;
-                }
-
-                var scriptEndTextBox = this.FindControl<TextBox>("ScriptEndTextBox");
-                if (scriptEndTextBox != null)
-                {
-                    scriptEndTextBox.Text = _viewModel.CurrentDialog.ScriptEnd ?? "";
-                }
-
-                var scriptAbortTextBox = this.FindControl<TextBox>("ScriptAbortTextBox");
-                if (scriptAbortTextBox != null)
-                {
-                    scriptAbortTextBox.Text = _viewModel.CurrentDialog.ScriptAbort ?? "";
-                }
-            }
+            _propertyPopulator.PopulateConversationSettings(_viewModel.CurrentDialog);
 
             // Issue #19: If ROOT node selected, keep only conversation settings enabled
             // All node-specific properties should remain disabled
             if (node is TreeViewRootNode)
             {
                 _isPopulatingProperties = false;
-                return; // Node fields remain disabled from ClearPropertiesPanel
+                return; // Node fields remain disabled from ClearAllFields
             }
 
             var dialogNode = node.OriginalNode;
 
-            // Basic info
-            // Updated for Mockup 1: NodeTypeTextBox is now a Border, text goes in NodeTypeTextBlock
-            var nodeTypeTextBlock = this.FindControl<TextBlock>("NodeTypeTextBlock");
-            if (nodeTypeTextBlock != null)
-            {
-                // Phase 1 Bug Fix: Simplified labels "NPC" / "PC"
-                // Format: Entry = NPC speaking, Reply = PC speaking
-                if (dialogNode.Type == DialogNodeType.Entry)
-                {
-                    // Entry node = NPC speaking
-                    if (!string.IsNullOrWhiteSpace(dialogNode.Speaker))
-                    {
-                        nodeTypeTextBlock.Text = $"NPC ({dialogNode.Speaker})";
-                    }
-                    else
-                    {
-                        nodeTypeTextBlock.Text = "NPC (Owner)";
-                    }
-                }
-                else // Reply node - always PC (Reply structs have no Speaker field)
-                {
-                    nodeTypeTextBlock.Text = "PC";
-                }
-            }
+            // Populate all node properties using helper
+            _propertyPopulator.PopulateNodeType(dialogNode);
+            _propertyPopulator.PopulateSpeaker(dialogNode);
+            _propertyPopulator.PopulateBasicProperties(dialogNode);
+            _propertyPopulator.PopulateAnimation(dialogNode);
+            _propertyPopulator.PopulateIsChildIndicator(node);
 
-            var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-            var recentCreatureComboBox = this.FindControl<ComboBox>("RecentCreatureTagsComboBox");
-            var browseCreatureButton = this.FindControl<Button>("BrowseCreatureButton");
+            // Populate scripts with callbacks for async operations
+            _propertyPopulator.PopulateScripts(dialogNode, node,
+                (script, isCondition) => _ = LoadParameterDeclarationsAsync(script, isCondition),
+                (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
+                (isCondition) => ClearScriptPreview(isCondition));
 
-            bool isPC = (dialogNode.Type == DialogNodeType.Reply);
-
-            if (speakerTextBox != null)
-            {
-                speakerTextBox.Text = dialogNode.Speaker ?? "";
-
-                // Phase 1 Bug Fix: Reply nodes (PC) never have Speaker - it's read-only
-                speakerTextBox.IsReadOnly = isPC;
-
-                if (isPC)
-                {
-                    speakerTextBox.Watermark = "PC (player character)";
-                }
-                else
-                {
-                    speakerTextBox.Watermark = "Character tag or empty for Owner";
-                }
-            }
-
-            // Issue #10: Disable Speaker dropdown and Browse button for PC nodes
-            if (recentCreatureComboBox != null)
-            {
-                recentCreatureComboBox.IsEnabled = !isPC;
-            }
-
-            if (browseCreatureButton != null)
-            {
-                browseCreatureButton.IsEnabled = !isPC;
-            }
-
-            var textTextBox = this.FindControl<TextBox>("TextTextBox");
-            if (textTextBox != null)
-            {
-                textTextBox.Text = dialogNode.Text?.GetDefault() ?? "";
-                textTextBox.IsReadOnly = false; // Make editable
-            }
-
-            // IsChild indicator (read-only display)
-            var isChildTextBlock = this.FindControl<TextBlock>("IsChildTextBlock");
-            if (isChildTextBlock != null)
-            {
-                if (node.IsChild)
-                {
-                    isChildTextBlock.Text = "⚠ This is a Child/Link (appears under multiple parents)";
-                }
-                else
-                {
-                    isChildTextBlock.Text = "";
-                }
-            }
-
-            // Animation
-            var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
-            if (animationComboBox != null)
-            {
-                animationComboBox.SelectedItem = dialogNode.Animation;
-                animationComboBox.IsEnabled = true;
-            }
-
-            var animationLoopCheckBox = this.FindControl<CheckBox>("AnimationLoopCheckBox");
-            if (animationLoopCheckBox != null)
-            {
-                animationLoopCheckBox.IsChecked = dialogNode.AnimationLoop;
-                animationLoopCheckBox.IsEnabled = true;
-            }
-
-            var soundTextBox = this.FindControl<TextBox>("SoundTextBox");
-            if (soundTextBox != null)
-            {
-                soundTextBox.Text = dialogNode.Sound ?? "";
-                soundTextBox.IsReadOnly = false;
-            }
-
-            // Delay field
-            var delayTextBox = this.FindControl<TextBox>("DelayTextBox");
-            if (delayTextBox != null)
-            {
-                // Display Delay as empty if it's the default value (uint.MaxValue)
-                delayTextBox.Text = dialogNode.Delay == uint.MaxValue ? "" : dialogNode.Delay.ToString();
-                delayTextBox.IsReadOnly = false;
-            }
-
-            // Scripts
-            var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-            if (scriptTextBox != null)
-            {
-                scriptTextBox.Text = dialogNode.ScriptAction ?? "";
-                scriptTextBox.IsReadOnly = false;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateProperties: Set Script Action field to '{dialogNode.ScriptAction}' for node '{dialogNode.DisplayText}'");
-
-                // Load parameter declarations and preview for action script
-                if (!string.IsNullOrWhiteSpace(dialogNode.ScriptAction))
-                {
-                    _ = LoadParameterDeclarationsAsync(dialogNode.ScriptAction, isCondition: false);
-                    _ = LoadScriptPreviewAsync(dialogNode.ScriptAction, isCondition: false);
-                }
-                else
-                {
-                    ClearScriptPreview(isCondition: false);
-                }
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "PopulateProperties: ScriptActionTextBox control NOT FOUND!");
-            }
-
-            // Conditional script (ScriptAppears is on DialogPtr, not DialogNode)
-            var scriptAppearsTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
-            if (scriptAppearsTextBox != null)
-            {
-                // Get script from the source pointer if available
-                if (node.SourcePointer != null)
-                {
-                    scriptAppearsTextBox.Text = node.SourcePointer.ScriptAppears ?? "";
-                    scriptAppearsTextBox.IsReadOnly = false;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateProperties: Set Conditional Script to '{node.SourcePointer.ScriptAppears}' from SourcePointer");
-
-                    // Load parameter declarations and preview for conditional script
-                    if (!string.IsNullOrWhiteSpace(node.SourcePointer.ScriptAppears))
-                    {
-                        _ = LoadParameterDeclarationsAsync(node.SourcePointer.ScriptAppears, isCondition: true);
-                        _ = LoadScriptPreviewAsync(node.SourcePointer.ScriptAppears, isCondition: true);
-                    }
-                    else
-                    {
-                        ClearScriptPreview(isCondition: true);
-                    }
-                }
-                else
-                {
-                    scriptAppearsTextBox.Text = "(No pointer context - root level entry)";
-                    scriptAppearsTextBox.IsReadOnly = true;
-                    ClearScriptPreview(isCondition: true);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "PopulateProperties: No SourcePointer for conditional script");
-                }
-            }
-
-            var commentTextBox = this.FindControl<TextBox>("CommentTextBox");
-            if (commentTextBox != null)
-            {
-                commentTextBox.Text = dialogNode.Comment ?? "";
-                commentTextBox.IsReadOnly = false;
-            }
-
-            // Populate Quest fields from dialog node
-            if (!string.IsNullOrEmpty(dialogNode.Quest))
-            {
-                var questTagComboBox = this.FindControl<ComboBox>("QuestTagComboBox");
-                if (questTagComboBox?.ItemsSource is List<JournalCategory> categories)
-                {
-                    var matchingCategory = categories.FirstOrDefault(c => c.Tag == dialogNode.Quest);
-                    questTagComboBox.SelectedItem = matchingCategory;
-
-                    // Populate quest name display
-                    var questNameTextBlock = this.FindControl<TextBlock>("QuestNameTextBlock");
-                    if (questNameTextBlock != null && matchingCategory != null)
-                    {
-                        var questName = matchingCategory.Name?.GetDefault();
-                        questNameTextBlock.Text = string.IsNullOrEmpty(questName)
-                            ? ""
-                            : $"Quest: {questName}";
-                    }
-
-                    // Populate quest entry dropdown (OnQuestTagChanged won't fire because _isPopulatingProperties=true)
-                    if (matchingCategory != null)
-                    {
-                        var questEntryComboBox = this.FindControl<ComboBox>("QuestEntryComboBox");
-                        if (questEntryComboBox != null)
-                        {
-                            // Set ItemsSource to the category's entries
-                            questEntryComboBox.ItemsSource = matchingCategory.Entries;
-
-                            // Set selected item if quest has an entry
-                            if (dialogNode.QuestEntry != uint.MaxValue)
-                            {
-                                var matchingEntry = matchingCategory.Entries.FirstOrDefault(e => e.ID == dialogNode.QuestEntry);
-                                questEntryComboBox.SelectedItem = matchingEntry;
-
-                                // Populate quest entry details
-                                if (matchingEntry != null)
-                                {
-                                    var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
-                                    if (questEntryPreviewTextBlock != null)
-                                    {
-                                        questEntryPreviewTextBlock.Text = matchingEntry.TextPreview;
-                                    }
-
-                                    var questEntryEndTextBlock = this.FindControl<TextBlock>("QuestEntryEndTextBlock");
-                                    if (questEntryEndTextBlock != null)
-                                    {
-                                        questEntryEndTextBlock.Text = matchingEntry.End ? "✓ Quest Complete" : "";
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // Clear quest selections
-                var questTagComboBox = this.FindControl<ComboBox>("QuestTagComboBox");
-                if (questTagComboBox != null)
-                    questTagComboBox.SelectedIndex = -1;
-
-                var questNameTextBlock = this.FindControl<TextBlock>("QuestNameTextBlock");
-                if (questNameTextBlock != null)
-                    questNameTextBlock.Text = "";
-
-                var questEntryComboBox = this.FindControl<ComboBox>("QuestEntryComboBox");
-                if (questEntryComboBox != null)
-                    questEntryComboBox.SelectedIndex = -1;
-
-                var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
-                if (questEntryPreviewTextBlock != null)
-                    questEntryPreviewTextBlock.Text = "";
-
-                var questEntryEndTextBlock = this.FindControl<TextBlock>("QuestEntryEndTextBlock");
-                if (questEntryEndTextBlock != null)
-                    questEntryEndTextBlock.Text = "";
-            }
+            // Populate quest fields
+            _propertyPopulator.PopulateQuest(dialogNode);
 
             // Populate script parameters
-            PopulateParameterGrids(dialogNode, node.SourcePointer);
+            _propertyPopulator.PopulateParameterGrids(dialogNode, node.SourcePointer, AddParameterRow);
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Populated properties for node: {dialogNode.DisplayText}");
 
@@ -1841,141 +1590,6 @@ namespace DialogEditor.Views
             _isPopulatingProperties = false;
         }
 
-        private void PopulateParameterGrids(DialogNode node, DialogPtr? ptr)
-        {
-            var conditionsPanel = this.FindControl<StackPanel>("ConditionsParametersPanel");
-            var actionsPanel = this.FindControl<StackPanel>("ActionsParametersPanel");
-
-            // Clear existing parameters
-            conditionsPanel?.Children.Clear();
-            actionsPanel?.Children.Clear();
-
-            // Populate condition parameters (from DialogPtr if available)
-            if (ptr != null && ptr.ConditionParams.Count > 0)
-            {
-                foreach (var kvp in ptr.ConditionParams)
-                {
-                    AddParameterRow(conditionsPanel!, kvp.Key, kvp.Value, true);
-                }
-            }
-
-            // Populate action parameters (from DialogNode)
-            if (node.ActionParams.Count > 0)
-            {
-                foreach (var kvp in node.ActionParams)
-                {
-                    AddParameterRow(actionsPanel!, kvp.Key, kvp.Value, false);
-                }
-            }
-        }
-
-        private void ClearPropertiesPanel()
-        {
-            // CRITICAL FIX: Clear ALL fields including Animation and AnimationLoop
-            // Also DISABLE all editable fields to prevent typing without selection
-
-            // Updated for Mockup 1: NodeTypeTextBox is now a Border, clear the TextBlock inside
-            var nodeTypeTextBlock = this.FindControl<TextBlock>("NodeTypeTextBlock");
-            if (nodeTypeTextBlock != null) nodeTypeTextBlock.Text = "";
-
-            var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-            if (speakerTextBox != null)
-            {
-                speakerTextBox.Clear();
-                speakerTextBox.IsReadOnly = true; // Disable when no selection
-            }
-
-            var textTextBox = this.FindControl<TextBox>("TextTextBox");
-            if (textTextBox != null)
-            {
-                textTextBox.Clear();
-                textTextBox.IsReadOnly = true; // Disable when no selection
-            }
-
-            var soundTextBox = this.FindControl<TextBox>("SoundTextBox");
-            if (soundTextBox != null)
-            {
-                soundTextBox.Clear();
-                soundTextBox.IsReadOnly = true; // Disable when no selection
-            }
-
-            var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-            if (scriptTextBox != null)
-            {
-                scriptTextBox.Clear();
-                scriptTextBox.IsReadOnly = true; // Disable when no selection
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "ClearProperties: Cleared Script field");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "ClearProperties: ScriptActionTextBox control NOT FOUND!");
-            }
-
-            var commentTextBox = this.FindControl<TextBox>("CommentTextBox");
-            if (commentTextBox != null)
-            {
-                commentTextBox.Clear();
-                commentTextBox.IsReadOnly = true; // Disable when no selection
-            }
-
-            // Clear quest ComboBoxes
-            var questTagComboBox = this.FindControl<ComboBox>("QuestTagComboBox");
-            if (questTagComboBox != null)
-            {
-                questTagComboBox.SelectedIndex = -1;
-            }
-
-            var questNameTextBlock = this.FindControl<TextBlock>("QuestNameTextBlock");
-            if (questNameTextBlock != null)
-            {
-                questNameTextBlock.Text = "";
-            }
-
-            var questEntryComboBox = this.FindControl<ComboBox>("QuestEntryComboBox");
-            if (questEntryComboBox != null)
-            {
-                questEntryComboBox.ItemsSource = null;
-                questEntryComboBox.SelectedIndex = -1;
-            }
-
-            var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
-            if (questEntryPreviewTextBlock != null)
-                questEntryPreviewTextBlock.Text = "";
-
-            var questEntryEndTextBlock = this.FindControl<TextBlock>("QuestEntryEndTextBlock");
-            if (questEntryEndTextBlock != null)
-                questEntryEndTextBlock.Text = "";
-
-            var delayTextBox = this.FindControl<TextBox>("DelayTextBox");
-            if (delayTextBox != null)
-            {
-                delayTextBox.Clear();
-                delayTextBox.IsReadOnly = true; // Disable when no selection
-            }
-
-            // Clear Animation dropdown (Issue #19)
-            var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
-            if (animationComboBox != null)
-            {
-                animationComboBox.SelectedIndex = -1; // Clear selection
-                animationComboBox.IsEnabled = false; // Disable when no selection
-            }
-
-            // Clear Animation Loop checkbox
-            var animationLoopCheckBox = this.FindControl<CheckBox>("AnimationLoopCheckBox");
-            if (animationLoopCheckBox != null)
-            {
-                animationLoopCheckBox.IsChecked = false;
-                animationLoopCheckBox.IsEnabled = false; // Disable when no selection
-            }
-
-            // Clear script parameters
-            var conditionsPanel = this.FindControl<StackPanel>("ConditionsParametersPanel");
-            conditionsPanel?.Children.Clear();
-
-            var actionsPanel = this.FindControl<StackPanel>("ActionsParametersPanel");
-            actionsPanel?.Children.Clear();
-        }
 
         private void OnPropertyChanged(object? sender, RoutedEventArgs e)
         {

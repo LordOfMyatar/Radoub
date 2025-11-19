@@ -10,6 +10,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.15-alpha] - TBD
+**Branch**: `parley/refactor/epic-99-property-panel` | **PR**: #135
+
+### Epic #99: MainViewModel Refactoring - Phase 5 (PropertyPanelPopulator)
+
+Extract property panel population logic from MainWindow into dedicated helper class.
+
+### Added
+- **PropertyPanelPopulator** (~370 lines): Helper class for populating properties panel in MainWindow
+  - PopulateConversationSettings - Dialog-level properties (PreventZoom, ScriptEnd, ScriptAbort)
+  - PopulateNodeType - Node type display (NPC/PC with speaker info)
+  - PopulateSpeaker - Speaker field and related controls
+  - PopulateBasicProperties - Text, Sound, Comment, Delay fields
+  - PopulateAnimation - Animation selection and loop checkbox
+  - PopulateIsChildIndicator - Child/Link warning display
+  - PopulateScripts - Action and conditional script fields with callbacks
+  - PopulateQuest - Quest tag, entry, and preview fields
+  - PopulateParameterGrids - Script parameter grids
+  - ClearAllFields - Clear and disable all property controls
+
+### Changed
+- MainWindow reduced from 4,405 to 4,019 lines (-386 lines)
+- PopulatePropertiesPanel method reduced from ~300 lines to ~40 lines
+- Removed duplicate methods: PopulateParameterGrids, ClearPropertiesPanel
+- Property population logic now organized into focused helper methods
+
+### Tests
+- ✅ All 211 tests passing
+- ✅ Build succeeds
+
+---
+
 ## [0.1.14-alpha] - TBD
 **Branch**: `parley/refactor/epic-99-tree-navigation` | **PR**: #133
 
