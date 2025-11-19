@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.13-alpha] - TBD
+**Branch**: `parley/refactor/epic-99-orphan-manager` | **PR**: #132
+
+### Epic #99: MainViewModel Refactoring - Phase 3 (OrphanNodeManager)
+
+Extract orphan pointer cleanup functionality from MainViewModel into dedicated service.
+
+### Added
+- **OrphanNodeManager** (~150 lines): Handles orphaned pointer removal after node deletions
+- Deprecated orphan container methods documented in service (preserved for reference)
+
+### Changed
+- MainViewModel reduced from 3,551 to 3,474 lines (-77 lines)
+- Replaced inline RemoveOrphanedPointers with service call
+- Deprecated methods (FindOrphanedNodes, CreateOrUpdateOrphanContainers) preserved but no longer called
+
+### Fixed
+- **Orphaning Bug**: PC Reply nodes appearing at root level after incorrect restore workflow
+- Added `RemoveOrphanedNodes()` to detect and remove nodes with no incoming pointers
+- Cleanup runs automatically before save to ensure dialog integrity
+
+### Notes
+- Most orphan functionality deprecated in favor of ScrapManager
+- This extraction focuses on active orphan cleanup (pointers + nodes)
+- Large deprecated methods kept for historical reference
+
+### Tests
+- ✅ All 211 tests passing (added 5 orphan cleanup tests)
+- ✅ 16 skipped (Issue #130 - expected)
+- ✅ Build succeeds
+- New tests: `OrphanNodeCleanupTests` (5 tests covering orphan detection/removal)
+
+---
+
 ## [0.1.12-alpha] - TBD
 **Branch**: `parley/refactor/epic-99-undo-manager` | **PR**: #131
 
