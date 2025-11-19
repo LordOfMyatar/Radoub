@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.16-alpha] - TBD
+**Branch**: `parley/refactor/epic-99-node-operations` | **PR**: #TBD
+
+### Epic #99: MainViewModel Refactoring - Phase 6 (NodeOperationsManager)
+
+Extract node add/delete/move operations from MainViewModel into dedicated service.
+
+### Added
+- **NodeOperationsManager**: Service for tree node manipulation operations
+
+### Changed
+- MainViewModel delegates node operations to NodeOperationsManager
+
+### Tests
+- TBD
+
+---
+
 ## [0.1.15-alpha] - TBD
 **Branch**: `parley/refactor/epic-99-property-panel` | **PR**: #135
 
