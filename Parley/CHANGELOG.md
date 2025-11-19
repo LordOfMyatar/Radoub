@@ -18,13 +18,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Extract tree navigation and traversal functionality from MainViewModel into dedicated service.
 
 ### Added
-- **TreeNavigationManager**: Tree traversal, node selection, parent/child navigation
+- **TreeNavigationManager** (~270 lines): Tree navigation, state management, and traversal
+  - FindTreeNodeForDialogNode - Recursive node search
+  - SaveTreeExpansionState/RestoreTreeExpansionState - Simple expansion state
+  - CaptureExpandedNodePaths/RestoreExpandedNodePaths - Path-based state (for undo/redo)
+  - CaptureTreeStructure - Debug/logging tree representation
 
 ### Changed
-- MainViewModel reduced by extracting ~300 lines of navigation logic
+- MainViewModel reduced from 3,484 to 3,265 lines (-219 lines)
+- Replaced inline tree navigation methods with service calls
+- Tree state management now centralized in dedicated service
 
 ### Tests
-- ✅ All tests passing
+- ✅ All 211 tests passing
+- ✅ Build succeeds
 
 ---
 
