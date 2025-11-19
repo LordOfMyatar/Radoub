@@ -1,0 +1,142 @@
+=== GFF HEADER COMPARISON ===
+
+Original size: 4848 bytes
+Exported size: 3007 bytes
+Difference: -1841 bytes
+
+=== GFF HEADER (56 bytes) ===
+
+Signature:    'DLG ' vs 'DLG '
+Version:      'V3.2' vs 'V3.2'
+StructOffset        :       56 vs       56 ✅
+StructCount         :       29 vs       16 ❌
+FieldOffset         :      404 vs      248 ❌
+FieldCount          :      177 vs      102 ❌
+LabelOffset         :     2528 vs     1472 ❌
+LabelCount          :       28 vs       28 ✅
+FieldDataOffset     :     2976 vs     1920 ❌
+FieldDataCount      :      904 vs      531 ❌
+FieldIndicesOffset  :     3880 vs     2451 ❌
+FieldIndicesCount   :      708 vs      408 ❌
+ListIndicesOffset   :     4588 vs     2859 ❌
+ListIndicesCount    :      260 vs      148 ❌
+
+=== STRUCT ARRAY COMPARISON ===
+
+Struct[0]: Type=4294967295, Data=0, Fields=9 ✅
+Struct[1]: Type=0, Data=36, Fields=11 ✅
+Struct[2]:
+  Type:   0 vs 0 ✅
+  DataOrDataOffset: 80 vs 80 ✅
+  FieldCount: 5 vs 4 ❌
+Struct[3]:
+  Type:   1 vs 1 ✅
+  DataOrDataOffset: 100 vs 96 ❌
+  FieldCount: 4 vs 4 ✅
+Struct[4]:
+  Type:   2 vs 1 ❌
+  DataOrDataOffset: 116 vs 112 ❌
+  FieldCount: 4 vs 11 ❌
+Struct[5]:
+  Type:   3 vs 0 ❌
+  DataOrDataOffset: 132 vs 156 ❌
+  FieldCount: 4 vs 4 ✅
+Struct[6]:
+  Type:   1 vs 1 ✅
+  DataOrDataOffset: 148 vs 172 ❌
+  FieldCount: 11 vs 4 ❌
+Struct[7]:
+  Type:   0 vs 0 ✅
+  DataOrDataOffset: 192 vs 188 ❌
+  FieldCount: 4 vs 10 ❌
+Struct[8]:
+  Type:   1 vs 0 ❌
+  DataOrDataOffset: 208 vs 228 ❌
+  FieldCount: 4 vs 2 ❌
+Struct[9]:
+  Type:   2 vs 1 ❌
+  DataOrDataOffset: 224 vs 236 ❌
+  FieldCount: 5 vs 10 ❌
+Struct[10]:
+  Type:   3 vs 0 ❌
+  DataOrDataOffset: 244 vs 276 ❌
+  FieldCount: 5 vs 2 ❌
+Struct[11]:
+  Type:   2 vs 2 ✅
+  DataOrDataOffset: 264 vs 284 ❌
+  FieldCount: 11 vs 10 ❌
+Struct[12]:
+  Type:   0 vs 3 ❌
+  DataOrDataOffset: 308 vs 324 ❌
+  FieldCount: 4 vs 10 ❌
+Struct[13]:
+  Type:   1 vs 0 ❌
+  DataOrDataOffset: 324 vs 364 ❌
+  FieldCount: 4 vs 5 ❌
+Struct[14]:
+  Type:   0 vs 0 ✅
+  DataOrDataOffset: 340 vs 384 ❌
+  FieldCount: 10 vs 3 ❌
+Struct[15]:
+  Type:   1 vs 1 ✅
+  DataOrDataOffset: 380 vs 396 ❌
+  FieldCount: 10 vs 3 ❌
+
+=== FIELD ARRAY COMPARISON (first 20 fields) ===
+
+Field[2]:
+  Type: 4 vs 4 ✅
+  LabelIdx: 2 vs 2 ✅
+  DataOrDataOffset: 56 vs 36 ❌
+Field[11]:
+  Type: 11 vs 11 ✅
+  LabelIdx: 11 vs 11 ✅
+  DataOrDataOffset: 60 vs 62 ❌
+Field[12]:
+  Type: 15 vs 15 ✅
+  LabelIdx: 12 vs 12 ✅
+  DataOrDataOffset: 16 vs 12 ❌
+Field[14]:
+  Type: 10 vs 10 ✅
+  LabelIdx: 14 vs 14 ✅
+  DataOrDataOffset: 61 vs 63 ❌
+Field[15]:
+  Type: 11 vs 11 ✅
+  LabelIdx: 15 vs 15 ✅
+  DataOrDataOffset: 65 vs 67 ❌
+Field[16]:
+  Type: 10 vs 10 ✅
+  LabelIdx: 16 vs 16 ✅
+  DataOrDataOffset: 66 vs 68 ❌
+Field[17]:
+  Type: 15 vs 15 ✅
+  LabelIdx: 17 vs 17 ✅
+  DataOrDataOffset: 20 vs 16 ❌
+Field[18]:
+  Type: 4 vs 4 ✅
+  LabelIdx: 18 vs 18 ✅
+  DataOrDataOffset: 6 vs 1 ❌
+Field[19]:
+  Type: 11 vs 11 ✅
+  LabelIdx: 19 vs 19 ✅
+  DataOrDataOffset: 70 vs 72 ❌
+
+=== FIELD DATA SECTION SAMPLE (first 100 bytes) ===
+
+Original field data starts at offset 2976:
+0BA0: 0A 6E 77 5F 77 61 6C 6B 5F 77 70 0A 6E 77 5F 77 
+0BB0: 61 6C 6B 5F 77 70 00 00 00 00 1E 00 00 00 FF FF 
+0BC0: FF FF 01 00 00 00 00 00 00 00 0E 00 00 00 41 6E 
+0BD0: 79 74 68 69 6E 67 20 65 6C 73 65 3F 00 00 00 00 
+0BE0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0BF0: 00 00 20 00 00 00 FF FF FF FF 01 00 00 00 00 00 
+0C00: 00 00 10 00 
+
+Exported field data starts at offset 1920:
+0780: 0A 6E 77 5F 77 61 6C 6B 5F 77 70 0A 6E 77 5F 77 
+0790: 61 6C 6B 5F 77 70 00 00 00 00 20 00 00 00 FF FF 
+07A0: FF FF 01 00 00 00 00 00 00 00 10 00 00 00 53 75 
+07B0: 72 65 2C 20 77 68 61 74 20 6B 69 6E 64 3F 00 00 
+07C0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 3D 00 
+07D0: 00 00 FF FF FF FF 01 00 00 00 00 00 00 00 2D 00 
+07E0: 00 00 48 65 

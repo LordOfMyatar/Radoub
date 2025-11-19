@@ -162,15 +162,22 @@ namespace Parley.Services
 
         /// <summary>
         /// Recursively collects all nodes reachable from a starting node.
-        /// Used to identify which nodes have incoming pointers.
+        /// ONLY traverses regular pointers (IsLink=false) from START points.
+        /// IsLink=true pointers are back-references and should NOT prevent orphaning.
+        ///
+        /// CRITICAL: If we traverse IsLink pointers, nodes with only child link references
+        /// will appear reachable even when they're orphaned, preventing proper cleanup.
         /// </summary>
         private void CollectReachableNodes(DialogNode node, HashSet<DialogNode> reachable)
         {
             if (node == null || !reachable.Add(node))
                 return; // Already visited
 
-            // Traverse all child pointers
-            foreach (var ptr in node.Pointers)
+            // ONLY traverse regular pointers (IsLink=false) for orphan detection
+            // IsLink=true pointers are back-references from link children to their shared parent
+            // If we traverse IsLink pointers, link parents appear reachable even when their
+            // owning START is deleted, preventing proper orphan detection
+            foreach (var ptr in node.Pointers.Where(p => !p.IsLink))
             {
                 if (ptr.Node != null)
                 {
