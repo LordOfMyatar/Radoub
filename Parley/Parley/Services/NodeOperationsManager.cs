@@ -130,6 +130,23 @@ namespace Parley.Services
             RecalculatePointerIndices(dialog);
             _orphanManager.RemoveOrphanedPointers(dialog);
 
+            // CRITICAL: Remove any remaining orphaned nodes (nodes with no incoming pointers)
+            // This catches nodes that were orphaned by the deletion (e.g., nodes with only child links)
+            var additionalOrphans = _orphanManager.RemoveOrphanedNodes(dialog);
+            if (additionalOrphans.Count > 0 && currentFileName != null)
+            {
+                // Add orphaned nodes to scrap
+                var orphanHierarchy = new Dictionary<DialogNode, (int level, DialogNode? parent)>();
+                foreach (var orphan in additionalOrphans)
+                {
+                    orphanHierarchy[orphan] = (0, null); // Orphans have no parent
+                }
+                _scrapManager.AddToScrap(currentFileName, additionalOrphans, "orphaned after deletion", orphanHierarchy);
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Removed {additionalOrphans.Count} orphaned nodes after deletion");
+            }
+
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted node tree: {node.DisplayText}");
 
             return linkedNodes;
