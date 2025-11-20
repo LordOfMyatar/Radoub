@@ -15,8 +15,8 @@
     "contrast_level": "AAA"
   },
   "colors": {
-    "background": "#1E1E1E",
-    "sidebar": "#252526",
+    "background": "#2D2D2D",
+    "sidebar": "#3A3A3A",
     "text": "#D4D4D4",
     "selection": "#264F78",
     "border": "#3E3E42",
@@ -25,8 +25,8 @@
     "warning": "#CCA700",
     "success": "#89D185",
     "info": "#75BEFF",
-    "tree_entry": "#4EC9B0",
-    "tree_reply": "#9CDCFE",
+    "tree_entry": "#FF8A65",
+    "tree_reply": "#4FC3F7",
     "tree_link": "#808080",
     "button_primary": "#007ACC",
     "button_secondary": "#5A5A5A",
