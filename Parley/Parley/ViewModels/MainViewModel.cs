@@ -31,6 +31,7 @@ namespace DialogEditor.ViewModels
         private readonly IndexManager _indexManager = new(); // Service for pointer index management
         private readonly NodeCloningService _cloningService = new(); // Service for deep node cloning
         private readonly ReferenceManager _referenceManager = new(); // Service for reference counting and pointer operations
+        private readonly PasteOperationsManager _pasteManager; // Service for paste operations
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -178,6 +179,9 @@ namespace DialogEditor.ViewModels
 
             // Initialize NodeOperationsManager with required dependencies
             _nodeOpsManager = new NodeOperationsManager(_editorService, _scrapManager, _orphanManager);
+
+            // Initialize PasteOperationsManager with required dependencies
+            _pasteManager = new PasteOperationsManager(_clipboardService, _cloningService, _indexManager);
 
             // Hook up scrap count changed event
             _scrapManager.ScrapCountChanged += (s, count) =>
@@ -1276,161 +1280,21 @@ namespace DialogEditor.ViewModels
         public void PasteAsDuplicate(TreeViewSafeNode? parent)
         {
             if (CurrentDialog == null) return;
-            if (_clipboardService.ClipboardNode == null)
-            {
-                StatusMessage = "No node copied. Use Copy Node first.";
-                return;
-            }
-            if (parent == null)
-            {
-                StatusMessage = "Select a parent node to paste under";
-                return;
-            }
 
             // Save state for undo before pasting
             SaveUndoState("Paste Node");
 
-            // Check if pasting to ROOT
-            if (parent is TreeViewRootNode)
+            // Delegate to PasteOperationsManager
+            var result = _pasteManager.PasteAsDuplicate(CurrentDialog, parent);
+
+            // Update UI state
+            StatusMessage = result.StatusMessage;
+
+            if (result.Success)
             {
-                // PC Replies can NEVER be at ROOT (they only respond to NPCs)
-                if (_clipboardService.ClipboardNode.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_clipboardService.ClipboardNode.Speaker))
-                {
-                    StatusMessage = "Cannot paste PC Reply to ROOT - PC can only respond to NPC statements";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Blocked PC Reply paste to ROOT");
-                    return;
-                }
-
-                // For Cut operation, reuse the node; for Copy, clone it
-                var duplicate = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : _cloningService.CloneNode(_clipboardService.ClipboardNode, CurrentDialog);
-
-                // Convert NPC Reply nodes to Entry when pasting to ROOT (GFF requirement)
-                if (duplicate.Type == DialogNodeType.Reply)
-                {
-                    // This is an NPC Reply (has Speaker set) - convert to Entry
-                    duplicate.Type = DialogNodeType.Entry;
-
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-converted NPC Reply to Entry for ROOT level");
-                    StatusMessage = $"Auto-converted NPC Reply to Entry for ROOT level";
-                }
-
-                // If cut, ensure node is in the appropriate list (may have been removed during cut)
-                if (_clipboardService.WasCutOperation)
-                {
-                    var list = duplicate.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
-                    if (!list.Contains(duplicate))
-                    {
-                        CurrentDialog.AddNodeInternal(duplicate, duplicate.Type);
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Re-added cut node to list: {duplicate.DisplayText}");
-                    }
-                }
-                else
-                {
-                    // For copy, always add (will be a new clone)
-                    CurrentDialog.AddNodeInternal(duplicate, duplicate.Type);
-                }
-
-                // Get the correct index after adding
-                var duplicateIndex = (uint)CurrentDialog.GetNodeIndex(duplicate, duplicate.Type);
-
-                // Create start pointer
-                var startPtr = new DialogPtr
-                {
-                    Node = duplicate,
-                    Type = DialogNodeType.Entry,
-                    Index = duplicateIndex,
-                    IsLink = false,
-                    IsStart = true,
-                    ScriptAppears = "",
-                    ConditionParams = new Dictionary<string, string>(),
-                    Comment = "",
-                    Parent = CurrentDialog
-                };
-
-                CurrentDialog.Starts.Add(startPtr);
-
-                // Register the start pointer with LinkRegistry
-                CurrentDialog.LinkRegistry.RegisterLink(startPtr);
-
-                // CRITICAL: Recalculate indices in case recursive cloning added multiple nodes
-                _indexManager.RecalculatePointerIndices(CurrentDialog);
-
                 RefreshTreeView();
                 HasUnsavedChanges = true;
-                var opType = _clipboardService.WasCutOperation ? "Moved" : "Pasted duplicate";
-                StatusMessage = $"{opType} Entry at ROOT: {duplicate.DisplayText}";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"{opType} Entry to ROOT: {duplicate.DisplayText}");
-
-                // Clipboard is cleared by service after cut/paste
-                return;
             }
-
-            // Normal paste to non-ROOT parent
-            var parentNode = parent.OriginalNode;
-
-            // CRITICAL: Validate parent/child type compatibility (Aurora rule)
-            // Entry (NPC) can only have Reply (PC) children
-            // Reply (PC) can only have Entry (NPC) children
-            if (parentNode.Type == _clipboardService.ClipboardNode.Type)
-            {
-                string parentTypeName = parentNode.Type == DialogNodeType.Entry ? "NPC" : "PC";
-                string childTypeName = _clipboardService.ClipboardNode.Type == DialogNodeType.Entry ? "NPC" : "PC";
-                StatusMessage = $"Cannot paste {childTypeName} under {parentTypeName} - conversation must alternate NPC/PC";
-                UnifiedLogger.LogApplication(LogLevel.WARN,
-                    $"Blocked invalid paste: {childTypeName} node under {parentTypeName} parent");
-                return;
-            }
-
-            // For Cut operation, reuse the node; for Copy, clone it
-            var duplicateNode = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : _cloningService.CloneNode(_clipboardService.ClipboardNode, CurrentDialog);
-
-            // If cut, ensure node is in the appropriate list (may have been removed during cut)
-            if (_clipboardService.WasCutOperation)
-            {
-                var list = duplicateNode.Type == DialogNodeType.Entry ? CurrentDialog.Entries : CurrentDialog.Replies;
-                if (!list.Contains(duplicateNode))
-                {
-                    CurrentDialog.AddNodeInternal(duplicateNode, duplicateNode.Type);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Re-added cut node to list: {duplicateNode.DisplayText}");
-                }
-            }
-            else
-            {
-                // For copy, always add (will be a new clone)
-                CurrentDialog.AddNodeInternal(duplicateNode, duplicateNode.Type);
-            }
-
-            // Get the correct index after adding
-            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(duplicateNode, duplicateNode.Type);
-
-            // Create pointer from parent to duplicate
-            var newPtr = new DialogPtr
-            {
-                Node = duplicateNode,
-                Type = duplicateNode.Type,
-                Index = nodeIndex,
-                IsLink = false,
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = "",
-                Parent = CurrentDialog
-            };
-
-            parent.OriginalNode.Pointers.Add(newPtr);
-
-            // Register the new pointer with LinkRegistry
-            CurrentDialog.LinkRegistry.RegisterLink(newPtr);
-
-            // CRITICAL: Recalculate indices in case recursive cloning added multiple nodes
-            _indexManager.RecalculatePointerIndices(CurrentDialog);
-
-            RefreshTreeView();
-            HasUnsavedChanges = true;
-            var operation = _clipboardService.WasCutOperation ? "Moved" : "Pasted duplicate";
-            StatusMessage = $"{operation} node under {parent.DisplayText}: {duplicateNode.DisplayText}";
-
-            // Clipboard is cleared by service after cut/paste
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Pasted duplicate: {duplicateNode.DisplayText} under {parent.DisplayText}");
         }
 
         public void PasteAsLink(TreeViewSafeNode? parent)

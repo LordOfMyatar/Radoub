@@ -31,9 +31,13 @@ Remove deprecated orphan containerization code and extract index management and 
   - HasOtherReferences - Counts references to nodes for cut operations
   - DetachNodeFromParent - Removes pointer references from parent nodes
   - CollectReachableNodes - Recursively collects reachable nodes (Issue #82 lazy loading fix)
+- **PasteOperationsManager service** (~220 lines) - Extracted from MainViewModel
+  - PasteAsDuplicate - Handles paste/move operations with validation
+  - PasteToRoot - Paste logic for ROOT level with type conversion
+  - PasteToParent - Paste logic for normal parents with type checking
 
 ### Removed
-- **~1,204 lines of code** from MainViewModel:
+- **~1,342 lines of code** from MainViewModel:
   - **693 lines** of deprecated orphan containerization code:
     - FindOrphanedNodes(TreeViewRootNode) - Replaced by OrphanNodeManager.RemoveOrphanedNodes
     - CreateOrUpdateOrphanContainers - Replaced by ScrapManager (Scrap Tab)
@@ -60,12 +64,18 @@ Remove deprecated orphan containerization code and extract index management and 
     - HasOtherReferences - Moved to ReferenceManager
     - DetachNodeFromParent - Moved to ReferenceManager
     - CollectReachableNodes - Dead code (never called), removed
+  - **~138 lines** of paste operations code (moved to PasteOperationsManager service):
+    - PasteAsDuplicate - Moved to PasteOperationsManager
+    - PasteToRoot - Extracted to PasteOperationsManager
+    - PasteToParent - Extracted to PasteOperationsManager
 
 ### Changed
-- MainViewModel reduced from 2,956 to 1,752 lines (-1,204 lines, 41% reduction)
+- MainViewModel reduced from 2,956 to 1,614 lines (-1,342 lines, 45% reduction)
 - MainViewModel now uses _indexManager service for all index operations
 - MainViewModel now uses _cloningService for all node cloning operations
 - MainViewModel now uses _referenceManager for reference counting and detachment
+- MainViewModel now uses _pasteManager for paste operations
+- PasteAsDuplicate now returns PasteResult for better separation of concerns
 - Added null check guard in CutNode to prevent null reference warnings
 
 ### Notes
@@ -73,6 +83,7 @@ Remove deprecated orphan containerization code and extract index management and 
 - All index management now consolidated in IndexManager service
 - All node cloning now consolidated in NodeCloningService service
 - All reference management now consolidated in ReferenceManager service
+- All paste operations now consolidated in PasteOperationsManager service
 - Git history preserves original implementations if needed
 - No functional changes - purely refactoring and dead code removal
 
