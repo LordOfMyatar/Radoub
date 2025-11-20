@@ -1,0 +1,49 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.parley.theme.tritanopia",
+    "name": "Tritanopia (Blue-Yellow Colorblind)",
+    "version": "1.0.0",
+    "author": "Parley Team",
+    "description": "Accessibility theme for tritanopia (blue-yellow colorblindness). Uses red/blue palette.",
+    "type": "theme",
+    "tags": ["official", "accessibility", "colorblind", "tritanopia"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "colorblind",
+    "condition": "tritanopia",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#FFFFFF",
+    "sidebar": "#F5F5F5",
+    "text": "#000000",
+    "selection": "#CC0066",
+    "border": "#999999",
+    "accent": "#CC0066",
+    "error": "#990033",
+    "warning": "#CC0066",
+    "success": "#006699",
+    "info": "#0066CC",
+    "tree_entry": "#006699",
+    "tree_reply": "#CC0066",
+    "tree_link": "#CC3366",
+    "button_primary": "#CC0066",
+    "button_secondary": "#666666",
+    "button_hover": "#990033"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28,
+    "tree_indent": 16
+  }
+}

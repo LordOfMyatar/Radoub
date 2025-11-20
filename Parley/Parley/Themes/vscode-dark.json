@@ -1,0 +1,48 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.parley.theme.vscode-dark",
+    "name": "VSCode Dark",
+    "version": "1.0.0",
+    "author": "Parley Team",
+    "description": "Faithful recreation of Visual Studio Code's popular dark theme",
+    "type": "theme",
+    "tags": ["official", "dark", "vscode"]
+  },
+  "base_theme": "Dark",
+  "accessibility": {
+    "type": "standard",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#1E1E1E",
+    "sidebar": "#252526",
+    "text": "#D4D4D4",
+    "selection": "#264F78",
+    "border": "#3E3E42",
+    "accent": "#007ACC",
+    "error": "#F14C4C",
+    "warning": "#CCA700",
+    "success": "#89D185",
+    "info": "#75BEFF",
+    "tree_entry": "#4EC9B0",
+    "tree_reply": "#9CDCFE",
+    "tree_link": "#858585",
+    "button_primary": "#0E639C",
+    "button_secondary": "#5F6A79",
+    "button_hover": "#1177BB"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28,
+    "tree_indent": 16
+  }
+}
