@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.17-alpha] - 2025-11-19
+**Branch**: `parley/refactor/epic-99-cleanup-dead-code` | **PR**: #TBD
+
+### Epic #99: MainViewModel Refactoring - Phase 7 (Dead Code Removal)
+
+Remove deprecated orphan containerization code already replaced by OrphanNodeManager and ScrapManager.
+
+### Removed
+- **693 lines of deprecated orphan detection code** from MainViewModel:
+  - FindOrphanedNodes(TreeViewRootNode) - Replaced by OrphanNodeManager.RemoveOrphanedNodes
+  - CreateOrUpdateOrphanContainers - Replaced by ScrapManager (Scrap Tab)
+  - DetectAndContainerizeOrphansSync - No longer needed (orphans removed at save time)
+  - CreateOrUpdateOrphanContainersInModel - Replaced by ScrapManager
+  - CollectReachableNodesForOrphanDetection - Duplicate of OrphanNodeManager logic
+  - IsNodeInSubtree/IsNodeInSubtreeRecursive - Replaced by OrphanNodeManager helpers
+  - FindParentEntry - No longer used
+  - CollectDialogSubtree/CollectDialogSubtreeChildren - Duplicate traversal logic
+
+### Changed
+- MainViewModel reduced from 2,956 to 2,265 lines (-691 lines, 23% reduction)
+- Added deletion comment documenting removed methods for reference
+
+### Notes
+- All orphan functionality now consolidated in OrphanNodeManager service
+- OrphanNodeManager already marked these methods as deprecated with NotImplementedException
+- Git history preserves original implementations if needed
+- No functional changes - purely dead code removal
+
+### Tests
+- ✅ Build successful (0 errors, 6 warnings)
+- ✅ All 22 orphan-related tests passing
+
+---
+
 ## [0.1.16-alpha] - 2025-11-18
 **Branch**: `parley/refactor/epic-99-node-operations` | **PR**: #137
 
