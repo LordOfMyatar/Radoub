@@ -198,12 +198,43 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Apply color values to resource dictionary
+        /// Maps theme colors to Avalonia system resources
         /// </summary>
         private void ApplyColors(IResourceDictionary resources, ThemeColors colors)
         {
-            // Use reflection to iterate all color properties
-            var colorProperties = typeof(ThemeColors).GetProperties();
+            // Map theme colors to Avalonia system resource keys
+            var colorMappings = new List<(string? ColorValue, string[] ResourceKeys)>
+            {
+                (colors.Background, new[] { "SystemChromeMediumColor", "SystemChromeMediumLowColor" }),
+                (colors.Sidebar, new[] { "SystemAltMediumColor", "SystemChromeLowColor" }),
+                (colors.Text, new[] { "SystemBaseHighColor", "SystemBaseMediumHighColor" }),
+                (colors.Accent, new[] { "SystemAccentColor", "SystemAccentColorLight1", "SystemAccentColorDark1" }),
+                (colors.Selection, new[] { "SystemListLowColor", "SystemListMediumColor" }),
+                (colors.Border, new[] { "SystemBaseMediumLowColor", "SystemChromeDisabledLowColor" })
+            };
 
+            foreach (var (colorValue, resourceKeys) in colorMappings)
+            {
+                if (!string.IsNullOrEmpty(colorValue))
+                {
+                    try
+                    {
+                        var color = Color.Parse(colorValue);
+                        foreach (var key in resourceKeys)
+                        {
+                            resources[key] = color;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN,
+                            $"Invalid color value: {colorValue} - {ex.Message}");
+                    }
+                }
+            }
+
+            // Also create Theme-prefixed resources for direct use
+            var colorProperties = typeof(ThemeColors).GetProperties();
             foreach (var prop in colorProperties)
             {
                 var colorValue = prop.GetValue(colors) as string;
