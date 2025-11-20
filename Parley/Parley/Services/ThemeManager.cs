@@ -58,8 +58,8 @@ namespace DialogEditor.Services
             _themeDirectories.Add(officialThemes);
 
             // Community themes (user data folder)
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var userThemes = Path.Combine(userProfile, "Parley", "Themes");
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var userThemes = Path.Combine(appData, "Parley", "Themes");
             if (!Directory.Exists(userThemes))
             {
                 Directory.CreateDirectory(userThemes);
