@@ -45,6 +45,7 @@ namespace DialogEditor.Views
     {
         private bool _isInitializing = true;
         private PluginManager? _pluginManager;
+        private bool _easterEggActivated = false;
 
         // Parameterless constructor for XAML/Avalonia runtime
         public SettingsWindow() : this(0, null)
@@ -136,18 +137,12 @@ namespace DialogEditor.Views
             var themeComboBox = this.FindControl<ComboBox>("ThemeComboBox");
             if (themeComboBox != null)
             {
-                // Populate theme list (hide easter eggs)
-                var themes = ThemeManager.Instance.AvailableThemes
-                    .Where(t => !t.Plugin.Tags.Contains("easter-egg"))
-                    .OrderBy(t => t.Accessibility?.Type == "colorblind" ? 1 : 0)
-                    .ThenBy(t => t.Plugin.Name)
-                    .ToList();
-
-                themeComboBox.ItemsSource = themes;
-                themeComboBox.DisplayMemberBinding = new Avalonia.Data.Binding("Plugin.Name");
+                // Populate theme list (hide easter eggs initially)
+                PopulateThemeList(themeComboBox, includeEasterEggs: false);
 
                 // Select current theme
-                var currentTheme = themes.FirstOrDefault(t => t.Plugin.Id == settings.CurrentThemeId);
+                var themes = (IEnumerable<ThemeManifest>?)themeComboBox.ItemsSource;
+                var currentTheme = themes?.FirstOrDefault(t => t.Plugin.Id == settings.CurrentThemeId);
                 themeComboBox.SelectedItem = currentTheme;
 
                 // Update theme description
@@ -155,6 +150,7 @@ namespace DialogEditor.Views
                 {
                     UpdateThemeDescription(currentTheme);
                 }
+
             }
 
             var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
@@ -857,6 +853,56 @@ namespace DialogEditor.Views
                     accessText.IsVisible = false;
                 }
             }
+        }
+
+        private void PopulateThemeList(ComboBox comboBox, bool includeEasterEggs)
+        {
+            var themes = ThemeManager.Instance.AvailableThemes;
+
+            if (!includeEasterEggs)
+            {
+                themes = themes.Where(t => !t.Plugin.Tags.Contains("easter-egg")).ToList();
+            }
+
+            var sortedThemes = themes
+                .OrderBy(t => t.Accessibility?.Type == "colorblind" ? 1 : 0)
+                .ThenBy(t => t.Plugin.Name)
+                .ToList();
+
+            comboBox.ItemsSource = sortedThemes;
+            comboBox.DisplayMemberBinding = new Avalonia.Data.Binding("Plugin.Name");
+        }
+
+        private void OnEasterEggHintClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+        {
+            if (_easterEggActivated) return;
+
+            _easterEggActivated = true;
+
+            var comboBox = this.FindControl<ComboBox>("ThemeComboBox");
+            if (comboBox == null) return;
+
+            // Repopulate list with easter eggs
+            PopulateThemeList(comboBox, includeEasterEggs: true);
+
+            // Select the easter egg theme
+            var easterEggs = (IEnumerable<ThemeManifest>?)comboBox.ItemsSource;
+            var easterEgg = easterEggs?.FirstOrDefault(t => t.Plugin.Tags.Contains("easter-egg"));
+
+            if (easterEgg != null)
+            {
+                comboBox.SelectedItem = easterEgg;
+            }
+
+            // Update easter egg hint
+            var hint = this.FindControl<TextBlock>("EasterEggHint");
+            if (hint != null)
+            {
+                hint.Text = "🍇🍓 You found it! Enjoy the chaos...";
+                hint.Foreground = Avalonia.Media.Brushes.DarkOrange;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Easter egg theme activated!");
         }
 
         private void OnFontSizeChanged(object? sender, RangeBaseValueChangedEventArgs e)
