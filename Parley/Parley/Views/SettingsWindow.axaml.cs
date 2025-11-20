@@ -873,6 +873,28 @@ namespace DialogEditor.Views
             comboBox.DisplayMemberBinding = new Avalonia.Data.Binding("Plugin.Name");
         }
 
+        private void OnGetThemesClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Open GitHub themes directory in browser
+                const string themesUrl = "https://github.com/LordOfMyatar/Radoub/tree/main/Parley/Parley/Themes";
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = themesUrl,
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Opened GitHub themes directory");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open themes URL: {ex.Message}");
+            }
+        }
+
         private void OnEasterEggHintClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
         {
             if (_easterEggActivated) return;
