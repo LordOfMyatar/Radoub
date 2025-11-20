@@ -30,6 +30,7 @@ namespace DialogEditor.ViewModels
         private readonly NodeOperationsManager _nodeOpsManager; // Service for node add/delete/move operations
         private readonly IndexManager _indexManager = new(); // Service for pointer index management
         private readonly NodeCloningService _cloningService = new(); // Service for deep node cloning
+        private readonly ReferenceManager _referenceManager = new(); // Service for reference counting and pointer operations
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -1206,6 +1207,7 @@ namespace DialogEditor.ViewModels
 
         public void CutNode(TreeViewSafeNode? nodeToCut)
         {
+            if (CurrentDialog == null) return;
             if (nodeToCut == null || nodeToCut is TreeViewRootNode)
             {
                 StatusMessage = "Cannot cut ROOT node";
@@ -1221,17 +1223,14 @@ namespace DialogEditor.ViewModels
             SaveUndoState("Cut Node");
 
             // Store node for pasting in clipboard service
-            if (CurrentDialog != null)
-            {
-                _clipboardService.CutNode(node, CurrentDialog);
-            }
+            _clipboardService.CutNode(node, CurrentDialog);
 
             // CRITICAL: Check for other references BEFORE detaching
             // We need to count while the current reference is still there
-            bool hasOtherReferences = HasOtherReferences(node);
+            bool hasOtherReferences = _referenceManager.HasOtherReferences(CurrentDialog, node);
 
             // Detach from parent
-            DetachNodeFromParent(node);
+            _referenceManager.DetachNodeFromParent(CurrentDialog, node);
 
             // If only had 1 reference (the one we just removed), remove from dialog lists
             // If had multiple references, keep it (still linked from elsewhere)
@@ -1272,69 +1271,6 @@ namespace DialogEditor.ViewModels
             HasUnsavedChanges = true;
             StatusMessage = $"Cut node: {node.DisplayText}";
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Cut node (detached from parent): {node.DisplayText}");
-        }
-
-        private bool HasOtherReferences(DialogNode node)
-        {
-            if (CurrentDialog == null) return false;
-
-            int refCount = 0;
-
-            // Count references in Starts
-            refCount += CurrentDialog.Starts.Count(s => s.Node == node);
-
-            // Count references in all Entries
-            foreach (var entry in CurrentDialog.Entries)
-            {
-                refCount += entry.Pointers.Count(p => p.Node == node);
-            }
-
-            // Count references in all Replies
-            foreach (var reply in CurrentDialog.Replies)
-            {
-                refCount += reply.Pointers.Count(p => p.Node == node);
-            }
-
-            // If more than 1 reference, has other references besides the one we're cutting
-            return refCount > 1;
-        }
-
-
-        private void DetachNodeFromParent(DialogNode node)
-        {
-            if (CurrentDialog == null) return;
-
-            // Remove from Starts list if present
-            var startToRemove = CurrentDialog.Starts.FirstOrDefault(s => s.Node == node);
-            if (startToRemove != null)
-            {
-                CurrentDialog.Starts.Remove(startToRemove);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Detached from Starts list");
-                return;
-            }
-
-            // Remove from parent's pointers
-            foreach (var entry in CurrentDialog.Entries)
-            {
-                var ptrToRemove = entry.Pointers.FirstOrDefault(p => p.Node == node);
-                if (ptrToRemove != null)
-                {
-                    entry.Pointers.Remove(ptrToRemove);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Detached from Entry: {entry.DisplayText}");
-                    return;
-                }
-            }
-
-            foreach (var reply in CurrentDialog.Replies)
-            {
-                var ptrToRemove = reply.Pointers.FirstOrDefault(p => p.Node == node);
-                if (ptrToRemove != null)
-                {
-                    reply.Pointers.Remove(ptrToRemove);
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Detached from Reply: {reply.DisplayText}");
-                    return;
-                }
-            }
         }
 
         public void PasteAsDuplicate(TreeViewSafeNode? parent)
@@ -1619,40 +1555,6 @@ namespace DialogEditor.ViewModels
         // DetectAndContainerizeOrphansSync, CreateOrUpdateOrphanContainersInModel,
         // CollectReachableNodesForOrphanDetection, IsNodeInSubtree, FindParentEntry
         // Git history preserves original implementation if needed for reference.
-
-        /// <summary>
-        /// Recursively collects all nodes reachable from the tree structure
-        /// CRITICAL: Traverses dialog model pointers, not TreeView children (Issue #82 lazy loading fix)
-        /// This ensures we find all reachable nodes even when TreeView children aren't populated yet
-        /// Links are terminal (don't expand) but the nodes they point to ARE still reachable
-        /// </summary>
-        private void CollectReachableNodes(TreeViewSafeNode node, HashSet<DialogNode> reachableNodes)
-        {
-            if (node?.OriginalNode == null || reachableNodes.Contains(node.OriginalNode))
-                return;
-
-            // Add this node to reachable set (even if it's a link target)
-            reachableNodes.Add(node.OriginalNode);
-
-            // ISSUE #82 FIX: Traverse dialog model pointers, not TreeView children
-            // With lazy loading, TreeView children aren't populated until node is expanded
-            // Must traverse the underlying DialogNode.Pointers to find all reachable nodes
-
-            // Don't traverse THROUGH link nodes (they're terminal in TreeView)
-            // But the nodes they point to are still marked as reachable (above)
-            if (node.IsChild)
-                return;
-
-            foreach (var pointer in node.OriginalNode.Pointers)
-            {
-                if (pointer.Node != null)
-                {
-                    // Create temporary TreeViewSafeNode with pointer to check if it's a link
-                    var childSafeNode = new TreeViewSafeNode(pointer.Node, sourcePointer: pointer);
-                    CollectReachableNodes(childSafeNode, reachableNodes);
-                }
-            }
-        }
 
         /// <summary>
         /// Restores tree expansion state and selection

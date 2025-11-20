@@ -27,9 +27,13 @@ Remove deprecated orphan containerization code and extract index management and 
   - CloneNode - Deep clones dialog nodes with all properties
   - CloneNodeWithDepth - Recursive cloning with circular reference detection
   - CloneLocString - Deep copies localized string objects
+- **ReferenceManager service** (~135 lines) - Extracted from MainViewModel
+  - HasOtherReferences - Counts references to nodes for cut operations
+  - DetachNodeFromParent - Removes pointer references from parent nodes
+  - CollectReachableNodes - Recursively collects reachable nodes (Issue #82 lazy loading fix)
 
 ### Removed
-- **~1,108 lines of code** from MainViewModel:
+- **~1,204 lines of code** from MainViewModel:
   - **693 lines** of deprecated orphan containerization code:
     - FindOrphanedNodes(TreeViewRootNode) - Replaced by OrphanNodeManager.RemoveOrphanedNodes
     - CreateOrUpdateOrphanContainers - Replaced by ScrapManager (Scrap Tab)
@@ -52,17 +56,23 @@ Remove deprecated orphan containerization code and extract index management and 
     - CloneNode - Moved to NodeCloningService
     - CloneNodeWithDepth - Moved to NodeCloningService
     - CloneLocString - Moved to NodeCloningService
+  - **~96 lines** of reference management code (moved to ReferenceManager service):
+    - HasOtherReferences - Moved to ReferenceManager
+    - DetachNodeFromParent - Moved to ReferenceManager
+    - CollectReachableNodes - Dead code (never called), removed
 
 ### Changed
-- MainViewModel reduced from 2,956 to 1,848 lines (-1,108 lines, 37% reduction)
+- MainViewModel reduced from 2,956 to 1,752 lines (-1,204 lines, 41% reduction)
 - MainViewModel now uses _indexManager service for all index operations
 - MainViewModel now uses _cloningService for all node cloning operations
-- Added deletion comments documenting removed methods for reference
+- MainViewModel now uses _referenceManager for reference counting and detachment
+- Added null check guard in CutNode to prevent null reference warnings
 
 ### Notes
 - All orphan functionality now consolidated in OrphanNodeManager service
 - All index management now consolidated in IndexManager service
-- All node cloning now consolidated in NodeCloningService
+- All node cloning now consolidated in NodeCloningService service
+- All reference management now consolidated in ReferenceManager service
 - Git history preserves original implementations if needed
 - No functional changes - purely refactoring and dead code removal
 
