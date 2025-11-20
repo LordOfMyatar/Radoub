@@ -15,7 +15,7 @@
 
         <!-- Theme-aware window background -->
         <Style Selector="Window">
-            <Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorBase}"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeBackground}"/>
         </Style>
 
         <!-- Global font styles that respond to settings changes -->
@@ -82,6 +82,9 @@
         <!-- Default font size and family - will be updated from settings -->
         <x:Double x:Key="GlobalFontSize">14</x:Double>
         <FontFamily x:Key="GlobalFontFamily">$Default</FontFamily>
+
+        <!-- Default theme background - will be overridden by theme manager -->
+        <SolidColorBrush x:Key="ThemeBackground">#FFFFFF</SolidColorBrush>
 
         <!-- Global converters for UI -->
         <models:BoolToTextWrappingConverter x:Key="BoolToTextWrappingConverter"/>
