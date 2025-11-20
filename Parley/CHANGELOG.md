@@ -35,9 +35,12 @@ Remove deprecated orphan containerization code and extract index management and 
   - PasteAsDuplicate - Handles paste/move operations with validation
   - PasteToRoot - Paste logic for ROOT level with type conversion
   - PasteToParent - Paste logic for normal parents with type checking
+- **RestoreFromScrap moved to ScrapManager service** (~145 lines) - Extracted from MainViewModel
+  - RestoreFromScrap - Handles scrap restoration with validation and pointer creation
+  - RestoreResult - Result object for separation of concerns
 
 ### Removed
-- **~1,342 lines of code** from MainViewModel:
+- **~1,698 lines of code** from MainViewModel:
   - **693 lines** of deprecated orphan containerization code:
     - FindOrphanedNodes(TreeViewRootNode) - Replaced by OrphanNodeManager.RemoveOrphanedNodes
     - CreateOrUpdateOrphanContainers - Replaced by ScrapManager (Scrap Tab)
@@ -68,14 +71,20 @@ Remove deprecated orphan containerization code and extract index management and 
     - PasteAsDuplicate - Moved to PasteOperationsManager
     - PasteToRoot - Extracted to PasteOperationsManager
     - PasteToParent - Extracted to PasteOperationsManager
+  - **~356 lines** of scrap restoration code (moved to ScrapManager service):
+    - RestoreFromScrap - Moved to ScrapManager.RestoreFromScrap
+    - Validation logic extracted to RestoreResult pattern
 
 ### Changed
-- MainViewModel reduced from 2,956 to 1,614 lines (-1,342 lines, 45% reduction)
+- **MainViewModel reduced from 2,956 to 1,258 lines (-1,698 lines, 57% reduction)**
+- **GOAL ACHIEVED**: MainViewModel now 258 lines BELOW the 1,000 line target
 - MainViewModel now uses _indexManager service for all index operations
 - MainViewModel now uses _cloningService for all node cloning operations
 - MainViewModel now uses _referenceManager for reference counting and detachment
 - MainViewModel now uses _pasteManager for paste operations
+- MainViewModel now uses _scrapManager.RestoreFromScrap for scrap restoration
 - PasteAsDuplicate now returns PasteResult for better separation of concerns
+- RestoreFromScrap now returns RestoreResult for better separation of concerns
 - Added null check guard in CutNode to prevent null reference warnings
 
 ### Notes
@@ -84,11 +93,12 @@ Remove deprecated orphan containerization code and extract index management and 
 - All node cloning now consolidated in NodeCloningService service
 - All reference management now consolidated in ReferenceManager service
 - All paste operations now consolidated in PasteOperationsManager service
+- All scrap restoration now consolidated in ScrapManager service
 - Git history preserves original implementations if needed
 - No functional changes - purely refactoring and dead code removal
 
 ### Tests
-- ✅ Build successful (0 errors, 2 warnings)
+- ✅ Build successful (0 errors, 1 warning - pre-existing in DebugLogger)
 - ✅ All 231 tests passing (16 skipped GUI tests)
 
 ---

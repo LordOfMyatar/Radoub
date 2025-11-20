@@ -1440,130 +1440,20 @@ namespace DialogEditor.ViewModels
         /// </summary>
         public bool RestoreFromScrap(string entryId, TreeViewSafeNode? selectedParent)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"RestoreFromScrap called - entryId: {entryId}");
+            if (CurrentDialog == null) return false;
 
-            if (CurrentDialog == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore - no dialog loaded");
-                return false;
-            }
-
-            // Check if a parent is selected
-            if (selectedParent == null)
-            {
-                StatusMessage = "Select a location in the tree to restore to (root or parent node)";
-                UnifiedLogger.LogApplication(LogLevel.WARN, "Restore failed - no parent selected");
-                return false;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring to parent: {selectedParent.DisplayText} (Type: {selectedParent.GetType().Name})");
-
-            // Get the node from scrap WITHOUT removing it yet
-            var node = _scrapManager.GetNodeFromScrap(entryId);
-            if (node == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "Failed to retrieve node from scrap manager");
-                StatusMessage = "Failed to retrieve node from scrap";
-                return false;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node retrieved from scrap: Type={node.Type}, Text={node.Text?.Strings.Values.FirstOrDefault()}");
-
-            // Validate restoration target BEFORE making ANY changes
-            if (selectedParent is TreeViewRootNode && node.Type != DialogNodeType.Entry)
-            {
-                StatusMessage = "Only NPC Entry nodes can be restored to root level";
-                UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot restore PC Reply to root level");
-                return false;
-            }
-
-            // Validate dialog structure rules
-            if (!(selectedParent is TreeViewRootNode) && selectedParent?.OriginalNode != null)
-            {
-                var parentNode = selectedParent.OriginalNode;
-
-                // NPC Entry can only be child of PC Reply (not another NPC Entry)
-                if (node.Type == DialogNodeType.Entry && parentNode.Type == DialogNodeType.Entry)
-                {
-                    StatusMessage = "NPC Entry nodes cannot be children of other NPC Entry nodes";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Invalid structure: Entry under Entry");
-                    return false;
-                }
-
-                // PC Reply can be under NPC Entry OR NPC Reply (branching PC responses)
-                // No validation needed for PC Reply - both parent types are valid
-            }
-
-            // ALL validations passed - now make the changes
-
-            // Save state for undo
             SaveUndoState("Restore from Scrap");
 
-            // Add the restored node to the appropriate list
-            if (node.Type == DialogNodeType.Entry)
+            var result = _scrapManager.RestoreFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
+            StatusMessage = result.StatusMessage;
+
+            if (result.Success)
             {
-                CurrentDialog.Entries.Add(node);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to Entries list (index {CurrentDialog.Entries.Count - 1})");
-            }
-            else
-            {
-                CurrentDialog.Replies.Add(node);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to Replies list (index {CurrentDialog.Replies.Count - 1})");
+                RefreshTreeView();
+                HasUnsavedChanges = true;
             }
 
-            // Get the index of the restored node
-            var nodeIndex = (uint)CurrentDialog.GetNodeIndex(node, node.Type);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Node index: {nodeIndex}");
-
-            // Create pointer to restored node
-            var ptr = new DialogPtr
-            {
-                Node = node,
-                Type = node.Type,
-                Index = nodeIndex,
-                IsLink = false,
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
-                Comment = "[Restored from scrap]",
-                Parent = CurrentDialog
-            };
-
-            // Add to root level or under selected parent
-            if (selectedParent is TreeViewRootNode)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Restoring to root level");
-                // We already validated this is an Entry node above
-                ptr.IsStart = true;
-                CurrentDialog.Starts.Add(ptr);
-                StatusMessage = "Restored node to root level";
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Node restored to root level");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring as child of {selectedParent.DisplayText}");
-                // Restore as child of selected node
-                selectedParent.OriginalNode.Pointers.Add(ptr);
-                selectedParent.IsExpanded = true;
-                StatusMessage = $"Restored node under {selectedParent.DisplayText}";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Node restored under {selectedParent.DisplayText}");
-            }
-
-            // Register the pointer
-            CurrentDialog.LinkRegistry.RegisterLink(ptr);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Pointer registered in LinkRegistry");
-
-            // Recalculate indices
-            _indexManager.RecalculatePointerIndices(CurrentDialog);
-
-            // Refresh UI
-            RefreshTreeView();
-            HasUnsavedChanges = true;
-
-            // Only remove from scrap after successful restoration
-            _scrapManager.RemoveFromScrap(entryId);
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Restore completed successfully");
-            return true;
+            return result.Success;
         }
 
         /// <summary>
