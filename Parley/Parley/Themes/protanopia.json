@@ -1,0 +1,55 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.parley.theme.protanopia",
+    "name": "Protanopia (Red Colorblind)",
+    "version": "1.0.0",
+    "author": "Parley Team",
+    "description": "Accessibility theme for protanopia (red colorblindness). Uses sky blue/orange palette.",
+    "type": "theme",
+    "tags": ["official", "accessibility", "colorblind", "protanopia"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "colorblind",
+    "condition": "protanopia",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#DDDDDD",
+    "sidebar": "#AAAAAA",
+    "text": "#000000",
+    "selection": "#0099CC",
+    "border": "#999999",
+    "accent": "#0099CC",
+    "error": "#CC5500",
+    "warning": "#FFAA00",
+    "success": "#00AACC",
+    "info": "#0099CC",
+    "tree_entry": "#0099CC",
+    "tree_reply": "#FF9944",
+    "tree_link": "#6600CC",
+    "button_primary": "#0099CC",
+    "button_secondary": "#666666",
+    "button_hover": "#007799",
+    "speaker_1": "#0099CC",
+    "speaker_2": "#FF9944",
+    "speaker_3": "#6600CC",
+    "speaker_4": "#00AACC",
+    "speaker_5": "#CC5500",
+    "speaker_6": "#8800CC"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28,
+    "tree_indent": 16
+  }
+}

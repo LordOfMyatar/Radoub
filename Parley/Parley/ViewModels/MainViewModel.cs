@@ -1022,6 +1022,14 @@ namespace DialogEditor.ViewModels
         // Methods removed: PerformMove, UpdatePointersForMove, ValidateMoveIntegrity, RecalculatePointerIndices
         // MainViewModel now uses _indexManager service for all index operations.
 
+        /// <summary>
+        /// Public method to refresh tree view (called when theme changes)
+        /// </summary>
+        public void RefreshTreeViewColors()
+        {
+            RefreshTreeView();
+        }
+
         private void RefreshTreeView()
         {
             // Log dialog state before refresh

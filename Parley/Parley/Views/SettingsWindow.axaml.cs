@@ -13,6 +13,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using DialogEditor.Models;
 using DialogEditor.Plugins;
 using DialogEditor.Services;
 
@@ -44,6 +45,7 @@ namespace DialogEditor.Views
     {
         private bool _isInitializing = true;
         private PluginManager? _pluginManager;
+        private bool _easterEggActivated = false;
 
         // Parameterless constructor for XAML/Avalonia runtime
         public SettingsWindow() : this(0, null)
@@ -131,21 +133,29 @@ namespace DialogEditor.Views
                 recentModulesListBox.ItemsSource = settings.ModulePaths;
             }
 
-            // UI Settings
-            var lightThemeRadio = this.FindControl<RadioButton>("LightThemeRadio");
-            var darkThemeRadio = this.FindControl<RadioButton>("DarkThemeRadio");
+            // UI Settings - Theme
+            var themeComboBox = this.FindControl<ComboBox>("ThemeComboBox");
+            if (themeComboBox != null)
+            {
+                // Populate theme list (hide easter eggs initially)
+                PopulateThemeList(themeComboBox, includeEasterEggs: false);
+
+                // Select current theme
+                var themes = (IEnumerable<ThemeManifest>?)themeComboBox.ItemsSource;
+                var currentTheme = themes?.FirstOrDefault(t => t.Plugin.Id == settings.CurrentThemeId);
+                themeComboBox.SelectedItem = currentTheme;
+
+                // Update theme description
+                if (currentTheme != null)
+                {
+                    UpdateThemeDescription(currentTheme);
+                }
+
+            }
+
             var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
             var fontSizeLabel = this.FindControl<TextBlock>("FontSizeLabel");
             var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
-
-            if (settings.IsDarkTheme)
-            {
-                if (darkThemeRadio != null) darkThemeRadio.IsChecked = true;
-            }
-            else
-            {
-                if (lightThemeRadio != null) lightThemeRadio.IsChecked = true;
-            }
 
             if (fontSizeSlider != null)
             {
@@ -788,27 +798,133 @@ namespace DialogEditor.Views
             }
         }
 
-        private void OnThemeChanged(object? sender, RoutedEventArgs e)
+        private void OnThemeComboBoxChanged(object? sender, SelectionChangedEventArgs e)
         {
             if (_isInitializing) return;
 
-            // Determine which radio button was clicked
-            var senderRadio = sender as RadioButton;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnThemeChanged: sender={senderRadio?.Name}, IsChecked={senderRadio?.IsChecked}");
-
-            // Apply theme based on which button was checked
-            if (senderRadio?.IsChecked == true)
+            var comboBox = sender as ComboBox;
+            if (comboBox?.SelectedItem is ThemeManifest theme)
             {
-                bool isDark = senderRadio.Name == "DarkThemeRadio";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Theme applied: {(isDark ? "Dark" : "Light")} (from {senderRadio.Name})");
+                // Apply theme immediately
+                ThemeManager.Instance.ApplyTheme(theme);
 
-                if (Application.Current != null)
+                // Update theme description panel
+                UpdateThemeDescription(theme);
+
+                // Save to settings
+                SettingsService.Instance.CurrentThemeId = theme.Plugin.Id;
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Theme changed to: {theme.Plugin.Name}");
+            }
+        }
+
+        private void UpdateThemeDescription(ThemeManifest theme)
+        {
+            var nameText = this.FindControl<TextBlock>("ThemeNameText");
+            var descText = this.FindControl<TextBlock>("ThemeDescriptionText");
+            var accessText = this.FindControl<TextBlock>("ThemeAccessibilityText");
+
+            if (nameText != null)
+            {
+                nameText.Text = theme.Plugin.Name;
+            }
+
+            if (descText != null)
+            {
+                descText.Text = theme.Plugin.Description;
+            }
+
+            if (accessText != null && theme.Accessibility != null)
+            {
+                if (theme.Accessibility.Type == "colorblind")
                 {
-                    Application.Current.RequestedThemeVariant = isDark
-                        ? global::Avalonia.Styling.ThemeVariant.Dark
-                        : global::Avalonia.Styling.ThemeVariant.Light;
+                    var condition = theme.Accessibility.Condition ?? "color blindness";
+                    accessText.Text = $"♿ Accessibility: Optimized for {condition} ({theme.Accessibility.ContrastLevel} contrast)";
+                    accessText.IsVisible = true;
+                }
+                else if (theme.Accessibility.Type == "nightmare")
+                {
+                    accessText.Text = theme.Accessibility.Warning ?? "⚠️ Warning: This theme may cause eye strain";
+                    accessText.Foreground = Avalonia.Media.Brushes.Red;
+                    accessText.IsVisible = true;
+                }
+                else
+                {
+                    accessText.IsVisible = false;
                 }
             }
+        }
+
+        private void PopulateThemeList(ComboBox comboBox, bool includeEasterEggs)
+        {
+            var themes = ThemeManager.Instance.AvailableThemes;
+
+            if (!includeEasterEggs)
+            {
+                themes = themes.Where(t => !t.Plugin.Tags.Contains("easter-egg")).ToList();
+            }
+
+            var sortedThemes = themes
+                .OrderBy(t => t.Accessibility?.Type == "colorblind" ? 1 : 0)
+                .ThenBy(t => t.Plugin.Name)
+                .ToList();
+
+            comboBox.ItemsSource = sortedThemes;
+            comboBox.DisplayMemberBinding = new Avalonia.Data.Binding("Plugin.Name");
+        }
+
+        private void OnGetThemesClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Open GitHub themes directory in browser
+                const string themesUrl = "https://github.com/LordOfMyatar/Radoub/tree/main/Parley/Parley/Themes";
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = themesUrl,
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Opened GitHub themes directory");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open themes URL: {ex.Message}");
+            }
+        }
+
+        private void OnEasterEggHintClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+        {
+            if (_easterEggActivated) return;
+
+            _easterEggActivated = true;
+
+            var comboBox = this.FindControl<ComboBox>("ThemeComboBox");
+            if (comboBox == null) return;
+
+            // Repopulate list with easter eggs
+            PopulateThemeList(comboBox, includeEasterEggs: true);
+
+            // Select the easter egg theme
+            var easterEggs = (IEnumerable<ThemeManifest>?)comboBox.ItemsSource;
+            var easterEgg = easterEggs?.FirstOrDefault(t => t.Plugin.Tags.Contains("easter-egg"));
+
+            if (easterEgg != null)
+            {
+                comboBox.SelectedItem = easterEgg;
+            }
+
+            // Update easter egg hint
+            var hint = this.FindControl<TextBlock>("EasterEggHint");
+            if (hint != null)
+            {
+                hint.Text = "🍇🍓 You found it! Enjoy the chaos...";
+                hint.Foreground = Avalonia.Media.Brushes.DarkOrange;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Easter egg theme activated!");
         }
 
         private void OnFontSizeChanged(object? sender, RangeBaseValueChangedEventArgs e)
@@ -959,14 +1075,9 @@ namespace DialogEditor.Views
             }
 
             // UI Settings
-            var darkThemeRadio = this.FindControl<RadioButton>("DarkThemeRadio");
+            // Theme is now saved automatically via OnThemeComboBoxChanged
             var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
             var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
-
-            if (darkThemeRadio != null)
-            {
-                settings.IsDarkTheme = darkThemeRadio.IsChecked == true;
-            }
 
             if (fontSizeSlider != null)
             {
@@ -1004,26 +1115,8 @@ namespace DialogEditor.Views
 
         private void ApplyThemePreview()
         {
-            try
-            {
-                var lightThemeRadio = this.FindControl<RadioButton>("LightThemeRadio");
-                var darkThemeRadio = this.FindControl<RadioButton>("DarkThemeRadio");
-
-                bool isDark = darkThemeRadio?.IsChecked == true;
-                bool isLight = lightThemeRadio?.IsChecked == true;
-
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ApplyThemePreview: Light={isLight}, Dark={isDark}");
-
-                if (Application.Current != null)
-                {
-                    Application.Current.RequestedThemeVariant = isDark ? global::Avalonia.Styling.ThemeVariant.Dark : global::Avalonia.Styling.ThemeVariant.Light;
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Theme applied: {(isDark ? "Dark" : "Light")}");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error applying theme preview: {ex.Message}");
-            }
+            // Theme preview now handled by OnThemeComboBoxChanged
+            // This method kept for compatibility but is no longer used
         }
 
         private void ApplyFontSizePreview()

@@ -136,10 +136,37 @@
                         <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Theme" FontWeight="Bold"/>
-                                <RadioButton x:Name="LightThemeRadio" Content="Light Theme"
-                                            GroupName="Theme" Checked="OnThemeChanged"/>
-                                <RadioButton x:Name="DarkThemeRadio" Content="Dark Theme"
-                                            GroupName="Theme" Checked="OnThemeChanged"/>
+                                <TextBlock Text="Choose a color theme for Parley. Accessibility themes are optimized for color blindness."
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+
+                                <!-- Standard Themes -->
+                                <TextBlock Text="Standard Themes" FontWeight="SemiBold" Margin="0,10,0,5"/>
+                                <ComboBox x:Name="ThemeComboBox"
+                                         SelectionChanged="OnThemeComboBoxChanged"
+                                         HorizontalAlignment="Stretch"
+                                         MinWidth="300"/>
+
+                                <!-- Theme Description -->
+                                <Border x:Name="ThemeDescriptionBorder"
+                                       BorderBrush="LightGray" BorderThickness="1"
+                                       Padding="10" Margin="0,10,0,0" CornerRadius="3"
+                                       Background="{DynamicResource ThemeBackground}">
+                                    <StackPanel Spacing="5">
+                                        <TextBlock x:Name="ThemeNameText" FontWeight="Bold"/>
+                                        <TextBlock x:Name="ThemeDescriptionText" TextWrapping="Wrap" FontSize="11"/>
+                                        <TextBlock x:Name="ThemeAccessibilityText" TextWrapping="Wrap" FontSize="11" Foreground="DarkGreen"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Theme Actions -->
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,10,0,0">
+                                    <Button Content="Get Themes" Click="OnGetThemesClick" Padding="10,5"
+                                           ToolTip.Tip="Browse community themes on GitHub"/>
+                                    <TextBlock x:Name="EasterEggHint" Text="💡 Tip: Click here for hidden themes..."
+                                              FontSize="10" Foreground="Gray" VerticalAlignment="Center"
+                                              Opacity="0.6" Cursor="Hand"
+                                              PointerPressed="OnEasterEggHintClick"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
