@@ -202,35 +202,65 @@ namespace DialogEditor.Services
         /// </summary>
         private void ApplyColors(IResourceDictionary resources, ThemeColors colors)
         {
-            // Map theme colors to Avalonia system resource keys
-            var colorMappings = new List<(string? ColorValue, string[] ResourceKeys)>
+            // Comprehensive mapping to Avalonia system colors
+            // Background colors - main window background
+            if (!string.IsNullOrEmpty(colors.Background))
             {
-                (colors.Background, new[] { "SystemChromeMediumColor", "SystemChromeMediumLowColor" }),
-                (colors.Sidebar, new[] { "SystemAltMediumColor", "SystemChromeLowColor" }),
-                (colors.Text, new[] { "SystemBaseHighColor", "SystemBaseMediumHighColor" }),
-                (colors.Accent, new[] { "SystemAccentColor", "SystemAccentColorLight1", "SystemAccentColorDark1" }),
-                (colors.Selection, new[] { "SystemListLowColor", "SystemListMediumColor" }),
-                (colors.Border, new[] { "SystemBaseMediumLowColor", "SystemChromeDisabledLowColor" })
-            };
+                var bgColor = Color.Parse(colors.Background);
+                resources["SystemChromeMediumColor"] = bgColor;
+                resources["SystemChromeMediumLowColor"] = bgColor;
+                resources["SystemChromeHighColor"] = bgColor;
+                resources["SystemRegionColor"] = bgColor;
+            }
 
-            foreach (var (colorValue, resourceKeys) in colorMappings)
+            // Sidebar/Alt colors - panels, toolbars
+            if (!string.IsNullOrEmpty(colors.Sidebar))
             {
-                if (!string.IsNullOrEmpty(colorValue))
-                {
-                    try
-                    {
-                        var color = Color.Parse(colorValue);
-                        foreach (var key in resourceKeys)
-                        {
-                            resources[key] = color;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.WARN,
-                            $"Invalid color value: {colorValue} - {ex.Message}");
-                    }
-                }
+                var sidebarColor = Color.Parse(colors.Sidebar);
+                resources["SystemAltMediumColor"] = sidebarColor;
+                resources["SystemAltHighColor"] = sidebarColor;
+                resources["SystemChromeLowColor"] = sidebarColor;
+                resources["SystemChromeWhiteColor"] = sidebarColor;
+            }
+
+            // Text colors
+            if (!string.IsNullOrEmpty(colors.Text))
+            {
+                var textColor = Color.Parse(colors.Text);
+                resources["SystemBaseHighColor"] = textColor;
+                resources["SystemBaseMediumHighColor"] = textColor;
+                resources["SystemBaseMediumColor"] = textColor;
+            }
+
+            // Accent color - buttons, highlights
+            if (!string.IsNullOrEmpty(colors.Accent))
+            {
+                var accentColor = Color.Parse(colors.Accent);
+                resources["SystemAccentColor"] = accentColor;
+                resources["SystemAccentColorLight1"] = accentColor;
+                resources["SystemAccentColorLight2"] = accentColor;
+                resources["SystemAccentColorLight3"] = accentColor;
+                resources["SystemAccentColorDark1"] = accentColor;
+                resources["SystemAccentColorDark2"] = accentColor;
+                resources["SystemAccentColorDark3"] = accentColor;
+            }
+
+            // Selection color
+            if (!string.IsNullOrEmpty(colors.Selection))
+            {
+                var selColor = Color.Parse(colors.Selection);
+                resources["SystemListLowColor"] = selColor;
+                resources["SystemListMediumColor"] = selColor;
+            }
+
+            // Border colors
+            if (!string.IsNullOrEmpty(colors.Border))
+            {
+                var borderColor = Color.Parse(colors.Border);
+                resources["SystemBaseMediumLowColor"] = borderColor;
+                resources["SystemBaseLowColor"] = borderColor;
+                resources["SystemChromeDisabledLowColor"] = borderColor;
+                resources["SystemChromeDisabledHighColor"] = borderColor;
             }
 
             // Also create Theme-prefixed resources for direct use
