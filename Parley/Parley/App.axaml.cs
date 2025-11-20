@@ -18,11 +18,21 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
-        // Apply font size and family from settings
+        // Discover and load themes
+        ThemeManager.Instance.DiscoverThemes();
+
+        // Apply saved theme from settings
+        var themeId = SettingsService.Instance.CurrentThemeId;
+        if (!string.IsNullOrEmpty(themeId))
+        {
+            ThemeManager.Instance.ApplyTheme(themeId);
+        }
+
+        // Apply font size and family from settings (may be overridden by theme)
         ApplyFontSize(SettingsService.Instance.FontSize);
         ApplyFontFamily(SettingsService.Instance.FontFamily);
 
-        // Subscribe to font changes
+        // Subscribe to settings changes
         SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
     }
 
@@ -50,6 +60,15 @@ public partial class App : Application
         else if (e.PropertyName == nameof(SettingsService.FontFamily))
         {
             ApplyFontFamily(SettingsService.Instance.FontFamily);
+        }
+        else if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
+        {
+            // Theme changed - apply new theme
+            var themeId = SettingsService.Instance.CurrentThemeId;
+            if (!string.IsNullOrEmpty(themeId))
+            {
+                ThemeManager.Instance.ApplyTheme(themeId);
+            }
         }
     }
 
