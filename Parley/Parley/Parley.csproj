@@ -26,6 +26,13 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
+  <!-- Copy Themes folder to output directory -->
+  <ItemGroup>
+    <None Include="Themes\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <Protobuf Include="Plugins\Protos\plugin.proto" GrpcServices="Both" />
   </ItemGroup>
