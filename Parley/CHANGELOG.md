@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.17-alpha] - 2025-11-19
-**Branch**: `parley/refactor/epic-99-cleanup-dead-code` | **PR**: #TBD
+**Branch**: `parley/refactor/epic-99-cleanup-dead-code` | **PR**: #138
 
 ### Epic #99: MainViewModel Refactoring - Phase 7 (Dead Code Removal & Service Extraction)
 
