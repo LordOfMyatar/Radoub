@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 using DialogEditor.Models;
@@ -66,7 +67,7 @@ namespace DialogEditor.Services
             _themeDirectories.Add(userThemes);
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Theme directories initialized: {string.Join(", ", _themeDirectories.Select(d => PathHelper.SanitizePath(d)))}");
+                $"Theme directories initialized: {_themeDirectories.Count} locations");
         }
 
         /// <summary>
@@ -96,7 +97,7 @@ namespace DialogEditor.Services
                     catch (Exception ex)
                     {
                         UnifiedLogger.LogApplication(LogLevel.WARN,
-                            $"Failed to load theme from {PathHelper.SanitizePath(themeFile)}: {ex.Message}");
+                            $"Failed to load theme: {ex.Message}");
                     }
                 }
             }
@@ -198,7 +199,7 @@ namespace DialogEditor.Services
         /// <summary>
         /// Apply color values to resource dictionary
         /// </summary>
-        private void ApplyColors(ResourceDictionary resources, ThemeColors colors)
+        private void ApplyColors(IResourceDictionary resources, ThemeColors colors)
         {
             // Use reflection to iterate all color properties
             var colorProperties = typeof(ThemeColors).GetProperties();
@@ -225,7 +226,7 @@ namespace DialogEditor.Services
         /// <summary>
         /// Apply font values to resource dictionary
         /// </summary>
-        private void ApplyFonts(ResourceDictionary resources, ThemeFonts fonts)
+        private void ApplyFonts(IResourceDictionary resources, ThemeFonts fonts)
         {
             if (!string.IsNullOrEmpty(fonts.Primary))
             {
@@ -262,7 +263,7 @@ namespace DialogEditor.Services
         /// <summary>
         /// Apply spacing values to resource dictionary
         /// </summary>
-        private void ApplySpacing(ResourceDictionary resources, ThemeSpacing spacing)
+        private void ApplySpacing(IResourceDictionary resources, ThemeSpacing spacing)
         {
             if (spacing.ControlPadding.HasValue)
             {
