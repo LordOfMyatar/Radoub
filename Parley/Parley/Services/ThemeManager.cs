@@ -222,6 +222,16 @@ namespace DialogEditor.Services
                 resources["SystemChromeHighColor"] = bgColor;
                 resources["SystemRegionColor"] = bgColor;
 
+                // CRITICAL: Window and panel backgrounds
+                resources["SolidBackgroundFillColorBase"] = bgBrush;
+                resources["SolidBackgroundFillColorBaseBrush"] = bgBrush;
+                resources["LayerFillColorDefault"] = bgBrush;
+                resources["LayerFillColorDefaultBrush"] = bgBrush;
+                resources["CardBackgroundFillColorDefault"] = bgBrush;
+                resources["CardBackgroundFillColorDefaultBrush"] = bgBrush;
+                resources["SubtleFillColorSecondary"] = bgBrush;
+                resources["SubtleFillColorSecondaryBrush"] = bgBrush;
+
                 // CRITICAL: These are what TextBox, CheckBox, etc. actually use
                 resources["TextControlBackground"] = bgBrush;
                 resources["TextControlBackgroundPointerOver"] = bgBrush;
@@ -246,6 +256,11 @@ namespace DialogEditor.Services
                 resources["SystemChromeLowColor"] = sidebarColor;
                 resources["SystemChromeWhiteColor"] = sidebarColor;
 
+                // Panel and container backgrounds
+                resources["CardBackgroundFillColorSecondary"] = sidebarBrush;
+                resources["CardBackgroundFillColorSecondaryBrush"] = sidebarBrush;
+                resources["LayerFillColorAlt"] = sidebarBrush;
+                resources["LayerFillColorAltBrush"] = sidebarBrush;
                 resources["SystemControlBackgroundAltHighBrush"] = sidebarBrush;
                 resources["SystemControlBackgroundChromeMediumBrush"] = sidebarBrush;
             }
