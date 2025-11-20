@@ -539,38 +539,6 @@ namespace DialogEditor.ViewModels
             }
         }
 
-        private void MarkReachableEntries(DialogNode entry, HashSet<DialogNode> reachableEntries)
-        {
-            if (reachableEntries.Contains(entry))
-                return; // Already visited
-
-            reachableEntries.Add(entry);
-
-            // Follow all paths from this entry
-            foreach (var pointer in entry.Pointers)
-            {
-                if (pointer.Node != null)
-                {
-                    // If this points to a reply, follow the reply's pointers too
-                    if (pointer.Type == DialogNodeType.Reply)
-                    {
-                        foreach (var replyPointer in pointer.Node.Pointers)
-                        {
-                            if (replyPointer.Node != null && replyPointer.Type == DialogNodeType.Entry)
-                            {
-                                MarkReachableEntries(replyPointer.Node, reachableEntries);
-                            }
-                        }
-                    }
-                    // If this points directly to an entry, follow it
-                    else if (pointer.Type == DialogNodeType.Entry)
-                    {
-                        MarkReachableEntries(pointer.Node, reachableEntries);
-                    }
-                }
-            }
-        }
-
         private void LinkDialogPointers()
         {
             if (CurrentDialog == null) return;
@@ -2204,60 +2172,6 @@ namespace DialogEditor.ViewModels
         {
             // This will be handled by binding in the UI based on ScrapCount > 0
             // The badge visibility is controlled by the IsVisible binding in XAML
-        }
-
-        /// <summary>
-        /// Find orphaned nodes after a delete/cut operation
-        /// </summary>
-        private List<DialogNode> FindOrphanedNodes()
-        {
-            if (CurrentDialog == null) return new List<DialogNode>();
-
-            var orphaned = new List<DialogNode>();
-            var reachable = new HashSet<DialogNode>();
-
-            // Mark all nodes reachable from STARTs
-            foreach (var start in CurrentDialog.Starts)
-            {
-                if (start.Node != null)
-                {
-                    MarkReachable(start.Node, reachable);
-                }
-            }
-
-            // Find all nodes not marked as reachable
-            foreach (var entry in CurrentDialog.Entries)
-            {
-                if (!reachable.Contains(entry) &&
-                    !entry.Comment?.Contains("PARLEY: Orphaned") == true)
-                {
-                    orphaned.Add(entry);
-                }
-            }
-
-            foreach (var reply in CurrentDialog.Replies)
-            {
-                if (!reachable.Contains(reply) &&
-                    !reply.Comment?.Contains("PARLEY: Orphaned") == true)
-                {
-                    orphaned.Add(reply);
-                }
-            }
-
-            return orphaned;
-        }
-
-        private void MarkReachable(DialogNode node, HashSet<DialogNode> reachable)
-        {
-            if (!reachable.Add(node)) return; // Already visited
-
-            foreach (var ptr in node.Pointers)
-            {
-                if (ptr.Node != null)
-                {
-                    MarkReachable(ptr.Node, reachable);
-                }
-            }
         }
 
         #endregion

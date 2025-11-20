@@ -18,19 +18,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Remove deprecated orphan containerization code already replaced by OrphanNodeManager and ScrapManager.
 
 ### Removed
-- **693 lines of deprecated orphan detection code** from MainViewModel:
-  - FindOrphanedNodes(TreeViewRootNode) - Replaced by OrphanNodeManager.RemoveOrphanedNodes
-  - CreateOrUpdateOrphanContainers - Replaced by ScrapManager (Scrap Tab)
-  - DetectAndContainerizeOrphansSync - No longer needed (orphans removed at save time)
-  - CreateOrUpdateOrphanContainersInModel - Replaced by ScrapManager
-  - CollectReachableNodesForOrphanDetection - Duplicate of OrphanNodeManager logic
-  - IsNodeInSubtree/IsNodeInSubtreeRecursive - Replaced by OrphanNodeManager helpers
-  - FindParentEntry - No longer used
-  - CollectDialogSubtree/CollectDialogSubtreeChildren - Duplicate traversal logic
+- **~770 lines of deprecated code** from MainViewModel:
+  - **693 lines** of deprecated orphan containerization code:
+    - FindOrphanedNodes(TreeViewRootNode) - Replaced by OrphanNodeManager.RemoveOrphanedNodes
+    - CreateOrUpdateOrphanContainers - Replaced by ScrapManager (Scrap Tab)
+    - DetectAndContainerizeOrphansSync - No longer needed (orphans removed at save time)
+    - CreateOrUpdateOrphanContainersInModel - Replaced by ScrapManager
+    - CollectReachableNodesForOrphanDetection - Duplicate of OrphanNodeManager logic
+    - IsNodeInSubtree/IsNodeInSubtreeRecursive - Replaced by OrphanNodeManager helpers
+    - FindParentEntry - No longer used
+    - CollectDialogSubtree/CollectDialogSubtreeChildren - Duplicate traversal logic
+  - **~77 lines** of never-called tree building methods:
+    - MarkReachableEntries - Never called from anywhere
+    - FindOrphanedNodes() (no-param version) - Never called
+    - MarkReachable - Only called by dead FindOrphanedNodes()
 
 ### Changed
-- MainViewModel reduced from 2,956 to 2,265 lines (-691 lines, 23% reduction)
-- Added deletion comment documenting removed methods for reference
+- MainViewModel reduced from 2,956 to ~2,188 lines (-768 lines, 26% reduction)
+- Added deletion comments documenting removed methods for reference
 
 ### Notes
 - All orphan functionality now consolidated in OrphanNodeManager service
