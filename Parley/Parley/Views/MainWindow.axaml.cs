@@ -75,6 +75,9 @@ namespace DialogEditor.Views
             // Apply saved theme preference
             ApplySavedTheme();
 
+            // Subscribe to theme changes to refresh tree view colors
+            ThemeManager.Instance.ThemeApplied += OnThemeApplied;
+
             // Phase 0 Fix: Hide debug console by default
             HideDebugConsoleByDefault();
 
@@ -139,6 +142,22 @@ namespace DialogEditor.Views
         {
             // Controls are now available, restore settings
             RestoreDebugSettings();
+        }
+
+        /// <summary>
+        /// Handler for theme changes - refreshes tree view to update node colors
+        /// </summary>
+        private void OnThemeApplied(object? sender, EventArgs e)
+        {
+            // Only refresh if a dialog is loaded
+            if (_viewModel.CurrentDialog != null)
+            {
+                global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _viewModel.RefreshTreeViewColors();
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after theme change");
+                });
+            }
         }
 
         private void RestoreDebugSettings()

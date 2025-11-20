@@ -24,6 +24,12 @@ namespace DialogEditor.Services
         private ThemeManifest? _currentTheme;
 
         /// <summary>
+        /// Event raised when a theme is successfully applied
+        /// UI components can subscribe to refresh their visuals
+        /// </summary>
+        public event EventHandler? ThemeApplied;
+
+        /// <summary>
         /// Theme directories (official and community)
         /// </summary>
         private readonly List<string> _themeDirectories = new();
@@ -192,6 +198,9 @@ namespace DialogEditor.Services
 
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Applied theme: {theme.Plugin.Name} ({theme.Plugin.Id})");
+
+                // Notify subscribers that theme has changed
+                ThemeApplied?.Invoke(this, EventArgs.Empty);
 
                 return true;
             }
