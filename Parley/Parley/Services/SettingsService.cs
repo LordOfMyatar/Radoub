@@ -44,7 +44,8 @@ namespace DialogEditor.Services
         // UI settings
         private double _fontSize = 14;
         private string _fontFamily = ""; // Empty string = use system default
-        private bool _isDarkTheme = false;
+        private bool _isDarkTheme = false; // DEPRECATED: Use CurrentThemeId instead
+        private string _currentThemeId = "org.parley.theme.light"; // Default theme
         private bool _useNewLayout = false; // Feature flag for new layout (#108)
         
         // Game settings
@@ -175,10 +176,39 @@ namespace DialogEditor.Services
             set { if (SetProperty(ref _fontFamily, value ?? "")) SaveSettings(); }
         }
 
+        /// <summary>
+        /// DEPRECATED: Use CurrentThemeId instead. Kept for backwards compatibility.
+        /// </summary>
         public bool IsDarkTheme
         {
             get => _isDarkTheme;
-            set { if (SetProperty(ref _isDarkTheme, value)) SaveSettings(); }
+            set
+            {
+                if (SetProperty(ref _isDarkTheme, value))
+                {
+                    // Auto-migrate to new theme system
+                    _currentThemeId = value ? "org.parley.theme.dark" : "org.parley.theme.light";
+                    OnPropertyChanged(nameof(CurrentThemeId));
+                    SaveSettings();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Current theme plugin ID (e.g., "org.parley.theme.light")
+        /// </summary>
+        public string CurrentThemeId
+        {
+            get => _currentThemeId;
+            set
+            {
+                if (SetProperty(ref _currentThemeId, value))
+                {
+                    // Update legacy IsDarkTheme for compatibility
+                    _isDarkTheme = value.Contains("dark", StringComparison.OrdinalIgnoreCase);
+                    SaveSettings();
+                }
+            }
         }
 
         public bool UseNewLayout
@@ -427,7 +457,20 @@ namespace DialogEditor.Services
                         // Load UI settings
                         _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
                         _fontFamily = settings.FontFamily ?? "";
-                        _isDarkTheme = settings.IsDarkTheme;
+
+                        // Migrate from old IsDarkTheme to new CurrentThemeId
+                        if (!string.IsNullOrEmpty(settings.CurrentThemeId))
+                        {
+                            _currentThemeId = settings.CurrentThemeId;
+                            _isDarkTheme = settings.IsDarkTheme; // Keep for compatibility
+                        }
+                        else
+                        {
+                            // Old settings file - migrate
+                            _isDarkTheme = settings.IsDarkTheme;
+                            _currentThemeId = _isDarkTheme ? "org.parley.theme.dark" : "org.parley.theme.light";
+                        }
+
                         _useNewLayout = settings.UseNewLayout;
 
                         // Load game settings (expand ~ to user home directory)
@@ -502,7 +545,8 @@ namespace DialogEditor.Services
                     WindowMaximized = WindowMaximized,
                     FontSize = FontSize,
                     FontFamily = FontFamily,
-                    IsDarkTheme = IsDarkTheme,
+                    IsDarkTheme = IsDarkTheme, // Keep for backwards compatibility
+                    CurrentThemeId = CurrentThemeId,
                     UseNewLayout = UseNewLayout,
                     NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
                     BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
@@ -676,7 +720,8 @@ namespace DialogEditor.Services
             // UI settings
             public double FontSize { get; set; } = 14;
             public string FontFamily { get; set; } = "";
-            public bool IsDarkTheme { get; set; } = false;
+            public bool IsDarkTheme { get; set; } = false; // DEPRECATED: For backwards compatibility
+            public string? CurrentThemeId { get; set; } = "org.parley.theme.light";
             public bool UseNewLayout { get; set; } = false;
             
             // Game settings
