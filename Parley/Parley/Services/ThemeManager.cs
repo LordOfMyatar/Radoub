@@ -155,15 +155,22 @@ namespace DialogEditor.Services
                     return false;
                 }
 
-                // Apply Avalonia base theme variant (Light/Dark)
-                app.RequestedThemeVariant = theme.BaseTheme.ToLower() switch
+                // Apply Avalonia base theme variant (Light/Dark) first
+                var targetVariant = theme.BaseTheme.ToLower() switch
                 {
                     "dark" => ThemeVariant.Dark,
                     "light" => ThemeVariant.Light,
                     _ => ThemeVariant.Light
                 };
 
-                // Apply custom colors to resource dictionary
+                // Only change if different to avoid flickering
+                if (app.RequestedThemeVariant != targetVariant)
+                {
+                    app.RequestedThemeVariant = targetVariant;
+                }
+
+                // CRITICAL: Apply custom colors AFTER theme variant loads
+                // Must override BOTH Color and Brush resources
                 if (theme.Colors != null)
                 {
                     ApplyColors(app.Resources, theme.Colors);
@@ -203,7 +210,7 @@ namespace DialogEditor.Services
         private void ApplyColors(IResourceDictionary resources, ThemeColors colors)
         {
             // Comprehensive mapping to Avalonia system colors AND brushes
-            // Background colors - main window background
+            // Background colors - main window background AND control backgrounds
             if (!string.IsNullOrEmpty(colors.Background))
             {
                 var bgColor = Color.Parse(colors.Background);
@@ -215,6 +222,14 @@ namespace DialogEditor.Services
                 resources["SystemChromeHighColor"] = bgColor;
                 resources["SystemRegionColor"] = bgColor;
 
+                // CRITICAL: These are what TextBox, CheckBox, etc. actually use
+                resources["TextControlBackground"] = bgBrush;
+                resources["TextControlBackgroundPointerOver"] = bgBrush;
+                resources["TextControlBackgroundFocused"] = bgBrush;
+                resources["TextControlBackgroundDisabled"] = bgBrush;
+                resources["ControlFillColorDefaultBrush"] = bgBrush;
+                resources["ControlFillColorSecondaryBrush"] = bgBrush;
+                resources["ControlFillColorTertiaryBrush"] = bgBrush;
                 resources["SystemControlBackgroundAltHighBrush"] = bgBrush;
                 resources["SystemControlBackgroundAltMediumBrush"] = bgBrush;
                 resources["SystemControlBackgroundAltMediumHighBrush"] = bgBrush;
@@ -235,7 +250,7 @@ namespace DialogEditor.Services
                 resources["SystemControlBackgroundChromeMediumBrush"] = sidebarBrush;
             }
 
-            // Text colors
+            // Text colors - controls need TextControlForeground
             if (!string.IsNullOrEmpty(colors.Text))
             {
                 var textColor = Color.Parse(colors.Text);
@@ -245,6 +260,12 @@ namespace DialogEditor.Services
                 resources["SystemBaseMediumHighColor"] = textColor;
                 resources["SystemBaseMediumColor"] = textColor;
 
+                // CRITICAL: TextBox and other control foregrounds
+                resources["TextControlForeground"] = textBrush;
+                resources["TextControlForegroundPointerOver"] = textBrush;
+                resources["TextControlForegroundFocused"] = textBrush;
+                resources["TextControlForegroundDisabled"] = textBrush;
+                resources["TextControlPlaceholderForeground"] = textBrush;
                 resources["SystemControlForegroundBaseHighBrush"] = textBrush;
                 resources["SystemControlForegroundBaseMediumBrush"] = textBrush;
                 resources["SystemControlForegroundBaseMediumHighBrush"] = textBrush;
