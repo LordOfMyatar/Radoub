@@ -1,7 +1,7 @@
 # Code Path Map - Parley Architecture
 
 **Purpose**: Track active code paths for file operations and UI workflows
-**Last Updated**: 2025-11-18
+**Last Updated**: 2025-11-19 (Phase 7 Complete)
 **Note**: This information was discovered and written by Claude AI.
 
 ---
@@ -19,20 +19,25 @@
 **DialogFileService** (~200 lines): Facade for file operations (load/save)
 **UndoManager** (~150 lines): Manages undo/redo state history
 **DialogClipboardService** (~300 lines): Copy/paste operations
-**ScrapManager** (~250 lines): Manages deleted/scrapped nodes
+**ScrapManager** (~395 lines): Manages deleted/scrapped nodes + scrap restoration (2025-11-19: Added RestoreFromScrap)
 **OrphanNodeManager** (~250 lines): Orphan detection and cleanup (2025-11-18: Fixed to skip child links)
 **NodeOperationsManager** (~530 lines): Node add/delete/move operations (Phase 6, PR #137)
 **TreeNavigationManager** (~280 lines): Tree traversal, expansion state, node finding (Phase 7, PR #133)
 **DialogEditorService** (~200 lines): Node editing operations
 **PropertyPanelPopulator** (~460 lines): Properties panel population (Phase 5, PR #135)
+**IndexManager** (~280 lines): Pointer index management and validation (Phase 7, 2025-11-19)
+**NodeCloningService** (~140 lines): Deep node cloning with circular reference detection (Phase 7, 2025-11-19)
+**ReferenceManager** (~135 lines): Reference counting and pointer detachment (Phase 7, 2025-11-19)
+**PasteOperationsManager** (~220 lines): Paste as duplicate with type validation (Phase 7, 2025-11-19)
 **SettingsService** (~650 lines): Application settings persistence
 **UnifiedLogger** (~385 lines): Session-based logging with path sanitization
 **DebugLogger** (~180 lines): UI debug console with log level filtering
 
 ### ViewModels & UI
-**MainViewModel** (~2,933 lines as of Phase 6): **ACTIVELY REFACTORING - DO NOT ADD LOGIC HERE**
-- Down from ~3,500 lines (Phase 6 NodeOperationsManager: -332 lines)
-- Target: < 2,000 lines by end of Epic #99
+**MainViewModel** (~1,258 lines as of Phase 7): **REFACTORING COMPLETE - GOAL EXCEEDED ✅**
+- Down from ~2,956 lines (Phase 7: -1,698 lines, 57% reduction)
+- **Target Exceeded**: Now 258 lines BELOW 1,000 line goal
+- Phase 7 Extractions: IndexManager, NodeCloningService, ReferenceManager, PasteOperationsManager, RestoreFromScrap
 **MainWindow.axaml.cs** (~370 lines): Thin coordinator - delegates to handlers
 
 ### Handlers (UI Logic Extracted from MainWindow)
@@ -199,6 +204,124 @@ MainViewModel.RefreshTreeView (MainViewModel.cs:1242)
 - Nodes with incoming links get warning logged
 - Links are NOT followed during deletion (Aurora behavior: delete parent = delete subtree)
 - Child links (IsLink=true) do NOT prevent orphaning (2025-11-18 fix)
+
+---
+
+## PASTE PATH (Copy/Paste Operations)
+
+**Entry Point**: User right-clicks → Paste as Duplicate → MainViewModel.PasteAsDuplicate
+
+### Call Chain (Phase 7 Architecture - 2025-11-19)
+```
+MainViewModel.PasteAsDuplicate (MainViewModel.cs:1280)
+  ↓ Save undo state
+  ↓ Delegate to PasteOperationsManager
+PasteOperationsManager.PasteAsDuplicate (PasteOperationsManager.cs:48)
+  ↓
+  ↓ Validate parent is selected
+  ↓ Check clipboard has content
+  ↓
+  ↓ Route based on parent type
+  ↓
+  ├→ PasteToRoot (PasteOperationsManager.cs:73)
+  │   ↓ Validate PC Reply not pasted to ROOT
+  │   ↓ Clone or reuse node (cut vs copy)
+  │   ↓ Convert NPC Reply → Entry at ROOT (GFF requirement)
+  │   ↓ Add to dialog.Entries list
+  │   ↓ Create start pointer (IsStart=true)
+  │   ↓ Register with LinkRegistry
+  │   ↓ Recalculate indices
+  │
+  └→ PasteToParent (PasteOperationsManager.cs:155)
+      ↓ Validate type alternation (Entry→Reply→Entry)
+      ↓ Clone or reuse node (cut vs copy)
+      ↓ Add to appropriate list (Entries/Replies)
+      ↓ Create pointer from parent
+      ↓ Register with LinkRegistry
+      ↓ Recalculate indices
+  ↓
+  ↓ Return PasteResult
+  ↓
+MainViewModel updates StatusMessage and refreshes tree
+```
+
+### Key Components
+
+**Result Pattern**:
+- `PasteResult` - Success flag, status message, pasted node reference
+- Clean separation: Service handles logic, ViewModel handles UI
+
+**Type Validation**:
+- ROOT only accepts Entry nodes (NPC speech)
+- Entry→Reply alternation enforced (conversation structure)
+- PC Reply auto-converted to Entry at ROOT
+
+**Index Management**:
+- Uses `IndexManager.RecalculatePointerIndices` after paste
+- Ensures pointer.Index matches list position
+
+---
+
+## SCRAP RESTORATION PATH (Restore from Scrap)
+
+**Entry Point**: User selects scrap entry + tree parent → Restore → MainViewModel.RestoreFromScrap
+
+### Call Chain (Phase 7 Architecture - 2025-11-19)
+```
+MainViewModel.RestoreFromScrap (MainViewModel.cs:1441)
+  ↓ Save undo state
+  ↓ Delegate to ScrapManager
+ScrapManager.RestoreFromScrap (ScrapManager.cs:228)
+  ↓
+  ↓ Validate dialog loaded
+  ↓ Validate parent selected
+  ↓ Retrieve node from scrap (GetNodeFromScrap)
+  ↓
+  ↓ Validate restoration target
+  ↓   - ROOT: Only Entry nodes allowed
+  ↓   - Parent type: Enforce Entry→Reply alternation
+  ↓
+  ↓ Add restored node to Entries/Replies list
+  ↓ Get node index from list position
+  ↓
+  ↓ Create pointer to restored node
+  ↓
+  ├→ Restore to ROOT
+  │   ↓ Set ptr.IsStart = true
+  │   ↓ Add to dialog.Starts list
+  │
+  └→ Restore to Parent
+      ↓ Add to parent.Pointers
+      ↓ Set parent.IsExpanded = true
+  ↓
+  ↓ Register pointer with LinkRegistry
+  ↓ IndexManager.RecalculatePointerIndices
+  ↓ Remove from scrap (only after successful restoration)
+  ↓
+  ↓ Return RestoreResult
+  ↓
+MainViewModel updates StatusMessage and refreshes tree
+```
+
+### Key Components
+
+**Result Pattern**:
+- `RestoreResult` - Success flag, status message, restored node reference
+- Clean separation: Service handles logic, ViewModel handles UI
+
+**Validation Rules**:
+- Same as paste: Entry→Reply alternation enforced
+- ROOT validation: Only Entry nodes allowed
+- No type conversion (unlike paste)
+
+**Transaction Safety**:
+- Node only removed from scrap AFTER successful restoration
+- Validation runs BEFORE making any changes
+- If validation fails, scrap entry preserved
+
+**Index Management**:
+- Uses `IndexManager.RecalculatePointerIndices` after restoration
+- Ensures all pointers stay synchronized with list positions
 
 ---
 
