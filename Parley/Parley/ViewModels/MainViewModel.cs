@@ -29,6 +29,7 @@ namespace DialogEditor.ViewModels
         private readonly TreeNavigationManager _treeNavManager = new(); // Service for tree navigation and state
         private readonly NodeOperationsManager _nodeOpsManager; // Service for node add/delete/move operations
         private readonly IndexManager _indexManager = new(); // Service for pointer index management
+        private readonly NodeCloningService _cloningService = new(); // Service for deep node cloning
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -1365,7 +1366,7 @@ namespace DialogEditor.ViewModels
                 }
 
                 // For Cut operation, reuse the node; for Copy, clone it
-                var duplicate = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : CloneNode(_clipboardService.ClipboardNode);
+                var duplicate = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : _cloningService.CloneNode(_clipboardService.ClipboardNode, CurrentDialog);
 
                 // Convert NPC Reply nodes to Entry when pasting to ROOT (GFF requirement)
                 if (duplicate.Type == DialogNodeType.Reply)
@@ -1445,7 +1446,7 @@ namespace DialogEditor.ViewModels
             }
 
             // For Cut operation, reuse the node; for Copy, clone it
-            var duplicateNode = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : CloneNode(_clipboardService.ClipboardNode);
+            var duplicateNode = _clipboardService.WasCutOperation ? _clipboardService.ClipboardNode : _cloningService.CloneNode(_clipboardService.ClipboardNode, CurrentDialog);
 
             // If cut, ensure node is in the appropriate list (may have been removed during cut)
             if (_clipboardService.WasCutOperation)
@@ -1539,109 +1540,10 @@ namespace DialogEditor.ViewModels
             StatusMessage = $"Pasted link under {parent.DisplayText}: {linkPtr.Node?.DisplayText}";
         }
 
-        private DialogNode CloneNode(DialogNode original)
-        {
-            return CloneNodeWithDepth(original, 0, new HashSet<DialogNode>());
-        }
-
-        private DialogNode CloneNodeWithDepth(DialogNode original, int depth, HashSet<DialogNode> visited)
-        {
-            // Prevent infinite recursion with depth limit
-            const int MAX_DEPTH = 100;
-            if (depth > MAX_DEPTH)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Maximum clone depth ({MAX_DEPTH}) exceeded - possible circular reference");
-                throw new InvalidOperationException($"Maximum clone depth ({MAX_DEPTH}) exceeded during node cloning");
-            }
-
-            // Prevent circular reference cloning
-            if (!visited.Add(original))
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Circular reference detected during clone at depth {depth} - creating link instead");
-                // Return a simple node without children to break the cycle
-                return new DialogNode
-                {
-                    Type = original.Type,
-                    Text = CloneLocString(original.Text),
-                    Speaker = original.Speaker,
-                    Comment = original.Comment + " [CIRCULAR REF]",
-                    Pointers = new List<DialogPtr>() // No children to prevent infinite loop
-                };
-            }
-
-            // Deep copy of node
-            var clone = new DialogNode
-            {
-                Type = original.Type,
-                Text = CloneLocString(original.Text),
-                Speaker = original.Speaker,
-                Comment = original.Comment,
-                Sound = original.Sound,
-                ScriptAction = original.ScriptAction,
-                Animation = original.Animation,
-                AnimationLoop = original.AnimationLoop,
-                Delay = original.Delay,
-                Quest = original.Quest,
-                QuestEntry = original.QuestEntry,
-                Pointers = new List<DialogPtr>(), // Empty - will populate below
-                ActionParams = new Dictionary<string, string>(original.ActionParams ?? new Dictionary<string, string>())
-            };
-
-            // Recursively clone all child pointers
-            foreach (var ptr in original.Pointers)
-            {
-                // CRITICAL FIX: Null safety - skip if ptr.Node is null
-                if (ptr.Node == null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Skipping null pointer during clone of '{original.DisplayText}'");
-                    continue;
-                }
-
-                var clonedChild = CloneNodeWithDepth(ptr.Node, depth + 1, visited);
-
-                // Add cloned child to dialog lists using AddNodeInternal to update LinkRegistry
-                CurrentDialog!.AddNodeInternal(clonedChild, clonedChild.Type);
-
-                // Get the correct index after adding (LinkRegistry will track this)
-                var nodeIndex = (uint)CurrentDialog.GetNodeIndex(clonedChild, clonedChild.Type);
-
-                // Create pointer to cloned child
-                var clonedPtr = new DialogPtr
-                {
-                    Node = clonedChild,
-                    Type = clonedChild.Type,
-                    Index = nodeIndex,
-                    IsLink = ptr.IsLink,
-                    ScriptAppears = ptr.ScriptAppears,
-                    ConditionParams = new Dictionary<string, string>(ptr.ConditionParams ?? new Dictionary<string, string>()),
-                    Comment = ptr.Comment,
-                    LinkComment = ptr.LinkComment,
-                    Parent = CurrentDialog
-                };
-
-                clone.Pointers.Add(clonedPtr);
-
-                // Register the new pointer with LinkRegistry
-                CurrentDialog.LinkRegistry.RegisterLink(clonedPtr);
-            }
-
-            return clone;
-        }
-
-        private LocString CloneLocString(LocString? original)
-        {
-            if (original == null)
-                return new LocString();
-
-            var clone = new LocString();
-
-            foreach (var kvp in original.Strings)
-            {
-                clone.Strings[kvp.Key] = kvp.Value;
-            }
-
-            return clone;
-        }
+        // DELETED: 103 lines of node cloning code (2025-11-19)
+        // Moved to NodeCloningService for better separation of concerns.
+        // Methods removed: CloneNode, CloneNodeWithDepth, CloneLocString
+        // MainViewModel now uses _cloningService for all cloning operations.
 
         // Phase 1 Step 8: Copy Operations (Clipboard)
         public string? GetNodeText(TreeViewSafeNode? node)

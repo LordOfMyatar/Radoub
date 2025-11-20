@@ -13,9 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.17-alpha] - 2025-11-19
 **Branch**: `parley/refactor/epic-99-cleanup-dead-code` | **PR**: #TBD
 
-### Epic #99: MainViewModel Refactoring - Phase 7 (Dead Code Removal & Index Management)
+### Epic #99: MainViewModel Refactoring - Phase 7 (Dead Code Removal & Service Extraction)
 
-Remove deprecated orphan containerization code and extract index management to dedicated service.
+Remove deprecated orphan containerization code and extract index management and node cloning to dedicated services.
 
 ### Added
 - **IndexManager service** (~280 lines) - Extracted from MainViewModel
@@ -23,9 +23,13 @@ Remove deprecated orphan containerization code and extract index management to d
   - UpdatePointersForMove - Updates pointers during move operations
   - ValidateMoveIntegrity - Validates pointer index integrity
   - PerformMove - Full move operation with index tracking
+- **NodeCloningService** (~140 lines) - Extracted from MainViewModel
+  - CloneNode - Deep clones dialog nodes with all properties
+  - CloneNodeWithDepth - Recursive cloning with circular reference detection
+  - CloneLocString - Deep copies localized string objects
 
 ### Removed
-- **~1,010 lines of code** from MainViewModel:
+- **~1,108 lines of code** from MainViewModel:
   - **693 lines** of deprecated orphan containerization code:
     - FindOrphanedNodes(TreeViewRootNode) - Replaced by OrphanNodeManager.RemoveOrphanedNodes
     - CreateOrUpdateOrphanContainers - Replaced by ScrapManager (Scrap Tab)
@@ -44,15 +48,21 @@ Remove deprecated orphan containerization code and extract index management to d
     - PerformMove - Moved to IndexManager
     - UpdatePointersForMove - Moved to IndexManager
     - ValidateMoveIntegrity - Moved to IndexManager
+  - **~98 lines** of node cloning code (moved to NodeCloningService):
+    - CloneNode - Moved to NodeCloningService
+    - CloneNodeWithDepth - Moved to NodeCloningService
+    - CloneLocString - Moved to NodeCloningService
 
 ### Changed
-- MainViewModel reduced from 2,956 to 1,946 lines (-1,010 lines, 34% reduction)
+- MainViewModel reduced from 2,956 to 1,848 lines (-1,108 lines, 37% reduction)
 - MainViewModel now uses _indexManager service for all index operations
+- MainViewModel now uses _cloningService for all node cloning operations
 - Added deletion comments documenting removed methods for reference
 
 ### Notes
 - All orphan functionality now consolidated in OrphanNodeManager service
 - All index management now consolidated in IndexManager service
+- All node cloning now consolidated in NodeCloningService
 - Git history preserves original implementations if needed
 - No functional changes - purely refactoring and dead code removal
 
