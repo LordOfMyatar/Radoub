@@ -16,8 +16,8 @@
     "contrast_level": "AAA"
   },
   "colors": {
-    "background": "#E8E8E8",
-    "sidebar": "#D8D8D8",
+    "background": "#DDDDDD",
+    "sidebar": "#CCCCCC",
     "text": "#000000",
     "selection": "#0066CC",
     "border": "#999999",
