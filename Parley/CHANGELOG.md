@@ -10,6 +10,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.18-alpha] - 2025-11-20
+**Branch**: `parley/feat/epic-39-ui-ux` | **PR**: #140
+
+### Epic #39: Theme System with 8 Themes and Auto-Refresh
+
+Complete theme system with 8 official themes, automatic tree view refresh, and accessibility-focused colorblind options.
+
+### Added
+- **8 Official Themes**:
+  - **Light** - Clean, professional light theme (#FFFFFF)
+  - **Dark** - Modern dark theme (#2D2D2D)
+  - **VSCode Dark** - Faithful VSCode recreation (#1E1E1E)
+  - **Fluent Light** - Microsoft Fluent Design System (#F3F3F3)
+  - **Deuteranopia** - Red-green colorblind safe (#DDDDDD)
+  - **Protanopia** - Red colorblind safe (#DDDDDD)
+  - **Tritanopia** - Blue-yellow colorblind safe (#DDDDDD)
+  - **Angry Fruit Salad** - Easter egg nightmare theme (Comic Sans MS!)
+- **Theme System Features**:
+  - Tree view auto-refreshes on theme change (no file close/reopen needed)
+  - ThemeManager.ThemeApplied event for UI refresh notifications
+  - MainViewModel.RefreshTreeViewColors() public method
+  - Automatic theme file deployment (copies to build output)
+  - Theme-aware PC/Owner color overrides in SpeakerVisualHelper
+- **Theme Development Guide** (NonPublic/Theme_Development_Guide.md)
+  - JSON manifest structure documentation
+  - Color palette design guidelines
+  - Font and spacing configuration
+  - WCAG accessibility guidelines
+  - Colorblind-safe palette examples
+
+### Changed
+- **PC/Owner Colors** restored to original defaults:
+  - PC (Reply nodes): #4FC3F7 (light blue)
+  - Owner (Entry nodes): #FF8A65 (orange)
+  - Themes can override these for accessibility
+- **Colorblind Theme Backgrounds**: Medium gray (#DDDDDD) with darker sidebar (#AAAAAA) for better contrast
+- **Window Background**: Now uses dynamic ThemeBackground resource
+- **App.axaml**: Added Window background style binding to ThemeBackground
+
+### Fixed
+- Theme colors now apply to window backgrounds (Closes #60)
+- Tree view node colors update immediately on theme change
+- Fluent control backgrounds properly themed
+- Multi-NPC speaker colors working with theme system (Addresses #16, #36)
+
+### Technical
+- **Services/ThemeManager.cs**: Theme discovery, loading, application, and event firing
+- **Models/ThemeManifest.cs**: JSON theme definition model
+- **Utils/SpeakerVisualHelper.cs**: Theme override support for PC/Owner colors
+- **Parley.csproj**: Build configuration to copy Themes folder
+
+---
+
 ## [0.1.17-alpha] - 2025-11-19
 **Branch**: `parley/refactor/epic-99-cleanup-dead-code` | **PR**: #138
 
