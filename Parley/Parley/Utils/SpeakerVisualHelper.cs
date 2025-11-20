@@ -90,20 +90,38 @@ namespace DialogEditor.Utils
 
         /// <summary>
         /// Gets the color for a dialog speaker based on their identity.
-        /// PC always gets Blue, Owner always gets Orange, other NPCs get hash-assigned colors from the palette.
+        /// PC gets blue (or theme override), Owner gets orange (or theme override),
+        /// other NPCs get hash-assigned colors from the palette.
         /// </summary>
         /// <param name="speaker">The speaker tag/name (empty for Owner)</param>
         /// <param name="isPC">True if this is a PC (Player Character) reply node</param>
         /// <returns>Hex color string (e.g., "#4FC3F7")</returns>
         public static string GetSpeakerColor(string speaker, bool isPC)
         {
-            // PC always gets blue
-            if (isPC)
-                return ColorPalette.Blue;
+            // Check for theme overrides from Application resources
+            var app = Avalonia.Application.Current;
 
-            // Owner (empty speaker on Entry) always gets orange
+            // PC gets blue (or theme PC color override)
+            if (isPC)
+            {
+                if (app?.Resources.TryGetResource("ThemePCColor", Avalonia.Styling.ThemeVariant.Default, out var pcColorObj) == true
+                    && pcColorObj is string pcColor)
+                {
+                    return pcColor;
+                }
+                return ColorPalette.Blue;
+            }
+
+            // Owner (empty speaker on Entry) gets orange (or theme Owner color override)
             if (string.IsNullOrEmpty(speaker))
+            {
+                if (app?.Resources.TryGetResource("ThemeOwnerColor", Avalonia.Styling.ThemeVariant.Default, out var ownerColorObj) == true
+                    && ownerColorObj is string ownerColor)
+                {
+                    return ownerColor;
+                }
                 return ColorPalette.Orange;
+            }
 
             // Other NPCs get colors based on hash
             return ColorPalette.GetNpcColor(speaker);

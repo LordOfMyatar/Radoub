@@ -13,6 +13,11 @@
     <Application.Styles>
         <FluentTheme />
 
+        <!-- Theme-aware window background -->
+        <Style Selector="Window">
+            <Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorBase}"/>
+        </Style>
+
         <!-- Global font styles that respond to settings changes -->
         <!-- These will be updated dynamically from code-behind -->
         <Style Selector="TextBlock">

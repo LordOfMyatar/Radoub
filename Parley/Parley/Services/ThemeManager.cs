@@ -350,6 +350,17 @@ namespace DialogEditor.Services
                     }
                 }
             }
+
+            // Map tree colors to PC/Owner overrides for SpeakerVisualHelper
+            // TreeReply -> PC color, TreeEntry -> Owner color
+            if (!string.IsNullOrEmpty(colors.TreeReply))
+            {
+                resources["ThemePCColor"] = colors.TreeReply;
+            }
+            if (!string.IsNullOrEmpty(colors.TreeEntry))
+            {
+                resources["ThemeOwnerColor"] = colors.TreeEntry;
+            }
         }
 
         /// <summary>
