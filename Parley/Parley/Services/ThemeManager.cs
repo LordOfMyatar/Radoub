@@ -202,40 +202,60 @@ namespace DialogEditor.Services
         /// </summary>
         private void ApplyColors(IResourceDictionary resources, ThemeColors colors)
         {
-            // Comprehensive mapping to Avalonia system colors
+            // Comprehensive mapping to Avalonia system colors AND brushes
             // Background colors - main window background
             if (!string.IsNullOrEmpty(colors.Background))
             {
                 var bgColor = Color.Parse(colors.Background);
+                var bgBrush = new SolidColorBrush(bgColor);
+
+                // Set both color and brush resources
                 resources["SystemChromeMediumColor"] = bgColor;
                 resources["SystemChromeMediumLowColor"] = bgColor;
                 resources["SystemChromeHighColor"] = bgColor;
                 resources["SystemRegionColor"] = bgColor;
+
+                resources["SystemControlBackgroundAltHighBrush"] = bgBrush;
+                resources["SystemControlBackgroundAltMediumBrush"] = bgBrush;
+                resources["SystemControlBackgroundAltMediumHighBrush"] = bgBrush;
             }
 
             // Sidebar/Alt colors - panels, toolbars
             if (!string.IsNullOrEmpty(colors.Sidebar))
             {
                 var sidebarColor = Color.Parse(colors.Sidebar);
+                var sidebarBrush = new SolidColorBrush(sidebarColor);
+
                 resources["SystemAltMediumColor"] = sidebarColor;
                 resources["SystemAltHighColor"] = sidebarColor;
                 resources["SystemChromeLowColor"] = sidebarColor;
                 resources["SystemChromeWhiteColor"] = sidebarColor;
+
+                resources["SystemControlBackgroundAltHighBrush"] = sidebarBrush;
+                resources["SystemControlBackgroundChromeMediumBrush"] = sidebarBrush;
             }
 
             // Text colors
             if (!string.IsNullOrEmpty(colors.Text))
             {
                 var textColor = Color.Parse(colors.Text);
+                var textBrush = new SolidColorBrush(textColor);
+
                 resources["SystemBaseHighColor"] = textColor;
                 resources["SystemBaseMediumHighColor"] = textColor;
                 resources["SystemBaseMediumColor"] = textColor;
+
+                resources["SystemControlForegroundBaseHighBrush"] = textBrush;
+                resources["SystemControlForegroundBaseMediumBrush"] = textBrush;
+                resources["SystemControlForegroundBaseMediumHighBrush"] = textBrush;
             }
 
             // Accent color - buttons, highlights
             if (!string.IsNullOrEmpty(colors.Accent))
             {
                 var accentColor = Color.Parse(colors.Accent);
+                var accentBrush = new SolidColorBrush(accentColor);
+
                 resources["SystemAccentColor"] = accentColor;
                 resources["SystemAccentColorLight1"] = accentColor;
                 resources["SystemAccentColorLight2"] = accentColor;
@@ -243,24 +263,36 @@ namespace DialogEditor.Services
                 resources["SystemAccentColorDark1"] = accentColor;
                 resources["SystemAccentColorDark2"] = accentColor;
                 resources["SystemAccentColorDark3"] = accentColor;
+
+                resources["SystemControlHighlightAccentBrush"] = accentBrush;
             }
 
             // Selection color
             if (!string.IsNullOrEmpty(colors.Selection))
             {
                 var selColor = Color.Parse(colors.Selection);
+                var selBrush = new SolidColorBrush(selColor);
+
                 resources["SystemListLowColor"] = selColor;
                 resources["SystemListMediumColor"] = selColor;
+
+                resources["SystemControlHighlightListLowBrush"] = selBrush;
+                resources["SystemControlHighlightListMediumBrush"] = selBrush;
             }
 
             // Border colors
             if (!string.IsNullOrEmpty(colors.Border))
             {
                 var borderColor = Color.Parse(colors.Border);
+                var borderBrush = new SolidColorBrush(borderColor);
+
                 resources["SystemBaseMediumLowColor"] = borderColor;
                 resources["SystemBaseLowColor"] = borderColor;
                 resources["SystemChromeDisabledLowColor"] = borderColor;
                 resources["SystemChromeDisabledHighColor"] = borderColor;
+
+                resources["SystemControlForegroundBaseMediumLowBrush"] = borderBrush;
+                resources["SystemControlForegroundBaseLowBrush"] = borderBrush;
             }
 
             // Also create Theme-prefixed resources for direct use
