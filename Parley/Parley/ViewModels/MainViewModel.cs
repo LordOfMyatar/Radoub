@@ -28,6 +28,7 @@ namespace DialogEditor.ViewModels
         private readonly OrphanNodeManager _orphanManager = new(); // Service for orphan pointer cleanup
         private readonly TreeNavigationManager _treeNavManager = new(); // Service for tree navigation and state
         private readonly NodeOperationsManager _nodeOpsManager; // Service for node add/delete/move operations
+        private readonly IndexManager _indexManager = new(); // Service for pointer index management
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -333,7 +334,7 @@ namespace DialogEditor.ViewModels
                     // Attempt to fix by rebuilding LinkRegistry and recalculating indices
                     UnifiedLogger.LogApplication(LogLevel.INFO, "Attempting to auto-fix index issues...");
                     CurrentDialog.RebuildLinkRegistry();
-                    RecalculatePointerIndices();
+                    _indexManager.RecalculatePointerIndices(CurrentDialog);
 
                     // Re-validate after fix attempt
                     var errorsAfterFix = CurrentDialog.ValidatePointerIndices();
@@ -1010,202 +1011,10 @@ namespace DialogEditor.ViewModels
             return _nodeOpsManager.FindSiblingForFocus(CurrentDialog, node);
         }
 
-        private void PerformMove(List<DialogNode> list, DialogNodeType nodeType, uint oldIdx, uint newIdx)
-        {
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Starting move operation: {nodeType} [{oldIdx}] → [{newIdx}]");
-
-            // Create index tracker
-            var tracker = new IndexUpdateTracker();
-            tracker.CalculateMapping(oldIdx, newIdx, nodeType);
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, tracker.GetMoveDescription());
-
-            // Save the node we're moving for later focus restoration
-            var movedNode = list[(int)oldIdx];
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"Moving node: '{movedNode.Text}' (type={movedNode.Type})");
-
-            // Update all affected pointers
-            UpdatePointersForMove(tracker);
-
-            // Perform actual list reorder
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"BEFORE MOVE - List order:");
-            for (int i = 0; i < list.Count; i++)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  [{i}] = '{list[i].Text}'");
-            }
-
-            list.RemoveAt((int)oldIdx);
-            list.Insert((int)newIdx, movedNode);
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"AFTER MOVE - List order:");
-            for (int i = 0; i < list.Count; i++)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  [{i}] = '{list[i].Text}'");
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"List reordered: removed at {oldIdx}, inserted at {newIdx}");
-
-            // Validate integrity
-            if (!ValidateMoveIntegrity())
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR,
-                    "Move validation FAILED - index corruption detected!");
-                StatusMessage = "Move failed - integrity check failed (use Undo to revert)";
-                // User can use Undo (Ctrl+Z) to revert failed operations
-                return;
-            }
-
-            // Mark as changed
-            HasUnsavedChanges = true;
-
-            // Refresh UI - need to rebuild tree structure
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Refreshing tree view...");
-            PopulateDialogNodes();
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed");
-
-            StatusMessage = $"Moved {nodeType} from position {oldIdx} to {newIdx}";
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Move completed successfully: {nodeType} [{oldIdx}] → [{newIdx}]");
-        }
-
-        private void UpdatePointersForMove(IndexUpdateTracker tracker)
-        {
-            if (CurrentDialog == null) return;
-
-            int updateCount = 0;
-
-            // Update StartingList pointers (if moving entries)
-            if (tracker.ListType == DialogNodeType.Entry)
-            {
-                foreach (var start in CurrentDialog.Starts)
-                {
-                    if (tracker.TryGetUpdatedIndex(start.Index, out uint newIdx))
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                            $"StartingList: Index {start.Index} → {newIdx}");
-                        start.Index = newIdx;
-                        updateCount++;
-                    }
-                }
-            }
-
-            // Update Entry → Reply pointers (if moving replies)
-            if (tracker.ListType == DialogNodeType.Reply)
-            {
-                foreach (var entry in CurrentDialog.Entries)
-                {
-                    foreach (var ptr in entry.Pointers)
-                    {
-                        if (tracker.TryGetUpdatedIndex(ptr.Index, out uint newIdx))
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                                $"Entry '{entry.DisplayText}' → Reply: Index {ptr.Index} → {newIdx}");
-                            ptr.Index = newIdx;
-                            updateCount++;
-                        }
-                    }
-                }
-            }
-
-            // Update Reply → Entry pointers (if moving entries)
-            if (tracker.ListType == DialogNodeType.Entry)
-            {
-                foreach (var reply in CurrentDialog.Replies)
-                {
-                    foreach (var ptr in reply.Pointers)
-                    {
-                        if (tracker.TryGetUpdatedIndex(ptr.Index, out uint newIdx))
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                                $"Reply '{reply.DisplayText}' → Entry: Index {ptr.Index} → {newIdx}");
-                            ptr.Index = newIdx;
-                            updateCount++;
-                        }
-                    }
-                }
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Updated {updateCount} pointer indices");
-        }
-
-        private bool ValidateMoveIntegrity()
-        {
-            if (CurrentDialog == null) return false;
-
-            try
-            {
-                // Validate StartingList pointers
-                foreach (var start in CurrentDialog.Starts)
-                {
-                    if (start.Index >= CurrentDialog.Entries.Count)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.ERROR,
-                            $"Invalid Start Index: {start.Index} >= Entry count {CurrentDialog.Entries.Count}");
-                        return false;
-                    }
-
-                    if (start.Node != CurrentDialog.Entries[(int)start.Index])
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.ERROR,
-                            $"Start pointer mismatch: Index {start.Index} does not point to expected node");
-                        return false;
-                    }
-                }
-
-                // Validate Entry → Reply pointers
-                foreach (var entry in CurrentDialog.Entries)
-                {
-                    foreach (var ptr in entry.Pointers)
-                    {
-                        if (ptr.Index >= CurrentDialog.Replies.Count)
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.ERROR,
-                                $"Invalid Reply Index in Entry '{entry.DisplayText}': {ptr.Index} >= Reply count {CurrentDialog.Replies.Count}");
-                            return false;
-                        }
-
-                        if (ptr.Node != CurrentDialog.Replies[(int)ptr.Index])
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.ERROR,
-                                $"Entry pointer mismatch: Index {ptr.Index} does not point to expected node");
-                            return false;
-                        }
-                    }
-                }
-
-                // Validate Reply → Entry pointers
-                foreach (var reply in CurrentDialog.Replies)
-                {
-                    foreach (var ptr in reply.Pointers)
-                    {
-                        if (ptr.Index >= CurrentDialog.Entries.Count)
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.ERROR,
-                                $"Invalid Entry Index in Reply '{reply.DisplayText}': {ptr.Index} >= Entry count {CurrentDialog.Entries.Count}");
-                            return false;
-                        }
-
-                        if (ptr.Node != CurrentDialog.Entries[(int)ptr.Index])
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.ERROR,
-                                $"Reply pointer mismatch: Index {ptr.Index} does not point to expected node");
-                            return false;
-                        }
-                    }
-                }
-
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Move integrity validation PASSED");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Validation exception: {ex.Message}");
-                return false;
-            }
-        }
+        // DELETED: 195 lines of index management code (2025-11-19)
+        // Moved to IndexManager service for better separation of concerns.
+        // Methods removed: PerformMove, UpdatePointersForMove, ValidateMoveIntegrity, RecalculatePointerIndices
+        // MainViewModel now uses _indexManager service for all index operations.
 
         private void RefreshTreeView()
         {
@@ -1438,7 +1247,7 @@ namespace DialogEditor.ViewModels
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed cut Reply from list (was only reference): {node.DisplayText}");
                 }
                 // CRITICAL: Recalculate all pointer indices after removing from list
-                RecalculatePointerIndices();
+                _indexManager.RecalculatePointerIndices(CurrentDialog);
             }
             else
             {
@@ -1489,48 +1298,6 @@ namespace DialogEditor.ViewModels
             return refCount > 1;
         }
 
-        /// <summary>
-        /// CRITICAL: Recalculates all pointer indices to match current list positions
-        /// This must be called after any operation that removes nodes from Entries/Replies lists
-        /// </summary>
-        private void RecalculatePointerIndices()
-        {
-            if (CurrentDialog == null) return;
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Recalculating all pointer indices using LinkRegistry");
-
-            // Rebuild the LinkRegistry from current dialog state
-            CurrentDialog.RebuildLinkRegistry();
-
-            // Update all Entry node indices
-            for (uint i = 0; i < CurrentDialog.Entries.Count; i++)
-            {
-                var entry = CurrentDialog.Entries[(int)i];
-                CurrentDialog.LinkRegistry.UpdateNodeIndex(entry, i, DialogNodeType.Entry);
-            }
-
-            // Update all Reply node indices
-            for (uint i = 0; i < CurrentDialog.Replies.Count; i++)
-            {
-                var reply = CurrentDialog.Replies[(int)i];
-                CurrentDialog.LinkRegistry.UpdateNodeIndex(reply, i, DialogNodeType.Reply);
-            }
-
-            // Validate all indices are correct
-            var errors = CurrentDialog.ValidatePointerIndices();
-            if (errors.Count > 0)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Index validation found {errors.Count} issues after recalculation:");
-                foreach (var error in errors)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"  - {error}");
-                }
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "All pointer indices validated successfully");
-            }
-        }
 
         private void DetachNodeFromParent(DialogNode node)
         {
@@ -1649,7 +1416,7 @@ namespace DialogEditor.ViewModels
                 CurrentDialog.LinkRegistry.RegisterLink(startPtr);
 
                 // CRITICAL: Recalculate indices in case recursive cloning added multiple nodes
-                RecalculatePointerIndices();
+                _indexManager.RecalculatePointerIndices(CurrentDialog);
 
                 RefreshTreeView();
                 HasUnsavedChanges = true;
@@ -1718,7 +1485,7 @@ namespace DialogEditor.ViewModels
             CurrentDialog.LinkRegistry.RegisterLink(newPtr);
 
             // CRITICAL: Recalculate indices in case recursive cloning added multiple nodes
-            RecalculatePointerIndices();
+            _indexManager.RecalculatePointerIndices(CurrentDialog);
 
             RefreshTreeView();
             HasUnsavedChanges = true;
@@ -2118,7 +1885,7 @@ namespace DialogEditor.ViewModels
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "Pointer registered in LinkRegistry");
 
             // Recalculate indices
-            RecalculatePointerIndices();
+            _indexManager.RecalculatePointerIndices(CurrentDialog);
 
             // Refresh UI
             RefreshTreeView();

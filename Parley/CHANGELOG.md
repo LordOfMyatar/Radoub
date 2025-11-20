@@ -13,12 +13,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.17-alpha] - 2025-11-19
 **Branch**: `parley/refactor/epic-99-cleanup-dead-code` | **PR**: #TBD
 
-### Epic #99: MainViewModel Refactoring - Phase 7 (Dead Code Removal)
+### Epic #99: MainViewModel Refactoring - Phase 7 (Dead Code Removal & Index Management)
 
-Remove deprecated orphan containerization code already replaced by OrphanNodeManager and ScrapManager.
+Remove deprecated orphan containerization code and extract index management to dedicated service.
+
+### Added
+- **IndexManager service** (~280 lines) - Extracted from MainViewModel
+  - RecalculatePointerIndices - Recalculates all pointer indices after list changes
+  - UpdatePointersForMove - Updates pointers during move operations
+  - ValidateMoveIntegrity - Validates pointer index integrity
+  - PerformMove - Full move operation with index tracking
 
 ### Removed
-- **~770 lines of deprecated code** from MainViewModel:
+- **~1,010 lines of code** from MainViewModel:
   - **693 lines** of deprecated orphan containerization code:
     - FindOrphanedNodes(TreeViewRootNode) - Replaced by OrphanNodeManager.RemoveOrphanedNodes
     - CreateOrUpdateOrphanContainers - Replaced by ScrapManager (Scrap Tab)
@@ -32,20 +39,26 @@ Remove deprecated orphan containerization code already replaced by OrphanNodeMan
     - MarkReachableEntries - Never called from anywhere
     - FindOrphanedNodes() (no-param version) - Never called
     - MarkReachable - Only called by dead FindOrphanedNodes()
+  - **~240 lines** of index management code (moved to IndexManager service):
+    - RecalculatePointerIndices - Moved to IndexManager
+    - PerformMove - Moved to IndexManager
+    - UpdatePointersForMove - Moved to IndexManager
+    - ValidateMoveIntegrity - Moved to IndexManager
 
 ### Changed
-- MainViewModel reduced from 2,956 to ~2,188 lines (-768 lines, 26% reduction)
+- MainViewModel reduced from 2,956 to 1,946 lines (-1,010 lines, 34% reduction)
+- MainViewModel now uses _indexManager service for all index operations
 - Added deletion comments documenting removed methods for reference
 
 ### Notes
 - All orphan functionality now consolidated in OrphanNodeManager service
-- OrphanNodeManager already marked these methods as deprecated with NotImplementedException
+- All index management now consolidated in IndexManager service
 - Git history preserves original implementations if needed
-- No functional changes - purely dead code removal
+- No functional changes - purely refactoring and dead code removal
 
 ### Tests
-- ✅ Build successful (0 errors, 6 warnings)
-- ✅ All 22 orphan-related tests passing
+- ✅ Build successful (0 errors, 2 warnings)
+- ✅ All 231 tests passing (16 skipped GUI tests)
 
 ---
 
