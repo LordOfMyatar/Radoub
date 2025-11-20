@@ -31,7 +31,13 @@
     "tree_link": "#FF00FF",
     "button_primary": "#FF6600",
     "button_secondary": "#00FF00",
-    "button_hover": "#FF0099"
+    "button_hover": "#FF0099",
+    "speaker_1": "#FF00FF",
+    "speaker_2": "#00FFFF",
+    "speaker_3": "#FFFF00",
+    "speaker_4": "#FF0099",
+    "speaker_5": "#00FF00",
+    "speaker_6": "#FF6600"
   },
   "fonts": {
     "primary": "Comic Sans MS",

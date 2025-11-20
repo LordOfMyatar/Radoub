@@ -137,6 +137,25 @@ namespace DialogEditor.Models
 
         [JsonPropertyName("button_hover")]
         public string? ButtonHover { get; set; }
+
+        // Multi-NPC speaker colors (Issue #16 integration)
+        [JsonPropertyName("speaker_1")]
+        public string? Speaker1 { get; set; }
+
+        [JsonPropertyName("speaker_2")]
+        public string? Speaker2 { get; set; }
+
+        [JsonPropertyName("speaker_3")]
+        public string? Speaker3 { get; set; }
+
+        [JsonPropertyName("speaker_4")]
+        public string? Speaker4 { get; set; }
+
+        [JsonPropertyName("speaker_5")]
+        public string? Speaker5 { get; set; }
+
+        [JsonPropertyName("speaker_6")]
+        public string? Speaker6 { get; set; }
     }
 
     /// <summary>

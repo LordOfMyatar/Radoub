@@ -30,7 +30,13 @@
     "tree_link": "#858585",
     "button_primary": "#0E639C",
     "button_secondary": "#5F6A79",
-    "button_hover": "#1177BB"
+    "button_hover": "#1177BB",
+    "speaker_1": "#9CDCFE",
+    "speaker_2": "#C586C0",
+    "speaker_3": "#F48771",
+    "speaker_4": "#4EC9B0",
+    "speaker_5": "#DCDCAA",
+    "speaker_6": "#CE9178"
   },
   "fonts": {
     "primary": "$Default",
