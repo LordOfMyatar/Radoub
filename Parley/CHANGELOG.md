@@ -11,9 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.19-alpha] - TBD
-**Branch**: `parley/feat/epic-108-inline-editing` | **PR**: #TBD
+**Branch**: `parley/feat/epic-108-inline-editing` | **PR**: #142
 
-### Epic #108: Inline Editing & Panel Persistence
+### Epic #99: Inline Editing & Panel Persistence (Issue #108)
 
 Inline editing for node text and panel state persistence across sessions.
 
