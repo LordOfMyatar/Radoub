@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.19-alpha] - TBD
+**Branch**: `parley/feat/epic-108-inline-editing` | **PR**: #TBD
+
+### Epic #108: Inline Editing & Panel Persistence
+
+Inline editing for node text and panel state persistence across sessions.
+
+---
+
 ## [0.1.18-alpha] - 2025-11-20
 **Branch**: `parley/feat/epic-39-ui-ux` | **PR**: #140
 
