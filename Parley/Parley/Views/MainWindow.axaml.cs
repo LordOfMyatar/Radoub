@@ -84,11 +84,24 @@ namespace DialogEditor.Views
             // Hook up menu events
             this.Opened += async (s, e) =>
             {
-                // Restore window position from settings
+                // Restore window position from settings (after window is open and screens are available)
                 var settings = SettingsService.Instance;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring window position: Left={settings.WindowLeft}, Top={settings.WindowTop}, Current={Position.X},{Position.Y}");
+
                 if (settings.WindowLeft >= 0 && settings.WindowTop >= 0)
                 {
-                    Position = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
+                    var targetPos = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
+
+                    // Validate position is on a visible screen
+                    if (IsPositionOnScreen(targetPos))
+                    {
+                        Position = targetPos;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position restored to ({targetPos.X}, {targetPos.Y})");
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN, $"Saved position ({targetPos.X}, {targetPos.Y}) is off-screen, using default");
+                    }
                 }
 
                 PopulateRecentFilesMenu();
@@ -498,6 +511,7 @@ namespace DialogEditor.Views
             {
                 settings.WindowLeft = Position.X;
                 settings.WindowTop = Position.Y;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Saved window position: ({Position.X}, {Position.Y})");
             }
 
             // Width/Height already bound to settings with TwoWay, but ensure they're saved
@@ -506,6 +520,25 @@ namespace DialogEditor.Views
                 settings.WindowWidth = Width;
                 settings.WindowHeight = Height;
             }
+        }
+
+        private bool IsPositionOnScreen(PixelPoint position)
+        {
+            // Check if position is visible on any screen
+            var screens = Screens.All;
+            foreach (var screen in screens)
+            {
+                var bounds = screen.Bounds;
+                // Check if the top-left corner is within screen bounds (with some tolerance)
+                if (position.X >= bounds.X - 50 &&
+                    position.X < bounds.X + bounds.Width &&
+                    position.Y >= bounds.Y - 50 &&
+                    position.Y < bounds.Y + bounds.Height)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         // Phase 1 Step 4: Removed UnsavedChangesDialog - auto-save provides safety
