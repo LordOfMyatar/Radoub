@@ -21,6 +21,7 @@ Continuation of Epic #39 - panel size/window position persistence and tree view 
 - [ ] Panel size persistence (widths)
 - [ ] Window position/size persistence
 - [ ] Inline editing for entry/reply node text in tree view
+- [ ] Move "Show Debug Panel" from View menu to Settings > Logging section
 
 ---
 
