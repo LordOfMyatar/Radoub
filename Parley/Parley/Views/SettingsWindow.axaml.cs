@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Interactivity;
@@ -180,6 +181,7 @@ namespace DialogEditor.Views
             var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
             var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
             var logRetentionLabel = this.FindControl<TextBlock>("LogRetentionLabel");
+            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
 
             if (logLevelComboBox != null)
             {
@@ -195,6 +197,11 @@ namespace DialogEditor.Views
             if (logRetentionLabel != null)
             {
                 logRetentionLabel.Text = $"{settings.LogRetentionSessions} sessions";
+            }
+
+            if (showDebugPanelCheckBox != null)
+            {
+                showDebugPanelCheckBox.IsChecked = settings.DebugWindowVisible;
             }
 
             // Parameter Cache Settings
@@ -958,6 +965,32 @@ namespace DialogEditor.Views
             }
         }
 
+        private void OnShowDebugPanelChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            // Apply debug panel visibility immediately
+            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
+            if (showDebugPanelCheckBox != null)
+            {
+                bool isVisible = showDebugPanelCheckBox.IsChecked ?? false;
+                SettingsService.Instance.DebugWindowVisible = isVisible;
+
+                // Find MainWindow and update debug tab visibility
+                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    if (desktop.MainWindow is MainWindow mainWindow)
+                    {
+                        var debugTab = mainWindow.FindControl<TabItem>("DebugTab");
+                        if (debugTab != null)
+                        {
+                            debugTab.IsVisible = isVisible;
+                        }
+                    }
+                }
+            }
+        }
+
         private void OnSafeModeChanged(object? sender, RoutedEventArgs e)
         {
             if (_isInitializing) return;
@@ -1099,6 +1132,7 @@ namespace DialogEditor.Views
             // Logging Settings
             var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
             var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
+            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
 
             if (logLevelComboBox?.SelectedItem is LogLevel logLevel)
             {
@@ -1108,6 +1142,11 @@ namespace DialogEditor.Views
             if (logRetentionSlider != null)
             {
                 settings.LogRetentionSessions = (int)logRetentionSlider.Value;
+            }
+
+            if (showDebugPanelCheckBox != null)
+            {
+                settings.DebugWindowVisible = showDebugPanelCheckBox.IsChecked ?? false;
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "Settings applied successfully");

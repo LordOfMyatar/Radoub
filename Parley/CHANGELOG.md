@@ -10,6 +10,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.19-alpha] - 2025-11-20
+**Branch**: `parley/feat/epic-108-inline-editing` | **PR**: #142
+
+### Epic #39: UI/UX Enhancements (Issue #108)
+
+UI state persistence improvements - panel sizes, window position, and debug panel relocation.
+
+### Added
+- **Panel Size Persistence**: Left/right panel widths and top/bottom panel heights persist across sessions
+- **Window Position Persistence**: Window position and size restore correctly on application launch
+- **Debug Panel in Settings**: "Show Debug Panel" moved from View menu to Settings > Logging section as checkbox
+  - Applies immediately when toggled (no restart required)
+  - Visibility state persists across sessions
+
+### Changed
+- Default left panel width increased from 700px to 800px for better proportions
+- Debug panel visibility now controlled via Settings > Logging instead of View menu
+
+### Fixed
+- Window position restoration now works correctly (previously defaulted to top-left)
+- Panel sizes persist properly via code-behind (GridLength bindings don't support TwoWay mode)
+- Position saves blocked during window initialization to prevent overwriting saved values
+- Screen bounds validation prevents window spawning off-screen
+
+### Technical Details
+- GridSplitter positions saved when Grid PropertyChanged fires
+- Window position saves blocked during initial 500ms restore window
+- Added screen bounds validation for multi-monitor setups
+- Enhanced debug logging for position save/restore troubleshooting
+
+### Known Limitations
+- Inline editing for tree view node text not implemented (deferred to future release)
+
+---
+
 ## [0.1.18-alpha] - 2025-11-20
 **Branch**: `parley/feat/epic-39-ui-ux` | **PR**: #140
 

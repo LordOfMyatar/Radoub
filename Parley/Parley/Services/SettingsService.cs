@@ -40,7 +40,11 @@ namespace DialogEditor.Services
         private double _windowWidth = 1200;
         private double _windowHeight = 800;
         private bool _windowMaximized = false;
-        
+
+        // Panel layout settings - GridSplitter positions (#108)
+        private double _leftPanelWidth = 800; // Tree+Text area width (default ~67% at 1200px window)
+        private double _topLeftPanelHeight = 400; // Dialog tree height (default 2* of left panels)
+
         // UI settings
         private double _fontSize = 14;
         private string _fontFamily = ""; // Empty string = use system default
@@ -162,7 +166,20 @@ namespace DialogEditor.Services
             get => _windowMaximized;
             set { if (SetProperty(ref _windowMaximized, value)) SaveSettings(); }
         }
-        
+
+        // Panel layout properties
+        public double LeftPanelWidth
+        {
+            get => _leftPanelWidth;
+            set { if (SetProperty(ref _leftPanelWidth, Math.Max(350, value))) SaveSettings(); }
+        }
+
+        public double TopLeftPanelHeight
+        {
+            get => _topLeftPanelHeight;
+            set { if (SetProperty(ref _topLeftPanelHeight, Math.Max(150, value))) SaveSettings(); }
+        }
+
         // UI properties
         public double FontSize
         {
@@ -454,6 +471,12 @@ namespace DialogEditor.Services
                         _windowHeight = Math.Max(300, settings.WindowHeight);
                         _windowMaximized = settings.WindowMaximized;
 
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded window position from settings: Left={_windowLeft}, Top={_windowTop}, Width={_windowWidth}, Height={_windowHeight}");
+
+                        // Load panel layout settings
+                        _leftPanelWidth = Math.Max(350, settings.LeftPanelWidth);
+                        _topLeftPanelHeight = Math.Max(150, settings.TopLeftPanelHeight);
+
                         // Load UI settings
                         _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
                         _fontFamily = settings.FontFamily ?? "";
@@ -543,6 +566,8 @@ namespace DialogEditor.Services
                     WindowWidth = WindowWidth,
                     WindowHeight = WindowHeight,
                     WindowMaximized = WindowMaximized,
+                    LeftPanelWidth = LeftPanelWidth,
+                    TopLeftPanelHeight = TopLeftPanelHeight,
                     FontSize = FontSize,
                     FontFamily = FontFamily,
                     IsDarkTheme = IsDarkTheme, // Keep for backwards compatibility
@@ -716,7 +741,11 @@ namespace DialogEditor.Services
             public double WindowWidth { get; set; } = 1200;
             public double WindowHeight { get; set; } = 800;
             public bool WindowMaximized { get; set; } = false;
-            
+
+            // Panel layout settings
+            public double LeftPanelWidth { get; set; } = 800;
+            public double TopLeftPanelHeight { get; set; } = 400;
+
             // UI settings
             public double FontSize { get; set; } = 14;
             public string FontFamily { get; set; } = "";

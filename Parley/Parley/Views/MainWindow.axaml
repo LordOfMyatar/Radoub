@@ -79,11 +79,6 @@
                 <MenuItem Header="Copy Tree _Structure" InputGesture="Ctrl+Shift+S" Click="OnCopyTreeStructureClick"/>
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem x:Name="ShowDebugMenuItem" Header="Show _Debug Console" Click="OnToggleDebugConsoleClick">
-                    <MenuItem.Icon>
-                        <CheckBox IsChecked="True" IsHitTestVisible="False" Focusable="False"/>
-                    </MenuItem.Icon>
-                </MenuItem>
                 <MenuItem Header="Clear Debug Output" Click="OnClearDebugClick"/>
                 <Separator/>
                 <MenuItem Header="_Logging">
@@ -133,17 +128,17 @@
 
 <!-- Main Content Area (spans rows 2-4 for left/right layout) -->
         <!-- DRAGON: Grid layout only - tree data binding in TreeView below -->
-        <Grid Grid.Row="2" Grid.RowSpan="3">
+        <Grid Grid.Row="2" Grid.RowSpan="3" x:Name="MainContentGrid">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="7*" MinWidth="500"/>  <!-- Tree+Text area (70%) -->
+                <ColumnDefinition Width="800" MinWidth="500"/>  <!-- Tree+Text area -->
                 <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="3*" MinWidth="350"/>  <!-- Properties area (30%) -->
+                <ColumnDefinition Width="*" MinWidth="350"/>  <!-- Properties area -->
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="2*" MinHeight="200"/>
+                <RowDefinition Height="400" MinHeight="200"/>
                 <RowDefinition Height="5"/>
-                <RowDefinition Height="1*" MinHeight="150"/>
+                <RowDefinition Height="*" MinHeight="150"/>
             </Grid.RowDefinitions>
 
             <!-- Dialog Tree View (top left) -->
