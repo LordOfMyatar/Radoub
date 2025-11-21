@@ -471,6 +471,8 @@ namespace DialogEditor.Services
                         _windowHeight = Math.Max(300, settings.WindowHeight);
                         _windowMaximized = settings.WindowMaximized;
 
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded window position from settings: Left={_windowLeft}, Top={_windowTop}, Width={_windowWidth}, Height={_windowHeight}");
+
                         // Load panel layout settings
                         _leftPanelWidth = Math.Max(350, settings.LeftPanelWidth);
                         _topLeftPanelHeight = Math.Max(150, settings.TopLeftPanelHeight);

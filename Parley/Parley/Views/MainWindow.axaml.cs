@@ -41,8 +41,8 @@ namespace DialogEditor.Views
         private const int ADD_NODE_DEBOUNCE_MS = 150; // Minimum delay between Ctrl+D operations
         private bool _isAddingNode = false; // Prevents overlapping node creation operations
 
-        // Flag to prevent saving position during initial restore
-        private bool _isRestoringPosition = false;
+        // Flag to prevent saving position during initial window setup and restore
+        private bool _isRestoringPosition = true; // Start as true, prevent saves during constructor/init
 
         // Session cache for recently used creature tags
         private readonly List<string> _recentCreatureTags = new();
@@ -512,6 +512,12 @@ namespace DialogEditor.Views
 
         private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
+            // Don't save during initial restore
+            if (_isRestoringPosition)
+            {
+                return;
+            }
+
             // Save size when window is resized (Width/Height properties change)
             if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
             {
