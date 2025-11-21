@@ -526,18 +526,24 @@ namespace DialogEditor.Views
         {
             // Check if position is visible on any screen
             var screens = Screens.All;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Checking position ({position.X}, {position.Y}) against {screens.Count} screens");
+
             foreach (var screen in screens)
             {
                 var bounds = screen.Bounds;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Screen: X={bounds.X}, Y={bounds.Y}, W={bounds.Width}, H={bounds.Height}, Primary={screen.IsPrimary}");
+
                 // Check if the top-left corner is within screen bounds (with some tolerance)
                 if (position.X >= bounds.X - 50 &&
                     position.X < bounds.X + bounds.Width &&
                     position.Y >= bounds.Y - 50 &&
                     position.Y < bounds.Y + bounds.Height)
                 {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Position is ON this screen");
                     return true;
                 }
             }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Position is OFF all screens");
             return false;
         }
 
