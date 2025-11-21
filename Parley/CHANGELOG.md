@@ -13,9 +13,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.19-alpha] - TBD
 **Branch**: `parley/feat/epic-108-inline-editing` | **PR**: #142
 
-### Epic #99: Inline Editing & Panel Persistence (Issue #108)
+### Epic #39: UI/UX Enhancements (Issue #108)
 
-Inline editing for node text and panel state persistence across sessions.
+Continuation of Epic #39 - panel size/window position persistence and tree view inline editing.
+
+### TODO
+- [ ] Panel size persistence (widths)
+- [ ] Window position/size persistence
+- [ ] Inline editing for entry/reply node text in tree view
 
 ---
 
