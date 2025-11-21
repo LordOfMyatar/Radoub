@@ -1221,51 +1221,15 @@ namespace DialogEditor.Views
             try
             {
                 var debugTab = this.FindControl<TabItem>("DebugTab");
-                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
-
                 if (debugTab != null)
                 {
-                    debugTab.IsVisible = false;
-                    if (showDebugMenuItem != null)
-                        showDebugMenuItem.Header = "Show _Debug Console";
+                    // Set visibility from settings (default: false)
+                    debugTab.IsVisible = SettingsService.Instance.DebugWindowVisible;
                 }
             }
             catch (Exception ex)
             {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error hiding debug console: {ex.Message}");
-            }
-        }
-
-        private void OnToggleDebugConsoleClick(object? sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var debugTab = this.FindControl<TabItem>("DebugTab");
-                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
-
-                if (debugTab != null)
-                {
-                    bool isVisible = debugTab.IsVisible;
-                    if (isVisible)
-                    {
-                        debugTab.IsVisible = false;
-                        if (showDebugMenuItem != null)
-                            showDebugMenuItem.Header = "Show _Debug Console";
-                    }
-                    else
-                    {
-                        debugTab.IsVisible = true;
-                        if (showDebugMenuItem != null)
-                            showDebugMenuItem.Header = "Hide _Debug Console";
-                    }
-
-                    // Save the visibility state to settings
-                    SettingsService.Instance.DebugWindowVisible = debugTab.IsVisible;
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error toggling debug console: {ex.Message}");
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error setting debug console visibility: {ex.Message}");
             }
         }
 

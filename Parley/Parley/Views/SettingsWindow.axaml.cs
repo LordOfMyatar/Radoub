@@ -180,6 +180,7 @@ namespace DialogEditor.Views
             var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
             var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
             var logRetentionLabel = this.FindControl<TextBlock>("LogRetentionLabel");
+            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
 
             if (logLevelComboBox != null)
             {
@@ -195,6 +196,11 @@ namespace DialogEditor.Views
             if (logRetentionLabel != null)
             {
                 logRetentionLabel.Text = $"{settings.LogRetentionSessions} sessions";
+            }
+
+            if (showDebugPanelCheckBox != null)
+            {
+                showDebugPanelCheckBox.IsChecked = settings.DebugWindowVisible;
             }
 
             // Parameter Cache Settings
@@ -958,6 +964,12 @@ namespace DialogEditor.Views
             }
         }
 
+        private void OnShowDebugPanelChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+            // Debug panel visibility change will be applied when OK or Apply is clicked
+        }
+
         private void OnSafeModeChanged(object? sender, RoutedEventArgs e)
         {
             if (_isInitializing) return;
@@ -1099,6 +1111,7 @@ namespace DialogEditor.Views
             // Logging Settings
             var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
             var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
+            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
 
             if (logLevelComboBox?.SelectedItem is LogLevel logLevel)
             {
@@ -1108,6 +1121,11 @@ namespace DialogEditor.Views
             if (logRetentionSlider != null)
             {
                 settings.LogRetentionSessions = (int)logRetentionSlider.Value;
+            }
+
+            if (showDebugPanelCheckBox != null)
+            {
+                settings.DebugWindowVisible = showDebugPanelCheckBox.IsChecked ?? false;
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "Settings applied successfully");
