@@ -41,6 +41,9 @@ namespace DialogEditor.Views
         private const int ADD_NODE_DEBOUNCE_MS = 150; // Minimum delay between Ctrl+D operations
         private bool _isAddingNode = false; // Prevents overlapping node creation operations
 
+        // Flag to prevent saving position during initial restore
+        private bool _isRestoringPosition = false;
+
         // Session cache for recently used creature tags
         private readonly List<string> _recentCreatureTags = new();
 
@@ -85,6 +88,7 @@ namespace DialogEditor.Views
             this.Opened += async (s, e) =>
             {
                 // Restore window position from settings (after window is open and screens are available)
+                _isRestoringPosition = true;
                 var settings = SettingsService.Instance;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring window position: Left={settings.WindowLeft}, Top={settings.WindowTop}, Current={Position.X},{Position.Y}");
 
@@ -103,6 +107,10 @@ namespace DialogEditor.Views
                         UnifiedLogger.LogApplication(LogLevel.WARN, $"Saved position ({targetPos.X}, {targetPos.Y}) is off-screen, using default");
                     }
                 }
+
+                // Allow position saving after a short delay (to avoid saving the restore itself)
+                await Task.Delay(500);
+                _isRestoringPosition = false;
 
                 PopulateRecentFilesMenu();
                 // Start enabled plugins after window opens
@@ -490,7 +498,15 @@ namespace DialogEditor.Views
 
         private void OnWindowPositionChanged(object? sender, PixelPointEventArgs e)
         {
-            // Save position when window is moved (debounced by SettingsService)
+            // Don't save position during initial restore
+            if (_isRestoringPosition)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position changed during restore, skipping save: ({Position.X}, {Position.Y})");
+                return;
+            }
+
+            // Save position when window is moved
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position changed by user, saving: ({Position.X}, {Position.Y})");
             SaveWindowPosition();
         }
 
