@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Interactivity;
@@ -967,7 +968,27 @@ namespace DialogEditor.Views
         private void OnShowDebugPanelChanged(object? sender, RoutedEventArgs e)
         {
             if (_isInitializing) return;
-            // Debug panel visibility change will be applied when OK or Apply is clicked
+
+            // Apply debug panel visibility immediately
+            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
+            if (showDebugPanelCheckBox != null)
+            {
+                bool isVisible = showDebugPanelCheckBox.IsChecked ?? false;
+                SettingsService.Instance.DebugWindowVisible = isVisible;
+
+                // Find MainWindow and update debug tab visibility
+                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                {
+                    if (desktop.MainWindow is MainWindow mainWindow)
+                    {
+                        var debugTab = mainWindow.FindControl<TabItem>("DebugTab");
+                        if (debugTab != null)
+                        {
+                            debugTab.IsVisible = isVisible;
+                        }
+                    }
+                }
+            }
         }
 
         private void OnSafeModeChanged(object? sender, RoutedEventArgs e)

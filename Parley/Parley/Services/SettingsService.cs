@@ -42,7 +42,7 @@ namespace DialogEditor.Services
         private bool _windowMaximized = false;
 
         // Panel layout settings - GridSplitter positions (#108)
-        private double _leftPanelWidth = 700; // Tree+Text area width (default 70% of 1000px)
+        private double _leftPanelWidth = 800; // Tree+Text area width (default ~67% at 1200px window)
         private double _topLeftPanelHeight = 400; // Dialog tree height (default 2* of left panels)
 
         // UI settings
@@ -741,7 +741,7 @@ namespace DialogEditor.Services
             public bool WindowMaximized { get; set; } = false;
 
             // Panel layout settings
-            public double LeftPanelWidth { get; set; } = 700;
+            public double LeftPanelWidth { get; set; } = 800;
             public double TopLeftPanelHeight { get; set; } = 400;
 
             // UI settings

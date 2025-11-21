@@ -114,6 +114,7 @@ namespace DialogEditor.Views
             };
             this.Closing += OnWindowClosing;
             this.PositionChanged += OnWindowPositionChanged;
+            this.PropertyChanged += OnWindowPropertyChanged;
 
             // Phase 1 Fix: Set up keyboard shortcuts
             SetupKeyboardShortcuts();
@@ -142,6 +143,7 @@ namespace DialogEditor.Views
         {
             // Controls are now available, restore settings
             RestoreDebugSettings();
+            RestorePanelSizes();
         }
 
         /// <summary>
@@ -157,6 +159,51 @@ namespace DialogEditor.Views
                     _viewModel.RefreshTreeViewColors();
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after theme change");
                 });
+            }
+        }
+
+        private void RestorePanelSizes()
+        {
+            var settings = SettingsService.Instance;
+            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
+
+            if (mainContentGrid != null && mainContentGrid.ColumnDefinitions.Count > 0 && mainContentGrid.RowDefinitions.Count > 0)
+            {
+                // Column 0 is left panel (tree+text)
+                mainContentGrid.ColumnDefinitions[0].Width = new GridLength(settings.LeftPanelWidth, GridUnitType.Pixel);
+
+                // Row 0 is top panel (dialog tree)
+                mainContentGrid.RowDefinitions[0].Height = new GridLength(settings.TopLeftPanelHeight, GridUnitType.Pixel);
+
+                // Watch for splitter changes
+                mainContentGrid.PropertyChanged += OnMainContentGridPropertyChanged;
+            }
+        }
+
+        private void OnMainContentGridPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            // Save panel sizes when grid layout changes (splitters dragged)
+            SavePanelSizes();
+        }
+
+        private void SavePanelSizes()
+        {
+            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
+
+            if (mainContentGrid != null && mainContentGrid.ColumnDefinitions.Count > 0 && mainContentGrid.RowDefinitions.Count > 0)
+            {
+                var leftPanelColumn = mainContentGrid.ColumnDefinitions[0];
+                var topLeftPanelRow = mainContentGrid.RowDefinitions[0];
+
+                if (leftPanelColumn.Width.IsAbsolute)
+                {
+                    SettingsService.Instance.LeftPanelWidth = leftPanelColumn.Width.Value;
+                }
+
+                if (topLeftPanelRow.Height.IsAbsolute)
+                {
+                    SettingsService.Instance.TopLeftPanelHeight = topLeftPanelRow.Height.Value;
+                }
             }
         }
 
@@ -434,14 +481,30 @@ namespace DialogEditor.Views
             SaveWindowPosition();
         }
 
+        private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            // Save size when window is resized (Width/Height properties change)
+            if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
+            {
+                SaveWindowPosition();
+            }
+        }
+
         private void SaveWindowPosition()
         {
-            // Save current window position to settings
+            // Save current window position and size to settings
             var settings = SettingsService.Instance;
             if (Position.X >= 0 && Position.Y >= 0)
             {
                 settings.WindowLeft = Position.X;
                 settings.WindowTop = Position.Y;
+            }
+
+            // Width/Height already bound to settings with TwoWay, but ensure they're saved
+            if (Width > 0 && Height > 0)
+            {
+                settings.WindowWidth = Width;
+                settings.WindowHeight = Height;
             }
         }
 

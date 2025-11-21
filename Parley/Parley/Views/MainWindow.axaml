@@ -130,13 +130,13 @@
         <!-- DRAGON: Grid layout only - tree data binding in TreeView below -->
         <Grid Grid.Row="2" Grid.RowSpan="3" x:Name="MainContentGrid">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=LeftPanelWidth, Mode=TwoWay}" MinWidth="500"/>  <!-- Tree+Text area -->
+                <ColumnDefinition Width="800" MinWidth="500"/>  <!-- Tree+Text area -->
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*" MinWidth="350"/>  <!-- Properties area -->
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=TopLeftPanelHeight, Mode=TwoWay}" MinHeight="200"/>
+                <RowDefinition Height="400" MinHeight="200"/>
                 <RowDefinition Height="5"/>
                 <RowDefinition Height="*" MinHeight="150"/>
             </Grid.RowDefinitions>
