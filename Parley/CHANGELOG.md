@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.20-alpha] - TBD
+**Branch**: `parley/feat/epic-39-inline-text` | **PR**: #TBD
+
+### Epic #39: UI/UX Enhancements (Issue #108)
+
+Inline text editing for dialog tree nodes.
+
+---
+
 ## [0.1.19-alpha] - 2025-11-20
 **Branch**: `parley/feat/epic-108-inline-editing` | **PR**: #142
 
