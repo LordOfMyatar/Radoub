@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.20-alpha] - TBD
-**Branch**: `parley/refactor/mainwindow-cleanup` | **PR**: #TBD
+**Branch**: `parley/refactor/mainwindow-cleanup` | **PR**: #164
 
 ### Epic #163: MainWindow.axaml.cs Refactoring Sprint
 
