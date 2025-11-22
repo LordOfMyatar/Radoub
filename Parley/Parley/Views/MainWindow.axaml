@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:DialogEditor.ViewModels"
         xmlns:models="using:DialogEditor.Models"
+        xmlns:converters="using:DialogEditor.Models"
         xmlns:services="using:DialogEditor.Services"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -208,12 +209,34 @@
                                           Width="16" Height="16"
                                           Stretch="Uniform"
                                           VerticalAlignment="Center"
-                                          Margin="0,2,0,0"/>
-                                    <!-- Node text -->
-                                    <TextBlock Text="{Binding DisplayText}"
+                                          Margin="0,2,0,0"
+                                          IsVisible="{Binding IsInEditMode, Converter={x:Static converters:NotConverter.Instance}}"/>
+                                    <!-- Node text (display mode) -->
+                                    <TextBlock Name="DisplayTextBlock"
+                                               Text="{Binding DisplayText}"
                                                TextWrapping="Wrap"
                                                Foreground="{Binding NodeColor}"
-                                               VerticalAlignment="Center"/>
+                                               VerticalAlignment="Center"
+                                               IsVisible="{Binding IsInEditMode, Converter={x:Static converters:NotConverter.Instance}}"/>
+                                    <!-- Node text (edit mode) -->
+                                    <Border Name="EditBorder"
+                                            BorderBrush="{DynamicResource SystemAccentColor}"
+                                            BorderThickness="1"
+                                            IsVisible="{Binding IsInEditMode}"
+                                            Margin="-2">
+                                        <TextBox Name="EditTextBox"
+                                                 Text="{Binding EditText}"
+                                                 MinWidth="200"
+                                                 MaxWidth="400"
+                                                 TextWrapping="Wrap"
+                                                 AcceptsReturn="False"
+                                                 Background="{DynamicResource ThemeBackground}"
+                                                 Foreground="{DynamicResource ThemeForeground}"
+                                                 BorderThickness="0"
+                                                 Padding="2"
+                                                 LostFocus="OnInlineEditLostFocus"
+                                                 KeyDown="OnInlineEditKeyDown"/>
+                                    </Border>
                                 </StackPanel>
                             </TreeDataTemplate>
                         </TreeView.DataTemplates>

@@ -405,6 +405,10 @@ namespace DialogEditor.Views
                             OnDeleteNodeClick(null, null!);
                             e.Handled = true;
                             break;
+                        case global::Avalonia.Input.Key.F2:
+                            StartInlineEdit();
+                            e.Handled = true;
+                            break;
                     }
                 }
             };
@@ -3570,27 +3574,39 @@ namespace DialogEditor.Views
                 }
             }
 
-            // Auto-focus to text box for immediate typing
-            // Delay allows tree view selection and properties panel population to complete
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Waiting 300ms for properties panel...");
-            await Task.Delay(300);
+            // Check if we should auto-start inline editing (for Ctrl+D workflow)
+            bool startInlineEdit = e == null || (e.Source is not Button);  // Not from button click
 
-            var textTextBox = this.FindControl<TextBox>("TextTextBox");
-            if (textTextBox != null)
+            if (startInlineEdit)
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Attempting to focus TextTextBox");
-
-                // Try multiple times to overcome focus stealing
-                textTextBox.Focus();
-                await Task.Delay(50);
-                textTextBox.Focus();
-                textTextBox.SelectAll();
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"OnAddSmartNodeClick: Focus set, IsFocused={textTextBox.IsFocused}");
+                // Auto-start inline editing for rapid dialog capture (Ctrl+D workflow)
+                UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Starting inline edit for new node");
+                await Task.Delay(200); // Small delay for tree to update
+                StartInlineEdit();
             }
             else
             {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "OnAddSmartNodeClick: TextTextBox control not found!");
+                // Traditional focus to text box (from menu/button click)
+                UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Waiting 300ms for properties panel...");
+                await Task.Delay(300);
+
+                var textTextBox = this.FindControl<TextBox>("TextTextBox");
+                if (textTextBox != null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Attempting to focus TextTextBox");
+
+                    // Try multiple times to overcome focus stealing
+                    textTextBox.Focus();
+                    await Task.Delay(50);
+                    textTextBox.Focus();
+                    textTextBox.SelectAll();
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"OnAddSmartNodeClick: Focus set, IsFocused={textTextBox.IsFocused}");
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.ERROR, "OnAddSmartNodeClick: TextTextBox control not found!");
+                }
             }
 
             // Trigger auto-save after node creation
@@ -3823,6 +3839,201 @@ namespace DialogEditor.Views
             var treeView = this.FindControl<TreeView>("DialogTreeView");
             return treeView?.SelectedItem as TreeViewSafeNode;
         }
+
+        #region Inline Text Editing
+
+        private TreeViewSafeNode? _currentEditNode;
+        private System.Timers.Timer? _inlineEditAutoSaveTimer;
+
+        /// <summary>
+        /// Start inline editing for the selected tree node
+        /// </summary>
+        private void StartInlineEdit()
+        {
+            var selectedNode = GetSelectedTreeNode();
+            if (selectedNode == null || !selectedNode.CanEdit)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Cannot start inline edit: node={selectedNode?.DisplayText ?? "null"}, canEdit={selectedNode?.CanEdit ?? false}");
+                return;
+            }
+
+            // Exit any previous edit
+            if (_currentEditNode != null && _currentEditNode != selectedNode)
+            {
+                CommitInlineEdit();
+            }
+
+            // Enter edit mode
+            _currentEditNode = selectedNode;
+            selectedNode.IsInEditMode = true;
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Started inline edit for: {selectedNode.DisplayText}");
+
+            // Focus the inline edit TextBox after a small delay
+            global::Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+            {
+                await Task.Delay(50); // Small delay for UI to update
+                var treeView = this.FindControl<TreeView>("DialogTreeView");
+                if (treeView != null)
+                {
+                    // Try to find the EditTextBox within the tree
+                    // This is a bit tricky since it's in a template
+                    // For now, just ensure tree view has focus
+                    treeView.Focus();
+                }
+            });
+
+            // Start auto-save timer (10 seconds)
+            StartAutoSaveTimer();
+        }
+
+        /// <summary>
+        /// Commit the inline edit and save changes
+        /// </summary>
+        private void CommitInlineEdit()
+        {
+            if (_currentEditNode == null || !_currentEditNode.IsInEditMode) return;
+
+            // Stop auto-save timer
+            StopAutoSaveTimer();
+
+            // Save the current node properties and create undo state
+            SaveCurrentNodeProperties();
+
+            // Commit the edit (updates the dialog node)
+            _currentEditNode.CommitEdit();
+
+            // Mark as having unsaved changes
+            _viewModel.HasUnsavedChanges = true;
+
+            // Update the text box in properties panel if this node is still selected
+            var currentSelection = GetSelectedTreeNode();
+            if (currentSelection == _currentEditNode)
+            {
+                var textTextBox = this.FindControl<TextBox>("TextTextBox");
+                if (textTextBox != null)
+                {
+                    textTextBox.Text = _currentEditNode.OriginalNode.Text.GetDefault();
+                }
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Committed inline edit for: {_currentEditNode.DisplayText}");
+
+            _currentEditNode = null;
+        }
+
+        /// <summary>
+        /// Cancel the inline edit without saving
+        /// </summary>
+        private void CancelInlineEdit()
+        {
+            if (_currentEditNode == null) return;
+
+            // Stop auto-save timer
+            StopAutoSaveTimer();
+
+            _currentEditNode.CancelEdit();
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Cancelled inline edit for: {_currentEditNode.DisplayText}");
+
+            _currentEditNode = null;
+        }
+
+        /// <summary>
+        /// Start the 10-second auto-save timer for inline editing
+        /// </summary>
+        private void StartAutoSaveTimer()
+        {
+            StopAutoSaveTimer(); // Stop any existing timer
+
+            _inlineEditAutoSaveTimer = new System.Timers.Timer(10000); // 10 seconds
+            _inlineEditAutoSaveTimer.Elapsed += (s, e) =>
+            {
+                global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    if (_currentEditNode != null && _currentEditNode.IsInEditMode)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-saving inline edit after 10 seconds");
+                        CommitInlineEdit();
+                    }
+                });
+            };
+            _inlineEditAutoSaveTimer.AutoReset = false;
+            _inlineEditAutoSaveTimer.Start();
+        }
+
+        /// <summary>
+        /// Stop the auto-save timer for inline editing
+        /// </summary>
+        private void StopAutoSaveTimer()
+        {
+            if (_inlineEditAutoSaveTimer != null)
+            {
+                _inlineEditAutoSaveTimer.Stop();
+                _inlineEditAutoSaveTimer.Dispose();
+                _inlineEditAutoSaveTimer = null;
+            }
+        }
+
+        /// <summary>
+        /// Handle key down events in the inline edit TextBox
+        /// </summary>
+        private void OnInlineEditKeyDown(object? sender, global::Avalonia.Input.KeyEventArgs e)
+        {
+            if (_currentEditNode == null || sender is not TextBox textBox) return;
+
+            bool ctrlPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Control);
+
+            switch (e.Key)
+            {
+                case global::Avalonia.Input.Key.Enter:
+                    // TODO: Check user preference for Enter behavior (save vs line break)
+                    CommitInlineEdit();
+                    e.Handled = true;
+                    break;
+
+                case global::Avalonia.Input.Key.Escape:
+                    CancelInlineEdit();
+                    e.Handled = true;
+                    break;
+
+                case global::Avalonia.Input.Key.Tab:
+                    // Save and move focus to node properties panel
+                    CommitInlineEdit();
+                    var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
+                    speakerTextBox?.Focus();
+                    e.Handled = true;
+                    break;
+
+                case global::Avalonia.Input.Key.D when ctrlPressed:
+                    // Save current edit, create new node, and start editing it
+                    CommitInlineEdit();
+                    // Let the regular Ctrl+D handler create the node
+                    // Don't mark as handled so it bubbles up
+                    break;
+            }
+
+            // Reset auto-save timer on any key press
+            if (!e.Handled)
+            {
+                StartAutoSaveTimer();
+            }
+        }
+
+        /// <summary>
+        /// Handle lost focus event for inline edit TextBox
+        /// </summary>
+        private void OnInlineEditLostFocus(object? sender, RoutedEventArgs e)
+        {
+            // Save on focus loss (click outside)
+            if (_currentEditNode != null && _currentEditNode.IsInEditMode)
+            {
+                CommitInlineEdit();
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Load journal file for the current module and populate quest dropdown
