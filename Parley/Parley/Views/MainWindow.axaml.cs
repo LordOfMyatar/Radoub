@@ -22,7 +22,7 @@ using Parley.Views.Helpers;
 
 namespace DialogEditor.Views
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, IKeyboardShortcutHandler
     {
         private readonly MainViewModel _viewModel;
         private readonly AudioService _audioService;
@@ -33,6 +33,7 @@ namespace DialogEditor.Views
         private readonly ScriptParameterUIManager _parameterUIManager; // Manages script parameter UI and synchronization
         private readonly NodeCreationHelper _nodeCreationHelper; // Handles smart node creation and tree navigation
         private readonly ResourceBrowserManager _resourceBrowserManager; // Manages resource browser dialogs
+        private readonly KeyboardShortcutManager _keyboardShortcutManager; // Manages keyboard shortcuts
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -86,6 +87,8 @@ namespace DialogEditor.Views
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 autoSaveProperty: AutoSaveProperty,
                 getSelectedNode: () => _selectedNode);
+            _keyboardShortcutManager = new KeyboardShortcutManager();
+            _keyboardShortcutManager.RegisterShortcuts(this);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -293,144 +296,59 @@ namespace DialogEditor.Views
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "SetupKeyboardShortcuts: Keyboard handler registered");
 
-            // Use PreviewKeyDown (tunneling) to intercept keys before TreeView handles them
+            // Tunneling event for shortcuts that intercept before TreeView (Ctrl+Shift+Up/Down)
             this.AddHandler(KeyDownEvent, (sender, e) =>
             {
-                // Log ALL key presses for debugging
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"PreviewKeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}");
-
-                // Check for modifier keys
-                bool ctrlPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Control);
-                bool shiftPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Shift);
-                bool altPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Alt);
-
-                // Phase 2a: Node Reordering shortcuts (Ctrl+Shift+Up/Down) - CHECK FIRST
-                // Note: Alt+Up/Down conflicts with menu activation in Avalonia
-                // Use tunneling to intercept before TreeView consumes the event
-                if (ctrlPressed && shiftPressed && !altPressed)
+                if (_keyboardShortcutManager.HandlePreviewKeyDown(e))
                 {
-                    switch (e.Key)
-                    {
-                        case global::Avalonia.Input.Key.Up:
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+Shift+Up detected - calling OnMoveNodeUpClick");
-                            OnMoveNodeUpClick(null, null!);
-                            e.Handled = true;
-                            return;
-                        case global::Avalonia.Input.Key.Down:
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+Shift+Down detected - calling OnMoveNodeDownClick");
-                            OnMoveNodeDownClick(null, null!);
-                            e.Handled = true;
-                            return;
-                    }
+                    e.Handled = true;
                 }
             }, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
+            // Standard KeyDown events
             this.KeyDown += (sender, e) =>
             {
-                // Check for modifier keys
-                bool ctrlPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Control);
-                bool shiftPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Shift);
-                bool altPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Alt);
-
-                if (ctrlPressed && !shiftPressed)
+                if (_keyboardShortcutManager.HandleKeyDown(e))
                 {
-                    switch (e.Key)
-                    {
-                        case global::Avalonia.Input.Key.N:
-                            // File > New
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+N detected - calling OnNewClick");
-                            OnNewClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.O:
-                            // File > Open
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+O detected - calling OnOpenClick");
-                            OnOpenClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.S:
-                            // File > Save
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+S detected - calling OnSaveClick");
-                            OnSaveClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.D:
-                            // Edit > Add Node (context-aware)
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+D detected - calling OnAddSmartNodeClick");
-                            OnAddSmartNodeClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.R:
-                            // Phase 1 Fix: Context-aware node creation
-                            // Ctrl+R = "Reply" - creates appropriate node based on selected parent
-                            OnAddContextAwareReply(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.C:
-                            OnCopyNodeClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.V:
-                            OnPasteAsDuplicateClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.L:
-                            OnPasteAsLinkClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.X:
-                            OnCutNodeClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.Z:
-                            OnUndoClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.Y:
-                            OnRedoClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.E:
-                            OnExpandSubnodesClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.W:
-                            OnCollapseSubnodesClick(null, null!);
-                            e.Handled = true;
-                            break;
-                    }
-                }
-                else if (ctrlPressed && shiftPressed)
-                {
-                    switch (e.Key)
-                    {
-                        case global::Avalonia.Input.Key.T:
-                            OnCopyNodeTextClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.P:
-                            OnCopyNodePropertiesClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.S:
-                            OnCopyTreeStructureClick(null, null!);
-                            e.Handled = true;
-                            break;
-                    }
-                }
-                else if (!ctrlPressed && !shiftPressed && !altPressed)
-                {
-                    switch (e.Key)
-                    {
-                        case global::Avalonia.Input.Key.Delete:
-                            OnDeleteNodeClick(null, null!);
-                            e.Handled = true;
-                            break;
-                    }
+                    e.Handled = true;
                 }
             };
         }
+
+        #region IKeyboardShortcutHandler Implementation
+
+        // File operations
+        void IKeyboardShortcutHandler.OnNew() => OnNewClick(null, null!);
+        void IKeyboardShortcutHandler.OnOpen() => OnOpenClick(null, null!);
+        void IKeyboardShortcutHandler.OnSave() => OnSaveClick(null, null!);
+
+        // Node operations
+        void IKeyboardShortcutHandler.OnAddSmartNode() => OnAddSmartNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnAddContextAwareReply() => OnAddContextAwareReply(null, null!);
+        void IKeyboardShortcutHandler.OnDeleteNode() => OnDeleteNodeClick(null, null!);
+
+        // Clipboard operations
+        void IKeyboardShortcutHandler.OnCopyNode() => OnCopyNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnCutNode() => OnCutNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnPasteAsDuplicate() => OnPasteAsDuplicateClick(null, null!);
+        void IKeyboardShortcutHandler.OnPasteAsLink() => OnPasteAsLinkClick(null, null!);
+
+        // Advanced copy
+        void IKeyboardShortcutHandler.OnCopyNodeText() => OnCopyNodeTextClick(null, null!);
+        void IKeyboardShortcutHandler.OnCopyNodeProperties() => OnCopyNodePropertiesClick(null, null!);
+        void IKeyboardShortcutHandler.OnCopyTreeStructure() => OnCopyTreeStructureClick(null, null!);
+
+        // History
+        void IKeyboardShortcutHandler.OnUndo() => OnUndoClick(null, null!);
+        void IKeyboardShortcutHandler.OnRedo() => OnRedoClick(null, null!);
+
+        // Tree navigation
+        void IKeyboardShortcutHandler.OnExpandSubnodes() => OnExpandSubnodesClick(null, null!);
+        void IKeyboardShortcutHandler.OnCollapseSubnodes() => OnCollapseSubnodesClick(null, null!);
+        void IKeyboardShortcutHandler.OnMoveNodeUp() => OnMoveNodeUpClick(null, null!);
+        void IKeyboardShortcutHandler.OnMoveNodeDown() => OnMoveNodeDownClick(null, null!);
+
+        #endregion
 
         private void OnAddContextAwareReply(object? sender, RoutedEventArgs e)
         {
