@@ -46,4 +46,31 @@ namespace DialogEditor.Models
             throw new NotImplementedException();
         }
     }
+
+    /// <summary>
+    /// Inverts a boolean value
+    /// true = false, false = true
+    /// </summary>
+    public class NotConverter : IValueConverter
+    {
+        public static readonly NotConverter Instance = new();
+
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                return !boolValue;
+            }
+            return true; // Default to true if not a boolean
+        }
+
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue)
+            {
+                return !boolValue;
+            }
+            return false;
+        }
+    }
 }

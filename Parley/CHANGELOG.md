@@ -10,6 +10,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.20-alpha] - TBD
+**Branch**: `parley/feat/epic-39-inline-text-v2` | **PR**: #147
+
+### Epic #39: UI/UX Enhancements (Issue #108)
+
+Inline text editing for dialog tree nodes - rapid dialog capture workflow optimized for fast-paced "Samuel L. Jackson style" conversations.
+
+### Added
+- **Inline Text Editing** for dialog tree nodes
+  - F2 key to enter edit mode (cross-platform friendly)
+  - Edit text directly in the tree view without jumping to properties panel
+  - Automatic edit mode on new node creation (Ctrl+D workflow)
+  - 10-second auto-save timer to prevent data loss
+  - Visual feedback with theme-compliant border during edit
+- **Keyboard Shortcuts for Inline Editing**
+  - Enter: Save and exit edit mode
+  - Escape: Cancel edit without saving
+  - Tab: Save and move focus to node properties
+  - Ctrl+D: Save current edit, create child node, auto-enter edit mode
+- **Smart Edit Restrictions**
+  - ROOT node cannot be edited (read-only)
+  - Link nodes (IsChild=true) cannot be edited (Aurora standard)
+  - Placeholder nodes cannot be edited
+
+### Technical
+- TreeViewSafeNode extended with IsInEditMode, EditText, and CanEdit properties
+- Custom TreeView DataTemplate with TextBlock/TextBox switching
+- NotConverter added for boolean inversion in XAML bindings
+- Separate inline edit timer to avoid conflicts with file auto-save
+- Focus management for seamless Ctrl+D rapid node creation
+
+### Known Limitations
+- Real-time sync with bulk text editor not yet implemented
+- Enter key behavior not yet configurable (always saves)
+- Inline edit TextBox focus needs refinement for template controls
+
+---
+
 ## [0.1.19-alpha] - 2025-11-20
 **Branch**: `parley/feat/epic-108-inline-editing` | **PR**: #142
 

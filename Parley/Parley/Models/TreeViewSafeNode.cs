@@ -20,6 +20,8 @@ namespace DialogEditor.Models
         protected readonly int _depth;
         private ObservableCollection<TreeViewSafeNode>? _children;
         private bool _isExpanded;
+        private bool _isInEditMode;
+        private string _editText = string.Empty;
 
         // Global tracking of expanded nodes to show links instead of duplicating content
         private static readonly HashSet<DialogNode> _globalExpandedNodes = new();
@@ -94,12 +96,88 @@ namespace DialogEditor.Models
             }
         }
 
+        // Inline editing support
+        public bool IsInEditMode
+        {
+            get => _isInEditMode;
+            set
+            {
+                if (_isInEditMode != value)
+                {
+                    _isInEditMode = value;
+                    if (_isInEditMode)
+                    {
+                        // Initialize edit text with current text (without speaker prefix)
+                        _editText = GetRawText();
+                    }
+                    OnPropertyChanged(nameof(IsInEditMode));
+                }
+            }
+        }
+
+        public string EditText
+        {
+            get => _editText;
+            set
+            {
+                if (_editText != value)
+                {
+                    _editText = value;
+                    OnPropertyChanged(nameof(EditText));
+                }
+            }
+        }
+
+        // Whether this node can be edited inline (false for ROOT and link nodes)
+        public bool CanEdit
+        {
+            get
+            {
+                // Cannot edit ROOT node
+                if (this is TreeViewRootNode) return false;
+                // Cannot edit link nodes (gray, IsChild=true)
+                if (IsChild) return false;
+                // Cannot edit placeholder nodes
+                if (this is TreeViewPlaceholderNode) return false;
+                return true;
+            }
+        }
+
+        // Get raw text without speaker prefix for editing
+        private string GetRawText()
+        {
+            if (_originalNode == null) return string.Empty;
+            return _originalNode.Text.GetDefault().Trim();
+        }
+
+        // Commit edit changes back to the dialog node
+        public void CommitEdit()
+        {
+            if (!IsInEditMode || _originalNode == null) return;
+
+            // Update the text in the original dialog node (language ID 0)
+            _originalNode.Text.Add(0, _editText);
+
+            // Exit edit mode
+            IsInEditMode = false;
+
+            // Notify that display text has changed
+            OnPropertyChanged(nameof(DisplayText));
+        }
+
+        // Cancel edit without saving
+        public void CancelEdit()
+        {
+            IsInEditMode = false;
+            _editText = string.Empty;
+        }
+
         // Reset global tracking (call when loading a new dialog)
         public static void ResetGlobalTracking()
         {
             _globalExpandedNodes.Clear();
         }
-        
+
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
