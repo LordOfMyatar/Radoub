@@ -184,6 +184,7 @@ namespace Parley.Tests
             // Create connected node
             var entry = new DialogNode { Type = DialogNodeType.Entry, Text = new LocString() };
             entry.Text.Add(0, "Connected");
+            Assert.NotNull(vm.CurrentDialog);
             vm.CurrentDialog.Entries.Add(entry);
             vm.CurrentDialog.Starts.Add(new DialogPtr { Node = entry, Type = DialogNodeType.Entry, Index = 0, IsStart = true, Parent = vm.CurrentDialog });
 

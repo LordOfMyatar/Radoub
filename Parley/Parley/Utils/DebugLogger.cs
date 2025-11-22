@@ -38,7 +38,7 @@ namespace DialogEditor.Utils
                     // Only send to UI if it passes the filter
                     if (ShouldShowMessage(logLevel) && _mainWindow != null)
                     {
-                        _mainWindow.AddDebugMessage(timestampedMessage);
+                        _mainWindow?.AddDebugMessage(timestampedMessage);
                     }
                 }
                 catch (Exception ex)
