@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### In Progress
+- **MainWindow.axaml.cs Refactoring Sprint** (Branch: `parley/refactor/mainwindow-cleanup`, Issue #163)
+  - Systematic service extraction from 4,126-line code-behind file
+  - Target: ~1,200-1,500 lines after refactoring
+  - Following Epic #99 patterns (SOLID principles, service extraction)
+  - Will be resumed in separate conversation
+
+### Abandoned Work
+- **Inline Text Editing for Tree View** (Branch: `parley/feat/epic-39-inline-text-v2`)
+  - Attempted inline editing in tree view with F2 key support
+  - Abandoned due to Avalonia focus management complexity vs. value-add mismatch
+  - Existing properties-panel workflow sufficient for rapid dialog entry
+  - Dead code cleanup tracked in #162
+
 ---
 
 ## [0.1.19-alpha] - 2025-11-20
