@@ -8,12 +8,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### In Progress
-- **MainWindow.axaml.cs Refactoring Sprint** (Branch: `parley/refactor/mainwindow-cleanup`, Issue #163)
-  - Systematic service extraction from 4,126-line code-behind file
-  - Target: ~1,200-1,500 lines after refactoring
-  - Following Epic #99 patterns (SOLID principles, service extraction)
-  - Will be resumed in separate conversation
+---
+
+## [0.1.20-alpha] - TBD
+**Branch**: `parley/refactor/mainwindow-cleanup` | **PR**: #TBD
+
+### Epic #163: MainWindow.axaml.cs Refactoring Sprint
+
+Systematic service extraction from 4,126-line code-behind file, following Epic #99 patterns.
+
+### Planned Extractions
+- **Issue #153**: Extract inline editing to service (dead code cleanup)
+- **Issue #155**: PropertyAutoSaveService - 179 line god method
+- **Issue #156**: ScriptParameterUIManager - 578 lines duplicated logic
+- **Issue #157**: NodeCreationHelper - 108 line OnAddSmartNodeClick monster
+- **Issue #158**: ResourceBrowserManager - Duplicated browse patterns
+- **Issue #159**: KeyboardShortcutManager - 147 line setup method
+- **Issue #160**: DebugAndLoggingHandler - 270 lines debug operations
+- **Issue #161**: WindowPersistenceManager - 437 lines state management
+- **Issue #162**: Remove dead inline editing code
+
+### Build Warnings to Fix
+- **Main App** (1 warning):
+  - DebugLogger.cs:41 - Null reference warning
+- **Test Project** (4 warnings):
+  - NodeCreationHeadlessTests.cs:114 - Null reference
+  - CopyPasteHeadlessTests.cs:104, 135 - Null references
+  - OrphanNodeCleanupTests.cs:187 - Null reference
+
+### Target
+- MainWindow.axaml.cs: 4,126 → ~1,200-1,500 lines
+- All build warnings resolved
+- No functional changes (pure refactoring)
 
 ### Abandoned Work
 - **Inline Text Editing for Tree View** (Branch: `parley/feat/epic-39-inline-text-v2`)
