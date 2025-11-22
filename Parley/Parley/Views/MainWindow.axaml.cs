@@ -32,6 +32,7 @@ namespace DialogEditor.Views
         private readonly PropertyAutoSaveService _propertyAutoSaveService; // Handles auto-saving of node properties
         private readonly ScriptParameterUIManager _parameterUIManager; // Manages script parameter UI and synchronization
         private readonly NodeCreationHelper _nodeCreationHelper; // Handles smart node creation and tree navigation
+        private readonly ResourceBrowserManager _resourceBrowserManager; // Manages resource browser dialogs
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -43,9 +44,6 @@ namespace DialogEditor.Views
 
         // Flag to prevent saving position during initial window setup and restore
         private bool _isRestoringPosition = true; // Start as true, prevent saves during constructor/init
-
-        // Session cache for recently used creature tags
-        private readonly List<string> _recentCreatureTags = new();
 
         // Parameter autocomplete: Cache of script parameter declarations
         private ScriptParameterDeclarations? _currentConditionDeclarations;
@@ -81,6 +79,13 @@ namespace DialogEditor.Views
                 findControl: this.FindControl<Control>,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 triggerAutoSave: TriggerDebouncedAutoSave);
+            _resourceBrowserManager = new ResourceBrowserManager(
+                audioService: _audioService,
+                creatureService: _creatureService,
+                findControl: this.FindControl<Control>,
+                setStatusMessage: msg => _viewModel.StatusMessage = msg,
+                autoSaveProperty: AutoSaveProperty,
+                getSelectedNode: () => _selectedNode);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -2667,121 +2672,9 @@ namespace DialogEditor.Views
 
         private async void OnBrowseCreatureClick(object? sender, RoutedEventArgs e)
         {
-            // Don't allow creature browser when no node selected or ROOT selected
-            if (_selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a dialog node first";
-                return;
-            }
-
-            if (_selectedNode is TreeViewRootNode)
-            {
-                _viewModel.StatusMessage = "Cannot assign creatures to ROOT. Select a dialog node instead.";
-                return;
-            }
-
-            try
-            {
-                // Get creatures from CreatureService
-                var creatures = _creatureService.GetAllCreatures();
-
-                if (creatures.Count == 0)
-                {
-                    // Show helpful message with instructions
-                    var message = "No creatures loaded.\n\n" +
-                                "To use creature browser:\n" +
-                                "• Place .utc files in the same folder as your .dlg file, OR\n" +
-                                "• Specify module directory in Settings\n\n" +
-                                "You can still type creature tags manually.";
-
-                    var msgBox = new Window
-                    {
-                        Title = "No Creatures Available",
-                        Width = 400,
-                        Height = 250,
-                        Content = new TextBlock
-                        {
-                            Text = message,
-                            Margin = new Thickness(20)
-                        },
-                        WindowStartupLocation = WindowStartupLocation.CenterOwner
-                    };
-
-                    await msgBox.ShowDialog(this);
-
-                    _viewModel.StatusMessage = "No creatures loaded - see message for details";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "No creatures available for picker");
-                    return;
-                }
-
-                var creaturePicker = new CreaturePickerWindow(creatures, _recentCreatureTags);
-                var result = await creaturePicker.ShowDialog<bool>(this);
-
-                if (result && !string.IsNullOrEmpty(creaturePicker.SelectedTag))
-                {
-                    var selectedTag = creaturePicker.SelectedTag;
-
-                    // Update the Speaker field with selected tag
-                    var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-                    if (speakerTextBox != null)
-                    {
-                        speakerTextBox.Text = selectedTag;
-                        // Trigger auto-save
-                        AutoSaveProperty("SpeakerTextBox");
-                    }
-
-                    // Add to recent tags (avoid duplicates, max 10)
-                    AddToRecentTags(selectedTag);
-
-                    _viewModel.StatusMessage = $"Selected creature: {selectedTag}";
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening creature picker: {ex.Message}");
-                _viewModel.StatusMessage = $"Error opening creature picker: {ex.Message}";
-            }
+            await _resourceBrowserManager.BrowseCreatureAsync(this);
         }
 
-        private void AddToRecentTags(string tag)
-        {
-            // Remove if already exists (move to front)
-            _recentCreatureTags.Remove(tag);
-
-            // Add to front
-            _recentCreatureTags.Insert(0, tag);
-
-            // Keep max 10 recent tags
-            if (_recentCreatureTags.Count > 10)
-            {
-                _recentCreatureTags.RemoveAt(_recentCreatureTags.Count - 1);
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to recent creature tags: {tag}");
-
-            // Update the dropdown
-            UpdateRecentCreatureTagsDropdown();
-        }
-
-        private void UpdateRecentCreatureTagsDropdown()
-        {
-            try
-            {
-                var comboBox = this.FindControl<ComboBox>("RecentCreatureTagsComboBox");
-                if (comboBox != null)
-                {
-                    comboBox.Items.Clear();
-                    foreach (var tag in _recentCreatureTags)
-                    {
-                        comboBox.Items.Add(tag);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to update recent tags dropdown: {ex.Message}");
-            }
-        }
 
         private void OnRecentCreatureTagSelected(object? sender, SelectionChangedEventArgs e)
         {
