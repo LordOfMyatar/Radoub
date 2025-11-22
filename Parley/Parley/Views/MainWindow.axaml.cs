@@ -29,6 +29,7 @@ namespace DialogEditor.Views
         private readonly CreatureService _creatureService;
         private readonly PluginManager _pluginManager;
         private readonly PropertyPanelPopulator _propertyPopulator; // Helper for populating properties panel
+        private readonly PropertyAutoSaveService _propertyAutoSaveService; // Handles auto-saving of node properties
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -64,6 +65,12 @@ namespace DialogEditor.Views
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
             _propertyPopulator = new PropertyPanelPopulator(this);
+            _propertyAutoSaveService = new PropertyAutoSaveService(
+                findControl: this.FindControl<Control>,
+                refreshTreeDisplay: RefreshTreeDisplayPreserveState,
+                loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
+                clearScriptPreview: ClearScriptPreview,
+                triggerDebouncedAutoSave: TriggerDebouncedAutoSave);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -1814,179 +1821,13 @@ namespace DialogEditor.Views
 
         private void AutoSaveProperty(string propertyName)
         {
-            if (_selectedNode == null) return;
+            var result = _propertyAutoSaveService.AutoSaveProperty(_selectedNode, propertyName);
 
-            var dialogNode = _selectedNode.OriginalNode;
-            bool saved = false;
-            string displayName = "";
-
-            switch (propertyName)
-            {
-                case "SpeakerTextBox":
-                    var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-                    if (speakerTextBox != null && !speakerTextBox.IsReadOnly)
-                    {
-                        dialogNode.Speaker = speakerTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Speaker";
-                        RefreshTreeDisplayPreserveState(); // Update tree to show new speaker name
-                    }
-                    break;
-
-                case "TextTextBox":
-                    var textTextBox = this.FindControl<TextBox>("TextTextBox");
-                    if (textTextBox != null && dialogNode.Text != null)
-                    {
-                        dialogNode.Text.Strings[0] = textTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Text";
-                        RefreshTreeDisplayPreserveState(); // Update tree display
-                    }
-                    break;
-
-                case "CommentTextBox":
-                    var commentTextBox = this.FindControl<TextBox>("CommentTextBox");
-                    if (commentTextBox != null)
-                    {
-                        dialogNode.Comment = commentTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Comment";
-                    }
-                    break;
-
-                case "SoundTextBox":
-                    var soundTextBox = this.FindControl<TextBox>("SoundTextBox");
-                    if (soundTextBox != null)
-                    {
-                        dialogNode.Sound = soundTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Sound";
-                    }
-                    break;
-
-                case "ScriptAppearsTextBox":
-                    var scriptAppearsTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
-                    if (scriptAppearsTextBox != null && _selectedNode.SourcePointer != null)
-                    {
-                        _selectedNode.SourcePointer.ScriptAppears = scriptAppearsTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Conditional Script";
-
-                        // Reload script preview when script name changes
-                        if (!string.IsNullOrWhiteSpace(scriptAppearsTextBox.Text))
-                        {
-                            _ = LoadScriptPreviewAsync(scriptAppearsTextBox.Text, isCondition: true);
-                        }
-                        else
-                        {
-                            ClearScriptPreview(isCondition: true);
-                        }
-                    }
-                    break;
-
-                case "ScriptTextBox":
-                case "ScriptActionTextBox":
-                    var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-                    if (scriptTextBox != null)
-                    {
-                        dialogNode.ScriptAction = scriptTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Script Action";
-
-                        // Reload script preview when script name changes
-                        if (!string.IsNullOrWhiteSpace(scriptTextBox.Text))
-                        {
-                            _ = LoadScriptPreviewAsync(scriptTextBox.Text, isCondition: false);
-                        }
-                        else
-                        {
-                            ClearScriptPreview(isCondition: false);
-                        }
-                    }
-                    break;
-
-                case "QuestTextBox":
-                    var questTextBox = this.FindControl<TextBox>("QuestTextBox");
-                    if (questTextBox != null)
-                    {
-                        dialogNode.Quest = questTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Quest";
-                    }
-                    break;
-
-                case "QuestEntryTextBox":
-                    var questEntryTextBox = this.FindControl<TextBox>("QuestEntryTextBox");
-                    if (questEntryTextBox != null)
-                    {
-                        // Parse as uint, use uint.MaxValue if empty or invalid
-                        if (string.IsNullOrWhiteSpace(questEntryTextBox.Text))
-                        {
-                            dialogNode.QuestEntry = uint.MaxValue;
-                        }
-                        else if (uint.TryParse(questEntryTextBox.Text, out uint entryId))
-                        {
-                            dialogNode.QuestEntry = entryId;
-                        }
-                        saved = true;
-                        displayName = "Quest Entry";
-                    }
-                    break;
-
-                case "AnimationComboBox":
-                    var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
-                    if (animationComboBox != null && animationComboBox.SelectedItem is DialogAnimation selectedAnimation)
-                    {
-                        dialogNode.Animation = selectedAnimation;
-                        saved = true;
-                        displayName = "Animation";
-                    }
-                    break;
-
-                case "AnimationLoopCheckBox":
-                    var animationLoopCheckBox = this.FindControl<CheckBox>("AnimationLoopCheckBox");
-                    if (animationLoopCheckBox != null && animationLoopCheckBox.IsChecked.HasValue)
-                    {
-                        dialogNode.AnimationLoop = animationLoopCheckBox.IsChecked.Value;
-                        saved = true;
-                        displayName = "Animation Loop";
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"AnimationLoop set to: {dialogNode.AnimationLoop}");
-                    }
-                    else if (animationLoopCheckBox != null)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.WARN, $"AnimationLoop CheckBox IsChecked is null!");
-                    }
-                    break;
-
-                case "DelayTextBox":
-                    var delayTextBox = this.FindControl<TextBox>("DelayTextBox");
-                    if (delayTextBox != null)
-                    {
-                        // Parse as uint, use uint.MaxValue if empty or invalid
-                        if (string.IsNullOrWhiteSpace(delayTextBox.Text))
-                        {
-                            dialogNode.Delay = uint.MaxValue;
-                        }
-                        else if (uint.TryParse(delayTextBox.Text, out uint delayMs))
-                        {
-                            dialogNode.Delay = delayMs;
-                        }
-                        saved = true;
-                        displayName = "Delay";
-                    }
-                    break;
-            }
-
-            if (saved)
+            if (result.Success)
             {
                 _viewModel.HasUnsavedChanges = true;
-                _viewModel.StatusMessage = $"{displayName} saved";
-
-                // Also send to debug console
-                _viewModel.AddDebugMessage($"{displayName} saved");
-
-                // Trigger debounced file auto-save
-                TriggerDebouncedAutoSave();
+                _viewModel.StatusMessage = result.Message;
+                _viewModel.AddDebugMessage(result.Message);
             }
         }
 
