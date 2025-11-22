@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.20-alpha] - TBD
-**Branch**: `parley/feat/epic-39-inline-text-v2` | **PR**: #TBD
+**Branch**: `parley/feat/epic-39-inline-text-v2` | **PR**: #147
 
 ### Epic #39: UI/UX Enhancements (Issue #108)
 
