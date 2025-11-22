@@ -31,6 +31,7 @@ namespace DialogEditor.Views
         private readonly PropertyPanelPopulator _propertyPopulator; // Helper for populating properties panel
         private readonly PropertyAutoSaveService _propertyAutoSaveService; // Handles auto-saving of node properties
         private readonly ScriptParameterUIManager _parameterUIManager; // Manages script parameter UI and synchronization
+        private readonly NodeCreationHelper _nodeCreationHelper; // Handles smart node creation and tree navigation
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -38,10 +39,7 @@ namespace DialogEditor.Views
         // Flag to prevent auto-save during programmatic updates
         private bool _isPopulatingProperties = false;
 
-        // DEBOUNCED NODE CREATION: Prevent rapid Ctrl+D causing focus misplacement (Issue #76)
-        private DateTime _lastAddNodeTime = DateTime.MinValue;
-        private const int ADD_NODE_DEBOUNCE_MS = 150; // Minimum delay between Ctrl+D operations
-        private bool _isAddingNode = false; // Prevents overlapping node creation operations
+        // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
         // Flag to prevent saving position during initial window setup and restore
         private bool _isRestoringPosition = true; // Start as true, prevent saves during constructor/init
@@ -78,6 +76,11 @@ namespace DialogEditor.Views
                 triggerAutoSave: () => { _viewModel.HasUnsavedChanges = true; TriggerDebouncedAutoSave(); },
                 isPopulatingProperties: () => _isPopulatingProperties,
                 getSelectedNode: () => _selectedNode);
+            _nodeCreationHelper = new NodeCreationHelper(
+                viewModel: _viewModel,
+                findControl: this.FindControl<Control>,
+                saveCurrentNodeProperties: SaveCurrentNodeProperties,
+                triggerAutoSave: TriggerDebouncedAutoSave);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -3339,98 +3342,8 @@ namespace DialogEditor.Views
         /// </summary>
         private async void OnAddSmartNodeClick(object? sender, RoutedEventArgs e)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, "=== OnAddSmartNodeClick CALLED ===");
-
-            // DEBOUNCE CHECK: Prevent rapid Ctrl+D causing focus misplacement (Issue #76)
-            var timeSinceLastAdd = (DateTime.Now - _lastAddNodeTime).TotalMilliseconds;
-            if (timeSinceLastAdd < ADD_NODE_DEBOUNCE_MS)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"OnAddSmartNodeClick: Debounced (only {timeSinceLastAdd:F0}ms since last add, minimum {ADD_NODE_DEBOUNCE_MS}ms required)");
-                return;
-            }
-
-            // OVERLAP CHECK: Prevent concurrent node creation operations (Issue #76)
-            if (_isAddingNode)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    "OnAddSmartNodeClick: Operation already in progress, rejecting concurrent call");
-                return;
-            }
-
-            _lastAddNodeTime = DateTime.Now;
-            _isAddingNode = true;
-
-            try
-            {
-                // IMPORTANT: Save current node properties before creating new node
-                // This ensures any typed text is saved before moving to next node
-                SaveCurrentNodeProperties();
-                UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Saved current node properties");
-
             var selectedNode = GetSelectedTreeNode();
-
-            // Track dialog node count before adding
-            int entryCountBefore = _viewModel.CurrentDialog?.Entries.Count ?? 0;
-            int replyCountBefore = _viewModel.CurrentDialog?.Replies.Count ?? 0;
-
-            _viewModel.AddSmartNode(selectedNode);
-
-            // Wait for tree view to refresh
-            await Task.Delay(100);
-
-            // Find and select the newly created node
-            var treeView = this.FindControl<TreeView>("DialogTreeView");
-            if (treeView != null && _viewModel.CurrentDialog != null)
-            {
-                bool entryAdded = _viewModel.CurrentDialog.Entries.Count > entryCountBefore;
-                bool replyAdded = _viewModel.CurrentDialog.Replies.Count > replyCountBefore;
-
-                if (entryAdded || replyAdded)
-                {
-                    var newNode = FindLastAddedNode(treeView, entryAdded, replyAdded);
-                    if (newNode != null)
-                    {
-                        // Expand all ancestor nodes to make new node visible (Issue #7)
-                        ExpandToNode(treeView, newNode);
-
-                        treeView.SelectedItem = newNode;
-                        UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Selected new node in tree");
-                    }
-                }
-            }
-
-            // Auto-focus to text box for immediate typing
-            // Delay allows tree view selection and properties panel population to complete
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Waiting 300ms for properties panel...");
-            await Task.Delay(300);
-
-            var textTextBox = this.FindControl<TextBox>("TextTextBox");
-            if (textTextBox != null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Attempting to focus TextTextBox");
-
-                // Try multiple times to overcome focus stealing
-                textTextBox.Focus();
-                await Task.Delay(50);
-                textTextBox.Focus();
-                textTextBox.SelectAll();
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"OnAddSmartNodeClick: Focus set, IsFocused={textTextBox.IsFocused}");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "OnAddSmartNodeClick: TextTextBox control not found!");
-            }
-
-            // Trigger auto-save after node creation
-            TriggerDebouncedAutoSave();
-            }
-            finally
-            {
-                // Reset flag to allow next operation (Issue #76)
-                _isAddingNode = false;
-            }
+            await _nodeCreationHelper.CreateSmartNodeAsync(selectedNode);
         }
 
         private TreeViewSafeNode? FindLastAddedNode(TreeView treeView, bool entryAdded, bool replyAdded)
