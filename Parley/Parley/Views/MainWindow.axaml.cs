@@ -30,6 +30,7 @@ namespace DialogEditor.Views
         private readonly PluginManager _pluginManager;
         private readonly PropertyPanelPopulator _propertyPopulator; // Helper for populating properties panel
         private readonly PropertyAutoSaveService _propertyAutoSaveService; // Handles auto-saving of node properties
+        private readonly ScriptParameterUIManager _parameterUIManager; // Manages script parameter UI and synchronization
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -71,6 +72,12 @@ namespace DialogEditor.Views
                 loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
                 clearScriptPreview: ClearScriptPreview,
                 triggerDebouncedAutoSave: TriggerDebouncedAutoSave);
+            _parameterUIManager = new ScriptParameterUIManager(
+                findControl: this.FindControl<Control>,
+                setStatusMessage: msg => _viewModel.StatusMessage = msg,
+                triggerAutoSave: () => { _viewModel.HasUnsavedChanges = true; TriggerDebouncedAutoSave(); },
+                isPopulatingProperties: () => _isPopulatingProperties,
+                getSelectedNode: () => _selectedNode);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -845,12 +852,12 @@ namespace DialogEditor.Views
 
             // CRITICAL FIX: Save script parameters from UI before saving file
             // Update action parameters (on DialogNode)
-            UpdateActionParamsFromUI(dialogNode);
+            _parameterUIManager.UpdateActionParamsFromUI(dialogNode);
 
             // Update condition parameters (on DialogPtr if available)
             if (_selectedNode.SourcePointer != null)
             {
-                UpdateConditionParamsFromUI(_selectedNode.SourcePointer);
+                _parameterUIManager.UpdateConditionParamsFromUI(_selectedNode.SourcePointer);
             }
         }
 
@@ -2057,30 +2064,12 @@ namespace DialogEditor.Views
         // Properties panel handlers
         private void OnAddConditionsParamClick(object? sender, RoutedEventArgs e)
         {
-            var conditionsPanel = this.FindControl<StackPanel>("ConditionsParametersPanel");
-            if (conditionsPanel != null)
-            {
-                AddParameterRow(conditionsPanel, "", "", true);
-                _viewModel.StatusMessage = "Added condition parameter - enter key and value, then click elsewhere to save";
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "OnAddConditionsParamClick: ConditionsParametersPanel NOT FOUND");
-            }
+            _parameterUIManager.OnAddConditionsParamClick();
         }
 
         private void OnAddActionsParamClick(object? sender, RoutedEventArgs e)
         {
-            var actionsPanel = this.FindControl<StackPanel>("ActionsParametersPanel");
-            if (actionsPanel != null)
-            {
-                AddParameterRow(actionsPanel, "", "", false);
-                _viewModel.StatusMessage = "Added action parameter - enter key and value, then click elsewhere to save";
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "OnAddActionsParamClick: ActionsParametersPanel NOT FOUND");
-            }
+            _parameterUIManager.OnAddActionsParamClick();
         }
 
         private async void OnSuggestConditionsParamClick(object? sender, RoutedEventArgs e)
@@ -2401,7 +2390,7 @@ namespace DialogEditor.Views
                 // Conditional parameters are on the DialogPtr
                 if (sourcePtr != null)
                 {
-                    UpdateConditionParamsFromUI(sourcePtr);
+                    _parameterUIManager.UpdateConditionParamsFromUI(sourcePtr);
                     _viewModel.StatusMessage = "Condition parameters updated";
                 }
                 else
@@ -2412,7 +2401,7 @@ namespace DialogEditor.Views
             else
             {
                 // Action parameters are on the DialogNode
-                UpdateActionParamsFromUI(dialogNode);
+                _parameterUIManager.UpdateActionParamsFromUI(dialogNode);
                 _viewModel.StatusMessage = "Action parameters updated";
             }
 
