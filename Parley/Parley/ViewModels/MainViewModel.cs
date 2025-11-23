@@ -149,9 +149,15 @@ namespace DialogEditor.ViewModels
                 if (SetProperty(ref _selectedTreeNode, value))
                 {
                     OnPropertyChanged(nameof(CanRestoreFromScrap));
+                    OnPropertyChanged(nameof(HasNodeSelected)); // Issue #3
                 }
             }
         }
+
+        /// <summary>
+        /// True if a non-root node is selected (for enabling/disabling node properties panel) - Issue #3
+        /// </summary>
+        public bool HasNodeSelected => _selectedTreeNode != null && !(_selectedTreeNode is TreeViewRootNode);
 
         public bool CanRestoreFromScrap
         {
