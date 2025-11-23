@@ -84,8 +84,9 @@ namespace DialogEditor.ViewModels
             {
                 if (SetProperty(ref _hasUnsavedChanges, value))
                 {
+                    // Explicitly refresh WindowTitle to ensure asterisk updates (Issue #18)
                     OnPropertyChanged(nameof(WindowTitle));
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Unsaved changes flag: {value}");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"HasUnsavedChanges = {value}, WindowTitle = '{WindowTitle}'");
                 }
             }
         }

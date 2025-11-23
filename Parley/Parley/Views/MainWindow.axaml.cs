@@ -1405,6 +1405,7 @@ namespace DialogEditor.Views
             {
                 if (!_viewModel.HasUnsavedChanges || string.IsNullOrEmpty(_viewModel.CurrentFileName))
                 {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-save skipped: no changes or no file loaded");
                     return;
                 }
 
@@ -1412,12 +1413,17 @@ namespace DialogEditor.Views
                 {
                     // Phase 1 Step 4: Enhanced save status indicators
                     _viewModel.StatusMessage = "💾 Auto-saving...";
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-save starting...");
 
                     await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
 
                     var timestamp = DateTime.Now.ToString("h:mm tt");
                     var fileName = System.IO.Path.GetFileName(_viewModel.CurrentFileName);
                     _viewModel.StatusMessage = $"✓ Auto-saved '{fileName}' at {timestamp}";
+
+                    // Verify HasUnsavedChanges was cleared (Issue #18)
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Auto-save completed. HasUnsavedChanges = {_viewModel.HasUnsavedChanges}, WindowTitle = '{_viewModel.WindowTitle}'");
                 }
                 catch (Exception ex)
                 {
