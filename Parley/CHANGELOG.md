@@ -10,6 +10,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.21-alpha] - TBD
+**Branch**: `parley/feat/autosave-improvements` | **PR**: #TBD
+
+### Autosave Improvements (Issues #18, #62)
+
+Non-intrusive autosave enhancements with configurable intervals and better visual feedback.
+
+**Window Title Sync Fix** (#18):
+- Fixed asterisk (*) persisting after auto-save completion
+- Window title now updates immediately when file saved
+
+**Configurable Autosave Interval**:
+- Settings UI: 1-60 minute interval selection
+- Default remains 2 seconds for backward compatibility
+- Per-session persistence
+
+**Visual Feedback Improvements**:
+- Status bar "Last saved: [time]" indicator
+- Non-intrusive save progress icon
+- Clear indication of save completion
+
+---
+
 ## [0.1.20-alpha] - TBD
 **Branch**: `parley/refactor/mainwindow-cleanup` | **PR**: #164
 
