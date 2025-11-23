@@ -1388,14 +1388,17 @@ namespace DialogEditor.Views
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
 
-            // Create new timer that fires after configured delay
-            var delayMs = SettingsService.Instance.AutoSaveDelayMs;
+            // Create new timer that fires after configured delay (Issue #62)
+            var delayMs = SettingsService.Instance.EffectiveAutoSaveIntervalMs;
             _autoSaveTimer = new System.Timers.Timer(delayMs);
             _autoSaveTimer.AutoReset = false; // Only fire once
             _autoSaveTimer.Elapsed += async (s, e) => await AutoSaveToFileAsync();
             _autoSaveTimer.Start();
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Debounced auto-save scheduled in {delayMs}ms");
+            var intervalDesc = SettingsService.Instance.AutoSaveIntervalMinutes > 0
+                ? $"{SettingsService.Instance.AutoSaveIntervalMinutes} minute(s)"
+                : $"{delayMs}ms (fast debounce)";
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Debounced auto-save scheduled in {intervalDesc}");
         }
 
         private async Task AutoSaveToFileAsync()

@@ -66,7 +66,8 @@ namespace DialogEditor.Services
 
         // Auto-save settings - Phase 1 Step 6
         private bool _autoSaveEnabled = true; // Default: ON
-        private int _autoSaveDelayMs = 2000; // Default: 2 seconds
+        private int _autoSaveDelayMs = 2000; // Default: 2 seconds (fast debounce)
+        private int _autoSaveIntervalMinutes = 0; // Default: 0 = use AutoSaveDelayMs instead (Issue #62)
 
         // Script editor settings
         private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
@@ -372,6 +373,44 @@ namespace DialogEditor.Services
             }
         }
 
+        /// <summary>
+        /// Auto-save interval in minutes (Issue #62).
+        /// 0 = use AutoSaveDelayMs (fast debounce, default).
+        /// 1-60 = timer-based autosave every N minutes.
+        /// </summary>
+        public int AutoSaveIntervalMinutes
+        {
+            get => _autoSaveIntervalMinutes;
+            set
+            {
+                // Clamp to reasonable bounds (0-60 minutes, 0 = disabled/use fast debounce)
+                var clampedValue = Math.Max(0, Math.Min(60, value));
+                if (SetProperty(ref _autoSaveIntervalMinutes, clampedValue))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-save interval set to {clampedValue} minutes");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the effective autosave interval in milliseconds based on configuration.
+        /// If AutoSaveIntervalMinutes > 0, converts to milliseconds.
+        /// Otherwise, uses AutoSaveDelayMs (fast debounce).
+        /// </summary>
+        public int EffectiveAutoSaveIntervalMs
+        {
+            get
+            {
+                if (_autoSaveIntervalMinutes > 0)
+                {
+                    // Convert minutes to milliseconds
+                    return _autoSaveIntervalMinutes * 60 * 1000;
+                }
+                return _autoSaveDelayMs; // Default: fast debounce
+            }
+        }
+
         // Script Editor Settings Properties
         public string ExternalEditorPath
         {
@@ -521,9 +560,10 @@ namespace DialogEditor.Services
                         _debugLogFilterLevel = settings.DebugLogFilterLevel;
                         _debugWindowVisible = settings.DebugWindowVisible;
 
-                        // Load auto-save settings - Phase 1 Step 6
+                        // Load auto-save settings - Phase 1 Step 6 + Issue #62
                         _autoSaveEnabled = settings.AutoSaveEnabled;
                         _autoSaveDelayMs = Math.Max(1000, Math.Min(10000, settings.AutoSaveDelayMs));
+                        _autoSaveIntervalMinutes = Math.Max(0, Math.Min(60, settings.AutoSaveIntervalMinutes));
 
                         // Load parameter cache settings
                         _enableParameterCache = settings.EnableParameterCache;
@@ -583,6 +623,7 @@ namespace DialogEditor.Services
                     DebugWindowVisible = DebugWindowVisible,
                     AutoSaveEnabled = AutoSaveEnabled,
                     AutoSaveDelayMs = AutoSaveDelayMs,
+                    AutoSaveIntervalMinutes = AutoSaveIntervalMinutes,
                     EnableParameterCache = EnableParameterCache,
                     MaxCachedValuesPerParameter = MaxCachedValuesPerParameter,
                     MaxCachedScripts = MaxCachedScripts
@@ -765,9 +806,10 @@ namespace DialogEditor.Services
             public LogLevel DebugLogFilterLevel { get; set; } = LogLevel.INFO; // Debug window filter
             public bool DebugWindowVisible { get; set; } = false; // Debug window visibility
 
-            // Auto-save settings - Phase 1 Step 6
+            // Auto-save settings - Phase 1 Step 6 + Issue #62
             public bool AutoSaveEnabled { get; set; } = true;
             public int AutoSaveDelayMs { get; set; } = 2000;
+            public int AutoSaveIntervalMinutes { get; set; } = 0; // 0 = use fast debounce
 
             // Parameter cache settings
             public bool EnableParameterCache { get; set; } = true;
