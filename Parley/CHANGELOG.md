@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.21-alpha] - TBD
-**Branch**: `parley/feat/autosave-improvements` | **PR**: #TBD
+**Branch**: `parley/feat/autosave-improvements` | **PR**: #165
 
 ### Autosave Improvements (Issues #18, #62)
 
