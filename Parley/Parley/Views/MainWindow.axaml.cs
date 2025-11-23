@@ -43,6 +43,9 @@ namespace DialogEditor.Views
         // Flag to prevent auto-save during programmatic updates
         private bool _isPopulatingProperties = false;
 
+        // Track active Settings window to close it when MainWindow closes (Issue #134)
+        private SettingsWindow? _activeSettingsWindow;
+
         // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
         // Parameter autocomplete: Cache of script parameter declarations
@@ -396,6 +399,13 @@ namespace DialogEditor.Views
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
             _audioService.Dispose();
+
+            // Close Settings window if open (Issue #134)
+            if (_activeSettingsWindow != null)
+            {
+                _activeSettingsWindow.Close();
+                _activeSettingsWindow = null;
+            }
 
             // Save window position on close
             _windowPersistenceManager.SaveWindowPosition();
@@ -1053,14 +1063,22 @@ namespace DialogEditor.Views
         {
             try
             {
-                var settingsWindow = new SettingsWindow(pluginManager: _pluginManager);
-                settingsWindow.Closed += (s, args) =>
+                // If Settings window already open, just bring it to front (Issue #134)
+                if (_activeSettingsWindow != null)
+                {
+                    _activeSettingsWindow.Activate();
+                    return;
+                }
+
+                _activeSettingsWindow = new SettingsWindow(pluginManager: _pluginManager);
+                _activeSettingsWindow.Closed += (s, args) =>
                 {
                     // Reload theme when settings window closes
                     ApplySavedTheme();
                     _viewModel.StatusMessage = "Settings updated";
+                    _activeSettingsWindow = null; // Clear reference (Issue #134)
                 };
-                settingsWindow.Show();
+                _activeSettingsWindow.Show();
             }
             catch (Exception ex)
             {
@@ -1073,14 +1091,24 @@ namespace DialogEditor.Views
         {
             try
             {
+                // If Settings window already open, switch to Resource Paths tab and bring to front (Issue #134)
+                if (_activeSettingsWindow != null)
+                {
+                    _activeSettingsWindow.Activate();
+                    // Switch to Resource Paths tab (tab 0) - requires public method in SettingsWindow
+                    // For now just activate - user can navigate manually
+                    return;
+                }
+
                 // Open preferences with Resource Paths tab selected (tab 0)
-                var settingsWindow = new SettingsWindow(initialTab: 0, pluginManager: _pluginManager);
-                settingsWindow.Closed += (s, args) =>
+                _activeSettingsWindow = new SettingsWindow(initialTab: 0, pluginManager: _pluginManager);
+                _activeSettingsWindow.Closed += (s, args) =>
                 {
                     ApplySavedTheme();
                     _viewModel.StatusMessage = "Settings updated";
+                    _activeSettingsWindow = null; // Clear reference (Issue #134)
                 };
-                settingsWindow.Show();
+                _activeSettingsWindow.Show();
             }
             catch (Exception ex)
             {
@@ -1093,14 +1121,24 @@ namespace DialogEditor.Views
         {
             try
             {
+                // If Settings window already open, switch to Logging tab and bring to front (Issue #134)
+                if (_activeSettingsWindow != null)
+                {
+                    _activeSettingsWindow.Activate();
+                    // Switch to Logging tab (tab 2) - requires public method in SettingsWindow
+                    // For now just activate - user can navigate manually
+                    return;
+                }
+
                 // Open preferences with Logging tab selected (tab 2)
-                var settingsWindow = new SettingsWindow(initialTab: 2, pluginManager: _pluginManager);
-                settingsWindow.Closed += (s, args) =>
+                _activeSettingsWindow = new SettingsWindow(initialTab: 2, pluginManager: _pluginManager);
+                _activeSettingsWindow.Closed += (s, args) =>
                 {
                     ApplySavedTheme();
                     _viewModel.StatusMessage = "Settings updated";
+                    _activeSettingsWindow = null; // Clear reference (Issue #134)
                 };
-                settingsWindow.Show();
+                _activeSettingsWindow.Show();
             }
             catch (Exception ex)
             {
