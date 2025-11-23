@@ -18,6 +18,7 @@ namespace DialogEditor.ViewModels
         private string? _currentFileName;
         private bool _isLoading;
         private string _statusMessage = "Ready";
+        private string _lastSavedTime = ""; // Issue #62 - Last saved indicator
         private ObservableCollection<string> _debugMessages = new();
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
@@ -102,6 +103,15 @@ namespace DialogEditor.ViewModels
         {
             get => _statusMessage;
             set => SetProperty(ref _statusMessage, value);
+        }
+
+        /// <summary>
+        /// Last saved time display (Issue #62)
+        /// </summary>
+        public string LastSavedTime
+        {
+            get => _lastSavedTime;
+            set => SetProperty(ref _lastSavedTime, value);
         }
 
         public ObservableCollection<string> DebugMessages
@@ -266,6 +276,7 @@ namespace DialogEditor.ViewModels
 
                     CurrentFileName = filePath;
                     HasUnsavedChanges = false; // Clear dirty flag when loading
+                    LastSavedTime = ""; // Clear last saved time on load
                     StatusMessage = $"Dialog loaded successfully: {CurrentDialog.Entries.Count} entries, {CurrentDialog.Replies.Count} replies";
 
                     // Add to recent files
@@ -402,6 +413,10 @@ namespace DialogEditor.ViewModels
                 {
                     CurrentFileName = filePath;
                     HasUnsavedChanges = false; // Clear dirty flag on successful save
+
+                    // Update last saved time (Issue #62)
+                    LastSavedTime = $"Last saved: {DateTime.Now:h:mm:ss tt}";
+
                     StatusMessage = "Dialog saved successfully";
                     UnifiedLogger.LogApplication(LogLevel.INFO, "Dialog saved successfully");
 
@@ -685,6 +700,7 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = new Dialog();
                 CurrentFileName = null; // No filename until user saves (this will also clear scrap via setter)
                 HasUnsavedChanges = false; // Start clean
+                LastSavedTime = ""; // Clear last saved time
                 SelectedTreeNode = null; // Clear selection
                 SelectedScrapEntry = null; // Clear scrap selection
 
@@ -710,6 +726,7 @@ namespace DialogEditor.ViewModels
             CurrentDialog = null;
             CurrentFileName = null;
             HasUnsavedChanges = false;
+            LastSavedTime = ""; // Clear last saved time
             DialogNodes.Clear();
             SelectedScrapEntry = null; // Clear scrap selection
             StatusMessage = "Dialog closed";
