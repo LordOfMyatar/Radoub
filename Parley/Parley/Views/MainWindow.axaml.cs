@@ -2305,8 +2305,12 @@ namespace DialogEditor.Views
                     }
                 }
 
+                // Trigger autosave
+                _viewModel.HasUnsavedChanges = true;
+                TriggerDebouncedAutoSave();
+
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest tag set to: {category.Tag}");
-                _viewModel.StatusMessage = $"Quest: {category.DisplayName}";
+                _viewModel.StatusMessage = $"Quest saved: {category.DisplayName}";
             }
             else
             {
@@ -2314,6 +2318,10 @@ namespace DialogEditor.Views
                 var dialogNode = _selectedNode.OriginalNode;
                 dialogNode.Quest = string.Empty;
                 dialogNode.QuestEntry = uint.MaxValue;
+
+                // Trigger autosave for clearing
+                _viewModel.HasUnsavedChanges = true;
+                TriggerDebouncedAutoSave();
 
                 // Clear quest name display
                 var questNameTextBlock = this.FindControl<TextBlock>("QuestNameTextBlock");
@@ -2353,15 +2361,23 @@ namespace DialogEditor.Views
                     questEntryEndTextBlock.Text = entry.End ? "✓ Quest Complete" : "";
                 }
 
+                // Trigger autosave
+                _viewModel.HasUnsavedChanges = true;
+                TriggerDebouncedAutoSave();
+
                 var endStatus = entry.End ? " (Quest Complete - plays reward sound)" : "";
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest entry set to: {entry.ID}{endStatus}");
-                _viewModel.StatusMessage = $"Entry {entry.ID}: {entry.FullText}{endStatus}";
+                _viewModel.StatusMessage = $"Quest Entry saved - Entry {entry.ID}: {entry.FullText}{endStatus}";
             }
             else
             {
                 // Cleared selection
                 var dialogNode = _selectedNode.OriginalNode;
                 dialogNode.QuestEntry = uint.MaxValue;
+
+                // Trigger autosave for clearing
+                _viewModel.HasUnsavedChanges = true;
+                TriggerDebouncedAutoSave();
 
                 // Clear displays
                 var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
