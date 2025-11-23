@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DialogEditor.Services;
 
 namespace DialogEditor.Utils
 {
@@ -67,7 +68,7 @@ namespace DialogEditor.Utils
 
         /// <summary>
         /// Gets the shape icon for a dialog speaker based on their identity.
-        /// PC always gets Circle, Owner always gets Square, other NPCs get hash-assigned shapes.
+        /// PC always gets Circle, Owner always gets Square, other NPCs check preferences first, then use hash-assigned shapes.
         /// </summary>
         /// <param name="speaker">The speaker tag/name (empty for Owner)</param>
         /// <param name="isPC">True if this is a PC (Player Character) reply node</param>
@@ -82,6 +83,11 @@ namespace DialogEditor.Utils
             if (string.IsNullOrEmpty(speaker))
                 return SpeakerShape.Square;
 
+            // Check for user preference (Issue #16, #36)
+            var (_, prefShape) = SettingsService.Instance.GetSpeakerPreference(speaker);
+            if (prefShape.HasValue)
+                return prefShape.Value;
+
             // Other NPCs get shapes based on hash
             var availableShapes = new[] { SpeakerShape.Triangle, SpeakerShape.Diamond, SpeakerShape.Pentagon, SpeakerShape.Star };
             int hash = Math.Abs(speaker.GetHashCode());
@@ -91,7 +97,7 @@ namespace DialogEditor.Utils
         /// <summary>
         /// Gets the color for a dialog speaker based on their identity.
         /// PC gets blue (or theme override), Owner gets orange (or theme override),
-        /// other NPCs get hash-assigned colors from the palette.
+        /// other NPCs check preferences first, then get hash-assigned colors from the palette.
         /// </summary>
         /// <param name="speaker">The speaker tag/name (empty for Owner)</param>
         /// <param name="isPC">True if this is a PC (Player Character) reply node</param>
@@ -122,6 +128,11 @@ namespace DialogEditor.Utils
                 }
                 return ColorPalette.Orange;
             }
+
+            // Check for user preference (Issue #16, #36)
+            var (prefColor, _) = SettingsService.Instance.GetSpeakerPreference(speaker);
+            if (!string.IsNullOrEmpty(prefColor))
+                return prefColor;
 
             // Other NPCs get colors based on hash
             return ColorPalette.GetNpcColor(speaker);

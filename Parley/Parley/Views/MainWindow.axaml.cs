@@ -184,6 +184,35 @@ namespace DialogEditor.Views
             // Controls are now available, restore settings
             _windowPersistenceManager.RestoreDebugSettings();
             _windowPersistenceManager.RestorePanelSizes();
+
+            // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
+            InitializeSpeakerVisualComboBoxes();
+        }
+
+        private void InitializeSpeakerVisualComboBoxes()
+        {
+            // Populate Shape ComboBox with NPC shapes (Triangle, Diamond, Pentagon, Star)
+            var shapeComboBox = this.FindControl<ComboBox>("SpeakerShapeComboBox");
+            if (shapeComboBox != null)
+            {
+                shapeComboBox.Items.Clear();
+                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Triangle);
+                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Diamond);
+                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Pentagon);
+                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Star);
+            }
+
+            // Populate Color ComboBox with color-blind friendly palette
+            var colorComboBox = this.FindControl<ComboBox>("SpeakerColorComboBox");
+            if (colorComboBox != null)
+            {
+                colorComboBox.Items.Clear();
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Orange", Tag = SpeakerVisualHelper.ColorPalette.Orange });
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Purple", Tag = SpeakerVisualHelper.ColorPalette.Purple });
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Teal", Tag = SpeakerVisualHelper.ColorPalette.Teal });
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Amber", Tag = SpeakerVisualHelper.ColorPalette.Amber });
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Pink", Tag = SpeakerVisualHelper.ColorPalette.Pink });
+            }
         }
 
         /// <summary>
@@ -998,17 +1027,18 @@ namespace DialogEditor.Views
         }
 
         // Settings handlers
-        private async void OnPreferencesClick(object? sender, RoutedEventArgs e)
+        private void OnPreferencesClick(object? sender, RoutedEventArgs e)
         {
             try
             {
                 var settingsWindow = new SettingsWindow(pluginManager: _pluginManager);
-                await settingsWindow.ShowDialog(this);
-
-                // Reload theme in case it changed
-                ApplySavedTheme();
-
-                _viewModel.StatusMessage = "Settings updated";
+                settingsWindow.Closed += (s, args) =>
+                {
+                    // Reload theme when settings window closes
+                    ApplySavedTheme();
+                    _viewModel.StatusMessage = "Settings updated";
+                };
+                settingsWindow.Show();
             }
             catch (Exception ex)
             {
@@ -1017,15 +1047,18 @@ namespace DialogEditor.Views
             }
         }
 
-        private async void OnGameDirectoriesClick(object? sender, RoutedEventArgs e)
+        private void OnGameDirectoriesClick(object? sender, RoutedEventArgs e)
         {
             try
             {
                 // Open preferences with Resource Paths tab selected (tab 0)
                 var settingsWindow = new SettingsWindow(initialTab: 0, pluginManager: _pluginManager);
-                await settingsWindow.ShowDialog(this);
-                ApplySavedTheme();
-                _viewModel.StatusMessage = "Settings updated";
+                settingsWindow.Closed += (s, args) =>
+                {
+                    ApplySavedTheme();
+                    _viewModel.StatusMessage = "Settings updated";
+                };
+                settingsWindow.Show();
             }
             catch (Exception ex)
             {
@@ -1034,15 +1067,18 @@ namespace DialogEditor.Views
             }
         }
 
-        private async void OnLogSettingsClick(object? sender, RoutedEventArgs e)
+        private void OnLogSettingsClick(object? sender, RoutedEventArgs e)
         {
             try
             {
                 // Open preferences with Logging tab selected (tab 2)
                 var settingsWindow = new SettingsWindow(initialTab: 2, pluginManager: _pluginManager);
-                await settingsWindow.ShowDialog(this);
-                ApplySavedTheme();
-                _viewModel.StatusMessage = "Settings updated";
+                settingsWindow.Closed += (s, args) =>
+                {
+                    ApplySavedTheme();
+                    _viewModel.StatusMessage = "Settings updated";
+                };
+                settingsWindow.Show();
             }
             catch (Exception ex)
             {
@@ -2064,6 +2100,56 @@ namespace DialogEditor.Views
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error selecting recent tag: {ex.Message}");
+            }
+        }
+
+        // NPC Speaker Visual Preferences (Issue #16, #36)
+        private void OnSpeakerShapeChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                var comboBox = sender as ComboBox;
+                var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
+
+                if (comboBox?.SelectedItem != null && speakerTextBox != null && !string.IsNullOrEmpty(speakerTextBox.Text))
+                {
+                    var speakerTag = speakerTextBox.Text.Trim();
+                    if (Enum.TryParse<SpeakerVisualHelper.SpeakerShape>(comboBox.SelectedItem.ToString(), out var shape))
+                    {
+                        SettingsService.Instance.SetSpeakerPreference(speakerTag, null, shape);
+                        _viewModel.RefreshTreeViewColors();
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' shape to {shape}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error setting speaker shape: {ex.Message}");
+            }
+        }
+
+        private void OnSpeakerColorChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                var comboBox = sender as ComboBox;
+                var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
+
+                if (comboBox?.SelectedItem is ComboBoxItem item && speakerTextBox != null && !string.IsNullOrEmpty(speakerTextBox.Text))
+                {
+                    var speakerTag = speakerTextBox.Text.Trim();
+                    var color = item.Tag as string;
+                    if (!string.IsNullOrEmpty(color))
+                    {
+                        SettingsService.Instance.SetSpeakerPreference(speakerTag, color, null);
+                        _viewModel.RefreshTreeViewColors();
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' color to {color}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error setting speaker color: {ex.Message}");
             }
         }
 
