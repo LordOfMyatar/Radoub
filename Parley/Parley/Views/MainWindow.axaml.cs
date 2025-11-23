@@ -2911,11 +2911,17 @@ namespace DialogEditor.Views
                 return;
             }
 
-            // Confirm deletion
-            var confirmed = await ShowConfirmDialog(
-                "Delete Node",
-                $"Are you sure you want to delete this node and all its children?\n\n\"{selectedNode.DisplayText}\""
-            );
+            // Check if delete confirmation is enabled (Issue #14)
+            bool confirmed = true;
+            if (SettingsService.Instance.ShowDeleteConfirmation)
+            {
+                // Confirm deletion with "Don't show this again" option
+                confirmed = await ShowConfirmDialog(
+                    "Delete Node",
+                    $"Are you sure you want to delete this node and all its children?\n\n\"{selectedNode.DisplayText}\"",
+                    showDontAskAgain: true
+                );
+            }
 
             if (confirmed)
             {
@@ -3063,7 +3069,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private async Task<bool> ShowConfirmDialog(string title, string message)
+        private async Task<bool> ShowConfirmDialog(string title, string message, bool showDontAskAgain = false)
         {
             var dialog = new Window
             {
@@ -3085,6 +3091,18 @@ namespace DialogEditor.Views
                 Margin = new Thickness(0, 0, 0, 20)
             });
 
+            // "Don't show this again" checkbox (Issue #14)
+            CheckBox? dontAskCheckBox = null;
+            if (showDontAskAgain)
+            {
+                dontAskCheckBox = new CheckBox
+                {
+                    Content = "Don't show this again",
+                    Margin = new Thickness(0, 0, 0, 20)
+                };
+                panel.Children.Add(dontAskCheckBox);
+            }
+
             var buttonPanel = new StackPanel
             {
                 Orientation = global::Avalonia.Layout.Orientation.Horizontal,
@@ -3095,7 +3113,16 @@ namespace DialogEditor.Views
             var result = false;
 
             var yesButton = new Button { Content = "Yes", Width = 80 };
-            yesButton.Click += (s, e) => { result = true; dialog.Close(); };
+            yesButton.Click += (s, e) =>
+            {
+                result = true;
+                // Save "don't ask again" preference if checkbox is checked (Issue #14)
+                if (dontAskCheckBox?.IsChecked == true)
+                {
+                    SettingsService.Instance.ShowDeleteConfirmation = false;
+                }
+                dialog.Close();
+            };
 
             var noButton = new Button { Content = "No", Width = 80 };
             noButton.Click += (s, e) => { result = false; dialog.Close(); };

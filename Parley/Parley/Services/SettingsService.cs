@@ -86,6 +86,9 @@ namespace DialogEditor.Services
         private Dictionary<string, SpeakerPreferences> _npcSpeakerPreferences = new Dictionary<string, SpeakerPreferences>();
         private bool _enableNpcTagColoring = true; // Default: ON (use shape/color per tag)
 
+        // Confirmation dialog settings (Issue #14)
+        private bool _showDeleteConfirmation = true; // Default: ON (show delete confirmation dialog)
+
         // Script editor settings
         private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
         private List<string> _scriptSearchPaths = new List<string>(); // Additional directories to search for scripts
@@ -499,6 +502,18 @@ namespace DialogEditor.Services
             }
         }
 
+        public bool ShowDeleteConfirmation
+        {
+            get => _showDeleteConfirmation;
+            set
+            {
+                if (SetProperty(ref _showDeleteConfirmation, value))
+                {
+                    SaveSettings();
+                }
+            }
+        }
+
         // Script Editor Settings Properties
         public string ExternalEditorPath
         {
@@ -625,6 +640,7 @@ namespace DialogEditor.Services
                         _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
                         _npcSpeakerPreferences = settings.NpcSpeakerPreferences ?? new Dictionary<string, SpeakerPreferences>(); // Issue #16, #36
                         _enableNpcTagColoring = settings.EnableNpcTagColoring; // Issue #16, #36
+                        _showDeleteConfirmation = settings.ShowDeleteConfirmation; // Issue #14
 
                         // Load game settings (expand ~ to user home directory)
                         _neverwinterNightsPath = ExpandPath(settings.NeverwinterNightsPath ?? "");
@@ -707,6 +723,7 @@ namespace DialogEditor.Services
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
                     NpcSpeakerPreferences = NpcSpeakerPreferences, // Issue #16, #36
                     EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
+                    ShowDeleteConfirmation = ShowDeleteConfirmation, // Issue #14
                     NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
                     BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
                     CurrentModulePath = ContractPath(CurrentModulePath), // Use ~ for home directory
@@ -890,6 +907,7 @@ namespace DialogEditor.Services
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
             public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON
+            public bool ShowDeleteConfirmation { get; set; } = true; // Issue #14: Default ON
 
             // Game settings
             public string NeverwinterNightsPath { get; set; } = "";
