@@ -101,6 +101,8 @@ namespace Parley.Tests.GUI
             var entry1Node = viewModel.DialogNodes[0];
             viewModel.AddPCReplyNode(entry1Node); // Reply under Entry 1
 
+            Assert.NotNull(entry1Node.Children);
+            Assert.NotEmpty(entry1Node.Children);
             var replyNode = entry1Node.Children[0];
             viewModel.CopyNode(replyNode);
 
@@ -132,6 +134,8 @@ namespace Parley.Tests.GUI
             var entry1Node = viewModel.DialogNodes[0];
             viewModel.AddPCReplyNode(entry1Node);
 
+            Assert.NotNull(entry1Node.Children);
+            Assert.NotEmpty(entry1Node.Children);
             var replyNode = entry1Node.Children[0];
             viewModel.CopyNode(replyNode);
 

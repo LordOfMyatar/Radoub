@@ -10,6 +10,86 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.20-alpha] - TBD
+**Branch**: `parley/refactor/mainwindow-cleanup` | **PR**: #164
+
+### Epic #163: MainWindow.axaml.cs Refactoring Sprint
+
+Systematic service extraction from 4,126-line code-behind file, following Epic #99 SOLID patterns.
+
+**FINAL RESULT**: MainWindow.axaml.cs reduced from 4,126 → 2,603 lines (-1,523, -37%)
+
+### Services Extracted
+
+#### PropertyAutoSaveService (#155) - 245 lines
+- Extracted 179-line god method with 16-case switch statement
+- Strategy pattern with property handlers dictionary
+- MainWindow reduction: -706 lines
+
+#### ScriptParameterUIManager (#156) - 352 lines
+- Consolidated ~400 lines of duplicated parameter UI logic
+- Handles conditional and action parameters with auto-trim feedback
+- MainWindow reduction: -82 lines (initial)
+
+#### NodeCreationHelper (#157) - 229 lines
+- Smart node creation with debouncing (Issue #76)
+- Tree navigation and selection management
+- Auto-focus workflow for rapid entry
+- MainWindow reduction: -71 lines
+
+#### ResourceBrowserManager (#158) - 214 lines
+- Unified Sound/Creature browser patterns
+- Recent tags management and session cache
+- MainWindow reduction: -90 lines
+
+#### KeyboardShortcutManager (#159) - 215 lines
+- Data-driven keyboard shortcuts (20+ shortcuts)
+- Interface-based handler pattern (IKeyboardShortcutHandler)
+- Replaced 147-line nested if/switch method
+- MainWindow reduction: -87 lines
+
+#### DebugAndLoggingHandler (#160) - 311 lines
+- Log export with ZIP creation (117 lines)
+- Scrap management (restore/clear operations)
+- Debug console operations
+- MainWindow reduction: -187 lines
+
+#### WindowPersistenceManager (#161) - 252 lines
+- Window position and panel size persistence
+- Screen boundary validation
+- Debug settings and animation values restoration
+- MainWindow reduction: -150 lines
+
+#### Duplicate Code Cleanup - 221 lines removed
+- UpdateConditionParamsFromUI (95 lines) → ScriptParameterUIManager
+- UpdateActionParamsFromUI (84 lines) → ScriptParameterUIManager
+- FindLastAddedNode + FindLastAddedNodeRecursive (42 lines) → NodeCreationHelper
+
+### Other Improvements
+
+#### Build Warnings Fixed (5 → 0)
+- ✅ DebugLogger.cs:41 - Added null-conditional operator
+- ✅ NodeCreationHeadlessTests.cs:114 - Added Assert.NotNull check
+- ✅ CopyPasteHeadlessTests.cs:104, 135 - Added Assert.NotNull checks
+- ✅ OrphanNodeCleanupTests.cs:187 - Added Assert.NotNull check
+
+#### Dead Code Cleanup (#162)
+- ✅ Removed abandoned inline editing code
+
+### Testing
+- All 231 tests passing
+- 16 GUI tests skipped (expected)
+- No functional changes (pure refactoring)
+
+### Abandoned Work
+- **Inline Text Editing for Tree View** (Branch: `parley/feat/epic-39-inline-text-v2`)
+  - Attempted inline editing in tree view with F2 key support
+  - Abandoned due to Avalonia focus management complexity vs. value-add mismatch
+  - Existing properties-panel workflow sufficient for rapid dialog entry
+  - Dead code cleanup tracked in #162
+
+---
+
 ## [0.1.19-alpha] - 2025-11-20
 **Branch**: `parley/feat/epic-108-inline-editing` | **PR**: #142
 

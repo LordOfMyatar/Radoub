@@ -1,7 +1,7 @@
 # Code Path Map - Parley Architecture
 
 **Purpose**: Track active code paths for file operations and UI workflows
-**Last Updated**: 2025-11-19 (Phase 7 Complete)
+**Last Updated**: 2025-11-22 (Epic #163 MainWindow Refactoring Complete)
 **Note**: This information was discovered and written by Claude AI.
 
 ---
@@ -15,7 +15,7 @@
 **GffBinaryReader** (~400 lines): Reads GFF binary format
 **GffIndexFixer** (~400 lines): Fixes field indices for Aurora compatibility
 
-### Services & Managers (Epic #99 Refactoring)
+### Services & Managers (Epic #99 + #163 Refactoring)
 **DialogFileService** (~200 lines): Facade for file operations (load/save)
 **UndoManager** (~150 lines): Manages undo/redo state history
 **DialogClipboardService** (~300 lines): Copy/paste operations
@@ -33,18 +33,27 @@
 **UnifiedLogger** (~385 lines): Session-based logging with path sanitization
 **DebugLogger** (~180 lines): UI debug console with log level filtering
 
+### MainWindow Services (Epic #163 - PR #164)
+**PropertyAutoSaveService** (245 lines): Auto-save property changes with strategy pattern (2025-11-22)
+**ScriptParameterUIManager** (352 lines): Parameter UI management for conditions/actions (2025-11-22)
+**NodeCreationHelper** (229 lines): Smart node creation with debouncing and tree navigation (2025-11-22)
+**ResourceBrowserManager** (214 lines): Sound/Creature browser dialogs and recent tags (2025-11-22)
+**KeyboardShortcutManager** (215 lines): Data-driven keyboard shortcuts with 20+ mappings (2025-11-22)
+**DebugAndLoggingHandler** (311 lines): Log export, scrap operations, debug console (2025-11-22)
+**WindowPersistenceManager** (252 lines): Window/panel persistence and screen validation (2025-11-22)
+
 ### ViewModels & UI
 **MainViewModel** (~1,258 lines as of Phase 7): **REFACTORING COMPLETE - GOAL EXCEEDED ✅**
 - Down from ~2,956 lines (Phase 7: -1,698 lines, 57% reduction)
 - **Target Exceeded**: Now 258 lines BELOW 1,000 line goal
 - Phase 7 Extractions: IndexManager, NodeCloningService, ReferenceManager, PasteOperationsManager, RestoreFromScrap
-**MainWindow.axaml.cs** (~370 lines): Thin coordinator - delegates to handlers
 
-### Handlers (UI Logic Extracted from MainWindow)
-**FileOperationsHandler** (~200 lines): Open, save, recent files
-**ThemeAndSettingsHandler** (~150 lines): Theme, font size, game dirs
-**TreeViewHandler** (~300 lines): Tree operations, selection, expand/collapse
-**PropertiesPanelHandler** (~400 lines): Properties panel, script preview
+**MainWindow.axaml.cs** (2,603 lines): **EPIC #163 REFACTORING COMPLETE ✅**
+- Down from 4,126 lines (Epic #163: -1,523 lines, 37% reduction)
+- **7 Services Extracted**: PropertyAutoSave, ScriptParameterUI, NodeCreation, ResourceBrowser, KeyboardShortcuts, DebugLogging, WindowPersistence
+- Implements IKeyboardShortcutHandler interface
+- All build warnings fixed (5 → 0)
+- All 231 tests passing
 
 ---
 

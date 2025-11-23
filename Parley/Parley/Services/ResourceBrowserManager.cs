@@ -1,0 +1,214 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
+using DialogEditor.Models;
+using DialogEditor.Utils;
+using DialogEditor.ViewModels;
+using DialogEditor.Views;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace DialogEditor.Services
+{
+    /// <summary>
+    /// Manages resource browser dialogs (sounds, creatures, etc.) with unified patterns.
+    /// Handles recent items and browser dialog creation.
+    /// Extracted from MainWindow.axaml.cs to eliminate browser pattern duplication.
+    /// </summary>
+    public class ResourceBrowserManager
+    {
+        private readonly AudioService _audioService;
+        private readonly CreatureService _creatureService;
+        private readonly Func<string, Control?> _findControl;
+        private readonly Action<string> _setStatusMessage;
+        private readonly Action<string> _autoSaveProperty;
+        private readonly Func<TreeViewSafeNode?> _getSelectedNode;
+
+        // Session cache for recently used creature tags
+        private readonly List<string> _recentCreatureTags = new();
+
+        public ResourceBrowserManager(
+            AudioService audioService,
+            CreatureService creatureService,
+            Func<string, Control?> findControl,
+            Action<string> setStatusMessage,
+            Action<string> autoSaveProperty,
+            Func<TreeViewSafeNode?> getSelectedNode)
+        {
+            _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
+            _creatureService = creatureService ?? throw new ArgumentNullException(nameof(creatureService));
+            _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
+            _setStatusMessage = setStatusMessage ?? throw new ArgumentNullException(nameof(setStatusMessage));
+            _autoSaveProperty = autoSaveProperty ?? throw new ArgumentNullException(nameof(autoSaveProperty));
+            _getSelectedNode = getSelectedNode ?? throw new ArgumentNullException(nameof(getSelectedNode));
+        }
+
+        /// <summary>
+        /// Opens sound browser dialog and updates sound field
+        /// </summary>
+        public async Task BrowseSoundAsync(Window owner)
+        {
+            // Phase 2 Fix: Don't allow sound browser when no node selected or ROOT selected
+            var selectedNode = _getSelectedNode();
+            if (selectedNode == null)
+            {
+                _setStatusMessage("Please select a dialog node first");
+                return;
+            }
+
+            if (selectedNode is TreeViewRootNode)
+            {
+                _setStatusMessage("Cannot assign sounds to ROOT. Select a dialog node instead.");
+                return;
+            }
+
+            try
+            {
+                var soundBrowser = new SoundBrowserWindow();
+                var result = await soundBrowser.ShowDialog<string?>(owner);
+
+                if (!string.IsNullOrEmpty(result))
+                {
+                    // Update the sound field with selected sound
+                    var soundTextBox = _findControl("SoundTextBox") as TextBox;
+                    if (soundTextBox != null)
+                    {
+                        soundTextBox.Text = result;
+                        // Trigger auto-save
+                        _autoSaveProperty("SoundTextBox");
+                    }
+                    _setStatusMessage($"Selected sound: {result}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening sound browser: {ex.Message}");
+                _setStatusMessage($"Error opening sound browser: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Opens creature browser dialog and updates speaker field
+        /// </summary>
+        public async Task BrowseCreatureAsync(Window owner)
+        {
+            // Don't allow creature browser when no node selected or ROOT selected
+            var selectedNode = _getSelectedNode();
+            if (selectedNode == null)
+            {
+                _setStatusMessage("Please select a dialog node first");
+                return;
+            }
+
+            if (selectedNode is TreeViewRootNode)
+            {
+                _setStatusMessage("Cannot assign creatures to ROOT. Select a dialog node instead.");
+                return;
+            }
+
+            try
+            {
+                // Get creatures from CreatureService
+                var creatures = _creatureService.GetAllCreatures();
+
+                if (creatures.Count == 0)
+                {
+                    // Show helpful message with instructions
+                    var message = "No creatures loaded.\n\n" +
+                                "To use creature browser:\n" +
+                                "• Place .utc files in the same folder as your .dlg file, OR\n" +
+                                "• Specify module directory in Settings\n\n" +
+                                "You can still type creature tags manually.";
+
+                    var msgBox = new Window
+                    {
+                        Title = "No Creatures Available",
+                        Width = 400,
+                        Height = 250,
+                        Content = new TextBlock
+                        {
+                            Text = message,
+                            Margin = new Thickness(20)
+                        },
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    };
+
+                    await msgBox.ShowDialog(owner);
+
+                    _setStatusMessage("No creatures loaded - see message for details");
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "No creatures available for picker");
+                    return;
+                }
+
+                var creaturePicker = new CreaturePickerWindow(creatures, _recentCreatureTags);
+                var result = await creaturePicker.ShowDialog<bool>(owner);
+
+                if (result && !string.IsNullOrEmpty(creaturePicker.SelectedTag))
+                {
+                    var selectedTag = creaturePicker.SelectedTag;
+
+                    // Update the Speaker field with selected tag
+                    var speakerTextBox = _findControl("SpeakerTextBox") as TextBox;
+                    if (speakerTextBox != null)
+                    {
+                        speakerTextBox.Text = selectedTag;
+                        // Trigger auto-save
+                        _autoSaveProperty("SpeakerTextBox");
+                    }
+
+                    // Add to recent tags (avoid duplicates, max 10)
+                    AddToRecentTags(selectedTag);
+
+                    _setStatusMessage($"Selected creature: {selectedTag}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening creature picker: {ex.Message}");
+                _setStatusMessage($"Error opening creature picker: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Adds a creature tag to recent tags list
+        /// </summary>
+        private void AddToRecentTags(string tag)
+        {
+            // Remove if already exists (move to front)
+            _recentCreatureTags.Remove(tag);
+
+            // Add to front
+            _recentCreatureTags.Insert(0, tag);
+
+            // Keep max 10 recent tags
+            if (_recentCreatureTags.Count > 10)
+            {
+                _recentCreatureTags.RemoveAt(_recentCreatureTags.Count - 1);
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to recent creature tags: {tag}");
+
+            // Update the dropdown
+            UpdateRecentCreatureTagsDropdown();
+        }
+
+        /// <summary>
+        /// Updates the recent creature tags dropdown
+        /// </summary>
+        private void UpdateRecentCreatureTagsDropdown()
+        {
+            var dropdown = _findControl("RecentCreatureTagsComboBox") as ComboBox;
+            if (dropdown != null)
+            {
+                dropdown.ItemsSource = _recentCreatureTags.ToList();
+            }
+        }
+
+        /// <summary>
+        /// Gets recent creature tags for external access
+        /// </summary>
+        public IReadOnlyList<string> GetRecentCreatureTags() => _recentCreatureTags.AsReadOnly();
+    }
+}

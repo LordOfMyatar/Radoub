@@ -22,13 +22,20 @@ using Parley.Views.Helpers;
 
 namespace DialogEditor.Views
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, IKeyboardShortcutHandler
     {
         private readonly MainViewModel _viewModel;
         private readonly AudioService _audioService;
         private readonly CreatureService _creatureService;
         private readonly PluginManager _pluginManager;
         private readonly PropertyPanelPopulator _propertyPopulator; // Helper for populating properties panel
+        private readonly PropertyAutoSaveService _propertyAutoSaveService; // Handles auto-saving of node properties
+        private readonly ScriptParameterUIManager _parameterUIManager; // Manages script parameter UI and synchronization
+        private readonly NodeCreationHelper _nodeCreationHelper; // Handles smart node creation and tree navigation
+        private readonly ResourceBrowserManager _resourceBrowserManager; // Manages resource browser dialogs
+        private readonly KeyboardShortcutManager _keyboardShortcutManager; // Manages keyboard shortcuts
+        private readonly DebugAndLoggingHandler _debugAndLoggingHandler; // Handles debug and logging operations
+        private readonly WindowPersistenceManager _windowPersistenceManager; // Manages window and panel persistence
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -36,16 +43,7 @@ namespace DialogEditor.Views
         // Flag to prevent auto-save during programmatic updates
         private bool _isPopulatingProperties = false;
 
-        // DEBOUNCED NODE CREATION: Prevent rapid Ctrl+D causing focus misplacement (Issue #76)
-        private DateTime _lastAddNodeTime = DateTime.MinValue;
-        private const int ADD_NODE_DEBOUNCE_MS = 150; // Minimum delay between Ctrl+D operations
-        private bool _isAddingNode = false; // Prevents overlapping node creation operations
-
-        // Flag to prevent saving position during initial window setup and restore
-        private bool _isRestoringPosition = true; // Start as true, prevent saves during constructor/init
-
-        // Session cache for recently used creature tags
-        private readonly List<string> _recentCreatureTags = new();
+        // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
         // Parameter autocomplete: Cache of script parameter declarations
         private ScriptParameterDeclarations? _currentConditionDeclarations;
@@ -64,6 +62,40 @@ namespace DialogEditor.Views
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
             _propertyPopulator = new PropertyPanelPopulator(this);
+            _propertyAutoSaveService = new PropertyAutoSaveService(
+                findControl: this.FindControl<Control>,
+                refreshTreeDisplay: RefreshTreeDisplayPreserveState,
+                loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
+                clearScriptPreview: ClearScriptPreview,
+                triggerDebouncedAutoSave: TriggerDebouncedAutoSave);
+            _parameterUIManager = new ScriptParameterUIManager(
+                findControl: this.FindControl<Control>,
+                setStatusMessage: msg => _viewModel.StatusMessage = msg,
+                triggerAutoSave: () => { _viewModel.HasUnsavedChanges = true; TriggerDebouncedAutoSave(); },
+                isPopulatingProperties: () => _isPopulatingProperties,
+                getSelectedNode: () => _selectedNode);
+            _nodeCreationHelper = new NodeCreationHelper(
+                viewModel: _viewModel,
+                findControl: this.FindControl<Control>,
+                saveCurrentNodeProperties: SaveCurrentNodeProperties,
+                triggerAutoSave: TriggerDebouncedAutoSave);
+            _resourceBrowserManager = new ResourceBrowserManager(
+                audioService: _audioService,
+                creatureService: _creatureService,
+                findControl: this.FindControl<Control>,
+                setStatusMessage: msg => _viewModel.StatusMessage = msg,
+                autoSaveProperty: AutoSaveProperty,
+                getSelectedNode: () => _selectedNode);
+            _keyboardShortcutManager = new KeyboardShortcutManager();
+            _keyboardShortcutManager.RegisterShortcuts(this);
+            _debugAndLoggingHandler = new DebugAndLoggingHandler(
+                viewModel: _viewModel,
+                findControl: this.FindControl<Control>,
+                getStorageProvider: () => this.StorageProvider,
+                setStatusMessage: msg => _viewModel.StatusMessage = msg);
+            _windowPersistenceManager = new WindowPersistenceManager(
+                window: this,
+                findControl: this.FindControl<Control>);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -73,7 +105,7 @@ namespace DialogEditor.Views
             var retentionCount = SettingsService.Instance.LogRetentionSessions;
             UnifiedLogger.CleanupOldSessions(retentionCount);
 
-            LoadAnimationValues();
+            _windowPersistenceManager.LoadAnimationValues();
 
             // Apply saved theme preference
             ApplySavedTheme();
@@ -87,30 +119,8 @@ namespace DialogEditor.Views
             // Hook up menu events
             this.Opened += async (s, e) =>
             {
-                // Restore window position from settings (after window is open and screens are available)
-                _isRestoringPosition = true;
-                var settings = SettingsService.Instance;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring window position: Left={settings.WindowLeft}, Top={settings.WindowTop}, Current={Position.X},{Position.Y}");
-
-                if (settings.WindowLeft >= 0 && settings.WindowTop >= 0)
-                {
-                    var targetPos = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-
-                    // Validate position is on a visible screen
-                    if (IsPositionOnScreen(targetPos))
-                    {
-                        Position = targetPos;
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position restored to ({targetPos.X}, {targetPos.Y})");
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.WARN, $"Saved position ({targetPos.X}, {targetPos.Y}) is off-screen, using default");
-                    }
-                }
-
-                // Allow position saving after a short delay (to avoid saving the restore itself)
-                await Task.Delay(500);
-                _isRestoringPosition = false;
+                // Restore window position from settings
+                await _windowPersistenceManager.RestoreWindowPositionAsync();
 
                 PopulateRecentFilesMenu();
                 // Start enabled plugins after window opens
@@ -134,8 +144,17 @@ namespace DialogEditor.Views
                 }
             };
             this.Closing += OnWindowClosing;
-            this.PositionChanged += OnWindowPositionChanged;
-            this.PropertyChanged += OnWindowPropertyChanged;
+            this.PositionChanged += (s, e) => _windowPersistenceManager.SaveWindowPosition();
+            this.PropertyChanged += (s, e) =>
+            {
+                if (!_windowPersistenceManager.IsRestoringPosition)
+                {
+                    if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
+                    {
+                        _windowPersistenceManager.SaveWindowPosition();
+                    }
+                }
+            };
 
             // Phase 1 Fix: Set up keyboard shortcuts
             SetupKeyboardShortcuts();
@@ -163,8 +182,8 @@ namespace DialogEditor.Views
         private void OnWindowLoaded(object? sender, RoutedEventArgs e)
         {
             // Controls are now available, restore settings
-            RestoreDebugSettings();
-            RestorePanelSizes();
+            _windowPersistenceManager.RestoreDebugSettings();
+            _windowPersistenceManager.RestorePanelSizes();
         }
 
         /// <summary>
@@ -183,232 +202,67 @@ namespace DialogEditor.Views
             }
         }
 
-        private void RestorePanelSizes()
-        {
-            var settings = SettingsService.Instance;
-            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
-
-            if (mainContentGrid != null && mainContentGrid.ColumnDefinitions.Count > 0 && mainContentGrid.RowDefinitions.Count > 0)
-            {
-                // Column 0 is left panel (tree+text)
-                mainContentGrid.ColumnDefinitions[0].Width = new GridLength(settings.LeftPanelWidth, GridUnitType.Pixel);
-
-                // Row 0 is top panel (dialog tree)
-                mainContentGrid.RowDefinitions[0].Height = new GridLength(settings.TopLeftPanelHeight, GridUnitType.Pixel);
-
-                // Watch for splitter changes
-                mainContentGrid.PropertyChanged += OnMainContentGridPropertyChanged;
-            }
-        }
-
-        private void OnMainContentGridPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            // Save panel sizes when grid layout changes (splitters dragged)
-            SavePanelSizes();
-        }
-
-        private void SavePanelSizes()
-        {
-            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
-
-            if (mainContentGrid != null && mainContentGrid.ColumnDefinitions.Count > 0 && mainContentGrid.RowDefinitions.Count > 0)
-            {
-                var leftPanelColumn = mainContentGrid.ColumnDefinitions[0];
-                var topLeftPanelRow = mainContentGrid.RowDefinitions[0];
-
-                if (leftPanelColumn.Width.IsAbsolute)
-                {
-                    SettingsService.Instance.LeftPanelWidth = leftPanelColumn.Width.Value;
-                }
-
-                if (topLeftPanelRow.Height.IsAbsolute)
-                {
-                    SettingsService.Instance.TopLeftPanelHeight = topLeftPanelRow.Height.Value;
-                }
-            }
-        }
-
-        private void RestoreDebugSettings()
-        {
-            // Initialize log level filter from saved settings
-            // SelectionChanged doesn't fire on initial XAML load, so we must set it manually
-            var savedFilterLevel = SettingsService.Instance.DebugLogFilterLevel;
-            DebugLogger.SetLogLevelFilter(savedFilterLevel);
-
-            // Set ComboBox to match saved filter level
-            var logLevelComboBox = this.FindControl<ComboBox>("LogLevelFilterComboBox");
-            if (logLevelComboBox != null)
-            {
-                var selectedIndex = savedFilterLevel switch
-                {
-                    LogLevel.ERROR => 0,
-                    LogLevel.WARN => 1,
-                    LogLevel.INFO => 2,
-                    LogLevel.DEBUG => 3,
-                    LogLevel.TRACE => 4,
-                    _ => 2 // Default to INFO
-                };
-                logLevelComboBox.SelectedIndex = selectedIndex;
-            }
-
-            // Restore debug window visibility from settings
-            var debugTab = this.FindControl<TabItem>("DebugTab");
-            if (debugTab != null)
-            {
-                var savedVisibility = SettingsService.Instance.DebugWindowVisible;
-                debugTab.IsVisible = savedVisibility;
-
-                // Update menu item text to match visibility state
-                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
-                if (showDebugMenuItem != null)
-                {
-                    showDebugMenuItem.Header = debugTab.IsVisible ? "Hide _Debug Console" : "Show _Debug Console";
-                }
-            }
-        }
-
+        
+        
+        
+        
         private void SetupKeyboardShortcuts()
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "SetupKeyboardShortcuts: Keyboard handler registered");
 
-            // Use PreviewKeyDown (tunneling) to intercept keys before TreeView handles them
+            // Tunneling event for shortcuts that intercept before TreeView (Ctrl+Shift+Up/Down)
             this.AddHandler(KeyDownEvent, (sender, e) =>
             {
-                // Log ALL key presses for debugging
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"PreviewKeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}");
-
-                // Check for modifier keys
-                bool ctrlPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Control);
-                bool shiftPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Shift);
-                bool altPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Alt);
-
-                // Phase 2a: Node Reordering shortcuts (Ctrl+Shift+Up/Down) - CHECK FIRST
-                // Note: Alt+Up/Down conflicts with menu activation in Avalonia
-                // Use tunneling to intercept before TreeView consumes the event
-                if (ctrlPressed && shiftPressed && !altPressed)
+                if (_keyboardShortcutManager.HandlePreviewKeyDown(e))
                 {
-                    switch (e.Key)
-                    {
-                        case global::Avalonia.Input.Key.Up:
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+Shift+Up detected - calling OnMoveNodeUpClick");
-                            OnMoveNodeUpClick(null, null!);
-                            e.Handled = true;
-                            return;
-                        case global::Avalonia.Input.Key.Down:
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+Shift+Down detected - calling OnMoveNodeDownClick");
-                            OnMoveNodeDownClick(null, null!);
-                            e.Handled = true;
-                            return;
-                    }
+                    e.Handled = true;
                 }
             }, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
+            // Standard KeyDown events
             this.KeyDown += (sender, e) =>
             {
-                // Check for modifier keys
-                bool ctrlPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Control);
-                bool shiftPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Shift);
-                bool altPressed = e.KeyModifiers.HasFlag(global::Avalonia.Input.KeyModifiers.Alt);
-
-                if (ctrlPressed && !shiftPressed)
+                if (_keyboardShortcutManager.HandleKeyDown(e))
                 {
-                    switch (e.Key)
-                    {
-                        case global::Avalonia.Input.Key.N:
-                            // File > New
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+N detected - calling OnNewClick");
-                            OnNewClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.O:
-                            // File > Open
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+O detected - calling OnOpenClick");
-                            OnOpenClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.S:
-                            // File > Save
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+S detected - calling OnSaveClick");
-                            OnSaveClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.D:
-                            // Edit > Add Node (context-aware)
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Ctrl+D detected - calling OnAddSmartNodeClick");
-                            OnAddSmartNodeClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.R:
-                            // Phase 1 Fix: Context-aware node creation
-                            // Ctrl+R = "Reply" - creates appropriate node based on selected parent
-                            OnAddContextAwareReply(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.C:
-                            OnCopyNodeClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.V:
-                            OnPasteAsDuplicateClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.L:
-                            OnPasteAsLinkClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.X:
-                            OnCutNodeClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.Z:
-                            OnUndoClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.Y:
-                            OnRedoClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.E:
-                            OnExpandSubnodesClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.W:
-                            OnCollapseSubnodesClick(null, null!);
-                            e.Handled = true;
-                            break;
-                    }
-                }
-                else if (ctrlPressed && shiftPressed)
-                {
-                    switch (e.Key)
-                    {
-                        case global::Avalonia.Input.Key.T:
-                            OnCopyNodeTextClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.P:
-                            OnCopyNodePropertiesClick(null, null!);
-                            e.Handled = true;
-                            break;
-                        case global::Avalonia.Input.Key.S:
-                            OnCopyTreeStructureClick(null, null!);
-                            e.Handled = true;
-                            break;
-                    }
-                }
-                else if (!ctrlPressed && !shiftPressed && !altPressed)
-                {
-                    switch (e.Key)
-                    {
-                        case global::Avalonia.Input.Key.Delete:
-                            OnDeleteNodeClick(null, null!);
-                            e.Handled = true;
-                            break;
-                    }
+                    e.Handled = true;
                 }
             };
         }
+
+        #region IKeyboardShortcutHandler Implementation
+
+        // File operations
+        void IKeyboardShortcutHandler.OnNew() => OnNewClick(null, null!);
+        void IKeyboardShortcutHandler.OnOpen() => OnOpenClick(null, null!);
+        void IKeyboardShortcutHandler.OnSave() => OnSaveClick(null, null!);
+
+        // Node operations
+        void IKeyboardShortcutHandler.OnAddSmartNode() => OnAddSmartNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnAddContextAwareReply() => OnAddContextAwareReply(null, null!);
+        void IKeyboardShortcutHandler.OnDeleteNode() => OnDeleteNodeClick(null, null!);
+
+        // Clipboard operations
+        void IKeyboardShortcutHandler.OnCopyNode() => OnCopyNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnCutNode() => OnCutNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnPasteAsDuplicate() => OnPasteAsDuplicateClick(null, null!);
+        void IKeyboardShortcutHandler.OnPasteAsLink() => OnPasteAsLinkClick(null, null!);
+
+        // Advanced copy
+        void IKeyboardShortcutHandler.OnCopyNodeText() => OnCopyNodeTextClick(null, null!);
+        void IKeyboardShortcutHandler.OnCopyNodeProperties() => OnCopyNodePropertiesClick(null, null!);
+        void IKeyboardShortcutHandler.OnCopyTreeStructure() => OnCopyTreeStructureClick(null, null!);
+
+        // History
+        void IKeyboardShortcutHandler.OnUndo() => OnUndoClick(null, null!);
+        void IKeyboardShortcutHandler.OnRedo() => OnRedoClick(null, null!);
+
+        // Tree navigation
+        void IKeyboardShortcutHandler.OnExpandSubnodes() => OnExpandSubnodesClick(null, null!);
+        void IKeyboardShortcutHandler.OnCollapseSubnodes() => OnCollapseSubnodesClick(null, null!);
+        void IKeyboardShortcutHandler.OnMoveNodeUp() => OnMoveNodeUpClick(null, null!);
+        void IKeyboardShortcutHandler.OnMoveNodeDown() => OnMoveNodeDownClick(null, null!);
+
+        #endregion
 
         private void OnAddContextAwareReply(object? sender, RoutedEventArgs e)
         {
@@ -493,82 +347,13 @@ namespace DialogEditor.Views
             _audioService.Dispose();
 
             // Save window position on close
-            SaveWindowPosition();
+            _windowPersistenceManager.SaveWindowPosition();
         }
 
-        private void OnWindowPositionChanged(object? sender, PixelPointEventArgs e)
-        {
-            // Don't save position during initial restore
-            if (_isRestoringPosition)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position changed during restore, skipping save: ({Position.X}, {Position.Y})");
-                return;
-            }
-
-            // Save position when window is moved
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position changed by user, saving: ({Position.X}, {Position.Y})");
-            SaveWindowPosition();
-        }
-
-        private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            // Don't save during initial restore
-            if (_isRestoringPosition)
-            {
-                return;
-            }
-
-            // Save size when window is resized (Width/Height properties change)
-            if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
-            {
-                SaveWindowPosition();
-            }
-        }
-
-        private void SaveWindowPosition()
-        {
-            // Save current window position and size to settings
-            var settings = SettingsService.Instance;
-            if (Position.X >= 0 && Position.Y >= 0)
-            {
-                settings.WindowLeft = Position.X;
-                settings.WindowTop = Position.Y;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Saved window position: ({Position.X}, {Position.Y})");
-            }
-
-            // Width/Height already bound to settings with TwoWay, but ensure they're saved
-            if (Width > 0 && Height > 0)
-            {
-                settings.WindowWidth = Width;
-                settings.WindowHeight = Height;
-            }
-        }
-
-        private bool IsPositionOnScreen(PixelPoint position)
-        {
-            // Check if position is visible on any screen
-            var screens = Screens.All;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Checking position ({position.X}, {position.Y}) against {screens.Count} screens");
-
-            foreach (var screen in screens)
-            {
-                var bounds = screen.Bounds;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Screen: X={bounds.X}, Y={bounds.Y}, W={bounds.Width}, H={bounds.Height}, Primary={screen.IsPrimary}");
-
-                // Check if the top-left corner is within screen bounds (with some tolerance)
-                if (position.X >= bounds.X - 50 &&
-                    position.X < bounds.X + bounds.Width &&
-                    position.Y >= bounds.Y - 50 &&
-                    position.Y < bounds.Y + bounds.Height)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Position is ON this screen");
-                    return true;
-                }
-            }
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Position is OFF all screens");
-            return false;
-        }
-
+        
+        
+        
+        
         // Phase 1 Step 4: Removed UnsavedChangesDialog - auto-save provides safety
 
         private void InitializeComponent()
@@ -576,24 +361,8 @@ namespace DialogEditor.Views
             AvaloniaXamlLoader.Load(this);
         }
 
-        private void LoadAnimationValues()
-        {
-            try
-            {
-                var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
-                if (animationComboBox != null)
-                {
-                    animationComboBox.ItemsSource = Enum.GetValues(typeof(Models.DialogAnimation));
-                    animationComboBox.SelectedIndex = 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load animation values: {ex.Message}");
-            }
-        }
-
-        public void AddDebugMessage(string message) => _viewModel.AddDebugMessage(message);
+        
+        public void AddDebugMessage(string message) => _debugAndLoggingHandler.AddDebugMessage(message);
         public void ClearDebugOutput() => _viewModel.ClearDebugMessages();
 
         // File menu handlers
@@ -838,12 +607,12 @@ namespace DialogEditor.Views
 
             // CRITICAL FIX: Save script parameters from UI before saving file
             // Update action parameters (on DialogNode)
-            UpdateActionParamsFromUI(dialogNode);
+            _parameterUIManager.UpdateActionParamsFromUI(dialogNode);
 
             // Update condition parameters (on DialogPtr if available)
             if (_selectedNode.SourcePointer != null)
             {
-                UpdateConditionParamsFromUI(_selectedNode.SourcePointer);
+                _parameterUIManager.UpdateConditionParamsFromUI(_selectedNode.SourcePointer);
             }
         }
 
@@ -1100,244 +869,25 @@ namespace DialogEditor.Views
 
         private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
         {
-            try
-            {
-                var logFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "Parley", "Logs");
-
-                if (!Directory.Exists(logFolder))
-                {
-                    _viewModel.StatusMessage = "Log folder does not exist yet";
-                    return;
-                }
-
-                // Open folder in explorer
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = logFolder,
-                    UseShellExecute = true
-                });
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened log folder: {logFolder}");
-            }
-            catch (Exception ex)
-            {
-                _viewModel.StatusMessage = $"Failed to open log folder: {ex.Message}";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open log folder: {ex.Message}");
-            }
+            _debugAndLoggingHandler.OpenLogFolder();
         }
 
         private async void OnExportLogsClick(object? sender, RoutedEventArgs e)
         {
-            try
-            {
-                var logFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "Parley", "Logs");
-
-                if (!Directory.Exists(logFolder))
-                {
-                    _viewModel.StatusMessage = "No logs to export";
-                    return;
-                }
-
-                var storageProvider = StorageProvider;
-                if (storageProvider == null)
-                {
-                    _viewModel.StatusMessage = "Storage provider not available";
-                    return;
-                }
-
-                // Show save dialog for zip file
-                var options = new FilePickerSaveOptions
-                {
-                    Title = "Export Logs for Support",
-                    SuggestedFileName = $"Parley_Logs_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
-                    FileTypeChoices = new[]
-                    {
-                        new FilePickerFileType("ZIP Archive")
-                        {
-                            Patterns = new[] { "*.zip" }
-                        }
-                    }
-                };
-
-                var file = await storageProvider.SaveFilePickerAsync(options);
-                if (file == null) return;
-
-                var result = file.Path.LocalPath;
-
-                // Create zip archive
-                if (File.Exists(result))
-                {
-                    File.Delete(result);
-                }
-
-                System.IO.Compression.ZipFile.CreateFromDirectory(logFolder, result);
-
-                _viewModel.StatusMessage = $"Logs exported to: {result}";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Exported logs to: {result}");
-
-                // Offer to open folder
-                var openFolderWindow = new Window
-                {
-                    Title = "Logs Exported",
-                    Width = 400,
-                    Height = 150,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Content = new StackPanel
-                    {
-                        Margin = new Thickness(20),
-                        Children =
-                        {
-                            new TextBlock
-                            {
-                                Text = "Logs exported successfully. Open the folder?",
-                                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                                Margin = new Thickness(0, 0, 0, 20)
-                            },
-                            new StackPanel
-                            {
-                                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                                Children =
-                                {
-                                    new Button
-                                    {
-                                        Content = "Yes",
-                                        Padding = new Thickness(15, 5),
-                                        Margin = new Thickness(0, 0, 10, 0)
-                                    },
-                                    new Button
-                                    {
-                                        Content = "No",
-                                        Padding = new Thickness(15, 5)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                };
-
-                var yesButton = ((StackPanel)((StackPanel)openFolderWindow.Content).Children[1]).Children[0] as Button;
-                var noButton = ((StackPanel)((StackPanel)openFolderWindow.Content).Children[1]).Children[1] as Button;
-
-                yesButton!.Click += (s, args) =>
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = Path.GetDirectoryName(result)!,
-                        UseShellExecute = true
-                    });
-                    openFolderWindow.Close();
-                };
-
-                noButton!.Click += (s, args) => openFolderWindow.Close();
-
-                openFolderWindow.Show();
-            }
-            catch (Exception ex)
-            {
-                _viewModel.StatusMessage = $"Failed to export logs: {ex.Message}";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export logs: {ex.Message}");
-            }
+            await _debugAndLoggingHandler.ExportLogsAsync(this);
         }
 
         // Scrap tab handlers
         private void OnRestoreScrapClick(object? sender, RoutedEventArgs e)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnRestoreScrapClick called");
-
-            if (_viewModel.SelectedScrapEntry == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "No scrap entry selected");
-                return;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Selected scrap entry: {_viewModel.SelectedScrapEntry.NodeText}");
-
-            // Get the selected node from the tree view
             var treeView = this.FindControl<TreeView>("DialogTreeView");
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeView found: {treeView != null}");
-
             var selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Selected tree node: {selectedNode?.DisplayText ?? "null"} (Type: {selectedNode?.GetType().Name ?? "null"})");
-
-            var restored = _viewModel.RestoreFromScrap(_viewModel.SelectedScrapEntry.Id, selectedNode);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restore result: {restored}");
-
-            if (!restored)
-            {
-                // The RestoreFromScrap method will set an appropriate status message
-            }
+            _debugAndLoggingHandler.RestoreFromScrap(selectedNode);
         }
 
         private async void OnClearScrapClick(object? sender, RoutedEventArgs e)
         {
-            var messageBox = new Window
-            {
-                Title = "Clear All Scrap",
-                Width = 400,
-                Height = 150,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Content = new StackPanel
-                {
-                    Margin = new Thickness(20),
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = "Are you sure you want to clear all scrap entries?",
-                            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                            Margin = new Thickness(0, 0, 0, 20)
-                        },
-                        new StackPanel
-                        {
-                            Orientation = Avalonia.Layout.Orientation.Horizontal,
-                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                            Children =
-                            {
-                                new Button
-                                {
-                                    Content = "Yes",
-                                    Width = 80,
-                                    Margin = new Thickness(0, 0, 10, 0),
-                                    Name = "YesButton"
-                                },
-                                new Button
-                                {
-                                    Content = "No",
-                                    Width = 80,
-                                    IsDefault = true,
-                                    Name = "NoButton"
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-
-            var stackPanel = messageBox.Content as StackPanel;
-            var buttonPanel = stackPanel?.Children[1] as StackPanel;
-            var yesButton = buttonPanel?.Children[0] as Button;
-            var noButton = buttonPanel?.Children[1] as Button;
-
-            if (yesButton != null)
-            {
-                yesButton.Click += (s, args) =>
-                {
-                    _viewModel.ClearAllScrap();
-                    messageBox.Close();
-                };
-            }
-
-            if (noButton != null)
-            {
-                noButton.Click += (s, args) => messageBox.Close();
-            }
-
-            await messageBox.ShowDialog(this);
+            await _debugAndLoggingHandler.ClearScrapAsync(this);
         }
 
         private void HideDebugConsoleByDefault()
@@ -1814,179 +1364,13 @@ namespace DialogEditor.Views
 
         private void AutoSaveProperty(string propertyName)
         {
-            if (_selectedNode == null) return;
+            var result = _propertyAutoSaveService.AutoSaveProperty(_selectedNode, propertyName);
 
-            var dialogNode = _selectedNode.OriginalNode;
-            bool saved = false;
-            string displayName = "";
-
-            switch (propertyName)
-            {
-                case "SpeakerTextBox":
-                    var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-                    if (speakerTextBox != null && !speakerTextBox.IsReadOnly)
-                    {
-                        dialogNode.Speaker = speakerTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Speaker";
-                        RefreshTreeDisplayPreserveState(); // Update tree to show new speaker name
-                    }
-                    break;
-
-                case "TextTextBox":
-                    var textTextBox = this.FindControl<TextBox>("TextTextBox");
-                    if (textTextBox != null && dialogNode.Text != null)
-                    {
-                        dialogNode.Text.Strings[0] = textTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Text";
-                        RefreshTreeDisplayPreserveState(); // Update tree display
-                    }
-                    break;
-
-                case "CommentTextBox":
-                    var commentTextBox = this.FindControl<TextBox>("CommentTextBox");
-                    if (commentTextBox != null)
-                    {
-                        dialogNode.Comment = commentTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Comment";
-                    }
-                    break;
-
-                case "SoundTextBox":
-                    var soundTextBox = this.FindControl<TextBox>("SoundTextBox");
-                    if (soundTextBox != null)
-                    {
-                        dialogNode.Sound = soundTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Sound";
-                    }
-                    break;
-
-                case "ScriptAppearsTextBox":
-                    var scriptAppearsTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
-                    if (scriptAppearsTextBox != null && _selectedNode.SourcePointer != null)
-                    {
-                        _selectedNode.SourcePointer.ScriptAppears = scriptAppearsTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Conditional Script";
-
-                        // Reload script preview when script name changes
-                        if (!string.IsNullOrWhiteSpace(scriptAppearsTextBox.Text))
-                        {
-                            _ = LoadScriptPreviewAsync(scriptAppearsTextBox.Text, isCondition: true);
-                        }
-                        else
-                        {
-                            ClearScriptPreview(isCondition: true);
-                        }
-                    }
-                    break;
-
-                case "ScriptTextBox":
-                case "ScriptActionTextBox":
-                    var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-                    if (scriptTextBox != null)
-                    {
-                        dialogNode.ScriptAction = scriptTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Script Action";
-
-                        // Reload script preview when script name changes
-                        if (!string.IsNullOrWhiteSpace(scriptTextBox.Text))
-                        {
-                            _ = LoadScriptPreviewAsync(scriptTextBox.Text, isCondition: false);
-                        }
-                        else
-                        {
-                            ClearScriptPreview(isCondition: false);
-                        }
-                    }
-                    break;
-
-                case "QuestTextBox":
-                    var questTextBox = this.FindControl<TextBox>("QuestTextBox");
-                    if (questTextBox != null)
-                    {
-                        dialogNode.Quest = questTextBox.Text ?? "";
-                        saved = true;
-                        displayName = "Quest";
-                    }
-                    break;
-
-                case "QuestEntryTextBox":
-                    var questEntryTextBox = this.FindControl<TextBox>("QuestEntryTextBox");
-                    if (questEntryTextBox != null)
-                    {
-                        // Parse as uint, use uint.MaxValue if empty or invalid
-                        if (string.IsNullOrWhiteSpace(questEntryTextBox.Text))
-                        {
-                            dialogNode.QuestEntry = uint.MaxValue;
-                        }
-                        else if (uint.TryParse(questEntryTextBox.Text, out uint entryId))
-                        {
-                            dialogNode.QuestEntry = entryId;
-                        }
-                        saved = true;
-                        displayName = "Quest Entry";
-                    }
-                    break;
-
-                case "AnimationComboBox":
-                    var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
-                    if (animationComboBox != null && animationComboBox.SelectedItem is DialogAnimation selectedAnimation)
-                    {
-                        dialogNode.Animation = selectedAnimation;
-                        saved = true;
-                        displayName = "Animation";
-                    }
-                    break;
-
-                case "AnimationLoopCheckBox":
-                    var animationLoopCheckBox = this.FindControl<CheckBox>("AnimationLoopCheckBox");
-                    if (animationLoopCheckBox != null && animationLoopCheckBox.IsChecked.HasValue)
-                    {
-                        dialogNode.AnimationLoop = animationLoopCheckBox.IsChecked.Value;
-                        saved = true;
-                        displayName = "Animation Loop";
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"AnimationLoop set to: {dialogNode.AnimationLoop}");
-                    }
-                    else if (animationLoopCheckBox != null)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.WARN, $"AnimationLoop CheckBox IsChecked is null!");
-                    }
-                    break;
-
-                case "DelayTextBox":
-                    var delayTextBox = this.FindControl<TextBox>("DelayTextBox");
-                    if (delayTextBox != null)
-                    {
-                        // Parse as uint, use uint.MaxValue if empty or invalid
-                        if (string.IsNullOrWhiteSpace(delayTextBox.Text))
-                        {
-                            dialogNode.Delay = uint.MaxValue;
-                        }
-                        else if (uint.TryParse(delayTextBox.Text, out uint delayMs))
-                        {
-                            dialogNode.Delay = delayMs;
-                        }
-                        saved = true;
-                        displayName = "Delay";
-                    }
-                    break;
-            }
-
-            if (saved)
+            if (result.Success)
             {
                 _viewModel.HasUnsavedChanges = true;
-                _viewModel.StatusMessage = $"{displayName} saved";
-
-                // Also send to debug console
-                _viewModel.AddDebugMessage($"{displayName} saved");
-
-                // Trigger debounced file auto-save
-                TriggerDebouncedAutoSave();
+                _viewModel.StatusMessage = result.Message;
+                _viewModel.AddDebugMessage(result.Message);
             }
         }
 
@@ -2216,30 +1600,12 @@ namespace DialogEditor.Views
         // Properties panel handlers
         private void OnAddConditionsParamClick(object? sender, RoutedEventArgs e)
         {
-            var conditionsPanel = this.FindControl<StackPanel>("ConditionsParametersPanel");
-            if (conditionsPanel != null)
-            {
-                AddParameterRow(conditionsPanel, "", "", true);
-                _viewModel.StatusMessage = "Added condition parameter - enter key and value, then click elsewhere to save";
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "OnAddConditionsParamClick: ConditionsParametersPanel NOT FOUND");
-            }
+            _parameterUIManager.OnAddConditionsParamClick();
         }
 
         private void OnAddActionsParamClick(object? sender, RoutedEventArgs e)
         {
-            var actionsPanel = this.FindControl<StackPanel>("ActionsParametersPanel");
-            if (actionsPanel != null)
-            {
-                AddParameterRow(actionsPanel, "", "", false);
-                _viewModel.StatusMessage = "Added action parameter - enter key and value, then click elsewhere to save";
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "OnAddActionsParamClick: ActionsParametersPanel NOT FOUND");
-            }
+            _parameterUIManager.OnAddActionsParamClick();
         }
 
         private async void OnSuggestConditionsParamClick(object? sender, RoutedEventArgs e)
@@ -2560,7 +1926,7 @@ namespace DialogEditor.Views
                 // Conditional parameters are on the DialogPtr
                 if (sourcePtr != null)
                 {
-                    UpdateConditionParamsFromUI(sourcePtr);
+                    _parameterUIManager.UpdateConditionParamsFromUI(sourcePtr);
                     _viewModel.StatusMessage = "Condition parameters updated";
                 }
                 else
@@ -2571,7 +1937,7 @@ namespace DialogEditor.Views
             else
             {
                 // Action parameters are on the DialogNode
-                UpdateActionParamsFromUI(dialogNode);
+                _parameterUIManager.UpdateActionParamsFromUI(dialogNode);
                 _viewModel.StatusMessage = "Action parameters updated";
             }
 
@@ -2611,186 +1977,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private void UpdateConditionParamsFromUI(DialogPtr ptr, string? scriptName = null)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: ENTRY - ptr has {ptr.ConditionParams.Count} existing params");
 
-            ptr.ConditionParams.Clear();
-            var conditionsPanel = this.FindControl<StackPanel>("ConditionsParametersPanel");
-            if (conditionsPanel == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"UpdateConditionParamsFromUI: ConditionsParametersPanel NOT FOUND - parameters will be empty!");
-                return;
-            }
-
-            // Get script name from UI if not provided
-            if (string.IsNullOrEmpty(scriptName))
-            {
-                var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
-                scriptName = scriptTextBox?.Text;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Found ConditionsParametersPanel with {conditionsPanel.Children.Count} children");
-
-            var autoTrimCheckBox = this.FindControl<CheckBox>("AutoTrimConditionsCheckBox");
-            bool autoTrim = autoTrimCheckBox?.IsChecked ?? true; // Default to true if checkbox not found
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Auto-Trim = {autoTrim}");
-
-            foreach (var child in conditionsPanel.Children)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Child type={child.GetType().Name}");
-
-                if (child is Grid paramGrid)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Grid has {paramGrid.Children.Count} children");
-
-                    if (paramGrid.Children.Count >= 3)
-                    {
-                        var keyTextBox = paramGrid.Children[0] as TextBox;
-                        var valueTextBox = paramGrid.Children[1] as TextBox; // FIXED: Index 1, not 2!
-
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Examining param row - keyText='{keyTextBox?.Text ?? "null"}', valueText='{valueTextBox?.Text ?? "null"}'");
-
-                        if (keyTextBox != null && valueTextBox != null &&
-                            !string.IsNullOrWhiteSpace(keyTextBox.Text))
-                        {
-                            string key = keyTextBox.Text;
-                            string value = valueTextBox.Text ?? "";
-
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Before trim: key='{key}', value='{value}'");
-
-                        // Apply trimming if Auto-Trim is enabled
-                        if (autoTrim)
-                        {
-                            string originalKey = key;
-                            string originalValue = value;
-
-                            key = key.Trim();
-                            value = value.Trim();
-
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"After trim: key='{key}', value='{value}'");
-
-                            // CRITICAL: Update the UI textboxes to show trimmed values
-                            // This ensures visual feedback that whitespace was removed
-                            keyTextBox.Text = key;
-                            valueTextBox.Text = value;
-
-                            // Show visual feedback if text was actually trimmed
-                            if (originalKey != key)
-                            {
-                                ShowTrimFeedback(keyTextBox);
-                            }
-                            if (originalValue != value)
-                            {
-                                ShowTrimFeedback(valueTextBox);
-                            }
-                        }
-
-                        ptr.ConditionParams[key] = value;
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: Added param '{key}' = '{value}'");
-
-                        // Cache parameter value if script name is known
-                        if (!string.IsNullOrWhiteSpace(scriptName) && !string.IsNullOrWhiteSpace(value))
-                        {
-                            ParameterCacheService.Instance.AddValue(scriptName, key, value);
-                        }
-                        }
-                    }
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"UpdateConditionParamsFromUI: Child is not Grid, type={child.GetType().Name}");
-                }
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateConditionParamsFromUI: EXIT - ptr now has {ptr.ConditionParams.Count} params");
-        }
-
-        private void UpdateActionParamsFromUI(DialogNode node, string? scriptName = null)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: ENTRY - node '{node.DisplayText}' has {node.ActionParams.Count} existing params");
-
-            node.ActionParams.Clear();
-            var actionsPanel = this.FindControl<StackPanel>("ActionsParametersPanel");
-            if (actionsPanel == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"UpdateActionParamsFromUI: ActionsParametersPanel NOT FOUND - parameters will be empty!");
-                return;
-            }
-
-            // Get script name from UI if not provided
-            if (string.IsNullOrEmpty(scriptName))
-            {
-                var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-                scriptName = scriptTextBox?.Text;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: Found ActionsParametersPanel with {actionsPanel.Children.Count} children");
-
-            var autoTrimCheckBox = this.FindControl<CheckBox>("AutoTrimActionsCheckBox");
-            bool autoTrim = autoTrimCheckBox?.IsChecked ?? true; // Default to true if checkbox not found
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: Auto-Trim = {autoTrim}");
-
-            foreach (var child in actionsPanel.Children)
-            {
-                if (child is Grid paramGrid && paramGrid.Children.Count >= 3)
-                {
-                    var keyTextBox = paramGrid.Children[0] as TextBox;
-                    var valueTextBox = paramGrid.Children[1] as TextBox; // FIXED: Index 1, not 2!
-
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: Examining param row - keyText='{keyTextBox?.Text ?? "null"}', valueText='{valueTextBox?.Text ?? "null"}'");
-
-                    if (keyTextBox != null && valueTextBox != null &&
-                        !string.IsNullOrWhiteSpace(keyTextBox.Text))
-                    {
-                        string key = keyTextBox.Text;
-                        string value = valueTextBox.Text ?? "";
-
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Before trim: key='{key}', value='{value}'");
-
-                        // Apply trimming if Auto-Trim is enabled
-                        if (autoTrim)
-                        {
-                            string originalKey = key;
-                            string originalValue = value;
-
-                            key = key.Trim();
-                            value = value.Trim();
-
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"After trim: key='{key}', value='{value}'");
-
-                            // CRITICAL: Update the UI textboxes to show trimmed values
-                            // This ensures visual feedback that whitespace was removed
-                            keyTextBox.Text = key;
-                            valueTextBox.Text = value;
-
-                            // Show visual feedback if text was actually trimmed
-                            if (originalKey != key)
-                            {
-                                ShowTrimFeedback(keyTextBox);
-                            }
-                            if (originalValue != value)
-                            {
-                                ShowTrimFeedback(valueTextBox);
-                            }
-                        }
-
-                        node.ActionParams[key] = value;
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: Added param '{key}' = '{value}'");
-
-                        // Cache parameter value if script name is known
-                        if (!string.IsNullOrWhiteSpace(scriptName) && !string.IsNullOrWhiteSpace(value))
-                        {
-                            ParameterCacheService.Instance.AddValue(scriptName, key, value);
-                        }
-                    }
-                }
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateActionParamsFromUI: EXIT - node '{node.DisplayText}' now has {node.ActionParams.Count} params");
-        }
 
         private async void OnBrowseSoundClick(object? sender, RoutedEventArgs e)
         {
@@ -2834,121 +2021,9 @@ namespace DialogEditor.Views
 
         private async void OnBrowseCreatureClick(object? sender, RoutedEventArgs e)
         {
-            // Don't allow creature browser when no node selected or ROOT selected
-            if (_selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a dialog node first";
-                return;
-            }
-
-            if (_selectedNode is TreeViewRootNode)
-            {
-                _viewModel.StatusMessage = "Cannot assign creatures to ROOT. Select a dialog node instead.";
-                return;
-            }
-
-            try
-            {
-                // Get creatures from CreatureService
-                var creatures = _creatureService.GetAllCreatures();
-
-                if (creatures.Count == 0)
-                {
-                    // Show helpful message with instructions
-                    var message = "No creatures loaded.\n\n" +
-                                "To use creature browser:\n" +
-                                "• Place .utc files in the same folder as your .dlg file, OR\n" +
-                                "• Specify module directory in Settings\n\n" +
-                                "You can still type creature tags manually.";
-
-                    var msgBox = new Window
-                    {
-                        Title = "No Creatures Available",
-                        Width = 400,
-                        Height = 250,
-                        Content = new TextBlock
-                        {
-                            Text = message,
-                            Margin = new Thickness(20)
-                        },
-                        WindowStartupLocation = WindowStartupLocation.CenterOwner
-                    };
-
-                    await msgBox.ShowDialog(this);
-
-                    _viewModel.StatusMessage = "No creatures loaded - see message for details";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "No creatures available for picker");
-                    return;
-                }
-
-                var creaturePicker = new CreaturePickerWindow(creatures, _recentCreatureTags);
-                var result = await creaturePicker.ShowDialog<bool>(this);
-
-                if (result && !string.IsNullOrEmpty(creaturePicker.SelectedTag))
-                {
-                    var selectedTag = creaturePicker.SelectedTag;
-
-                    // Update the Speaker field with selected tag
-                    var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-                    if (speakerTextBox != null)
-                    {
-                        speakerTextBox.Text = selectedTag;
-                        // Trigger auto-save
-                        AutoSaveProperty("SpeakerTextBox");
-                    }
-
-                    // Add to recent tags (avoid duplicates, max 10)
-                    AddToRecentTags(selectedTag);
-
-                    _viewModel.StatusMessage = $"Selected creature: {selectedTag}";
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening creature picker: {ex.Message}");
-                _viewModel.StatusMessage = $"Error opening creature picker: {ex.Message}";
-            }
+            await _resourceBrowserManager.BrowseCreatureAsync(this);
         }
 
-        private void AddToRecentTags(string tag)
-        {
-            // Remove if already exists (move to front)
-            _recentCreatureTags.Remove(tag);
-
-            // Add to front
-            _recentCreatureTags.Insert(0, tag);
-
-            // Keep max 10 recent tags
-            if (_recentCreatureTags.Count > 10)
-            {
-                _recentCreatureTags.RemoveAt(_recentCreatureTags.Count - 1);
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to recent creature tags: {tag}");
-
-            // Update the dropdown
-            UpdateRecentCreatureTagsDropdown();
-        }
-
-        private void UpdateRecentCreatureTagsDropdown()
-        {
-            try
-            {
-                var comboBox = this.FindControl<ComboBox>("RecentCreatureTagsComboBox");
-                if (comboBox != null)
-                {
-                    comboBox.Items.Clear();
-                    foreach (var tag in _recentCreatureTags)
-                    {
-                        comboBox.Items.Add(tag);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to update recent tags dropdown: {ex.Message}");
-            }
-        }
 
         private void OnRecentCreatureTagSelected(object? sender, SelectionChangedEventArgs e)
         {
@@ -3509,142 +2584,10 @@ namespace DialogEditor.Views
         /// </summary>
         private async void OnAddSmartNodeClick(object? sender, RoutedEventArgs e)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, "=== OnAddSmartNodeClick CALLED ===");
-
-            // DEBOUNCE CHECK: Prevent rapid Ctrl+D causing focus misplacement (Issue #76)
-            var timeSinceLastAdd = (DateTime.Now - _lastAddNodeTime).TotalMilliseconds;
-            if (timeSinceLastAdd < ADD_NODE_DEBOUNCE_MS)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"OnAddSmartNodeClick: Debounced (only {timeSinceLastAdd:F0}ms since last add, minimum {ADD_NODE_DEBOUNCE_MS}ms required)");
-                return;
-            }
-
-            // OVERLAP CHECK: Prevent concurrent node creation operations (Issue #76)
-            if (_isAddingNode)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    "OnAddSmartNodeClick: Operation already in progress, rejecting concurrent call");
-                return;
-            }
-
-            _lastAddNodeTime = DateTime.Now;
-            _isAddingNode = true;
-
-            try
-            {
-                // IMPORTANT: Save current node properties before creating new node
-                // This ensures any typed text is saved before moving to next node
-                SaveCurrentNodeProperties();
-                UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Saved current node properties");
-
             var selectedNode = GetSelectedTreeNode();
-
-            // Track dialog node count before adding
-            int entryCountBefore = _viewModel.CurrentDialog?.Entries.Count ?? 0;
-            int replyCountBefore = _viewModel.CurrentDialog?.Replies.Count ?? 0;
-
-            _viewModel.AddSmartNode(selectedNode);
-
-            // Wait for tree view to refresh
-            await Task.Delay(100);
-
-            // Find and select the newly created node
-            var treeView = this.FindControl<TreeView>("DialogTreeView");
-            if (treeView != null && _viewModel.CurrentDialog != null)
-            {
-                bool entryAdded = _viewModel.CurrentDialog.Entries.Count > entryCountBefore;
-                bool replyAdded = _viewModel.CurrentDialog.Replies.Count > replyCountBefore;
-
-                if (entryAdded || replyAdded)
-                {
-                    var newNode = FindLastAddedNode(treeView, entryAdded, replyAdded);
-                    if (newNode != null)
-                    {
-                        // Expand all ancestor nodes to make new node visible (Issue #7)
-                        ExpandToNode(treeView, newNode);
-
-                        treeView.SelectedItem = newNode;
-                        UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Selected new node in tree");
-                    }
-                }
-            }
-
-            // Auto-focus to text box for immediate typing
-            // Delay allows tree view selection and properties panel population to complete
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Waiting 300ms for properties panel...");
-            await Task.Delay(300);
-
-            var textTextBox = this.FindControl<TextBox>("TextTextBox");
-            if (textTextBox != null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "OnAddSmartNodeClick: Attempting to focus TextTextBox");
-
-                // Try multiple times to overcome focus stealing
-                textTextBox.Focus();
-                await Task.Delay(50);
-                textTextBox.Focus();
-                textTextBox.SelectAll();
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"OnAddSmartNodeClick: Focus set, IsFocused={textTextBox.IsFocused}");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, "OnAddSmartNodeClick: TextTextBox control not found!");
-            }
-
-            // Trigger auto-save after node creation
-            TriggerDebouncedAutoSave();
-            }
-            finally
-            {
-                // Reset flag to allow next operation (Issue #76)
-                _isAddingNode = false;
-            }
+            await _nodeCreationHelper.CreateSmartNodeAsync(selectedNode);
         }
 
-        private TreeViewSafeNode? FindLastAddedNode(TreeView treeView, bool entryAdded, bool replyAdded)
-        {
-            if (treeView.ItemsSource == null) return null;
-
-            foreach (var item in treeView.ItemsSource)
-            {
-                if (item is TreeViewSafeNode node)
-                {
-                    var found = FindLastAddedNodeRecursive(node, entryAdded, replyAdded);
-                    if (found != null) return found;
-                }
-            }
-            return null;
-        }
-
-        private TreeViewSafeNode? FindLastAddedNodeRecursive(TreeViewSafeNode node, bool entryAdded, bool replyAdded)
-        {
-            // Check children first (depth-first to find last node)
-            if (node.Children != null)
-            {
-                foreach (var child in node.Children.Reverse())
-                {
-                    var found = FindLastAddedNodeRecursive(child, entryAdded, replyAdded);
-                    if (found != null) return found;
-                }
-            }
-
-            // Check if this node is the type we just added with empty text
-            if (node.OriginalNode != null)
-            {
-                var dialogNode = node.OriginalNode;
-                bool isEmpty = string.IsNullOrEmpty(dialogNode.Text.Get(0));
-
-                if (isEmpty)
-                {
-                    if (entryAdded && dialogNode.Type == DialogNodeType.Entry) return node;
-                    if (replyAdded && dialogNode.Type == DialogNodeType.Reply) return node;
-                }
-            }
-
-            return null;
-        }
 
         /// <summary>
         /// Expands all ancestor nodes to make target node visible (Issue #7)

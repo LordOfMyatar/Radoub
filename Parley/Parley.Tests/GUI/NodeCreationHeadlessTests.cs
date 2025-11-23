@@ -111,6 +111,8 @@ namespace Parley.Tests.GUI
             viewModel.AddPCReplyNode(entryNode);
 
             // Find reply node in tree
+            Assert.NotNull(entryNode.Children);
+            Assert.NotEmpty(entryNode.Children);
             var replyNode = entryNode.Children[0];
 
             // Act: AddSmartNode under reply
