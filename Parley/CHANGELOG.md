@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.23-alpha] - TBD
-**Branch**: `parley/feat/epic-39-ux-improvements` | **PR**: #TBD
+**Branch**: `parley/feat/epic-39-ux-improvements` | **PR**: #174
 
 ### UX Improvements (Issues #20, #14, #3)
 
