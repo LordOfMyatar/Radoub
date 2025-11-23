@@ -275,8 +275,8 @@
 
                 <!-- Scripts & Parameters Tab -->
                 <TabItem Header="Scripts">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,5,0">
-                        <StackPanel Margin="5,5,10,50">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                        <StackPanel Margin="5,5,15,50">
 
                         <!-- Conditional Scripts -->
                         <TextBlock Text="Conditional Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
