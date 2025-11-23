@@ -86,6 +86,13 @@ namespace DialogEditor.ViewModels
                 {
                     // Explicitly refresh WindowTitle to ensure asterisk updates (Issue #18)
                     OnPropertyChanged(nameof(WindowTitle));
+
+                    // Force immediate UI refresh on UI thread to prevent asterisk persistence
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        OnPropertyChanged(nameof(WindowTitle));
+                    }, DispatcherPriority.Send);
+
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"HasUnsavedChanges = {value}, WindowTitle = '{WindowTitle}'");
                 }
             }
