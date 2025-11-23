@@ -68,7 +68,7 @@ namespace DialogEditor.Utils
 
         /// <summary>
         /// Gets the shape icon for a dialog speaker based on their identity.
-        /// PC always gets Circle, Owner always gets Square, other NPCs check preferences first, then use hash-assigned shapes.
+        /// PC always gets Circle, Owner always gets Square, other NPCs check preferences first, then use hash-assigned shapes (unless disabled).
         /// </summary>
         /// <param name="speaker">The speaker tag/name (empty for Owner)</param>
         /// <param name="isPC">True if this is a PC (Player Character) reply node</param>
@@ -88,6 +88,10 @@ namespace DialogEditor.Utils
             if (prefShape.HasValue)
                 return prefShape.Value;
 
+            // If NPC tag coloring disabled, use default Owner shape (Issue #134)
+            if (!SettingsService.Instance.EnableNpcTagColoring)
+                return SpeakerShape.Square;
+
             // Other NPCs get shapes based on hash
             var availableShapes = new[] { SpeakerShape.Triangle, SpeakerShape.Diamond, SpeakerShape.Pentagon, SpeakerShape.Star };
             int hash = Math.Abs(speaker.GetHashCode());
@@ -97,7 +101,7 @@ namespace DialogEditor.Utils
         /// <summary>
         /// Gets the color for a dialog speaker based on their identity.
         /// PC gets blue (or theme override), Owner gets orange (or theme override),
-        /// other NPCs check preferences first, then get hash-assigned colors from the palette.
+        /// other NPCs check preferences first, then get hash-assigned colors from the palette (unless disabled).
         /// </summary>
         /// <param name="speaker">The speaker tag/name (empty for Owner)</param>
         /// <param name="isPC">True if this is a PC (Player Character) reply node</param>
@@ -133,6 +137,17 @@ namespace DialogEditor.Utils
             var (prefColor, _) = SettingsService.Instance.GetSpeakerPreference(speaker);
             if (!string.IsNullOrEmpty(prefColor))
                 return prefColor;
+
+            // If NPC tag coloring disabled, use default Owner color from theme (Issue #134)
+            if (!SettingsService.Instance.EnableNpcTagColoring)
+            {
+                if (app?.Resources.TryGetResource("ThemeOwnerColor", Avalonia.Styling.ThemeVariant.Default, out var ownerColorObj2) == true
+                    && ownerColorObj2 is string ownerColor2)
+                {
+                    return ownerColor2;
+                }
+                return ColorPalette.Orange;
+            }
 
             // Other NPCs get colors based on hash
             return ColorPalette.GetNpcColor(speaker);

@@ -970,6 +970,14 @@ namespace DialogEditor.ViewModels
             RefreshTreeView();
         }
 
+        /// <summary>
+        /// Public method to refresh tree view and restore selection to specific node (Issue #134)
+        /// </summary>
+        public void RefreshTreeViewColors(DialogNode nodeToSelect)
+        {
+            RefreshTreeViewAndSelectNode(nodeToSelect);
+        }
+
         private void RefreshTreeView()
         {
             // Log dialog state before refresh
