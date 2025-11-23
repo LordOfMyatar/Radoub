@@ -35,6 +35,7 @@ namespace DialogEditor.Views
         private readonly ResourceBrowserManager _resourceBrowserManager; // Manages resource browser dialogs
         private readonly KeyboardShortcutManager _keyboardShortcutManager; // Manages keyboard shortcuts
         private readonly DebugAndLoggingHandler _debugAndLoggingHandler; // Handles debug and logging operations
+        private readonly WindowPersistenceManager _windowPersistenceManager; // Manages window and panel persistence
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -43,9 +44,6 @@ namespace DialogEditor.Views
         private bool _isPopulatingProperties = false;
 
         // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
-
-        // Flag to prevent saving position during initial window setup and restore
-        private bool _isRestoringPosition = true; // Start as true, prevent saves during constructor/init
 
         // Parameter autocomplete: Cache of script parameter declarations
         private ScriptParameterDeclarations? _currentConditionDeclarations;
@@ -95,6 +93,9 @@ namespace DialogEditor.Views
                 findControl: this.FindControl<Control>,
                 getStorageProvider: () => this.StorageProvider,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg);
+            _windowPersistenceManager = new WindowPersistenceManager(
+                window: this,
+                findControl: this.FindControl<Control>);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -104,7 +105,7 @@ namespace DialogEditor.Views
             var retentionCount = SettingsService.Instance.LogRetentionSessions;
             UnifiedLogger.CleanupOldSessions(retentionCount);
 
-            LoadAnimationValues();
+            _windowPersistenceManager.LoadAnimationValues();
 
             // Apply saved theme preference
             ApplySavedTheme();
@@ -118,30 +119,8 @@ namespace DialogEditor.Views
             // Hook up menu events
             this.Opened += async (s, e) =>
             {
-                // Restore window position from settings (after window is open and screens are available)
-                _isRestoringPosition = true;
-                var settings = SettingsService.Instance;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restoring window position: Left={settings.WindowLeft}, Top={settings.WindowTop}, Current={Position.X},{Position.Y}");
-
-                if (settings.WindowLeft >= 0 && settings.WindowTop >= 0)
-                {
-                    var targetPos = new PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
-
-                    // Validate position is on a visible screen
-                    if (IsPositionOnScreen(targetPos))
-                    {
-                        Position = targetPos;
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position restored to ({targetPos.X}, {targetPos.Y})");
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.WARN, $"Saved position ({targetPos.X}, {targetPos.Y}) is off-screen, using default");
-                    }
-                }
-
-                // Allow position saving after a short delay (to avoid saving the restore itself)
-                await Task.Delay(500);
-                _isRestoringPosition = false;
+                // Restore window position from settings
+                await _windowPersistenceManager.RestoreWindowPositionAsync();
 
                 PopulateRecentFilesMenu();
                 // Start enabled plugins after window opens
@@ -165,8 +144,17 @@ namespace DialogEditor.Views
                 }
             };
             this.Closing += OnWindowClosing;
-            this.PositionChanged += OnWindowPositionChanged;
-            this.PropertyChanged += OnWindowPropertyChanged;
+            this.PositionChanged += (s, e) => _windowPersistenceManager.SaveWindowPosition();
+            this.PropertyChanged += (s, e) =>
+            {
+                if (!_windowPersistenceManager.IsRestoringPosition)
+                {
+                    if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
+                    {
+                        _windowPersistenceManager.SaveWindowPosition();
+                    }
+                }
+            };
 
             // Phase 1 Fix: Set up keyboard shortcuts
             SetupKeyboardShortcuts();
@@ -194,8 +182,8 @@ namespace DialogEditor.Views
         private void OnWindowLoaded(object? sender, RoutedEventArgs e)
         {
             // Controls are now available, restore settings
-            RestoreDebugSettings();
-            RestorePanelSizes();
+            _windowPersistenceManager.RestoreDebugSettings();
+            _windowPersistenceManager.RestorePanelSizes();
         }
 
         /// <summary>
@@ -214,90 +202,10 @@ namespace DialogEditor.Views
             }
         }
 
-        private void RestorePanelSizes()
-        {
-            var settings = SettingsService.Instance;
-            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
-
-            if (mainContentGrid != null && mainContentGrid.ColumnDefinitions.Count > 0 && mainContentGrid.RowDefinitions.Count > 0)
-            {
-                // Column 0 is left panel (tree+text)
-                mainContentGrid.ColumnDefinitions[0].Width = new GridLength(settings.LeftPanelWidth, GridUnitType.Pixel);
-
-                // Row 0 is top panel (dialog tree)
-                mainContentGrid.RowDefinitions[0].Height = new GridLength(settings.TopLeftPanelHeight, GridUnitType.Pixel);
-
-                // Watch for splitter changes
-                mainContentGrid.PropertyChanged += OnMainContentGridPropertyChanged;
-            }
-        }
-
-        private void OnMainContentGridPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            // Save panel sizes when grid layout changes (splitters dragged)
-            SavePanelSizes();
-        }
-
-        private void SavePanelSizes()
-        {
-            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
-
-            if (mainContentGrid != null && mainContentGrid.ColumnDefinitions.Count > 0 && mainContentGrid.RowDefinitions.Count > 0)
-            {
-                var leftPanelColumn = mainContentGrid.ColumnDefinitions[0];
-                var topLeftPanelRow = mainContentGrid.RowDefinitions[0];
-
-                if (leftPanelColumn.Width.IsAbsolute)
-                {
-                    SettingsService.Instance.LeftPanelWidth = leftPanelColumn.Width.Value;
-                }
-
-                if (topLeftPanelRow.Height.IsAbsolute)
-                {
-                    SettingsService.Instance.TopLeftPanelHeight = topLeftPanelRow.Height.Value;
-                }
-            }
-        }
-
-        private void RestoreDebugSettings()
-        {
-            // Initialize log level filter from saved settings
-            // SelectionChanged doesn't fire on initial XAML load, so we must set it manually
-            var savedFilterLevel = SettingsService.Instance.DebugLogFilterLevel;
-            DebugLogger.SetLogLevelFilter(savedFilterLevel);
-
-            // Set ComboBox to match saved filter level
-            var logLevelComboBox = this.FindControl<ComboBox>("LogLevelFilterComboBox");
-            if (logLevelComboBox != null)
-            {
-                var selectedIndex = savedFilterLevel switch
-                {
-                    LogLevel.ERROR => 0,
-                    LogLevel.WARN => 1,
-                    LogLevel.INFO => 2,
-                    LogLevel.DEBUG => 3,
-                    LogLevel.TRACE => 4,
-                    _ => 2 // Default to INFO
-                };
-                logLevelComboBox.SelectedIndex = selectedIndex;
-            }
-
-            // Restore debug window visibility from settings
-            var debugTab = this.FindControl<TabItem>("DebugTab");
-            if (debugTab != null)
-            {
-                var savedVisibility = SettingsService.Instance.DebugWindowVisible;
-                debugTab.IsVisible = savedVisibility;
-
-                // Update menu item text to match visibility state
-                var showDebugMenuItem = this.FindControl<MenuItem>("ShowDebugMenuItem");
-                if (showDebugMenuItem != null)
-                {
-                    showDebugMenuItem.Header = debugTab.IsVisible ? "Hide _Debug Console" : "Show _Debug Console";
-                }
-            }
-        }
-
+        
+        
+        
+        
         private void SetupKeyboardShortcuts()
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "SetupKeyboardShortcuts: Keyboard handler registered");
@@ -439,82 +347,13 @@ namespace DialogEditor.Views
             _audioService.Dispose();
 
             // Save window position on close
-            SaveWindowPosition();
+            _windowPersistenceManager.SaveWindowPosition();
         }
 
-        private void OnWindowPositionChanged(object? sender, PixelPointEventArgs e)
-        {
-            // Don't save position during initial restore
-            if (_isRestoringPosition)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position changed during restore, skipping save: ({Position.X}, {Position.Y})");
-                return;
-            }
-
-            // Save position when window is moved
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Position changed by user, saving: ({Position.X}, {Position.Y})");
-            SaveWindowPosition();
-        }
-
-        private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            // Don't save during initial restore
-            if (_isRestoringPosition)
-            {
-                return;
-            }
-
-            // Save size when window is resized (Width/Height properties change)
-            if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
-            {
-                SaveWindowPosition();
-            }
-        }
-
-        private void SaveWindowPosition()
-        {
-            // Save current window position and size to settings
-            var settings = SettingsService.Instance;
-            if (Position.X >= 0 && Position.Y >= 0)
-            {
-                settings.WindowLeft = Position.X;
-                settings.WindowTop = Position.Y;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Saved window position: ({Position.X}, {Position.Y})");
-            }
-
-            // Width/Height already bound to settings with TwoWay, but ensure they're saved
-            if (Width > 0 && Height > 0)
-            {
-                settings.WindowWidth = Width;
-                settings.WindowHeight = Height;
-            }
-        }
-
-        private bool IsPositionOnScreen(PixelPoint position)
-        {
-            // Check if position is visible on any screen
-            var screens = Screens.All;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Checking position ({position.X}, {position.Y}) against {screens.Count} screens");
-
-            foreach (var screen in screens)
-            {
-                var bounds = screen.Bounds;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Screen: X={bounds.X}, Y={bounds.Y}, W={bounds.Width}, H={bounds.Height}, Primary={screen.IsPrimary}");
-
-                // Check if the top-left corner is within screen bounds (with some tolerance)
-                if (position.X >= bounds.X - 50 &&
-                    position.X < bounds.X + bounds.Width &&
-                    position.Y >= bounds.Y - 50 &&
-                    position.Y < bounds.Y + bounds.Height)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Position is ON this screen");
-                    return true;
-                }
-            }
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Position is OFF all screens");
-            return false;
-        }
-
+        
+        
+        
+        
         // Phase 1 Step 4: Removed UnsavedChangesDialog - auto-save provides safety
 
         private void InitializeComponent()
@@ -522,23 +361,7 @@ namespace DialogEditor.Views
             AvaloniaXamlLoader.Load(this);
         }
 
-        private void LoadAnimationValues()
-        {
-            try
-            {
-                var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
-                if (animationComboBox != null)
-                {
-                    animationComboBox.ItemsSource = Enum.GetValues(typeof(Models.DialogAnimation));
-                    animationComboBox.SelectedIndex = 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load animation values: {ex.Message}");
-            }
-        }
-
+        
         public void AddDebugMessage(string message) => _debugAndLoggingHandler.AddDebugMessage(message);
         public void ClearDebugOutput() => _viewModel.ClearDebugMessages();
 
