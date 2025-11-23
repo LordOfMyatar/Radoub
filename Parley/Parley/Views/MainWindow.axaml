@@ -161,7 +161,8 @@
                     <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
                               SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
                               SelectionChanged="OnDialogTreeViewSelectionChanged"
-                              DoubleTapped="OnTreeViewItemDoubleTapped">
+                              DoubleTapped="OnTreeViewItemDoubleTapped"
+                              Padding="0,0,0,20">
                         <TreeView.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Add Node" Click="OnAddSmartNodeClick"/>
