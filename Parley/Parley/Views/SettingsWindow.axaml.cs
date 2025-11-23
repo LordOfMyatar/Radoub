@@ -204,6 +204,27 @@ namespace DialogEditor.Views
                 showDebugPanelCheckBox.IsChecked = settings.DebugWindowVisible;
             }
 
+            // Auto-Save Settings (Issue #62)
+            var autoSaveEnabledCheckBox = this.FindControl<CheckBox>("AutoSaveEnabledCheckBox");
+            var autoSaveIntervalSlider = this.FindControl<Slider>("AutoSaveIntervalSlider");
+            var autoSaveIntervalLabel = this.FindControl<TextBlock>("AutoSaveIntervalLabel");
+
+            if (autoSaveEnabledCheckBox != null)
+            {
+                autoSaveEnabledCheckBox.IsChecked = settings.AutoSaveEnabled;
+            }
+
+            if (autoSaveIntervalSlider != null)
+            {
+                autoSaveIntervalSlider.Value = settings.AutoSaveIntervalMinutes;
+            }
+
+            if (autoSaveIntervalLabel != null)
+            {
+                int value = settings.AutoSaveIntervalMinutes;
+                autoSaveIntervalLabel.Text = value == 0 ? "Fast debounce (2s)" : $"Every {value} minute{(value > 1 ? "s" : "")}";
+            }
+
             // Parameter Cache Settings
             var enableParameterCacheCheckBox = this.FindControl<CheckBox>("EnableParameterCacheCheckBox");
             var maxCachedValuesSlider = this.FindControl<Slider>("MaxCachedValuesSlider");
@@ -965,6 +986,29 @@ namespace DialogEditor.Views
             }
         }
 
+        private void OnAutoSaveEnabledChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+            // Auto-save enabled change will be applied when OK or Apply is clicked
+        }
+
+        private void OnAutoSaveIntervalChanged(object? sender, RangeBaseValueChangedEventArgs e)
+        {
+            var label = this.FindControl<TextBlock>("AutoSaveIntervalLabel");
+            if (label != null && sender is Slider slider)
+            {
+                int value = (int)slider.Value;
+                if (value == 0)
+                {
+                    label.Text = "Fast debounce (2s)";
+                }
+                else
+                {
+                    label.Text = $"Every {value} minute{(value > 1 ? "s" : "")}";
+                }
+            }
+        }
+
         private void OnShowDebugPanelChanged(object? sender, RoutedEventArgs e)
         {
             if (_isInitializing) return;
@@ -1147,6 +1191,20 @@ namespace DialogEditor.Views
             if (showDebugPanelCheckBox != null)
             {
                 settings.DebugWindowVisible = showDebugPanelCheckBox.IsChecked ?? false;
+            }
+
+            // Auto-Save Settings (Issue #62)
+            var autoSaveEnabledCheckBox = this.FindControl<CheckBox>("AutoSaveEnabledCheckBox");
+            var autoSaveIntervalSlider = this.FindControl<Slider>("AutoSaveIntervalSlider");
+
+            if (autoSaveEnabledCheckBox != null)
+            {
+                settings.AutoSaveEnabled = autoSaveEnabledCheckBox.IsChecked ?? true;
+            }
+
+            if (autoSaveIntervalSlider != null)
+            {
+                settings.AutoSaveIntervalMinutes = (int)autoSaveIntervalSlider.Value;
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "Settings applied successfully");

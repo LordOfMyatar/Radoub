@@ -18,6 +18,7 @@ namespace DialogEditor.ViewModels
         private string? _currentFileName;
         private bool _isLoading;
         private string _statusMessage = "Ready";
+        private string _lastSavedTime = ""; // Issue #62 - Last saved indicator
         private ObservableCollection<string> _debugMessages = new();
         private ObservableCollection<TreeViewSafeNode> _dialogNodes = new();
         private bool _hasUnsavedChanges;
@@ -32,6 +33,7 @@ namespace DialogEditor.ViewModels
         private readonly NodeCloningService _cloningService = new(); // Service for deep node cloning
         private readonly ReferenceManager _referenceManager = new(); // Service for reference counting and pointer operations
         private readonly PasteOperationsManager _pasteManager; // Service for paste operations
+        private readonly DialogSaveService _saveService = new(); // Service for dialog save operations
         private ScrapEntry? _selectedScrapEntry;
         private TreeViewSafeNode? _selectedTreeNode;
 
@@ -84,8 +86,16 @@ namespace DialogEditor.ViewModels
             {
                 if (SetProperty(ref _hasUnsavedChanges, value))
                 {
+                    // Explicitly refresh WindowTitle to ensure asterisk updates (Issue #18)
                     OnPropertyChanged(nameof(WindowTitle));
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Unsaved changes flag: {value}");
+
+                    // Force immediate UI refresh on UI thread to prevent asterisk persistence
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        OnPropertyChanged(nameof(WindowTitle));
+                    }, DispatcherPriority.Send);
+
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"HasUnsavedChanges = {value}, WindowTitle = '{WindowTitle}'");
                 }
             }
         }
@@ -94,6 +104,15 @@ namespace DialogEditor.ViewModels
         {
             get => _statusMessage;
             set => SetProperty(ref _statusMessage, value);
+        }
+
+        /// <summary>
+        /// Last saved time display (Issue #62)
+        /// </summary>
+        public string LastSavedTime
+        {
+            get => _lastSavedTime;
+            set => SetProperty(ref _lastSavedTime, value);
         }
 
         public ObservableCollection<string> DebugMessages
@@ -258,6 +277,7 @@ namespace DialogEditor.ViewModels
 
                     CurrentFileName = filePath;
                     HasUnsavedChanges = false; // Clear dirty flag when loading
+                    LastSavedTime = ""; // Clear last saved time on load
                     StatusMessage = $"Dialog loaded successfully: {CurrentDialog.Entries.Count} entries, {CurrentDialog.Replies.Count} replies";
 
                     // Add to recent files
@@ -315,110 +335,28 @@ namespace DialogEditor.ViewModels
                 IsLoading = true;
                 StatusMessage = $"Saving {System.IO.Path.GetFileName(filePath)}...";
 
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving dialog to: {UnifiedLogger.SanitizePath(filePath)}");
+                // Use DialogSaveService for all save logic
+                var result = await _saveService.SaveDialogAsync(CurrentDialog, filePath);
 
-                // CLEANUP: Remove orphaned nodes before save (nodes with no incoming pointers)
-                var orphanedNodes = _orphanManager.RemoveOrphanedNodes(CurrentDialog);
-                if (orphanedNodes.Count > 0)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN,
-                        $"Removed {orphanedNodes.Count} orphaned nodes before save");
-                    // Note: Orphaned nodes are removed from dialog, not added to scrap
-                    // This is cleanup, not user-initiated deletion
-                }
-
-                // SAFETY VALIDATION: Validate all pointer indices before save (Issue #6 fix)
-                var validationErrors = CurrentDialog.ValidatePointerIndices();
-                if (validationErrors.Count > 0)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"⚠️ PRE-SAVE VALIDATION: Found {validationErrors.Count} index issues:");
-                    foreach (var error in validationErrors)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.WARN, $"  - {error}");
-                    }
-
-                    // Attempt to fix by rebuilding LinkRegistry and recalculating indices
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Attempting to auto-fix index issues...");
-                    CurrentDialog.RebuildLinkRegistry();
-                    _indexManager.RecalculatePointerIndices(CurrentDialog);
-
-                    // Re-validate after fix attempt
-                    var errorsAfterFix = CurrentDialog.ValidatePointerIndices();
-                    if (errorsAfterFix.Count > 0)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.ERROR, $"❌ CRITICAL: {errorsAfterFix.Count} index issues remain after auto-fix!");
-                        StatusMessage = $"ERROR: Dialog has {errorsAfterFix.Count} pointer index issues. Save aborted to prevent corruption.";
-                        return;
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.INFO, "✅ All index issues resolved successfully");
-                    }
-                }
-
-                // Phase 4 Refactoring: Use DialogFileService facade instead of DialogParser directly
-                var dialogService = new DialogFileService();
-
-                // Determine output format based on file extension
-                var extension = System.IO.Path.GetExtension(filePath).ToLower();
-                bool success = false;
-
-                // Log parameter counts before writing
-                int totalActionParams = CurrentDialog.Entries.Sum(e => e.ActionParams.Count) + CurrentDialog.Replies.Sum(r => r.ActionParams.Count);
-                int totalConditionParams = CurrentDialog.Entries.Sum(e => e.Pointers.Sum(p => p.ConditionParams.Count))
-                                         + CurrentDialog.Replies.Sum(r => r.Pointers.Sum(p => p.ConditionParams.Count));
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"💾 SAVE: Dialog model has TotalActionParams={totalActionParams}, TotalConditionParams={totalConditionParams} before write");
-
-                // Log entry order at save time
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"💾 SAVE: Entry list order (Count={CurrentDialog.Entries.Count}):");
-                for (int i = 0; i < CurrentDialog.Entries.Count; i++)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"  Entry[{i}] = '{CurrentDialog.Entries[i].Text}'");
-                }
-
-                if (extension == ".json")
-                {
-                    var json = await dialogService.ConvertToJsonAsync(CurrentDialog);
-                    if (!string.IsNullOrEmpty(json))
-                    {
-                        await System.IO.File.WriteAllTextAsync(filePath, json);
-                        success = true;
-                    }
-                }
-                else
-                {
-                    success = await dialogService.SaveToFileAsync(CurrentDialog, filePath);
-                }
-
-                if (success)
+                if (result.Success)
                 {
                     CurrentFileName = filePath;
                     HasUnsavedChanges = false; // Clear dirty flag on successful save
-                    StatusMessage = "Dialog saved successfully";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Dialog saved successfully");
 
-                    // REMOVED: Auto-export tree structure to logs (was too verbose for production use)
-                    // Users can manually export tree via Debug menu if needed for troubleshooting
+                    // Update last saved time (Issue #62)
+                    LastSavedTime = $"Last saved: {DateTime.Now:h:mm:ss tt}";
 
-                    // NOTE: Auto-reload disabled during editing to preserve tree state
-                    // Auto-reload the exported file to prevent cached data issues
-                    // if (extension == ".dlg")
-                    // {
-                    //     UnifiedLogger.LogApplication(LogLevel.INFO, "Auto-reloading exported DLG file to verify integrity");
-                    //     StatusMessage = "Reloading exported file...";
-                    //     await LoadDialogAsync(filePath);
-                    // }
+                    StatusMessage = result.StatusMessage;
                 }
                 else
                 {
-                    StatusMessage = "Failed to save dialog";
-                    UnifiedLogger.LogApplication(LogLevel.ERROR, "Failed to save dialog - parser returned false");
+                    StatusMessage = result.StatusMessage;
                 }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error saving dialog: {ex.Message}";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save dialog: {ex.Message}");
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save dialog in MainViewModel: {ex.Message}");
             }
             finally
             {
@@ -677,6 +615,7 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = new Dialog();
                 CurrentFileName = null; // No filename until user saves (this will also clear scrap via setter)
                 HasUnsavedChanges = false; // Start clean
+                LastSavedTime = ""; // Clear last saved time
                 SelectedTreeNode = null; // Clear selection
                 SelectedScrapEntry = null; // Clear scrap selection
 
@@ -702,6 +641,7 @@ namespace DialogEditor.ViewModels
             CurrentDialog = null;
             CurrentFileName = null;
             HasUnsavedChanges = false;
+            LastSavedTime = ""; // Clear last saved time
             DialogNodes.Clear();
             SelectedScrapEntry = null; // Clear scrap selection
             StatusMessage = "Dialog closed";

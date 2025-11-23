@@ -256,6 +256,56 @@
                 </ScrollViewer>
             </TabItem>
 
+            <!-- Auto-Save Tab (Issue #62) -->
+            <TabItem Header="Auto-Save">
+                <ScrollViewer>
+                    <StackPanel Margin="10" Spacing="15">
+                        <!-- Enable Auto-Save -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <CheckBox x:Name="AutoSaveEnabledCheckBox"
+                                         Content="Enable Auto-Save"
+                                         FontWeight="Bold"
+                                         Checked="OnAutoSaveEnabledChanged"
+                                         Unchecked="OnAutoSaveEnabledChanged"/>
+                                <TextBlock Text="Automatically save dialog file after changes"
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Auto-Save Interval -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Auto-Save Interval" FontWeight="Bold"/>
+                                <TextBlock Text="Set auto-save interval. 0 = fast debounce (2 seconds after last change), 1-60 = periodic save every N minutes."
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider x:Name="AutoSaveIntervalSlider" Grid.Column="0"
+                                           Minimum="0" Maximum="60" Value="0"
+                                           TickFrequency="1" IsSnapToTickEnabled="True"
+                                           ValueChanged="OnAutoSaveIntervalChanged"/>
+                                    <TextBlock x:Name="AutoSaveIntervalLabel" Grid.Column="1"
+                                              Text="Fast debounce (2s)" Margin="10,0,0,0" VerticalAlignment="Center" MinWidth="150"/>
+                                </Grid>
+
+                                <Border BorderBrush="LightBlue" BorderThickness="1" Padding="8" CornerRadius="3"
+                                       Background="LightBlue" Opacity="0.2">
+                                    <StackPanel Spacing="5">
+                                        <TextBlock Text="ℹ️ Fast Debounce Mode (0):" FontWeight="SemiBold" FontSize="11"/>
+                                        <TextBlock Text="Saves 2 seconds after you stop typing. Best for real-time work."
+                                                  TextWrapping="Wrap" FontSize="10"/>
+                                        <TextBlock Text="⏱️ Periodic Mode (1-60 min):" FontWeight="SemiBold" FontSize="11" Margin="0,5,0,0"/>
+                                        <TextBlock Text="Saves at fixed intervals regardless of activity. Good for long editing sessions."
+                                                  TextWrapping="Wrap" FontSize="10"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <!-- Parameters Tab -->
             <TabItem Header="Parameters">
                 <ScrollViewer>

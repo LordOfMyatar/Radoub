@@ -703,10 +703,12 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"/>
-                <TextBlock Grid.Column="1" Text="{Binding LoadedFileName}" Foreground="Gray" Margin="20,0,0,0"/>
-                <ProgressBar Grid.Column="2" Width="100" Height="16"
+                <TextBlock Grid.Column="1" Text="{Binding LastSavedTime}" Foreground="{DynamicResource SystemAccentColor}" FontStyle="Italic" Margin="20,0,0,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding LoadedFileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <ProgressBar Grid.Column="3" Width="100" Height="16"
                              IsIndeterminate="{Binding IsLoading}"
                              IsVisible="{Binding IsLoading}" Margin="10,0,0,0"/>
             </Grid>

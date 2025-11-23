@@ -1388,14 +1388,17 @@ namespace DialogEditor.Views
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
 
-            // Create new timer that fires after configured delay
-            var delayMs = SettingsService.Instance.AutoSaveDelayMs;
+            // Create new timer that fires after configured delay (Issue #62)
+            var delayMs = SettingsService.Instance.EffectiveAutoSaveIntervalMs;
             _autoSaveTimer = new System.Timers.Timer(delayMs);
             _autoSaveTimer.AutoReset = false; // Only fire once
             _autoSaveTimer.Elapsed += async (s, e) => await AutoSaveToFileAsync();
             _autoSaveTimer.Start();
 
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Debounced auto-save scheduled in {delayMs}ms");
+            var intervalDesc = SettingsService.Instance.AutoSaveIntervalMinutes > 0
+                ? $"{SettingsService.Instance.AutoSaveIntervalMinutes} minute(s)"
+                : $"{delayMs}ms (fast debounce)";
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Debounced auto-save scheduled in {intervalDesc}");
         }
 
         private async Task AutoSaveToFileAsync()
@@ -1405,6 +1408,7 @@ namespace DialogEditor.Views
             {
                 if (!_viewModel.HasUnsavedChanges || string.IsNullOrEmpty(_viewModel.CurrentFileName))
                 {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-save skipped: no changes or no file loaded");
                     return;
                 }
 
@@ -1412,12 +1416,17 @@ namespace DialogEditor.Views
                 {
                     // Phase 1 Step 4: Enhanced save status indicators
                     _viewModel.StatusMessage = "💾 Auto-saving...";
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-save starting...");
 
                     await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
 
                     var timestamp = DateTime.Now.ToString("h:mm tt");
                     var fileName = System.IO.Path.GetFileName(_viewModel.CurrentFileName);
                     _viewModel.StatusMessage = $"✓ Auto-saved '{fileName}' at {timestamp}";
+
+                    // Verify HasUnsavedChanges was cleared (Issue #18)
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Auto-save completed. HasUnsavedChanges = {_viewModel.HasUnsavedChanges}, WindowTitle = '{_viewModel.WindowTitle}'");
                 }
                 catch (Exception ex)
                 {
@@ -2296,8 +2305,12 @@ namespace DialogEditor.Views
                     }
                 }
 
+                // Trigger autosave
+                _viewModel.HasUnsavedChanges = true;
+                TriggerDebouncedAutoSave();
+
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest tag set to: {category.Tag}");
-                _viewModel.StatusMessage = $"Quest: {category.DisplayName}";
+                _viewModel.StatusMessage = $"Quest saved: {category.DisplayName}";
             }
             else
             {
@@ -2305,6 +2318,10 @@ namespace DialogEditor.Views
                 var dialogNode = _selectedNode.OriginalNode;
                 dialogNode.Quest = string.Empty;
                 dialogNode.QuestEntry = uint.MaxValue;
+
+                // Trigger autosave for clearing
+                _viewModel.HasUnsavedChanges = true;
+                TriggerDebouncedAutoSave();
 
                 // Clear quest name display
                 var questNameTextBlock = this.FindControl<TextBlock>("QuestNameTextBlock");
@@ -2344,15 +2361,23 @@ namespace DialogEditor.Views
                     questEntryEndTextBlock.Text = entry.End ? "✓ Quest Complete" : "";
                 }
 
+                // Trigger autosave
+                _viewModel.HasUnsavedChanges = true;
+                TriggerDebouncedAutoSave();
+
                 var endStatus = entry.End ? " (Quest Complete - plays reward sound)" : "";
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest entry set to: {entry.ID}{endStatus}");
-                _viewModel.StatusMessage = $"Entry {entry.ID}: {entry.FullText}{endStatus}";
+                _viewModel.StatusMessage = $"Quest Entry saved - Entry {entry.ID}: {entry.FullText}{endStatus}";
             }
             else
             {
                 // Cleared selection
                 var dialogNode = _selectedNode.OriginalNode;
                 dialogNode.QuestEntry = uint.MaxValue;
+
+                // Trigger autosave for clearing
+                _viewModel.HasUnsavedChanges = true;
+                TriggerDebouncedAutoSave();
 
                 // Clear displays
                 var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
