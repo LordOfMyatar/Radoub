@@ -276,7 +276,7 @@
                 <!-- Scripts & Parameters Tab -->
                 <TabItem Header="Scripts">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,5,0">
-                        <StackPanel Margin="5,5,10,20">
+                        <StackPanel Margin="5,5,10,50">
 
                         <!-- Conditional Scripts -->
                         <TextBlock Text="Conditional Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
@@ -300,7 +300,7 @@
                         </Grid>
 
                         <TextBlock Text="Condition Parameters:" Margin="0,5,0,2"/>
-                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" MaxHeight="200" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -309,7 +309,7 @@
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for condition script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
-                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40" MaxHeight="80"
+                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40" MaxHeight="120"
                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ConditionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
@@ -365,7 +365,7 @@
                         </Grid>
 
                         <TextBlock Text="Action Parameters:" Margin="0,5,0,2"/>
-                        <Border x:Name="ActionsParametersGrid" MinHeight="60" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ActionsParametersGrid" MinHeight="60" MaxHeight="200" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -374,7 +374,7 @@
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for action script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
-                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40" MaxHeight="80"
+                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40" MaxHeight="120"
                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ActionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
