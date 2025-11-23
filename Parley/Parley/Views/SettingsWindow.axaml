@@ -283,7 +283,7 @@
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Slider x:Name="AutoSaveIntervalSlider" Grid.Column="0"
                                            Minimum="0" Maximum="60" Value="0"
-                                           TickFrequency="5" IsSnapToTickEnabled="True"
+                                           TickFrequency="1" IsSnapToTickEnabled="True"
                                            ValueChanged="OnAutoSaveIntervalChanged"/>
                                     <TextBlock x:Name="AutoSaveIntervalLabel" Grid.Column="1"
                                               Text="Fast debounce (2s)" Margin="10,0,0,0" VerticalAlignment="Center" MinWidth="150"/>

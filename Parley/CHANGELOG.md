@@ -10,26 +10,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.21-alpha] - TBD
+## [0.1.21-alpha] - 2025-11-23
 **Branch**: `parley/feat/autosave-improvements` | **PR**: #165
 
 ### Autosave Improvements (Issues #18, #62)
 
-Non-intrusive autosave enhancements with configurable intervals and better visual feedback.
+Non-intrusive autosave enhancements with configurable intervals, better visual feedback, and improved save architecture.
 
 **Window Title Sync Fix** (#18):
 - Fixed asterisk (*) persisting after auto-save completion
 - Window title now updates immediately when file saved
+- Force UI refresh using Dispatcher.UIThread.Post with DispatcherPriority.Send
 
 **Configurable Autosave Interval**:
-- Settings UI: 1-60 minute interval selection
-- Default remains 2 seconds for backward compatibility
+- Settings UI: 0-60 minute interval slider (0 = fast debounce mode)
+- Fast debounce mode: 2 seconds after last change (default)
+- Periodic mode: 1-60 minute fixed intervals
 - Per-session persistence
+- Live label updates showing current mode
 
 **Visual Feedback Improvements**:
-- Status bar "Last saved: [time]" indicator
-- Non-intrusive save progress icon
+- Status bar "Last saved: [time]" indicator with timestamp
+- Theme-compliant colors using SystemAccentColor
+- Non-intrusive save progress feedback
 - Clear indication of save completion
+
+**Save Architecture Refactor** (Epic #163 pattern):
+- Extracted DialogSaveService from MainViewModel (~125→35 lines, 72% reduction)
+- Service handles orphan cleanup, validation, index fixing
+- Returns SaveResult with success/status/error info
+- Maintains all safety features (orphan removal, pointer validation, multi-format support)
+
+**Quest System Consistency**:
+- Quest and QuestEntry changes now trigger autosave
+- Status messages include "saved" feedback matching other properties
+- Improved UX consistency across all property types
+
+### Testing
+- Added DialogSaveServiceTests.cs with 14 comprehensive tests
+- Input validation tests (null dialog, null/empty filepath)
+- Orphan cleanup verification
+- Round-trip integrity tests (.dlg and .json)
+- Pointer index validation and auto-fix
+- Error handling coverage
+- All 14 tests passing ✅
+
+### Enhancement Issues Filed (Future Work)
+- #166: Quest system UI refactor (TextBoxes with browse buttons)
+- #167: Mono audio filtering for conversation compatibility
+- #168: HAK file support in sound browser
 
 ---
 
