@@ -10,6 +10,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.22-alpha] - TBD
+**Branch**: `parley/feat/scrollbar-improvements` | **PR**: #TBD
+
+### Scrollbar Improvements (Issue #63)
+
+Improved scrollbar visibility and usability across all panels.
+
+**Settings Panel Scrollbar**:
+- Added visible scrollbar to SettingsWindow
+- Clear indication of additional content below fold
+
+**TreeView Scrollbar**:
+- Added bottom padding to prevent last item overlap
+- Improved scrollbar grab area and visibility
+
+**Optional Enhancements**:
+- Auto-hide preference for scrollbars (if implemented)
+- Increased scrollbar width for easier interaction
+
+---
+
 ## [0.1.21-alpha] - 2025-11-23
 **Branch**: `parley/feat/autosave-improvements` | **PR**: #165
 
