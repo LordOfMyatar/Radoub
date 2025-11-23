@@ -207,6 +207,19 @@
                                 </Border>
                             </StackPanel>
                         </Border>
+
+                        <!-- Scrollbar Settings -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Scrollbar Settings" FontWeight="Bold"/>
+                                <CheckBox x:Name="AllowScrollbarAutoHideCheckBox"
+                                         Content="Allow scrollbars to auto-hide when not in use"
+                                         Checked="OnAllowScrollbarAutoHideChanged"
+                                         Unchecked="OnAllowScrollbarAutoHideChanged"/>
+                                <TextBlock Text="When unchecked, scrollbars remain visible (requires restart)"
+                                          FontSize="11" Foreground="Gray" Margin="25,0,0,0"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

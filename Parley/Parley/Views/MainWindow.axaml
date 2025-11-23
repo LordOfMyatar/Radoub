@@ -275,7 +275,7 @@
 
                 <!-- Scripts & Parameters Tab -->
                 <TabItem Header="Scripts">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="5">
 
                         <!-- Conditional Scripts -->
@@ -409,7 +409,7 @@
 
                 <!-- Node Properties Tab -->
                 <TabItem Header="Node">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="5">
                             <!-- Conversation Settings (shown only for ROOT node) -->
                             <StackPanel x:Name="ConversationSettingsPanel">
@@ -602,7 +602,8 @@
                                      ItemsSource="{Binding ScrapEntries}"
                                      SelectedItem="{Binding SelectedScrapEntry}"
                                      Background="Transparent"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                 <ListBox.Styles>
                                     <Style Selector="ListBoxItem">
                                         <Setter Property="Padding" Value="4,2"/>

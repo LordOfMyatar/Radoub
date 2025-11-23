@@ -69,6 +69,9 @@ namespace DialogEditor.Services
         private int _autoSaveDelayMs = 2000; // Default: 2 seconds (fast debounce)
         private int _autoSaveIntervalMinutes = 0; // Default: 0 = use AutoSaveDelayMs instead (Issue #62)
 
+        // UI settings (Issue #63)
+        private bool _allowScrollbarAutoHide = false; // Default: always visible
+
         // Script editor settings
         private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
         private List<string> _scriptSearchPaths = new List<string>(); // Additional directories to search for scripts
@@ -411,6 +414,20 @@ namespace DialogEditor.Services
             }
         }
 
+        // UI Settings Properties (Issue #63)
+        public bool AllowScrollbarAutoHide
+        {
+            get => _allowScrollbarAutoHide;
+            set
+            {
+                if (SetProperty(ref _allowScrollbarAutoHide, value))
+                {
+                    SaveSettings();
+                    OnPropertyChanged(nameof(AllowScrollbarAutoHide));
+                }
+            }
+        }
+
         // Script Editor Settings Properties
         public string ExternalEditorPath
         {
@@ -534,6 +551,7 @@ namespace DialogEditor.Services
                         }
 
                         _useNewLayout = settings.UseNewLayout;
+                        _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
 
                         // Load game settings (expand ~ to user home directory)
                         _neverwinterNightsPath = ExpandPath(settings.NeverwinterNightsPath ?? "");
@@ -613,6 +631,7 @@ namespace DialogEditor.Services
                     IsDarkTheme = IsDarkTheme, // Keep for backwards compatibility
                     CurrentThemeId = CurrentThemeId,
                     UseNewLayout = UseNewLayout,
+                    AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
                     NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
                     BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
                     CurrentModulePath = ContractPath(CurrentModulePath), // Use ~ for home directory
@@ -793,6 +812,7 @@ namespace DialogEditor.Services
             public bool IsDarkTheme { get; set; } = false; // DEPRECATED: For backwards compatibility
             public string? CurrentThemeId { get; set; } = "org.parley.theme.light";
             public bool UseNewLayout { get; set; } = false;
+            public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
             
             // Game settings
             public string NeverwinterNightsPath { get; set; } = "";
