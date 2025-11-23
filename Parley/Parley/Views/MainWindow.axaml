@@ -293,10 +293,10 @@
                             <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas"
                                      TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditConditionalScriptButton" Grid.Column="2" Content="Edit Script"
-                                    MinWidth="70" Padding="5,0" Click="OnEditConditionalScriptClick"
+                                    MinWidth="55" Padding="5,0" Click="OnEditConditionalScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
                             <Button x:Name="BrowseConditionalScriptButton" Grid.Column="4" Content="Browse..."
-                                    MinWidth="70" Padding="5,0" Click="OnBrowseConditionalScriptClick"/>
+                                    MinWidth="55" Padding="5,0" Click="OnBrowseConditionalScriptClick"/>
                         </Grid>
 
                         <TextBlock Text="Condition Parameters:" Margin="0,5,0,2"/>
@@ -358,10 +358,10 @@
                             <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas"
                                      TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditActionScriptButton" Grid.Column="2" Content="Edit Script"
-                                    MinWidth="70" Padding="5,0" Click="OnEditActionScriptClick"
+                                    MinWidth="55" Padding="5,0" Click="OnEditActionScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
                             <Button x:Name="BrowseActionScriptButton" Grid.Column="4" Content="Browse..."
-                                    MinWidth="70" Padding="5,0" Click="OnBrowseActionScriptClick"/>
+                                    MinWidth="55" Padding="5,0" Click="OnBrowseActionScriptClick"/>
                         </Grid>
 
                         <TextBlock Text="Action Parameters:" Margin="0,5,0,2"/>
@@ -433,7 +433,7 @@
                                 <TextBox x:Name="ScriptEndTextBox" Grid.Column="0" FontFamily="Consolas"
                                          TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
                                          ToolTip.Tip="Script to run when conversation ends normally"/>
-                                <Button Grid.Column="2" Content="Browse..." MinWidth="70" Padding="5,0"
+                                <Button Grid.Column="2" Content="Browse..." MinWidth="55" Padding="5,0"
                                         Click="OnBrowseConversationScriptClick" Tag="ScriptEnd"/>
                             </Grid>
 
@@ -447,7 +447,7 @@
                                 <TextBox x:Name="ScriptAbortTextBox" Grid.Column="0" FontFamily="Consolas"
                                          TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
                                          ToolTip.Tip="Script to run when conversation is aborted"/>
-                                <Button Grid.Column="2" Content="Browse..." MinWidth="70" Padding="5,0"
+                                <Button Grid.Column="2" Content="Browse..." MinWidth="55" Padding="5,0"
                                         Click="OnBrowseConversationScriptClick" Tag="ScriptAbort"/>
                             </Grid>
 
@@ -486,9 +486,9 @@
                                 <TextBox x:Name="SoundTextBox" Grid.Column="0" TextWrapping="Wrap"
                                          LostFocus="OnFieldLostFocus"/>
                                 <Button x:Name="BrowseSoundButton" Grid.Column="2" Content="Browse..."
-                                        MinWidth="70" Padding="5,0" Click="OnBrowseSoundClick"/>
+                                        MinWidth="55" Padding="5,0" Click="OnBrowseSoundClick"/>
                                 <Button x:Name="PlaySoundButton" Grid.Column="4" Content="Play"
-                                        MinWidth="50" Padding="5,0" Click="OnPlaySoundClick"/>
+                                        MinWidth="40" Padding="5,0" Click="OnPlaySoundClick"/>
                             </Grid>
 
                             <TextBlock Text="Delay (ms):"/>
@@ -502,7 +502,7 @@
 
                             <TextBlock Text="Quest Tag:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                <ComboBox x:Name="QuestTagComboBox" MinWidth="200"
+                                <ComboBox x:Name="QuestTagComboBox" MinWidth="150"
                                           SelectionChanged="OnQuestTagChanged"
                                           ToolTip.Tip="Select a quest from the module's journal">
                                     <ComboBox.ItemTemplate>
@@ -526,7 +526,7 @@
 
                             <TextBlock Text="Quest Entry:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                <ComboBox x:Name="QuestEntryComboBox" MinWidth="200"
+                                <ComboBox x:Name="QuestEntryComboBox" MinWidth="150"
                                           SelectionChanged="OnQuestEntryChanged"
                                           ToolTip.Tip="Select a quest entry">
                                     <ComboBox.ItemTemplate>
