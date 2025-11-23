@@ -2108,6 +2108,9 @@ namespace DialogEditor.Views
         {
             try
             {
+                // Don't trigger during property population
+                if (_isPopulatingProperties) return;
+
                 var comboBox = sender as ComboBox;
                 var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
 
@@ -2116,8 +2119,16 @@ namespace DialogEditor.Views
                     var speakerTag = speakerTextBox.Text.Trim();
                     if (Enum.TryParse<SpeakerVisualHelper.SpeakerShape>(comboBox.SelectedItem.ToString(), out var shape))
                     {
+                        var currentSelection = _selectedNode;
                         SettingsService.Instance.SetSpeakerPreference(speakerTag, null, shape);
                         _viewModel.RefreshTreeViewColors();
+
+                        // Restore selection after refresh (Issue #134)
+                        if (currentSelection != null)
+                        {
+                            _viewModel.SelectedTreeNode = currentSelection;
+                        }
+
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' shape to {shape}");
                     }
                 }
@@ -2132,6 +2143,9 @@ namespace DialogEditor.Views
         {
             try
             {
+                // Don't trigger during property population
+                if (_isPopulatingProperties) return;
+
                 var comboBox = sender as ComboBox;
                 var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
 
@@ -2141,8 +2155,16 @@ namespace DialogEditor.Views
                     var color = item.Tag as string;
                     if (!string.IsNullOrEmpty(color))
                     {
+                        var currentSelection = _selectedNode;
                         SettingsService.Instance.SetSpeakerPreference(speakerTag, color, null);
                         _viewModel.RefreshTreeViewColors();
+
+                        // Restore selection after refresh (Issue #134)
+                        if (currentSelection != null)
+                        {
+                            _viewModel.SelectedTreeNode = currentSelection;
+                        }
+
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' color to {color}");
                     }
                 }
