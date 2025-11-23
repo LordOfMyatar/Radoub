@@ -275,8 +275,8 @@
 
                 <!-- Scripts & Parameters Tab -->
                 <TabItem Header="Scripts">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Margin="5">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,5,0">
+                        <StackPanel Margin="5,5,10,20">
 
                         <!-- Conditional Scripts -->
                         <TextBlock Text="Conditional Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
@@ -300,16 +300,16 @@
                         </Grid>
 
                         <TextBlock Text="Condition Parameters:" Margin="0,5,0,2"/>
-                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for condition script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
-                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40"
+                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40" MaxHeight="80"
                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ConditionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
@@ -332,11 +332,11 @@
                         <TextBlock Text="Conditional Script Preview:" Margin="0,5,0,2"/>
                         <Border x:Name="ConditionalScriptPreviewGrid" MinHeight="100" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer"
-                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                                 <TextBox x:Name="ConditionalScriptPreviewTextBox"
                                          FontFamily="Consolas"
                                          Background="Transparent" BorderThickness="0"
-                                         IsReadOnly="True" TextWrapping="Wrap"
+                                         IsReadOnly="True" TextWrapping="NoWrap"
                                          Text="// Conditional script preview will appear here"
                                          Margin="5"/>
                             </ScrollViewer>
@@ -365,16 +365,16 @@
                         </Grid>
 
                         <TextBlock Text="Action Parameters:" Margin="0,5,0,2"/>
-                        <Border x:Name="ActionsParametersGrid" MinHeight="60" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ActionsParametersGrid" MinHeight="60" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for action script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
-                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40"
+                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40" MaxHeight="80"
                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ActionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
@@ -397,11 +397,11 @@
                         <TextBlock Text="Action Script Preview:" Margin="0,5,0,2"/>
                         <Border x:Name="ActionScriptPreviewGrid" MinHeight="100" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <ScrollViewer x:Name="ActionScriptPreviewScrollViewer"
-                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                                 <TextBox x:Name="ActionScriptPreviewTextBox"
                                          FontFamily="Consolas"
                                          Background="Transparent" BorderThickness="0"
-                                         IsReadOnly="True" TextWrapping="Wrap"
+                                         IsReadOnly="True" TextWrapping="NoWrap"
                                          Text="// Action script preview will appear here"
                                          Margin="5"/>
                             </ScrollViewer>
