@@ -113,6 +113,9 @@ namespace DialogEditor.Views
             // Subscribe to theme changes to refresh tree view colors
             ThemeManager.Instance.ThemeApplied += OnThemeApplied;
 
+            // Subscribe to NPC tag coloring setting changes (Issue #134)
+            SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+
             // Phase 0 Fix: Hide debug console by default
             HideDebugConsoleByDefault();
 
@@ -228,6 +231,25 @@ namespace DialogEditor.Views
                     _viewModel.RefreshTreeViewColors();
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after theme change");
                 });
+            }
+        }
+
+        /// <summary>
+        /// Handles settings changes that require tree view refresh (Issue #134)
+        /// </summary>
+        private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            // Refresh tree when NPC tag coloring setting changes
+            if (e.PropertyName == nameof(SettingsService.EnableNpcTagColoring))
+            {
+                if (_viewModel.CurrentDialog != null)
+                {
+                    global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        _viewModel.RefreshTreeViewColors();
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after NPC tag coloring setting change");
+                    });
+                }
             }
         }
 
