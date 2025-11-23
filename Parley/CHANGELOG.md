@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.22-alpha] - 2025-11-23
+**Branch**: `parley/feat/scrollbar-improvements` | **PR**: #172
+
+### Scrollbar Improvements (Issue #63)
+
+Comprehensive scrollbar visibility and usability improvements across all panels.
+
+**Global Scrollbar Enhancements**:
+- Increased scrollbar width to 18px (vertical) and height to 18px (horizontal)
+- Always visible by default (AllowAutoHide = False)
+- User preference in Settings > UI Settings > Scrollbar Settings
+- Preference applies dynamically without restart
+
+**SettingsWindow Scrollbars**:
+- All 6 tabs: VerticalScrollBarVisibility="Auto", HorizontalScrollBarVisibility="Disabled"
+- Clear overflow indication on every tab
+
+**MainWindow TreeView**:
+- Added 20px bottom padding to prevent last item clipping
+
+**MainWindow Properties Panel (Scripts/Node/Scrap tabs)**:
+- Scripts tab: Fixed nested ScrollViewer conflicts
+- All tabs: HorizontalScrollBarVisibility settings for consistency
+- Added padding and margins for scrollbar clearance
+- Script preview sections: Horizontal scrolling enabled for long code lines
+
+**UI Sizing Improvements**:
+- Reduced button MinWidth: 70→55px (-21%)
+- Reduced Play button: 50→40px (-20%)
+- Reduced Quest ComboBoxes: 200→150px (-25%)
+- Total space savings: ~60-90px in Properties panel
+
+---
+
 ## [0.1.21-alpha] - 2025-11-23
 **Branch**: `parley/feat/autosave-improvements` | **PR**: #165
 

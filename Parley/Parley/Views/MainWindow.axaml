@@ -161,7 +161,8 @@
                     <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
                               SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
                               SelectionChanged="OnDialogTreeViewSelectionChanged"
-                              DoubleTapped="OnTreeViewItemDoubleTapped">
+                              DoubleTapped="OnTreeViewItemDoubleTapped"
+                              Padding="0,0,0,20">
                         <TreeView.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="Add Node" Click="OnAddSmartNodeClick"/>
@@ -274,8 +275,8 @@
 
                 <!-- Scripts & Parameters Tab -->
                 <TabItem Header="Scripts">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="5">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                        <StackPanel Margin="5,5,15,50">
 
                         <!-- Conditional Scripts -->
                         <TextBlock Text="Conditional Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
@@ -292,23 +293,24 @@
                             <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas"
                                      TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditConditionalScriptButton" Grid.Column="2" Content="Edit Script"
-                                    MinWidth="70" Padding="5,0" Click="OnEditConditionalScriptClick"
+                                    MinWidth="55" Padding="5,0" Click="OnEditConditionalScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
                             <Button x:Name="BrowseConditionalScriptButton" Grid.Column="4" Content="Browse..."
-                                    MinWidth="70" Padding="5,0" Click="OnBrowseConditionalScriptClick"/>
+                                    MinWidth="55" Padding="5,0" Click="OnBrowseConditionalScriptClick"/>
                         </Grid>
 
                         <TextBlock Text="Condition Parameters:" Margin="0,5,0,2"/>
-                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" MaxHeight="200" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for condition script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
-                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40">
+                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40" MaxHeight="120"
+                                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ConditionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
@@ -329,11 +331,12 @@
 
                         <TextBlock Text="Conditional Script Preview:" Margin="0,5,0,2"/>
                         <Border x:Name="ConditionalScriptPreviewGrid" MinHeight="100" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
-                            <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer">
+                            <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer"
+                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                                 <TextBox x:Name="ConditionalScriptPreviewTextBox"
                                          FontFamily="Consolas"
                                          Background="Transparent" BorderThickness="0"
-                                         IsReadOnly="True" TextWrapping="Wrap"
+                                         IsReadOnly="True" TextWrapping="NoWrap"
                                          Text="// Conditional script preview will appear here"
                                          Margin="5"/>
                             </ScrollViewer>
@@ -355,23 +358,24 @@
                             <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas"
                                      TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditActionScriptButton" Grid.Column="2" Content="Edit Script"
-                                    MinWidth="70" Padding="5,0" Click="OnEditActionScriptClick"
+                                    MinWidth="55" Padding="5,0" Click="OnEditActionScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
                             <Button x:Name="BrowseActionScriptButton" Grid.Column="4" Content="Browse..."
-                                    MinWidth="70" Padding="5,0" Click="OnBrowseActionScriptClick"/>
+                                    MinWidth="55" Padding="5,0" Click="OnBrowseActionScriptClick"/>
                         </Grid>
 
                         <TextBlock Text="Action Parameters:" Margin="0,5,0,2"/>
-                        <Border x:Name="ActionsParametersGrid" MinHeight="60" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ActionsParametersGrid" MinHeight="60" MaxHeight="200" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for action script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
-                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40">
+                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40" MaxHeight="120"
+                                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ActionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
@@ -392,11 +396,12 @@
 
                         <TextBlock Text="Action Script Preview:" Margin="0,5,0,2"/>
                         <Border x:Name="ActionScriptPreviewGrid" MinHeight="100" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
-                            <ScrollViewer x:Name="ActionScriptPreviewScrollViewer">
+                            <ScrollViewer x:Name="ActionScriptPreviewScrollViewer"
+                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                                 <TextBox x:Name="ActionScriptPreviewTextBox"
                                          FontFamily="Consolas"
                                          Background="Transparent" BorderThickness="0"
-                                         IsReadOnly="True" TextWrapping="Wrap"
+                                         IsReadOnly="True" TextWrapping="NoWrap"
                                          Text="// Action script preview will appear here"
                                          Margin="5"/>
                             </ScrollViewer>
@@ -408,7 +413,7 @@
 
                 <!-- Node Properties Tab -->
                 <TabItem Header="Node">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="5">
                             <!-- Conversation Settings (shown only for ROOT node) -->
                             <StackPanel x:Name="ConversationSettingsPanel">
@@ -428,7 +433,7 @@
                                 <TextBox x:Name="ScriptEndTextBox" Grid.Column="0" FontFamily="Consolas"
                                          TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
                                          ToolTip.Tip="Script to run when conversation ends normally"/>
-                                <Button Grid.Column="2" Content="Browse..." MinWidth="70" Padding="5,0"
+                                <Button Grid.Column="2" Content="Browse..." MinWidth="55" Padding="5,0"
                                         Click="OnBrowseConversationScriptClick" Tag="ScriptEnd"/>
                             </Grid>
 
@@ -442,7 +447,7 @@
                                 <TextBox x:Name="ScriptAbortTextBox" Grid.Column="0" FontFamily="Consolas"
                                          TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
                                          ToolTip.Tip="Script to run when conversation is aborted"/>
-                                <Button Grid.Column="2" Content="Browse..." MinWidth="70" Padding="5,0"
+                                <Button Grid.Column="2" Content="Browse..." MinWidth="55" Padding="5,0"
                                         Click="OnBrowseConversationScriptClick" Tag="ScriptAbort"/>
                             </Grid>
 
@@ -481,9 +486,9 @@
                                 <TextBox x:Name="SoundTextBox" Grid.Column="0" TextWrapping="Wrap"
                                          LostFocus="OnFieldLostFocus"/>
                                 <Button x:Name="BrowseSoundButton" Grid.Column="2" Content="Browse..."
-                                        MinWidth="70" Padding="5,0" Click="OnBrowseSoundClick"/>
+                                        MinWidth="55" Padding="5,0" Click="OnBrowseSoundClick"/>
                                 <Button x:Name="PlaySoundButton" Grid.Column="4" Content="Play"
-                                        MinWidth="50" Padding="5,0" Click="OnPlaySoundClick"/>
+                                        MinWidth="40" Padding="5,0" Click="OnPlaySoundClick"/>
                             </Grid>
 
                             <TextBlock Text="Delay (ms):"/>
@@ -497,7 +502,7 @@
 
                             <TextBlock Text="Quest Tag:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                <ComboBox x:Name="QuestTagComboBox" MinWidth="200"
+                                <ComboBox x:Name="QuestTagComboBox" MinWidth="150"
                                           SelectionChanged="OnQuestTagChanged"
                                           ToolTip.Tip="Select a quest from the module's journal">
                                     <ComboBox.ItemTemplate>
@@ -521,7 +526,7 @@
 
                             <TextBlock Text="Quest Entry:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                <ComboBox x:Name="QuestEntryComboBox" MinWidth="200"
+                                <ComboBox x:Name="QuestEntryComboBox" MinWidth="150"
                                           SelectionChanged="OnQuestEntryChanged"
                                           ToolTip.Tip="Select a quest entry">
                                     <ComboBox.ItemTemplate>
@@ -601,7 +606,8 @@
                                      ItemsSource="{Binding ScrapEntries}"
                                      SelectedItem="{Binding SelectedScrapEntry}"
                                      Background="Transparent"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                 <ListBox.Styles>
                                     <Style Selector="ListBoxItem">
                                         <Setter Property="Padding" Value="4,2"/>

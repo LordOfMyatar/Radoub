@@ -23,7 +23,7 @@
         <TabControl x:Name="SettingsTabControl" Grid.Row="1">
             <!-- Resource Paths Tab -->
             <TabItem Header="Resource Paths">
-                <ScrollViewer>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10" Spacing="15">
                         <!-- Base Game Installation Path -->
                         <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
@@ -130,7 +130,7 @@
 
             <!-- UI Settings Tab -->
             <TabItem Header="UI Settings">
-                <ScrollViewer>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10" Spacing="15">
                         <!-- Theme -->
                         <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
@@ -207,13 +207,26 @@
                                 </Border>
                             </StackPanel>
                         </Border>
+
+                        <!-- Scrollbar Settings -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Scrollbar Settings" FontWeight="Bold"/>
+                                <CheckBox x:Name="AllowScrollbarAutoHideCheckBox"
+                                         Content="Allow scrollbars to auto-hide when not in use"
+                                         Checked="OnAllowScrollbarAutoHideChanged"
+                                         Unchecked="OnAllowScrollbarAutoHideChanged"/>
+                                <TextBlock Text="When unchecked, scrollbars remain visible (requires restart)"
+                                          FontSize="11" Foreground="Gray" Margin="25,0,0,0"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
             <!-- Logging Tab -->
             <TabItem Header="Logging">
-                <ScrollViewer>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10" Spacing="15">
                         <!-- Log Level -->
                         <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
@@ -258,7 +271,7 @@
 
             <!-- Auto-Save Tab (Issue #62) -->
             <TabItem Header="Auto-Save">
-                <ScrollViewer>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10" Spacing="15">
                         <!-- Enable Auto-Save -->
                         <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
@@ -308,7 +321,7 @@
 
             <!-- Parameters Tab -->
             <TabItem Header="Parameters">
-                <ScrollViewer>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10" Spacing="15">
                         <!-- Enable Parameter Cache -->
                         <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
@@ -375,7 +388,7 @@
 
             <!-- Plugins Tab -->
             <TabItem Header="Plugins">
-                <ScrollViewer>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10" Spacing="15">
                         <!-- Plugin List -->
                         <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">

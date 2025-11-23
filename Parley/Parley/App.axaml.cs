@@ -32,6 +32,9 @@ public partial class App : Application
         ApplyFontSize(SettingsService.Instance.FontSize);
         ApplyFontFamily(SettingsService.Instance.FontFamily);
 
+        // Apply scrollbar auto-hide preference (Issue #63)
+        ApplyScrollbarAutoHide(SettingsService.Instance.AllowScrollbarAutoHide);
+
         // Subscribe to settings changes
         SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
     }
@@ -69,6 +72,10 @@ public partial class App : Application
             {
                 ThemeManager.Instance.ApplyTheme(themeId);
             }
+        }
+        else if (e.PropertyName == nameof(SettingsService.AllowScrollbarAutoHide))
+        {
+            ApplyScrollbarAutoHide(SettingsService.Instance.AllowScrollbarAutoHide);
         }
     }
 
@@ -114,6 +121,19 @@ public partial class App : Application
                 Application.Current.Resources["GlobalFontFamily"] = FontFamily.Default;
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"Font '{fontFamilyName}' not found, using system default");
             }
+        }
+    }
+
+    /// <summary>
+    /// Apply scrollbar auto-hide preference globally
+    /// Fixes issue #63 - Scrollbar usability improvements
+    /// </summary>
+    public static void ApplyScrollbarAutoHide(bool allowAutoHide)
+    {
+        if (Application.Current?.Resources != null)
+        {
+            Application.Current.Resources["AllowScrollbarAutoHide"] = allowAutoHide;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied scrollbar auto-hide: {allowAutoHide}");
         }
     }
 

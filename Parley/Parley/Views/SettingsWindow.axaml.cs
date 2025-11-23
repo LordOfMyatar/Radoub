@@ -172,6 +172,13 @@ namespace DialogEditor.Views
             LoadFontFamilies(settings.FontFamily);
             UpdateFontPreview();
 
+            // Scrollbar Settings (Issue #63)
+            var allowScrollbarAutoHideCheckBox = this.FindControl<CheckBox>("AllowScrollbarAutoHideCheckBox");
+            if (allowScrollbarAutoHideCheckBox != null)
+            {
+                allowScrollbarAutoHideCheckBox.IsChecked = settings.AllowScrollbarAutoHide;
+            }
+
             if (externalEditorPathTextBox != null)
             {
                 externalEditorPathTextBox.Text = settings.ExternalEditorPath;
@@ -1305,6 +1312,18 @@ namespace DialogEditor.Views
                 }
 
                 UpdateFontPreview();
+            }
+        }
+
+        private void OnAllowScrollbarAutoHideChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var checkbox = sender as CheckBox;
+            if (checkbox != null)
+            {
+                SettingsService.Instance.AllowScrollbarAutoHide = checkbox.IsChecked == true;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Scrollbar auto-hide preference: {checkbox.IsChecked}");
             }
         }
 

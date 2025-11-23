@@ -76,6 +76,19 @@
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
+
+        <!-- Scrollbar visibility and usability improvements (Issue #63) -->
+        <Style Selector="ScrollBar">
+            <Setter Property="AllowAutoHide" Value="{DynamicResource AllowScrollbarAutoHide}"/>
+        </Style>
+
+        <Style Selector="ScrollBar:vertical">
+            <Setter Property="Width" Value="18"/>
+        </Style>
+
+        <Style Selector="ScrollBar:horizontal">
+            <Setter Property="Height" Value="18"/>
+        </Style>
     </Application.Styles>
 
     <Application.Resources>
@@ -85,6 +98,9 @@
 
         <!-- Default theme background - will be overridden by theme manager -->
         <SolidColorBrush x:Key="ThemeBackground">#FFFFFF</SolidColorBrush>
+
+        <!-- Scrollbar auto-hide preference (Issue #63) - will be updated from settings -->
+        <x:Boolean x:Key="AllowScrollbarAutoHide">False</x:Boolean>
 
         <!-- Global converters for UI -->
         <models:BoolToTextWrappingConverter x:Key="BoolToTextWrappingConverter"/>
