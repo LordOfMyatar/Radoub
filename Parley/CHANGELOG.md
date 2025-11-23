@@ -13,23 +13,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.23-alpha] - TBD
 **Branch**: `parley/feat/epic-39-ux-improvements` | **PR**: #174
 
-### UX Improvements (Issues #20, #14, #3)
+### UX Improvements (Issues #20, #16, #36)
 
-**Modeless Dialog Completion** (Issue #20):
-- Settings window remains modeless (already implemented v0.1.6-alpha)
-- All resource browsers remain modeless (Parameter Browser, Script Browser - v0.1.6-alpha)
-- Issue audit complete - all appropriate dialogs converted
+**Modeless Settings Window** (Issue #20):
+- Settings window now non-blocking (Show() instead of ShowDialog())
+- Users can keep Settings open while working in main window
+- Theme changes apply immediately without dialog dismissal
 
-**Delete Confirmation Preferences** (Issue #14):
-- Added "Don't show again" checkbox to delete confirmation dialog
-- Setting persists to ParleySettings.json
-- Can re-enable in Settings > UI Settings
+**NPC Speaker Visual Preferences** (Issues #16, #36):
+- Per-tag color and shape preferences for NPC speakers
+- Shape/Color ComboBoxes next to Speaker field in Node Text panel
+- Preferences persist across sessions in ParleySettings.json
+- Controls update automatically when switching nodes
+- Disabled for PC nodes and Owner (empty speaker)
+- Speaker TextBox shortened to 150px (15 character limit)
+- Setting to disable NPC tag coloring (use theme defaults only)
 
-**Properties Panel State Management** (Issue #3):
-- Properties panel grays out when no node selected
-- Root-level properties remain enabled (PreventZoom, OnEndConversation, OnAbortConversation)
-- Quest entry dropdown properly handles null node state
-- Clear visual feedback for enabled/disabled state
+**Focus Preservation**:
+- Selection preserved after changing speaker preferences
+- Tree view refresh no longer loses focus
+- _isPopulatingProperties flag prevents event loops
+
+**GitHub Issues Created**:
+- #175 - Epic: Focus Management
+- #176 - Theme colors: Warm NPC / Cool PC consistency
+- #177 - Theme backgrounds: Darker gray for light text visibility
+
+**Remaining Work** (deferred):
+- Issue #14 - Delete confirmation "Don't show again" (low priority)
+- Issue #3 - Properties panel state management (needs more design)
 
 ---
 
