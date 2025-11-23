@@ -10,6 +10,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.23-alpha] - TBD
+**Branch**: `parley/feat/epic-39-ux-improvements` | **PR**: #TBD
+
+### UX Improvements (Issues #20, #14, #3)
+
+**Modeless Dialog Completion** (Issue #20):
+- Settings window remains modeless (already implemented v0.1.6-alpha)
+- All resource browsers remain modeless (Parameter Browser, Script Browser - v0.1.6-alpha)
+- Issue audit complete - all appropriate dialogs converted
+
+**Delete Confirmation Preferences** (Issue #14):
+- Added "Don't show again" checkbox to delete confirmation dialog
+- Setting persists to ParleySettings.json
+- Can re-enable in Settings > UI Settings
+
+**Properties Panel State Management** (Issue #3):
+- Properties panel grays out when no node selected
+- Root-level properties remain enabled (PreventZoom, OnEndConversation, OnAbortConversation)
+- Quest entry dropdown properly handles null node state
+- Clear visual feedback for enabled/disabled state
+
+---
+
 ## [0.1.22-alpha] - 2025-11-23
 **Branch**: `parley/feat/scrollbar-improvements` | **PR**: #172
 
