@@ -1858,9 +1858,9 @@ namespace DialogEditor.Views
         {
             // Create grid: [Key TextBox] [=] [Value TextBox] [Delete Button]
             var grid = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 150 });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 150 });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
