@@ -156,9 +156,10 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        $archiveName = "${{ matrix.artifact-name }}.zip"
-        Compress-Archive -Path "./publish/${{ matrix.artifact-name }}/*" -DestinationPath $archiveName
-        Write-Host "Created: $archiveName"
+        cd "./publish/${{ matrix.artifact-name }}"
+        $archiveName = "../../${{ matrix.artifact-name }}.zip"
+        Compress-Archive -Path "*" -DestinationPath $archiveName
+        Write-Host "Created: ${{ matrix.artifact-name }}.zip"
       working-directory: ./Parley
 
     - name: Package macOS Build
