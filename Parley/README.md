@@ -17,6 +17,7 @@ Parley is under active development. While the core dialog editing functionality 
 ## New Features
 
 ### Current (Alpha)
+
 - Color coded NPCs for multi-npc conversations
 - Themes, Fonts, and Font Sizes
 - Improved interface for script parameters including auto-trim
@@ -27,7 +28,8 @@ Parley is under active development. While the core dialog editing functionality 
 - Plugin system (In Progress: Python-based, process-isolated, gRPC communication)
 
 ### Roadmap
-See [parent README](../README.md) for full roadmap.
+
+[Parley Project Roadmap](https://github.com/users/LordOfMyatar/projects/2)
 
 ---
 
@@ -39,7 +41,6 @@ See [parent README](../README.md) for full roadmap.
 - No dark mode
 - Modal window management block workflow
 - Script parameters easy to lose and hard to enter
-- Wine and other utilities required for cross platform support
 
 ### Parley Improvements
 
@@ -59,6 +60,7 @@ See [parent README](../README.md) for full roadmap.
 Download the latest release from [GitHub Releases](https://github.com/LordOfMyatar/Radoub/releases).
 
 **Self-Contained Builds** (No .NET required):
+
 - **Windows**: Extract `Parley-win-x64.zip` and run `Parley.exe`
 - **macOS**: Extract `Parley-osx-arm64.zip` and open `Parley.app`
   - First launch: System Preferences → Security & Privacy → Allow
@@ -66,15 +68,18 @@ Download the latest release from [GitHub Releases](https://github.com/LordOfMyat
 - **Linux**: Extract `Parley-linux-x64.tar.gz`, run `chmod +x Parley`, then `./Parley`
 
 **Framework-Dependent Builds** (Requires [.NET 9 Runtime](https://dotnet.microsoft.com/download/dotnet/9.0)):
+
 - Smaller downloads (`-fd` suffix): `Parley-win-x64-fd.zip`, `Parley-osx-arm64-fd.zip`, `Parley-linux-x64-fd.tar.gz`
 
 ### From Source
 
 **Prerequisites**:
+
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - Git
 
 **Build Steps**:
+
 ```bash
 git clone https://github.com/LordOfMyatar/Radoub.git
 cd Radoub/Parley
@@ -100,8 +105,6 @@ dotnet run --project Parley/Parley.csproj
    - Adjust font size
    - Configure auto-save interval
    - Enable/disable NPC tag coloring
-
-
 
 ---
 
@@ -164,4 +167,4 @@ See [LICENSE](../LICENSE)
 
 ---
 
-*Part of the [Radoub](../) toolset*
+_Part of the [Radoub](../) toolset_
