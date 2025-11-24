@@ -1,8 +1,8 @@
 # Parley
 
-**Cross-Platform Dialog Editor for Neverwinter Nights**
+## What is Parley?
 
-Modern dialog editor for Neverwinter Nights DLG files with 100% Aurora Engine compatibility. Part of the Radoub toolset.
+Parley is a conversation editor designed for Neverwinter Nights conversation files based off of the conversation editor from Aurora Toolset. It aims to improve usability via a modern user interface. It allows you to work on conversation files outside of the Aurora Toolset.
 
 ---
 
@@ -10,47 +10,40 @@ Modern dialog editor for Neverwinter Nights DLG files with 100% Aurora Engine co
 
 **This is alpha software. Always work with backup copies of your module files.**
 
-Known Issues:
-- Copy/paste with complex node links needs improvement
-- Delete operations with multiple parent references require testing
-- See [GitHub Issues](../../issues?q=is%3Aissue+is%3Aopen+label%3Aparley) for current bug list
+Parley is under active development. While the core dialog editing functionality appears stable and Aurora-compatible, some features are still being refined. See [Known Issues](#known-issues) below for details.
 
 ---
 
-## Features
+## New Features
 
 ### Current (Alpha)
-- ✅ Read and write Aurora-compatible DLG files
-- ✅ Tree view conversation editing
-- ✅ Node properties editing (text, speaker, listener, scripts)
-- ✅ Add, delete, move nodes
-- ✅ Undo/redo system (Ctrl+Z/Ctrl+Y)
-- ✅ Sound browser (MP3/WAV/BMU from game and module)
-- ✅ Script browser with parameter preview
-- ✅ Creature tag selection (from UTC files)
-- ✅ Journal quest integration
-- ✅ Dark mode and font scaling
-- ✅ Copy tree structure to clipboard
-- ✅ Recent files menu
-- ✅ Cross-platform (Windows, Linux, macOS)
-- ✅ **Plugin system** (Python-based, process-isolated, gRPC communication)
-- ✅ Color-blind accessible speaker visuals
+
+- Color coded NPCs for multi-npc conversations
+- Themes, Fonts, and Font Sizes
+- Improved interface for script parameters including auto-trim
+- Script parameter system to avoid typos
+- Modeless dialogs (Settings, Script/Parameter browsers)
+- Cross-platform (Win/Linux. Limited support for Mac)
+- Sound browser (In Progress)
+- Plugin system (In Progress: Python-based, process-isolated, gRPC communication)
 
 ### Roadmap
-See [parent README](../README.md) for full roadmap.
+
+[Parley Project Roadmap](https://github.com/users/LordOfMyatar/projects/2)
 
 ---
 
 ## Why Parley?
 
-**Problems with Aurora Toolset**:
+### Problems with Aurora Toolset
+
 - Fonts not following Windows 10/11 settings
 - No dark mode
 - Modal window management block workflow
 - Script parameters easy to lose and hard to enter
-- Wine and other utilties required for cross platform support
 
-**Parley Improvements**:
+### Parley Improvements
+
 - Adjustable font size
 - Dark mode support
 - Cross-platform (Windows, Linux, macOS)
@@ -62,32 +55,37 @@ See [parent README](../README.md) for full roadmap.
 
 ## Installation
 
-### Binary Release (Coming Soon)
-Pre-built binaries will be available from GitHub Releases.
+### Binary Releases (Recommended)
+
+Download the latest release from [GitHub Releases](https://github.com/LordOfMyatar/Radoub/releases).
+
+**Self-Contained Builds** (No .NET required):
+
+- **Windows**: Extract `Parley-win-x64.zip` and run `Parley.exe`
+- **macOS**: Extract `Parley-osx-arm64.zip` and open `Parley.app`
+  - First launch: System Preferences → Security & Privacy → Allow
+  - Apple Silicon (M1/M2/M3) Macs
+- **Linux**: Extract `Parley-linux-x64.tar.gz`, run `chmod +x Parley`, then `./Parley`
+
+**Framework-Dependent Builds** (Requires [.NET 9 Runtime](https://dotnet.microsoft.com/download/dotnet/9.0)):
+
+- Smaller downloads (`-fd` suffix): `Parley-win-x64-fd.zip`, `Parley-osx-arm64-fd.zip`, `Parley-linux-x64-fd.tar.gz`
 
 ### From Source
 
 **Prerequisites**:
-- .NET 9.0 SDK
+
+- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - Git
 
 **Build Steps**:
+
 ```bash
-# Clone repository
-git clone https://github.com/YourUsername/Radoub.git
+git clone https://github.com/LordOfMyatar/Radoub.git
 cd Radoub/Parley
-
-# Build
 dotnet build Parley.sln -c Release
-
-# Run
 dotnet run --project Parley/Parley.csproj
 ```
-
-**Supported Platforms**:
-- ✅ Windows 10/11 (tested)
-- ⚠️ Linux (needs testing)
-- ⚠️ macOS (needs testing)
 
 ---
 
@@ -96,86 +94,23 @@ dotnet run --project Parley/Parley.csproj
 ### First Launch
 
 1. **Open Settings** (Tools → Settings or Ctrl+,)
-2. **Set Game Directory**: Point to your NWN installation
-   - Windows: `~\Documents\Neverwinter Nights`
-   - Linux: `~/.local/share/Neverwinter Nights`
-   - macOS: `~/Library/Application Support/Neverwinter Nights`
-3. **Set Module Directory** (optional): Choose specific module folder
-
-### Opening a Dialog File
-
-- **File → Open** (Ctrl+O): Browse for `.dlg` file
-- **Recent Files**: Quick access to recently opened files
-- **Command Line**: `Parley.exe path/to/dialog.dlg`
-
-### Editing Dialogs
-
-**Tree View**:
-- Click node to select and view properties
-- Right-click for context menu (Add, Delete, Cut, Paste, Copy Tree)
-- Drag to reorder siblings (in progress)
-
-**Properties Panel**:
-- Edit text, speaker, listener
-- Set scripts and parameters
-- Configure quest/journal entries
-- Assign sounds
-
-**Keyboard Shortcuts**:
-- `Ctrl+Z` / `Ctrl+Y`: Undo/Redo
-- `Ctrl+X`: Cut node
-- `Ctrl+C`: Copy tree structure to clipboard
-- `Ctrl+S`: Save
-- `Ctrl+Shift+S`: Save As
-- `Ctrl+N`: New dialog
-- `Ctrl+O`: Open
-- `Ctrl+,`: Settings
-- `Ctrl+Shift+Up/Down`: Move node up/down
-
-### Testing in Aurora Toolset
-
-After editing:
-1. Save file in Parley
-2. Open module in Aurora Toolset
-3. Test conversation in-game or via toolset preview
-4. Report any issues to GitHub
-
-### Using Plugins
-
-Parley supports Python-based plugins for extended functionality:
-
-**Installing Plugins**:
-1. Extract plugin to `~/Parley/Plugins/Community/`
-2. Open Settings → Plugins tab
-3. Enable the plugin and restart Parley
-
-**Creating Plugins**:
-See [Plugin Development Guide](Documentation/Plugin_Development_Guide.md) and [Using Plugins](Documentation/Using_Plugins.md)
-
-**Current Capabilities**:
-- Show notifications and dialogs
-- Query dialog data
-- Audio playback requests
-- File operations (sandboxed to plugin data directory)
-
-**Security**: Plugins run as isolated processes with permission-based access control and rate limiting.
+2. **Configure Resource Paths**:
+   - **Base Game Installation**: Path to NWN installation (optional, for base game resources)
+   - **Module Directory**: Path to your NWN modules folder
+     - Windows: `~\Documents\Neverwinter Nights\modules`
+     - Linux: `~/.local/share/Neverwinter Nights/modules`
+     - macOS: `~/Library/Application Support/Neverwinter Nights/modules`
+3. **Customize UI** (optional):
+   - Choose theme (Standard, Dark, or accessibility themes)
+   - Adjust font size
+   - Configure auto-save interval
+   - Enable/disable NPC tag coloring
 
 ---
 
 ## Known Issues
 
-### Critical
-- None currently
-
-### Major
-- **Copy/Paste**: Complex node links may not preserve correctly ([#XX](link))
-- **Delete**: Nodes with multiple parents need careful handling ([#XX](link))
-
-### Minor
-- **macOS/Linux**: Auto-detection of Steam/Beamdog paths not implemented ([#70](link))
-- **Modal Dialogs**: Some dialogs block main window ([#69](link))
-
-See [all issues](../../issues?q=is%3Aissue+is%3Aopen+label%3Aparley)
+See [GitHub Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is%3Aopen+label%3Aparley) for current bug list and feature requests.
 
 ---
 
@@ -183,14 +118,16 @@ See [all issues](../../issues?q=is%3Aissue+is%3Aopen+label%3Aparley)
 
 Contributions welcome! See [parent repository guidelines](../CLAUDE.md) and [Parley-specific guidance](CLAUDE.md).
 
-**Wanted**:
+### Wanted
+
 - Bug reports with reproduction steps
 - Platform testing (especially Linux/macOS)
 - Module compatibility testing
 - Accessibility feedback
 - Code review and improvements
 
-**Before Contributing**:
+### Before Contributing
+
 - Read `CLAUDE.md` for development workflow
 - Check existing issues to avoid duplicates
 - Test with backup copies of modules
@@ -199,17 +136,18 @@ Contributions welcome! See [parent repository guidelines](../CLAUDE.md) and [Par
 
 ## Technical Details
 
-**Stack**:
+### Stack
+
 - .NET 9.0
 - Avalonia UI (cross-platform)
 - Aurora Engine GFF v3.28+ binary format
 
-**Architecture**:
+### Architecture
+
 - MVVM pattern
 - Dialog file service layer
 - Comprehensive logging
 - Undo/redo system
-- Circular reference protection
 
 See [PARSER_ARCHITECTURE.md](Documentation/PARSER_ARCHITECTURE.md) for parser details.
 
@@ -229,4 +167,4 @@ See [LICENSE](../LICENSE)
 
 ---
 
-*Part of the [Radoub](../) toolset*
+_Part of the [Radoub](../) toolset_
