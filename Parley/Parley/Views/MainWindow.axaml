@@ -236,24 +236,43 @@
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="5"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="5"/>
-                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Speaker:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBox x:Name="SpeakerTextBox" Grid.Column="1"
-                                 TextWrapping="Wrap" AcceptsReturn="True"
+                        <TextBlock Grid.Column="0" Text="Speaker:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBox x:Name="SpeakerTextBox" Grid.Column="1" MaxLength="15"
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
                                  LostFocus="OnFieldLostFocus"/>
                         <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="3"
-                                  MinWidth="100" MaxWidth="150"
+                                  MinWidth="80" MaxWidth="120"
                                   PlaceholderText="Recent..."
                                   SelectionChanged="OnRecentCreatureTagSelected">
                             <!-- Populated dynamically -->
                         </ComboBox>
                         <Button x:Name="BrowseCreatureButton" Grid.Column="5" Content="Browse..."
-                                MinWidth="70" Padding="5,0" Click="OnBrowseCreatureClick"/>
+                                MinWidth="55" Padding="5,0" Click="OnBrowseCreatureClick"/>
+
+                        <!-- NPC Speaker Visual Preferences (Issue #16, #36) -->
+                        <TextBlock Grid.Column="7" Text="Shape:" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                        <ComboBox x:Name="SpeakerShapeComboBox" Grid.Column="8" MinWidth="90"
+                                 SelectionChanged="OnSpeakerShapeChanged">
+                            <!-- Populated in code-behind -->
+                        </ComboBox>
+                        <TextBlock Grid.Column="10" Text="Color:" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                        <ComboBox x:Name="SpeakerColorComboBox" Grid.Column="11" MinWidth="90"
+                                 SelectionChanged="OnSpeakerColorChanged">
+                            <!-- Populated in code-behind -->
+                        </ComboBox>
                     </Grid>
 
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
@@ -282,9 +301,9 @@
                         <TextBlock Text="Conditional Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
 
                         <TextBlock Text="Script (Appears When):"/>
-                        <Grid Margin="0,0,0,5">
+                        <Grid Margin="0,0,0,5" HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="180"/>
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="5"/>
@@ -347,9 +366,9 @@
                         <TextBlock Text="Action Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
 
                         <TextBlock Text="Script (Action):"/>
-                        <Grid Margin="0,0,0,5">
+                        <Grid Margin="0,0,0,5" HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="180"/>
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="5"/>
@@ -454,8 +473,8 @@
                             <Separator Margin="0,5,0,10"/>
                         </StackPanel>
 
-                        <!-- Node Properties (shown for all nodes) -->
-                        <StackPanel x:Name="NodePropertiesPanel">
+                        <!-- Node Properties (disabled when no node selected - Issue #3) -->
+                        <StackPanel x:Name="NodePropertiesPanel" IsEnabled="{Binding HasNodeSelected}">
                             <TextBlock Text="Node Properties" FontWeight="Bold" Margin="0,0,0,10"/>
 
                             <!-- Basic Node Info (display only) -->

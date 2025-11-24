@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using DialogEditor.Utils;
 using Parley.Models;
 
 namespace Parley.Views.Helpers
@@ -117,6 +119,87 @@ namespace Parley.Views.Helpers
             if (browseCreatureButton != null)
             {
                 browseCreatureButton.IsEnabled = !isPC;
+            }
+
+            // Populate NPC speaker visual preferences (Issue #16, #36)
+            PopulateSpeakerVisualPreferences(dialogNode);
+        }
+
+        /// <summary>
+        /// Populates shape/color ComboBoxes based on speaker tag preferences.
+        /// Disabled for PC nodes and empty speakers (Owner).
+        /// </summary>
+        public void PopulateSpeakerVisualPreferences(DialogNode dialogNode)
+        {
+            var shapeComboBox = _window.FindControl<ComboBox>("SpeakerShapeComboBox");
+            var colorComboBox = _window.FindControl<ComboBox>("SpeakerColorComboBox");
+
+            bool isPC = (dialogNode.Type == DialogNodeType.Reply);
+            bool hasNamedSpeaker = !string.IsNullOrWhiteSpace(dialogNode.Speaker);
+
+            // Disable for PC nodes and Owner (empty speaker)
+            bool enableControls = !isPC && hasNamedSpeaker;
+
+            if (shapeComboBox != null)
+            {
+                shapeComboBox.IsEnabled = enableControls;
+                if (enableControls)
+                {
+                    var (_, prefShape) = SettingsService.Instance.GetSpeakerPreference(dialogNode.Speaker);
+                    if (prefShape.HasValue)
+                    {
+                        // Set to preference
+                        shapeComboBox.SelectedItem = prefShape.Value;
+                    }
+                    else
+                    {
+                        // Show hash-based default
+                        var defaultShape = SpeakerVisualHelper.GetSpeakerShape(dialogNode.Speaker, false);
+                        shapeComboBox.SelectedItem = defaultShape;
+                    }
+                }
+                else
+                {
+                    shapeComboBox.SelectedIndex = -1;
+                }
+            }
+
+            if (colorComboBox != null)
+            {
+                colorComboBox.IsEnabled = enableControls;
+                if (enableControls)
+                {
+                    var (prefColor, _) = SettingsService.Instance.GetSpeakerPreference(dialogNode.Speaker);
+                    if (!string.IsNullOrEmpty(prefColor))
+                    {
+                        // Set to preference
+                        foreach (var obj in colorComboBox.Items)
+                        {
+                            if (obj is ComboBoxItem item && item.Tag as string == prefColor)
+                            {
+                                colorComboBox.SelectedItem = item;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Show hash-based default
+                        var defaultColor = SpeakerVisualHelper.GetSpeakerColor(dialogNode.Speaker, false);
+                        foreach (var obj in colorComboBox.Items)
+                        {
+                            if (obj is ComboBoxItem item && item.Tag as string == defaultColor)
+                            {
+                                colorComboBox.SelectedItem = item;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    colorComboBox.SelectedIndex = -1;
+                }
             }
         }
 

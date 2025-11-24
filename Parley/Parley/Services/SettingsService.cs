@@ -5,9 +5,19 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
+using DialogEditor.Utils;
 
 namespace DialogEditor.Services
 {
+    /// <summary>
+    /// Stores speaker-specific visual preferences (color and shape)
+    /// </summary>
+    public class SpeakerPreferences
+    {
+        public string? Color { get; set; }
+        public string? Shape { get; set; } // Store as string for JSON serialization
+    }
+
     public class SettingsService : INotifyPropertyChanged
     {
         public static SettingsService Instance { get; } = new SettingsService();
@@ -71,6 +81,13 @@ namespace DialogEditor.Services
 
         // UI settings (Issue #63)
         private bool _allowScrollbarAutoHide = false; // Default: always visible
+
+        // NPC speaker visual preferences (Issue #16, #36)
+        private Dictionary<string, SpeakerPreferences> _npcSpeakerPreferences = new Dictionary<string, SpeakerPreferences>();
+        private bool _enableNpcTagColoring = true; // Default: ON (use shape/color per tag)
+
+        // Confirmation dialog settings (Issue #14)
+        private bool _showDeleteConfirmation = true; // Default: ON (show delete confirmation dialog)
 
         // Script editor settings
         private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
@@ -428,6 +445,75 @@ namespace DialogEditor.Services
             }
         }
 
+        // NPC Speaker Visual Preferences (Issue #16, #36)
+        public Dictionary<string, SpeakerPreferences> NpcSpeakerPreferences
+        {
+            get => _npcSpeakerPreferences;
+        }
+
+        public void SetSpeakerPreference(string speakerTag, string? color, SpeakerVisualHelper.SpeakerShape? shape)
+        {
+            if (string.IsNullOrEmpty(speakerTag))
+                return;
+
+            if (!_npcSpeakerPreferences.ContainsKey(speakerTag))
+            {
+                _npcSpeakerPreferences[speakerTag] = new SpeakerPreferences();
+            }
+
+            if (color != null)
+                _npcSpeakerPreferences[speakerTag].Color = color;
+
+            if (shape != null)
+                _npcSpeakerPreferences[speakerTag].Shape = shape.ToString();
+
+            SaveSettings();
+            OnPropertyChanged(nameof(NpcSpeakerPreferences));
+        }
+
+        public (string? color, SpeakerVisualHelper.SpeakerShape? shape) GetSpeakerPreference(string speakerTag)
+        {
+            // If NPC tag coloring disabled, return null (use theme defaults only)
+            if (!_enableNpcTagColoring)
+                return (null, null);
+
+            if (string.IsNullOrEmpty(speakerTag) || !_npcSpeakerPreferences.ContainsKey(speakerTag))
+                return (null, null);
+
+            var prefs = _npcSpeakerPreferences[speakerTag];
+            SpeakerVisualHelper.SpeakerShape? shape = null;
+            if (Enum.TryParse<SpeakerVisualHelper.SpeakerShape>(prefs.Shape, out var parsedShape))
+            {
+                shape = parsedShape;
+            }
+            return (prefs.Color, shape);
+        }
+
+        public bool EnableNpcTagColoring
+        {
+            get => _enableNpcTagColoring;
+            set
+            {
+                if (SetProperty(ref _enableNpcTagColoring, value))
+                {
+                    SaveSettings();
+                    OnPropertyChanged(nameof(EnableNpcTagColoring));
+                }
+            }
+        }
+
+        public bool ShowDeleteConfirmation
+        {
+            get => _showDeleteConfirmation;
+            set
+            {
+                if (SetProperty(ref _showDeleteConfirmation, value))
+                {
+                    SaveSettings();
+                }
+            }
+        }
+
         // Script Editor Settings Properties
         public string ExternalEditorPath
         {
@@ -552,6 +638,9 @@ namespace DialogEditor.Services
 
                         _useNewLayout = settings.UseNewLayout;
                         _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
+                        _npcSpeakerPreferences = settings.NpcSpeakerPreferences ?? new Dictionary<string, SpeakerPreferences>(); // Issue #16, #36
+                        _enableNpcTagColoring = settings.EnableNpcTagColoring; // Issue #16, #36
+                        _showDeleteConfirmation = settings.ShowDeleteConfirmation; // Issue #14
 
                         // Load game settings (expand ~ to user home directory)
                         _neverwinterNightsPath = ExpandPath(settings.NeverwinterNightsPath ?? "");
@@ -632,6 +721,9 @@ namespace DialogEditor.Services
                     CurrentThemeId = CurrentThemeId,
                     UseNewLayout = UseNewLayout,
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
+                    NpcSpeakerPreferences = NpcSpeakerPreferences, // Issue #16, #36
+                    EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
+                    ShowDeleteConfirmation = ShowDeleteConfirmation, // Issue #14
                     NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
                     BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
                     CurrentModulePath = ContractPath(CurrentModulePath), // Use ~ for home directory
@@ -813,7 +905,10 @@ namespace DialogEditor.Services
             public string? CurrentThemeId { get; set; } = "org.parley.theme.light";
             public bool UseNewLayout { get; set; } = false;
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
-            
+            public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
+            public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON
+            public bool ShowDeleteConfirmation { get; set; } = true; // Issue #14: Default ON
+
             // Game settings
             public string NeverwinterNightsPath { get; set; } = "";
             public string BaseGameInstallPath { get; set; } = ""; // Phase 2: Base game installation

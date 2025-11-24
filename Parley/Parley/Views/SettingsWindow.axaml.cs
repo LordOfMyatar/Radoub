@@ -179,6 +179,13 @@ namespace DialogEditor.Views
                 allowScrollbarAutoHideCheckBox.IsChecked = settings.AllowScrollbarAutoHide;
             }
 
+            // NPC Tag Coloring (Issue #16, #36)
+            var enableNpcTagColoringCheckBox = this.FindControl<CheckBox>("EnableNpcTagColoringCheckBox");
+            if (enableNpcTagColoringCheckBox != null)
+            {
+                enableNpcTagColoringCheckBox.IsChecked = settings.EnableNpcTagColoring;
+            }
+
             if (externalEditorPathTextBox != null)
             {
                 externalEditorPathTextBox.Text = settings.ExternalEditorPath;
@@ -1327,6 +1334,17 @@ namespace DialogEditor.Views
             }
         }
 
+        private void OnEnableNpcTagColoringChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var checkbox = sender as CheckBox;
+            if (checkbox != null)
+            {
+                SettingsService.Instance.EnableNpcTagColoring = checkbox.IsChecked == true;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"NPC tag coloring: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
+            }
+        }
 
         private void UpdateFontPreview()
         {

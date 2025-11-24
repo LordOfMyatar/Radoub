@@ -10,6 +10,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.23-alpha] - 2025-11-23
+**Branch**: `parley/feat/epic-39-ux-improvements` | **PR**: #174
+
+### Epic #39: UI/UX Enhancements (Complete)
+
+Comprehensive UX improvements including modeless dialogs, per-NPC speaker preferences, focus management, delete confirmation preferences, and properties panel state management.
+
+**Modeless Settings Window** (Issue #20):
+- Settings window now non-blocking (Show() instead of ShowDialog())
+- Users can keep Settings open while working in main window
+- Theme changes apply immediately without dialog dismissal
+- Settings window closes automatically when main window closes
+
+**NPC Speaker Visual Preferences** (Issues #16, #36):
+- Per-tag color and shape preferences for NPC speakers
+- Shape/Color ComboBoxes next to Speaker field in Node Text panel (single row layout)
+- Preferences persist across sessions in ParleySettings.json
+- Controls update automatically when switching nodes
+- Disabled for PC nodes and Owner (empty speaker)
+- Speaker TextBox shortened to 150px (15 character limit)
+- Setting to disable NPC tag coloring (use theme defaults only)
+- Immediate tree view refresh when setting toggled
+
+**Delete Confirmation Preferences** (Issue #14):
+- "Don't show this again" checkbox on delete confirmation dialog
+- ShowDeleteConfirmation setting persists across sessions
+- Skips dialog when disabled (no confirmation needed)
+
+**Properties Panel State Management** (Issue #3):
+- Properties panel disabled when no node selected
+- Conversation settings remain enabled (ROOT-level properties)
+- HasNodeSelected binding prevents confusion with empty state
+- Clear visual indication of disabled state
+
+**Focus Preservation**:
+- Selection preserved after changing speaker preferences
+- Tree view refresh no longer loses focus
+- RefreshTreeViewColors(DialogNode) overload maintains selection
+- _isPopulatingProperties flag prevents event loops
+
+**Script Field Layout**:
+- Script TextBoxes constrained to 180px width (15 char limit)
+- Edit Script and Browse buttons positioned adjacent to TextBox
+- Left-aligned layout prevents buttons from floating to right edge
+- Parameter key/value fields constrained to 150px width
+
+**GitHub Issues Created**:
+- #175 - Epic: Focus Management
+- #176 - Theme colors: Warm NPC / Cool PC consistency
+- #177 - Theme backgrounds: Darker gray for light text visibility
+
+---
+
 ## [0.1.22-alpha] - 2025-11-23
 **Branch**: `parley/feat/scrollbar-improvements` | **PR**: #172
 

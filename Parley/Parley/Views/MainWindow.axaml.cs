@@ -43,6 +43,14 @@ namespace DialogEditor.Views
         // Flag to prevent auto-save during programmatic updates
         private bool _isPopulatingProperties = false;
 
+        // Track active Settings window to close it when MainWindow closes (Issue #134)
+        private SettingsWindow? _activeSettingsWindow;
+
+        // Track active browser windows to close them when MainWindow closes (Issue #20)
+        private ParameterBrowserWindow? _activeParameterBrowserWindow;
+        private ScriptBrowserWindow? _activeScriptBrowserWindow;
+        private SoundBrowserWindow? _activeSoundBrowserWindow;
+
         // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
         // Parameter autocomplete: Cache of script parameter declarations
@@ -112,6 +120,9 @@ namespace DialogEditor.Views
 
             // Subscribe to theme changes to refresh tree view colors
             ThemeManager.Instance.ThemeApplied += OnThemeApplied;
+
+            // Subscribe to NPC tag coloring setting changes (Issue #134)
+            SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
 
             // Phase 0 Fix: Hide debug console by default
             HideDebugConsoleByDefault();
@@ -184,6 +195,35 @@ namespace DialogEditor.Views
             // Controls are now available, restore settings
             _windowPersistenceManager.RestoreDebugSettings();
             _windowPersistenceManager.RestorePanelSizes();
+
+            // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
+            InitializeSpeakerVisualComboBoxes();
+        }
+
+        private void InitializeSpeakerVisualComboBoxes()
+        {
+            // Populate Shape ComboBox with NPC shapes (Triangle, Diamond, Pentagon, Star)
+            var shapeComboBox = this.FindControl<ComboBox>("SpeakerShapeComboBox");
+            if (shapeComboBox != null)
+            {
+                shapeComboBox.Items.Clear();
+                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Triangle);
+                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Diamond);
+                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Pentagon);
+                shapeComboBox.Items.Add(SpeakerVisualHelper.SpeakerShape.Star);
+            }
+
+            // Populate Color ComboBox with color-blind friendly palette
+            var colorComboBox = this.FindControl<ComboBox>("SpeakerColorComboBox");
+            if (colorComboBox != null)
+            {
+                colorComboBox.Items.Clear();
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Orange", Tag = SpeakerVisualHelper.ColorPalette.Orange });
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Purple", Tag = SpeakerVisualHelper.ColorPalette.Purple });
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Teal", Tag = SpeakerVisualHelper.ColorPalette.Teal });
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Amber", Tag = SpeakerVisualHelper.ColorPalette.Amber });
+                colorComboBox.Items.Add(new ComboBoxItem { Content = "Pink", Tag = SpeakerVisualHelper.ColorPalette.Pink });
+            }
         }
 
         /// <summary>
@@ -199,6 +239,25 @@ namespace DialogEditor.Views
                     _viewModel.RefreshTreeViewColors();
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after theme change");
                 });
+            }
+        }
+
+        /// <summary>
+        /// Handles settings changes that require tree view refresh (Issue #134)
+        /// </summary>
+        private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            // Refresh tree when NPC tag coloring setting changes
+            if (e.PropertyName == nameof(SettingsService.EnableNpcTagColoring))
+            {
+                if (_viewModel.CurrentDialog != null)
+                {
+                    global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        _viewModel.RefreshTreeViewColors();
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after NPC tag coloring setting change");
+                    });
+                }
             }
         }
 
@@ -345,6 +404,32 @@ namespace DialogEditor.Views
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
             _audioService.Dispose();
+
+            // Close Settings window if open (Issue #134)
+            if (_activeSettingsWindow != null)
+            {
+                _activeSettingsWindow.Close();
+                _activeSettingsWindow = null;
+            }
+
+            // Close browser windows if open (Issue #20)
+            if (_activeParameterBrowserWindow != null)
+            {
+                _activeParameterBrowserWindow.Close();
+                _activeParameterBrowserWindow = null;
+            }
+
+            if (_activeScriptBrowserWindow != null)
+            {
+                _activeScriptBrowserWindow.Close();
+                _activeScriptBrowserWindow = null;
+            }
+
+            if (_activeSoundBrowserWindow != null)
+            {
+                _activeSoundBrowserWindow.Close();
+                _activeSoundBrowserWindow = null;
+            }
 
             // Save window position on close
             _windowPersistenceManager.SaveWindowPosition();
@@ -998,17 +1083,26 @@ namespace DialogEditor.Views
         }
 
         // Settings handlers
-        private async void OnPreferencesClick(object? sender, RoutedEventArgs e)
+        private void OnPreferencesClick(object? sender, RoutedEventArgs e)
         {
             try
             {
-                var settingsWindow = new SettingsWindow(pluginManager: _pluginManager);
-                await settingsWindow.ShowDialog(this);
+                // If Settings window already open, just bring it to front (Issue #134)
+                if (_activeSettingsWindow != null)
+                {
+                    _activeSettingsWindow.Activate();
+                    return;
+                }
 
-                // Reload theme in case it changed
-                ApplySavedTheme();
-
-                _viewModel.StatusMessage = "Settings updated";
+                _activeSettingsWindow = new SettingsWindow(pluginManager: _pluginManager);
+                _activeSettingsWindow.Closed += (s, args) =>
+                {
+                    // Reload theme when settings window closes
+                    ApplySavedTheme();
+                    _viewModel.StatusMessage = "Settings updated";
+                    _activeSettingsWindow = null; // Clear reference (Issue #134)
+                };
+                _activeSettingsWindow.Show();
             }
             catch (Exception ex)
             {
@@ -1017,15 +1111,28 @@ namespace DialogEditor.Views
             }
         }
 
-        private async void OnGameDirectoriesClick(object? sender, RoutedEventArgs e)
+        private void OnGameDirectoriesClick(object? sender, RoutedEventArgs e)
         {
             try
             {
+                // If Settings window already open, switch to Resource Paths tab and bring to front (Issue #134)
+                if (_activeSettingsWindow != null)
+                {
+                    _activeSettingsWindow.Activate();
+                    // Switch to Resource Paths tab (tab 0) - requires public method in SettingsWindow
+                    // For now just activate - user can navigate manually
+                    return;
+                }
+
                 // Open preferences with Resource Paths tab selected (tab 0)
-                var settingsWindow = new SettingsWindow(initialTab: 0, pluginManager: _pluginManager);
-                await settingsWindow.ShowDialog(this);
-                ApplySavedTheme();
-                _viewModel.StatusMessage = "Settings updated";
+                _activeSettingsWindow = new SettingsWindow(initialTab: 0, pluginManager: _pluginManager);
+                _activeSettingsWindow.Closed += (s, args) =>
+                {
+                    ApplySavedTheme();
+                    _viewModel.StatusMessage = "Settings updated";
+                    _activeSettingsWindow = null; // Clear reference (Issue #134)
+                };
+                _activeSettingsWindow.Show();
             }
             catch (Exception ex)
             {
@@ -1034,15 +1141,28 @@ namespace DialogEditor.Views
             }
         }
 
-        private async void OnLogSettingsClick(object? sender, RoutedEventArgs e)
+        private void OnLogSettingsClick(object? sender, RoutedEventArgs e)
         {
             try
             {
+                // If Settings window already open, switch to Logging tab and bring to front (Issue #134)
+                if (_activeSettingsWindow != null)
+                {
+                    _activeSettingsWindow.Activate();
+                    // Switch to Logging tab (tab 2) - requires public method in SettingsWindow
+                    // For now just activate - user can navigate manually
+                    return;
+                }
+
                 // Open preferences with Logging tab selected (tab 2)
-                var settingsWindow = new SettingsWindow(initialTab: 2, pluginManager: _pluginManager);
-                await settingsWindow.ShowDialog(this);
-                ApplySavedTheme();
-                _viewModel.StatusMessage = "Settings updated";
+                _activeSettingsWindow = new SettingsWindow(initialTab: 2, pluginManager: _pluginManager);
+                _activeSettingsWindow.Closed += (s, args) =>
+                {
+                    ApplySavedTheme();
+                    _viewModel.StatusMessage = "Settings updated";
+                    _activeSettingsWindow = null; // Clear reference (Issue #134)
+                };
+                _activeSettingsWindow.Show();
             }
             catch (Exception ex)
             {
@@ -1701,9 +1821,9 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Shows parameter browser window for selecting parameters
+        /// Shows parameter browser window for selecting parameters (modeless - Issue #20)
         /// </summary>
-        private async void ShowParameterBrowser(ScriptParameterDeclarations? declarations, bool isCondition)
+        private void ShowParameterBrowser(ScriptParameterDeclarations? declarations, bool isCondition)
         {
             try
             {
@@ -1723,32 +1843,47 @@ namespace DialogEditor.Views
                 // Get existing parameters from the node for dependency resolution
                 var existingParameters = GetExistingParametersFromPanel(isCondition);
 
+                // Close existing browser if one is already open
+                if (_activeParameterBrowserWindow != null)
+                {
+                    _activeParameterBrowserWindow.Close();
+                    _activeParameterBrowserWindow = null;
+                }
+
+                // Create and show modeless browser window (Issue #20)
                 var browser = new ParameterBrowserWindow();
                 browser.SetDeclarations(declarations, scriptName, isCondition, existingParameters);
 
-                await browser.ShowDialog(this);
-
-                if (browser.DialogResult && !string.IsNullOrEmpty(browser.SelectedKey))
+                // Track the window and handle cleanup when it closes
+                _activeParameterBrowserWindow = browser;
+                browser.Closed += (s, e) =>
                 {
-                    // Add the parameter to the appropriate panel
-                    var key = browser.SelectedKey;
-                    var value = browser.SelectedValue ?? "";
+                    _activeParameterBrowserWindow = null;
 
-                    // Find the appropriate panel
-                    var panelName = isCondition ? "ConditionsParametersPanel" : "ActionsParametersPanel";
-                    var panel = this.FindControl<StackPanel>(panelName);
-
-                    if (panel != null)
+                    if (browser.DialogResult && !string.IsNullOrEmpty(browser.SelectedKey))
                     {
-                        AddParameterRow(panel, key, value, isCondition);
-                        OnParameterChanged(isCondition);
+                        // Add the parameter to the appropriate panel
+                        var key = browser.SelectedKey;
+                        var value = browser.SelectedValue ?? "";
 
-                        var paramType = isCondition ? "condition" : "action";
-                        _viewModel.StatusMessage = $"Added {paramType} parameter: {key}={value}";
-                        UnifiedLogger.LogApplication(LogLevel.INFO,
-                            $"Added parameter from browser - Type: {paramType}, Key: '{key}', Value: '{value}'");
+                        // Find the appropriate panel
+                        var panelName = isCondition ? "ConditionsParametersPanel" : "ActionsParametersPanel";
+                        var panel = this.FindControl<StackPanel>(panelName);
+
+                        if (panel != null)
+                        {
+                            AddParameterRow(panel, key, value, isCondition);
+                            OnParameterChanged(isCondition);
+
+                            var paramType = isCondition ? "condition" : "action";
+                            _viewModel.StatusMessage = $"Added {paramType} parameter: {key}={value}";
+                            UnifiedLogger.LogApplication(LogLevel.INFO,
+                                $"Added parameter from browser - Type: {paramType}, Key: '{key}', Value: '{value}'");
+                        }
                     }
-                }
+                };
+
+                browser.Show();
             }
             catch (Exception ex)
             {
@@ -1762,9 +1897,9 @@ namespace DialogEditor.Views
         {
             // Create grid: [Key TextBox] [=] [Value TextBox] [Delete Button]
             var grid = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 150 });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 150 });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -2067,6 +2202,82 @@ namespace DialogEditor.Views
             }
         }
 
+        // NPC Speaker Visual Preferences (Issue #16, #36)
+        private void OnSpeakerShapeChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                // Don't trigger during property population
+                if (_isPopulatingProperties) return;
+
+                var comboBox = sender as ComboBox;
+                var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
+
+                if (comboBox?.SelectedItem != null && speakerTextBox != null && !string.IsNullOrEmpty(speakerTextBox.Text))
+                {
+                    var speakerTag = speakerTextBox.Text.Trim();
+                    if (Enum.TryParse<SpeakerVisualHelper.SpeakerShape>(comboBox.SelectedItem.ToString(), out var shape))
+                    {
+                        SettingsService.Instance.SetSpeakerPreference(speakerTag, null, shape);
+
+                        // Refresh tree and restore selection (Issue #134)
+                        if (_selectedNode?.OriginalNode != null)
+                        {
+                            _viewModel.RefreshTreeViewColors(_selectedNode.OriginalNode);
+                        }
+                        else
+                        {
+                            _viewModel.RefreshTreeViewColors();
+                        }
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' shape to {shape}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error setting speaker shape: {ex.Message}");
+            }
+        }
+
+        private void OnSpeakerColorChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                // Don't trigger during property population
+                if (_isPopulatingProperties) return;
+
+                var comboBox = sender as ComboBox;
+                var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
+
+                if (comboBox?.SelectedItem is ComboBoxItem item && speakerTextBox != null && !string.IsNullOrEmpty(speakerTextBox.Text))
+                {
+                    var speakerTag = speakerTextBox.Text.Trim();
+                    var color = item.Tag as string;
+                    if (!string.IsNullOrEmpty(color))
+                    {
+                        SettingsService.Instance.SetSpeakerPreference(speakerTag, color, null);
+
+                        // Refresh tree and restore selection (Issue #134)
+                        if (_selectedNode?.OriginalNode != null)
+                        {
+                            _viewModel.RefreshTreeViewColors(_selectedNode.OriginalNode);
+                        }
+                        else
+                        {
+                            _viewModel.RefreshTreeViewColors();
+                        }
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Set speaker '{speakerTag}' color to {color}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error setting speaker color: {ex.Message}");
+            }
+        }
+
         private async Task LoadCreaturesFromModuleDirectory(string dialogFilePath)
         {
             try
@@ -2219,46 +2430,63 @@ namespace DialogEditor.Views
                 $"ScriptEnd='{_viewModel.CurrentDialog.ScriptEnd}', ScriptAbort='{_viewModel.CurrentDialog.ScriptAbort}'");
         }
 
-        private async void OnBrowseConversationScriptClick(object? sender, RoutedEventArgs e)
+        private void OnBrowseConversationScriptClick(object? sender, RoutedEventArgs e)
         {
             if (sender is not Button button) return;
             var fieldName = button.Tag?.ToString();
 
             try
             {
-                var scriptBrowser = new ScriptBrowserWindow();
-                var result = await scriptBrowser.ShowDialog<string?>(this);
-
-                if (!string.IsNullOrEmpty(result))
+                // Close existing browser if one is already open
+                if (_activeScriptBrowserWindow != null)
                 {
-                    if (fieldName == "ScriptEnd")
-                    {
-                        var scriptEndTextBox = this.FindControl<TextBox>("ScriptEndTextBox");
-                        if (scriptEndTextBox != null)
-                        {
-                            scriptEndTextBox.Text = result;
-                            if (_viewModel.CurrentDialog != null)
-                            {
-                                _viewModel.CurrentDialog.ScriptEnd = result;
-                            }
-                        }
-                    }
-                    else if (fieldName == "ScriptAbort")
-                    {
-                        var scriptAbortTextBox = this.FindControl<TextBox>("ScriptAbortTextBox");
-                        if (scriptAbortTextBox != null)
-                        {
-                            scriptAbortTextBox.Text = result;
-                            if (_viewModel.CurrentDialog != null)
-                            {
-                                _viewModel.CurrentDialog.ScriptAbort = result;
-                            }
-                        }
-                    }
-
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Selected conversation script for {fieldName}: {result}");
-                    _viewModel.StatusMessage = $"Selected script: {result}";
+                    _activeScriptBrowserWindow.Close();
+                    _activeScriptBrowserWindow = null;
                 }
+
+                // Create and show modeless browser window (Issue #20)
+                var scriptBrowser = new ScriptBrowserWindow();
+
+                // Track the window and handle cleanup when it closes
+                _activeScriptBrowserWindow = scriptBrowser;
+                scriptBrowser.Closed += (s, e) =>
+                {
+                    var result = scriptBrowser.SelectedScript;
+                    _activeScriptBrowserWindow = null;
+
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        if (fieldName == "ScriptEnd")
+                        {
+                            var scriptEndTextBox = this.FindControl<TextBox>("ScriptEndTextBox");
+                            if (scriptEndTextBox != null)
+                            {
+                                scriptEndTextBox.Text = result;
+                                if (_viewModel.CurrentDialog != null)
+                                {
+                                    _viewModel.CurrentDialog.ScriptEnd = result;
+                                }
+                            }
+                        }
+                        else if (fieldName == "ScriptAbort")
+                        {
+                            var scriptAbortTextBox = this.FindControl<TextBox>("ScriptAbortTextBox");
+                            if (scriptAbortTextBox != null)
+                            {
+                                scriptAbortTextBox.Text = result;
+                                if (_viewModel.CurrentDialog != null)
+                                {
+                                    _viewModel.CurrentDialog.ScriptAbort = result;
+                                }
+                            }
+                        }
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Selected conversation script for {fieldName}: {result}");
+                        _viewModel.StatusMessage = $"Selected script: {result}";
+                    }
+                };
+
+                scriptBrowser.Show();
             }
             catch (Exception ex)
             {
@@ -2470,7 +2698,7 @@ namespace DialogEditor.Views
             return null;
         }
 
-        private async void OnBrowseConditionalScriptClick(object? sender, RoutedEventArgs e)
+        private void OnBrowseConditionalScriptClick(object? sender, RoutedEventArgs e)
         {
             // Core Feature: Conditional scripts on DialogPtr
             if (_selectedNode == null)
@@ -2494,21 +2722,38 @@ namespace DialogEditor.Views
 
             try
             {
-                var scriptBrowser = new ScriptBrowserWindow();
-                var result = await scriptBrowser.ShowDialog<string?>(this);
-
-                if (!string.IsNullOrEmpty(result))
+                // Close existing browser if one is already open
+                if (_activeScriptBrowserWindow != null)
                 {
-                    // Update the conditional script field with selected script
-                    var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
-                    if (scriptTextBox != null)
-                    {
-                        scriptTextBox.Text = result;
-                        // Trigger auto-save
-                        AutoSaveProperty("ScriptAppearsTextBox");
-                    }
-                    _viewModel.StatusMessage = $"Selected conditional script: {result}";
+                    _activeScriptBrowserWindow.Close();
+                    _activeScriptBrowserWindow = null;
                 }
+
+                // Create and show modeless browser window (Issue #20)
+                var scriptBrowser = new ScriptBrowserWindow();
+
+                // Track the window and handle cleanup when it closes
+                _activeScriptBrowserWindow = scriptBrowser;
+                scriptBrowser.Closed += (s, e) =>
+                {
+                    var result = scriptBrowser.SelectedScript;
+                    _activeScriptBrowserWindow = null;
+
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        // Update the conditional script field with selected script
+                        var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
+                        if (scriptTextBox != null)
+                        {
+                            scriptTextBox.Text = result;
+                            // Trigger auto-save
+                            AutoSaveProperty("ScriptAppearsTextBox");
+                        }
+                        _viewModel.StatusMessage = $"Selected conditional script: {result}";
+                    }
+                };
+
+                scriptBrowser.Show();
             }
             catch (Exception ex)
             {
@@ -2517,7 +2762,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private async void OnBrowseActionScriptClick(object? sender, RoutedEventArgs e)
+        private void OnBrowseActionScriptClick(object? sender, RoutedEventArgs e)
         {
             // Phase 2 Fix: Don't allow script browser when no node selected or ROOT selected
             if (_selectedNode == null)
@@ -2534,21 +2779,38 @@ namespace DialogEditor.Views
 
             try
             {
-                var scriptBrowser = new ScriptBrowserWindow();
-                var result = await scriptBrowser.ShowDialog<string?>(this);
-
-                if (!string.IsNullOrEmpty(result))
+                // Close existing browser if one is already open
+                if (_activeScriptBrowserWindow != null)
                 {
-                    // Update the script action field with selected script
-                    var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-                    if (scriptTextBox != null)
-                    {
-                        scriptTextBox.Text = result;
-                        // Trigger auto-save
-                        AutoSaveProperty("ScriptActionTextBox");
-                    }
-                    _viewModel.StatusMessage = $"Selected script: {result}";
+                    _activeScriptBrowserWindow.Close();
+                    _activeScriptBrowserWindow = null;
                 }
+
+                // Create and show modeless browser window (Issue #20)
+                var scriptBrowser = new ScriptBrowserWindow();
+
+                // Track the window and handle cleanup when it closes
+                _activeScriptBrowserWindow = scriptBrowser;
+                scriptBrowser.Closed += (s, e) =>
+                {
+                    var result = scriptBrowser.SelectedScript;
+                    _activeScriptBrowserWindow = null;
+
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        // Update the script action field with selected script
+                        var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
+                        if (scriptTextBox != null)
+                        {
+                            scriptTextBox.Text = result;
+                            // Trigger auto-save
+                            AutoSaveProperty("ScriptActionTextBox");
+                        }
+                        _viewModel.StatusMessage = $"Selected script: {result}";
+                    }
+                };
+
+                scriptBrowser.Show();
             }
             catch (Exception ex)
             {
@@ -2739,11 +3001,17 @@ namespace DialogEditor.Views
                 return;
             }
 
-            // Confirm deletion
-            var confirmed = await ShowConfirmDialog(
-                "Delete Node",
-                $"Are you sure you want to delete this node and all its children?\n\n\"{selectedNode.DisplayText}\""
-            );
+            // Check if delete confirmation is enabled (Issue #14)
+            bool confirmed = true;
+            if (SettingsService.Instance.ShowDeleteConfirmation)
+            {
+                // Confirm deletion with "Don't show this again" option
+                confirmed = await ShowConfirmDialog(
+                    "Delete Node",
+                    $"Are you sure you want to delete this node and all its children?\n\n\"{selectedNode.DisplayText}\"",
+                    showDontAskAgain: true
+                );
+            }
 
             if (confirmed)
             {
@@ -2891,7 +3159,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private async Task<bool> ShowConfirmDialog(string title, string message)
+        private async Task<bool> ShowConfirmDialog(string title, string message, bool showDontAskAgain = false)
         {
             var dialog = new Window
             {
@@ -2913,6 +3181,18 @@ namespace DialogEditor.Views
                 Margin = new Thickness(0, 0, 0, 20)
             });
 
+            // "Don't show this again" checkbox (Issue #14)
+            CheckBox? dontAskCheckBox = null;
+            if (showDontAskAgain)
+            {
+                dontAskCheckBox = new CheckBox
+                {
+                    Content = "Don't show this again",
+                    Margin = new Thickness(0, 0, 0, 20)
+                };
+                panel.Children.Add(dontAskCheckBox);
+            }
+
             var buttonPanel = new StackPanel
             {
                 Orientation = global::Avalonia.Layout.Orientation.Horizontal,
@@ -2923,7 +3203,16 @@ namespace DialogEditor.Views
             var result = false;
 
             var yesButton = new Button { Content = "Yes", Width = 80 };
-            yesButton.Click += (s, e) => { result = true; dialog.Close(); };
+            yesButton.Click += (s, e) =>
+            {
+                result = true;
+                // Save "don't ask again" preference if checkbox is checked (Issue #14)
+                if (dontAskCheckBox?.IsChecked == true)
+                {
+                    SettingsService.Instance.ShowDeleteConfirmation = false;
+                }
+                dialog.Close();
+            };
 
             var noButton = new Button { Content = "No", Width = 80 };
             noButton.Click += (s, e) => { result = false; dialog.Close(); };

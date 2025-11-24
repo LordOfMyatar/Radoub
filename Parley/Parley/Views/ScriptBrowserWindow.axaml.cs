@@ -123,21 +123,24 @@ namespace DialogEditor.Views
 
         private void OnScriptDoubleClicked(object? sender, RoutedEventArgs e)
         {
-            // Double-click selects and closes
+            // Double-click selects and closes (modeless - Issue #20)
             if (_selectedScript != null)
             {
-                Close(_selectedScript);
+                Close();
             }
         }
 
         private void OnOkClick(object? sender, RoutedEventArgs e)
         {
-            Close(_selectedScript);
+            // Modeless: Just close, Closed event handler will read SelectedScript (Issue #20)
+            Close();
         }
 
         private void OnCancelClick(object? sender, RoutedEventArgs e)
         {
-            Close(null);
+            // Modeless: Clear selection before closing (Issue #20)
+            _selectedScript = null;
+            Close();
         }
 
         private void OnOpenInEditorClick(object? sender, RoutedEventArgs e)
