@@ -301,15 +301,15 @@
                         <TextBlock Text="Conditional Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
 
                         <TextBlock Text="Script (Appears When):"/>
-                        <Grid Margin="0,0,0,5">
+                        <Grid Margin="0,0,0,5" HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="180"/>
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas" MaxWidth="180"
+                            <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas"
                                      TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditConditionalScriptButton" Grid.Column="2" Content="Edit Script"
                                     MinWidth="55" Padding="5,0" Click="OnEditConditionalScriptClick"
@@ -366,15 +366,15 @@
                         <TextBlock Text="Action Scripts:" FontWeight="Bold" Margin="0,5,0,5"/>
 
                         <TextBlock Text="Script (Action):"/>
-                        <Grid Margin="0,0,0,5">
+                        <Grid Margin="0,0,0,5" HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="180"/>
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas" MaxWidth="180"
+                            <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas"
                                      TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditActionScriptButton" Grid.Column="2" Content="Edit Script"
                                     MinWidth="55" Padding="5,0" Click="OnEditActionScriptClick"
