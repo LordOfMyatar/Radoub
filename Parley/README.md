@@ -1,8 +1,8 @@
 # Parley
 
-**Cross-Platform Dialog Editor for Neverwinter Nights**
+## What is Parley?
 
-Modern dialog editor for Neverwinter Nights DLG files with 100% Aurora Engine compatibility. Part of the Radoub toolset.
+Parley is a conversation editor designed for Neverwinter Nights conversation files based off of the conversation editor from Aurora Toolset. It aims to improve usability via a modern user interface. It allows you to work on conversation files outside of the Aurora Toolset.
 
 ---
 
@@ -14,26 +14,17 @@ Parley is under active development. While the core dialog editing functionality 
 
 ---
 
-## Features
+## New Features
 
 ### Current (Alpha)
-- ✅ Read and write Aurora-compatible DLG files
-- ✅ Tree view conversation editing
-- ✅ Node properties editing (text, speaker, listener, scripts)
-- ✅ Add, delete, move nodes
-- ✅ Undo/redo system (Ctrl+Z/Ctrl+Y)
-- ✅ Sound browser (In Progress)
-- ✅ Script browser with parameter preview
-- ✅ Creature tag selection (from UTC files)
-- ✅ Journal quest integration
-- ✅ Modeless dialogs (Settings, Script/Parameter browsers)
-- ✅ NPC speaker visual preferences (per-tag colors and shapes)
-- ✅ Auto-save with configurable intervals
-- ✅ Dark mode and accessibility themes
-- ✅ Font scaling and scrollbar visibility settings
-- ✅ Recent files menu
-- ✅ Cross-platform (Win/Linux. Limited support for Mac)
-- ✅ **Plugin system** (In Progress: Python-based, process-isolated, gRPC communication)
+- Color coded NPCs for multi-npc conversations
+- Themes, Fonts, and Font Sizes
+- Improved interface for script parameters including auto-trim
+- Script parameter system to avoid typos
+- Modeless dialogs (Settings, Script/Parameter browsers)
+- Cross-platform (Win/Linux. Limited support for Mac)
+- Sound browser (In Progress)
+- Plugin system (In Progress: Python-based, process-isolated, gRPC communication)
 
 ### Roadmap
 See [parent README](../README.md) for full roadmap.
@@ -42,14 +33,16 @@ See [parent README](../README.md) for full roadmap.
 
 ## Why Parley?
 
-**Problems with Aurora Toolset**:
+### Problems with Aurora Toolset
+
 - Fonts not following Windows 10/11 settings
 - No dark mode
 - Modal window management block workflow
 - Script parameters easy to lose and hard to enter
-- Wine and other utilties required for cross platform support
+- Wine and other utilities required for cross platform support
 
-**Parley Improvements**:
+### Parley Improvements
+
 - Adjustable font size
 - Dark mode support
 - Cross-platform (Windows, Linux, macOS)
@@ -108,36 +101,7 @@ dotnet run --project Parley/Parley.csproj
    - Configure auto-save interval
    - Enable/disable NPC tag coloring
 
-### Opening a Dialog File
 
-- **File → Open** (Ctrl+O): Browse for `.dlg` file
-- **Recent Files**: Quick access to recently opened files
-- **Command Line**: `Parley.exe path/to/dialog.dlg`
-
-### Editing Dialogs
-
-**Tree View**:
-- Click node to select and view properties
-- Right-click for context menu (Add, Delete, Cut, Paste, Copy Tree)
-- Drag to reorder siblings (in progress)
-
-**Properties Panel**:
-- Edit text, speaker, listener
-- Set scripts and parameters (with script browser and parameter preview)
-- Configure quest/journal entries
-- Assign sounds (with audio preview)
-- Customize NPC speaker colors and shapes (per-tag preferences)
-
-**Keyboard Shortcuts**:
-- `Ctrl+Z` / `Ctrl+Y`: Undo/Redo
-- `Ctrl+X`: Cut node
-- `Ctrl+C`: Copy tree structure to clipboard
-- `Ctrl+S`: Save
-- `Ctrl+Shift+S`: Save As
-- `Ctrl+N`: New dialog
-- `Ctrl+O`: Open
-- `Ctrl+,`: Settings
-- `Ctrl+Shift+Up/Down`: Move node up/down
 
 ---
 
@@ -151,14 +115,16 @@ See [GitHub Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+i
 
 Contributions welcome! See [parent repository guidelines](../CLAUDE.md) and [Parley-specific guidance](CLAUDE.md).
 
-**Wanted**:
+### Wanted
+
 - Bug reports with reproduction steps
 - Platform testing (especially Linux/macOS)
 - Module compatibility testing
 - Accessibility feedback
 - Code review and improvements
 
-**Before Contributing**:
+### Before Contributing
+
 - Read `CLAUDE.md` for development workflow
 - Check existing issues to avoid duplicates
 - Test with backup copies of modules
@@ -167,12 +133,14 @@ Contributions welcome! See [parent repository guidelines](../CLAUDE.md) and [Par
 
 ## Technical Details
 
-**Stack**:
+### Stack
+
 - .NET 9.0
 - Avalonia UI (cross-platform)
 - Aurora Engine GFF v3.28+ binary format
 
-**Architecture**:
+### Architecture
+
 - MVVM pattern
 - Dialog file service layer
 - Comprehensive logging
