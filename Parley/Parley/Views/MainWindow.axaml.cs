@@ -46,6 +46,11 @@ namespace DialogEditor.Views
         // Track active Settings window to close it when MainWindow closes (Issue #134)
         private SettingsWindow? _activeSettingsWindow;
 
+        // Track active browser windows to close them when MainWindow closes (Issue #20)
+        private ParameterBrowserWindow? _activeParameterBrowserWindow;
+        private ScriptBrowserWindow? _activeScriptBrowserWindow;
+        private SoundBrowserWindow? _activeSoundBrowserWindow;
+
         // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
         // Parameter autocomplete: Cache of script parameter declarations
@@ -405,6 +410,25 @@ namespace DialogEditor.Views
             {
                 _activeSettingsWindow.Close();
                 _activeSettingsWindow = null;
+            }
+
+            // Close browser windows if open (Issue #20)
+            if (_activeParameterBrowserWindow != null)
+            {
+                _activeParameterBrowserWindow.Close();
+                _activeParameterBrowserWindow = null;
+            }
+
+            if (_activeScriptBrowserWindow != null)
+            {
+                _activeScriptBrowserWindow.Close();
+                _activeScriptBrowserWindow = null;
+            }
+
+            if (_activeSoundBrowserWindow != null)
+            {
+                _activeSoundBrowserWindow.Close();
+                _activeSoundBrowserWindow = null;
             }
 
             // Save window position on close
@@ -1797,9 +1821,9 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Shows parameter browser window for selecting parameters
+        /// Shows parameter browser window for selecting parameters (modeless - Issue #20)
         /// </summary>
-        private async void ShowParameterBrowser(ScriptParameterDeclarations? declarations, bool isCondition)
+        private void ShowParameterBrowser(ScriptParameterDeclarations? declarations, bool isCondition)
         {
             try
             {
@@ -1819,32 +1843,47 @@ namespace DialogEditor.Views
                 // Get existing parameters from the node for dependency resolution
                 var existingParameters = GetExistingParametersFromPanel(isCondition);
 
+                // Close existing browser if one is already open
+                if (_activeParameterBrowserWindow != null)
+                {
+                    _activeParameterBrowserWindow.Close();
+                    _activeParameterBrowserWindow = null;
+                }
+
+                // Create and show modeless browser window (Issue #20)
                 var browser = new ParameterBrowserWindow();
                 browser.SetDeclarations(declarations, scriptName, isCondition, existingParameters);
 
-                await browser.ShowDialog(this);
-
-                if (browser.DialogResult && !string.IsNullOrEmpty(browser.SelectedKey))
+                // Track the window and handle cleanup when it closes
+                _activeParameterBrowserWindow = browser;
+                browser.Closed += (s, e) =>
                 {
-                    // Add the parameter to the appropriate panel
-                    var key = browser.SelectedKey;
-                    var value = browser.SelectedValue ?? "";
+                    _activeParameterBrowserWindow = null;
 
-                    // Find the appropriate panel
-                    var panelName = isCondition ? "ConditionsParametersPanel" : "ActionsParametersPanel";
-                    var panel = this.FindControl<StackPanel>(panelName);
-
-                    if (panel != null)
+                    if (browser.DialogResult && !string.IsNullOrEmpty(browser.SelectedKey))
                     {
-                        AddParameterRow(panel, key, value, isCondition);
-                        OnParameterChanged(isCondition);
+                        // Add the parameter to the appropriate panel
+                        var key = browser.SelectedKey;
+                        var value = browser.SelectedValue ?? "";
 
-                        var paramType = isCondition ? "condition" : "action";
-                        _viewModel.StatusMessage = $"Added {paramType} parameter: {key}={value}";
-                        UnifiedLogger.LogApplication(LogLevel.INFO,
-                            $"Added parameter from browser - Type: {paramType}, Key: '{key}', Value: '{value}'");
+                        // Find the appropriate panel
+                        var panelName = isCondition ? "ConditionsParametersPanel" : "ActionsParametersPanel";
+                        var panel = this.FindControl<StackPanel>(panelName);
+
+                        if (panel != null)
+                        {
+                            AddParameterRow(panel, key, value, isCondition);
+                            OnParameterChanged(isCondition);
+
+                            var paramType = isCondition ? "condition" : "action";
+                            _viewModel.StatusMessage = $"Added {paramType} parameter: {key}={value}";
+                            UnifiedLogger.LogApplication(LogLevel.INFO,
+                                $"Added parameter from browser - Type: {paramType}, Key: '{key}', Value: '{value}'");
+                        }
                     }
-                }
+                };
+
+                browser.Show();
             }
             catch (Exception ex)
             {
@@ -2391,46 +2430,63 @@ namespace DialogEditor.Views
                 $"ScriptEnd='{_viewModel.CurrentDialog.ScriptEnd}', ScriptAbort='{_viewModel.CurrentDialog.ScriptAbort}'");
         }
 
-        private async void OnBrowseConversationScriptClick(object? sender, RoutedEventArgs e)
+        private void OnBrowseConversationScriptClick(object? sender, RoutedEventArgs e)
         {
             if (sender is not Button button) return;
             var fieldName = button.Tag?.ToString();
 
             try
             {
-                var scriptBrowser = new ScriptBrowserWindow();
-                var result = await scriptBrowser.ShowDialog<string?>(this);
-
-                if (!string.IsNullOrEmpty(result))
+                // Close existing browser if one is already open
+                if (_activeScriptBrowserWindow != null)
                 {
-                    if (fieldName == "ScriptEnd")
-                    {
-                        var scriptEndTextBox = this.FindControl<TextBox>("ScriptEndTextBox");
-                        if (scriptEndTextBox != null)
-                        {
-                            scriptEndTextBox.Text = result;
-                            if (_viewModel.CurrentDialog != null)
-                            {
-                                _viewModel.CurrentDialog.ScriptEnd = result;
-                            }
-                        }
-                    }
-                    else if (fieldName == "ScriptAbort")
-                    {
-                        var scriptAbortTextBox = this.FindControl<TextBox>("ScriptAbortTextBox");
-                        if (scriptAbortTextBox != null)
-                        {
-                            scriptAbortTextBox.Text = result;
-                            if (_viewModel.CurrentDialog != null)
-                            {
-                                _viewModel.CurrentDialog.ScriptAbort = result;
-                            }
-                        }
-                    }
-
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Selected conversation script for {fieldName}: {result}");
-                    _viewModel.StatusMessage = $"Selected script: {result}";
+                    _activeScriptBrowserWindow.Close();
+                    _activeScriptBrowserWindow = null;
                 }
+
+                // Create and show modeless browser window (Issue #20)
+                var scriptBrowser = new ScriptBrowserWindow();
+
+                // Track the window and handle cleanup when it closes
+                _activeScriptBrowserWindow = scriptBrowser;
+                scriptBrowser.Closed += (s, e) =>
+                {
+                    var result = scriptBrowser.SelectedScript;
+                    _activeScriptBrowserWindow = null;
+
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        if (fieldName == "ScriptEnd")
+                        {
+                            var scriptEndTextBox = this.FindControl<TextBox>("ScriptEndTextBox");
+                            if (scriptEndTextBox != null)
+                            {
+                                scriptEndTextBox.Text = result;
+                                if (_viewModel.CurrentDialog != null)
+                                {
+                                    _viewModel.CurrentDialog.ScriptEnd = result;
+                                }
+                            }
+                        }
+                        else if (fieldName == "ScriptAbort")
+                        {
+                            var scriptAbortTextBox = this.FindControl<TextBox>("ScriptAbortTextBox");
+                            if (scriptAbortTextBox != null)
+                            {
+                                scriptAbortTextBox.Text = result;
+                                if (_viewModel.CurrentDialog != null)
+                                {
+                                    _viewModel.CurrentDialog.ScriptAbort = result;
+                                }
+                            }
+                        }
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Selected conversation script for {fieldName}: {result}");
+                        _viewModel.StatusMessage = $"Selected script: {result}";
+                    }
+                };
+
+                scriptBrowser.Show();
             }
             catch (Exception ex)
             {
@@ -2642,7 +2698,7 @@ namespace DialogEditor.Views
             return null;
         }
 
-        private async void OnBrowseConditionalScriptClick(object? sender, RoutedEventArgs e)
+        private void OnBrowseConditionalScriptClick(object? sender, RoutedEventArgs e)
         {
             // Core Feature: Conditional scripts on DialogPtr
             if (_selectedNode == null)
@@ -2666,21 +2722,38 @@ namespace DialogEditor.Views
 
             try
             {
-                var scriptBrowser = new ScriptBrowserWindow();
-                var result = await scriptBrowser.ShowDialog<string?>(this);
-
-                if (!string.IsNullOrEmpty(result))
+                // Close existing browser if one is already open
+                if (_activeScriptBrowserWindow != null)
                 {
-                    // Update the conditional script field with selected script
-                    var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
-                    if (scriptTextBox != null)
-                    {
-                        scriptTextBox.Text = result;
-                        // Trigger auto-save
-                        AutoSaveProperty("ScriptAppearsTextBox");
-                    }
-                    _viewModel.StatusMessage = $"Selected conditional script: {result}";
+                    _activeScriptBrowserWindow.Close();
+                    _activeScriptBrowserWindow = null;
                 }
+
+                // Create and show modeless browser window (Issue #20)
+                var scriptBrowser = new ScriptBrowserWindow();
+
+                // Track the window and handle cleanup when it closes
+                _activeScriptBrowserWindow = scriptBrowser;
+                scriptBrowser.Closed += (s, e) =>
+                {
+                    var result = scriptBrowser.SelectedScript;
+                    _activeScriptBrowserWindow = null;
+
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        // Update the conditional script field with selected script
+                        var scriptTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
+                        if (scriptTextBox != null)
+                        {
+                            scriptTextBox.Text = result;
+                            // Trigger auto-save
+                            AutoSaveProperty("ScriptAppearsTextBox");
+                        }
+                        _viewModel.StatusMessage = $"Selected conditional script: {result}";
+                    }
+                };
+
+                scriptBrowser.Show();
             }
             catch (Exception ex)
             {
@@ -2689,7 +2762,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private async void OnBrowseActionScriptClick(object? sender, RoutedEventArgs e)
+        private void OnBrowseActionScriptClick(object? sender, RoutedEventArgs e)
         {
             // Phase 2 Fix: Don't allow script browser when no node selected or ROOT selected
             if (_selectedNode == null)
@@ -2706,21 +2779,38 @@ namespace DialogEditor.Views
 
             try
             {
-                var scriptBrowser = new ScriptBrowserWindow();
-                var result = await scriptBrowser.ShowDialog<string?>(this);
-
-                if (!string.IsNullOrEmpty(result))
+                // Close existing browser if one is already open
+                if (_activeScriptBrowserWindow != null)
                 {
-                    // Update the script action field with selected script
-                    var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-                    if (scriptTextBox != null)
-                    {
-                        scriptTextBox.Text = result;
-                        // Trigger auto-save
-                        AutoSaveProperty("ScriptActionTextBox");
-                    }
-                    _viewModel.StatusMessage = $"Selected script: {result}";
+                    _activeScriptBrowserWindow.Close();
+                    _activeScriptBrowserWindow = null;
                 }
+
+                // Create and show modeless browser window (Issue #20)
+                var scriptBrowser = new ScriptBrowserWindow();
+
+                // Track the window and handle cleanup when it closes
+                _activeScriptBrowserWindow = scriptBrowser;
+                scriptBrowser.Closed += (s, e) =>
+                {
+                    var result = scriptBrowser.SelectedScript;
+                    _activeScriptBrowserWindow = null;
+
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        // Update the script action field with selected script
+                        var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
+                        if (scriptTextBox != null)
+                        {
+                            scriptTextBox.Text = result;
+                            // Trigger auto-save
+                            AutoSaveProperty("ScriptActionTextBox");
+                        }
+                        _viewModel.StatusMessage = $"Selected script: {result}";
+                    }
+                };
+
+                scriptBrowser.Show();
             }
             catch (Exception ex)
             {
