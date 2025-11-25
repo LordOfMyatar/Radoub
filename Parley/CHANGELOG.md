@@ -17,13 +17,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Visual depth indicators to improve readability of complex dialog trees.
 
-**Planned Features**:
-- Depth-based color coding for nesting levels
-- Theme-aware colors (light/dark mode)
-- Multi-NPC mode: follows NPC speaker color preferences
-- Single-NPC mode: full rainbow palette
-- Soft, eye-friendly color palette
-- Settings option to enable/disable
+**Features**:
+- Colored vertical bars indicate nesting depth in dialog tree
+- Theme-aware palettes (soft colors for light/dark modes)
+- Multi-NPC mode: indicators match speaker colors for visual consistency
+- Single-NPC mode: rainbow palette cycles through 6 distinct colors
+- Settings toggle in Appearance tab to enable/disable
+- Immediate tree refresh when setting changes
+
+**Implementation**:
+- `RainbowBracketHelper`: Utility with theme-aware color palettes
+- `TreeViewSafeNode.Depth`: Exposed nesting level property
+- `TreeViewSafeNode.DepthIndicatorBrush`: Computed brush for indicator color
+- `TreeViewSafeNode.ShowDepthIndicator`: Visibility control (hidden for ROOT/links)
+- `SettingsService.EnableRainbowBrackets`: Persisted setting (default: ON)
+
+**Color Palettes**:
+- Light theme: Soft indigo, teal, amber, pink, green, purple
+- Dark theme: Brighter variants for visibility on dark backgrounds
 
 ---
 

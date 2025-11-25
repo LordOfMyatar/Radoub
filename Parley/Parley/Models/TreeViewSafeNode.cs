@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using DialogEditor.Utils;
 using DialogEditor.Services;
+using Avalonia.Media;
 
 namespace DialogEditor.Models
 {
@@ -171,6 +172,55 @@ namespace DialogEditor.Models
                 return Utils.SpeakerVisualHelper.GetShapeGeometry(shape);
             }
         }
+
+        /// <summary>
+        /// The nesting depth of this node in the tree (0 = ROOT, 1 = first level children, etc.)
+        /// </summary>
+        public int Depth => _depth;
+
+        /// <summary>
+        /// Gets the rainbow bracket indicator color for this node based on depth.
+        /// Returns Transparent when rainbow brackets are disabled or at depth 0.
+        /// When NPC tag coloring is enabled, uses speaker colors; otherwise uses rainbow palette.
+        /// </summary>
+        public virtual IBrush DepthIndicatorBrush
+        {
+            get
+            {
+                // Don't show indicator if rainbow brackets are disabled
+                if (!SettingsService.Instance.EnableRainbowBrackets)
+                    return Brushes.Transparent;
+
+                // Links/children don't get depth indicators (they're terminal)
+                if (IsChild)
+                    return Brushes.Transparent;
+
+                bool isPC = _originalNode?.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_originalNode.Speaker);
+                string speaker = _originalNode?.Speaker ?? "";
+                bool isDark = RainbowBracketHelper.IsDarkTheme();
+
+                var colorHex = RainbowBracketHelper.GetDepthColorWithSpeaker(_depth, speaker, isPC, isDark);
+
+                if (colorHex == "Transparent")
+                    return Brushes.Transparent;
+
+                try
+                {
+                    return new SolidColorBrush(Color.Parse(colorHex));
+                }
+                catch
+                {
+                    return Brushes.Transparent;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Whether the depth indicator should be visible.
+        /// Hidden for ROOT (depth 0) and when rainbow brackets are disabled.
+        /// </summary>
+        public bool ShowDepthIndicator =>
+            SettingsService.Instance.EnableRainbowBrackets && _depth > 0 && !IsChild;
 
         // Formatted display text that matches copy tree structure format
         public virtual string FormattedDisplayText

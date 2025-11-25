@@ -247,7 +247,7 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Handles settings changes that require tree view refresh (Issue #134)
+        /// Handles settings changes that require tree view refresh (Issue #134, #70)
         /// </summary>
         private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
@@ -260,6 +260,19 @@ namespace DialogEditor.Views
                     {
                         _viewModel.RefreshTreeViewColors();
                         UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after NPC tag coloring setting change");
+                    });
+                }
+            }
+
+            // Refresh tree when rainbow brackets setting changes (Issue #70)
+            if (e.PropertyName == nameof(SettingsService.EnableRainbowBrackets))
+            {
+                if (_viewModel.CurrentDialog != null)
+                {
+                    global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        _viewModel.RefreshTreeViewColors();
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Tree view refreshed after rainbow brackets setting change");
                     });
                 }
             }

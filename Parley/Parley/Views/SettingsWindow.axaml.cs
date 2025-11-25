@@ -186,6 +186,13 @@ namespace DialogEditor.Views
                 enableNpcTagColoringCheckBox.IsChecked = settings.EnableNpcTagColoring;
             }
 
+            // Rainbow Brackets (Issue #70)
+            var enableRainbowBracketsCheckBox = this.FindControl<CheckBox>("EnableRainbowBracketsCheckBox");
+            if (enableRainbowBracketsCheckBox != null)
+            {
+                enableRainbowBracketsCheckBox.IsChecked = settings.EnableRainbowBrackets;
+            }
+
             if (externalEditorPathTextBox != null)
             {
                 externalEditorPathTextBox.Text = settings.ExternalEditorPath;
@@ -1343,6 +1350,18 @@ namespace DialogEditor.Views
             {
                 SettingsService.Instance.EnableNpcTagColoring = checkbox.IsChecked == true;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"NPC tag coloring: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
+            }
+        }
+
+        private void OnEnableRainbowBracketsChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var checkbox = sender as CheckBox;
+            if (checkbox != null)
+            {
+                SettingsService.Instance.EnableRainbowBrackets = checkbox.IsChecked == true;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Rainbow brackets: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
             }
         }
 

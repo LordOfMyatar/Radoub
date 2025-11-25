@@ -86,6 +86,9 @@ namespace DialogEditor.Services
         private Dictionary<string, SpeakerPreferences> _npcSpeakerPreferences = new Dictionary<string, SpeakerPreferences>();
         private bool _enableNpcTagColoring = true; // Default: ON (use shape/color per tag)
 
+        // Rainbow brackets for depth visualization (Issue #70)
+        private bool _enableRainbowBrackets = true; // Default: ON
+
         // Confirmation dialog settings (Issue #14)
         private bool _showDeleteConfirmation = true; // Default: ON (show delete confirmation dialog)
 
@@ -502,6 +505,23 @@ namespace DialogEditor.Services
             }
         }
 
+        /// <summary>
+        /// Enable rainbow brackets for depth visualization (Issue #70).
+        /// When enabled, shows colored indicators based on nesting depth.
+        /// </summary>
+        public bool EnableRainbowBrackets
+        {
+            get => _enableRainbowBrackets;
+            set
+            {
+                if (SetProperty(ref _enableRainbowBrackets, value))
+                {
+                    SaveSettings();
+                    OnPropertyChanged(nameof(EnableRainbowBrackets));
+                }
+            }
+        }
+
         public bool ShowDeleteConfirmation
         {
             get => _showDeleteConfirmation;
@@ -640,6 +660,7 @@ namespace DialogEditor.Services
                         _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
                         _npcSpeakerPreferences = settings.NpcSpeakerPreferences ?? new Dictionary<string, SpeakerPreferences>(); // Issue #16, #36
                         _enableNpcTagColoring = settings.EnableNpcTagColoring; // Issue #16, #36
+                        _enableRainbowBrackets = settings.EnableRainbowBrackets; // Issue #70
                         _showDeleteConfirmation = settings.ShowDeleteConfirmation; // Issue #14
 
                         // Load game settings (expand ~ to user home directory)
@@ -723,6 +744,7 @@ namespace DialogEditor.Services
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
                     NpcSpeakerPreferences = NpcSpeakerPreferences, // Issue #16, #36
                     EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
+                    EnableRainbowBrackets = EnableRainbowBrackets, // Issue #70
                     ShowDeleteConfirmation = ShowDeleteConfirmation, // Issue #14
                     NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
                     BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
@@ -907,6 +929,7 @@ namespace DialogEditor.Services
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
             public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON
+            public bool EnableRainbowBrackets { get; set; } = true; // Issue #70: Default ON
             public bool ShowDeleteConfirmation { get; set; } = true; // Issue #14: Default ON
 
             // Game settings
