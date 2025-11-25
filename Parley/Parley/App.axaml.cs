@@ -9,7 +9,6 @@ using DialogEditor.ViewModels;
 using DialogEditor.Views;
 using DialogEditor.Services;
 using DialogEditor.Plugins;
-using Parley.Services;
 using System.ComponentModel;
 
 namespace DialogEditor;

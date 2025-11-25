@@ -4,7 +4,7 @@ using System.Linq;
 using DialogEditor.Models;
 using DialogEditor.Services;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Service responsible for node add/delete/move operations.

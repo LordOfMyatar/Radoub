@@ -340,7 +340,8 @@ namespace DialogEditor.Parsers
                     }
                     else
                     {
-                        UnifiedLogger.LogParser(LogLevel.WARN, $"CExoLocString has no LocalizedStrings and no StrRef!");
+                        // Empty text is valid - this is a "[CONTINUE]" node in NWN dialogs
+                        UnifiedLogger.LogParser(LogLevel.DEBUG, $"CExoLocString has no LocalizedStrings and no StrRef (empty/continue node)");
                     }
                 }
                 else

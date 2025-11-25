@@ -10,6 +10,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.26-alpha] - 2025-11-25
+**Branch**: `parley/tech-debt/sprint-1` | **PR**: #191
+
+### Tech Debt Sprint 1
+
+Addressing accumulated tech debt issues and codebase cleanup.
+
+**Completed**:
+- #189 - Fix flaky UnifiedLoggerTests due to shared static state
+  - Added `[Collection("UnifiedLogger")]` to prevent parallel test execution
+  - Implemented `IDisposable` to clean up shared callback between tests
+  - Created `TestCollections.cs` with collection definition
+- #192 - Removed dead `ResourceSettings.cs` (284 lines)
+- #193 - Removed unused methods from `SoundService.cs` (`SearchSounds`, `ValidateSound`, `GetSoundPath`)
+- #195 - Removed unused `IsScriptInDialogDirectory` from `ExternalEditorService.cs`
+- #181 - Menu cleanup:
+  - Removed duplicate "Save" from Edit menu (already in File menu)
+  - Moved "Clear Debug Output" into View > Logging submenu
+  - Added Help > Documentation link (opens GitHub docs)
+  - Added Help > Report Issue link (opens GitHub issues)
+- #169 - Namespace consolidation:
+  - Moved 12 service classes from `Parley.Services` to `DialogEditor.Services`
+  - Removed all `using Parley.Services` statements
+- Fixed spurious parser warnings for empty nodes:
+  - Changed `CExoLocString has no LocalizedStrings and no StrRef` from WARN to DEBUG
+  - Removed validation warnings for nodes without text (valid NWN "[CONTINUE]" pattern)
+
+**Issues Found During Scan**:
+- #192 - Dead code: ResourceSettings.cs completely unused
+- #193 - Dead code: Unused SoundService methods
+- #194 - Code duplication: LocString/DialogNode cloning
+- #195 - Dead code: ExternalEditorService unused method
+- #196 - Exception handling: Empty catch blocks and swallowed exceptions
+
+**Remaining**:
+- #136 - Review: Verify orphaned link children handling in DeleteNode
+- #23 - Add file path validation and input sanitization
+
+---
+
 ## [0.1.24-alpha] - 2025-11-24
 **Branch**: `parley/feat/issue-9-command-line` | **PR**: #187
 

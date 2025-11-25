@@ -223,24 +223,10 @@ namespace DialogEditor.Parsers
                 {
                     result.AddWarning("Dialog has no starting points");
                 }
-                
-                // Validate node structure
-                foreach (var entry in dialog.Entries)
-                {
-                    if (entry.Text.IsEmpty && string.IsNullOrWhiteSpace(entry.Comment))
-                    {
-                        result.AddWarning($"Entry node has no text or comment");
-                    }
-                }
-                
-                foreach (var reply in dialog.Replies)
-                {
-                    if (reply.Text.IsEmpty && string.IsNullOrWhiteSpace(reply.Comment))
-                    {
-                        result.AddWarning($"Reply node has no text or comment");
-                    }
-                }
-                
+
+                // Note: Empty nodes (no text, no comment) are valid in NWN dialogs
+                // They serve as "[CONTINUE]" nodes for conversation flow
+
                 UnifiedLogger.LogParser(LogLevel.DEBUG,
                     $"Dialog validation completed with {result.Warnings.Count} warnings");
                     

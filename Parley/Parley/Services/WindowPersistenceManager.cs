@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Platform;
 using DialogEditor.Utils;
 using DialogEditor.ViewModels;
-using Parley.Services;
 using System;
 using System.IO;
 using System.Linq;

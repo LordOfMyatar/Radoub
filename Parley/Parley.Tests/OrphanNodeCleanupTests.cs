@@ -1,7 +1,7 @@
 using System.Linq;
 using DialogEditor.Models;
 using DialogEditor.ViewModels;
-using Parley.Services;
+using DialogEditor.Services;
 using Xunit;
 
 namespace Parley.Tests

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Services;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Command line options for Parley

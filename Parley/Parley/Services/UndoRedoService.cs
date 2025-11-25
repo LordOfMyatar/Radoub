@@ -5,7 +5,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using Parley.Models;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Service responsible for undo/redo operations with tree state management.

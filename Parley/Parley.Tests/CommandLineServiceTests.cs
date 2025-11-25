@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Parley.Services;
+using DialogEditor.Services;
 using Xunit;
 
 namespace DialogEditor.Tests

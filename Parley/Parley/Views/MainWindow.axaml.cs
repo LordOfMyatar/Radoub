@@ -1003,6 +1003,42 @@ namespace DialogEditor.Views
             await aboutWindow.ShowDialog(this);
         }
 
+        private void OnDocumentationClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var url = "https://github.com/LordOfMyatar/Radoub/tree/main/Parley/Documentation";
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening documentation: {ex.Message}");
+                _viewModel.StatusMessage = "Could not open documentation URL";
+            }
+        }
+
+        private void OnReportIssueClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var url = "https://github.com/LordOfMyatar/Radoub/issues/new";
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening issue page: {ex.Message}");
+                _viewModel.StatusMessage = "Could not open issue page URL";
+            }
+        }
+
         // Font size handlers - Fixed in #58 (font sizing) and #59 (font selection)
         private void OnFontSizeClick(object? sender, RoutedEventArgs e)
         {

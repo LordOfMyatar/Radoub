@@ -8,7 +8,6 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using DialogEditor.Utils;
 using Parley.Models;
-using Parley.Services;
 
 namespace DialogEditor.ViewModels
 {
@@ -1364,9 +1363,9 @@ namespace DialogEditor.ViewModels
         /// <summary>
         /// Captures the current tree expansion state and selected node
         /// </summary>
-        private Parley.Services.TreeState CaptureTreeState()
+        private TreeState CaptureTreeState()
         {
-            var state = new Parley.Services.TreeState
+            var state = new TreeState
             {
                 ExpandedNodePaths = _treeNavManager.CaptureExpandedNodePaths(DialogNodes),
                 SelectedNodePath = null
@@ -1385,7 +1384,7 @@ namespace DialogEditor.ViewModels
         /// <summary>
         /// Restores tree expansion state and selection
         /// </summary>
-        private void RestoreTreeState(Parley.Services.TreeState state)
+        private void RestoreTreeState(TreeState state)
         {
             if (state == null) return;
 
