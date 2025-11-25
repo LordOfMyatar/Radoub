@@ -147,46 +147,6 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Get full path to a sound file by category and filename.
-        /// </summary>
-        public string? GetSoundPath(string category, string filename)
-        {
-            var basePath = _settingsService.BaseGameInstallPath;
-            if (string.IsNullOrEmpty(basePath))
-                return null;
-
-            var soundPath = Path.Combine(basePath, category.ToLowerInvariant(), filename);
-            return File.Exists(soundPath) ? soundPath : null;
-        }
-
-        /// <summary>
-        /// Search for sounds across all categories.
-        /// </summary>
-        public List<(string Category, string Filename)> SearchSounds(string searchTerm)
-        {
-            var results = new List<(string, string)>();
-
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return results;
-
-            var allSounds = GetSoundsByCategory();
-            var lowerSearch = searchTerm.ToLowerInvariant();
-
-            foreach (var category in allSounds)
-            {
-                foreach (var sound in category.Value)
-                {
-                    if (sound.ToLowerInvariant().Contains(lowerSearch))
-                    {
-                        results.Add((category.Key, sound));
-                    }
-                }
-            }
-
-            return results;
-        }
-
-        /// <summary>
         /// Add sound to recent sounds list.
         /// </summary>
         public void AddRecentSound(string soundName)
@@ -205,30 +165,6 @@ namespace DialogEditor.Services
         {
             // FUTURE Enhancement: Retrieve from SettingsService.RecentSounds
             return new List<string>();
-        }
-
-        /// <summary>
-        /// Validate that sound file exists in game directories.
-        /// </summary>
-        public bool ValidateSound(string soundName)
-        {
-            if (string.IsNullOrWhiteSpace(soundName))
-                return true; // Empty is valid (no sound)
-
-            var basePath = _settingsService.BaseGameInstallPath;
-            if (string.IsNullOrEmpty(basePath))
-                return false;
-
-            // Check all category folders
-            var categories = new[] { "ambient", "dialog", "music", "soundset" };
-            foreach (var category in categories)
-            {
-                var soundPath = Path.Combine(basePath, category, soundName);
-                if (File.Exists(soundPath))
-                    return true;
-            }
-
-            return false;
         }
     }
 }

@@ -5,7 +5,13 @@ using Xunit;
 
 namespace DialogEditor.Tests
 {
-    public class UnifiedLoggerTests
+    /// <summary>
+    /// Tests for UnifiedLogger.
+    /// Uses [Collection] to prevent parallel execution since tests share the static _debugConsoleCallback.
+    /// See Issue #189 for context.
+    /// </summary>
+    [Collection("UnifiedLogger")]
+    public class UnifiedLoggerTests : IDisposable
     {
         private readonly string _testUserProfile;
         private readonly string _originalUserProfile;
@@ -17,6 +23,19 @@ namespace DialogEditor.Tests
 
             // For testing, we'll use the actual user profile
             _testUserProfile = _originalUserProfile;
+
+            // Clear any lingering callback from previous tests
+            UnifiedLogger.SetDebugConsoleCallback(null!);
+
+            // Ensure log level is at INFO for consistent test behavior
+            UnifiedLogger.SetLogLevel(LogLevel.INFO);
+        }
+
+        public void Dispose()
+        {
+            // Clean up after each test to prevent interference
+            UnifiedLogger.SetDebugConsoleCallback(null!);
+            UnifiedLogger.SetLogLevel(LogLevel.INFO);
         }
 
         [Fact]

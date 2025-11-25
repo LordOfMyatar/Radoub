@@ -11,17 +11,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.26-alpha] - TBD
-**Branch**: `parley/tech-debt/sprint-1` | **PR**: #TBD
+**Branch**: `parley/tech-debt/sprint-1` | **PR**: #191
 
 ### Tech Debt Sprint 1
 
 Addressing accumulated tech debt issues and codebase cleanup.
 
-**Issues Targeted**:
+**Completed**:
 - #189 - Fix flaky UnifiedLoggerTests due to shared static state
+  - Added `[Collection("UnifiedLogger")]` to prevent parallel test execution
+  - Implemented `IDisposable` to clean up shared callback between tests
+  - Created `TestCollections.cs` with collection definition
+- #192 - Removed dead `ResourceSettings.cs` (284 lines)
+- #193 - Removed unused methods from `SoundService.cs` (`SearchSounds`, `ValidateSound`, `GetSoundPath`)
+- #195 - Removed unused `IsScriptInDialogDirectory` from `ExternalEditorService.cs`
+
+**Issues Found During Scan**:
+- #192 - Dead code: ResourceSettings.cs completely unused
+- #193 - Dead code: Unused SoundService methods
+- #194 - Code duplication: LocString/DialogNode cloning
+- #195 - Dead code: ExternalEditorService unused method
+- #196 - Exception handling: Empty catch blocks and swallowed exceptions
+
+**Remaining**:
 - #181 - Menu cleanup: Remove deprecated features and reorganize
 - #169 - Consolidate Parley.Services namespace into DialogEditor.Services
-- #141 - Theme System: Audit PC/Owner color consistency across all themes
 - #136 - Review: Verify orphaned link children handling in DeleteNode
 - #23 - Add file path validation and input sanitization
 

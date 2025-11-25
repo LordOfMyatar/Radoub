@@ -238,20 +238,5 @@ namespace DialogEditor.Services
 
             return null; // No editor detected, will use system default
         }
-
-        /// <summary>
-        /// Checks if a script exists in the same directory as the dialog file
-        /// </summary>
-        public bool IsScriptInDialogDirectory(string scriptName, string dialogFilePath)
-        {
-            if (string.IsNullOrWhiteSpace(scriptName) || string.IsNullOrWhiteSpace(dialogFilePath))
-                return false;
-
-            scriptName = scriptName.Replace(".nss", "", StringComparison.OrdinalIgnoreCase);
-            string dialogDir = Path.GetDirectoryName(dialogFilePath) ?? "";
-            string scriptPath = Path.Combine(dialogDir, $"{scriptName}.nss");
-
-            return File.Exists(scriptPath);
-        }
     }
 }
