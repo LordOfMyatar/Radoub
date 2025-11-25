@@ -18,19 +18,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Visual depth indicators to improve readability of complex dialog trees.
 
 **Features**:
-- Colored vertical bars indicate nesting depth in dialog tree
+- VSCode-style indent guides showing all ancestor depth levels
+- Each node displays N colored bars (one per depth level from 1 to current)
 - Theme-aware palettes (soft colors for light/dark modes)
-- Multi-NPC mode: indicators match speaker colors for visual consistency
-- Single-NPC mode: rainbow palette cycles through 6 distinct colors
+- Rainbow palette cycles through 6 distinct colors per depth
 - Settings toggle in Appearance tab to enable/disable
 - Immediate tree refresh when setting changes
 
 **Implementation**:
 - `RainbowBracketHelper`: Utility with theme-aware color palettes
 - `TreeViewSafeNode.Depth`: Exposed nesting level property
-- `TreeViewSafeNode.DepthIndicatorBrush`: Computed brush for indicator color
-- `TreeViewSafeNode.ShowDepthIndicator`: Visibility control (hidden for ROOT/links)
+- `TreeViewSafeNode.DepthGuides`: Collection of depth guide indicators
+- `DepthGuide`: Simple class with Level and Brush properties
 - `SettingsService.EnableRainbowBrackets`: Persisted setting (default: ON)
+- XAML ItemsControl renders guide bars horizontally
 
 **Color Palettes**:
 - Light theme: Soft indigo, teal, amber, pink, green, purple

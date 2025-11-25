@@ -202,14 +202,25 @@
                         </TreeView.Styles>
                         <TreeView.DataTemplates>
                             <TreeDataTemplate DataType="models:TreeViewSafeNode" ItemsSource="{Binding Children}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <!-- Rainbow bracket depth indicator (Issue #70) -->
-                                    <Border Width="3"
-                                            CornerRadius="1"
-                                            Background="{Binding DepthIndicatorBrush}"
-                                            IsVisible="{Binding ShowDepthIndicator}"
-                                            VerticalAlignment="Stretch"
-                                            Margin="0,2,2,2"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <!-- Rainbow indent guides (Issue #70) - VSCode-style depth indicators -->
+                                    <ItemsControl ItemsSource="{Binding DepthGuides}"
+                                                  IsVisible="{Binding ShowDepthGuides}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" Spacing="0"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="models:DepthGuide">
+                                                <Border Width="2"
+                                                        Background="{Binding Brush}"
+                                                        VerticalAlignment="Stretch"
+                                                        Margin="0,0,6,0"
+                                                        MinHeight="16"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                     <!-- Speaker icon shape -->
                                     <Path Data="{Binding NodeShapeGeometry}"
                                           Fill="{Binding NodeColor}"

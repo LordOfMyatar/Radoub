@@ -179,47 +179,46 @@ namespace DialogEditor.Models
         public int Depth => _depth;
 
         /// <summary>
-        /// Gets the rainbow bracket indicator color for this node based on depth.
-        /// Returns Transparent when rainbow brackets are disabled or at depth 0.
-        /// When NPC tag coloring is enabled, uses speaker colors; otherwise uses rainbow palette.
+        /// Gets a collection of depth guide indicators for VSCode-style indent guides.
+        /// Each guide represents one depth level from 1 to current depth.
+        /// Returns empty collection when rainbow brackets are disabled.
         /// </summary>
-        public virtual IBrush DepthIndicatorBrush
+        public virtual IReadOnlyList<DepthGuide> DepthGuides
         {
             get
             {
-                // Don't show indicator if rainbow brackets are disabled
-                if (!SettingsService.Instance.EnableRainbowBrackets)
-                    return Brushes.Transparent;
+                // Don't show guides if rainbow brackets are disabled or at ROOT level
+                if (!SettingsService.Instance.EnableRainbowBrackets || _depth <= 0 || IsChild)
+                    return Array.Empty<DepthGuide>();
 
-                // Links/children don't get depth indicators (they're terminal)
-                if (IsChild)
-                    return Brushes.Transparent;
-
-                bool isPC = _originalNode?.Type == DialogNodeType.Reply && string.IsNullOrEmpty(_originalNode.Speaker);
-                string speaker = _originalNode?.Speaker ?? "";
                 bool isDark = RainbowBracketHelper.IsDarkTheme();
+                var guides = new List<DepthGuide>();
 
-                var colorHex = RainbowBracketHelper.GetDepthColorWithSpeaker(_depth, speaker, isPC, isDark);
-
-                if (colorHex == "Transparent")
-                    return Brushes.Transparent;
-
-                try
+                // Create a guide for each depth level from 1 to current depth
+                for (int d = 1; d <= _depth; d++)
                 {
-                    return new SolidColorBrush(Color.Parse(colorHex));
+                    var colorHex = RainbowBracketHelper.GetDepthColor(d, isDark);
+                    IBrush brush;
+                    try
+                    {
+                        brush = new SolidColorBrush(Color.Parse(colorHex));
+                    }
+                    catch
+                    {
+                        brush = Brushes.Gray;
+                    }
+                    guides.Add(new DepthGuide(d, brush));
                 }
-                catch
-                {
-                    return Brushes.Transparent;
-                }
+
+                return guides;
             }
         }
 
         /// <summary>
-        /// Whether the depth indicator should be visible.
+        /// Whether depth guides should be visible.
         /// Hidden for ROOT (depth 0) and when rainbow brackets are disabled.
         /// </summary>
-        public bool ShowDepthIndicator =>
+        public bool ShowDepthGuides =>
             SettingsService.Instance.EnableRainbowBrackets && _depth > 0 && !IsChild;
 
         // Formatted display text that matches copy tree structure format
@@ -486,5 +485,20 @@ namespace DialogEditor.Models
         public override string NodeColor => "Gray";
         public override ObservableCollection<TreeViewSafeNode>? Children => null;
         public override bool HasChildren => false;
+    }
+
+    /// <summary>
+    /// Represents a single depth guide line for rainbow bracket visualization.
+    /// </summary>
+    public class DepthGuide
+    {
+        public int Level { get; }
+        public IBrush Brush { get; }
+
+        public DepthGuide(int level, IBrush brush)
+        {
+            Level = level;
+            Brush = brush;
+        }
     }
 }
