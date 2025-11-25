@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.26-alpha] - TBD
+**Branch**: `parley/tech-debt/sprint-1` | **PR**: #TBD
+
+### Tech Debt Sprint 1
+
+Addressing accumulated tech debt issues and codebase cleanup.
+
+**Issues Targeted**:
+- #189 - Fix flaky UnifiedLoggerTests due to shared static state
+- #181 - Menu cleanup: Remove deprecated features and reorganize
+- #169 - Consolidate Parley.Services namespace into DialogEditor.Services
+- #141 - Theme System: Audit PC/Owner color consistency across all themes
+- #136 - Review: Verify orphaned link children handling in DeleteNode
+- #23 - Add file path validation and input sanitization
+
+---
+
 ## [0.1.24-alpha] - 2025-11-24
 **Branch**: `parley/feat/issue-9-command-line` | **PR**: #187
 
