@@ -33,6 +33,9 @@ Addressing accumulated tech debt issues and codebase cleanup.
 - #169 - Namespace consolidation:
   - Moved 12 service classes from `Parley.Services` to `DialogEditor.Services`
   - Removed all `using Parley.Services` statements
+- Fixed spurious parser warnings for empty nodes:
+  - Changed `CExoLocString has no LocalizedStrings and no StrRef` from WARN to DEBUG
+  - Removed validation warnings for nodes without text (valid NWN "[CONTINUE]" pattern)
 
 **Issues Found During Scan**:
 - #192 - Dead code: ResourceSettings.cs completely unused
