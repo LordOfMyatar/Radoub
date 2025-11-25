@@ -4,7 +4,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using Parley.Models;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Service responsible for managing dialog node references and pointers.

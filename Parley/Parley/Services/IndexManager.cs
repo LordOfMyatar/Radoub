@@ -4,7 +4,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using DialogEditor.Utils;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Service responsible for managing dialog pointer indices.

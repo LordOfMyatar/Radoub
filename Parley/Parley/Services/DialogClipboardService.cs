@@ -5,7 +5,7 @@ using System.Text.Json;
 using DialogEditor.Models;
 using DialogEditor.Services;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Service responsible for clipboard operations (copy, cut, paste).

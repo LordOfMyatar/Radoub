@@ -9,7 +9,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using Parley.Models;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Result of a restore operation with status information

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using DialogEditor.Models;
-using Parley.Services;
+using DialogEditor.Services;
 using Xunit;
 
 namespace Parley.Tests

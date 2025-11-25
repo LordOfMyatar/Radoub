@@ -3,7 +3,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using Parley.Models;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Result of a paste operation with status information

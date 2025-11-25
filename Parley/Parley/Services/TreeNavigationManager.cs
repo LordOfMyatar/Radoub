@@ -5,7 +5,7 @@ using System.Linq;
 using DialogEditor.Models;
 using DialogEditor.Services;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Service responsible for tree view navigation, state management, and traversal.

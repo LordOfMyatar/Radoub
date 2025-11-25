@@ -734,7 +734,7 @@ namespace Parley.Tests
             // ONLY the child link from "I go through...", so it should be removed
 
             var dialog = new Dialog();
-            var orphanManager = new Parley.Services.OrphanNodeManager();
+            var orphanManager = new DialogEditor.Services.OrphanNodeManager();
 
             // Create "That's not uncommon..." entry
             var parentEntry = new DialogNode
@@ -826,7 +826,7 @@ namespace Parley.Tests
             // are NOT removed, even if they also have child links
 
             var dialog = new Dialog();
-            var orphanManager = new Parley.Services.OrphanNodeManager();
+            var orphanManager = new DialogEditor.Services.OrphanNodeManager();
 
             var entry1 = new DialogNode
             {
@@ -965,7 +965,7 @@ namespace Parley.Tests
             dialog.RebuildLinkRegistry();
 
             // Act: Remove orphaned nodes
-            var orphanManager = new Parley.Services.OrphanNodeManager();
+            var orphanManager = new DialogEditor.Services.OrphanNodeManager();
             var removed = orphanManager.RemoveOrphanedNodes(dialog);
 
             // Assert: Entry 2 should be removed (only reachable via child link)
@@ -1071,7 +1071,7 @@ namespace Parley.Tests
             dialog.RebuildLinkRegistry();
 
             // Act: Delete parent entry using OrphanNodeManager
-            var orphanManager = new Parley.Services.OrphanNodeManager();
+            var orphanManager = new DialogEditor.Services.OrphanNodeManager();
             var nodesToDelete = new HashSet<DialogNode> { parentEntry, sharedReply };
             var orphanedLinkChildren = orphanManager.IdentifyOrphanedLinkChildren(dialog, parentEntry, nodesToDelete);
 

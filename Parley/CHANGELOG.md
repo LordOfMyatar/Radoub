@@ -30,6 +30,9 @@ Addressing accumulated tech debt issues and codebase cleanup.
   - Moved "Clear Debug Output" into View > Logging submenu
   - Added Help > Documentation link (opens GitHub docs)
   - Added Help > Report Issue link (opens GitHub issues)
+- #169 - Namespace consolidation:
+  - Moved 12 service classes from `Parley.Services` to `DialogEditor.Services`
+  - Removed all `using Parley.Services` statements
 
 **Issues Found During Scan**:
 - #192 - Dead code: ResourceSettings.cs completely unused
@@ -39,8 +42,6 @@ Addressing accumulated tech debt issues and codebase cleanup.
 - #196 - Exception handling: Empty catch blocks and swallowed exceptions
 
 **Remaining**:
-- #181 - Menu cleanup: Remove deprecated features and reorganize
-- #169 - Consolidate Parley.Services namespace into DialogEditor.Services
 - #136 - Review: Verify orphaned link children handling in DeleteNode
 - #23 - Add file path validation and input sanitization
 

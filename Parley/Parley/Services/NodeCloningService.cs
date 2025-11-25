@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using DialogEditor.Models;
 using DialogEditor.Services;
 
-namespace Parley.Services
+namespace DialogEditor.Services
 {
     /// <summary>
     /// Service responsible for deep cloning dialog nodes.

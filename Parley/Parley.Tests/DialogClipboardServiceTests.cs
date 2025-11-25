@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 using DialogEditor.Models;
-using Parley.Services;
+using DialogEditor.Services;
 
 namespace Parley.Tests
 {
