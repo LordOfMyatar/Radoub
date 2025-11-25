@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.25-alpha] - TBD
+**Branch**: `parley/feat/issue-70-rainbow-brackets` | **PR**: #TBD
+
+### Rainbow Brackets for Nesting Visualization (Issue #70)
+
+Visual depth indicators to improve readability of complex dialog trees.
+
+**Planned Features**:
+- Depth-based color coding for nesting levels
+- Theme-aware colors (light/dark mode)
+- Multi-NPC mode: follows NPC speaker color preferences
+- Single-NPC mode: full rainbow palette
+- Soft, eye-friendly color palette
+- Settings option to enable/disable
+
+---
+
 ## [0.1.24-alpha] - 2025-11-24
 **Branch**: `parley/feat/issue-9-command-line` | **PR**: #187
 
