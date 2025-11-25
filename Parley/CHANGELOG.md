@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.25-alpha] - TBD
-**Branch**: `parley/feat/issue-70-rainbow-brackets` | **PR**: #TBD
+**Branch**: `parley/feat/issue-70-rainbow-brackets` | **PR**: #188
 
 ### Rainbow Brackets for Nesting Visualization (Issue #70)
 
