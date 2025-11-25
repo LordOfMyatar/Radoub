@@ -24,8 +24,10 @@ Future tools will be added as subdirectories with their own README, CLAUDE.md, a
 Radoub/
 ├── README.md (landing page)
 ├── LICENSE
+├── CHANGELOG.md (repo-level changes)
 ├── CLAUDE.md (this file - repo-level guidance)
 ├── .gitignore
+├── .claude/commands/ (slash commands for Claude Code)
 ├── Documentation/ (Aurora Engine format specs - shared across tools)
 │   ├── BioWare_Original_PDFs/
 │   └── Bioware_Aurora_*.md
@@ -35,12 +37,11 @@ Radoub/
 ├── Parley/ (dialog editor)
 │   ├── README.md
 │   ├── CLAUDE.md (Parley-specific guidance)
-│   ├── CHANGELOG.md
+│   ├── CHANGELOG.md (Parley-specific changes)
 │   ├── Parley/ (source code)
 │   ├── TestingTools/
 │   ├── Documentation/ (Approved Parley-specific docs)
 │   ├── NonPublic/ (To be approved documents)
-│   └── .github/
 └── [Future tools will be added here]
 ```
 
@@ -229,6 +230,23 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ---
 
+## CHANGELOG Management
+
+**Two-Level CHANGELOG System**:
+
+| CHANGELOG | Location | Contents |
+|-----------|----------|----------|
+| **Radoub** | `CHANGELOG.md` | Repository-level changes: shared documentation, slash commands, cross-tool features |
+| **Parley** | `Parley/CHANGELOG.md` | Parley-specific changes: features, fixes, UI updates |
+
+**Rules**:
+- Tool-specific changes go in tool CHANGELOG only
+- Shared documentation updates go in Radoub CHANGELOG
+- Slash commands (`.claude/commands/`) go in Radoub CHANGELOG
+- When in doubt, ask which CHANGELOG to update
+
+---
+
 ## Session Management
 
 **Starting a New Session**:
@@ -240,7 +258,7 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 **Session Best Practices**:
 - Use TodoWrite tool for task tracking
 - Commit regularly with clear messages
-- Update tool CHANGELOG for user-facing changes
+- Update appropriate CHANGELOG for user-facing changes (see CHANGELOG Management above)
 - Mark in-progress work clearly if session ends incomplete
 
 ---

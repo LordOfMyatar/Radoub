@@ -134,6 +134,10 @@ namespace DialogEditor.Views
                 await _windowPersistenceManager.RestoreWindowPositionAsync();
 
                 PopulateRecentFilesMenu();
+
+                // Handle command line file loading (Issue #9)
+                await _windowPersistenceManager.HandleStartupFileAsync(_viewModel);
+
                 // Start enabled plugins after window opens
                 var startedPlugins = await _pluginManager.StartEnabledPluginsAsync();
                 if (startedPlugins.Count > 0)

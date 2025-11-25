@@ -254,6 +254,11 @@ Tests: ✅ Privacy workflow passes
 - Link commits to GH issues when applicable
 - New documents go to the NonPublic folder. The user will move docs to Documentation after manual review.
 
+**CHANGELOG Rules**:
+- **Parley CHANGELOG** (`CHANGELOG.md`): Parley-specific changes only
+- **Radoub CHANGELOG** (`../CHANGELOG.md`): Repository-level changes (documentation, shared resources, slash commands)
+- **DO NOT** add Radoub-level changes to Parley's CHANGELOG
+
 ### Branch Workflow
 - **Note**: Now part of the Radoub repository - see parent `../CLAUDE.md` for full branch strategy
 - `main` branch - production-ready releases (protected by PR process)

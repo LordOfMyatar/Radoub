@@ -8,6 +8,8 @@ using Avalonia.Media;
 using DialogEditor.ViewModels;
 using DialogEditor.Views;
 using DialogEditor.Services;
+using DialogEditor.Plugins;
+using Parley.Services;
 using System.ComponentModel;
 
 namespace DialogEditor;
@@ -18,17 +20,33 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
-        // Discover and load themes
-        ThemeManager.Instance.DiscoverThemes();
+        // Check for safe mode (command line)
+        // Note: Safe mode already backed up config folder in Program.cs,
+        // so SettingsService will use factory defaults (no config file exists)
+        var isSafeMode = CommandLineService.Options.SafeMode;
 
-        // Apply saved theme from settings
-        var themeId = SettingsService.Instance.CurrentThemeId;
-        if (!string.IsNullOrEmpty(themeId))
+        if (isSafeMode)
         {
-            ThemeManager.Instance.ApplyTheme(themeId);
+            PluginSettingsService.Instance.SafeMode = true;
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Safe mode enabled - using factory defaults");
         }
 
-        // Apply font size and family from settings (may be overridden by theme)
+        // Discover and apply themes
+        ThemeManager.Instance.DiscoverThemes();
+
+        var themeId = SettingsService.Instance.CurrentThemeId;
+        if (string.IsNullOrEmpty(themeId))
+        {
+            themeId = "org.parley.theme.light"; // Default if not set
+        }
+
+        if (!ThemeManager.Instance.ApplyTheme(themeId))
+        {
+            // If preferred theme fails, try default light theme
+            ThemeManager.Instance.ApplyTheme("org.parley.theme.light");
+        }
+
+        // Apply font size and family from settings
         ApplyFontSize(SettingsService.Instance.FontSize);
         ApplyFontFamily(SettingsService.Instance.FontFamily);
 

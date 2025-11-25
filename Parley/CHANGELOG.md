@@ -10,6 +10,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.24-alpha] - 2025-11-24
+**Branch**: `parley/feat/issue-9-command-line` | **PR**: #187
+
+### Command Line Support (Issue #9)
+
+New command line interface for power users and automation.
+
+**Features**:
+- Direct file loading: `Parley dialog.dlg`
+- Safe mode: `Parley --safe-mode` (clean slate - backs up config folder)
+- Screenplay export: `Parley --screenplay dialog.dlg` (outputs to stdout)
+- Output to file: `Parley --screenplay -o output.txt dialog.dlg`
+- Help: `Parley --help`
+
+**Safe Mode Details**:
+- Backs up `~/Parley` to `~/Parley.safemode` before launch
+- App starts with factory defaults (no config = fresh state)
+- Disables plugins via `PluginSettingsService.SafeMode`
+- To restore: delete `~/Parley` and rename `~/Parley.safemode` back to `~/Parley`
+
+**Implementation**:
+- `CommandLineService` handles argument parsing and screenplay generation
+- `WindowPersistenceManager.HandleStartupFileAsync()` loads command line files
+- `Program.BackupConfigForSafeMode()` handles config folder backup
+- `Program.AttachToParentConsole()` enables console output on Windows (WinExe apps)
+- Screenplay format shows speaker: text for each dialog node
+
+---
+
 ## [0.1.23-alpha] - 2025-11-23
 **Branch**: `parley/feat/epic-39-ux-improvements` | **PR**: #174
 

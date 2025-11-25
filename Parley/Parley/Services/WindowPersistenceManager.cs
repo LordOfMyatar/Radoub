@@ -2,7 +2,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Platform;
 using DialogEditor.Utils;
+using DialogEditor.ViewModels;
+using Parley.Services;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,6 +14,7 @@ namespace DialogEditor.Services
     /// <summary>
     /// Manages window position, panel sizes, and UI state persistence.
     /// Handles save/restore of window geometry and screen boundary validation.
+    /// Also handles startup tasks like loading command line files.
     /// Extracted from MainWindow.axaml.cs to separate persistence concerns.
     /// </summary>
     public class WindowPersistenceManager
@@ -25,6 +29,26 @@ namespace DialogEditor.Services
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
+        }
+
+        /// <summary>
+        /// Handle startup tasks including loading file from command line (Issue #9)
+        /// </summary>
+        public async Task HandleStartupFileAsync(MainViewModel viewModel)
+        {
+            var cmdLineFile = CommandLineService.Options.FilePath;
+            if (!string.IsNullOrEmpty(cmdLineFile))
+            {
+                if (File.Exists(cmdLineFile))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading file from command line: {UnifiedLogger.SanitizePath(cmdLineFile)}");
+                    await viewModel.LoadDialogAsync(cmdLineFile);
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Command line file not found: {UnifiedLogger.SanitizePath(cmdLineFile)}");
+                }
+            }
         }
 
         /// <summary>
