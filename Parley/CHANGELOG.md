@@ -25,6 +25,11 @@ Addressing accumulated tech debt issues and codebase cleanup.
 - #192 - Removed dead `ResourceSettings.cs` (284 lines)
 - #193 - Removed unused methods from `SoundService.cs` (`SearchSounds`, `ValidateSound`, `GetSoundPath`)
 - #195 - Removed unused `IsScriptInDialogDirectory` from `ExternalEditorService.cs`
+- #181 - Menu cleanup:
+  - Removed duplicate "Save" from Edit menu (already in File menu)
+  - Moved "Clear Debug Output" into View > Logging submenu
+  - Added Help > Documentation link (opens GitHub docs)
+  - Added Help > Report Issue link (opens GitHub issues)
 
 **Issues Found During Scan**:
 - #192 - Dead code: ResourceSettings.cs completely unused
