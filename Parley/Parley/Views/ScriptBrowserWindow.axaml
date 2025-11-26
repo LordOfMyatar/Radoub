@@ -26,20 +26,56 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- Location Override Row -->
+        <Grid Grid.Row="0" Margin="0,0,0,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       Text="Location:"
+                       VerticalAlignment="Center"
+                       Margin="0,0,8,0"
+                       FontSize="11"/>
+            <TextBlock Grid.Column="1"
+                       x:Name="LocationPathLabel"
+                       Text="(auto-detected)"
+                       VerticalAlignment="Center"
+                       FontSize="11"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       TextTrimming="CharacterEllipsis"/>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
+                <Button x:Name="ResetLocationButton"
+                        Content="reset"
+                        FontSize="11"
+                        Padding="8,2"
+                        IsVisible="False"
+                        Click="OnResetLocationClick"/>
+                <Button x:Name="BrowseLocationButton"
+                        Content="browse..."
+                        FontSize="11"
+                        Padding="8,2"
+                        Click="OnBrowseLocationClick"/>
+            </StackPanel>
+        </Grid>
+
         <!-- Search Box -->
-        <TextBox Grid.Row="0"
+        <TextBox Grid.Row="1"
                  x:Name="SearchBox"
                  Watermark="Type to filter scripts..."
                  Margin="0,0,0,10"
                  TextChanged="OnSearchTextChanged"/>
 
         <!-- Main Content Area: Script List + Preview -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="350"/>
                 <ColumnDefinition Width="5"/>
@@ -104,7 +140,7 @@
         </Grid>
 
         <!-- Selected Script Display -->
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                 BorderThickness="1"
                 Padding="10"
@@ -129,7 +165,7 @@
         </Border>
 
         <!-- Dialog Buttons -->
-        <StackPanel Grid.Row="3"
+        <StackPanel Grid.Row="4"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Spacing="10">
