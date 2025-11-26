@@ -155,7 +155,7 @@ namespace DialogEditor.Services
         /// <summary>
         /// Gets all available script search paths
         /// </summary>
-        private List<string> GetScriptSearchPaths()
+        public List<string> GetScriptSearchPaths()
         {
             var paths = new List<string>();
 

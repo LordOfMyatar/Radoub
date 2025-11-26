@@ -10,6 +10,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.27-alpha] - 2025-11-25
+**Branch**: `parley/feat/script-browser-sprint` | **PR**: #198
+
+### Script Browser Sprint
+
+Improving script browser usability with location override and better error handling.
+
+**Issues**:
+- #144 - Script browser fails when game/module paths not detected
+- #145 - Script browser cannot override location per-dialog
+
+**Deferred**:
+- #146 - Support browsing built-in game scripts (blocked by Epic #170 - BIF parser needed)
+
+**Completed**:
+- Script Browser now defaults to dialog file's directory (where .dlg and .nss co-locate)
+- Added location override row to Script Browser window
+  - Shows current search path (sanitized with `~` for privacy)
+  - "browse..." button to select alternate script folder
+  - "reset" button to return to dialog directory (appears after override)
+  - Per-session override (resets when browser closes)
+- Improved "no scripts found" messaging
+  - When override set: "No scripts found in selected folder"
+  - When no dialog loaded: "No dialog loaded - use browse..."
+- Script preview loads from dialog directory or override path
+
+---
+
 ## [0.1.26-alpha] - 2025-11-25
 **Branch**: `parley/tech-debt/sprint-1` | **PR**: #191
 

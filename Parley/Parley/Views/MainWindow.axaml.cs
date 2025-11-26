@@ -2485,7 +2485,7 @@ namespace DialogEditor.Views
                 }
 
                 // Create and show modeless browser window (Issue #20)
-                var scriptBrowser = new ScriptBrowserWindow();
+                var scriptBrowser = new ScriptBrowserWindow(_viewModel.CurrentFileName);
 
                 // Track the window and handle cleanup when it closes
                 _activeScriptBrowserWindow = scriptBrowser;
@@ -2770,7 +2770,7 @@ namespace DialogEditor.Views
                 }
 
                 // Create and show modeless browser window (Issue #20)
-                var scriptBrowser = new ScriptBrowserWindow();
+                var scriptBrowser = new ScriptBrowserWindow(_viewModel.CurrentFileName);
 
                 // Track the window and handle cleanup when it closes
                 _activeScriptBrowserWindow = scriptBrowser;
@@ -2827,7 +2827,7 @@ namespace DialogEditor.Views
                 }
 
                 // Create and show modeless browser window (Issue #20)
-                var scriptBrowser = new ScriptBrowserWindow();
+                var scriptBrowser = new ScriptBrowserWindow(_viewModel.CurrentFileName);
 
                 // Track the window and handle cleanup when it closes
                 _activeScriptBrowserWindow = scriptBrowser;

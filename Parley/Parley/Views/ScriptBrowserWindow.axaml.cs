@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using DialogEditor.Services;
 using DialogEditor.Utils;
 
@@ -14,27 +16,150 @@ namespace DialogEditor.Views
         private readonly ScriptService _scriptService;
         private List<string> _allScripts;
         private string? _selectedScript;
+        private string? _overridePath;
+        private readonly string? _dialogFilePath;
 
         public string? SelectedScript => _selectedScript;
 
-        public ScriptBrowserWindow()
+        // Parameterless constructor for XAML designer/runtime loader
+        public ScriptBrowserWindow() : this(null)
+        {
+        }
+
+        public ScriptBrowserWindow(string? dialogFilePath)
         {
             InitializeComponent();
             _scriptService = ScriptService.Instance;
             _allScripts = new List<string>();
+            _dialogFilePath = dialogFilePath;
 
+            UpdateLocationDisplay();
             LoadScripts();
+        }
+
+        private void UpdateLocationDisplay()
+        {
+            if (!string.IsNullOrEmpty(_overridePath))
+            {
+                // Show sanitized override path
+                LocationPathLabel.Text = UnifiedLogger.SanitizePath(_overridePath);
+                LocationPathLabel.Foreground = new SolidColorBrush(Colors.White);
+                ResetLocationButton.IsVisible = true;
+            }
+            else
+            {
+                // Default: use dialog file's directory
+                var dialogDir = GetDialogDirectory();
+                if (!string.IsNullOrEmpty(dialogDir))
+                {
+                    LocationPathLabel.Text = UnifiedLogger.SanitizePath(dialogDir);
+                    LocationPathLabel.Foreground = new SolidColorBrush(Colors.LightGray);
+                }
+                else
+                {
+                    LocationPathLabel.Text = "(no dialog loaded - use browse...)";
+                    LocationPathLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                }
+                ResetLocationButton.IsVisible = false;
+            }
+        }
+
+        private string? GetDialogDirectory()
+        {
+            if (!string.IsNullOrEmpty(_dialogFilePath))
+            {
+                var dir = Path.GetDirectoryName(_dialogFilePath);
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                    return dir;
+            }
+            return null;
+        }
+
+        private async void OnBrowseLocationClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Default to parent of dialog directory (one level up from .dlg)
+                IStorageFolder? suggestedStart = null;
+                var dialogDir = GetDialogDirectory();
+                if (!string.IsNullOrEmpty(dialogDir))
+                {
+                    var parentDir = Path.GetDirectoryName(dialogDir);
+                    if (!string.IsNullOrEmpty(parentDir) && Directory.Exists(parentDir))
+                    {
+                        suggestedStart = await StorageProvider.TryGetFolderFromPathAsync(parentDir);
+                    }
+                }
+
+                var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+                {
+                    Title = "Select Script Location",
+                    AllowMultiple = false,
+                    SuggestedStartLocation = suggestedStart
+                });
+
+                if (folders.Count > 0)
+                {
+                    var folder = folders[0];
+                    _overridePath = folder.Path.LocalPath;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Script browser: Override path set to {UnifiedLogger.SanitizePath(_overridePath)}");
+
+                    UpdateLocationDisplay();
+                    await LoadScriptsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error selecting folder: {ex.Message}");
+            }
+        }
+
+        private async void OnResetLocationClick(object? sender, RoutedEventArgs e)
+        {
+            _overridePath = null;
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Script browser: Reset to auto-detected paths");
+            UpdateLocationDisplay();
+            await LoadScriptsAsync();
         }
 
         private async void LoadScripts()
         {
+            await LoadScriptsAsync();
+        }
+
+        private async System.Threading.Tasks.Task LoadScriptsAsync()
+        {
             try
             {
-                _allScripts = await _scriptService.GetAvailableScriptsAsync();
+                if (!string.IsNullOrEmpty(_overridePath))
+                {
+                    // Use override path only
+                    _allScripts = await LoadScriptsFromPathAsync(_overridePath);
+                }
+                else
+                {
+                    // Default: use dialog file's directory
+                    var dialogDir = GetDialogDirectory();
+                    if (!string.IsNullOrEmpty(dialogDir))
+                    {
+                        _allScripts = await LoadScriptsFromPathAsync(dialogDir);
+                    }
+                    else
+                    {
+                        _allScripts = new List<string>();
+                    }
+                }
 
                 if (_allScripts.Count == 0)
                 {
-                    ScriptCountLabel.Text = "⚠ No scripts found - check module path in Settings";
+                    if (!string.IsNullOrEmpty(_overridePath))
+                    {
+                        ScriptCountLabel.Text = "⚠ No scripts found in selected folder";
+                    }
+                    else
+                    {
+                        ScriptCountLabel.Text = "⚠ No scripts found - use browse... to select folder";
+                    }
                     ScriptCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
                     UnifiedLogger.LogApplication(LogLevel.WARN, "Script Browser: No scripts found");
                     return;
@@ -48,6 +173,35 @@ namespace DialogEditor.Views
                 ScriptCountLabel.Text = $"❌ Error loading scripts: {ex.Message}";
                 ScriptCountLabel.Foreground = new SolidColorBrush(Colors.Red);
             }
+        }
+
+        private System.Threading.Tasks.Task<List<string>> LoadScriptsFromPathAsync(string path)
+        {
+            var scripts = new List<string>();
+
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    var scriptFiles = Directory.GetFiles(path, "*.nss", SearchOption.AllDirectories);
+
+                    foreach (var scriptFile in scriptFiles)
+                    {
+                        var scriptName = Path.GetFileNameWithoutExtension(scriptFile);
+                        if (!scripts.Contains(scriptName))
+                            scripts.Add(scriptName);
+                    }
+
+                    scripts.Sort();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Script Browser: Found {scripts.Count} scripts in override path");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning override path for scripts: {ex.Message}");
+            }
+
+            return System.Threading.Tasks.Task.FromResult(scripts);
         }
 
         private void UpdateScriptList()
@@ -92,7 +246,28 @@ namespace DialogEditor.Views
                     PreviewHeaderLabel.Text = $"Preview: {scriptName}.nss";
                     PreviewTextBox.Text = "Loading...";
 
-                    var scriptContent = await _scriptService.GetScriptContentAsync(scriptName);
+                    string? scriptContent = null;
+
+                    // If override path is set, load from there first
+                    if (!string.IsNullOrEmpty(_overridePath))
+                    {
+                        scriptContent = await LoadScriptContentFromPathAsync(scriptName, _overridePath);
+                    }
+                    else
+                    {
+                        // Try dialog directory
+                        var dialogDir = GetDialogDirectory();
+                        if (!string.IsNullOrEmpty(dialogDir))
+                        {
+                            scriptContent = await LoadScriptContentFromPathAsync(scriptName, dialogDir);
+                        }
+                    }
+
+                    // Fall back to service if still not found
+                    if (string.IsNullOrEmpty(scriptContent))
+                    {
+                        scriptContent = await _scriptService.GetScriptContentAsync(scriptName);
+                    }
 
                     if (!string.IsNullOrEmpty(scriptContent))
                     {
@@ -119,6 +294,31 @@ namespace DialogEditor.Views
                 PreviewTextBox.Text = "";
                 OpenInEditorButton.IsEnabled = false;
             }
+        }
+
+        private async System.Threading.Tasks.Task<string?> LoadScriptContentFromPathAsync(string scriptName, string basePath)
+        {
+            try
+            {
+                var scriptFileName = scriptName.EndsWith(".nss", StringComparison.OrdinalIgnoreCase)
+                    ? scriptName
+                    : $"{scriptName}.nss";
+
+                if (Directory.Exists(basePath))
+                {
+                    var scriptFiles = Directory.GetFiles(basePath, scriptFileName, SearchOption.AllDirectories);
+                    if (scriptFiles.Length > 0)
+                    {
+                        return await File.ReadAllTextAsync(scriptFiles[0]);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading script from override path: {ex.Message}");
+            }
+
+            return null;
         }
 
         private void OnScriptDoubleClicked(object? sender, RoutedEventArgs e)
