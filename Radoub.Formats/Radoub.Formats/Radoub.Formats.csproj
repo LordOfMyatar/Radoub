@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Radoub.Formats</RootNamespace>
+    <AssemblyName>Radoub.Formats</AssemblyName>
+    <Description>Aurora Engine file format parsers for Neverwinter Nights modding tools</Description>
+    <Authors>Lord of Midnight</Authors>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+</Project>
