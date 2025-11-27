@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
@@ -12,7 +13,7 @@ public abstract class FlaUITestBase : IDisposable
 {
     protected Application? App { get; private set; }
     protected UIA3Automation? Automation { get; private set; }
-    protected Window? MainWindow { get; private set; }
+    protected Window? MainWindow { get; set; }
 
     /// <summary>
     /// Path to the application executable. Override in derived classes.
@@ -25,10 +26,15 @@ public abstract class FlaUITestBase : IDisposable
     protected virtual TimeSpan DefaultTimeout => TimeSpan.FromSeconds(5);
 
     /// <summary>
+    /// Timeout for waiting for file operations to complete.
+    /// </summary>
+    protected virtual TimeSpan FileOperationTimeout => TimeSpan.FromSeconds(10);
+
+    /// <summary>
     /// Launches the application and gets the main window.
     /// Call this at the start of tests.
     /// </summary>
-    protected void StartApplication()
+    protected void StartApplication(string? arguments = null)
     {
         if (string.IsNullOrEmpty(ApplicationPath))
         {
@@ -41,10 +47,89 @@ public abstract class FlaUITestBase : IDisposable
         }
 
         Automation = new UIA3Automation();
-        App = Application.Launch(ApplicationPath);
+
+        var processInfo = new ProcessStartInfo
+        {
+            FileName = ApplicationPath,
+            Arguments = arguments ?? string.Empty,
+            UseShellExecute = false
+        };
+
+        App = Application.Launch(processInfo);
 
         // Wait for main window to appear
         MainWindow = App.GetMainWindow(Automation, DefaultTimeout);
+    }
+
+    /// <summary>
+    /// Waits for the window title to contain the specified text.
+    /// Useful for waiting for file loads to complete.
+    /// </summary>
+    protected bool WaitForTitleContains(string text, TimeSpan? timeout = null)
+    {
+        var endTime = DateTime.Now + (timeout ?? DefaultTimeout);
+        while (DateTime.Now < endTime)
+        {
+            // Refresh window reference to get updated title
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+            if (MainWindow?.Title?.Contains(text, StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return true;
+            }
+            Thread.Sleep(100);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Waits for the window title to NOT contain the specified text.
+    /// Useful for waiting for unsaved indicator to disappear after save.
+    /// </summary>
+    protected bool WaitForTitleNotContains(string text, TimeSpan? timeout = null)
+    {
+        var endTime = DateTime.Now + (timeout ?? DefaultTimeout);
+        while (DateTime.Now < endTime)
+        {
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+            if (MainWindow?.Title?.Contains(text, StringComparison.OrdinalIgnoreCase) != true)
+            {
+                return true;
+            }
+            Thread.Sleep(100);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Clicks a menu item by navigating through the menu hierarchy.
+    /// Example: ClickMenu("File", "Save") clicks File menu then Save item.
+    /// </summary>
+    protected void ClickMenu(params string[] menuPath)
+    {
+        if (menuPath.Length == 0) return;
+
+        // Click first menu to open it
+        var menu = MainWindow!.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
+        menu?.AsMenuItem().Click();
+
+        // Small delay for menu to open
+        Thread.Sleep(100);
+
+        // Click subsequent items
+        for (int i = 1; i < menuPath.Length; i++)
+        {
+            var item = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+            item?.AsMenuItem().Click();
+            Thread.Sleep(50);
+        }
+    }
+
+    /// <summary>
+    /// Sends keyboard shortcut to the application.
+    /// </summary>
+    protected void SendKeys(string keys)
+    {
+        FlaUI.Core.Input.Keyboard.Type(keys);
     }
 
     /// <summary>
