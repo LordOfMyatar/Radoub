@@ -24,6 +24,13 @@ Improving sound browser usability with location override and mono audio filterin
 **Additional Work**:
 - Add location override (browse...) to Sound Browser (same pattern as Script Browser)
 
+**Completed**:
+- Added mono-only filter checkbox (default ON) - shows only conversation-compatible sounds
+- Stereo files now show as errors (not just warnings) for dialog use
+- Added location override row with browse.../reset buttons
+- Show ⚠️ stereo indicator in file list when filter is disabled
+- Added `IsMonoWav()` and `GetWavChannelCount()` helpers to SoundValidator
+
 ---
 
 ## [0.1.27-alpha] - 2025-11-25
