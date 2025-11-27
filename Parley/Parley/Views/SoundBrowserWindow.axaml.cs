@@ -18,18 +18,16 @@ namespace DialogEditor.Views
         public string FileName { get; set; } = "";
         public string FullPath { get; set; } = "";
         public bool IsMono { get; set; } = true;
-        public string Category { get; set; } = "";
     }
 
     public partial class SoundBrowserWindow : Window
     {
         private readonly SoundService _soundService;
         private readonly AudioService _audioService;
-        private Dictionary<string, List<SoundFileInfo>> _allSounds;
+        private List<SoundFileInfo> _allSounds;
         private List<SoundFileInfo> _filteredSounds;
         private string? _selectedSound;
         private string? _selectedSoundPath;
-        private string _currentCategory = "Ambient";
         private string? _overridePath;
         private readonly string? _dialogFilePath;
 
@@ -45,7 +43,7 @@ namespace DialogEditor.Views
             InitializeComponent();
             _soundService = new SoundService(SettingsService.Instance);
             _audioService = new AudioService();
-            _allSounds = new Dictionary<string, List<SoundFileInfo>>();
+            _allSounds = new List<SoundFileInfo>();
             _filteredSounds = new List<SoundFileInfo>();
             _dialogFilePath = dialogFilePath;
 
@@ -132,18 +130,12 @@ namespace DialogEditor.Views
         {
             try
             {
-                _allSounds = new Dictionary<string, List<SoundFileInfo>>
-                {
-                    ["Ambient"] = new List<SoundFileInfo>(),
-                    ["Dialog"] = new List<SoundFileInfo>(),
-                    ["Music"] = new List<SoundFileInfo>(),
-                    ["Soundset"] = new List<SoundFileInfo>()
-                };
+                _allSounds = new List<SoundFileInfo>();
 
                 if (!string.IsNullOrEmpty(_overridePath))
                 {
                     // Override mode: scan custom path for all sounds
-                    ScanPathForSounds(_overridePath, "Custom");
+                    ScanPathForSounds(_overridePath);
                 }
                 else
                 {
@@ -159,39 +151,33 @@ namespace DialogEditor.Views
 
                     if (!Directory.Exists(basePath))
                     {
-                        FileCountLabel.Text = $"⚠ Game path not found - use browse...";
+                        FileCountLabel.Text = "⚠ Game path not found - use browse...";
                         FileCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
                         UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound Browser: Game path does not exist: {UnifiedLogger.SanitizePath(basePath)}");
                         return;
                     }
 
-                    // Scan standard game paths
+                    // Scan user path
                     var userPath = SettingsService.Instance.NeverwinterNightsPath;
                     if (!string.IsNullOrEmpty(userPath) && Directory.Exists(userPath))
                     {
-                        ScanCategorizedPath(userPath);
+                        ScanAllSoundFolders(userPath);
                     }
 
-                    ScanCategorizedPath(basePath);
+                    // Scan game installation
+                    ScanAllSoundFolders(basePath);
                     var dataPath = Path.Combine(basePath, "data");
                     if (Directory.Exists(dataPath))
                     {
-                        ScanCategorizedPath(dataPath, useAbbreviations: true);
+                        ScanAllSoundFolders(dataPath);
                     }
                 }
 
-                var totalSounds = _allSounds.Values.Sum(list => list.Count);
-                if (totalSounds == 0)
+                if (_allSounds.Count == 0)
                 {
                     FileCountLabel.Text = "⚠ No sound files found. Use browse... to select a folder with .wav files.";
                     FileCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
                     UnifiedLogger.LogApplication(LogLevel.WARN, "No sound files found");
-                }
-
-                // Select first category by default
-                if (CategoryListBox.SelectedIndex == -1)
-                {
-                    CategoryListBox.SelectedIndex = 0;
                 }
 
                 UpdateSoundList();
@@ -204,32 +190,21 @@ namespace DialogEditor.Views
             }
         }
 
-        private void ScanCategorizedPath(string basePath, bool useAbbreviations = false)
+        private void ScanAllSoundFolders(string basePath)
         {
-            ScanCategoryFolder(basePath, "ambient", useAbbreviations ? "amb" : null, "Ambient");
-            ScanCategoryFolder(basePath, "dialog", useAbbreviations ? "dlg" : null, "Dialog");
-            ScanCategoryFolder(basePath, "music", useAbbreviations ? "mus" : null, "Music");
-            ScanCategoryFolder(basePath, "soundset", useAbbreviations ? "sts" : null, "Soundset");
-        }
-
-        private void ScanCategoryFolder(string basePath, string folderName, string? abbreviation, string category)
-        {
-            var folder = Path.Combine(basePath, folderName);
-            if (Directory.Exists(folder))
+            // Scan known NWN sound folders
+            var soundFolders = new[] { "ambient", "amb", "dialog", "dlg", "music", "mus", "soundset", "sts" };
+            foreach (var folder in soundFolders)
             {
-                ScanPathForSounds(folder, category);
-            }
-            if (abbreviation != null)
-            {
-                var abbrevFolder = Path.Combine(basePath, abbreviation);
-                if (Directory.Exists(abbrevFolder))
+                var fullPath = Path.Combine(basePath, folder);
+                if (Directory.Exists(fullPath))
                 {
-                    ScanPathForSounds(abbrevFolder, category);
+                    ScanPathForSounds(fullPath);
                 }
             }
         }
 
-        private void ScanPathForSounds(string path, string category)
+        private void ScanPathForSounds(string path)
         {
             try
             {
@@ -239,36 +214,19 @@ namespace DialogEditor.Views
                     var fileName = Path.GetFileName(file);
                     var isMono = SoundValidator.IsMonoWav(file);
 
-                    // Check if already exists
-                    var targetCategory = category == "Custom" ? "Ambient" : category;
-                    if (!_allSounds[targetCategory].Any(s => s.FileName == fileName))
+                    // Check if already exists (avoid duplicates)
+                    if (!_allSounds.Any(s => s.FileName == fileName))
                     {
-                        _allSounds[targetCategory].Add(new SoundFileInfo
+                        _allSounds.Add(new SoundFileInfo
                         {
                             FileName = fileName,
                             FullPath = file,
-                            IsMono = isMono,
-                            Category = targetCategory
+                            IsMono = isMono
                         });
                     }
                 }
 
-                var bmuFiles = Directory.GetFiles(path, "*.bmu", SearchOption.TopDirectoryOnly);
-                foreach (var file in bmuFiles)
-                {
-                    var fileName = Path.GetFileName(file);
-                    var targetCategory = category == "Custom" ? "Music" : category;
-                    if (!_allSounds[targetCategory].Any(s => s.FileName == fileName))
-                    {
-                        _allSounds[targetCategory].Add(new SoundFileInfo
-                        {
-                            FileName = fileName,
-                            FullPath = file,
-                            IsMono = false, // BMU is music format, not compatible with conversations
-                            Category = targetCategory
-                        });
-                    }
-                }
+                // Don't scan for BMU files - they're music format, not usable in conversations
             }
             catch (Exception ex)
             {
@@ -276,32 +234,11 @@ namespace DialogEditor.Views
             }
         }
 
-        private void OnCategorySelected(object? sender, SelectionChangedEventArgs e)
-        {
-            if (CategoryListBox.SelectedItem is ListBoxItem item)
-            {
-                _currentCategory = item.Content?.ToString() ?? "Ambient";
-                UpdateSoundList();
-            }
-        }
-
         private void UpdateSoundList()
         {
             SoundListBox.Items.Clear();
 
-            List<SoundFileInfo> soundsToDisplay;
-
-            if (_currentCategory == "Recent")
-            {
-                // Recent sounds not yet implemented with SoundFileInfo
-                soundsToDisplay = new List<SoundFileInfo>();
-            }
-            else
-            {
-                soundsToDisplay = _allSounds.ContainsKey(_currentCategory)
-                    ? _allSounds[_currentCategory]
-                    : new List<SoundFileInfo>();
-            }
+            var soundsToDisplay = _allSounds.ToList();
 
             // Apply mono filter if checkbox is checked
             var monoOnly = MonoOnlyCheckBox?.IsChecked == true;
