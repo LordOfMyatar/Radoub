@@ -6,6 +6,7 @@ namespace Radoub.UITests.Parley;
 /// <summary>
 /// Basic smoke tests to verify Parley launches and responds.
 /// </summary>
+[Collection("ParleySequential")]
 public class SmokeTests : ParleyTestBase
 {
     [Fact]

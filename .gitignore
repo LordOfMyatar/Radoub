@@ -30,3 +30,5 @@ Desktop.ini
 ~$*
 /.claude/settings.local.json
 NonPublic
+TestOutput
+/Radoub.UITests/TestOutput
