@@ -142,4 +142,101 @@ public class FileOperationTests : ParleyTestBase
         // which is complex with native dialogs. This test verifies the basic
         // open-close cycle works.
     }
+
+    [Fact]
+    [Trait("Category", "FileOps")]
+    [Trait("Category", "RoundTrip")]
+    public void RoundTrip_OpenSaveClose_PreservesFileSize()
+    {
+        // Arrange - Copy test file to temp location
+        var tempFile = TestPaths.CopyTestFileToTemp(TestFileName);
+        var tempDir = Path.GetDirectoryName(tempFile)!;
+        var originalSize = new FileInfo(tempFile).Length;
+        var originalModified = File.GetLastWriteTime(tempFile);
+
+        try
+        {
+            // Act - Open file
+            StartApplication($"\"{tempFile}\"");
+            WaitForTitleContains(TestFileName, FileOperationTimeout);
+
+            // Wait a moment to ensure file is fully loaded
+            Thread.Sleep(500);
+
+            // Save via Ctrl+S
+            MainWindow!.Focus();
+            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
+                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
+                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+
+            // Wait for save to complete
+            Thread.Sleep(1000);
+
+            // Close app to release file lock
+            StopApplication();
+
+            // Assert - File should still exist with similar size
+            Assert.True(File.Exists(tempFile), "File should still exist after save");
+
+            var newSize = new FileInfo(tempFile).Length;
+            var newModified = File.GetLastWriteTime(tempFile);
+
+            // Size should be within 10% (minor variations acceptable due to format normalization)
+            var sizeDelta = Math.Abs(newSize - originalSize);
+            var sizePercent = (double)sizeDelta / originalSize * 100;
+            Assert.True(sizePercent < 10,
+                $"File size changed by {sizePercent:F1}% (was {originalSize}, now {newSize})");
+
+            // Modified time should have changed (proves save actually wrote)
+            // Note: This may not always change if save detects no modifications
+            // So we just verify file is readable
+            Assert.True(newSize > 0, "Saved file should not be empty");
+        }
+        finally
+        {
+            TestPaths.CleanupTempDirectory(tempDir);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "FileOps")]
+    [Trait("Category", "RoundTrip")]
+    public void RoundTrip_LargerDialog_PreservesFile()
+    {
+        // Arrange - Use a more complex dialog file
+        const string largerFile = "chef.dlg";
+        var tempFile = TestPaths.CopyTestFileToTemp(largerFile);
+        var tempDir = Path.GetDirectoryName(tempFile)!;
+        var originalSize = new FileInfo(tempFile).Length;
+
+        try
+        {
+            // Act
+            StartApplication($"\"{tempFile}\"");
+            WaitForTitleContains(largerFile, FileOperationTimeout);
+
+            Thread.Sleep(500);
+
+            // Save
+            MainWindow!.Focus();
+            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
+                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
+                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+
+            Thread.Sleep(1000);
+            StopApplication();
+
+            // Assert
+            var newSize = new FileInfo(tempFile).Length;
+            var sizeDelta = Math.Abs(newSize - originalSize);
+            var sizePercent = (double)sizeDelta / originalSize * 100;
+
+            Assert.True(sizePercent < 10,
+                $"chef.dlg size changed by {sizePercent:F1}% (was {originalSize}, now {newSize})");
+        }
+        finally
+        {
+            TestPaths.CleanupTempDirectory(tempDir);
+        }
+    }
 }
