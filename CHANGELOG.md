@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.2.0] - TBD
+## [0.2.0] - 2025-11-27
 **Branch**: `radoub/feat/issue-170-erf-hak` | **PR**: #201
 
 ### Epic #170: Aurora Game Resource Reading Infrastructure (Phase 2)
