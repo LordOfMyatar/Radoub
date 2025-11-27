@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -154,17 +155,26 @@ namespace DialogEditor.Views
             UpdateSoundList();
         }
 
-        private void LoadSounds()
+        private async void LoadSounds()
+        {
+            await LoadSoundsAsync();
+        }
+
+        private async Task LoadSoundsAsync()
         {
             try
             {
                 _allSounds = new List<SoundFileInfo>();
 
+                // Show loading indicator
+                FileCountLabel.Text = "Loading sounds...";
+                FileCountLabel.Foreground = new SolidColorBrush(Colors.Gray);
+
                 if (!string.IsNullOrEmpty(_overridePath))
                 {
                     // Override mode: scan custom path for all sounds and HAKs
                     ScanPathForSounds(_overridePath, "Override");
-                    ScanPathForHaks(_overridePath);
+                    await ScanPathForHaksAsync(_overridePath);
                 }
                 else
                 {
@@ -205,7 +215,7 @@ namespace DialogEditor.Views
                         var dialogDir = Path.GetDirectoryName(_dialogFilePath);
                         if (!string.IsNullOrEmpty(dialogDir) && Directory.Exists(dialogDir))
                         {
-                            ScanPathForHaks(dialogDir);
+                            await ScanPathForHaksAsync(dialogDir);
                         }
                     }
 
@@ -235,7 +245,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private void ScanPathForHaks(string path)
+        private async Task ScanPathForHaksAsync(string path)
         {
             try
             {
@@ -243,9 +253,17 @@ namespace DialogEditor.Views
                     return;
 
                 var hakFiles = Directory.GetFiles(path, "*.hak", SearchOption.TopDirectoryOnly);
-                foreach (var hakFile in hakFiles)
+
+                for (int i = 0; i < hakFiles.Length; i++)
                 {
-                    ScanHakForSounds(hakFile);
+                    var hakFile = hakFiles[i];
+                    var hakName = Path.GetFileName(hakFile);
+
+                    // Update progress on UI thread
+                    FileCountLabel.Text = $"Loading HAK {i + 1}/{hakFiles.Length}: {hakName}...";
+
+                    // Scan HAK on background thread to avoid blocking UI
+                    await Task.Run(() => ScanHakForSounds(hakFile));
                 }
             }
             catch (Exception ex)
