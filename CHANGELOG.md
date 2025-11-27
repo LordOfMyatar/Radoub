@@ -11,6 +11,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.2.0] - TBD
+**Branch**: `radoub/feat/issue-170-erf-hak` | **PR**: #TBD
+
+### Epic #170: Aurora Game Resource Reading Infrastructure (Phase 2)
+
+ERF/HAK file reading support for Aurora Engine resource archives.
+
+---
+
 ### Documentation (PR #183)
 
 Split large BioWare format documentation into chapter-based files for easier reading and reference.
