@@ -115,8 +115,10 @@ public static class ErfReader
             if (resOffset + ResourceEntrySize > buffer.Length)
                 throw new InvalidDataException($"Resource entry {i} extends beyond file boundary");
 
-            // Read key entry
-            var resRef = Encoding.ASCII.GetString(buffer, keyOffset, 16).TrimEnd('\0');
+            // Read key entry - trim nulls and any garbage after first null
+            var rawResRef = Encoding.ASCII.GetString(buffer, keyOffset, 16);
+            var nullIndex = rawResRef.IndexOf('\0');
+            var resRef = nullIndex >= 0 ? rawResRef.Substring(0, nullIndex) : rawResRef;
             var resId = BitConverter.ToUInt32(buffer, keyOffset + 16);
             var resourceType = BitConverter.ToUInt16(buffer, keyOffset + 20);
             // Bytes 22-23: Unused (2 bytes)

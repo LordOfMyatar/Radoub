@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
+using System;
+using System.IO;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
@@ -18,6 +20,9 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+
+        // Clean up any leftover temp files from previous sessions (fire-and-forget)
+        _ = System.Threading.Tasks.Task.Run(CleanupSoundBrowserTempFiles);
 
         // Check for safe mode (command line)
         // Note: Safe mode already backed up config folder in Program.cs,
@@ -164,6 +169,59 @@ public partial class App : Application
         foreach (var plugin in dataValidationPluginsToRemove)
         {
             BindingPlugins.DataValidators.Remove(plugin);
+        }
+    }
+
+    /// <summary>
+    /// Clean up leftover temp files from Sound Browser (from previous sessions or crashes).
+    /// Files: pv_*.wav (validation) and ps_*.wav (playback)
+    /// </summary>
+    private static void CleanupSoundBrowserTempFiles()
+    {
+        try
+        {
+            var tempDir = Path.GetTempPath();
+            var deletedCount = 0;
+
+            // Clean up validation temp files (pv_*.wav)
+            foreach (var file in Directory.GetFiles(tempDir, "pv_*.wav"))
+            {
+                try
+                {
+                    File.Delete(file);
+                    deletedCount++;
+                }
+                catch
+                {
+                    // File may be in use, skip
+                }
+            }
+
+            // Clean up playback temp files (ps_*.wav)
+            foreach (var file in Directory.GetFiles(tempDir, "ps_*.wav"))
+            {
+                try
+                {
+                    File.Delete(file);
+                    deletedCount++;
+                }
+                catch
+                {
+                    // File may be in use, skip
+                }
+            }
+
+            if (deletedCount > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Cleaned up {deletedCount} leftover Sound Browser temp file(s)");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Non-critical - log and continue
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Could not clean up Sound Browser temp files: {ex.Message}");
         }
     }
 }

@@ -32,44 +32,51 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Location Override Row -->
-        <Grid Grid.Row="0" Margin="0,0,0,5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Grid.Column="0"
-                       Text="Location:"
+        <!-- Source Selection Row -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5" Spacing="15">
+            <TextBlock Text="Sources:"
                        VerticalAlignment="Center"
-                       Margin="0,0,8,0"
                        FontSize="11"/>
-            <TextBlock Grid.Column="1"
-                       x:Name="LocationPathLabel"
-                       Text="(auto-detected)"
+            <CheckBox x:Name="IncludeGameResourcesCheckBox"
+                      Content="Game resources"
+                      FontSize="11"
+                      IsChecked="True"
+                      ToolTip.Tip="Include sounds from base game folders"
+                      Checked="OnSourceSelectionChanged"
+                      Unchecked="OnSourceSelectionChanged"/>
+            <CheckBox x:Name="IncludeHakFolderCheckBox"
+                      Content="HAK files"
+                      FontSize="11"
+                      IsChecked="True"
+                      ToolTip.Tip="Include sounds from HAK files in dialog directory"
+                      Checked="OnSourceSelectionChanged"
+                      Unchecked="OnSourceSelectionChanged"/>
+            <CheckBox x:Name="IncludeOtherLocationCheckBox"
+                      Content="Other location"
+                      FontSize="11"
+                      IsChecked="False"
+                      ToolTip.Tip="Browse for sounds in a custom folder"
+                      Checked="OnOtherLocationToggled"
+                      Unchecked="OnOtherLocationToggled"/>
+            <Button x:Name="BrowseLocationButton"
+                    Content="browse..."
+                    FontSize="11"
+                    Padding="8,2"
+                    IsEnabled="False"
+                    Click="OnBrowseLocationClick"/>
+            <TextBlock x:Name="OtherLocationLabel"
+                       Text=""
                        VerticalAlignment="Center"
-                       FontSize="11"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                       TextTrimming="CharacterEllipsis"/>
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
-                <Button x:Name="ResetLocationButton"
-                        Content="reset"
-                        FontSize="11"
-                        Padding="8,2"
-                        IsVisible="False"
-                        Click="OnResetLocationClick"/>
-                <Button x:Name="BrowseLocationButton"
-                        Content="browse..."
-                        FontSize="11"
-                        Padding="8,2"
-                        Click="OnBrowseLocationClick"/>
-            </StackPanel>
-        </Grid>
+                       FontSize="10"
+                       Foreground="Gray"
+                       TextTrimming="CharacterEllipsis"
+                       MaxWidth="150"/>
+        </StackPanel>
 
         <!-- Filter Row -->
         <Grid Grid.Row="1" Margin="0,0,0,5">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -77,13 +84,20 @@
 
             <CheckBox Grid.Column="0"
                       x:Name="MonoOnlyCheckBox"
-                      Content="Show only mono (conversation-compatible)"
+                      Content="Mono only"
                       FontSize="11"
                       IsChecked="True"
+                      ToolTip.Tip="Show only mono sounds (conversation-compatible)"
                       Checked="OnMonoFilterChanged"
                       Unchecked="OnMonoFilterChanged"/>
-            <TextBlock Grid.Column="2"
-                       Text="📦 = from HAK file"
+            <CheckBox Grid.Column="1"
+                      x:Name="DisableValidationCheckBox"
+                      Content="Skip HAK validation"
+                      FontSize="11"
+                      Margin="15,0,0,0"
+                      ToolTip.Tip="Disable on-selection format validation for HAK sounds (faster for large HAK collections)"/>
+            <TextBlock Grid.Column="3"
+                       Text="📦 = from HAK"
                        FontSize="10"
                        Foreground="LightBlue"
                        VerticalAlignment="Center"/>
@@ -111,9 +125,11 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- File Count Header -->
+                <!-- File Count Header / Status -->
                 <TextBlock Grid.Row="0" x:Name="FileCountLabel"
                            Text="0 sounds"
+                           TextWrapping="Wrap"
+                           MaxHeight="40"
                            Margin="0,0,0,5"/>
 
                 <!-- Files ListBox -->
