@@ -10,6 +10,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.28-alpha] - 2025-11-27
+**Branch**: `parley/feat/sprint-185-sound-browser` | **PR**: #200
+
+### Sound Browser & Audio Sprint (#185)
+
+Improving sound browser usability with location override and mono audio filtering.
+
+**Child Issues**:
+- #167 - Filter mono-only WAV files in Sound browser for conversation compatibility
+- #168 - Sound browser should search HAK files (deferred to Epic #170)
+
+**Additional Work**:
+- Add location override (browse...) to Sound Browser (same pattern as Script Browser)
+
+**Completed**:
+- Added mono-only filter checkbox (default ON) - shows only conversation-compatible sounds
+- Stereo files now show as errors (not just warnings) for dialog use
+- Added location override row with browse.../reset buttons
+- Show ⚠️ stereo indicator in file list when filter is disabled
+- Added `IsMonoWav()` and `GetWavChannelCount()` helpers to SoundValidator
+
+---
+
 ## [0.1.27-alpha] - 2025-11-25
 **Branch**: `parley/feat/script-browser-sprint` | **PR**: #198
 

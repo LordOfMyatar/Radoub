@@ -52,10 +52,15 @@ namespace DialogEditor.Services
                         result.Warnings.Add($"Sample rate {wavInfo.SampleRate} Hz - NWN recommends 44,100 or 41,000 Hz");
                     }
 
-                    // Channel check
+                    // Track channel info
+                    result.Channels = wavInfo.Channels;
+                    result.IsMono = wavInfo.Channels == 1;
+
+                    // Channel check - stereo is NOT COMPATIBLE with NWN conversations
                     if (isVoiceOrSfx && wavInfo.Channels > 1)
                     {
-                        result.Warnings.Add("Stereo detected - NWN recommends mono for voice/sound effects");
+                        result.Errors.Add("⚠️ Stereo - not compatible with conversations");
+                        result.IsValid = false;
                     }
 
                     // Format check
@@ -87,6 +92,41 @@ namespace DialogEditor.Services
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Quick check if a WAV file is mono (compatible with NWN conversations).
+        /// Returns true if mono or if format cannot be determined.
+        /// </summary>
+        public static bool IsMonoWav(string filePath)
+        {
+            try
+            {
+                var info = AnalyzeWavFile(filePath);
+                return info.Channels == 1;
+            }
+            catch
+            {
+                // If we can't read it, assume mono (let user decide)
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Get channel count of a WAV file (1=mono, 2=stereo).
+        /// Returns 1 if format cannot be determined.
+        /// </summary>
+        public static int GetWavChannelCount(string filePath)
+        {
+            try
+            {
+                var info = AnalyzeWavFile(filePath);
+                return info.Channels;
+            }
+            catch
+            {
+                return 1;
+            }
         }
 
         /// <summary>
@@ -134,6 +174,17 @@ namespace DialogEditor.Services
         public System.Collections.Generic.List<string> Errors { get; set; } = new();
         public System.Collections.Generic.List<string> Warnings { get; set; } = new();
         public string FormatInfo { get; set; } = "";
+
+        /// <summary>
+        /// True if this is a mono audio file (or if channel count couldn't be determined).
+        /// Stereo files are NOT compatible with NWN conversations.
+        /// </summary>
+        public bool IsMono { get; set; } = true;
+
+        /// <summary>
+        /// Number of audio channels (1=mono, 2=stereo).
+        /// </summary>
+        public int Channels { get; set; } = 1;
 
         public bool HasIssues => Errors.Count > 0 || Warnings.Count > 0;
     }
