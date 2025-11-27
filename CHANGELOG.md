@@ -20,6 +20,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ERF/HAK file reading support for Aurora Engine resource archives.
 
+**Added**:
+- `ErfFile` - Data model for ERF, HAK, MOD, SAV, NWM files
+- `ErfReader` - Parser for ERF format files
+- `ErfLocalizedString` - Localized description string support
+- `ErfResourceEntry` - Resource metadata with offset/size tracking
+- `ExtractResource()` - Extract individual resources from ERF archives
+- 22 unit tests for ERF/HAK reading
+
 ---
 
 ### Documentation (PR #183)
