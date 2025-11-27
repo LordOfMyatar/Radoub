@@ -1,0 +1,59 @@
+name: Radoub.Formats PR Test Suite
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Radoub.Formats/**'
+      - '.github/workflows/formats-pr-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'Radoub.Formats/**'
+      - '.github/workflows/formats-pr-tests.yml'
+
+jobs:
+  test:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Radoub.Formats.sln
+      working-directory: ./Radoub.Formats
+
+    - name: Build solution
+      run: dotnet build Radoub.Formats.sln --configuration Release --no-restore
+      working-directory: ./Radoub.Formats
+
+    - name: Run tests
+      run: dotnet test Radoub.Formats.Tests/Radoub.Formats.Tests.csproj --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=normal"
+      working-directory: ./Radoub.Formats
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: formats-test-results
+        path: ./Radoub.Formats/Radoub.Formats.Tests/TestResults/test-results.trx
+        retention-days: 30
+
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Formats Test Results
+        path: './Radoub.Formats/Radoub.Formats.Tests/TestResults/test-results.trx'
+        reporter: dotnet-trx
+        fail-on-error: true

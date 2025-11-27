@@ -12,6 +12,10 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 
 - **Parley**: Dialog editor (`.dlg` files) - See `Parley/CLAUDE.md` for tool-specific guidance
 
+### Shared Libraries
+
+- **Radoub.Formats**: Aurora Engine file format parsers (KEY, BIF, etc.) - Shared library for all tools
+
 ### Planned Tools
 
 Future tools will be added as subdirectories with their own README, CLAUDE.md, and development infrastructure.
@@ -42,6 +46,10 @@ Radoub/
 │   ├── TestingTools/
 │   ├── Documentation/ (Approved Parley-specific docs)
 │   ├── NonPublic/ (To be approved documents)
+├── Radoub.Formats/ (shared library)
+│   ├── Radoub.Formats.sln
+│   ├── Radoub.Formats/ (source code)
+│   └── Radoub.Formats.Tests/ (unit tests)
 └── [Future tools will be added here]
 ```
 
@@ -238,6 +246,7 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 |-----------|----------|----------|
 | **Radoub** | `CHANGELOG.md` | Repository-level changes: shared documentation, slash commands, cross-tool features |
 | **Parley** | `Parley/CHANGELOG.md` | Parley-specific changes: features, fixes, UI updates |
+| **Formats** | N/A (use Radoub) | Radoub.Formats is a shared library; changes go in Radoub CHANGELOG |
 
 **Rules**:
 - Tool-specific changes go in tool CHANGELOG only
@@ -342,9 +351,43 @@ ShowToastNotification("Plugin started", 3000);
 
 ---
 
+## Aurora File Format Implementation
+
+**Reference Strategy** for implementing Aurora Engine file parsers (GFF, ERF, KEY, BIF, TLK, 2DA, SSF):
+
+**PRIMARY Reference**: [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT License)
+- Official NWN:EE tooling, maintained by Beamdog developer
+- Battle-tested with 20+ years of real-world edge cases
+- Fuzz-validated against malformed files
+- Community-used and trusted
+
+**SECONDARY Reference**: BioWare Aurora Specifications (`Documentation/`)
+- Use for understanding structure and design intent
+- Specs are 20 years old and may not reflect modern edge cases
+- Good for "why" questions, not "how to handle X" questions
+
+**Implementation Approach**:
+1. Write parsers in C# (native to Radoub toolset)
+2. Follow neverwinter.nim's edge case handling and validation patterns
+3. Use BioWare specs to understand field purposes and structure
+4. Test against same edge cases Nim handles
+
+**Attribution Requirement**:
+- Must credit `niv/neverwinter.nim` in code comments and documentation
+- MIT license requires copyright notice preservation
+
+**Why This Matters**:
+- BioWare specs describe "ideal" format, not real-world variations
+- Community tools have discovered undocumented quirks over 20 years
+- Nim's fuzz testing caught issues specs never anticipated
+- Implementing purely from specs leads to mysterious failures
+
+---
+
 ## Resources
 
 - **BioWare Aurora Specs**: `Documentation/`
+- **neverwinter.nim Reference**: https://github.com/niv/neverwinter.nim
 - **Project History**: `About/CLAUDE_DEVELOPMENT_TIMELINE.md`
 - **AI Collaboration Story**: `About/ON_USING_CLAUDE.md`
 - **Tool-Specific Guidance**: `ToolName/CLAUDE.md`
