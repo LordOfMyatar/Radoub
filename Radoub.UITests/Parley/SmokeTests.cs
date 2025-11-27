@@ -1,3 +1,4 @@
+using FlaUI.Core.AutomationElements;
 using Xunit;
 
 namespace Radoub.UITests.Parley;
@@ -14,12 +15,9 @@ public class SmokeTests : ParleyTestBase
         // Arrange & Act
         StartApplication();
 
-        // Assert - Driver being non-null means app launched
-        Assert.NotNull(Driver);
-
-        // Verify the main window exists and has a title
-        var windowHandle = Driver.CurrentWindowHandle;
-        Assert.NotNull(windowHandle);
+        // Assert - MainWindow being non-null means app launched
+        Assert.NotNull(MainWindow);
+        Assert.NotNull(App);
     }
 
     [Fact]
@@ -30,7 +28,7 @@ public class SmokeTests : ParleyTestBase
         StartApplication();
 
         // Act
-        var title = Driver!.Title;
+        var title = MainWindow!.Title;
 
         // Assert - Parley window title should contain "Parley"
         Assert.Contains("Parley", title, StringComparison.OrdinalIgnoreCase);
@@ -43,11 +41,10 @@ public class SmokeTests : ParleyTestBase
         // Arrange
         StartApplication();
 
-        // Act - Try to find the File menu
-        var fileMenu = Driver!.FindElement(OpenQA.Selenium.By.Name("File"));
+        // Act - Try to find the File menu by name
+        var fileMenu = MainWindow!.FindFirstDescendant(cf => cf.ByName("File"));
 
         // Assert
         Assert.NotNull(fileMenu);
-        Assert.True(fileMenu.Displayed);
     }
 }

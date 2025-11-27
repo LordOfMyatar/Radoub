@@ -18,12 +18,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Issue #90: Automated GUI Testing Infrastructure
 
-Appium-based GUI testing framework for Radoub tools.
+FlaUI-based GUI testing framework for Radoub tools.
 
 **Added**:
 - `Radoub.UITests` project - Shared GUI test infrastructure
-- WinAppDriver/Appium integration for Windows desktop testing
-- Basic Parley launch smoke test
+- FlaUI integration for Windows desktop testing (no external dependencies)
+- Basic Parley launch smoke tests
 
 ---
 
