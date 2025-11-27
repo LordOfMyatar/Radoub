@@ -1,6 +1,10 @@
 # Radoub Toolset .gitignore
 # Root-level gitignore for multi-tool repository
 
+# Build Output
+[Bb]in/
+[Oo]bj/
+
 # OS Generated Files
 .DS_Store
 .DS_Store?

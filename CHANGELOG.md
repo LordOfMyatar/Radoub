@@ -13,6 +13,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.0] - TBD
+**Branch**: `radoub/feat/issue-90-gui-testing` | **PR**: #TBD
+
+### Issue #90: Automated GUI Testing Infrastructure
+
+Appium-based GUI testing framework for Radoub tools.
+
+**Added**:
+- `Radoub.UITests` project - Shared GUI test infrastructure
+- WinAppDriver/Appium integration for Windows desktop testing
+- Basic Parley launch smoke test
+
+---
+
 ## [0.2.0] - 2025-11-27
 **Branch**: `radoub/feat/issue-170-erf-hak` | **PR**: #201
 
