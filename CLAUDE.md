@@ -12,6 +12,10 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 
 - **Parley**: Dialog editor (`.dlg` files) - See `Parley/CLAUDE.md` for tool-specific guidance
 
+### Shared Libraries
+
+- **Radoub.Formats**: Aurora Engine file format parsers (KEY, BIF, etc.) - Shared library for all tools
+
 ### Planned Tools
 
 Future tools will be added as subdirectories with their own README, CLAUDE.md, and development infrastructure.
@@ -42,6 +46,10 @@ Radoub/
 │   ├── TestingTools/
 │   ├── Documentation/ (Approved Parley-specific docs)
 │   ├── NonPublic/ (To be approved documents)
+├── Radoub.Formats/ (shared library)
+│   ├── Radoub.Formats.sln
+│   ├── Radoub.Formats/ (source code)
+│   └── Radoub.Formats.Tests/ (unit tests)
 └── [Future tools will be added here]
 ```
 
@@ -238,6 +246,7 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 |-----------|----------|----------|
 | **Radoub** | `CHANGELOG.md` | Repository-level changes: shared documentation, slash commands, cross-tool features |
 | **Parley** | `Parley/CHANGELOG.md` | Parley-specific changes: features, fixes, UI updates |
+| **Formats** | N/A (use Radoub) | Radoub.Formats is a shared library; changes go in Radoub CHANGELOG |
 
 **Rules**:
 - Tool-specific changes go in tool CHANGELOG only
