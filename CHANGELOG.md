@@ -11,6 +11,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.2.0] - 2025-11-27
+**Branch**: `radoub/feat/issue-170-erf-hak` | **PR**: #201
+
+### Epic #170: Aurora Game Resource Reading Infrastructure (Phase 2)
+
+ERF/HAK file reading support for Aurora Engine resource archives.
+
+**Added**:
+- `ErfFile` - Data model for ERF, HAK, MOD, SAV, NWM files
+- `ErfReader` - Parser for ERF format files
+- `ErfLocalizedString` - Localized description string support
+- `ErfResourceEntry` - Resource metadata with offset/size tracking
+- `ExtractResource()` - Extract individual resources from ERF archives
+- 22 unit tests for ERF/HAK reading
+
+---
+
 ### Documentation (PR #183)
 
 Split large BioWare format documentation into chapter-based files for easier reading and reference.
