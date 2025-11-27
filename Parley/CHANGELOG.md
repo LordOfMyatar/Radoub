@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.28-alpha] - TBD
+## [0.1.28-alpha] - 2025-11-27
 **Branch**: `parley/feat/sprint-185-sound-browser` | **PR**: #200
 
 ### Sound Browser & Audio Sprint (#185)
