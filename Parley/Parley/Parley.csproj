@@ -65,4 +65,8 @@
     </PackageReference>
     <PackageReference Include="Google.Protobuf" Version="3.29.3" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Radoub.Formats\Radoub.Formats\Radoub.Formats.csproj" />
+  </ItemGroup>
 </Project>

@@ -7,17 +7,39 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using DialogEditor.Services;
+using Radoub.Formats.Common;
+using Radoub.Formats.Erf;
 
 namespace DialogEditor.Views
 {
     /// <summary>
-    /// Sound info with path and mono status for filtering.
+    /// Sound info with path/source and mono status for filtering.
     /// </summary>
     public class SoundFileInfo
     {
         public string FileName { get; set; } = "";
         public string FullPath { get; set; } = "";
         public bool IsMono { get; set; } = true;
+
+        /// <summary>
+        /// Source of the sound (e.g., "Override", "customsounds.hak", "Base Game").
+        /// </summary>
+        public string Source { get; set; } = "";
+
+        /// <summary>
+        /// If from HAK, the path to the HAK file.
+        /// </summary>
+        public string? HakPath { get; set; }
+
+        /// <summary>
+        /// If from HAK, the ERF resource entry for extraction.
+        /// </summary>
+        public ErfResourceEntry? ErfEntry { get; set; }
+
+        /// <summary>
+        /// True if this sound comes from a HAK file (requires extraction for playback).
+        /// </summary>
+        public bool IsFromHak => HakPath != null && ErfEntry != null;
     }
 
     public partial class SoundBrowserWindow : Window
@@ -30,6 +52,8 @@ namespace DialogEditor.Views
         private string? _selectedSoundPath;
         private string? _overridePath;
         private readonly string? _dialogFilePath;
+        private SoundFileInfo? _selectedSoundInfo;
+        private string? _tempExtractedPath; // For HAK sounds extracted for playback
 
         public string? SelectedSound => _selectedSound;
 
@@ -50,8 +74,12 @@ namespace DialogEditor.Views
             UpdateLocationDisplay();
             LoadSounds();
 
-            // Clean up audio on window close
-            Closing += (s, e) => _audioService.Dispose();
+            // Clean up audio and temp files on window close
+            Closing += (s, e) =>
+            {
+                _audioService.Dispose();
+                CleanupTempFile();
+            };
         }
 
         private void UpdateLocationDisplay()
@@ -134,12 +162,13 @@ namespace DialogEditor.Views
 
                 if (!string.IsNullOrEmpty(_overridePath))
                 {
-                    // Override mode: scan custom path for all sounds
-                    ScanPathForSounds(_overridePath);
+                    // Override mode: scan custom path for all sounds and HAKs
+                    ScanPathForSounds(_overridePath, "Override");
+                    ScanPathForHaks(_overridePath);
                 }
                 else
                 {
-                    // Default: use game paths
+                    // Default: use game paths with NWN resource priority
                     var basePath = SettingsService.Instance.BaseGameInstallPath;
                     if (string.IsNullOrEmpty(basePath))
                     {
@@ -157,14 +186,30 @@ namespace DialogEditor.Views
                         return;
                     }
 
-                    // Scan user path
+                    // NWN Resource Priority:
+                    // 1. Override folder (highest priority)
                     var userPath = SettingsService.Instance.NeverwinterNightsPath;
                     if (!string.IsNullOrEmpty(userPath) && Directory.Exists(userPath))
                     {
+                        var overrideFolder = Path.Combine(userPath, "override");
+                        if (Directory.Exists(overrideFolder))
+                        {
+                            ScanPathForSounds(overrideFolder, "Override");
+                        }
                         ScanAllSoundFolders(userPath);
                     }
 
-                    // Scan game installation
+                    // 2. HAK files (scan dialog directory for module-specific HAKs)
+                    if (!string.IsNullOrEmpty(_dialogFilePath))
+                    {
+                        var dialogDir = Path.GetDirectoryName(_dialogFilePath);
+                        if (!string.IsNullOrEmpty(dialogDir) && Directory.Exists(dialogDir))
+                        {
+                            ScanPathForHaks(dialogDir);
+                        }
+                    }
+
+                    // 3. Base game resources
                     ScanAllSoundFolders(basePath);
                     var dataPath = Path.Combine(basePath, "data");
                     if (Directory.Exists(dataPath))
@@ -190,6 +235,25 @@ namespace DialogEditor.Views
             }
         }
 
+        private void ScanPathForHaks(string path)
+        {
+            try
+            {
+                if (!Directory.Exists(path))
+                    return;
+
+                var hakFiles = Directory.GetFiles(path, "*.hak", SearchOption.TopDirectoryOnly);
+                foreach (var hakFile in hakFiles)
+                {
+                    ScanHakForSounds(hakFile);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning for HAKs in {path}: {ex.Message}");
+            }
+        }
+
         private void ScanAllSoundFolders(string basePath)
         {
             // Scan known NWN sound folders
@@ -204,7 +268,7 @@ namespace DialogEditor.Views
             }
         }
 
-        private void ScanPathForSounds(string path)
+        private void ScanPathForSounds(string path, string source = "")
         {
             try
             {
@@ -214,14 +278,15 @@ namespace DialogEditor.Views
                     var fileName = Path.GetFileName(file);
                     var isMono = SoundValidator.IsMonoWav(file);
 
-                    // Check if already exists (avoid duplicates)
-                    if (!_allSounds.Any(s => s.FileName == fileName))
+                    // Check if already exists (avoid duplicates - first found wins, per NWN resource priority)
+                    if (!_allSounds.Any(s => s.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)))
                     {
                         _allSounds.Add(new SoundFileInfo
                         {
                             FileName = fileName,
                             FullPath = file,
-                            IsMono = isMono
+                            IsMono = isMono,
+                            Source = string.IsNullOrEmpty(source) ? Path.GetFileName(path) : source
                         });
                     }
                 }
@@ -231,6 +296,46 @@ namespace DialogEditor.Views
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning {path}: {ex.Message}");
+            }
+        }
+
+        private void ScanHakForSounds(string hakPath)
+        {
+            try
+            {
+                var erf = ErfReader.Read(hakPath);
+                var hakFileName = Path.GetFileName(hakPath);
+
+                // Get all WAV resources
+                var wavResources = erf.GetResourcesByType(ResourceTypes.Wav);
+
+                foreach (var resource in wavResources)
+                {
+                    var fileName = $"{resource.ResRef}.wav";
+
+                    // Check if already exists (avoid duplicates - first found wins)
+                    if (!_allSounds.Any(s => s.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        // For HAK sounds, we can't easily check mono without extraction
+                        // Mark as unknown (true) - user can verify on selection
+                        _allSounds.Add(new SoundFileInfo
+                        {
+                            FileName = fileName,
+                            FullPath = hakPath, // Store HAK path for extraction
+                            IsMono = true, // Assume mono until verified
+                            Source = hakFileName,
+                            HakPath = hakPath,
+                            ErfEntry = resource
+                        });
+                    }
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Sound Browser: Found {wavResources.Count()} WAV resources in {hakFileName}");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning HAK {hakPath}: {ex.Message}");
             }
         }
 
@@ -263,24 +368,51 @@ namespace DialogEditor.Views
 
             foreach (var sound in soundsToDisplay)
             {
-                // Show stereo indicator if filter is off
-                var displayName = sound.IsMono ? sound.FileName : $"⚠️ {sound.FileName} (stereo)";
+                // Build display name with source and stereo indicator
+                var baseName = sound.FileName;
+                var sourceInfo = !string.IsNullOrEmpty(sound.Source) ? $" ({sound.Source})" : "";
+
+                string displayName;
+                IBrush foreground;
+
+                if (!sound.IsMono)
+                {
+                    displayName = $"⚠️ {baseName}{sourceInfo} [stereo]";
+                    foreground = new SolidColorBrush(Colors.Orange);
+                }
+                else if (sound.IsFromHak)
+                {
+                    displayName = $"📦 {baseName}{sourceInfo}";
+                    foreground = new SolidColorBrush(Colors.LightBlue);
+                }
+                else
+                {
+                    displayName = $"{baseName}{sourceInfo}";
+                    foreground = new SolidColorBrush(Colors.White);
+                }
+
                 SoundListBox.Items.Add(new ListBoxItem
                 {
                     Content = displayName,
                     Tag = sound,
-                    Foreground = sound.IsMono
-                        ? new SolidColorBrush(Colors.White)
-                        : new SolidColorBrush(Colors.Orange)
+                    Foreground = foreground
                 });
             }
 
+            // Build count text with HAK count
+            var hakCount = _filteredSounds.Count(s => s.IsFromHak);
             var stereoCount = _filteredSounds.Count(s => !s.IsMono);
             var countText = $"{soundsToDisplay.Count} sound{(soundsToDisplay.Count == 1 ? "" : "s")}";
+
+            var details = new List<string>();
+            if (hakCount > 0)
+                details.Add($"{hakCount} from HAK");
             if (!monoOnly && stereoCount > 0)
-            {
-                countText += $" ({stereoCount} stereo)";
-            }
+                details.Add($"{stereoCount} stereo");
+
+            if (details.Count > 0)
+                countText += $" ({string.Join(", ", details)})";
+
             FileCountLabel.Text = countText;
             FileCountLabel.Foreground = new SolidColorBrush(Colors.White);
         }
@@ -300,32 +432,44 @@ namespace DialogEditor.Views
                 soundInfo = info;
             }
 
+            _selectedSoundInfo = soundInfo;
+
             if (soundInfo != null)
             {
                 _selectedSound = soundInfo.FileName;
-                _selectedSoundPath = soundInfo.FullPath;
-                SelectedSoundLabel.Text = soundInfo.FileName;
+                _selectedSoundPath = soundInfo.IsFromHak ? null : soundInfo.FullPath;
+                SelectedSoundLabel.Text = soundInfo.IsFromHak
+                    ? $"{soundInfo.FileName} 📦"
+                    : soundInfo.FileName;
                 PlayButton.IsEnabled = true;
 
                 // Validate sound file format against NWN specs
                 try
                 {
-                    var validation = SoundValidator.Validate(soundInfo.FullPath, isVoiceOrSfx: true);
-
-                    if (validation.HasIssues)
+                    if (soundInfo.IsFromHak)
                     {
-                        var issues = string.Join(", ", validation.Errors.Concat(validation.Warnings));
-                        FileCountLabel.Text = validation.IsValid
-                            ? $"⚠ {issues}"
-                            : $"❌ {issues}";
-                        FileCountLabel.Foreground = validation.IsValid
-                            ? new SolidColorBrush(Colors.Orange)
-                            : new SolidColorBrush(Colors.Red);
+                        // For HAK sounds, extract temporarily to validate format
+                        ValidateHakSound(soundInfo);
                     }
-                    else if (!string.IsNullOrEmpty(validation.FormatInfo))
+                    else
                     {
-                        FileCountLabel.Text = $"✓ {validation.FormatInfo}";
-                        FileCountLabel.Foreground = new SolidColorBrush(Colors.Green);
+                        var validation = SoundValidator.Validate(soundInfo.FullPath, isVoiceOrSfx: true);
+
+                        if (validation.HasIssues)
+                        {
+                            var issues = string.Join(", ", validation.Errors.Concat(validation.Warnings));
+                            FileCountLabel.Text = validation.IsValid
+                                ? $"⚠ {issues}"
+                                : $"❌ {issues}";
+                            FileCountLabel.Foreground = validation.IsValid
+                                ? new SolidColorBrush(Colors.Orange)
+                                : new SolidColorBrush(Colors.Red);
+                        }
+                        else if (!string.IsNullOrEmpty(validation.FormatInfo))
+                        {
+                            FileCountLabel.Text = $"✓ {validation.FormatInfo}";
+                            FileCountLabel.Foreground = new SolidColorBrush(Colors.Green);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -337,6 +481,7 @@ namespace DialogEditor.Views
             {
                 _selectedSound = null;
                 _selectedSoundPath = null;
+                _selectedSoundInfo = null;
                 SelectedSoundLabel.Text = "(none)";
                 PlayButton.IsEnabled = false;
             }
@@ -357,21 +502,41 @@ namespace DialogEditor.Views
 
         private void OnPlayClick(object? sender, RoutedEventArgs e)
         {
-            if (_selectedSound == null || _selectedSoundPath == null)
+            if (_selectedSound == null || _selectedSoundInfo == null)
                 return;
 
             try
             {
-                if (!File.Exists(_selectedSoundPath))
+                string pathToPlay;
+
+                if (_selectedSoundInfo.IsFromHak)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound file not found: {_selectedSound}");
-                    CurrentSoundLabel.Text = $"⚠ File not found: {_selectedSound}";
-                    CurrentSoundLabel.Foreground = new SolidColorBrush(Colors.Orange);
-                    return;
+                    // Extract from HAK to temp file for playback
+                    var extractedPath = ExtractHakSoundToTemp(_selectedSoundInfo);
+                    if (extractedPath == null)
+                    {
+                        CurrentSoundLabel.Text = $"❌ Failed to extract from HAK";
+                        CurrentSoundLabel.Foreground = new SolidColorBrush(Colors.Red);
+                        return;
+                    }
+                    pathToPlay = extractedPath;
+                }
+                else
+                {
+                    pathToPlay = _selectedSoundInfo.FullPath;
+                    if (!File.Exists(pathToPlay))
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound file not found: {_selectedSound}");
+                        CurrentSoundLabel.Text = $"⚠ File not found: {_selectedSound}";
+                        CurrentSoundLabel.Foreground = new SolidColorBrush(Colors.Orange);
+                        return;
+                    }
                 }
 
-                _audioService.Play(_selectedSoundPath);
-                CurrentSoundLabel.Text = $"Playing: {_selectedSound}";
+                _audioService.Play(pathToPlay);
+                CurrentSoundLabel.Text = _selectedSoundInfo.IsFromHak
+                    ? $"Playing: {_selectedSound} (from HAK)"
+                    : $"Playing: {_selectedSound}";
                 CurrentSoundLabel.Foreground = new SolidColorBrush(Colors.Green);
                 StopButton.IsEnabled = true;
                 PlayButton.IsEnabled = false;
@@ -381,6 +546,116 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to play sound: {ex.Message}");
                 CurrentSoundLabel.Text = $"❌ Error: {ex.Message}";
                 CurrentSoundLabel.Foreground = new SolidColorBrush(Colors.Red);
+            }
+        }
+
+        private void ValidateHakSound(SoundFileInfo soundInfo)
+        {
+            if (soundInfo.HakPath == null || soundInfo.ErfEntry == null)
+            {
+                FileCountLabel.Text = $"📦 From: {soundInfo.Source}";
+                FileCountLabel.Foreground = new SolidColorBrush(Colors.LightBlue);
+                return;
+            }
+
+            try
+            {
+                // Extract sound data from HAK (in memory) to validate
+                var soundData = ErfReader.ExtractResource(soundInfo.HakPath, soundInfo.ErfEntry);
+
+                // Write to temp file for validation
+                var tempPath = Path.Combine(Path.GetTempPath(), $"parley_validate_{soundInfo.ErfEntry.ResRef}.wav");
+                File.WriteAllBytes(tempPath, soundData);
+
+                try
+                {
+                    var validation = SoundValidator.Validate(tempPath, isVoiceOrSfx: true);
+
+                    // Update the cached mono status
+                    soundInfo.IsMono = validation.IsMono;
+
+                    var sourceInfo = $" (📦 {soundInfo.Source})";
+                    if (validation.HasIssues)
+                    {
+                        var issues = string.Join(", ", validation.Errors.Concat(validation.Warnings));
+                        FileCountLabel.Text = validation.IsValid
+                            ? $"⚠ {issues}{sourceInfo}"
+                            : $"❌ {issues}{sourceInfo}";
+                        FileCountLabel.Foreground = validation.IsValid
+                            ? new SolidColorBrush(Colors.Orange)
+                            : new SolidColorBrush(Colors.Red);
+                    }
+                    else if (!string.IsNullOrEmpty(validation.FormatInfo))
+                    {
+                        FileCountLabel.Text = $"✓ {validation.FormatInfo}{sourceInfo}";
+                        FileCountLabel.Foreground = new SolidColorBrush(Colors.Green);
+                    }
+                    else
+                    {
+                        FileCountLabel.Text = $"📦 From: {soundInfo.Source}";
+                        FileCountLabel.Foreground = new SolidColorBrush(Colors.LightBlue);
+                    }
+                }
+                finally
+                {
+                    // Clean up temp validation file
+                    try { File.Delete(tempPath); } catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not validate HAK sound: {ex.Message}");
+                FileCountLabel.Text = $"📦 From: {soundInfo.Source} (validation unavailable)";
+                FileCountLabel.Foreground = new SolidColorBrush(Colors.LightBlue);
+            }
+        }
+
+        private string? ExtractHakSoundToTemp(SoundFileInfo soundInfo)
+        {
+            if (soundInfo.HakPath == null || soundInfo.ErfEntry == null)
+                return null;
+
+            try
+            {
+                // Clean up previous temp file
+                CleanupTempFile();
+
+                // Extract to temp directory
+                var tempDir = Path.GetTempPath();
+                var tempFileName = $"parley_sound_{soundInfo.ErfEntry.ResRef}.wav";
+                var tempPath = Path.Combine(tempDir, tempFileName);
+
+                var soundData = ErfReader.ExtractResource(soundInfo.HakPath, soundInfo.ErfEntry);
+                File.WriteAllBytes(tempPath, soundData);
+
+                _tempExtractedPath = tempPath;
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Extracted HAK sound to temp: {tempFileName}");
+
+                return tempPath;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Failed to extract HAK sound: {ex.Message}");
+                return null;
+            }
+        }
+
+        private void CleanupTempFile()
+        {
+            if (!string.IsNullOrEmpty(_tempExtractedPath) && File.Exists(_tempExtractedPath))
+            {
+                try
+                {
+                    File.Delete(_tempExtractedPath);
+                    _tempExtractedPath = null;
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
             }
         }
 

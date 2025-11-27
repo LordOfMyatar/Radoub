@@ -83,10 +83,9 @@
                       Checked="OnMonoFilterChanged"
                       Unchecked="OnMonoFilterChanged"/>
             <TextBlock Grid.Column="2"
-                       Text="HAK support coming soon"
+                       Text="📦 = from HAK file"
                        FontSize="10"
-                       FontStyle="Italic"
-                       Foreground="Gray"
+                       Foreground="LightBlue"
                        VerticalAlignment="Center"/>
         </Grid>
 
