@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.29-alpha] - TBD
+## [0.1.29-alpha] - 2025-11-27
 **Branch**: `parley/feat/issue-168-hak-sound-browser` | **PR**: #202
 
 ### HAK File Sound Browser Support (#168)
