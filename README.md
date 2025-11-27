@@ -100,6 +100,7 @@ See [LICENSE](LICENSE) for details.
 - BioWare/Beamdog for Neverwinter Nights and Aurora Engine
 - Original Aurora Toolset developers
 - NWN community for 20+ years of modding excellence
+- [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT) - Primary reference for Aurora file format parsing
 - All contributors and testers
 
 ---
