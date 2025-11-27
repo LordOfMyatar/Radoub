@@ -18,6 +18,11 @@ namespace DialogEditor.Services
         public bool IsPlaying => _isPlaying;
         public string? CurrentFile => _currentFile;
 
+        /// <summary>
+        /// Event raised when playback stops (either naturally or via Stop()).
+        /// </summary>
+        public event EventHandler? PlaybackStopped;
+
         public AudioService()
         {
             // Select platform-specific audio player
@@ -38,8 +43,17 @@ namespace DialogEditor.Services
                 throw new PlatformNotSupportedException("Audio playback not supported on this platform");
             }
 
+            _player.PlaybackStopped += OnPlaybackStopped;
+
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"AudioService initialized with {_player.GetType().Name}");
+        }
+
+        private void OnPlaybackStopped(object? sender, EventArgs e)
+        {
+            _isPlaying = false;
+            _currentFile = null;
+            PlaybackStopped?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -111,6 +125,7 @@ namespace DialogEditor.Services
     {
         void Play(string filePath);
         void Stop();
+        event EventHandler? PlaybackStopped;
     }
 
     /// <summary>
@@ -122,6 +137,11 @@ namespace DialogEditor.Services
         private NAudio.Wave.WaveOutEvent? _outputDevice;
         private NAudio.Wave.AudioFileReader? _audioFile;
 
+        /// <summary>
+        /// Event raised when playback stops (either naturally or via Stop()).
+        /// </summary>
+        public event EventHandler? PlaybackStopped;
+
         public void Play(string filePath)
         {
             Stop();
@@ -130,6 +150,7 @@ namespace DialogEditor.Services
             {
                 _audioFile = new NAudio.Wave.AudioFileReader(filePath);
                 _outputDevice = new NAudio.Wave.WaveOutEvent();
+                _outputDevice.PlaybackStopped += OnPlaybackStopped;
                 _outputDevice.Init(_audioFile);
                 _outputDevice.Play();
 
@@ -145,11 +166,20 @@ namespace DialogEditor.Services
             }
         }
 
+        private void OnPlaybackStopped(object? sender, NAudio.Wave.StoppedEventArgs e)
+        {
+            PlaybackStopped?.Invoke(this, EventArgs.Empty);
+        }
+
         public void Stop()
         {
-            _outputDevice?.Stop();
-            _outputDevice?.Dispose();
-            _outputDevice = null;
+            if (_outputDevice != null)
+            {
+                _outputDevice.PlaybackStopped -= OnPlaybackStopped;
+                _outputDevice.Stop();
+                _outputDevice.Dispose();
+                _outputDevice = null;
+            }
 
             _audioFile?.Dispose();
             _audioFile = null;
@@ -168,6 +198,8 @@ namespace DialogEditor.Services
     {
         private System.Diagnostics.Process? _process;
 
+        public event EventHandler? PlaybackStopped;
+
         public void Play(string filePath)
         {
             Stop();
@@ -182,9 +214,11 @@ namespace DialogEditor.Services
 
             _process = new System.Diagnostics.Process
             {
-                StartInfo = startInfo
+                StartInfo = startInfo,
+                EnableRaisingEvents = true
             };
 
+            _process.Exited += (s, e) => PlaybackStopped?.Invoke(this, EventArgs.Empty);
             _process.Start();
         }
 
@@ -211,6 +245,8 @@ namespace DialogEditor.Services
     {
         private System.Diagnostics.Process? _process;
 
+        public event EventHandler? PlaybackStopped;
+
         public void Play(string filePath)
         {
             Stop();
@@ -225,9 +261,11 @@ namespace DialogEditor.Services
 
             _process = new System.Diagnostics.Process
             {
-                StartInfo = startInfo
+                StartInfo = startInfo,
+                EnableRaisingEvents = true
             };
 
+            _process.Exited += (s, e) => PlaybackStopped?.Invoke(this, EventArgs.Empty);
             _process.Start();
         }
 

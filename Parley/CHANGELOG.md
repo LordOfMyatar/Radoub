@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.29-alpha] - TBD
+**Branch**: `parley/feat/issue-168-hak-sound-browser` | **PR**: #202
+
+### HAK File Sound Browser Support (#168)
+
+Sound browser now searches HAK files for sound resources.
+
+**Completed**:
+- Added HAK file scanning using Radoub.Formats ERF reader
+- Sound browser scans dialog directory for `.hak` files
+- HAK sounds display with 📦 indicator and source filename
+- Preview playback for HAK sounds (extracts to temp file)
+- **On-selection validation**: HAK sounds are validated when selected (extracts temporarily to check mono/stereo)
+- Shows HAK count in status bar (e.g., "150 sounds (25 from HAK)")
+- Source tracking for all sounds (Override, HAK name, Base Game)
+- Respects NWN resource priority (Override → HAK → Base Game)
+
+---
+
 ## [0.1.28-alpha] - 2025-11-27
 **Branch**: `parley/feat/sprint-185-sound-browser` | **PR**: #200
 

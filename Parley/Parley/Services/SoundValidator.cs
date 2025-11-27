@@ -16,15 +16,18 @@ namespace DialogEditor.Services
         /// <summary>
         /// Validate sound file and return warnings/errors.
         /// </summary>
-        public static SoundValidationResult Validate(string filePath, bool isVoiceOrSfx = true)
+        /// <param name="filePath">Path to the sound file to validate.</param>
+        /// <param name="isVoiceOrSfx">True for voice/SFX (requires mono), false for ambient sounds.</param>
+        /// <param name="skipFilenameCheck">True to skip filename length validation (for temp files extracted from HAK).</param>
+        public static SoundValidationResult Validate(string filePath, bool isVoiceOrSfx = true, bool skipFilenameCheck = false)
         {
             var result = new SoundValidationResult { IsValid = true };
             var fileName = Path.GetFileName(filePath);
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
 
-            // Check filename length (without extension)
-            if (fileNameWithoutExt.Length > MAX_FILENAME_LENGTH)
+            // Check filename length (without extension) - skip for temp files from HAK
+            if (!skipFilenameCheck && fileNameWithoutExt.Length > MAX_FILENAME_LENGTH)
             {
                 result.IsValid = false;
                 result.Errors.Add($"Filename too long: {fileNameWithoutExt.Length} chars (max {MAX_FILENAME_LENGTH})");
