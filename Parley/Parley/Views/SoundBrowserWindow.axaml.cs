@@ -264,7 +264,7 @@ namespace DialogEditor.Views
                         {
                             FileName = fileName,
                             FullPath = file,
-                            IsMono = true, // BMU files don't have mono/stereo distinction
+                            IsMono = false, // BMU is music format, not compatible with conversations
                             Category = targetCategory
                         });
                     }
