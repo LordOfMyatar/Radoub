@@ -56,11 +56,21 @@ public class FileOperationTests : ParleyTestBase
         // Arrange
         StartApplication();
 
+        // Wait for app to fully load before interacting with menus
+        Thread.Sleep(1000);
+
+        // Refresh window reference
+        MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
+        Assert.NotNull(MainWindow);
+
         // Act - Click File > New
         ClickMenu("File", "New");
 
         // Allow time for new file to be created
         Thread.Sleep(500);
+
+        // Refresh window reference after operation
+        MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
 
         // Assert - Should have "Parley" in title but no filename yet
         // (New files don't have a path until saved)

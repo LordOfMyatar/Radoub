@@ -65,6 +65,9 @@ public class UndoRedoTests : ParleyTestBase
             StartApplication($"\"{tempFile}\"");
             WaitForTitleContains(TestFileName, FileOperationTimeout);
 
+            // Wait for app to fully stabilize before making changes
+            Thread.Sleep(1000);
+
             // Make a modification - select and add node
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
@@ -96,6 +99,9 @@ public class UndoRedoTests : ParleyTestBase
         }
         finally
         {
+            // Stop application BEFORE cleaning up temp directory
+            // to avoid auto-save race conditions
+            StopApplication();
             TestPaths.CleanupTempDirectory(tempDir);
         }
     }
@@ -112,6 +118,9 @@ public class UndoRedoTests : ParleyTestBase
         {
             StartApplication($"\"{tempFile}\"");
             WaitForTitleContains(TestFileName, FileOperationTimeout);
+
+            // Wait for app to fully stabilize before making changes
+            Thread.Sleep(1000);
 
             // Make a modification
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
@@ -151,6 +160,9 @@ public class UndoRedoTests : ParleyTestBase
         }
         finally
         {
+            // Stop application BEFORE cleaning up temp directory
+            // to avoid auto-save race conditions
+            StopApplication();
             TestPaths.CleanupTempDirectory(tempDir);
         }
     }
@@ -167,6 +179,9 @@ public class UndoRedoTests : ParleyTestBase
         {
             StartApplication($"\"{tempFile}\"");
             WaitForTitleContains(TestFileName, FileOperationTimeout);
+
+            // Wait for app to fully stabilize before making changes
+            Thread.Sleep(1000);
 
             // Get initial node count
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
@@ -209,6 +224,9 @@ public class UndoRedoTests : ParleyTestBase
         }
         finally
         {
+            // Stop application BEFORE cleaning up temp directory
+            // to avoid auto-save race conditions
+            StopApplication();
             TestPaths.CleanupTempDirectory(tempDir);
         }
     }
