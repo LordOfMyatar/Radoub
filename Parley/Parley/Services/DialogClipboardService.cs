@@ -18,6 +18,10 @@ namespace DialogEditor.Services
         private bool _wasCut = false;
         private Dialog? _sourceDialog = null;
 
+        // Source pointer script info (ScriptAppears is on pointer, not node)
+        private string _sourceScriptAppears = string.Empty;
+        private Dictionary<string, string> _sourceConditionParams = new();
+
         /// <summary>
         /// Gets whether there is a node in the clipboard
         /// </summary>
@@ -41,7 +45,10 @@ namespace DialogEditor.Services
         /// <summary>
         /// Copy a node to the clipboard
         /// </summary>
-        public void CopyNode(DialogNode node, Dialog sourceDialog)
+        /// <param name="node">The node to copy</param>
+        /// <param name="sourceDialog">The source dialog</param>
+        /// <param name="sourcePointer">Optional source pointer (for ScriptAppears)</param>
+        public void CopyNode(DialogNode node, Dialog sourceDialog, DialogPtr? sourcePointer = null)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node));
@@ -54,14 +61,23 @@ namespace DialogEditor.Services
             _wasCut = false;
             _sourceDialog = sourceDialog;
 
+            // Store source pointer's script info (ScriptAppears is on pointer, not node)
+            _sourceScriptAppears = sourcePointer?.ScriptAppears ?? string.Empty;
+            _sourceConditionParams = sourcePointer?.ConditionParams != null
+                ? new Dictionary<string, string>(sourcePointer.ConditionParams)
+                : new Dictionary<string, string>();
+
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Copied node to clipboard: Type={node.Type}");
+                $"Copied node to clipboard: Type={node.Type}, ScriptAppears={_sourceScriptAppears}");
         }
 
         /// <summary>
         /// Cut a node to the clipboard (Copy + mark for deletion)
         /// </summary>
-        public void CutNode(DialogNode node, Dialog sourceDialog)
+        /// <param name="node">The node to cut</param>
+        /// <param name="sourceDialog">The source dialog</param>
+        /// <param name="sourcePointer">Optional source pointer (for ScriptAppears)</param>
+        public void CutNode(DialogNode node, Dialog sourceDialog, DialogPtr? sourcePointer = null)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node));
@@ -75,8 +91,14 @@ namespace DialogEditor.Services
             _wasCut = true;
             _sourceDialog = sourceDialog;
 
+            // Store source pointer's script info (ScriptAppears is on pointer, not node)
+            _sourceScriptAppears = sourcePointer?.ScriptAppears ?? string.Empty;
+            _sourceConditionParams = sourcePointer?.ConditionParams != null
+                ? new Dictionary<string, string>(sourcePointer.ConditionParams)
+                : new Dictionary<string, string>();
+
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Cut node to clipboard: Type={node.Type}");
+                $"Cut node to clipboard: Type={node.Type}, ScriptAppears={_sourceScriptAppears}");
         }
 
         /// <summary>
@@ -108,7 +130,7 @@ namespace DialogEditor.Services
                 ? (uint)(dialog.Entries.IndexOf(newNode))
                 : (uint)(dialog.Replies.IndexOf(newNode));
 
-            // Create pointer to new node
+            // Create pointer to new node (include source pointer's script info)
             if (parentNode != null)
             {
                 var newPtr = new DialogPtr
@@ -117,7 +139,9 @@ namespace DialogEditor.Services
                     Type = newNode.Type,
                     Index = newIndex,
                     IsLink = false,
-                    Node = newNode
+                    Node = newNode,
+                    ScriptAppears = _sourceScriptAppears,
+                    ConditionParams = new Dictionary<string, string>(_sourceConditionParams)
                 };
                 parentNode.Pointers.Add(newPtr);
             }
@@ -131,7 +155,9 @@ namespace DialogEditor.Services
                     Index = newIndex,
                     IsStart = true,
                     IsLink = false,
-                    Node = newNode
+                    Node = newNode,
+                    ScriptAppears = _sourceScriptAppears,
+                    ConditionParams = new Dictionary<string, string>(_sourceConditionParams)
                 };
                 dialog.Starts.Add(startPtr);
             }

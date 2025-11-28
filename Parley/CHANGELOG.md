@@ -41,6 +41,12 @@ Addressing exception handling, code duplication, and attribution.
 - Added arclight acknowledgment to README.md
 - Credit to jd28/arclight for inspiration during early development
 
+**Fixed - Copy Node Missing Scripts**:
+- Copy/Cut now preserves `ScriptAppears` (conditional script) from source pointer
+- Copy/Cut now preserves `ConditionParams` from source pointer
+- Paste as Duplicate applies stored scripts to new pointer
+- `GetNodeProperties` (Ctrl+Shift+P) now shows ScriptAppears and ConditionParams
+
 ---
 
 ## [0.1.29-alpha] - 2025-11-27

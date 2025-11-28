@@ -1164,7 +1164,8 @@ namespace DialogEditor.ViewModels
             if (CurrentDialog == null) return;
 
             var node = nodeToCopy.OriginalNode;
-            _clipboardService.CopyNode(node, CurrentDialog);
+            var sourcePointer = nodeToCopy.SourcePointer;
+            _clipboardService.CopyNode(node, CurrentDialog, sourcePointer);
 
             StatusMessage = $"Node copied: {node.DisplayText}";
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied node: {node.DisplayText}");
@@ -1180,6 +1181,7 @@ namespace DialogEditor.ViewModels
             }
 
             var node = nodeToCut.OriginalNode;
+            var sourcePointer = nodeToCut.SourcePointer;
 
             // Find sibling to focus BEFORE cutting
             var siblingToFocus = FindSiblingForFocus(node);
@@ -1187,8 +1189,8 @@ namespace DialogEditor.ViewModels
             // Save state for undo before cutting
             SaveUndoState("Cut Node");
 
-            // Store node for pasting in clipboard service
-            _clipboardService.CutNode(node, CurrentDialog);
+            // Store node for pasting in clipboard service (include source pointer for scripts)
+            _clipboardService.CutNode(node, CurrentDialog, sourcePointer);
 
             // CRITICAL: Check for other references BEFORE detaching
             // We need to count while the current reference is still there
@@ -1321,6 +1323,7 @@ namespace DialogEditor.ViewModels
                 return null;
 
             var dialogNode = node.OriginalNode;
+            var sourcePointer = node.SourcePointer;
             var sb = new System.Text.StringBuilder();
 
             sb.AppendLine($"=== Node Properties ===");
@@ -1333,6 +1336,15 @@ namespace DialogEditor.ViewModels
             sb.AppendLine($"Sound: {dialogNode.Sound ?? "(none)"}");
             sb.AppendLine($"Delay: {(dialogNode.Delay == uint.MaxValue ? "(none)" : dialogNode.Delay.ToString())}");
             sb.AppendLine();
+            sb.AppendLine($"Script (Appears When): {sourcePointer?.ScriptAppears ?? "(none)"}");
+            if (sourcePointer?.ConditionParams != null && sourcePointer.ConditionParams.Count > 0)
+            {
+                sb.AppendLine($"Condition Parameters:");
+                foreach (var param in sourcePointer.ConditionParams)
+                {
+                    sb.AppendLine($"  {param.Key} = {param.Value}");
+                }
+            }
             sb.AppendLine($"Script (Action): {dialogNode.ScriptAction ?? "(none)"}");
             if (dialogNode.ActionParams != null && dialogNode.ActionParams.Count > 0)
             {
