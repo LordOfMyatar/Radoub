@@ -10,6 +10,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.31-alpha] - 2025-11-28
+**Branch**: `parley/sprint/bugs-and-focus` | **PR**: #TBD
+
+### Sprint: Bug Squash + Focus Management
+
+Combined sprint addressing outstanding bugs and focus/navigation improvements.
+
+**Bug Fixes**:
+- [ ] #178 - Script preview doesn't clear when ROOT node selected
+- [ ] #12 - Links show original node comment instead of LinkComment
+- [ ] #11 - System allows invalid link operations (Entry → Entry)
+- [ ] #74 - Property changes not included in undo stack
+- [ ] #123 - Paste as Link after Cut should prompt for undo
+
+**Focus Management (#134)**:
+- [ ] #148 - Tab order navigation between fields
+- [ ] #122 - Focus behavior differs between Delete and Paste operations
+- [ ] Move up/down focus preservation
+- [ ] Paste duplicate focuses on pasted node
+- [ ] Delete focuses on sibling/parent
+
+---
+
 ## [0.1.30-alpha] - 2025-11-28
 **Branch**: `parley/fix/issue-196-tech-debt` | **PR**: #215
 
