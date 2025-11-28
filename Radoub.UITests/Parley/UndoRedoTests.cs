@@ -99,11 +99,8 @@ public class UndoRedoTests : ParleyTestBase
             var afterAddCount = afterAddItems?.Length ?? 0;
             Assert.True(afterAddCount > initialCount, $"Node should have been added (initial: {initialCount}, after: {afterAddCount})");
 
-            // Act - Undo via Ctrl+Z
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
+            // Act - Undo via Edit menu (Ctrl+Z goes to TextBox which has focus after Ctrl+D)
+            ClickMenu("Edit", "Undo");
             Thread.Sleep(1000);
 
             // Assert - Node count should be back to initial
@@ -166,11 +163,8 @@ public class UndoRedoTests : ParleyTestBase
             var afterAddCount = afterAddItems?.Length ?? 0;
             Assert.True(afterAddCount > initialCount, $"Node should have been added (initial: {initialCount}, after: {afterAddCount})");
 
-            // Undo the change
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
+            // Undo the change via Edit menu (Ctrl+Z goes to TextBox which has focus)
+            ClickMenu("Edit", "Undo");
             Thread.Sleep(1000);
 
             // Verify node count is back to initial
@@ -179,11 +173,8 @@ public class UndoRedoTests : ParleyTestBase
             var afterUndoCount = afterUndoItems?.Length ?? 0;
             Assert.Equal(initialCount, afterUndoCount);
 
-            // Act - Redo via Ctrl+Y
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Y);
+            // Act - Redo via Edit menu
+            ClickMenu("Edit", "Redo");
             Thread.Sleep(1000);
 
             // Assert - Node count should be back to after-add count
@@ -260,16 +251,11 @@ public class UndoRedoTests : ParleyTestBase
             var afterAddCount = afterAddItems?.Length ?? 0;
             Assert.True(afterAddCount > initialCount, $"Nodes should have been added (initial: {initialCount}, after: {afterAddCount})");
 
-            // Act - Undo twice
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
+            // Act - Undo twice via Edit menu (Ctrl+Z goes to TextBox which has focus)
+            ClickMenu("Edit", "Undo");
             Thread.Sleep(1000);
 
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
+            ClickMenu("Edit", "Undo");
             Thread.Sleep(1000);
 
             // Assert - Should be back to initial node count
