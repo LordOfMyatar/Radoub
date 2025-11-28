@@ -21,7 +21,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 TLK (Talk Table) file reading support for Aurora Engine localization.
 
 **Added**:
-- TBD
+- `TlkFile` - Data model for TLK (Talk Table) files
+- `TlkEntry` - Entry model with text, sound ResRef, and duration
+- `TlkReader` - Parser for TLK format files
+- Flag support: HasText (0x1), HasSound (0x2), HasSoundLength (0x4)
+- Legacy artifact stripping (0xC0 bytes from old editors)
+- Windows-1252 encoding support for NWN text
+- 23 unit tests for TLK reading
 
 ---
 
