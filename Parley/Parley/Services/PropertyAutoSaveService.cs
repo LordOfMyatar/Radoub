@@ -111,13 +111,25 @@ namespace DialogEditor.Services
             {
                 // Issue #12: For link nodes, save to LinkComment on the pointer
                 // instead of the original node's Comment
-                if (node.IsChild && node.SourcePointer != null)
+                bool isChildCheck = node.IsChild;
+                bool hasSourcePointer = node.SourcePointer != null;
+                string newValue = control.Text ?? "";
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"💾 SaveComment: IsChild={isChildCheck}, HasSourcePointer={hasSourcePointer}, " +
+                    $"NewValue='{newValue}', NodeType={node.GetType().Name}");
+
+                if (isChildCheck && hasSourcePointer)
                 {
-                    node.SourcePointer.LinkComment = control.Text ?? "";
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"💾 Saving to LINK comment (SourcePointer.LinkComment)");
+                    node.SourcePointer!.LinkComment = newValue;
                 }
                 else
                 {
-                    node.OriginalNode.Comment = control.Text ?? "";
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"💾 Saving to NODE comment (DialogNode.Comment)");
+                    node.OriginalNode.Comment = newValue;
                 }
             }
         }

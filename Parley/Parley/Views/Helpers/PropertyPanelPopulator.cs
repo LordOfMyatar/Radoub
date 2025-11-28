@@ -228,13 +228,26 @@ namespace Parley.Views.Helpers
             {
                 // Issue #12: For link nodes (IsChild=true), show LinkComment from pointer
                 // instead of the original node's Comment
-                if (node.IsChild && node.SourcePointer != null)
+                bool isChildCheck = node.IsChild;
+                bool hasSourcePointer = node.SourcePointer != null;
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"📝 Comment field: IsChild={isChildCheck}, HasSourcePointer={hasSourcePointer}, " +
+                    $"NodeType={node.GetType().Name}, DisplayText='{node.DisplayText}'");
+
+                if (isChildCheck && hasSourcePointer)
                 {
-                    commentTextBox.Text = node.SourcePointer.LinkComment ?? "";
+                    string linkComment = node.SourcePointer!.LinkComment ?? "";
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"📝 Using LINK comment: '{linkComment}' (from SourcePointer.LinkComment)");
+                    commentTextBox.Text = linkComment;
                 }
                 else
                 {
-                    commentTextBox.Text = dialogNode.Comment ?? "";
+                    string nodeComment = dialogNode.Comment ?? "";
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"📝 Using NODE comment: '{nodeComment}' (from DialogNode.Comment)");
+                    commentTextBox.Text = nodeComment;
                 }
                 commentTextBox.IsReadOnly = false;
             }

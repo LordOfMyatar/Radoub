@@ -367,7 +367,10 @@ namespace DialogEditor.Models
             _linkType = linkType;
         }
 
-        public override string DisplayText => _linkedNode.DisplayText;
+        // DisplayText now uses base class implementation which properly handles:
+        // - Empty text showing as [CONTINUE]
+        // - [PC] or [Owner/Speaker] prefixes
+        // This fixes the empty link display bug
         public override string TypeDisplay => $"Link ({base.TypeDisplay})";
 
         // Links are terminal - no children shown (NWN Toolset behavior)

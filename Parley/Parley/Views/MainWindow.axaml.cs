@@ -618,11 +618,18 @@ namespace DialogEditor.Views
                 dialogNode.Text.Strings[0] = textTextBox.Text ?? "";
             }
 
-            // Update Comment
+            // Update Comment - Issue #12: Save to LinkComment for link nodes
             var commentTextBox = this.FindControl<TextBox>("CommentTextBox");
             if (commentTextBox != null)
             {
-                dialogNode.Comment = commentTextBox.Text ?? "";
+                if (_selectedNode.IsChild && _selectedNode.SourcePointer != null)
+                {
+                    _selectedNode.SourcePointer.LinkComment = commentTextBox.Text ?? "";
+                }
+                else
+                {
+                    dialogNode.Comment = commentTextBox.Text ?? "";
+                }
             }
 
             // Update Sound
@@ -1306,6 +1313,7 @@ namespace DialogEditor.Views
         }
 
         private TreeViewSafeNode? _selectedNode;
+        private bool _isSettingSelectionProgrammatically = false;
 
         private void OnDialogTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
@@ -1320,7 +1328,8 @@ namespace DialogEditor.Views
             _selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
 
             // Update ViewModel's selected tree node for Restore button enabling
-            if (_viewModel != null)
+            // Skip if we're setting selection programmatically to avoid feedback loop
+            if (_viewModel != null && !_isSettingSelectionProgrammatically)
             {
                 _viewModel.SelectedTreeNode = _selectedNode;
             }
@@ -1382,6 +1391,11 @@ namespace DialogEditor.Views
             }
 
             var dialogNode = node.OriginalNode;
+
+            // Debug: Log node type for Issue #12 investigation
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"🔍 PopulatePropertiesPanel: NodeType={node.GetType().Name}, IsChild={node.IsChild}, " +
+                $"HasSourcePointer={node.SourcePointer != null}, DisplayText='{node.DisplayText}'");
 
             // Populate all node properties using helper
             _propertyPopulator.PopulateNodeType(dialogNode);
@@ -1453,7 +1467,15 @@ namespace DialogEditor.Views
                     break;
 
                 case "CommentTextBox":
-                    dialogNode.Comment = textBox.Text ?? "";
+                    // Issue #12: Save to LinkComment for link nodes
+                    if (_selectedNode.IsChild && _selectedNode.SourcePointer != null)
+                    {
+                        _selectedNode.SourcePointer.LinkComment = textBox.Text ?? "";
+                    }
+                    else
+                    {
+                        dialogNode.Comment = textBox.Text ?? "";
+                    }
                     _viewModel.HasUnsavedChanges = true;
                     _viewModel.StatusMessage = "Comment updated";
                     break;
@@ -1662,11 +1684,18 @@ namespace DialogEditor.Views
                 dialogNode.Text.Strings[0] = textTextBox.Text ?? "";
             }
 
-            // Update Comment
+            // Update Comment - Issue #12: Save to LinkComment for link nodes
             var commentTextBox = this.FindControl<TextBox>("CommentTextBox");
             if (commentTextBox != null)
             {
-                dialogNode.Comment = commentTextBox.Text ?? "";
+                if (_selectedNode.IsChild && _selectedNode.SourcePointer != null)
+                {
+                    _selectedNode.SourcePointer.LinkComment = commentTextBox.Text ?? "";
+                }
+                else
+                {
+                    dialogNode.Comment = commentTextBox.Text ?? "";
+                }
             }
 
             // Update Sound
@@ -3205,35 +3234,48 @@ namespace DialogEditor.Views
                 }
             }
 
-            // Watch for node re-selection requests after tree refresh
-            if (e.PropertyName == nameof(MainViewModel.NodeToSelectAfterRefresh))
+            // Watch for node selection requests - ViewModel finds the node, View sets TreeView.SelectedItem
+            // This is needed because TreeView binding doesn't work well with lazily-populated children
+            if (e.PropertyName == nameof(MainViewModel.SelectedTreeNode))
             {
-                var nodeToSelect = _viewModel.NodeToSelectAfterRefresh;
-                if (nodeToSelect != null)
+                var selectedNode = _viewModel.SelectedTreeNode;
+                // Only handle non-ROOT programmatic selection
+                // Skip if selection came from TreeView (flag set by SelectionChanged handler)
+                if (selectedNode != null && !(selectedNode is TreeViewRootNode) && !_isSettingSelectionProgrammatically)
                 {
-                    // Schedule selection for after tree is fully rebuilt
-                    global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    {
-                        var treeNode = _viewModel.FindTreeNodeForDialogNode(nodeToSelect);
-                        if (treeNode != null)
-                        {
-                            var treeView = this.FindControl<TreeView>("DialogTreeView");
-                            if (treeView != null)
-                            {
-                                treeView.SelectedItem = treeNode;
-                                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Re-selected node after refresh: {treeNode.DisplayText}");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"View: SelectedTreeNode changed to '{selectedNode.DisplayText}', scheduling selection");
 
-                                // Focus needs to be set after selection is fully processed
-                                global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                                {
-                                    treeView.Focus();
-                                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"TreeView focus restored after node move");
-                                }, global::Avalonia.Threading.DispatcherPriority.Background);
+                    // Defer selection to allow visual tree to render expanded children
+                    // Use Background priority (lower than Loaded) to run AFTER layout has completed
+                    global::Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+                    {
+                        var treeView = this.FindControl<TreeView>("DialogTreeView");
+                        if (treeView != null)
+                        {
+                            // Small delay to ensure TreeView has rendered expanded children
+                            await Task.Delay(50);
+
+                            // Expand ALL ancestors to ensure node is visible in visual tree
+                            _nodeCreationHelper.ExpandToNode(treeView, selectedNode);
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                $"View: Expanded ancestors for '{selectedNode.DisplayText}'");
+
+                            // Set flag to prevent feedback loop when setting SelectedItem
+                            _isSettingSelectionProgrammatically = true;
+                            try
+                            {
+                                // Force set TreeView selection (binding alone doesn't work for lazy-loaded children)
+                                treeView.SelectedItem = selectedNode;
+                                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                    $"View: Set TreeView.SelectedItem to '{selectedNode.DisplayText}'");
+                            }
+                            finally
+                            {
+                                _isSettingSelectionProgrammatically = false;
                             }
                         }
-                        // Clear the request
-                        _viewModel.NodeToSelectAfterRefresh = null;
-                    }, global::Avalonia.Threading.DispatcherPriority.Loaded);
+                    }, global::Avalonia.Threading.DispatcherPriority.Background);
                 }
             }
         }

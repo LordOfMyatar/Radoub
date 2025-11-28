@@ -21,6 +21,7 @@ namespace DialogEditor.Services
         // Shortcut registries by modifier combination
         private readonly Dictionary<Key, ShortcutAction> _ctrlShortcuts = new();
         private readonly Dictionary<Key, ShortcutAction> _ctrlShiftShortcuts = new();
+        private readonly Dictionary<Key, ShortcutAction> _ctrlTunnelingShortcuts = new();
         private readonly Dictionary<Key, ShortcutAction> _ctrlShiftTunnelingShortcuts = new();
         private readonly Dictionary<Key, ShortcutAction> _noModifierShortcuts = new();
 
@@ -39,8 +40,8 @@ namespace DialogEditor.Services
             _ctrlShortcuts[Key.V] = handler.OnPasteAsDuplicate;
             _ctrlShortcuts[Key.L] = handler.OnPasteAsLink;
             _ctrlShortcuts[Key.X] = handler.OnCutNode;
-            _ctrlShortcuts[Key.Z] = handler.OnUndo;
-            _ctrlShortcuts[Key.Y] = handler.OnRedo;
+            // Note: Ctrl+Z and Ctrl+Y are handled in tunneling phase (see _ctrlTunnelingShortcuts)
+            // to intercept before TextBox's built-in undo/redo
             _ctrlShortcuts[Key.E] = handler.OnExpandSubnodes;
             _ctrlShortcuts[Key.W] = handler.OnCollapseSubnodes;
 
@@ -48,6 +49,11 @@ namespace DialogEditor.Services
             _ctrlShiftShortcuts[Key.T] = handler.OnCopyNodeText;
             _ctrlShiftShortcuts[Key.P] = handler.OnCopyNodeProperties;
             _ctrlShiftShortcuts[Key.S] = handler.OnCopyTreeStructure;
+
+            // Ctrl tunneling shortcuts (intercept before TextBox handles them)
+            // This ensures global undo/redo instead of TextBox's character-level undo
+            _ctrlTunnelingShortcuts[Key.Z] = handler.OnUndo;
+            _ctrlTunnelingShortcuts[Key.Y] = handler.OnRedo;
 
             // Ctrl+Shift tunneling shortcuts (intercept before TreeView)
             _ctrlShiftTunnelingShortcuts[Key.Up] = handler.OnMoveNodeUp;
@@ -60,7 +66,7 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Handles PreviewKeyDown events (tunneling) for shortcuts that need to intercept before TreeView
+        /// Handles PreviewKeyDown events (tunneling) for shortcuts that need to intercept before TreeView/TextBox
         /// </summary>
         public bool HandlePreviewKeyDown(KeyEventArgs e)
         {
@@ -70,6 +76,18 @@ namespace DialogEditor.Services
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
                 $"PreviewKeyDown: Key={e.Key}, Modifiers={e.KeyModifiers}");
+
+            // Ctrl+Z/Y for undo/redo (must intercept before TextBox handles them)
+            if (ctrlPressed && !shiftPressed && !altPressed)
+            {
+                if (_ctrlTunnelingShortcuts.TryGetValue(e.Key, out var action))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Ctrl+{e.Key} detected (tunneling)");
+                    action();
+                    return true; // Mark as handled
+                }
+            }
 
             // Ctrl+Shift+Up/Down for node reordering (must intercept before TreeView)
             if (ctrlPressed && shiftPressed && !altPressed)

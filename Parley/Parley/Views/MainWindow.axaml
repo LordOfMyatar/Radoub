@@ -495,7 +495,9 @@
                         </StackPanel>
 
                         <!-- Node Properties (disabled when no node selected - Issue #3) -->
-                        <StackPanel x:Name="NodePropertiesPanel" IsEnabled="{Binding HasNodeSelected}">
+                        <!-- KeyboardNavigation.TabNavigation="Cycle" ensures Tab wraps within properties panel -->
+                        <StackPanel x:Name="NodePropertiesPanel" IsEnabled="{Binding HasNodeSelected}"
+                                    KeyboardNavigation.TabNavigation="Cycle">
                             <TextBlock Text="Node Properties" FontWeight="Bold" Margin="0,0,0,10"/>
 
                             <!-- Basic Node Info (display only) -->

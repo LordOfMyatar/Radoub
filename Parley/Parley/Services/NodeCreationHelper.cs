@@ -160,8 +160,15 @@ namespace DialogEditor.Services
             var parent = FindParentNode(treeView, targetNode);
             if (parent != null)
             {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"ExpandToNode: Expanding parent '{parent.DisplayText}' for target '{targetNode.DisplayText}'");
                 parent.IsExpanded = true;
                 ExpandToNode(treeView, parent); // Recurse upward
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"ExpandToNode: No parent found for '{targetNode.DisplayText}' (may be root-level)");
             }
         }
 
@@ -170,24 +177,36 @@ namespace DialogEditor.Services
         /// </summary>
         public TreeViewSafeNode? FindParentNode(TreeView treeView, TreeViewSafeNode targetNode)
         {
-            if (treeView.ItemsSource == null) return null;
+            if (treeView.ItemsSource == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "FindParentNode: ItemsSource is null");
+                return null;
+            }
 
             foreach (var item in treeView.ItemsSource)
             {
                 if (item is TreeViewSafeNode node)
                 {
-                    var parent = FindParentNodeRecursive(node, targetNode);
+                    var parent = FindParentNodeRecursive(node, targetNode, forcePopulate: true);
                     if (parent != null) return parent;
                 }
             }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"FindParentNode: Parent not found for '{targetNode.DisplayText}'");
             return null;
         }
 
-        private TreeViewSafeNode? FindParentNodeRecursive(TreeViewSafeNode currentNode, TreeViewSafeNode targetNode)
+        private TreeViewSafeNode? FindParentNodeRecursive(TreeViewSafeNode currentNode, TreeViewSafeNode targetNode, bool forcePopulate = false)
         {
+            // Force populate children if needed for searching
+            if (forcePopulate && currentNode.HasChildren && (currentNode.Children == null || !currentNode.Children.Any()))
+            {
+                currentNode.PopulateChildren();
+            }
+
             if (currentNode.Children == null) return null;
 
-            // Check if targetNode is a direct child
+            // Check if targetNode is a direct child (by reference equality)
             if (currentNode.Children.Contains(targetNode))
             {
                 return currentNode;
@@ -196,7 +215,7 @@ namespace DialogEditor.Services
             // Recurse through children
             foreach (var child in currentNode.Children)
             {
-                var found = FindParentNodeRecursive(child, targetNode);
+                var found = FindParentNodeRecursive(child, targetNode, forcePopulate);
                 if (found != null) return found;
             }
 
