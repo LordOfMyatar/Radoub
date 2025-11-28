@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.5.0] - TBD
-**Branch**: `radoub/sprint/game-file-formats` | **PR**: #TBD
+**Branch**: `radoub/sprint/game-file-formats` | **PR**: #214
 
 ### Sprint: Game File Formats Integration
 
