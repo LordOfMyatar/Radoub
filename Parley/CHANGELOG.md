@@ -13,7 +13,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.30-alpha] - TBD
 **Branch**: `parley/fix/issue-196-tech-debt` | **PR**: #215
 
-### Fix: Exception handling - Empty catch blocks and swallowed exceptions (#196)
+### Tech Debt Sprint
+
+Addressing exception handling, code duplication, and attribution.
+
+**Fixed - Exception Handling (#196)**:
+- Added DEBUG logging to font preview fallback in SettingsWindow
+- Added DEBUG logging to UTC file validation in CreatureParser
+- Added TRACE logging to temp file cleanup in SoundBrowserWindow
+- Added explanatory comment for intentional empty catch (font availability check)
+
+**Fixed - Code Duplication (#194)**:
+- Created `CloningHelper.cs` with shared cloning utilities
+- `CloneLocString()` - centralized LocString cloning
+- `CreateShallowNodeClone()` - centralized DialogNode shallow cloning
+- Updated `NodeCloningService` and `DialogClipboardService` to use helper
+- Removed ~30 lines of duplicate code
+
+**Verified - Orphan Link Children (#136)**:
+- Reviewed `NodeOperationsManager.DeleteNode()` implementation
+- Confirmed PR #132 fix is correctly implemented
+- `IdentifyOrphanedLinkChildren()` called before deletion
+- `RemoveOrphanedLinkChildrenFromLists()` called before index recalculation
+- All 23 orphan-related tests passing
+
+**Added - Attribution (#205)**:
+- Added arclight acknowledgment to README.md
+- Credit to jd28/arclight for inspiration during early development
 
 ---
 

@@ -728,7 +728,11 @@ namespace DialogEditor.Views
                 finally
                 {
                     // Clean up temp validation file
-                    try { File.Delete(tempPath); } catch { }
+                    try { File.Delete(tempPath); }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.TRACE, $"Could not delete temp file {UnifiedLogger.SanitizePath(tempPath)}: {ex.Message}");
+                    }
                 }
             }
             catch (Exception ex)

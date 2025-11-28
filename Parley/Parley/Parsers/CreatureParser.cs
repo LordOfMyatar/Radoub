@@ -82,8 +82,9 @@ namespace DialogEditor.Parsers
 
                 return fileType == "UTC " && fileVersion == "V3.2";
             }
-            catch
+            catch (Exception ex)
             {
+                UnifiedLogger.LogParser(LogLevel.DEBUG, $"File is not a valid UTC: {ex.Message}");
                 return false;
             }
         }

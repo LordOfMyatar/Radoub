@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using DialogEditor.Utils;
 
 namespace DialogEditor.Services
 {
@@ -48,33 +49,13 @@ namespace DialogEditor.Services
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"Circular reference detected during clone at depth {depth} - creating link instead");
                 // Return a simple node without children to break the cycle
-                return new DialogNode
-                {
-                    Type = original.Type,
-                    Text = CloneLocString(original.Text),
-                    Speaker = original.Speaker,
-                    Comment = original.Comment + " [CIRCULAR REF]",
-                    Pointers = new List<DialogPtr>() // No children to prevent infinite loop
-                };
+                var circularClone = CloningHelper.CreateShallowNodeClone(original);
+                circularClone.Comment = (original.Comment ?? string.Empty) + " [CIRCULAR REF]";
+                return circularClone;
             }
 
-            // Deep copy of node
-            var clone = new DialogNode
-            {
-                Type = original.Type,
-                Text = CloneLocString(original.Text),
-                Speaker = original.Speaker,
-                Comment = original.Comment,
-                Sound = original.Sound,
-                ScriptAction = original.ScriptAction,
-                Animation = original.Animation,
-                AnimationLoop = original.AnimationLoop,
-                Delay = original.Delay,
-                Quest = original.Quest,
-                QuestEntry = original.QuestEntry,
-                Pointers = new List<DialogPtr>(), // Empty - will populate below
-                ActionParams = new Dictionary<string, string>(original.ActionParams ?? new Dictionary<string, string>())
-            };
+            // Deep copy of node using shared helper
+            var clone = CloningHelper.CreateShallowNodeClone(original);
 
             // Recursively clone all child pointers
             foreach (var ptr in original.Pointers)
@@ -117,22 +98,5 @@ namespace DialogEditor.Services
             return clone;
         }
 
-        /// <summary>
-        /// Creates a deep copy of a LocString object.
-        /// </summary>
-        private LocString CloneLocString(LocString? original)
-        {
-            if (original == null)
-                return new LocString();
-
-            var clone = new LocString();
-
-            foreach (var kvp in original.Strings)
-            {
-                clone.Strings[kvp.Key] = kvp.Value;
-            }
-
-            return clone;
-        }
     }
 }

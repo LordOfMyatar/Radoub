@@ -164,6 +164,7 @@ See [LICENSE](../LICENSE)
 - BioWare/Beamdog for NWN and Aurora format specs
 - Original Aurora Toolset developers
 - NWN modding community
+- [arclight](https://github.com/jd28/arclight) by jd28 - inspiration and guidance during early development
 
 ---
 

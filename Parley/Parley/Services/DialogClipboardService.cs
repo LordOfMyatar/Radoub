@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using DialogEditor.Utils;
 
 namespace DialogEditor.Services
 {
@@ -253,22 +253,7 @@ namespace DialogEditor.Services
         {
             // CRITICAL: Create shallow clone without Pointers to avoid circular serialization
             // Pointers will be rebuilt recursively afterward
-            var shallowClone = new DialogNode
-            {
-                Type = original.Type,
-                Text = CloneLocString(original.Text),
-                Speaker = original.Speaker ?? string.Empty,
-                Comment = original.Comment ?? string.Empty,
-                Sound = original.Sound ?? string.Empty,
-                ScriptAction = original.ScriptAction ?? string.Empty,
-                Animation = original.Animation,
-                AnimationLoop = original.AnimationLoop,
-                Delay = original.Delay,
-                Quest = original.Quest ?? string.Empty,
-                QuestEntry = original.QuestEntry,
-                ActionParams = new Dictionary<string, string>(original.ActionParams ?? new Dictionary<string, string>()),
-                Pointers = new List<DialogPtr>() // Empty - will be populated below
-            };
+            var shallowClone = CloningHelper.CreateShallowNodeClone(original);
 
             // Recursively clone child nodes if needed
             if (original.Pointers.Count > 0)
@@ -277,22 +262,6 @@ namespace DialogEditor.Services
             }
 
             return shallowClone;
-        }
-
-        /// <summary>
-        /// Clone a LocString (localized text dictionary)
-        /// </summary>
-        private LocString CloneLocString(LocString? original)
-        {
-            if (original == null)
-                return new LocString();
-
-            var clone = new LocString();
-            foreach (var kvp in original.Strings)
-            {
-                clone.Strings[kvp.Key] = kvp.Value;
-            }
-            return clone;
         }
 
         /// <summary>
@@ -324,23 +293,8 @@ namespace DialogEditor.Services
                 }
                 else
                 {
-                    // Create shallow clone of child node
-                    clonedChild = new DialogNode
-                    {
-                        Type = originalPtr.Node.Type,
-                        Text = CloneLocString(originalPtr.Node.Text),
-                        Speaker = originalPtr.Node.Speaker ?? string.Empty,
-                        Comment = originalPtr.Node.Comment ?? string.Empty,
-                        Sound = originalPtr.Node.Sound ?? string.Empty,
-                        ScriptAction = originalPtr.Node.ScriptAction ?? string.Empty,
-                        Animation = originalPtr.Node.Animation,
-                        AnimationLoop = originalPtr.Node.AnimationLoop,
-                        Delay = originalPtr.Node.Delay,
-                        Quest = originalPtr.Node.Quest ?? string.Empty,
-                        QuestEntry = originalPtr.Node.QuestEntry,
-                        ActionParams = new Dictionary<string, string>(originalPtr.Node.ActionParams ?? new Dictionary<string, string>()),
-                        Pointers = new List<DialogPtr>()
-                    };
+                    // Create shallow clone of child node using shared helper
+                    clonedChild = CloningHelper.CreateShallowNodeClone(originalPtr.Node);
 
                     cloneMap[originalPtr.Node] = clonedChild;
 

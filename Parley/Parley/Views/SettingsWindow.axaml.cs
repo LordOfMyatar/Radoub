@@ -1272,13 +1272,14 @@ namespace DialogEditor.Views
                 {
                     try
                     {
-                        // Test if font exists
+                        // Test if font exists by attempting to create FontFamily
                         var testFamily = new FontFamily(font);
                         fonts.Add(font);
                     }
                     catch
                     {
-                        // Font not available on this system
+                        // Font not available on this system - expected for fonts
+                        // not installed. No logging needed as this is normal behavior.
                     }
                 }
 
@@ -1373,8 +1374,9 @@ namespace DialogEditor.Views
                             {
                                 fontPreviewText.FontFamily = new FontFamily(selectedFont);
                             }
-                            catch
+                            catch (Exception ex)
                             {
+                                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Font '{selectedFont}' not available for preview, using default: {ex.Message}");
                                 fontPreviewText.FontFamily = FontFamily.Default;
                             }
                         }
