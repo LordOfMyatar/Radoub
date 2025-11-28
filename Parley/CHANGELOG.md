@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.31-alpha] - 2025-11-28
-**Branch**: `parley/sprint/bugs-and-focus` | **PR**: #TBD
+**Branch**: `parley/sprint/bugs-and-focus` | **PR**: #217
 
 ### Sprint: Bug Squash + Focus Management
 
