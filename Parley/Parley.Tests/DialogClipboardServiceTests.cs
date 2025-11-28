@@ -485,6 +485,312 @@ namespace Parley.Tests
 
         #endregion
 
+        #region Source Pointer Script Tests (Issue #196)
+
+        [Fact]
+        public void CopyNode_WithSourcePointer_StoresScriptAppears()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var node = CreateTestNode(DialogNodeType.Entry, "Test entry");
+            dialog.Entries.Add(node);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = node,
+                Type = DialogNodeType.Entry,
+                Index = 0,
+                ScriptAppears = "lompqj_sc"
+            };
+
+            // Act
+            _clipboardService.CopyNode(node, dialog, sourcePointer);
+
+            // Assert
+            Assert.Equal("lompqj_sc", _clipboardService.SourceScriptAppears);
+        }
+
+        [Fact]
+        public void CopyNode_WithSourcePointer_StoresConditionParams()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var node = CreateTestNode(DialogNodeType.Entry, "Test entry");
+            dialog.Entries.Add(node);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = node,
+                Type = DialogNodeType.Entry,
+                Index = 0,
+                ScriptAppears = "test_script",
+                ConditionParams = new Dictionary<string, string>
+                {
+                    ["RATS"] = "1",
+                    ["CATS"] = "2"
+                }
+            };
+
+            // Act
+            _clipboardService.CopyNode(node, dialog, sourcePointer);
+
+            // Assert
+            Assert.Equal(2, _clipboardService.SourceConditionParams.Count);
+            Assert.Equal("1", _clipboardService.SourceConditionParams["RATS"]);
+            Assert.Equal("2", _clipboardService.SourceConditionParams["CATS"]);
+        }
+
+        [Fact]
+        public void CopyNode_WithoutSourcePointer_HasEmptyScriptInfo()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var node = CreateTestNode(DialogNodeType.Entry, "Test entry");
+            dialog.Entries.Add(node);
+
+            // Act - No source pointer
+            _clipboardService.CopyNode(node, dialog);
+
+            // Assert
+            Assert.Equal(string.Empty, _clipboardService.SourceScriptAppears);
+            Assert.Empty(_clipboardService.SourceConditionParams);
+        }
+
+        [Fact]
+        public void CutNode_WithSourcePointer_StoresScriptAppears()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var node = CreateTestNode(DialogNodeType.Entry, "Test entry");
+            dialog.Entries.Add(node);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = node,
+                Type = DialogNodeType.Entry,
+                Index = 0,
+                ScriptAppears = "cut_script"
+            };
+
+            // Act
+            _clipboardService.CutNode(node, dialog, sourcePointer);
+
+            // Assert
+            Assert.Equal("cut_script", _clipboardService.SourceScriptAppears);
+        }
+
+        [Fact]
+        public void CutNode_WithSourcePointer_StoresConditionParams()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var node = CreateTestNode(DialogNodeType.Entry, "Test entry");
+            dialog.Entries.Add(node);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = node,
+                Type = DialogNodeType.Entry,
+                Index = 0,
+                ConditionParams = new Dictionary<string, string>
+                {
+                    ["PARAM1"] = "value1"
+                }
+            };
+
+            // Act
+            _clipboardService.CutNode(node, dialog, sourcePointer);
+
+            // Assert
+            Assert.Single(_clipboardService.SourceConditionParams);
+            Assert.Equal("value1", _clipboardService.SourceConditionParams["PARAM1"]);
+        }
+
+        [Fact]
+        public void SourceConditionParams_ReturnsDefensiveCopy()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var node = CreateTestNode(DialogNodeType.Entry, "Test entry");
+            dialog.Entries.Add(node);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = node,
+                Type = DialogNodeType.Entry,
+                Index = 0,
+                ConditionParams = new Dictionary<string, string>
+                {
+                    ["KEY"] = "original"
+                }
+            };
+
+            _clipboardService.CopyNode(node, dialog, sourcePointer);
+
+            // Act - Modify the returned dictionary
+            var params1 = _clipboardService.SourceConditionParams;
+            params1["KEY"] = "modified";
+            params1["NEW"] = "added";
+
+            // Assert - Original not affected
+            var params2 = _clipboardService.SourceConditionParams;
+            Assert.Equal("original", params2["KEY"]);
+            Assert.False(params2.ContainsKey("NEW"));
+        }
+
+        [Fact]
+        public void PasteAsDuplicate_WithParent_AppliesScriptAppears()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var original = CreateTestNode(DialogNodeType.Reply, "Original");
+            var parent = CreateTestNode(DialogNodeType.Entry, "Parent");
+            dialog.Replies.Add(original);
+            dialog.Entries.Add(parent);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = original,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                ScriptAppears = "test_condition"
+            };
+
+            _clipboardService.CopyNode(original, dialog, sourcePointer);
+
+            // Act
+            _clipboardService.PasteAsDuplicate(dialog, parent, null);
+
+            // Assert - New pointer should have ScriptAppears
+            Assert.Single(parent.Pointers);
+            Assert.Equal("test_condition", parent.Pointers[0].ScriptAppears);
+        }
+
+        [Fact]
+        public void PasteAsDuplicate_WithParent_AppliesConditionParams()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var original = CreateTestNode(DialogNodeType.Reply, "Original");
+            var parent = CreateTestNode(DialogNodeType.Entry, "Parent");
+            dialog.Replies.Add(original);
+            dialog.Entries.Add(parent);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = original,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                ConditionParams = new Dictionary<string, string>
+                {
+                    ["RATS"] = "1",
+                    ["DOGS"] = "0"
+                }
+            };
+
+            _clipboardService.CopyNode(original, dialog, sourcePointer);
+
+            // Act
+            _clipboardService.PasteAsDuplicate(dialog, parent, null);
+
+            // Assert - New pointer should have ConditionParams
+            Assert.Single(parent.Pointers);
+            Assert.Equal(2, parent.Pointers[0].ConditionParams.Count);
+            Assert.Equal("1", parent.Pointers[0].ConditionParams["RATS"]);
+            Assert.Equal("0", parent.Pointers[0].ConditionParams["DOGS"]);
+        }
+
+        [Fact]
+        public void PasteAsDuplicate_ToRoot_AppliesScriptAppears()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var original = CreateTestNode(DialogNodeType.Entry, "Original");
+            dialog.Entries.Add(original);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = original,
+                Type = DialogNodeType.Entry,
+                Index = 0,
+                ScriptAppears = "root_condition"
+            };
+
+            _clipboardService.CopyNode(original, dialog, sourcePointer);
+
+            // Act - Paste to root (no parent)
+            _clipboardService.PasteAsDuplicate(dialog, null, null);
+
+            // Assert - START pointer should have ScriptAppears
+            Assert.Single(dialog.Starts);
+            Assert.Equal("root_condition", dialog.Starts[0].ScriptAppears);
+        }
+
+        [Fact]
+        public void PasteAsDuplicate_ToRoot_AppliesConditionParams()
+        {
+            // Arrange
+            var dialog = CreateTestDialog();
+            var original = CreateTestNode(DialogNodeType.Entry, "Original");
+            dialog.Entries.Add(original);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = original,
+                Type = DialogNodeType.Entry,
+                Index = 0,
+                ConditionParams = new Dictionary<string, string>
+                {
+                    ["START_PARAM"] = "yes"
+                }
+            };
+
+            _clipboardService.CopyNode(original, dialog, sourcePointer);
+
+            // Act - Paste to root (no parent)
+            _clipboardService.PasteAsDuplicate(dialog, null, null);
+
+            // Assert - START pointer should have ConditionParams
+            Assert.Single(dialog.Starts);
+            Assert.Single(dialog.Starts[0].ConditionParams);
+            Assert.Equal("yes", dialog.Starts[0].ConditionParams["START_PARAM"]);
+        }
+
+        [Fact]
+        public void PasteAsDuplicate_PreservesConditionParamsIndependently()
+        {
+            // Arrange - Test that pasted params are independent copies
+            var dialog = CreateTestDialog();
+            var original = CreateTestNode(DialogNodeType.Reply, "Original");
+            var parent = CreateTestNode(DialogNodeType.Entry, "Parent");
+            dialog.Replies.Add(original);
+            dialog.Entries.Add(parent);
+
+            var sourcePointer = new DialogPtr
+            {
+                Node = original,
+                Type = DialogNodeType.Reply,
+                Index = 0,
+                ConditionParams = new Dictionary<string, string>
+                {
+                    ["KEY"] = "original"
+                }
+            };
+
+            _clipboardService.CopyNode(original, dialog, sourcePointer);
+            _clipboardService.PasteAsDuplicate(dialog, parent, null);
+
+            // Act - Modify the pasted pointer's params
+            parent.Pointers[0].ConditionParams["KEY"] = "modified";
+            parent.Pointers[0].ConditionParams["NEW"] = "added";
+
+            // Assert - Clipboard source not affected
+            Assert.Equal("original", _clipboardService.SourceConditionParams["KEY"]);
+            Assert.False(_clipboardService.SourceConditionParams.ContainsKey("NEW"));
+        }
+
+        #endregion
+
         #region Clipboard State Tests
 
         [Fact]

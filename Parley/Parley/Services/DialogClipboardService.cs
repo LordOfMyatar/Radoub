@@ -43,6 +43,16 @@ namespace DialogEditor.Services
         public DialogNode? OriginalNode => _originalNode;
 
         /// <summary>
+        /// Gets the source pointer's ScriptAppears (conditional script)
+        /// </summary>
+        public string SourceScriptAppears => _sourceScriptAppears;
+
+        /// <summary>
+        /// Gets a copy of the source pointer's ConditionParams
+        /// </summary>
+        public Dictionary<string, string> SourceConditionParams => new(_sourceConditionParams);
+
+        /// <summary>
         /// Copy a node to the clipboard
         /// </summary>
         /// <param name="node">The node to copy</param>
@@ -68,7 +78,9 @@ namespace DialogEditor.Services
                 : new Dictionary<string, string>();
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Copied node to clipboard: Type={node.Type}, ScriptAppears={_sourceScriptAppears}");
+                $"Copied node to clipboard: Type={node.Type}, ScriptAction={node.ScriptAction}, " +
+                $"SourcePointer={(sourcePointer != null ? "present" : "NULL")}, " +
+                $"ScriptAppears='{_sourceScriptAppears}', ConditionParams={_sourceConditionParams.Count}");
         }
 
         /// <summary>
@@ -169,7 +181,8 @@ namespace DialogEditor.Services
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Pasted node as duplicate: Type={newNode.Type}, WasCut={_wasCut}");
+                $"Pasted node as duplicate: Type={newNode.Type}, ScriptAction={newNode.ScriptAction}, " +
+                $"AppliedScriptAppears='{_sourceScriptAppears}', AppliedConditionParams={_sourceConditionParams.Count}");
 
             return newNode;
         }

@@ -46,6 +46,23 @@ Addressing exception handling, code duplication, and attribution.
 - Copy/Cut now preserves `ConditionParams` from source pointer
 - Paste as Duplicate applies stored scripts to new pointer
 - `GetNodeProperties` (Ctrl+Shift+P) now shows ScriptAppears and ConditionParams
+- Added 11 new unit tests for script preservation (DialogClipboardServiceTests)
+- Added 11 new unit tests for PasteOperationsManager (new test file)
+
+**Code Path**: Copy/Paste Script Preservation
+```
+User Action: Copy Node (Ctrl+C) or Cut Node (Ctrl+X)
+├── MainViewModel.CopyNode/CutNode
+│   └── DialogClipboardService.CopyNode/CutNode(node, dialog, sourcePointer)
+│       ├── Stores _sourceScriptAppears from sourcePointer
+│       └── Stores _sourceConditionParams from sourcePointer
+
+User Action: Paste as Duplicate (Ctrl+V)
+├── MainViewModel.PasteAsDuplicate
+│   └── PasteOperationsManager.PasteAsDuplicate(dialog, parent)
+│       ├── PasteToRoot() - creates START pointer with clipboard scripts
+│       └── PasteToParent() - creates child pointer with clipboard scripts
+```
 
 ---
 
