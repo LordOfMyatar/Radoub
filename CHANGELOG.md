@@ -13,6 +13,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.0] - TBD
+**Branch**: `radoub/sprint/game-file-formats` | **PR**: #TBD
+
+### Sprint: Game File Formats Integration
+
+GameResourceResolver and documentation for Radoub.Formats library.
+
+**Added**:
+- TBD
+
+---
+
 ## [0.4.0] - 2025-11-27
 **Branch**: `radoub/feat/issue-170-formats-library-tlk` | **PR**: #209
 
