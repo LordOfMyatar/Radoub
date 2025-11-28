@@ -13,6 +13,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.4.0] - 2025-11-27
+**Branch**: `radoub/feat/issue-170-formats-library-tlk` | **PR**: #209
+
+### Epic #170: Aurora Game Resource Reading Infrastructure (Phase 3 - TLK & 2DA)
+
+TLK (Talk Table) and 2DA (Two-Dimensional Array) file reading support.
+
+**Added - TLK**:
+- `TlkFile` - Data model for TLK (Talk Table) files
+- `TlkEntry` - Entry model with text, sound ResRef, and duration
+- `TlkReader` - Parser for TLK format files
+- Flag support: HasText (0x1), HasSound (0x2), HasSoundLength (0x4)
+- Legacy artifact stripping (0xC0 bytes from old editors)
+- Windows-1252 encoding support for NWN text
+- 23 unit tests for TLK reading
+
+**Added - 2DA**:
+- `TwoDAFile` - Data model for 2DA game data tables
+- `TwoDARow` - Row model with label and cell values
+- `TwoDAReader` - Parser for 2DA format (text-based)
+- DEFAULT value support for missing cells
+- Quoted string handling for values with spaces
+- Empty cell (****) support
+- Case-insensitive column lookup
+- 26 unit tests for 2DA reading
+
+---
+
 ## [0.3.0] - TBD
 **Branch**: `radoub/feat/issue-90-gui-testing` | **PR**: #204
 
