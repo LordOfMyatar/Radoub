@@ -213,6 +213,21 @@ namespace DialogEditor.Services
                 return null;
             }
 
+            // Issue #11: Validate link type compatibility
+            // Aurora format: Entry children must be Reply, Reply children must be Entry
+            if (parentNode != null)
+            {
+                bool isSameType = parentNode.Type == _originalNode.Type;
+                if (isSameType)
+                {
+                    string parentType = parentNode.Type == DialogNodeType.Entry ? "NPC Entry" : "PC Reply";
+                    string nodeType = _originalNode.Type == DialogNodeType.Entry ? "NPC Entry" : "PC Reply";
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Invalid link: Cannot link {nodeType} under {parentType} (same types not allowed)");
+                    return null;
+                }
+            }
+
             // Find the index of the ORIGINAL node in the dialog
             uint nodeIndex;
             if (_originalNode.Type == DialogNodeType.Entry)

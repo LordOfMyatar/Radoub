@@ -68,6 +68,11 @@ namespace DialogEditor.ViewModels
 
         public string LoadedFileName => CurrentFileName != null ? System.IO.Path.GetFileName(CurrentFileName) : "No file loaded";
 
+        /// <summary>
+        /// Issue #123: Gets whether the clipboard content was from a Cut operation.
+        /// </summary>
+        public bool ClipboardWasCut => _clipboardService.WasCutOperation;
+
         public string WindowTitle => CurrentFileName != null
             ? $"Parley v{VersionHelper.FullVersion} - {System.IO.Path.GetFileName(CurrentFileName)}{(HasUnsavedChanges ? "*" : "")}"
             : $"Parley v{VersionHelper.FullVersion}";
@@ -663,9 +668,10 @@ namespace DialogEditor.ViewModels
         /// - Reply → Entry (NPC response)
         /// </summary>
         /// <summary>
-        /// Saves current state to undo stack before making changes
+        /// Saves current state to undo stack before making changes.
+        /// Issue #74: Made public to allow view to save state before property edits.
         /// </summary>
-        private void SaveUndoState(string description)
+        public void SaveUndoState(string description)
         {
             if (CurrentDialog != null && !_undoRedoService.IsRestoring)
             {
@@ -1255,6 +1261,11 @@ namespace DialogEditor.ViewModels
 
             if (result.Success)
             {
+                // Issue #122: Focus on the newly pasted node instead of sibling
+                if (result.PastedNode != null)
+                {
+                    NodeToSelectAfterRefresh = result.PastedNode;
+                }
                 RefreshTreeView();
                 HasUnsavedChanges = true;
             }
@@ -1282,6 +1293,16 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
+            // Issue #11: Check type compatibility before attempting paste
+            var clipboardNode = _clipboardService.ClipboardNode;
+            if (clipboardNode != null && clipboardNode.Type == parent.OriginalNode.Type)
+            {
+                string parentType = parent.OriginalNode.Type == DialogNodeType.Entry ? "NPC Entry" : "PC Reply";
+                string nodeType = clipboardNode.Type == DialogNodeType.Entry ? "NPC Entry" : "PC Reply";
+                StatusMessage = $"Invalid link: Cannot link {nodeType} under {parentType} (same types not allowed)";
+                return;
+            }
+
             // Save state for undo before creating link
             SaveUndoState("Paste as Link");
 
@@ -1291,13 +1312,15 @@ namespace DialogEditor.ViewModels
             if (linkPtr == null)
             {
                 // Service already logged the reason (Cut operation, different dialog, node not found, etc.)
-                StatusMessage = "Cannot paste as link - check logs for details";
+                StatusMessage = "Cannot paste as link - operation failed";
                 return;
             }
 
             // Register the link pointer with LinkRegistry
             CurrentDialog.LinkRegistry.RegisterLink(linkPtr);
 
+            // Issue #122: Focus on parent node (link is under parent, not standalone)
+            NodeToSelectAfterRefresh = parent.OriginalNode;
             RefreshTreeView();
             HasUnsavedChanges = true;
             StatusMessage = $"Pasted link under {parent.DisplayText}: {linkPtr.Node?.DisplayText}";

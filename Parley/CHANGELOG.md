@@ -18,18 +18,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Combined sprint addressing outstanding bugs and focus/navigation improvements.
 
 **Bug Fixes**:
-- [ ] #178 - Script preview doesn't clear when ROOT node selected
-- [ ] #12 - Links show original node comment instead of LinkComment
-- [ ] #11 - System allows invalid link operations (Entry → Entry)
-- [ ] #74 - Property changes not included in undo stack
-- [ ] #123 - Paste as Link after Cut should prompt for undo
+- [x] #178 - Script preview now clears when ROOT node selected
+- [x] #12 - Links now show LinkComment instead of original node comment
+- [x] #11 - Validation prevents invalid link operations (Entry → Entry, Reply → Reply)
+- [x] #74 - Property changes now saved to undo stack when field gains focus
+- [x] #123 - Paste as Link after Cut shows dialog with Undo/Paste as Copy/Cancel options
 
 **Focus Management (#134)**:
-- [ ] #148 - Tab order navigation between fields
-- [ ] #122 - Focus behavior differs between Delete and Paste operations
-- [ ] Move up/down focus preservation
-- [ ] Paste duplicate focuses on pasted node
-- [ ] Delete focuses on sibling/parent
+- [x] #148 - Tab order navigation added to properties panel fields
+- [x] #122 - Paste operations now focus on pasted/parent node instead of sibling
+- [x] Move up/down focus preservation (already working via RefreshTreeViewAndSelectNode)
+- [x] Paste duplicate focuses on pasted node
+- [x] Paste link focuses on parent node
 
 ---
 

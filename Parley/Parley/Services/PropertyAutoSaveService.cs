@@ -109,7 +109,16 @@ namespace DialogEditor.Services
             var control = _findControl("CommentTextBox") as TextBox;
             if (control != null)
             {
-                node.OriginalNode.Comment = control.Text ?? "";
+                // Issue #12: For link nodes, save to LinkComment on the pointer
+                // instead of the original node's Comment
+                if (node.IsChild && node.SourcePointer != null)
+                {
+                    node.SourcePointer.LinkComment = control.Text ?? "";
+                }
+                else
+                {
+                    node.OriginalNode.Comment = control.Text ?? "";
+                }
             }
         }
 

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
@@ -1385,7 +1386,7 @@ namespace DialogEditor.Views
             // Populate all node properties using helper
             _propertyPopulator.PopulateNodeType(dialogNode);
             _propertyPopulator.PopulateSpeaker(dialogNode);
-            _propertyPopulator.PopulateBasicProperties(dialogNode);
+            _propertyPopulator.PopulateBasicProperties(dialogNode, node);
             _propertyPopulator.PopulateAnimation(dialogNode);
             _propertyPopulator.PopulateIsChildIndicator(node);
 
@@ -1510,6 +1511,41 @@ namespace DialogEditor.Views
             }
         }
 
+        // Issue #74: Track if we've already saved undo state for current edit session
+        private string? _currentEditFieldName = null;
+
+        // Issue #74: Save undo state when field gains focus (before editing)
+        private void OnFieldGotFocus(object? sender, GotFocusEventArgs e)
+        {
+            if (_selectedNode == null || _isPopulatingProperties) return;
+            if (_viewModel.CurrentDialog == null) return;
+
+            var control = sender as Control;
+            if (control?.Name == null) return;
+
+            // Only save undo state once per field edit session
+            if (_currentEditFieldName != control.Name)
+            {
+                _currentEditFieldName = control.Name;
+                _viewModel.SaveUndoState($"Edit {GetFieldDisplayName(control.Name)}");
+            }
+        }
+
+        // Helper to get user-friendly field name for undo description
+        private static string GetFieldDisplayName(string fieldName) => fieldName switch
+        {
+            "SpeakerTextBox" => "Speaker",
+            "TextTextBox" => "Text",
+            "CommentTextBox" => "Comment",
+            "SoundTextBox" => "Sound",
+            "DelayTextBox" => "Delay",
+            "ScriptAppearsTextBox" => "Conditional Script",
+            "ScriptActionTextBox" => "Action Script",
+            "ScriptEndTextBox" => "End Script",
+            "ScriptAbortTextBox" => "Abort Script",
+            _ => fieldName.Replace("TextBox", "")
+        };
+
         // FIELD-LEVEL AUTO-SAVE: Save property when field loses focus
         private void OnFieldLostFocus(object? sender, RoutedEventArgs e)
         {
@@ -1517,6 +1553,9 @@ namespace DialogEditor.Views
 
             var control = sender as Control;
             if (control == null) return;
+
+            // Clear the edit session tracker (Issue #74)
+            _currentEditFieldName = null;
 
             // Auto-save the specific property that changed
             AutoSaveProperty(control.Name ?? "");
@@ -3315,7 +3354,7 @@ namespace DialogEditor.Views
             _viewModel.PasteAsDuplicate(selectedNode);
         }
 
-        private void OnPasteAsLinkClick(object? sender, RoutedEventArgs e)
+        private async void OnPasteAsLinkClick(object? sender, RoutedEventArgs e)
         {
             var selectedNode = GetSelectedTreeNode();
             if (selectedNode == null)
@@ -3324,7 +3363,89 @@ namespace DialogEditor.Views
                 return;
             }
 
+            // Issue #123: Check if clipboard is from Cut operation
+            if (_viewModel.ClipboardWasCut)
+            {
+                var result = await ShowPasteAsLinkAfterCutDialog();
+                switch (result)
+                {
+                    case PasteAfterCutChoice.UndoCut:
+                        // Undo the cut operation first
+                        _viewModel.Undo();
+                        // Now the node is restored, re-copy it so we can paste as link
+                        // Note: After undo, the clipboard may be cleared, so user needs to copy again
+                        _viewModel.StatusMessage = "Cut operation undone. Please copy the node again, then paste as link.";
+                        return;
+                    case PasteAfterCutChoice.PasteAsCopy:
+                        // Delegate to paste as duplicate instead
+                        _viewModel.PasteAsDuplicate(selectedNode);
+                        return;
+                    case PasteAfterCutChoice.Cancel:
+                    default:
+                        _viewModel.StatusMessage = "Paste as link cancelled";
+                        return;
+                }
+            }
+
             _viewModel.PasteAsLink(selectedNode);
+        }
+
+        private enum PasteAfterCutChoice { Cancel, UndoCut, PasteAsCopy }
+
+        /// <summary>
+        /// Issue #123: Shows dialog when user tries Paste as Link after Cut operation.
+        /// </summary>
+        private async Task<PasteAfterCutChoice> ShowPasteAsLinkAfterCutDialog()
+        {
+            var dialog = new Window
+            {
+                Title = "Cannot Paste as Link After Cut",
+                MinWidth = 450,
+                MaxWidth = 600,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false
+            };
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Cannot paste as link after a Cut operation.\n\n" +
+                       "Links reference the original node, but Cut will delete it.\n\n" +
+                       "Choose an option:",
+                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
+                MaxWidth = 560,
+                Margin = new Thickness(0, 0, 0, 20)
+            });
+
+            var buttonPanel = new StackPanel
+            {
+                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                Spacing = 10
+            };
+
+            var result = PasteAfterCutChoice.Cancel;
+
+            var undoButton = new Button { Content = "Undo Cut", MinWidth = 100 };
+            undoButton.Click += (s, e) => { result = PasteAfterCutChoice.UndoCut; dialog.Close(); };
+
+            var copyButton = new Button { Content = "Paste as Copy", MinWidth = 100 };
+            copyButton.Click += (s, e) => { result = PasteAfterCutChoice.PasteAsCopy; dialog.Close(); };
+
+            var cancelButton = new Button { Content = "Cancel", MinWidth = 80 };
+            cancelButton.Click += (s, e) => { result = PasteAfterCutChoice.Cancel; dialog.Close(); };
+
+            buttonPanel.Children.Add(undoButton);
+            buttonPanel.Children.Add(copyButton);
+            buttonPanel.Children.Add(cancelButton);
+
+            panel.Children.Add(buttonPanel);
+            dialog.Content = panel;
+
+            await dialog.ShowDialog(this);
+            return result;
         }
 
         // Expand/Collapse Subnodes (Issue #39)

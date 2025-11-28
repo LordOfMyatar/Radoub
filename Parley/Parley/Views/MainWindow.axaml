@@ -252,6 +252,8 @@
                         <TextBlock Grid.Column="0" Text="Speaker:" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox x:Name="SpeakerTextBox" Grid.Column="1" MaxLength="15"
                                  TextWrapping="NoWrap" AcceptsReturn="False"
+                                 TabIndex="1"
+                                 GotFocus="OnFieldGotFocus"
                                  LostFocus="OnFieldLostFocus"/>
                         <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="3"
                                   MinWidth="80" MaxWidth="120"
@@ -278,6 +280,8 @@
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <TextBox x:Name="TextTextBox" AcceptsReturn="True"
                             TextWrapping="Wrap"
+                            TabIndex="2"
+                            GotFocus="OnFieldGotFocus"
                             LostFocus="OnFieldLostFocus"
                             ScrollViewer.VerticalScrollBarVisibility="Auto"
                             ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
@@ -309,8 +313,8 @@
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas"
-                                     TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
+                            <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="3"
+                                     TextWrapping="Wrap" GotFocus="OnFieldGotFocus" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditConditionalScriptButton" Grid.Column="2" Content="Edit Script"
                                     MinWidth="55" Padding="5,0" Click="OnEditConditionalScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
@@ -374,8 +378,8 @@
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas"
-                                     TextWrapping="Wrap" LostFocus="OnFieldLostFocus"/>
+                            <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="4"
+                                     TextWrapping="Wrap" GotFocus="OnFieldGotFocus" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditActionScriptButton" Grid.Column="2" Content="Edit Script"
                                     MinWidth="55" Padding="5,0" Click="OnEditActionScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
@@ -449,7 +453,7 @@
                                     <ColumnDefinition Width="5"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="ScriptEndTextBox" Grid.Column="0" FontFamily="Consolas"
+                                <TextBox x:Name="ScriptEndTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="5"
                                          TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
                                          ToolTip.Tip="Script to run when conversation ends normally"/>
                                 <Button Grid.Column="2" Content="Browse..." MinWidth="55" Padding="5,0"
@@ -463,7 +467,7 @@
                                     <ColumnDefinition Width="5"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="ScriptAbortTextBox" Grid.Column="0" FontFamily="Consolas"
+                                <TextBox x:Name="ScriptAbortTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="6"
                                          TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
                                          ToolTip.Tip="Script to run when conversation is aborted"/>
                                 <Button Grid.Column="2" Content="Browse..." MinWidth="55" Padding="5,0"
@@ -491,6 +495,7 @@
 
                             <TextBlock Text="Animation:"/>
                             <ComboBox x:Name="AnimationComboBox" Margin="0,0,0,5"
+                                      TabIndex="10"
                                       SelectionChanged="OnAnimationSelectionChanged"/>
 
                             <TextBlock Text="Sound File:"/>
@@ -503,6 +508,8 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="SoundTextBox" Grid.Column="0" TextWrapping="Wrap"
+                                         TabIndex="11"
+                                         GotFocus="OnFieldGotFocus"
                                          LostFocus="OnFieldLostFocus"/>
                                 <Button x:Name="BrowseSoundButton" Grid.Column="2" Content="Browse..."
                                         MinWidth="55" Padding="5,0" Click="OnBrowseSoundClick"/>
@@ -512,6 +519,8 @@
 
                             <TextBlock Text="Delay (ms):"/>
                             <TextBox x:Name="DelayTextBox" Margin="0,0,0,10" TextWrapping="Wrap"
+                                     TabIndex="12"
+                                     GotFocus="OnFieldGotFocus"
                                      TextChanged="OnDelayTextChanged"
                                      LostFocus="OnFieldLostFocus"/>
 
@@ -522,6 +531,7 @@
                             <TextBlock Text="Quest Tag:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                                 <ComboBox x:Name="QuestTagComboBox" MinWidth="150"
+                                          TabIndex="13"
                                           SelectionChanged="OnQuestTagChanged"
                                           ToolTip.Tip="Select a quest from the module's journal">
                                     <ComboBox.ItemTemplate>
@@ -546,6 +556,7 @@
                             <TextBlock Text="Quest Entry:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                                 <ComboBox x:Name="QuestEntryComboBox" MinWidth="150"
+                                          TabIndex="14"
                                           SelectionChanged="OnQuestEntryChanged"
                                           ToolTip.Tip="Select a quest entry">
                                     <ComboBox.ItemTemplate>
@@ -588,6 +599,8 @@
                             <TextBlock Text="Comment:"/>
                             <TextBox x:Name="CommentTextBox" AcceptsReturn="True" MinHeight="50"
                                     TextWrapping="Wrap" Margin="0,0,0,5"
+                                    TabIndex="15"
+                                    GotFocus="OnFieldGotFocus"
                                     LostFocus="OnFieldLostFocus"/>
                             </StackPanel>
                         </StackPanel>
