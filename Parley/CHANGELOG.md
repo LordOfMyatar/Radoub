@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.30-alpha] - TBD
+## [0.1.30-alpha] - 2025-11-28
 **Branch**: `parley/fix/issue-196-tech-debt` | **PR**: #215
 
 ### Tech Debt Sprint
