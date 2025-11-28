@@ -37,6 +37,14 @@ namespace DialogEditor.Services
         public bool IsRestoring => _undoManager.IsRestoring;
 
         /// <summary>
+        /// Sets the restoring state. Used to extend restoring period during async tree rebuild.
+        /// </summary>
+        public void SetRestoring(bool value)
+        {
+            _undoManager.SetRestoring(value);
+        }
+
+        /// <summary>
         /// Saves the current dialog state for undo
         /// </summary>
         public void SaveState(Dialog dialog, string description = "")
