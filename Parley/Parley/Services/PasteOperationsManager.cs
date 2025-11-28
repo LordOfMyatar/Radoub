@@ -116,7 +116,7 @@ namespace DialogEditor.Services
             // Get the correct index after adding
             var duplicateIndex = (uint)dialog.GetNodeIndex(duplicate, duplicate.Type);
 
-            // Create start pointer
+            // Create start pointer (preserve source script info from clipboard)
             var startPtr = new DialogPtr
             {
                 Node = duplicate,
@@ -124,8 +124,8 @@ namespace DialogEditor.Services
                 Index = duplicateIndex,
                 IsLink = false,
                 IsStart = true,
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
+                ScriptAppears = _clipboardService.SourceScriptAppears,
+                ConditionParams = _clipboardService.SourceConditionParams,
                 Comment = "",
                 Parent = dialog
             };
@@ -197,15 +197,15 @@ namespace DialogEditor.Services
             // Get the correct index after adding
             var nodeIndex = (uint)dialog.GetNodeIndex(duplicateNode, duplicateNode.Type);
 
-            // Create pointer from parent to duplicate
+            // Create pointer from parent to duplicate (preserve source script info from clipboard)
             var newPtr = new DialogPtr
             {
                 Node = duplicateNode,
                 Type = duplicateNode.Type,
                 Index = nodeIndex,
                 IsLink = false,
-                ScriptAppears = "",
-                ConditionParams = new Dictionary<string, string>(),
+                ScriptAppears = _clipboardService.SourceScriptAppears,
+                ConditionParams = _clipboardService.SourceConditionParams,
                 Comment = "",
                 Parent = dialog
             };

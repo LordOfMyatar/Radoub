@@ -122,10 +122,18 @@ public abstract class FlaUITestBase : IDisposable
     protected void ClickMenu(params string[] menuPath)
     {
         if (menuPath.Length == 0) return;
+        if (MainWindow == null)
+        {
+            throw new InvalidOperationException("MainWindow is null - cannot click menu");
+        }
 
         // Click first menu to open it
-        var menu = MainWindow!.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
-        menu?.AsMenuItem().Click();
+        var menu = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
+        if (menu == null)
+        {
+            throw new InvalidOperationException($"Menu '{menuPath[0]}' not found in window");
+        }
+        menu.AsMenuItem().Click();
 
         // Small delay for menu to open
         Thread.Sleep(100);
@@ -134,7 +142,11 @@ public abstract class FlaUITestBase : IDisposable
         for (int i = 1; i < menuPath.Length; i++)
         {
             var item = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
-            item?.AsMenuItem().Click();
+            if (item == null)
+            {
+                throw new InvalidOperationException($"Menu item '{menuPath[i]}' not found");
+            }
+            item.AsMenuItem().Click();
             Thread.Sleep(50);
         }
     }

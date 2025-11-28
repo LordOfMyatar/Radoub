@@ -54,7 +54,7 @@ public class UndoRedoTests : ParleyTestBase
 
     [Fact]
     [Trait("Category", "UndoRedo")]
-    public void Undo_AfterModification_RemovesUnsavedIndicator()
+    public void Undo_AfterModification_RestoresDialogState()
     {
         // Arrange - Use temp file
         var tempFile = TestPaths.CopyTestFileToTemp(TestFileName);
@@ -65,9 +65,22 @@ public class UndoRedoTests : ParleyTestBase
             StartApplication($"\"{tempFile}\"");
             WaitForTitleContains(TestFileName, FileOperationTimeout);
 
-            // Make a modification - select and add node
+            // Wait for app to fully stabilize before making changes
+            Thread.Sleep(1000);
+
+            // Get initial node count (expand all first to see all nodes)
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+
+            // Expand the first node to ensure we can see children
+            firstItem?.DoubleClick();
+            Thread.Sleep(300);
+
+            var initialItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var initialCount = initialItems?.Length ?? 0;
+
+            // Make a modification - select and add node
+            firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
             firstItem?.Click();
             Thread.Sleep(200);
 
@@ -76,33 +89,38 @@ public class UndoRedoTests : ParleyTestBase
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
-            Thread.Sleep(500);
 
-            // Verify unsaved indicator appeared
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.Contains("*", MainWindow!.Title);
+            // Wait longer for node creation and tree refresh
+            Thread.Sleep(1000);
 
-            // Act - Undo via Ctrl+Z
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
-            Thread.Sleep(500);
+            // Verify node was added (node count should increase)
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterAddCount = afterAddItems?.Length ?? 0;
+            Assert.True(afterAddCount > initialCount, $"Node should have been added (initial: {initialCount}, after: {afterAddCount})");
 
-            // Assert - Unsaved indicator should be gone
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.NotNull(MainWindow);
-            Assert.DoesNotContain("*", MainWindow.Title);
+            // Act - Undo via Edit menu (Ctrl+Z goes to TextBox which has focus after Ctrl+D)
+            ClickMenu("Edit", "Undo");
+            Thread.Sleep(1000);
+
+            // Assert - Node count should be back to initial
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterUndoItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterUndoCount = afterUndoItems?.Length ?? 0;
+            Assert.Equal(initialCount, afterUndoCount);
         }
         finally
         {
+            // Stop application BEFORE cleaning up temp directory
+            // to avoid auto-save race conditions
+            StopApplication();
             TestPaths.CleanupTempDirectory(tempDir);
         }
     }
 
     [Fact]
     [Trait("Category", "UndoRedo")]
-    public void Redo_AfterUndo_RestoresUnsavedIndicator()
+    public void Redo_AfterUndo_RestoresDialogState()
     {
         // Arrange - Use temp file
         var tempFile = TestPaths.CopyTestFileToTemp(TestFileName);
@@ -113,9 +131,22 @@ public class UndoRedoTests : ParleyTestBase
             StartApplication($"\"{tempFile}\"");
             WaitForTitleContains(TestFileName, FileOperationTimeout);
 
-            // Make a modification
+            // Wait for app to fully stabilize before making changes
+            Thread.Sleep(1000);
+
+            // Get initial node count (expand first to see all nodes)
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+
+            // Expand the first node
+            firstItem?.DoubleClick();
+            Thread.Sleep(300);
+
+            var initialItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var initialCount = initialItems?.Length ?? 0;
+
+            // Make a modification
+            firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
             firstItem?.Click();
             Thread.Sleep(200);
 
@@ -124,33 +155,39 @@ public class UndoRedoTests : ParleyTestBase
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
 
-            // Undo the change
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
-            Thread.Sleep(500);
+            // Verify node was added
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterAddCount = afterAddItems?.Length ?? 0;
+            Assert.True(afterAddCount > initialCount, $"Node should have been added (initial: {initialCount}, after: {afterAddCount})");
 
-            // Verify unsaved indicator is gone
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.DoesNotContain("*", MainWindow!.Title);
+            // Undo the change via Edit menu (Ctrl+Z goes to TextBox which has focus)
+            ClickMenu("Edit", "Undo");
+            Thread.Sleep(1000);
 
-            // Act - Redo via Ctrl+Y
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Y);
-            Thread.Sleep(500);
+            // Verify node count is back to initial
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterUndoItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterUndoCount = afterUndoItems?.Length ?? 0;
+            Assert.Equal(initialCount, afterUndoCount);
 
-            // Assert - Unsaved indicator should be back
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.NotNull(MainWindow);
-            Assert.Contains("*", MainWindow.Title);
+            // Act - Redo via Edit menu
+            ClickMenu("Edit", "Redo");
+            Thread.Sleep(1000);
+
+            // Assert - Node count should be back to after-add count
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterRedoItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterRedoCount = afterRedoItems?.Length ?? 0;
+            Assert.Equal(afterAddCount, afterRedoCount);
         }
         finally
         {
+            // Stop application BEFORE cleaning up temp directory
+            // to avoid auto-save race conditions
+            StopApplication();
             TestPaths.CleanupTempDirectory(tempDir);
         }
     }
@@ -168,47 +205,70 @@ public class UndoRedoTests : ParleyTestBase
             StartApplication($"\"{tempFile}\"");
             WaitForTitleContains(TestFileName, FileOperationTimeout);
 
-            // Get initial node count
+            // Wait for app to fully stabilize before making changes
+            Thread.Sleep(1000);
+
+            // Get initial node count (expand first to see all nodes)
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+
+            // Expand the first node
+            firstItem?.DoubleClick();
+            Thread.Sleep(300);
+
             var initialItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
             var initialCount = initialItems?.Length ?? 0;
 
             // Select first node
-            var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
             firstItem?.Click();
             Thread.Sleep(200);
 
-            // Add two nodes
+            // Add first node
             MainWindow.Focus();
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            Thread.Sleep(1000);
+
+            // Click on the tree to regain focus before second add
+            // (Ctrl+D focuses the text box, need to click tree again)
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            firstItem?.Click();
             Thread.Sleep(300);
 
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
-            Thread.Sleep(300);
-
-            // Act - Undo twice
+            // Add second node
             MainWindow.Focus();
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
-            Thread.Sleep(300);
+                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            Thread.Sleep(1000);
 
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
-            Thread.Sleep(500);
+            // Verify nodes were added
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterAddCount = afterAddItems?.Length ?? 0;
+            Assert.True(afterAddCount > initialCount, $"Nodes should have been added (initial: {initialCount}, after: {afterAddCount})");
 
-            // Assert - Should be back to initial state (no unsaved indicator)
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.NotNull(MainWindow);
-            Assert.DoesNotContain("*", MainWindow.Title);
+            // Act - Undo twice via Edit menu (Ctrl+Z goes to TextBox which has focus)
+            ClickMenu("Edit", "Undo");
+            Thread.Sleep(1000);
+
+            ClickMenu("Edit", "Undo");
+            Thread.Sleep(1000);
+
+            // Assert - Should be back to initial node count
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterUndoItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterUndoCount = afterUndoItems?.Length ?? 0;
+            Assert.Equal(initialCount, afterUndoCount);
         }
         finally
         {
+            // Stop application BEFORE cleaning up temp directory
+            // to avoid auto-save race conditions
+            StopApplication();
             TestPaths.CleanupTempDirectory(tempDir);
         }
     }

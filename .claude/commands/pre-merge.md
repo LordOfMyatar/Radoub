@@ -65,7 +65,10 @@ Read the CHANGELOG and verify:
 - Version section exists for this PR
 - Branch name matches current branch
 - PR number is filled in (not TBD)
-- Date is set (for release-ready) or TBD (for in-progress)
+- Date is valid:
+  - ✅ Today's date or earlier (most PRs merge same day)
+  - ⚠️ TBD - warn user to set date before merge
+  - ❌ Future date - likely error, warn user
 
 **Build Check**:
 ```bash
@@ -125,7 +128,7 @@ Output format:
 - [x/⚠️] CHANGELOG updated
   - [ ] Version section exists
   - [ ] PR number filled in
-  - [ ] Date set (if ready for release)
+  - [ ] Date is today or earlier (not TBD, not future)
 - [x/⚠️] README updates: [Needed/Not needed]
 - [x/⚠️] User docs: [Needed/Not needed]
 

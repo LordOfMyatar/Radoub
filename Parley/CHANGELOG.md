@@ -10,6 +10,62 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.30-alpha] - 2025-11-28
+**Branch**: `parley/fix/issue-196-tech-debt` | **PR**: #215
+
+### Tech Debt Sprint
+
+Addressing exception handling, code duplication, and attribution.
+
+**Fixed - Exception Handling (#196)**:
+- Added DEBUG logging to font preview fallback in SettingsWindow
+- Added DEBUG logging to UTC file validation in CreatureParser
+- Added TRACE logging to temp file cleanup in SoundBrowserWindow
+- Added explanatory comment for intentional empty catch (font availability check)
+
+**Fixed - Code Duplication (#194)**:
+- Created `CloningHelper.cs` with shared cloning utilities
+- `CloneLocString()` - centralized LocString cloning
+- `CreateShallowNodeClone()` - centralized DialogNode shallow cloning
+- Updated `NodeCloningService` and `DialogClipboardService` to use helper
+- Removed ~30 lines of duplicate code
+
+**Verified - Orphan Link Children (#136)**:
+- Reviewed `NodeOperationsManager.DeleteNode()` implementation
+- Confirmed PR #132 fix is correctly implemented
+- `IdentifyOrphanedLinkChildren()` called before deletion
+- `RemoveOrphanedLinkChildrenFromLists()` called before index recalculation
+- All 23 orphan-related tests passing
+
+**Added - Attribution (#205)**:
+- Added arclight acknowledgment to README.md
+- Credit to jd28/arclight for inspiration during early development
+
+**Fixed - Copy Node Missing Scripts**:
+- Copy/Cut now preserves `ScriptAppears` (conditional script) from source pointer
+- Copy/Cut now preserves `ConditionParams` from source pointer
+- Paste as Duplicate applies stored scripts to new pointer
+- `GetNodeProperties` (Ctrl+Shift+P) now shows ScriptAppears and ConditionParams
+- Added 11 new unit tests for script preservation (DialogClipboardServiceTests)
+- Added 11 new unit tests for PasteOperationsManager (new test file)
+
+**Code Path**: Copy/Paste Script Preservation
+```
+User Action: Copy Node (Ctrl+C) or Cut Node (Ctrl+X)
+├── MainViewModel.CopyNode/CutNode
+│   └── DialogClipboardService.CopyNode/CutNode(node, dialog, sourcePointer)
+│       ├── Stores _sourceScriptAppears from sourcePointer
+│       └── Stores _sourceConditionParams from sourcePointer
+
+User Action: Paste as Duplicate (Ctrl+V)
+├── MainViewModel.PasteAsDuplicate
+│   └── PasteOperationsManager.PasteAsDuplicate(dialog, parent)
+│       ├── PasteToRoot() - creates START pointer with clipboard scripts
+│       └── PasteToParent() - creates child pointer with clipboard scripts
+```
+
+---
+
 ## [0.1.29-alpha] - 2025-11-27
 **Branch**: `parley/feat/issue-168-hak-sound-browser` | **PR**: #202
 

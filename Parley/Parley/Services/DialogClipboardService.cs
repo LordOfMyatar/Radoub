@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using DialogEditor.Utils;
 
 namespace DialogEditor.Services
 {
@@ -17,6 +17,10 @@ namespace DialogEditor.Services
         private DialogNode? _copiedNode = null;    // Cloned node (for PasteAsDuplicate)
         private bool _wasCut = false;
         private Dialog? _sourceDialog = null;
+
+        // Source pointer script info (ScriptAppears is on pointer, not node)
+        private string _sourceScriptAppears = string.Empty;
+        private Dictionary<string, string> _sourceConditionParams = new();
 
         /// <summary>
         /// Gets whether there is a node in the clipboard
@@ -39,9 +43,22 @@ namespace DialogEditor.Services
         public DialogNode? OriginalNode => _originalNode;
 
         /// <summary>
+        /// Gets the source pointer's ScriptAppears (conditional script)
+        /// </summary>
+        public string SourceScriptAppears => _sourceScriptAppears;
+
+        /// <summary>
+        /// Gets a copy of the source pointer's ConditionParams
+        /// </summary>
+        public Dictionary<string, string> SourceConditionParams => new(_sourceConditionParams);
+
+        /// <summary>
         /// Copy a node to the clipboard
         /// </summary>
-        public void CopyNode(DialogNode node, Dialog sourceDialog)
+        /// <param name="node">The node to copy</param>
+        /// <param name="sourceDialog">The source dialog</param>
+        /// <param name="sourcePointer">Optional source pointer (for ScriptAppears)</param>
+        public void CopyNode(DialogNode node, Dialog sourceDialog, DialogPtr? sourcePointer = null)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node));
@@ -54,14 +71,25 @@ namespace DialogEditor.Services
             _wasCut = false;
             _sourceDialog = sourceDialog;
 
+            // Store source pointer's script info (ScriptAppears is on pointer, not node)
+            _sourceScriptAppears = sourcePointer?.ScriptAppears ?? string.Empty;
+            _sourceConditionParams = sourcePointer?.ConditionParams != null
+                ? new Dictionary<string, string>(sourcePointer.ConditionParams)
+                : new Dictionary<string, string>();
+
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Copied node to clipboard: Type={node.Type}");
+                $"Copied node to clipboard: Type={node.Type}, ScriptAction={node.ScriptAction}, " +
+                $"SourcePointer={(sourcePointer != null ? "present" : "NULL")}, " +
+                $"ScriptAppears='{_sourceScriptAppears}', ConditionParams={_sourceConditionParams.Count}");
         }
 
         /// <summary>
         /// Cut a node to the clipboard (Copy + mark for deletion)
         /// </summary>
-        public void CutNode(DialogNode node, Dialog sourceDialog)
+        /// <param name="node">The node to cut</param>
+        /// <param name="sourceDialog">The source dialog</param>
+        /// <param name="sourcePointer">Optional source pointer (for ScriptAppears)</param>
+        public void CutNode(DialogNode node, Dialog sourceDialog, DialogPtr? sourcePointer = null)
         {
             if (node == null)
                 throw new ArgumentNullException(nameof(node));
@@ -75,8 +103,14 @@ namespace DialogEditor.Services
             _wasCut = true;
             _sourceDialog = sourceDialog;
 
+            // Store source pointer's script info (ScriptAppears is on pointer, not node)
+            _sourceScriptAppears = sourcePointer?.ScriptAppears ?? string.Empty;
+            _sourceConditionParams = sourcePointer?.ConditionParams != null
+                ? new Dictionary<string, string>(sourcePointer.ConditionParams)
+                : new Dictionary<string, string>();
+
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Cut node to clipboard: Type={node.Type}");
+                $"Cut node to clipboard: Type={node.Type}, ScriptAppears={_sourceScriptAppears}");
         }
 
         /// <summary>
@@ -108,7 +142,7 @@ namespace DialogEditor.Services
                 ? (uint)(dialog.Entries.IndexOf(newNode))
                 : (uint)(dialog.Replies.IndexOf(newNode));
 
-            // Create pointer to new node
+            // Create pointer to new node (include source pointer's script info)
             if (parentNode != null)
             {
                 var newPtr = new DialogPtr
@@ -117,7 +151,9 @@ namespace DialogEditor.Services
                     Type = newNode.Type,
                     Index = newIndex,
                     IsLink = false,
-                    Node = newNode
+                    Node = newNode,
+                    ScriptAppears = _sourceScriptAppears,
+                    ConditionParams = new Dictionary<string, string>(_sourceConditionParams)
                 };
                 parentNode.Pointers.Add(newPtr);
             }
@@ -131,7 +167,9 @@ namespace DialogEditor.Services
                     Index = newIndex,
                     IsStart = true,
                     IsLink = false,
-                    Node = newNode
+                    Node = newNode,
+                    ScriptAppears = _sourceScriptAppears,
+                    ConditionParams = new Dictionary<string, string>(_sourceConditionParams)
                 };
                 dialog.Starts.Add(startPtr);
             }
@@ -143,7 +181,8 @@ namespace DialogEditor.Services
             }
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Pasted node as duplicate: Type={newNode.Type}, WasCut={_wasCut}");
+                $"Pasted node as duplicate: Type={newNode.Type}, ScriptAction={newNode.ScriptAction}, " +
+                $"AppliedScriptAppears='{_sourceScriptAppears}', AppliedConditionParams={_sourceConditionParams.Count}");
 
             return newNode;
         }
@@ -253,22 +292,7 @@ namespace DialogEditor.Services
         {
             // CRITICAL: Create shallow clone without Pointers to avoid circular serialization
             // Pointers will be rebuilt recursively afterward
-            var shallowClone = new DialogNode
-            {
-                Type = original.Type,
-                Text = CloneLocString(original.Text),
-                Speaker = original.Speaker ?? string.Empty,
-                Comment = original.Comment ?? string.Empty,
-                Sound = original.Sound ?? string.Empty,
-                ScriptAction = original.ScriptAction ?? string.Empty,
-                Animation = original.Animation,
-                AnimationLoop = original.AnimationLoop,
-                Delay = original.Delay,
-                Quest = original.Quest ?? string.Empty,
-                QuestEntry = original.QuestEntry,
-                ActionParams = new Dictionary<string, string>(original.ActionParams ?? new Dictionary<string, string>()),
-                Pointers = new List<DialogPtr>() // Empty - will be populated below
-            };
+            var shallowClone = CloningHelper.CreateShallowNodeClone(original);
 
             // Recursively clone child nodes if needed
             if (original.Pointers.Count > 0)
@@ -277,22 +301,6 @@ namespace DialogEditor.Services
             }
 
             return shallowClone;
-        }
-
-        /// <summary>
-        /// Clone a LocString (localized text dictionary)
-        /// </summary>
-        private LocString CloneLocString(LocString? original)
-        {
-            if (original == null)
-                return new LocString();
-
-            var clone = new LocString();
-            foreach (var kvp in original.Strings)
-            {
-                clone.Strings[kvp.Key] = kvp.Value;
-            }
-            return clone;
         }
 
         /// <summary>
@@ -324,23 +332,8 @@ namespace DialogEditor.Services
                 }
                 else
                 {
-                    // Create shallow clone of child node
-                    clonedChild = new DialogNode
-                    {
-                        Type = originalPtr.Node.Type,
-                        Text = CloneLocString(originalPtr.Node.Text),
-                        Speaker = originalPtr.Node.Speaker ?? string.Empty,
-                        Comment = originalPtr.Node.Comment ?? string.Empty,
-                        Sound = originalPtr.Node.Sound ?? string.Empty,
-                        ScriptAction = originalPtr.Node.ScriptAction ?? string.Empty,
-                        Animation = originalPtr.Node.Animation,
-                        AnimationLoop = originalPtr.Node.AnimationLoop,
-                        Delay = originalPtr.Node.Delay,
-                        Quest = originalPtr.Node.Quest ?? string.Empty,
-                        QuestEntry = originalPtr.Node.QuestEntry,
-                        ActionParams = new Dictionary<string, string>(originalPtr.Node.ActionParams ?? new Dictionary<string, string>()),
-                        Pointers = new List<DialogPtr>()
-                    };
+                    // Create shallow clone of child node using shared helper
+                    clonedChild = CloningHelper.CreateShallowNodeClone(originalPtr.Node);
 
                     cloneMap[originalPtr.Node] = clonedChild;
 

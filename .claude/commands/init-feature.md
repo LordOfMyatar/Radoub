@@ -59,12 +59,17 @@ Edit the appropriate CHANGELOG file:
 Add new version section after `[Unreleased]`:
 
 ```markdown
-## [X.Y.Z-alpha] - TBD
+## [X.Y.Z-alpha] - YYYY-MM-DD
 **Branch**: `[branch-name]` | **PR**: #TBD
 
 ### [Epic/Feature/Fix] [N]: [Title from GitHub]
 
 ---
+```
+
+**Use today's date** (not TBD) - most PRs merge same day. Get today's date:
+```bash
+date +%Y-%m-%d
 ```
 
 Get the issue/epic title from GitHub:
@@ -131,7 +136,7 @@ Output to user:
 ### Next Steps
 1. Implement the feature
 2. Add tests
-3. Update CHANGELOG with completion date
+3. Run `/pre-merge` to verify all checks pass
 4. Mark PR ready for review
 
 ### Useful Commands
