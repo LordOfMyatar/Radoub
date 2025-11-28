@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.30-alpha] - TBD
+**Branch**: `parley/fix/issue-196-tech-debt` | **PR**: #TBD
+
+### Fix: Exception handling - Empty catch blocks and swallowed exceptions (#196)
+
+---
+
 ## [0.1.29-alpha] - 2025-11-27
 **Branch**: `parley/feat/issue-168-hak-sound-browser` | **PR**: #202
 
