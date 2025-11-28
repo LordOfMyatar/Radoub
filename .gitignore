@@ -1,6 +1,10 @@
 # Radoub Toolset .gitignore
 # Root-level gitignore for multi-tool repository
 
+# Build Output
+[Bb]in/
+[Oo]bj/
+
 # OS Generated Files
 .DS_Store
 .DS_Store?
@@ -26,3 +30,5 @@ Desktop.ini
 ~$*
 /.claude/settings.local.json
 NonPublic
+TestOutput
+/Radoub.UITests/TestOutput
