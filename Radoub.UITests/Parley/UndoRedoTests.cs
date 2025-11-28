@@ -54,7 +54,7 @@ public class UndoRedoTests : ParleyTestBase
 
     [Fact]
     [Trait("Category", "UndoRedo")]
-    public void Undo_AfterModification_RemovesUnsavedIndicator()
+    public void Undo_AfterModification_RestoresDialogState()
     {
         // Arrange - Use temp file
         var tempFile = TestPaths.CopyTestFileToTemp(TestFileName);
@@ -68,8 +68,12 @@ public class UndoRedoTests : ParleyTestBase
             // Wait for app to fully stabilize before making changes
             Thread.Sleep(1000);
 
-            // Make a modification - select and add node
+            // Get initial node count
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var initialItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var initialCount = initialItems?.Length ?? 0;
+
+            // Make a modification - select and add node
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
             firstItem?.Click();
             Thread.Sleep(200);
@@ -81,9 +85,11 @@ public class UndoRedoTests : ParleyTestBase
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
             Thread.Sleep(500);
 
-            // Verify unsaved indicator appeared
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.Contains("*", MainWindow!.Title);
+            // Verify node was added
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterAddCount = afterAddItems?.Length ?? 0;
+            Assert.True(afterAddCount > initialCount, "Node should have been added");
 
             // Act - Undo via Ctrl+Z
             MainWindow.Focus();
@@ -92,10 +98,11 @@ public class UndoRedoTests : ParleyTestBase
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
             Thread.Sleep(500);
 
-            // Assert - Unsaved indicator should be gone
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.NotNull(MainWindow);
-            Assert.DoesNotContain("*", MainWindow.Title);
+            // Assert - Node count should be back to initial
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterUndoItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterUndoCount = afterUndoItems?.Length ?? 0;
+            Assert.Equal(initialCount, afterUndoCount);
         }
         finally
         {
@@ -108,7 +115,7 @@ public class UndoRedoTests : ParleyTestBase
 
     [Fact]
     [Trait("Category", "UndoRedo")]
-    public void Redo_AfterUndo_RestoresUnsavedIndicator()
+    public void Redo_AfterUndo_RestoresDialogState()
     {
         // Arrange - Use temp file
         var tempFile = TestPaths.CopyTestFileToTemp(TestFileName);
@@ -122,8 +129,12 @@ public class UndoRedoTests : ParleyTestBase
             // Wait for app to fully stabilize before making changes
             Thread.Sleep(1000);
 
-            // Make a modification
+            // Get initial node count
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var initialItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var initialCount = initialItems?.Length ?? 0;
+
+            // Make a modification
             var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
             firstItem?.Click();
             Thread.Sleep(200);
@@ -135,6 +146,12 @@ public class UndoRedoTests : ParleyTestBase
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
             Thread.Sleep(500);
 
+            // Verify node was added
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterAddCount = afterAddItems?.Length ?? 0;
+            Assert.True(afterAddCount > initialCount, "Node should have been added");
+
             // Undo the change
             MainWindow.Focus();
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
@@ -142,9 +159,11 @@ public class UndoRedoTests : ParleyTestBase
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
             Thread.Sleep(500);
 
-            // Verify unsaved indicator is gone
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.DoesNotContain("*", MainWindow!.Title);
+            // Verify node count is back to initial
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterUndoItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterUndoCount = afterUndoItems?.Length ?? 0;
+            Assert.Equal(initialCount, afterUndoCount);
 
             // Act - Redo via Ctrl+Y
             MainWindow.Focus();
@@ -153,10 +172,11 @@ public class UndoRedoTests : ParleyTestBase
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Y);
             Thread.Sleep(500);
 
-            // Assert - Unsaved indicator should be back
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.NotNull(MainWindow);
-            Assert.Contains("*", MainWindow.Title);
+            // Assert - Node count should be back to after-add count
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterRedoItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterRedoCount = afterRedoItems?.Length ?? 0;
+            Assert.Equal(afterAddCount, afterRedoCount);
         }
         finally
         {
@@ -203,7 +223,13 @@ public class UndoRedoTests : ParleyTestBase
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
-            Thread.Sleep(300);
+            Thread.Sleep(500);
+
+            // Verify nodes were added
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterAddCount = afterAddItems?.Length ?? 0;
+            Assert.True(afterAddCount > initialCount, "Nodes should have been added");
 
             // Act - Undo twice
             MainWindow.Focus();
@@ -217,10 +243,11 @@ public class UndoRedoTests : ParleyTestBase
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
             Thread.Sleep(500);
 
-            // Assert - Should be back to initial state (no unsaved indicator)
-            MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
-            Assert.NotNull(MainWindow);
-            Assert.DoesNotContain("*", MainWindow.Title);
+            // Assert - Should be back to initial node count
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var afterUndoItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
+            var afterUndoCount = afterUndoItems?.Length ?? 0;
+            Assert.Equal(initialCount, afterUndoCount);
         }
         finally
         {
