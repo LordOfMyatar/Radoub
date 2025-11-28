@@ -13,6 +13,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.4.0] - TBD
+**Branch**: `radoub/feat/issue-170-formats-library-tlk` | **PR**: #TBD
+
+### Epic #170: Aurora Game Resource Reading Infrastructure (Phase 3 - TLK)
+
+TLK (Talk Table) file reading support for Aurora Engine localization.
+
+**Added**:
+- TBD
+
+---
+
 ## [0.3.0] - TBD
 **Branch**: `radoub/feat/issue-90-gui-testing` | **PR**: #204
 
