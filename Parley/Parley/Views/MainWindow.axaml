@@ -252,35 +252,40 @@
                         <TextBlock Grid.Column="0" Text="Speaker:" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox x:Name="SpeakerTextBox" Grid.Column="1" MaxLength="15"
                                  TextWrapping="NoWrap" AcceptsReturn="False"
-                                 TabIndex="1"
+                                 TabIndex="30"
                                  GotFocus="OnFieldGotFocus"
                                  LostFocus="OnFieldLostFocus"/>
                         <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="3"
                                   MinWidth="80" MaxWidth="120"
+                                  TabIndex="31"
                                   PlaceholderText="Recent..."
                                   SelectionChanged="OnRecentCreatureTagSelected">
                             <!-- Populated dynamically -->
                         </ComboBox>
                         <Button x:Name="BrowseCreatureButton" Grid.Column="5" Content="Browse..."
+                                TabIndex="32"
                                 MinWidth="55" Padding="5,0" Click="OnBrowseCreatureClick"/>
 
                         <!-- NPC Speaker Visual Preferences (Issue #16, #36) -->
                         <TextBlock Grid.Column="7" Text="Shape:" VerticalAlignment="Center" Margin="0,0,3,0"/>
                         <ComboBox x:Name="SpeakerShapeComboBox" Grid.Column="8" MinWidth="90"
+                                 TabIndex="33"
                                  SelectionChanged="OnSpeakerShapeChanged">
                             <!-- Populated in code-behind -->
                         </ComboBox>
                         <TextBlock Grid.Column="10" Text="Color:" VerticalAlignment="Center" Margin="0,0,3,0"/>
                         <ComboBox x:Name="SpeakerColorComboBox" Grid.Column="11" MinWidth="90"
+                                 TabIndex="34"
                                  SelectionChanged="OnSpeakerColorChanged">
                             <!-- Populated in code-behind -->
                         </ComboBox>
                     </Grid>
 
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
+                    <!-- Tab order: Ctrl+D lands here (1), then scripts, then back to speaker row -->
                     <TextBox x:Name="TextTextBox" AcceptsReturn="True"
                             TextWrapping="Wrap"
-                            TabIndex="2"
+                            TabIndex="1"
                             GotFocus="OnFieldGotFocus"
                             LostFocus="OnFieldLostFocus"
                             ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -313,12 +318,14 @@
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="3"
+                            <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="10"
                                      TextWrapping="Wrap" GotFocus="OnFieldGotFocus" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditConditionalScriptButton" Grid.Column="2" Content="Edit Script"
+                                    TabIndex="11"
                                     MinWidth="55" Padding="5,0" Click="OnEditConditionalScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
                             <Button x:Name="BrowseConditionalScriptButton" Grid.Column="4" Content="Browse..."
+                                    TabIndex="12"
                                     MinWidth="55" Padding="5,0" Click="OnBrowseConditionalScriptClick"/>
                         </Grid>
 
@@ -339,14 +346,17 @@
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
                                     <Button Content="+ Add Parameter"
                                             x:Name="AddConditionsParamButton" Click="OnAddConditionsParamClick"
+                                            TabIndex="13"
                                             Margin="0,0,5,0"/>
                                     <Button Content="💡 Suggest"
                                             x:Name="SuggestConditionsParamButton" Click="OnSuggestConditionsParamClick"
+                                            TabIndex="14"
                                             Margin="0,0,10,0"
                                             ToolTip.Tip="Show available parameter keys and values from script"/>
                                     <CheckBox x:Name="AutoTrimConditionsCheckBox"
                                               Content="Auto-Trim whitespace"
                                               IsChecked="True"
+                                              IsTabStop="False"
                                               ToolTip.Tip="Automatically trim leading/trailing whitespace from keys and values"/>
                                 </StackPanel>
                             </Grid>
@@ -360,6 +370,7 @@
                                          FontFamily="Consolas"
                                          Background="Transparent" BorderThickness="0"
                                          IsReadOnly="True" TextWrapping="NoWrap"
+                                         IsTabStop="False"
                                          Text="// Conditional script preview will appear here"
                                          Margin="5"/>
                             </ScrollViewer>
@@ -378,12 +389,14 @@
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="4"
+                            <TextBox x:Name="ScriptActionTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="20"
                                      TextWrapping="Wrap" GotFocus="OnFieldGotFocus" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditActionScriptButton" Grid.Column="2" Content="Edit Script"
+                                    TabIndex="21"
                                     MinWidth="55" Padding="5,0" Click="OnEditActionScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
                             <Button x:Name="BrowseActionScriptButton" Grid.Column="4" Content="Browse..."
+                                    TabIndex="22"
                                     MinWidth="55" Padding="5,0" Click="OnBrowseActionScriptClick"/>
                         </Grid>
 
@@ -404,14 +417,17 @@
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
                                     <Button Content="+ Add Parameter"
                                             x:Name="AddActionsParamButton" Click="OnAddActionsParamClick"
+                                            TabIndex="23"
                                             Margin="0,0,5,0"/>
                                     <Button Content="💡 Suggest"
                                             x:Name="SuggestActionsParamButton" Click="OnSuggestActionsParamClick"
+                                            TabIndex="24"
                                             Margin="0,0,10,0"
                                             ToolTip.Tip="Show available parameter keys and values from script"/>
                                     <CheckBox x:Name="AutoTrimActionsCheckBox"
                                               Content="Auto-Trim whitespace"
                                               IsChecked="True"
+                                              IsTabStop="False"
                                               ToolTip.Tip="Automatically trim leading/trailing whitespace from keys and values"/>
                                 </StackPanel>
                             </Grid>
@@ -425,6 +441,7 @@
                                          FontFamily="Consolas"
                                          Background="Transparent" BorderThickness="0"
                                          IsReadOnly="True" TextWrapping="NoWrap"
+                                         IsTabStop="False"
                                          Text="// Action script preview will appear here"
                                          Margin="5"/>
                             </ScrollViewer>
@@ -453,7 +470,7 @@
                                     <ColumnDefinition Width="5"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="ScriptEndTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="5"
+                                <TextBox x:Name="ScriptEndTextBox" Grid.Column="0" FontFamily="Consolas"
                                          TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
                                          ToolTip.Tip="Script to run when conversation ends normally"/>
                                 <Button Grid.Column="2" Content="Browse..." MinWidth="55" Padding="5,0"
@@ -467,7 +484,7 @@
                                     <ColumnDefinition Width="5"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="ScriptAbortTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="6"
+                                <TextBox x:Name="ScriptAbortTextBox" Grid.Column="0" FontFamily="Consolas"
                                          TextWrapping="Wrap" LostFocus="OnConversationSettingChanged"
                                          ToolTip.Tip="Script to run when conversation is aborted"/>
                                 <Button Grid.Column="2" Content="Browse..." MinWidth="55" Padding="5,0"
@@ -495,7 +512,6 @@
 
                             <TextBlock Text="Animation:"/>
                             <ComboBox x:Name="AnimationComboBox" Margin="0,0,0,5"
-                                      TabIndex="10"
                                       SelectionChanged="OnAnimationSelectionChanged"/>
 
                             <TextBlock Text="Sound File:"/>
@@ -508,7 +524,6 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="SoundTextBox" Grid.Column="0" TextWrapping="Wrap"
-                                         TabIndex="11"
                                          GotFocus="OnFieldGotFocus"
                                          LostFocus="OnFieldLostFocus"/>
                                 <Button x:Name="BrowseSoundButton" Grid.Column="2" Content="Browse..."
@@ -519,7 +534,6 @@
 
                             <TextBlock Text="Delay (ms):"/>
                             <TextBox x:Name="DelayTextBox" Margin="0,0,0,10" TextWrapping="Wrap"
-                                     TabIndex="12"
                                      GotFocus="OnFieldGotFocus"
                                      TextChanged="OnDelayTextChanged"
                                      LostFocus="OnFieldLostFocus"/>
@@ -531,7 +545,6 @@
                             <TextBlock Text="Quest Tag:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                                 <ComboBox x:Name="QuestTagComboBox" MinWidth="150"
-                                          TabIndex="13"
                                           SelectionChanged="OnQuestTagChanged"
                                           ToolTip.Tip="Select a quest from the module's journal">
                                     <ComboBox.ItemTemplate>
@@ -556,7 +569,6 @@
                             <TextBlock Text="Quest Entry:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                                 <ComboBox x:Name="QuestEntryComboBox" MinWidth="150"
-                                          TabIndex="14"
                                           SelectionChanged="OnQuestEntryChanged"
                                           ToolTip.Tip="Select a quest entry">
                                     <ComboBox.ItemTemplate>
@@ -599,7 +611,6 @@
                             <TextBlock Text="Comment:"/>
                             <TextBox x:Name="CommentTextBox" AcceptsReturn="True" MinHeight="50"
                                     TextWrapping="Wrap" Margin="0,0,0,5"
-                                    TabIndex="15"
                                     GotFocus="OnFieldGotFocus"
                                     LostFocus="OnFieldLostFocus"/>
                             </StackPanel>

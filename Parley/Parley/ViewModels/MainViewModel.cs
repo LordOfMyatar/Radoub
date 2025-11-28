@@ -778,6 +778,9 @@ namespace DialogEditor.ViewModels
             // Delegate to NodeOperationsManager
             var newNode = _nodeOpsManager.AddSmartNode(CurrentDialog, parentNode, parentPtr);
 
+            // Focus on the newly created node after tree refresh
+            NodeToSelectAfterRefresh = newNode;
+
             // Refresh the tree
             RefreshTreeView();
 
@@ -806,6 +809,9 @@ namespace DialogEditor.ViewModels
 
             // Delegate to NodeOperationsManager
             var newEntry = _nodeOpsManager.AddEntryNode(CurrentDialog, parentDialogNode, parentPtr);
+
+            // Focus on the newly created node after tree refresh
+            NodeToSelectAfterRefresh = newEntry;
 
             // Refresh tree display
             RefreshTreeView();
@@ -838,6 +844,9 @@ namespace DialogEditor.ViewModels
 
             // Delegate to NodeOperationsManager
             var newReply = _nodeOpsManager.AddPCReplyNode(CurrentDialog, parentDialogNode, null);
+
+            // Focus on the newly created node after tree refresh
+            NodeToSelectAfterRefresh = newReply;
 
             // Auto-expand parent node before refresh
             parent.IsExpanded = true;

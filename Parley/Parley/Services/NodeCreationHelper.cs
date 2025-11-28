@@ -70,40 +70,16 @@ namespace DialogEditor.Services
                 _saveCurrentNodeProperties();
                 UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Saved current node properties");
 
-                // Track dialog node count before adding
-                int entryCountBefore = _viewModel.CurrentDialog?.Entries.Count ?? 0;
-                int replyCountBefore = _viewModel.CurrentDialog?.Replies.Count ?? 0;
-
+                // AddSmartNode now sets NodeToSelectAfterRefresh to focus the new node
                 _viewModel.AddSmartNode(selectedNode);
 
-                // Wait for tree view to refresh
-                await Task.Delay(100);
-
-                // Find and select the newly created node
-                var treeView = _findControl("DialogTreeView") as TreeView;
-                if (treeView != null && _viewModel.CurrentDialog != null)
-                {
-                    bool entryAdded = _viewModel.CurrentDialog.Entries.Count > entryCountBefore;
-                    bool replyAdded = _viewModel.CurrentDialog.Replies.Count > replyCountBefore;
-
-                    if (entryAdded || replyAdded)
-                    {
-                        var newNode = FindLastAddedNode(treeView, entryAdded, replyAdded);
-                        if (newNode != null)
-                        {
-                            // Expand all ancestor nodes to make new node visible (Issue #7)
-                            ExpandToNode(treeView, newNode);
-
-                            treeView.SelectedItem = newNode;
-                            UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Selected new node in tree");
-                        }
-                    }
-                }
+                // Wait for tree view to refresh and node to be selected
+                await Task.Delay(150);
 
                 // Auto-focus to text box for immediate typing
                 // Delay allows tree view selection and properties panel population to complete
-                UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Waiting 300ms for properties panel...");
-                await Task.Delay(300);
+                UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Waiting for properties panel...");
+                await Task.Delay(200);
 
                 var textTextBox = _findControl("TextTextBox") as TextBox;
                 if (textTextBox != null)
