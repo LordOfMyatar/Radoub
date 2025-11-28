@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.4.0] - TBD
-**Branch**: `radoub/feat/issue-170-formats-library-tlk` | **PR**: #TBD
+**Branch**: `radoub/feat/issue-170-formats-library-tlk` | **PR**: #209
 
 ### Epic #170: Aurora Game Resource Reading Infrastructure (Phase 3 - TLK)
 
