@@ -68,13 +68,19 @@ public class UndoRedoTests : ParleyTestBase
             // Wait for app to fully stabilize before making changes
             Thread.Sleep(1000);
 
-            // Get initial node count
+            // Get initial node count (expand all first to see all nodes)
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+
+            // Expand the first node to ensure we can see children
+            firstItem?.DoubleClick();
+            Thread.Sleep(300);
+
             var initialItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
             var initialCount = initialItems?.Length ?? 0;
 
             // Make a modification - select and add node
-            var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
             firstItem?.Click();
             Thread.Sleep(200);
 
@@ -83,20 +89,22 @@ public class UndoRedoTests : ParleyTestBase
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
-            Thread.Sleep(500);
 
-            // Verify node was added
+            // Wait longer for node creation and tree refresh
+            Thread.Sleep(1000);
+
+            // Verify node was added (node count should increase)
             treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
             var afterAddCount = afterAddItems?.Length ?? 0;
-            Assert.True(afterAddCount > initialCount, "Node should have been added");
+            Assert.True(afterAddCount > initialCount, $"Node should have been added (initial: {initialCount}, after: {afterAddCount})");
 
             // Act - Undo via Ctrl+Z
             MainWindow.Focus();
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
 
             // Assert - Node count should be back to initial
             treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
@@ -129,13 +137,19 @@ public class UndoRedoTests : ParleyTestBase
             // Wait for app to fully stabilize before making changes
             Thread.Sleep(1000);
 
-            // Get initial node count
+            // Get initial node count (expand first to see all nodes)
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+
+            // Expand the first node
+            firstItem?.DoubleClick();
+            Thread.Sleep(300);
+
             var initialItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
             var initialCount = initialItems?.Length ?? 0;
 
             // Make a modification
-            var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
             firstItem?.Click();
             Thread.Sleep(200);
 
@@ -144,20 +158,20 @@ public class UndoRedoTests : ParleyTestBase
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
 
             // Verify node was added
             treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
             var afterAddCount = afterAddItems?.Length ?? 0;
-            Assert.True(afterAddCount > initialCount, "Node should have been added");
+            Assert.True(afterAddCount > initialCount, $"Node should have been added (initial: {initialCount}, after: {afterAddCount})");
 
             // Undo the change
             MainWindow.Focus();
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
 
             // Verify node count is back to initial
             treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
@@ -170,7 +184,7 @@ public class UndoRedoTests : ParleyTestBase
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Y);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
 
             // Assert - Node count should be back to after-add count
             treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
@@ -203,45 +217,60 @@ public class UndoRedoTests : ParleyTestBase
             // Wait for app to fully stabilize before making changes
             Thread.Sleep(1000);
 
-            // Get initial node count
+            // Get initial node count (expand first to see all nodes)
             var treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+
+            // Expand the first node
+            firstItem?.DoubleClick();
+            Thread.Sleep(300);
+
             var initialItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
             var initialCount = initialItems?.Length ?? 0;
 
             // Select first node
-            var firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
             firstItem?.Click();
             Thread.Sleep(200);
 
-            // Add two nodes
+            // Add first node
             MainWindow.Focus();
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            Thread.Sleep(1000);
+
+            // Click on the tree to regain focus before second add
+            // (Ctrl+D focuses the text box, need to click tree again)
+            treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
+            firstItem = treeView?.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem));
+            firstItem?.Click();
             Thread.Sleep(300);
 
+            // Add second node
+            MainWindow.Focus();
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
 
             // Verify nodes were added
             treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
             var afterAddItems = treeView?.FindAllDescendants(cf => cf.ByControlType(ControlType.TreeItem));
             var afterAddCount = afterAddItems?.Length ?? 0;
-            Assert.True(afterAddCount > initialCount, "Nodes should have been added");
+            Assert.True(afterAddCount > initialCount, $"Nodes should have been added (initial: {initialCount}, after: {afterAddCount})");
 
             // Act - Undo twice
             MainWindow.Focus();
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
-            Thread.Sleep(300);
+            Thread.Sleep(1000);
 
             FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                 FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
 
             // Assert - Should be back to initial node count
             treeView = MainWindow!.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tree));
