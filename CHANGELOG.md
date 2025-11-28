@@ -13,6 +13,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.0] - 2025-11-28
+**Branch**: `radoub/sprint/game-file-formats` | **PR**: #214
+
+### Sprint: Game File Formats Integration
+
+GameResourceResolver unified API for Aurora Engine resource resolution.
+
+**Added**:
+- `GameResourceConfig` - Configuration for game paths (NWN:EE and Classic factories)
+- `GameResourceResolver` - Unified resource lookup across Override/HAK/BIF sources
+- `ResourceResult` - Resource data with source tracking (Override, Hak, Bif)
+- `ResourceInfo` - Lightweight resource metadata for listings
+- TLK string resolution with custom TLK support (StrRef >= 0x1000000)
+- NWN:EE and Classic path conventions via factory methods
+- Archive caching for performance
+- 21 unit tests for GameResourceResolver
+
+---
+
 ## [0.4.0] - 2025-11-27
 **Branch**: `radoub/feat/issue-170-formats-library-tlk` | **PR**: #209
 
