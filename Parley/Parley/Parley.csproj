@@ -33,6 +33,13 @@
     </None>
   </ItemGroup>
 
+  <!-- Copy Official Plugins to output directory -->
+  <ItemGroup>
+    <None Include="Plugins\Official\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <Protobuf Include="Plugins\Protos\plugin.proto" GrpcServices="Both" />
   </ItemGroup>
