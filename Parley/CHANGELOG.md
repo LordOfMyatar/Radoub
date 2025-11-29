@@ -17,10 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Support browsing built-in game scripts from BIF files and resolving TLK StrRef values.
 
-**Planned**:
-- [ ] TLK string resolution for StrRef values in dialogs
-- [ ] Built-in script browser from base_scripts.bif
-- [ ] Visual distinction between module and built-in scripts
+**Features**:
+- [x] TLK string resolution for StrRef values in dialogs
+- [x] Built-in script browser from base game BIF files
+- [x] Visual distinction between module and built-in scripts (🎮 icon)
+- [x] GameResourceService wrapper for Radoub.Formats integration
 
 ---
 

@@ -67,12 +67,28 @@
             </StackPanel>
         </Grid>
 
-        <!-- Search Box -->
-        <TextBox Grid.Row="1"
-                 x:Name="SearchBox"
-                 Watermark="Type to filter scripts..."
-                 Margin="0,0,0,10"
-                 TextChanged="OnSearchTextChanged"/>
+        <!-- Search Box and Built-in Toggle -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0"
+                     x:Name="SearchBox"
+                     Watermark="Type to filter scripts..."
+                     Margin="0,0,10,0"
+                     TextChanged="OnSearchTextChanged"/>
+
+            <CheckBox Grid.Column="1"
+                      x:Name="ShowBuiltInCheckBox"
+                      Content="🎮 Show built-in"
+                      ToolTip.Tip="Show built-in game scripts from base game (requires game path in Settings)"
+                      VerticalAlignment="Center"
+                      IsChecked="False"
+                      Checked="OnShowBuiltInChanged"
+                      Unchecked="OnShowBuiltInChanged"/>
+        </Grid>
 
         <!-- Main Content Area: Script List + Preview -->
         <Grid Grid.Row="2">
