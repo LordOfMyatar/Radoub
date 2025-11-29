@@ -108,6 +108,21 @@ dotnet run --project Parley/Parley.csproj
 
 ---
 
+## Script Preview
+
+Parley displays script source code (`.nss` files) in the script preview panel when available. For scripts without source:
+
+- **Module scripts**: Place `.nss` files in your module directory
+- **Compiled game resources**: Base game scripts are distributed as compiled `.ncs` files without source
+- **Decompiling**: Use [nwnnsscomp](https://github.com/niv/neverwinter.nim) to decompile `.ncs` files:
+  ```bash
+  nwnnsscomp -d scriptname.ncs > scriptname.nss
+  ```
+
+The neverwinter.nim toolset is the recommended tool for working with NWN file formats.
+
+---
+
 ## Known Issues
 
 See [GitHub Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is%3Aopen+label%3Aparley) for current bug list and feature requests.

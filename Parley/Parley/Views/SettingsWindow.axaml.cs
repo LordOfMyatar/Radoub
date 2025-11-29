@@ -289,6 +289,81 @@ namespace DialogEditor.Views
             }
 
             LoadPluginList();
+
+            // TLK Language Settings
+            LoadTlkLanguageSettings();
+        }
+
+        private void LoadTlkLanguageSettings()
+        {
+            var settings = SettingsService.Instance;
+            var tlkLanguageComboBox = this.FindControl<ComboBox>("TlkLanguageComboBox");
+            var tlkUseFemaleCheckBox = this.FindControl<CheckBox>("TlkUseFemaleCheckBox");
+
+            if (tlkLanguageComboBox != null)
+            {
+                // Find and select the item matching current TlkLanguage setting
+                var currentLang = settings.TlkLanguage ?? "";
+                foreach (var item in tlkLanguageComboBox.Items)
+                {
+                    if (item is ComboBoxItem comboItem && (comboItem.Tag as string) == currentLang)
+                    {
+                        tlkLanguageComboBox.SelectedItem = comboItem;
+                        break;
+                    }
+                }
+            }
+
+            if (tlkUseFemaleCheckBox != null)
+            {
+                tlkUseFemaleCheckBox.IsChecked = settings.TlkUseFemale;
+            }
+
+            UpdateTlkLanguageStatus();
+        }
+
+        private void UpdateTlkLanguageStatus()
+        {
+            var tlkLanguageStatus = this.FindControl<TextBlock>("TlkLanguageStatus");
+            if (tlkLanguageStatus == null) return;
+
+            var settings = SettingsService.Instance;
+            var gameResourceService = GameResourceService.Instance;
+
+            // Check if base game path is configured
+            if (string.IsNullOrEmpty(settings.BaseGameInstallPath))
+            {
+                tlkLanguageStatus.Text = "⚠️ Base game installation path not configured. TLK files cannot be loaded.";
+                return;
+            }
+
+            // Try to determine the TLK path that would be used
+            var langCode = settings.TlkLanguage;
+            if (string.IsNullOrEmpty(langCode))
+            {
+                langCode = "en"; // Default
+            }
+
+            var tlkFileName = settings.TlkUseFemale ? "dialogf.tlk" : "dialog.tlk";
+            var tlkPath = System.IO.Path.Combine(settings.BaseGameInstallPath, "lang", langCode, "data", tlkFileName);
+
+            if (System.IO.File.Exists(tlkPath))
+            {
+                tlkLanguageStatus.Text = $"✓ TLK file found: lang/{langCode}/data/{tlkFileName}";
+            }
+            else
+            {
+                // Check if directory exists
+                var langDir = System.IO.Path.Combine(settings.BaseGameInstallPath, "lang", langCode);
+                if (!System.IO.Directory.Exists(langDir))
+                {
+                    tlkLanguageStatus.Text = $"⚠️ Language folder not found: lang/{langCode}/ - verify game installation";
+                }
+                else
+                {
+                    tlkLanguageStatus.Text = $"⚠️ TLK file not found: lang/{langCode}/data/{tlkFileName}";
+                }
+            }
         }
 
         private void LoadPluginList()
@@ -1047,6 +1122,111 @@ namespace DialogEditor.Views
                     }
                 }
             }
+        }
+
+        private async void OnTlkLanguageChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var tlkLanguageComboBox = this.FindControl<ComboBox>("TlkLanguageComboBox");
+            if (tlkLanguageComboBox?.SelectedItem is ComboBoxItem selectedItem)
+            {
+                var langCode = selectedItem.Tag as string ?? "";
+                var oldValue = SettingsService.Instance.TlkLanguage;
+
+                if (langCode != oldValue)
+                {
+                    SettingsService.Instance.TlkLanguage = langCode;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"TLK language changed from '{oldValue}' to '{langCode}'");
+
+                    // Invalidate resolver to force reload with new TLK
+                    GameResourceService.Instance.InvalidateResolver();
+
+                    UpdateTlkLanguageStatus();
+                    await PromptReloadDialog();
+                }
+            }
+        }
+
+        private async void OnTlkUseFemaleChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var tlkUseFemaleCheckBox = this.FindControl<CheckBox>("TlkUseFemaleCheckBox");
+            if (tlkUseFemaleCheckBox != null)
+            {
+                var useFemale = tlkUseFemaleCheckBox.IsChecked ?? false;
+                var oldValue = SettingsService.Instance.TlkUseFemale;
+
+                if (useFemale != oldValue)
+                {
+                    SettingsService.Instance.TlkUseFemale = useFemale;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"TLK female variant changed from {oldValue} to {useFemale}");
+
+                    // Invalidate resolver to force reload with new TLK
+                    GameResourceService.Instance.InvalidateResolver();
+
+                    UpdateTlkLanguageStatus();
+                    await PromptReloadDialog();
+                }
+            }
+        }
+
+        private async Task PromptReloadDialog()
+        {
+            // Check if there's a dialog loaded that might need reloading
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                if (desktop.MainWindow is MainWindow mainWindow && mainWindow.DataContext is ViewModels.MainViewModel vm)
+                {
+                    if (!string.IsNullOrEmpty(vm.CurrentFilePath))
+                    {
+                        var result = await ShowReloadConfirmDialog();
+                        if (result)
+                        {
+                            await vm.ReloadCurrentDialogAsync();
+                        }
+                    }
+                }
+            }
+        }
+
+        private async Task<bool> ShowReloadConfirmDialog()
+        {
+            var dialog = new Window
+            {
+                Title = "Reload Dialog?",
+                Width = 400,
+                Height = 150,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            bool result = false;
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+            panel.Children.Add(new TextBlock
+            {
+                Text = "TLK language settings have changed. Would you like to reload the current dialog to see the changes?",
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 15)
+            });
+
+            var buttonPanel = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right, Spacing = 10 };
+
+            var yesButton = new Button { Content = "Reload", Width = 80 };
+            yesButton.Click += (s, e) => { result = true; dialog.Close(); };
+            buttonPanel.Children.Add(yesButton);
+
+            var noButton = new Button { Content = "Later", Width = 80 };
+            noButton.Click += (s, e) => { result = false; dialog.Close(); };
+            buttonPanel.Children.Add(noButton);
+
+            panel.Children.Add(buttonPanel);
+
+            dialog.Content = panel;
+            await dialog.ShowDialog(this);
+
+            return result;
         }
 
         private void OnSafeModeChanged(object? sender, RoutedEventArgs e)

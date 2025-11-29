@@ -404,8 +404,9 @@ namespace DialogEditor.Views
                     else
                     {
                         PreviewTextBox.Text = $"// Script '{scriptEntry.Name}.nss' not found or could not be loaded.\n" +
-                                              "// The script name will still be saved to the dialog.\n" +
-                                              "// Make sure the .nss file exists in your module directory.";
+                                              "// This may be a compiled game resource (.ncs) without source available.\n" +
+                                              "// Use nwnnsscomp to decompile .ncs files: github.com/niv/neverwinter.nim\n" +
+                                              "// The script name will still be saved to the dialog.";
                     }
                 }
                 catch (Exception ex)
