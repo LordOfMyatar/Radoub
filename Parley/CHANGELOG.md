@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.32-alpha] - 2025-11-28
-**Branch**: `parley/feat/issue-146-builtin-scripts` | **PR**: #TBD
+**Branch**: `parley/feat/issue-146-builtin-scripts` | **PR**: #219
 
 ### Feature: Built-in Game Scripts & TLK Integration (#146)
 
