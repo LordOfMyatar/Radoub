@@ -334,9 +334,19 @@ namespace DialogEditor.Parsers
                     }
                     else if (locString.StrRef != 0xFFFFFFFF)
                     {
-                        // Text is in TLK file - not yet supported
-                        UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ TLK REFERENCE: StrRef={locString.StrRef} - TLK file support not implemented");
-                        node.Text.Add(0, $"<StrRef:{locString.StrRef}>");
+                        // Text is in TLK file - try to resolve it
+                        var tlkText = GameResourceService.Instance.GetTlkString(locString.StrRef);
+                        if (tlkText != null)
+                        {
+                            UnifiedLogger.LogParser(LogLevel.DEBUG, $"Resolved StrRef={locString.StrRef} from TLK: '{tlkText.Substring(0, Math.Min(50, tlkText.Length))}...'");
+                            node.Text.Add(0, tlkText);
+                        }
+                        else
+                        {
+                            // TLK not available or StrRef not found - show placeholder
+                            UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ TLK REFERENCE: StrRef={locString.StrRef} - could not resolve (TLK not loaded or StrRef not found)");
+                            node.Text.Add(0, $"<StrRef:{locString.StrRef}>");
+                        }
                     }
                     else
                     {
