@@ -222,6 +222,15 @@ EOF
 - `--verbose`: Show detailed output for each check
 - `--update-pr`: Update PR description with checklist results
 
+## Prerequisites
+
+**IMPORTANT**: Before running `/pre-merge`:
+- All changes must be **committed** to the feature branch
+- The branch must be **pushed** to the remote repository
+- A PR must exist (or be created) for the branch
+
+The pre-merge checklist validates the current PR state on GitHub, not local uncommitted changes.
+
 ## Notes
 
 - This command is advisory - it doesn't block merging

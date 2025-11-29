@@ -24,6 +24,22 @@ When you first launch Parley, configure these settings for the best experience:
 
 <img src="images/SettingsUI_Resources.png" alt="Settings - Resources" width="60%">
 
+### TLK Language Settings
+
+For dialogs that reference the base game's Talk Table (TLK) strings, you can select which language to display:
+
+1. In **Settings → Resource Paths**, find **TLK Language Settings**
+2. Select your preferred language from the dropdown (English, German, French, Spanish, Italian, Polish)
+3. Optionally enable **Use female text variant** for languages with gendered dialog
+4. Changing the language will prompt to reload the current dialog
+5. Since settings window is modeless, you can change this in real time
+
+*Note: This only affects dialogs that use StrRef values pointing to the TLK file. Dialogs with embedded text are not affected.*
+
+<img src="images/SettingsUI_TlkLanguage.png" alt="Settings - TLK Language" width="60%">
+
+<img src="images/SettingsUI_TlkLanguage_Options.png" alt="Settings - TLK Language" width="60%">
+
 ### UI Customization (Optional)
 
 Personalize Parley's appearance in **Settings → Preferences → UI Settings**:
@@ -59,7 +75,7 @@ Configure automatic saving in **Settings → Auto-Save**:
 
 - **File → New** (`Ctrl+N`): Create a new dialog file
   - Choose save location and filename
-  - Remember: Aurora Engine limits filenames to 12 characters (excluding `.dlg`)
+  - Remember: Aurora Engine limits filenames to 16 characters (excluding `.dlg`)
 - **File → Open** (`Ctrl+O`): Browse for an existing `.dlg` file
 - **Recent Files**: Quick access to recently opened files
 
@@ -121,10 +137,18 @@ Configure basic node properties:
 
 <img src="images/Tab_Node.png" alt="Node Tab" width="60%">
 
-**Sound Browser (In Progress)**:
+**Sound Browser**:
 
-- Browse sound files from game and module
-- Preview audio before assigning-
+Click the Browse button next to the Sound field to open the Sound Browser:
+
+- Browse sound files from multiple sources:
+  - HAK files
+  - Base game resources (In progress)
+- Filter sounds by name using the search box
+- Preview audio before assigning (play button)
+- Double-click or press Select to assign sound to the node
+
+<img src="images/SoundBrowser.png" alt="Sound Browser" width="60%">
 
 ### Scripts Tab
 
@@ -295,7 +319,7 @@ If you report problems with Parley, you may be asked for logs:
 
 ### Known Limitations
 
-- **Filename Length**: Aurora Engine requires ≤12 character filenames (excluding `.dlg`)
+- **Filename Length**: Aurora Engine requires ≤16 character filenames (excluding `.dlg`)
 - **Drag and Drop**: Reordering siblings via drag-drop is in progress
 
 ---

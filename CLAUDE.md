@@ -337,7 +337,7 @@ ShowToastNotification("Plugin started", 3000);
 
 **CRITICAL**: Aurora Engine (Neverwinter Nights) has strict filename limitations:
 
-- **Maximum filename length**: 12 characters (excluding extension)
+- **Maximum filename length**: 16 characters (excluding extension)
 - **Case**: Lowercase recommended for compatibility
 - **Characters**: Alphanumeric and underscore only
 - **Examples**:
@@ -353,7 +353,7 @@ ShowToastNotification("Plugin started", 3000);
 
 **Tools must**:
 - Validate filename length before saving
-- Warn users when filenames exceed 12 characters
+- Warn users when filenames exceed 16 characters
 - Suggest shortened alternatives
 
 ---

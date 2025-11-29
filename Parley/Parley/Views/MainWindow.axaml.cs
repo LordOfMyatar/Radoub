@@ -2135,7 +2135,8 @@ namespace DialogEditor.Views
                 else
                 {
                     previewTextBox.Text = $"// Script '{scriptName}.nss' not found or could not be loaded.\n" +
-                                          "// Make sure the .nss file exists in your module directory.";
+                                          "// This may be a compiled game resource (.ncs) without source available.\n" +
+                                          "// Use nwnnsscomp to decompile .ncs files: github.com/niv/neverwinter.nim";
                     UnifiedLogger.LogApplication(LogLevel.WARN,
                         $"LoadScriptPreviewAsync: No content for script '{scriptName}'");
                 }

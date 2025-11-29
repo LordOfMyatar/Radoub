@@ -69,6 +69,26 @@ namespace DialogEditor.ViewModels
         public string LoadedFileName => CurrentFileName != null ? System.IO.Path.GetFileName(CurrentFileName) : "No file loaded";
 
         /// <summary>
+        /// Gets the current file path (alias for CurrentFileName for external access).
+        /// </summary>
+        public string? CurrentFilePath => CurrentFileName;
+
+        /// <summary>
+        /// Reloads the current dialog file, useful when TLK settings change.
+        /// </summary>
+        public async Task ReloadCurrentDialogAsync()
+        {
+            if (string.IsNullOrEmpty(CurrentFileName)) return;
+
+            var filePath = CurrentFileName;
+
+            // Invalidate the resolver to force TLK reload with new settings
+            GameResourceService.Instance.InvalidateResolver();
+
+            await LoadDialogAsync(filePath);
+        }
+
+        /// <summary>
         /// Issue #123: Gets whether the clipboard content was from a Cut operation.
         /// </summary>
         public bool ClipboardWasCut => _clipboardService.WasCutOperation;
