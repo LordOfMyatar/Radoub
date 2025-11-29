@@ -267,6 +267,9 @@ namespace DialogEditor.ViewModels
 
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading dialog from: {UnifiedLogger.SanitizePath(filePath)}");
 
+                // Ensure GameResourceService is initialized before parsing (for TLK StrRef resolution)
+                _ = GameResourceService.Instance.IsAvailable;
+
                 // Phase 4 Refactoring: Use DialogFileService facade instead of DialogParser directly
                 var dialogService = new DialogFileService();
                 CurrentDialog = await dialogService.LoadFromFileAsync(filePath);

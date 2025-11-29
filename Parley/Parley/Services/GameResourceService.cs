@@ -93,6 +93,17 @@ public class GameResourceService : IDisposable
                 _resolver = new GameResourceResolver(config);
                 _currentConfig = config;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"GameResourceResolver initialized with game data: {UnifiedLogger.SanitizePath(config.GameDataPath ?? "")}");
+
+                // Verify TLK is accessible by testing a known StrRef
+                var testString = _resolver.GetTlkString(0); // StrRef 0 = "Bad Strref"
+                if (testString != null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"TLK loaded successfully. StrRef 0 = '{testString}'");
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "TLK load verification failed - GetTlkString(0) returned null");
+                }
             }
             catch (Exception ex)
             {
@@ -110,16 +121,21 @@ public class GameResourceService : IDisposable
 
         // Try BaseGameInstallPath first (explicit setting)
         var gameDataPath = settings.BaseGameInstallPath;
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"BuildConfig: BaseGameInstallPath = '{UnifiedLogger.SanitizePath(gameDataPath ?? "(null)")}'");
 
         // Fall back to NeverwinterNightsPath if no explicit base path
         if (string.IsNullOrEmpty(gameDataPath))
         {
             gameDataPath = settings.NeverwinterNightsPath;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"BuildConfig: Falling back to NeverwinterNightsPath = '{UnifiedLogger.SanitizePath(gameDataPath ?? "(null)")}'");
         }
 
         // Need at least a game data path
         if (string.IsNullOrEmpty(gameDataPath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "BuildConfig: No game path configured");
             return null;
+        }
 
         // Look for the data folder
         var dataPath = Path.Combine(gameDataPath, "data");
@@ -143,9 +159,48 @@ public class GameResourceService : IDisposable
             CacheArchives = true
         };
 
+        // Set TLK path - NWN:EE stores dialog.tlk in lang/XX/data/ folders
+        // Try common locations in priority order (English first)
+        string? tlkPath = null;
+        var tlkSearchPaths = new[]
+        {
+            Path.Combine(dataPath, "dialog.tlk"),                           // Classic NWN
+            Path.Combine(gameDataPath, "lang", "en", "data", "dialog.tlk"), // NWN:EE English
+            Path.Combine(gameDataPath, "lang", "de", "data", "dialog.tlk"), // NWN:EE German
+            Path.Combine(gameDataPath, "lang", "fr", "data", "dialog.tlk"), // NWN:EE French
+            Path.Combine(gameDataPath, "lang", "es", "data", "dialog.tlk"), // NWN:EE Spanish
+            Path.Combine(gameDataPath, "lang", "it", "data", "dialog.tlk"), // NWN:EE Italian
+            Path.Combine(gameDataPath, "lang", "pl", "data", "dialog.tlk"), // NWN:EE Polish
+        };
+
+        foreach (var path in tlkSearchPaths)
+        {
+            if (File.Exists(path))
+            {
+                tlkPath = path;
+                break;
+            }
+        }
+
+        if (tlkPath != null)
+        {
+            config.TlkPath = tlkPath;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"TLK path configured: {UnifiedLogger.SanitizePath(tlkPath)}");
+        }
+        else
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "dialog.tlk not found in any known location");
+        }
+
         // Add override path if it exists
+        // NWN:EE uses "ovr", classic uses "override"
+        var ovrPath = Path.Combine(gameDataPath, "ovr");
         var overridePath = Path.Combine(gameDataPath, "override");
-        if (Directory.Exists(overridePath))
+        if (Directory.Exists(ovrPath))
+        {
+            config.OverridePath = ovrPath;
+        }
+        else if (Directory.Exists(overridePath))
         {
             config.OverridePath = overridePath;
         }
@@ -178,11 +233,19 @@ public class GameResourceService : IDisposable
 
         var resolver = GetResolver();
         if (resolver == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetTlkString({strRef}): Resolver not available");
             return null;
+        }
 
         try
         {
-            return resolver.GetTlkString(strRef);
+            var result = resolver.GetTlkString(strRef);
+            if (result == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetTlkString({strRef}): TLK returned null");
+            }
+            return result;
         }
         catch (Exception ex)
         {

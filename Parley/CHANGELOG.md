@@ -22,6 +22,8 @@ Support browsing built-in game scripts from BIF files and resolving TLK StrRef v
 - [x] Built-in script browser from base game BIF files
 - [x] Visual distinction between module and built-in scripts (🎮 icon)
 - [x] GameResourceService wrapper for Radoub.Formats integration
+- [x] NWN:EE TLK path detection (lang/XX/data/dialog.tlk)
+- [x] Embedded StrRef placeholder resolution (for dialogs with baked-in `<StrRef:N>` text)
 
 ---
 
