@@ -162,6 +162,7 @@ public abstract class FlaUITestBase : IDisposable
     /// <summary>
     /// Closes the application and cleans up resources.
     /// Handles cases where app may have already exited.
+    /// Uses graceful shutdown to avoid Avalonia/SkiaSharp render crashes.
     /// </summary>
     protected void StopApplication()
     {
@@ -169,7 +170,38 @@ public abstract class FlaUITestBase : IDisposable
         {
             if (App != null && !App.HasExited)
             {
-                App.Close();
+                // Give Avalonia time to finish any pending renders before closing
+                Thread.Sleep(200);
+
+                // Use graceful close via Alt+F4 to let Avalonia shutdown properly
+                // This avoids SkiaSharp canvas flush crashes during mid-render close
+                try
+                {
+                    MainWindow?.Focus();
+                    Thread.Sleep(100);
+                    FlaUI.Core.Input.Keyboard.TypeSimultaneously(
+                        FlaUI.Core.WindowsAPI.VirtualKeyShort.ALT,
+                        FlaUI.Core.WindowsAPI.VirtualKeyShort.F4);
+                }
+                catch
+                {
+                    // Fallback to programmatic close
+                    App.Close();
+                }
+
+                // Wait for process to fully exit (prevents resource conflicts between tests)
+                var timeout = TimeSpan.FromSeconds(5);
+                var startTime = DateTime.Now;
+                while (!App.HasExited && (DateTime.Now - startTime) < timeout)
+                {
+                    Thread.Sleep(100);
+                }
+
+                // Force kill if still running
+                if (!App.HasExited)
+                {
+                    try { App.Kill(); } catch { }
+                }
             }
         }
         catch
@@ -185,6 +217,9 @@ public abstract class FlaUITestBase : IDisposable
         {
             // Ignore disposal errors
         }
+
+        // Brief delay to ensure OS releases all handles
+        Thread.Sleep(500);
 
         App = null;
         Automation = null;

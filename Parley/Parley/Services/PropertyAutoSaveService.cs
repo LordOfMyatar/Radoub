@@ -109,7 +109,28 @@ namespace DialogEditor.Services
             var control = _findControl("CommentTextBox") as TextBox;
             if (control != null)
             {
-                node.OriginalNode.Comment = control.Text ?? "";
+                // Issue #12: For link nodes, save to LinkComment on the pointer
+                // instead of the original node's Comment
+                bool isChildCheck = node.IsChild;
+                bool hasSourcePointer = node.SourcePointer != null;
+                string newValue = control.Text ?? "";
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"💾 SaveComment: IsChild={isChildCheck}, HasSourcePointer={hasSourcePointer}, " +
+                    $"NewValue='{newValue}', NodeType={node.GetType().Name}");
+
+                if (isChildCheck && hasSourcePointer)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"💾 Saving to LINK comment (SourcePointer.LinkComment)");
+                    node.SourcePointer!.LinkComment = newValue;
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"💾 Saving to NODE comment (DialogNode.Comment)");
+                    node.OriginalNode.Comment = newValue;
+                }
             }
         }
 

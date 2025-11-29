@@ -118,8 +118,8 @@ namespace DialogEditor.Services
 
                 // Create unique path using display text + link status
                 var nodePath = string.IsNullOrEmpty(parentPath)
-                    ? GetNodeIdentifier(node)
-                    : $"{parentPath}|{GetNodeIdentifier(node)}";
+                    ? GetNodeIdentifierInternal(node)
+                    : $"{parentPath}|{GetNodeIdentifierInternal(node)}";
 
                 // If expanded, record it
                 if (node.IsExpanded)
@@ -166,8 +166,8 @@ namespace DialogEditor.Services
 
                 // Create unique path using display text + link status
                 var nodePath = string.IsNullOrEmpty(parentPath)
-                    ? GetNodeIdentifier(node)
-                    : $"{parentPath}|{GetNodeIdentifier(node)}";
+                    ? GetNodeIdentifierInternal(node)
+                    : $"{parentPath}|{GetNodeIdentifierInternal(node)}";
 
                 // Restore expansion state if path matches
                 if (expandedPaths.Contains(nodePath))
@@ -190,7 +190,7 @@ namespace DialogEditor.Services
         /// Creates a unique identifier for a tree node.
         /// Uses display text + type + link status to distinguish between duplicate nodes.
         /// </summary>
-        private string GetNodeIdentifier(TreeViewSafeNode node)
+        private string GetNodeIdentifierInternal(TreeViewSafeNode node)
         {
             // Use display text + type + link status as identifier
             // This distinguishes between link nodes and duplicate nodes with same text
@@ -202,6 +202,70 @@ namespace DialogEditor.Services
             var isLink = node.IsChild ? "LINK" : "NODE";
 
             return $"{displayText}[{nodeType}:{isLink}]";
+        }
+
+        /// <summary>
+        /// Gets the full path for a node (for selection restoration).
+        /// </summary>
+        public string GetNodePath(TreeViewSafeNode node)
+        {
+            if (node is TreeViewRootNode)
+                return "ROOT";
+
+            return GetNodeIdentifierInternal(node);
+        }
+
+        /// <summary>
+        /// Finds a node by its path (for selection restoration after undo/redo).
+        /// </summary>
+        public TreeViewSafeNode? FindNodeByPath(ObservableCollection<TreeViewSafeNode> nodes, string path)
+        {
+            if (string.IsNullOrEmpty(path)) return null;
+            if (path == "ROOT")
+            {
+                return nodes.OfType<TreeViewRootNode>().FirstOrDefault();
+            }
+
+            return FindNodeByPathRecursive(nodes, path, null);
+        }
+
+        private TreeViewSafeNode? FindNodeByPathRecursive(ObservableCollection<TreeViewSafeNode> nodes, string targetPath, HashSet<TreeViewSafeNode>? visited)
+        {
+            if (nodes == null) return null;
+
+            visited ??= new HashSet<TreeViewSafeNode>();
+
+            foreach (var node in nodes)
+            {
+                if (node == null) continue;
+
+                // Circular reference check
+                if (!visited.Add(node)) continue;
+
+                var nodeId = GetNodeIdentifierInternal(node);
+                if (nodeId == targetPath)
+                {
+                    return node;
+                }
+
+                // Search children
+                if (node.Children != null && node.Children.Count > 0)
+                {
+                    // Force populate if needed
+                    var _ = node.Children;
+                    node.PopulateChildren();
+
+                    var found = FindNodeByPathRecursive(node.Children, targetPath, visited);
+                    if (found != null)
+                    {
+                        return found;
+                    }
+                }
+
+                visited.Remove(node);
+            }
+
+            return null;
         }
 
         /// <summary>

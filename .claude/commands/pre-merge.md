@@ -51,7 +51,7 @@ Based on changed files:
 **Privacy Scan** - Check for hardcoded paths:
 ```bash
 # Search for potential path leaks
-grep -r "C:\\\\Users" --include="*.cs" Parley/ Radoub.Formats/ || echo "No hardcoded paths found"
+grep -r "C:\\Users" --include="*.cs" Parley/ Radoub.Formats/ || echo "No hardcoded paths found"
 grep -r "/Users/" --include="*.cs" Parley/ Radoub.Formats/ || echo "No hardcoded paths found"
 ```
 
@@ -160,11 +160,42 @@ Output format:
 [✅ All checks pass - ready for review / ⚠️ [N] items need attention]
 ```
 
+### Step 7: Update PR Description
+
+After generating the checklist, update the PR on GitHub with:
+- Summary of changes from CHANGELOG
+- Test results summary
+- Any action items or known issues
+
+```bash
+gh pr edit [number] --body "$(cat <<'EOF'
+## Summary
+[Brief description from CHANGELOG]
+
+## Changes
+[Categorized file list]
+
+## Test Results
+- Unit Tests: [✅/❌] [count] passed
+- UI Tests: [✅/❌/⏳] [status]
+
+## Checklist
+- [x] Build passes
+- [x] Tests pass
+- [x] CHANGELOG updated
+- [x] No hardcoded paths
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
 ## Flags
 
 - `--run-tests`: Actually execute tests (default: just check if needed)
 - `--fix-changelog`: Attempt to auto-fill CHANGELOG PR number
 - `--verbose`: Show detailed output for each check
+- `--update-pr`: Update PR description with checklist results
 
 ## Notes
 

@@ -38,6 +38,14 @@ namespace Parley.Models
         public bool IsRestoring => _isRestoring;
 
         /// <summary>
+        /// Sets the restoring state. Used to extend restoring period during async operations.
+        /// </summary>
+        public void SetRestoring(bool value)
+        {
+            _isRestoring = value;
+        }
+
+        /// <summary>
         /// Saves the current dialog state for undo
         /// </summary>
         public void SaveState(Dialog dialog, string description = "")

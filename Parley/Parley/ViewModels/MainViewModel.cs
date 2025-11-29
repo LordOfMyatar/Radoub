@@ -68,6 +68,11 @@ namespace DialogEditor.ViewModels
 
         public string LoadedFileName => CurrentFileName != null ? System.IO.Path.GetFileName(CurrentFileName) : "No file loaded";
 
+        /// <summary>
+        /// Issue #123: Gets whether the clipboard content was from a Cut operation.
+        /// </summary>
+        public bool ClipboardWasCut => _clipboardService.WasCutOperation;
+
         public string WindowTitle => CurrentFileName != null
             ? $"Parley v{VersionHelper.FullVersion} - {System.IO.Path.GetFileName(CurrentFileName)}{(HasUnsavedChanges ? "*" : "")}"
             : $"Parley v{VersionHelper.FullVersion}";
@@ -369,11 +374,11 @@ namespace DialogEditor.ViewModels
             }
         }
 
-        public void PopulateDialogNodes()
+        public void PopulateDialogNodes(bool skipAutoSelect = false)
         {
             try
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "🎯 ENTERING PopulateDialogNodes method");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🎯 ENTERING PopulateDialogNodes method (skipAutoSelect={skipAutoSelect})");
 
                 // Create NEW collection instead of clearing to force UI refresh
                 var newNodes = new ObservableCollection<TreeViewSafeNode>();
@@ -440,10 +445,49 @@ namespace DialogEditor.ViewModels
                 newNodes.Add(rootNode);
                 rootNode.IsExpanded = true; // Auto-expand root
 
-                // Auto-select ROOT node for consistent initial state
-                // This ensures Restore button logic works correctly and shows conversation settings
-                SelectedTreeNode = rootNode;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-selected ROOT node");
+                // Check if we need to select a specific node after refresh (e.g., after Ctrl+D)
+                if (NodeToSelectAfterRefresh != null)
+                {
+                    var nodeToFind = NodeToSelectAfterRefresh;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"🎯 Looking for node to select: '{nodeToFind.DisplayText}' (Type: {nodeToFind.Type})");
+
+                    // Clear pending selection first to avoid infinite loops
+                    NodeToSelectAfterRefresh = null;
+
+                    // CRITICAL: Defer selection until AFTER TreeView has processed the new ItemsSource
+                    // Setting SelectedTreeNode immediately can fail because the binding hasn't propagated yet
+                    var capturedRootNode = rootNode;
+                    var capturedNodeToFind = nodeToFind;
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        var targetNode = FindTreeViewNode(capturedRootNode, capturedNodeToFind);
+                        if (targetNode != null)
+                        {
+                            SelectedTreeNode = targetNode;
+                            UnifiedLogger.LogApplication(LogLevel.INFO,
+                                $"✅ Selected node after refresh: '{targetNode.DisplayText}'");
+                        }
+                        else
+                        {
+                            SelectedTreeNode = capturedRootNode;
+                            UnifiedLogger.LogApplication(LogLevel.WARN,
+                                $"❌ Target node '{capturedNodeToFind.DisplayText}' not found, selected ROOT");
+                        }
+                    }, global::Avalonia.Threading.DispatcherPriority.Loaded);
+                }
+                else if (!skipAutoSelect)
+                {
+                    // Auto-select ROOT node for consistent initial state
+                    // This ensures Restore button logic works correctly and shows conversation settings
+                    SelectedTreeNode = rootNode;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-selected ROOT node");
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Skipped auto-select (undo/redo will restore selection)");
+                }
 
                 // No longer creating orphan containers - using Scrap Tab instead
                 // Orphaned nodes are now managed via the ScrapManager service
@@ -663,9 +707,10 @@ namespace DialogEditor.ViewModels
         /// - Reply → Entry (NPC response)
         /// </summary>
         /// <summary>
-        /// Saves current state to undo stack before making changes
+        /// Saves current state to undo stack before making changes.
+        /// Issue #74: Made public to allow view to save state before property edits.
         /// </summary>
-        private void SaveUndoState(string description)
+        public void SaveUndoState(string description)
         {
             if (CurrentDialog != null && !_undoRedoService.IsRestoring)
             {
@@ -691,17 +736,23 @@ namespace DialogEditor.ViewModels
                 // CRITICAL: Rebuild LinkRegistry after undo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
 
+                // CRITICAL FIX: Extend IsRestoring to cover async tree rebuild.
+                // Without this, tree restoration triggers SaveUndoState causing infinite loop.
+                _undoRedoService.SetRestoring(true);
+
                 // CRITICAL FIX (Issue #28): Don't use RefreshTreeView - it tries to restore
                 // expansion state using old node references that don't exist after undo.
                 // Instead, rebuild tree without expansion logic, then restore using paths.
                 Dispatcher.UIThread.Post(() =>
                 {
-                    PopulateDialogNodes();
+                    PopulateDialogNodes(skipAutoSelect: true);
 
-                    // Restore expansion after tree rebuilt using path-based state
+                    // Restore expansion and selection after tree rebuilt using path-based state
                     Dispatcher.UIThread.Post(() =>
                     {
                         RestoreTreeState(treeState);
+                        // Clear restoring flag after tree state is fully restored
+                        _undoRedoService.SetRestoring(false);
                     }, global::Avalonia.Threading.DispatcherPriority.Loaded);
                 });
 
@@ -729,17 +780,23 @@ namespace DialogEditor.ViewModels
                 // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
 
+                // CRITICAL FIX: Extend IsRestoring to cover async tree rebuild.
+                // Without this, tree restoration triggers SaveUndoState causing infinite loop.
+                _undoRedoService.SetRestoring(true);
+
                 // CRITICAL FIX (Issue #28): Don't use RefreshTreeView - it tries to restore
                 // expansion state using old node references that don't exist after redo.
                 // Instead, rebuild tree without expansion logic, then restore using paths.
                 Dispatcher.UIThread.Post(() =>
                 {
-                    PopulateDialogNodes();
+                    PopulateDialogNodes(skipAutoSelect: true);
 
-                    // Restore expansion after tree rebuilt using path-based state
+                    // Restore expansion and selection after tree rebuilt using path-based state
                     Dispatcher.UIThread.Post(() =>
                     {
                         RestoreTreeState(treeState);
+                        // Clear restoring flag after tree state is fully restored
+                        _undoRedoService.SetRestoring(false);
                     }, global::Avalonia.Threading.DispatcherPriority.Loaded);
                 });
 
@@ -772,6 +829,9 @@ namespace DialogEditor.ViewModels
             // Delegate to NodeOperationsManager
             var newNode = _nodeOpsManager.AddSmartNode(CurrentDialog, parentNode, parentPtr);
 
+            // Focus on the newly created node after tree refresh
+            NodeToSelectAfterRefresh = newNode;
+
             // Refresh the tree
             RefreshTreeView();
 
@@ -800,6 +860,9 @@ namespace DialogEditor.ViewModels
 
             // Delegate to NodeOperationsManager
             var newEntry = _nodeOpsManager.AddEntryNode(CurrentDialog, parentDialogNode, parentPtr);
+
+            // Focus on the newly created node after tree refresh
+            NodeToSelectAfterRefresh = newEntry;
 
             // Refresh tree display
             RefreshTreeView();
@@ -832,6 +895,9 @@ namespace DialogEditor.ViewModels
 
             // Delegate to NodeOperationsManager
             var newReply = _nodeOpsManager.AddPCReplyNode(CurrentDialog, parentDialogNode, null);
+
+            // Focus on the newly created node after tree refresh
+            NodeToSelectAfterRefresh = newReply;
 
             // Auto-expand parent node before refresh
             parent.IsExpanded = true;
@@ -1040,6 +1106,71 @@ namespace DialogEditor.ViewModels
                 _nodeToSelectAfterRefresh = value;
                 OnPropertyChanged();
             }
+        }
+
+        /// <summary>
+        /// Recursively finds a TreeViewSafeNode that wraps the target DialogNode.
+        /// Used to select the correct node after tree refresh (e.g., after Ctrl+D).
+        /// Only expands nodes that are on the path to the target (not all searched nodes).
+        /// Uses depth limit to avoid infinite recursion.
+        /// </summary>
+        private TreeViewSafeNode? FindTreeViewNode(TreeViewSafeNode parent, DialogNode target, int maxDepth = 10)
+        {
+            if (maxDepth <= 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔍 FindTreeViewNode: Max depth reached");
+                return null;
+            }
+
+            // Force populate children for searching (lazy loading requires this)
+            // Access Children property to initialize, then call PopulateChildren
+            var _ = parent.Children; // Initialize _children if null
+            parent.PopulateChildren();
+
+            int childCount = parent.Children?.Count(c => !(c is TreeViewPlaceholderNode)) ?? 0;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"🔍 FindTreeViewNode: Searching in '{parent.DisplayText}' ({childCount} children)");
+
+            // Check children
+            if (parent.Children != null)
+            {
+                foreach (var child in parent.Children)
+                {
+                    // Skip placeholder nodes
+                    if (child is TreeViewPlaceholderNode) continue;
+
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"🔍 Checking child: '{child.DisplayText}' (match: {child.OriginalNode == target})");
+
+                    if (child.OriginalNode == target)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔍 FOUND target!");
+                        // Expand parent since we found the target in this subtree
+                        parent.IsExpanded = true;
+                        return child;
+                    }
+
+                    // Recurse into children that have pointers (may lead to target)
+                    // The depth limit protects against infinite recursion
+                    int pointerCount = child.OriginalNode.Pointers.Count;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"🔍 Child '{child.DisplayText}' has {pointerCount} pointers");
+
+                    if (pointerCount > 0)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"🔍 Recursing into '{child.DisplayText}'...");
+                        var found = FindTreeViewNode(child, target, maxDepth - 1);
+                        if (found != null)
+                        {
+                            // Expand parent since target was found in this subtree
+                            parent.IsExpanded = true;
+                            return found;
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         public TreeViewSafeNode? FindTreeNodeForDialogNode(DialogNode nodeToFind)
@@ -1255,6 +1386,11 @@ namespace DialogEditor.ViewModels
 
             if (result.Success)
             {
+                // Issue #122: Focus on the newly pasted node instead of sibling
+                if (result.PastedNode != null)
+                {
+                    NodeToSelectAfterRefresh = result.PastedNode;
+                }
                 RefreshTreeView();
                 HasUnsavedChanges = true;
             }
@@ -1282,6 +1418,16 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
+            // Issue #11: Check type compatibility before attempting paste
+            var clipboardNode = _clipboardService.ClipboardNode;
+            if (clipboardNode != null && clipboardNode.Type == parent.OriginalNode.Type)
+            {
+                string parentType = parent.OriginalNode.Type == DialogNodeType.Entry ? "NPC Entry" : "PC Reply";
+                string nodeType = clipboardNode.Type == DialogNodeType.Entry ? "NPC Entry" : "PC Reply";
+                StatusMessage = $"Invalid link: Cannot link {nodeType} under {parentType} (same types not allowed)";
+                return;
+            }
+
             // Save state for undo before creating link
             SaveUndoState("Paste as Link");
 
@@ -1291,13 +1437,15 @@ namespace DialogEditor.ViewModels
             if (linkPtr == null)
             {
                 // Service already logged the reason (Cut operation, different dialog, node not found, etc.)
-                StatusMessage = "Cannot paste as link - check logs for details";
+                StatusMessage = "Cannot paste as link - operation failed";
                 return;
             }
 
             // Register the link pointer with LinkRegistry
             CurrentDialog.LinkRegistry.RegisterLink(linkPtr);
 
+            // Issue #122: Focus on parent node (link is under parent, not standalone)
+            NodeToSelectAfterRefresh = parent.OriginalNode;
             RefreshTreeView();
             HasUnsavedChanges = true;
             StatusMessage = $"Pasted link under {parent.DisplayText}: {linkPtr.Node?.DisplayText}";
@@ -1377,10 +1525,17 @@ namespace DialogEditor.ViewModels
         /// </summary>
         private TreeState CaptureTreeState()
         {
+            // Capture selected node path for restoration after undo/redo
+            string? selectedPath = null;
+            if (SelectedTreeNode != null && !(SelectedTreeNode is TreeViewRootNode))
+            {
+                selectedPath = _treeNavManager.GetNodePath(SelectedTreeNode);
+            }
+
             var state = new TreeState
             {
                 ExpandedNodePaths = _treeNavManager.CaptureExpandedNodePaths(DialogNodes),
-                SelectedNodePath = null
+                SelectedNodePath = selectedPath
             };
 
             return state;
@@ -1404,6 +1559,33 @@ namespace DialogEditor.ViewModels
             _treeNavManager.RestoreExpandedNodePaths(DialogNodes, state.ExpandedNodePaths);
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restored {state.ExpandedNodePaths.Count} expanded nodes");
+
+            // Get ROOT node as fallback
+            var rootNode = DialogNodes.OfType<TreeViewRootNode>().FirstOrDefault();
+
+            // Restore selection if we had one captured
+            if (!string.IsNullOrEmpty(state.SelectedNodePath))
+            {
+                var selectedNode = _treeNavManager.FindNodeByPath(DialogNodes, state.SelectedNodePath);
+                if (selectedNode != null)
+                {
+                    SelectedTreeNode = selectedNode;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restored selection to: '{selectedNode.DisplayText}'");
+                }
+                else
+                {
+                    // Node not found (may have been deleted by undo) - fallback to ROOT
+                    // This prevents orphaned TextBox focus with no backing node
+                    SelectedTreeNode = rootNode;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not find node for path: '{state.SelectedNodePath}', fallback to ROOT");
+                }
+            }
+            else
+            {
+                // No selection was captured - select ROOT to ensure valid state
+                SelectedTreeNode = rootNode;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "No previous selection, selected ROOT");
+            }
         }
 
         #region Scrap Management

@@ -218,6 +218,13 @@ When adding a new tool to Radoub:
 - Check for hardcoded paths (privacy)
 - Verify cross-platform compatibility if applicable
 
+**UI Test Stability (FlaUI + Avalonia)**:
+- Avalonia apps can crash with `SkiaSharp.SKCanvas.Flush()` errors if closed during mid-render
+- Use graceful shutdown (Alt+F4) instead of programmatic `App.Close()` in FlaUI tests
+- Add delays before closing to let Avalonia's compositor finish pending renders
+- Wait for process to fully exit between tests to prevent resource conflicts
+- See `FlaUITestBase.StopApplication()` for reference implementation
+
 **Before PRs to Main**:
 - All tools must build
 - All tool tests must pass

@@ -70,40 +70,16 @@ namespace DialogEditor.Services
                 _saveCurrentNodeProperties();
                 UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Saved current node properties");
 
-                // Track dialog node count before adding
-                int entryCountBefore = _viewModel.CurrentDialog?.Entries.Count ?? 0;
-                int replyCountBefore = _viewModel.CurrentDialog?.Replies.Count ?? 0;
-
+                // AddSmartNode now sets NodeToSelectAfterRefresh to focus the new node
                 _viewModel.AddSmartNode(selectedNode);
 
-                // Wait for tree view to refresh
-                await Task.Delay(100);
-
-                // Find and select the newly created node
-                var treeView = _findControl("DialogTreeView") as TreeView;
-                if (treeView != null && _viewModel.CurrentDialog != null)
-                {
-                    bool entryAdded = _viewModel.CurrentDialog.Entries.Count > entryCountBefore;
-                    bool replyAdded = _viewModel.CurrentDialog.Replies.Count > replyCountBefore;
-
-                    if (entryAdded || replyAdded)
-                    {
-                        var newNode = FindLastAddedNode(treeView, entryAdded, replyAdded);
-                        if (newNode != null)
-                        {
-                            // Expand all ancestor nodes to make new node visible (Issue #7)
-                            ExpandToNode(treeView, newNode);
-
-                            treeView.SelectedItem = newNode;
-                            UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Selected new node in tree");
-                        }
-                    }
-                }
+                // Wait for tree view to refresh and node to be selected
+                await Task.Delay(150);
 
                 // Auto-focus to text box for immediate typing
                 // Delay allows tree view selection and properties panel population to complete
-                UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Waiting 300ms for properties panel...");
-                await Task.Delay(300);
+                UnifiedLogger.LogApplication(LogLevel.INFO, "CreateSmartNodeAsync: Waiting for properties panel...");
+                await Task.Delay(200);
 
                 var textTextBox = _findControl("TextTextBox") as TextBox;
                 if (textTextBox != null)
@@ -184,8 +160,15 @@ namespace DialogEditor.Services
             var parent = FindParentNode(treeView, targetNode);
             if (parent != null)
             {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"ExpandToNode: Expanding parent '{parent.DisplayText}' for target '{targetNode.DisplayText}'");
                 parent.IsExpanded = true;
                 ExpandToNode(treeView, parent); // Recurse upward
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"ExpandToNode: No parent found for '{targetNode.DisplayText}' (may be root-level)");
             }
         }
 
@@ -194,24 +177,36 @@ namespace DialogEditor.Services
         /// </summary>
         public TreeViewSafeNode? FindParentNode(TreeView treeView, TreeViewSafeNode targetNode)
         {
-            if (treeView.ItemsSource == null) return null;
+            if (treeView.ItemsSource == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "FindParentNode: ItemsSource is null");
+                return null;
+            }
 
             foreach (var item in treeView.ItemsSource)
             {
                 if (item is TreeViewSafeNode node)
                 {
-                    var parent = FindParentNodeRecursive(node, targetNode);
+                    var parent = FindParentNodeRecursive(node, targetNode, forcePopulate: true);
                     if (parent != null) return parent;
                 }
             }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"FindParentNode: Parent not found for '{targetNode.DisplayText}'");
             return null;
         }
 
-        private TreeViewSafeNode? FindParentNodeRecursive(TreeViewSafeNode currentNode, TreeViewSafeNode targetNode)
+        private TreeViewSafeNode? FindParentNodeRecursive(TreeViewSafeNode currentNode, TreeViewSafeNode targetNode, bool forcePopulate = false)
         {
+            // Force populate children if needed for searching
+            if (forcePopulate && currentNode.HasChildren && (currentNode.Children == null || !currentNode.Children.Any()))
+            {
+                currentNode.PopulateChildren();
+            }
+
             if (currentNode.Children == null) return null;
 
-            // Check if targetNode is a direct child
+            // Check if targetNode is a direct child (by reference equality)
             if (currentNode.Children.Contains(targetNode))
             {
                 return currentNode;
@@ -220,7 +215,7 @@ namespace DialogEditor.Services
             // Recurse through children
             foreach (var child in currentNode.Children)
             {
-                var found = FindParentNodeRecursive(child, targetNode);
+                var found = FindParentNodeRecursive(child, targetNode, forcePopulate);
                 if (found != null) return found;
             }
 

@@ -205,8 +205,9 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Populates basic text properties (Text, Sound, Comment, Delay).
+        /// Issue #12: For link nodes, shows LinkComment instead of original node's Comment.
         /// </summary>
-        public void PopulateBasicProperties(DialogNode dialogNode)
+        public void PopulateBasicProperties(DialogNode dialogNode, TreeViewSafeNode node)
         {
             var textTextBox = _window.FindControl<TextBox>("TextTextBox");
             if (textTextBox != null)
@@ -225,7 +226,29 @@ namespace Parley.Views.Helpers
             var commentTextBox = _window.FindControl<TextBox>("CommentTextBox");
             if (commentTextBox != null)
             {
-                commentTextBox.Text = dialogNode.Comment ?? "";
+                // Issue #12: For link nodes (IsChild=true), show LinkComment from pointer
+                // instead of the original node's Comment
+                bool isChildCheck = node.IsChild;
+                bool hasSourcePointer = node.SourcePointer != null;
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"📝 Comment field: IsChild={isChildCheck}, HasSourcePointer={hasSourcePointer}, " +
+                    $"NodeType={node.GetType().Name}, DisplayText='{node.DisplayText}'");
+
+                if (isChildCheck && hasSourcePointer)
+                {
+                    string linkComment = node.SourcePointer!.LinkComment ?? "";
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"📝 Using LINK comment: '{linkComment}' (from SourcePointer.LinkComment)");
+                    commentTextBox.Text = linkComment;
+                }
+                else
+                {
+                    string nodeComment = dialogNode.Comment ?? "";
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"📝 Using NODE comment: '{nodeComment}' (from DialogNode.Comment)");
+                    commentTextBox.Text = nodeComment;
+                }
                 commentTextBox.IsReadOnly = false;
             }
 
@@ -540,6 +563,15 @@ namespace Parley.Views.Helpers
             var isChildTextBlock = _window.FindControl<TextBlock>("IsChildTextBlock");
             if (isChildTextBlock != null)
                 isChildTextBlock.Text = "";
+
+            // Issue #178: Clear script preview TextBoxes
+            var conditionalPreview = _window.FindControl<TextBox>("ConditionalScriptPreviewTextBox");
+            if (conditionalPreview != null)
+                conditionalPreview.Text = "// Conditional script preview will appear here";
+
+            var actionPreview = _window.FindControl<TextBox>("ActionScriptPreviewTextBox");
+            if (actionPreview != null)
+                actionPreview.Text = "// Action script preview will appear here";
         }
     }
 }
