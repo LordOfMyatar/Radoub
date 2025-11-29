@@ -11,6 +11,9 @@ from .plugin_pb2 import (
     ShowDialogRequest,
     GetCurrentDialogRequest,
     GetSelectedNodeRequest,
+    RegisterPanelRequest,
+    UpdatePanelContentRequest,
+    ClosePanelRequest,
 )
 from .plugin_pb2_grpc import (
     AudioServiceStub,
@@ -149,6 +152,94 @@ class ParleyClient:
         except grpc.RpcError as e:
             print(f"gRPC error: {e}")
             return ("", "")
+
+    def register_panel(
+        self,
+        panel_id: str,
+        title: str,
+        position: str = "right",
+        render_mode: str = "webview",
+        initial_width: int = 0,
+        initial_height: int = 0,
+        can_float: bool = True,
+        can_close: bool = True,
+    ) -> tuple:
+        """
+        Register a dockable/floating panel in Parley.
+
+        Args:
+            panel_id: Unique identifier for the panel
+            title: Display title for the panel
+            position: Panel position - "left", "right", "bottom", or "float"
+            render_mode: Rendering mode - "webview" (recommended) or "native"
+            initial_width: Initial width in pixels (0 = auto)
+            initial_height: Initial height in pixels (0 = auto)
+            can_float: Whether panel can be undocked to floating window
+            can_close: Whether user can close the panel
+
+        Returns:
+            Tuple of (success: bool, error_message: str, actual_panel_id: str)
+        """
+        try:
+            request = RegisterPanelRequest(
+                panel_id=panel_id,
+                title=title,
+                position=position,
+                render_mode=render_mode,
+                initial_width=initial_width,
+                initial_height=initial_height,
+                can_float=can_float,
+                can_close=can_close,
+            )
+            response = self.ui.RegisterPanel(request)
+            return (response.success, response.error_message, response.actual_panel_id)
+        except grpc.RpcError as e:
+            print(f"gRPC error: {e}")
+            return (False, str(e), "")
+
+    def update_panel_content(
+        self, panel_id: str, content_type: str, content: str
+    ) -> tuple:
+        """
+        Update the content of a registered panel.
+
+        Args:
+            panel_id: ID of the panel to update
+            content_type: Type of content - "html", "url", or "json"
+            content: HTML string, URL, or JSON descriptor depending on content_type
+
+        Returns:
+            Tuple of (success: bool, error_message: str)
+        """
+        try:
+            request = UpdatePanelContentRequest(
+                panel_id=panel_id,
+                content_type=content_type,
+                content=content,
+            )
+            response = self.ui.UpdatePanelContent(request)
+            return (response.success, response.error_message)
+        except grpc.RpcError as e:
+            print(f"gRPC error: {e}")
+            return (False, str(e))
+
+    def close_panel(self, panel_id: str) -> bool:
+        """
+        Close a registered panel.
+
+        Args:
+            panel_id: ID of the panel to close
+
+        Returns:
+            True if successful
+        """
+        try:
+            request = ClosePanelRequest(panel_id=panel_id)
+            response = self.ui.ClosePanel(request)
+            return response.success
+        except grpc.RpcError as e:
+            print(f"gRPC error: {e}")
+            return False
 
     def close(self):
         """Close the gRPC channel."""

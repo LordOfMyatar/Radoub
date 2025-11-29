@@ -71,6 +71,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Google.Protobuf" Version="3.29.3" />
+    <PackageReference Include="WebView.Avalonia.Cross" Version="11.3.1" />
   </ItemGroup>
 
   <ItemGroup>

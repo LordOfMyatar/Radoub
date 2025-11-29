@@ -1,0 +1,41 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DialogEditor.Views.PluginPanelWindow"
+        Title="Plugin Panel"
+        Width="600" Height="400"
+        WindowStartupLocation="CenterScreen"
+        Icon="avares://Parley/Assets/parley.ico">
+
+    <Grid>
+        <!-- Content area - WebView will be added programmatically -->
+        <Border x:Name="ContentBorder"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="ContentTextBlock"
+                           TextWrapping="Wrap"
+                           Margin="10"
+                           FontFamily="Consolas, Courier New, monospace"
+                           FontSize="12"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Placeholder shown when no content -->
+        <Border x:Name="PlaceholderBorder"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                IsVisible="True">
+            <StackPanel VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Spacing="10">
+                <TextBlock Text="Flowchart View"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Open a dialog file to view the flowchart"
+                           FontSize="14"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from . import plugin_pb2 as plugin__pb2
+import plugin_pb2 as plugin__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -489,6 +489,21 @@ class UIServiceStub(object):
                 request_serializer=plugin__pb2.ShowDialogRequest.SerializeToString,
                 response_deserializer=plugin__pb2.ShowDialogResponse.FromString,
                 _registered_method=True)
+        self.RegisterPanel = channel.unary_unary(
+                '/parley.plugin.UIService/RegisterPanel',
+                request_serializer=plugin__pb2.RegisterPanelRequest.SerializeToString,
+                response_deserializer=plugin__pb2.RegisterPanelResponse.FromString,
+                _registered_method=True)
+        self.UpdatePanelContent = channel.unary_unary(
+                '/parley.plugin.UIService/UpdatePanelContent',
+                request_serializer=plugin__pb2.UpdatePanelContentRequest.SerializeToString,
+                response_deserializer=plugin__pb2.UpdatePanelContentResponse.FromString,
+                _registered_method=True)
+        self.ClosePanel = channel.unary_unary(
+                '/parley.plugin.UIService/ClosePanel',
+                request_serializer=plugin__pb2.ClosePanelRequest.SerializeToString,
+                response_deserializer=plugin__pb2.ClosePanelResponse.FromString,
+                _registered_method=True)
 
 
 class UIServiceServicer(object):
@@ -507,6 +522,25 @@ class UIServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def RegisterPanel(self, request, context):
+        """Panel management (Epic 3 / #92)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdatePanelContent(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ClosePanel(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_UIServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -519,6 +553,21 @@ def add_UIServiceServicer_to_server(servicer, server):
                     servicer.ShowDialog,
                     request_deserializer=plugin__pb2.ShowDialogRequest.FromString,
                     response_serializer=plugin__pb2.ShowDialogResponse.SerializeToString,
+            ),
+            'RegisterPanel': grpc.unary_unary_rpc_method_handler(
+                    servicer.RegisterPanel,
+                    request_deserializer=plugin__pb2.RegisterPanelRequest.FromString,
+                    response_serializer=plugin__pb2.RegisterPanelResponse.SerializeToString,
+            ),
+            'UpdatePanelContent': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdatePanelContent,
+                    request_deserializer=plugin__pb2.UpdatePanelContentRequest.FromString,
+                    response_serializer=plugin__pb2.UpdatePanelContentResponse.SerializeToString,
+            ),
+            'ClosePanel': grpc.unary_unary_rpc_method_handler(
+                    servicer.ClosePanel,
+                    request_deserializer=plugin__pb2.ClosePanelRequest.FromString,
+                    response_serializer=plugin__pb2.ClosePanelResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -576,6 +625,87 @@ class UIService(object):
             '/parley.plugin.UIService/ShowDialog',
             plugin__pb2.ShowDialogRequest.SerializeToString,
             plugin__pb2.ShowDialogResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RegisterPanel(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/RegisterPanel',
+            plugin__pb2.RegisterPanelRequest.SerializeToString,
+            plugin__pb2.RegisterPanelResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdatePanelContent(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/UpdatePanelContent',
+            plugin__pb2.UpdatePanelContentRequest.SerializeToString,
+            plugin__pb2.UpdatePanelContentResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ClosePanel(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/ClosePanel',
+            plugin__pb2.ClosePanelRequest.SerializeToString,
+            plugin__pb2.ClosePanelResponse.FromString,
             options,
             channel_credentials,
             insecure,

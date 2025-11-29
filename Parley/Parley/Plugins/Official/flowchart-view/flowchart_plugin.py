@@ -45,10 +45,15 @@ class FlowchartPlugin:
             self.client = ParleyClient()
             print("[Flowchart] Connected to Parley gRPC server")
 
+            # Register the flowchart panel
+            if not self._register_panel():
+                print("[Flowchart] Warning: Panel registration failed")
+                # Continue anyway - panel registration is non-fatal for now
+
             # Show startup notification
             self.client.show_notification(
                 "Flowchart View",
-                "Plugin loaded. Flowchart panel will be available in View menu."
+                "Plugin loaded. Flowchart panel registered."
             )
 
             # Query initial dialog state
@@ -60,6 +65,97 @@ class FlowchartPlugin:
         except Exception as e:
             print(f"[Flowchart] Initialization failed: {e}")
             return False
+
+    def _register_panel(self) -> bool:
+        """
+        Register the flowchart panel with Parley.
+
+        Returns:
+            True if panel registration successful
+        """
+        if not self.client:
+            return False
+
+        success, error_msg, actual_id = self.client.register_panel(
+            panel_id="flowchart-view",
+            title="Flowchart View",
+            position="right",
+            render_mode="webview",
+            initial_width=600,
+            initial_height=400,
+            can_float=True,
+            can_close=True,
+        )
+
+        if success:
+            print(f"[Flowchart] Panel registered with ID: {actual_id}")
+            self._panel_registered = True
+
+            # Set initial content - placeholder HTML
+            self._update_panel_placeholder()
+            return True
+        else:
+            print(f"[Flowchart] Panel registration failed: {error_msg}")
+            return False
+
+    def _update_panel_placeholder(self):
+        """Update panel with placeholder content until dialog is loaded."""
+        if not self.client or not self._panel_registered:
+            return
+
+        placeholder_html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            box-sizing: border-box;
+            background: var(--bg-color, #f5f5f5);
+            color: var(--text-color, #333);
+        }
+        .placeholder {
+            text-align: center;
+            opacity: 0.7;
+        }
+        .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        h2 {
+            margin: 0 0 8px 0;
+            font-weight: 500;
+        }
+        p {
+            margin: 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="placeholder">
+        <div class="icon">📊</div>
+        <h2>Flowchart View</h2>
+        <p>Open a dialog file to view the flowchart</p>
+    </div>
+</body>
+</html>
+"""
+        success, error_msg = self.client.update_panel_content(
+            panel_id="flowchart-view",
+            content_type="html",
+            content=placeholder_html,
+        )
+
+        if not success:
+            print(f"[Flowchart] Failed to update panel content: {error_msg}")
 
     def _refresh_dialog_state(self):
         """Refresh the current dialog state from Parley."""
@@ -150,6 +246,11 @@ class FlowchartPlugin:
 
         if self.client:
             try:
+                # Close the panel
+                if self._panel_registered:
+                    self.client.close_panel("flowchart-view")
+                    self._panel_registered = False
+
                 self.client.show_notification(
                     "Flowchart View",
                     "Plugin stopped."

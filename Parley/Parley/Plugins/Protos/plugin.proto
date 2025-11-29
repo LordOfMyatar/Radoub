@@ -34,6 +34,11 @@ service AudioService {
 service UIService {
   rpc ShowNotification (ShowNotificationRequest) returns (ShowNotificationResponse);
   rpc ShowDialog (ShowDialogRequest) returns (ShowDialogResponse);
+
+  // Panel management (Epic 3 / #92)
+  rpc RegisterPanel (RegisterPanelRequest) returns (RegisterPanelResponse);
+  rpc UpdatePanelContent (UpdatePanelContentRequest) returns (UpdatePanelContentResponse);
+  rpc ClosePanel (ClosePanelRequest) returns (ClosePanelResponse);
 }
 
 // Dialog service (Plugin → Host)
@@ -186,4 +191,41 @@ message WriteFileRequest {
 message WriteFileResponse {
   bool success = 1;
   string error_message = 2;
+}
+
+// Panel management messages (Epic 3 / #92)
+message RegisterPanelRequest {
+  string panel_id = 1;           // Unique identifier for this panel
+  string title = 2;              // Display title
+  string position = 3;           // "left", "right", "bottom", or "float"
+  string render_mode = 4;        // "webview" or "native" (webview recommended)
+  int32 initial_width = 5;       // Initial width in pixels (0 = auto)
+  int32 initial_height = 6;      // Initial height in pixels (0 = auto)
+  bool can_float = 7;            // Whether panel can be undocked to floating
+  bool can_close = 8;            // Whether user can close the panel
+}
+
+message RegisterPanelResponse {
+  bool success = 1;
+  string error_message = 2;
+  string actual_panel_id = 3;    // The ID assigned (may differ if collision)
+}
+
+message UpdatePanelContentRequest {
+  string panel_id = 1;
+  string content_type = 2;       // "html", "url", or "json"
+  string content = 3;            // HTML string, URL, or JSON descriptor
+}
+
+message UpdatePanelContentResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message ClosePanelRequest {
+  string panel_id = 1;
+}
+
+message ClosePanelResponse {
+  bool success = 1;
 }
