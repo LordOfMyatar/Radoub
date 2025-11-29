@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.33-alpha] - 2025-11-29
-**Branch**: `parley/feat/epic-40-phase1-foundation` | **PR**: #TBD
+**Branch**: `parley/feat/epic-40-phase1-foundation` | **PR**: #244
 
 ### Epic 40 Phase 1: Flowchart Foundation (#223-#227)
 
