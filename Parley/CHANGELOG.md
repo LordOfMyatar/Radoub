@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.32-alpha] - 2025-11-28
+**Branch**: `parley/feat/issue-146-builtin-scripts` | **PR**: #219
+
+### Feature: Built-in Game Scripts & TLK Integration (#146)
+
+Support browsing built-in game scripts from BIF files and resolving TLK StrRef values.
+
+**Features**:
+- [x] TLK string resolution for StrRef values in dialogs
+- [x] Built-in script browser from base game BIF files
+- [x] Visual distinction between module and built-in scripts (🎮 icon)
+- [x] GameResourceService wrapper for Radoub.Formats integration
+- [x] NWN:EE TLK path detection (lang/XX/data/dialog.tlk)
+- [x] Embedded StrRef placeholder resolution (for dialogs with baked-in `<StrRef:N>` text)
+
+---
+
 ## [0.1.31-alpha] - 2025-11-28
 **Branch**: `parley/sprint/bugs-and-focus` | **PR**: #217
 

@@ -67,6 +67,8 @@ namespace DialogEditor.Services
         private string _baseGameInstallPath = ""; // Phase 2: Base game installation (Steam/GOG)
         private string _currentModulePath = "";
         private List<string> _modulePaths = new List<string>();
+        private string _tlkLanguage = ""; // Empty = auto-detect, or "en", "de", "fr", "es", "it", "pl"
+        private bool _tlkUseFemale = false; // Use dialogf.tlk (female) instead of dialog.tlk (male/default)
 
         // Logging settings
         private int _logRetentionSessions = 3; // Default: keep 3 most recent sessions
@@ -275,6 +277,25 @@ namespace DialogEditor.Services
         {
             get => _currentModulePath;
             set { if (SetProperty(ref _currentModulePath, value ?? "")) SaveSettings(); }
+        }
+
+        /// <summary>
+        /// TLK language preference. Empty = auto-detect, or specify: "en", "de", "fr", "es", "it", "pl"
+        /// </summary>
+        public string TlkLanguage
+        {
+            get => _tlkLanguage;
+            set { if (SetProperty(ref _tlkLanguage, value ?? "")) SaveSettings(); }
+        }
+
+        /// <summary>
+        /// Use female TLK variant (dialogf.tlk) instead of default (dialog.tlk).
+        /// Some languages have gendered text variants.
+        /// </summary>
+        public bool TlkUseFemale
+        {
+            get => _tlkUseFemale;
+            set { if (SetProperty(ref _tlkUseFemale, value)) SaveSettings(); }
         }
 
         public List<string> ModulePaths
@@ -647,6 +668,8 @@ namespace DialogEditor.Services
                         _baseGameInstallPath = ExpandPath(settings.BaseGameInstallPath ?? ""); // Phase 2
                         _currentModulePath = ExpandPath(settings.CurrentModulePath ?? "");
                         _modulePaths = ExpandPaths(settings.ModulePaths?.ToList() ?? new List<string>());
+                        _tlkLanguage = settings.TlkLanguage ?? ""; // TLK language preference
+                        _tlkUseFemale = settings.TlkUseFemale; // TLK gender preference
 
                         // Load logging settings (backwards compatible with old LogRetentionDays)
                         if (settings.LogRetentionSessions > 0)
@@ -728,6 +751,8 @@ namespace DialogEditor.Services
                     BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
                     CurrentModulePath = ContractPath(CurrentModulePath), // Use ~ for home directory
                     ModulePaths = ContractPaths(_modulePaths), // Use ~ for home directory
+                    TlkLanguage = TlkLanguage, // TLK language preference
+                    TlkUseFemale = TlkUseFemale, // TLK gender preference
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
                     DebugLogFilterLevel = DebugLogFilterLevel,
@@ -914,6 +939,8 @@ namespace DialogEditor.Services
             public string BaseGameInstallPath { get; set; } = ""; // Phase 2: Base game installation
             public string CurrentModulePath { get; set; } = "";
             public List<string> ModulePaths { get; set; } = new List<string>();
+            public string TlkLanguage { get; set; } = ""; // TLK language: "", "en", "de", "fr", "es", "it", "pl"
+            public bool TlkUseFemale { get; set; } = false; // Use dialogf.tlk (female) instead of dialog.tlk
 
             // Logging settings
             public int LogRetentionSessions { get; set; } = 3; // Keep 3 most recent sessions

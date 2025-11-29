@@ -324,19 +324,79 @@ namespace DialogEditor.Parsers
                     UnifiedLogger.LogParser(LogLevel.TRACE, $"Converting CExoLocString with {locString.LocalizedStrings?.Count ?? 0} strings, StrRef={locString.StrRef}");
                     if (locString.LocalizedStrings != null && locString.LocalizedStrings.Count > 0)
                     {
-                        // Convert CExoLocString to our LocString format
-                        foreach (var kvp in locString.LocalizedStrings)
+                        // Check if the text is a "<StrRef:N>" placeholder that needs TLK resolution
+                        // This happens when dialogs were previously saved with unresolved StrRefs as text
+                        var firstText = locString.LocalizedStrings.Values.FirstOrDefault();
+                        if (firstText != null && firstText.StartsWith("<StrRef:") && firstText.EndsWith(">"))
                         {
-                            UnifiedLogger.LogParser(LogLevel.TRACE, $"Adding to node.Text: Lang {kvp.Key} = '{kvp.Value}'");
-                            node.Text.Add((int)kvp.Key, kvp.Value);
+                            // Parse the StrRef number from the placeholder
+                            var strRefText = firstText.Substring(8, firstText.Length - 9); // Remove "<StrRef:" and ">"
+                            if (uint.TryParse(strRefText, out var embeddedStrRef))
+                            {
+                                UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔄 Detected embedded StrRef placeholder: {firstText} → attempting TLK lookup");
+                                var tlkText = GameResourceService.Instance.GetTlkString(embeddedStrRef);
+                                if (tlkText != null)
+                                {
+                                    var preview = tlkText.Length > 50 ? tlkText.Substring(0, 50) + "..." : tlkText;
+                                    UnifiedLogger.LogParser(LogLevel.DEBUG, $"✅ TLK RESOLVED embedded: StrRef={embeddedStrRef} → '{preview}'");
+                                    node.Text.Add(0, tlkText);
+                                }
+                                else
+                                {
+                                    // Keep the original placeholder if TLK lookup fails
+                                    UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ TLK lookup failed for embedded StrRef={embeddedStrRef}");
+                                    foreach (var kvp in locString.LocalizedStrings)
+                                    {
+                                        node.Text.Add((int)kvp.Key, kvp.Value);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Not a valid number, keep original text
+                                foreach (var kvp in locString.LocalizedStrings)
+                                {
+                                    node.Text.Add((int)kvp.Key, kvp.Value);
+                                }
+                            }
                         }
-                        UnifiedLogger.LogParser(LogLevel.TRACE, $"After conversion, node.Text.GetDefault() = '{node.Text.GetDefault()}'");
+                        else
+                        {
+                            // Normal text - Convert CExoLocString to our LocString format
+                            foreach (var kvp in locString.LocalizedStrings)
+                            {
+                                UnifiedLogger.LogParser(LogLevel.TRACE, $"Adding to node.Text: Lang {kvp.Key} = '{kvp.Value}'");
+                                node.Text.Add((int)kvp.Key, kvp.Value);
+                            }
+                            UnifiedLogger.LogParser(LogLevel.TRACE, $"After conversion, node.Text.GetDefault() = '{node.Text.GetDefault()}'");
+                        }
                     }
                     else if (locString.StrRef != 0xFFFFFFFF)
                     {
-                        // Text is in TLK file - not yet supported
-                        UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ TLK REFERENCE: StrRef={locString.StrRef} - TLK file support not implemented");
-                        node.Text.Add(0, $"<StrRef:{locString.StrRef}>");
+                        // Text is in TLK file - try to resolve it
+                        UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔍 TLK LOOKUP: Attempting to resolve StrRef={locString.StrRef}, GameResourceService.IsAvailable={GameResourceService.Instance.IsAvailable}");
+                        var tlkText = GameResourceService.Instance.GetTlkString(locString.StrRef);
+                        if (tlkText != null)
+                        {
+                            var preview = tlkText.Length > 50 ? tlkText.Substring(0, 50) + "..." : tlkText;
+                            UnifiedLogger.LogParser(LogLevel.DEBUG, $"✅ TLK RESOLVED: StrRef={locString.StrRef} → '{preview}'");
+                            node.Text.Add(0, tlkText);
+                        }
+                        else
+                        {
+                            // TLK not available or StrRef not found - show placeholder
+                            // Check if it's because TLK isn't loaded or StrRef is out of range
+                            var entry = GameResourceService.Instance.GetTlkEntry(locString.StrRef);
+                            if (entry != null)
+                            {
+                                UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ TLK ENTRY EXISTS but no text: StrRef={locString.StrRef}, Flags={entry.Flags}, HasText={entry.HasText}");
+                            }
+                            else
+                            {
+                                UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ TLK ENTRY NOT FOUND: StrRef={locString.StrRef} - TLK may not be loaded or StrRef out of range");
+                            }
+                            node.Text.Add(0, $"<StrRef:{locString.StrRef}>");
+                        }
                     }
                     else
                     {

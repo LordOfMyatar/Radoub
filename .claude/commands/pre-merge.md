@@ -85,14 +85,32 @@ dotnet test Radoub.UITests
 dotnet test Radoub.Formats/Radoub.Formats.Tests
 ```
 
-### Step 5: Documentation Check
+### Step 5: Code Review
+
+Run built-in review commands:
+
+**Security Review**:
+```
+/security-review
+```
+Checks for: injection vulnerabilities, auth bypass, hardcoded secrets, path traversal, etc.
+
+**General Code Review**:
+```
+/review
+```
+Checks for: logic errors, code quality, best practices, potential bugs.
+
+Document findings in the checklist output.
+
+### Step 6: Documentation Check
 
 Scan for:
 - New public APIs without XML docs
 - README updates needed for new features
 - User-facing changes that need documentation
 
-### Step 6: Generate Checklist
+### Step 7: Generate Checklist
 
 Output format:
 
@@ -120,6 +138,13 @@ Output format:
 - [x/⚠️] No hardcoded paths found
 - [x/⚠️] Build succeeds
 - [x/⚠️] No TODO comments in changed files
+
+---
+
+### Code Review
+
+- [x/⚠️] Security review: [✅ No issues / ⚠️ [N] findings]
+- [x/⚠️] General review: [✅ No issues / ⚠️ [N] findings]
 
 ---
 
@@ -160,7 +185,7 @@ Output format:
 [✅ All checks pass - ready for review / ⚠️ [N] items need attention]
 ```
 
-### Step 7: Update PR Description
+### Step 8: Update PR Description
 
 After generating the checklist, update the PR on GitHub with:
 - Summary of changes from CHANGELOG
