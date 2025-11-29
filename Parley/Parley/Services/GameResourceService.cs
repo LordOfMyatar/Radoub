@@ -44,10 +44,11 @@ public class GameResourceService : IDisposable
 
     private void OnSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        // Reinitialize resolver when relevant paths change
+        // Reinitialize resolver when relevant paths or TLK language change
         if (e.PropertyName is nameof(SettingsService.BaseGameInstallPath) or
             nameof(SettingsService.NeverwinterNightsPath) or
-            nameof(SettingsService.CurrentModulePath))
+            nameof(SettingsService.CurrentModulePath) or
+            nameof(SettingsService.TlkLanguage))
         {
             InvalidateResolver();
         }
@@ -160,25 +161,50 @@ public class GameResourceService : IDisposable
         };
 
         // Set TLK path - NWN:EE stores dialog.tlk in lang/XX/data/ folders
-        // Try common locations in priority order (English first)
+        // Check user language preference first, then auto-detect
+        var tlkLanguage = settings.TlkLanguage;
         string? tlkPath = null;
-        var tlkSearchPaths = new[]
-        {
-            Path.Combine(dataPath, "dialog.tlk"),                           // Classic NWN
-            Path.Combine(gameDataPath, "lang", "en", "data", "dialog.tlk"), // NWN:EE English
-            Path.Combine(gameDataPath, "lang", "de", "data", "dialog.tlk"), // NWN:EE German
-            Path.Combine(gameDataPath, "lang", "fr", "data", "dialog.tlk"), // NWN:EE French
-            Path.Combine(gameDataPath, "lang", "es", "data", "dialog.tlk"), // NWN:EE Spanish
-            Path.Combine(gameDataPath, "lang", "it", "data", "dialog.tlk"), // NWN:EE Italian
-            Path.Combine(gameDataPath, "lang", "pl", "data", "dialog.tlk"), // NWN:EE Polish
-        };
 
-        foreach (var path in tlkSearchPaths)
+        // Supported languages in priority order for auto-detection
+        var languages = new[] { "en", "de", "fr", "es", "it", "pl" };
+
+        if (!string.IsNullOrEmpty(tlkLanguage))
         {
-            if (File.Exists(path))
+            // User specified a language preference
+            var preferredPath = Path.Combine(gameDataPath, "lang", tlkLanguage, "data", "dialog.tlk");
+            if (File.Exists(preferredPath))
             {
-                tlkPath = path;
-                break;
+                tlkPath = preferredPath;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Using preferred TLK language: {tlkLanguage}");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Preferred TLK language '{tlkLanguage}' not found at: {UnifiedLogger.SanitizePath(preferredPath)}");
+            }
+        }
+
+        // Auto-detect if no preference or preference not found
+        if (tlkPath == null)
+        {
+            // Try classic NWN first
+            var classicPath = Path.Combine(dataPath, "dialog.tlk");
+            if (File.Exists(classicPath))
+            {
+                tlkPath = classicPath;
+            }
+            else
+            {
+                // Try NWN:EE language folders in priority order
+                foreach (var lang in languages)
+                {
+                    var langPath = Path.Combine(gameDataPath, "lang", lang, "data", "dialog.tlk");
+                    if (File.Exists(langPath))
+                    {
+                        tlkPath = langPath;
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-detected TLK language: {lang}");
+                        break;
+                    }
+                }
             }
         }
 
