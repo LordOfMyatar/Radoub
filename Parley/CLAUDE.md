@@ -135,7 +135,7 @@ dotnet run --project TestingTools/BoundaryProject/BoundaryProject.csproj
 - **Exact binary format adherence** for game engine compatibility
 - **Proper conversation flow** order preservation
 - **Complete field structure** matching Aurora's expectations
-- **Filename constraints**: 12 character max (excluding `.dlg`), lowercase, alphanumeric + underscore only
+- **Filename constraints**: 16 character max (excluding `.dlg`), lowercase, alphanumeric + underscore only
 - **Link structures**: IsLink=true pointers create shared content (critical for orphan detection)
 
 ## Development Guidelines
@@ -483,7 +483,7 @@ Located in `../.github/workflows/` (Radoub repository level):
 **Aurora Engine enforces strict filename limitations - violations cause silent file rejection:**
 
 **Filename Rules**:
-- **Maximum**: 12 characters (excluding `.dlg` extension)
+- **Maximum**: 16 characters (excluding `.dlg` extension)
 - **Case**: Lowercase recommended for compatibility
 - **Characters**: Alphanumeric and underscore only (`a-z`, `0-9`, `_`)
 - **Examples**:
@@ -526,7 +526,7 @@ Speaker = ""  // No validation required
 When creating test dialogs in `TestingTools/CreateTest*Dialog/`:
 
 **Validation checklist**:
-- [ ] Filename ≤12 characters (excluding `.dlg`)
+- [ ] Filename ≤16 characters (excluding `.dlg`)
 - [ ] Lowercase, alphanumeric + underscore only
 - [ ] All speaker tags empty (`Speaker = ""`) for generic tests
 - [ ] Multiple entry points documented (requires .nss scripts to test all branches)

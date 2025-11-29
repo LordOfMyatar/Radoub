@@ -38,6 +38,8 @@ For dialogs that reference the base game's Talk Table (TLK) strings, you can sel
 
 <img src="images/SettingsUI_TlkLanguage.png" alt="Settings - TLK Language" width="60%">
 
+<img src="images/SettingsUI_TlkLanguage_Options.png" alt="Settings - TLK Language" width="60%">
+
 ### UI Customization (Optional)
 
 Personalize Parley's appearance in **Settings → Preferences → UI Settings**:
@@ -73,7 +75,7 @@ Configure automatic saving in **Settings → Auto-Save**:
 
 - **File → New** (`Ctrl+N`): Create a new dialog file
   - Choose save location and filename
-  - Remember: Aurora Engine limits filenames to 12 characters (excluding `.dlg`)
+  - Remember: Aurora Engine limits filenames to 16 characters (excluding `.dlg`)
 - **File → Open** (`Ctrl+O`): Browse for an existing `.dlg` file
 - **Recent Files**: Quick access to recently opened files
 
@@ -317,7 +319,7 @@ If you report problems with Parley, you may be asked for logs:
 
 ### Known Limitations
 
-- **Filename Length**: Aurora Engine requires ≤12 character filenames (excluding `.dlg`)
+- **Filename Length**: Aurora Engine requires ≤16 character filenames (excluding `.dlg`)
 - **Drag and Drop**: Reordering siblings via drag-drop is in progress
 
 ---
