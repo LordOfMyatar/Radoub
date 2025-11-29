@@ -44,11 +44,12 @@ public class GameResourceService : IDisposable
 
     private void OnSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        // Reinitialize resolver when relevant paths or TLK language change
+        // Reinitialize resolver when relevant paths or TLK settings change
         if (e.PropertyName is nameof(SettingsService.BaseGameInstallPath) or
             nameof(SettingsService.NeverwinterNightsPath) or
             nameof(SettingsService.CurrentModulePath) or
-            nameof(SettingsService.TlkLanguage))
+            nameof(SettingsService.TlkLanguage) or
+            nameof(SettingsService.TlkUseFemale))
         {
             InvalidateResolver();
         }
@@ -161,8 +162,10 @@ public class GameResourceService : IDisposable
         };
 
         // Set TLK path - NWN:EE stores dialog.tlk in lang/XX/data/ folders
-        // Check user language preference first, then auto-detect
+        // Check user language and gender preference first, then auto-detect
         var tlkLanguage = settings.TlkLanguage;
+        var tlkUseFemale = settings.TlkUseFemale;
+        var tlkFilename = tlkUseFemale ? "dialogf.tlk" : "dialog.tlk";
         string? tlkPath = null;
 
         // Supported languages in priority order for auto-detection
@@ -171,15 +174,26 @@ public class GameResourceService : IDisposable
         if (!string.IsNullOrEmpty(tlkLanguage))
         {
             // User specified a language preference
-            var preferredPath = Path.Combine(gameDataPath, "lang", tlkLanguage, "data", "dialog.tlk");
+            var preferredPath = Path.Combine(gameDataPath, "lang", tlkLanguage, "data", tlkFilename);
             if (File.Exists(preferredPath))
             {
                 tlkPath = preferredPath;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Using preferred TLK language: {tlkLanguage}");
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Using preferred TLK: {tlkLanguage} ({(tlkUseFemale ? "female" : "male/default")})");
             }
-            else
+            else if (tlkUseFemale)
             {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Preferred TLK language '{tlkLanguage}' not found at: {UnifiedLogger.SanitizePath(preferredPath)}");
+                // Female TLK not found, fall back to male/default
+                var fallbackPath = Path.Combine(gameDataPath, "lang", tlkLanguage, "data", "dialog.tlk");
+                if (File.Exists(fallbackPath))
+                {
+                    tlkPath = fallbackPath;
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Female TLK not found for '{tlkLanguage}', using male/default");
+                }
+            }
+
+            if (tlkPath == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Preferred TLK language '{tlkLanguage}' not found at: {UnifiedLogger.SanitizePath(Path.Combine(gameDataPath, "lang", tlkLanguage, "data"))}");
             }
         }
 
@@ -187,22 +201,44 @@ public class GameResourceService : IDisposable
         if (tlkPath == null)
         {
             // Try classic NWN first
-            var classicPath = Path.Combine(dataPath, "dialog.tlk");
+            var classicPath = Path.Combine(dataPath, tlkFilename);
             if (File.Exists(classicPath))
             {
                 tlkPath = classicPath;
             }
-            else
+            else if (tlkUseFemale)
+            {
+                // Try male/default for classic
+                classicPath = Path.Combine(dataPath, "dialog.tlk");
+                if (File.Exists(classicPath))
+                {
+                    tlkPath = classicPath;
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "Female TLK not found for classic NWN, using male/default");
+                }
+            }
+
+            if (tlkPath == null)
             {
                 // Try NWN:EE language folders in priority order
                 foreach (var lang in languages)
                 {
-                    var langPath = Path.Combine(gameDataPath, "lang", lang, "data", "dialog.tlk");
+                    var langPath = Path.Combine(gameDataPath, "lang", lang, "data", tlkFilename);
                     if (File.Exists(langPath))
                     {
                         tlkPath = langPath;
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-detected TLK language: {lang}");
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-detected TLK: {lang} ({(tlkUseFemale ? "female" : "male/default")})");
                         break;
+                    }
+                    else if (tlkUseFemale)
+                    {
+                        // Try male/default fallback
+                        langPath = Path.Combine(gameDataPath, "lang", lang, "data", "dialog.tlk");
+                        if (File.Exists(langPath))
+                        {
+                            tlkPath = langPath;
+                            UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-detected TLK: {lang} (female not available, using male/default)");
+                            break;
+                        }
                     }
                 }
             }
