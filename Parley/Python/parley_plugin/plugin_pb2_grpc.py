@@ -737,6 +737,11 @@ class DialogServiceStub(object):
                 request_serializer=plugin__pb2.GetSelectedNodeRequest.SerializeToString,
                 response_deserializer=plugin__pb2.GetSelectedNodeResponse.FromString,
                 _registered_method=True)
+        self.GetDialogStructure = channel.unary_unary(
+                '/parley.plugin.DialogService/GetDialogStructure',
+                request_serializer=plugin__pb2.GetDialogStructureRequest.SerializeToString,
+                response_deserializer=plugin__pb2.GetDialogStructureResponse.FromString,
+                _registered_method=True)
 
 
 class DialogServiceServicer(object):
@@ -755,6 +760,12 @@ class DialogServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetDialogStructure(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DialogServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -767,6 +778,11 @@ def add_DialogServiceServicer_to_server(servicer, server):
                     servicer.GetSelectedNode,
                     request_deserializer=plugin__pb2.GetSelectedNodeRequest.FromString,
                     response_serializer=plugin__pb2.GetSelectedNodeResponse.SerializeToString,
+            ),
+            'GetDialogStructure': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetDialogStructure,
+                    request_deserializer=plugin__pb2.GetDialogStructureRequest.FromString,
+                    response_serializer=plugin__pb2.GetDialogStructureResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -824,6 +840,33 @@ class DialogService(object):
             '/parley.plugin.DialogService/GetSelectedNode',
             plugin__pb2.GetSelectedNodeRequest.SerializeToString,
             plugin__pb2.GetSelectedNodeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetDialogStructure(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.DialogService/GetDialogStructure',
+            plugin__pb2.GetDialogStructureRequest.SerializeToString,
+            plugin__pb2.GetDialogStructureResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -164,8 +164,9 @@ class ParleyClient:
                 - error_message: str (if not successful)
                 - dialog_id: str
                 - dialog_name: str
-                - nodes: list of dicts with id, type, text, speaker, is_link, link_target
-                - links: list of dicts with source, target
+                - nodes: list of dicts with id, type, text, speaker, is_link, link_target,
+                         has_condition, has_action, condition_script, action_script
+                - links: list of dicts with source, target, has_condition, condition_script
         """
         try:
             request = GetDialogStructureRequest()
@@ -179,6 +180,7 @@ class ParleyClient:
                     "links": [],
                 }
 
+            # Phase 2: Include script indicator fields (#228-#232)
             nodes = [
                 {
                     "id": node.id,
@@ -187,12 +189,21 @@ class ParleyClient:
                     "speaker": node.speaker,
                     "is_link": node.is_link,
                     "link_target": node.link_target,
+                    "has_condition": node.has_condition,
+                    "has_action": node.has_action,
+                    "condition_script": node.condition_script,
+                    "action_script": node.action_script,
                 }
                 for node in response.nodes
             ]
 
             links = [
-                {"source": link.source, "target": link.target}
+                {
+                    "source": link.source,
+                    "target": link.target,
+                    "has_condition": link.has_condition,
+                    "condition_script": link.condition_script,
+                }
                 for link in response.links
             ]
 
