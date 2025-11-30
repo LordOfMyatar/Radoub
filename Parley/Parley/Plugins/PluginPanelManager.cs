@@ -176,20 +176,26 @@ namespace DialogEditor.Plugins
                 pluginId = panelInfo.FullPanelId.Split(':')[1];
             }
 
-            UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+            UnifiedLogger.LogPlugin(LogLevel.INFO,
                 $"ReopenPanel: FullPanelId={panelInfo.FullPanelId}, PanelId={panelInfo.PanelId}, extracted pluginId={pluginId}");
 
             // Check if plugin is still running
             bool pluginRunning = _pluginManager?.IsPluginLoaded(pluginId) ?? false;
+            UnifiedLogger.LogPlugin(LogLevel.INFO,
+                $"ReopenPanel: pluginRunning={pluginRunning}, _pluginManager={((_pluginManager != null) ? "set" : "NULL")}");
+
             if (!pluginRunning && _pluginManager != null)
             {
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Restarting plugin for panel reopen: {pluginId}");
 
                 // Find and restart the plugin
                 var discovered = _pluginManager.Discovery.GetPluginById(pluginId);
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"ReopenPanel: Discovery.GetPluginById({pluginId}) returned {(discovered != null ? discovered.Manifest.Plugin.Name : "NULL")}");
+
                 if (discovered != null)
                 {
                     var host = new PluginHost(discovered);
+                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"ReopenPanel: Starting plugin host for {pluginId}...");
                     if (host.Start())
                     {
                         UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin restarted: {pluginId}");
