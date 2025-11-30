@@ -382,6 +382,9 @@ namespace DialogEditor.Plugins.Services
         /// </summary>
         public static IEnumerable<PanelInfo> GetAllRegisteredPanels()
         {
+            var count = _registeredPanels.Count;
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                $"GetAllRegisteredPanels: {count} panels in registry: [{string.Join(", ", _registeredPanels.Keys)}]");
             return _registeredPanels.Values;
         }
 
