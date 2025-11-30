@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.34-alpha] - 2025-11-29
-**Branch**: `parley/feat/epic-40-phase2-layout` | **PR**: #TBD
+**Branch**: `parley/feat/epic-40-phase2-layout` | **PR**: #245
 
 ### Epic 40 Phase 2: Layout and Visual Design (#228-#232)
 
