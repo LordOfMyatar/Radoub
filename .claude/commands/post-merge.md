@@ -95,11 +95,37 @@ Check for issues that should be closed:
 ```bash
 # Find "closes #X" or "fixes #X" in PR
 gh pr view [number] --json body | grep -oE "(closes|fixes|resolves) #[0-9]+"
+
+# Check individual issues from CHANGELOG work items
+gh issue view [number] --json state
 ```
 
-Verify those issues were auto-closed. If not, manually close them.
+Verify those issues were auto-closed. If not, close them with reference to the PR:
+```bash
+gh issue close [number] --comment "Completed in PR #[pr-number]"
+```
 
-### Step 7: Notify About Follow-ups
+### Step 7: Update Parent Epic (if applicable)
+
+If the merged PR was part of an epic:
+1. Identify the parent epic from PR title or CHANGELOG
+2. View current epic state:
+   ```bash
+   gh issue view [epic-number] --json body
+   ```
+3. Update epic body to:
+   - Mark completed phase/work items as checked `[x]`
+   - Update status (e.g., "Phase 1 Complete ✅")
+   - Add implementation notes documenting what was delivered
+   - Update any technical stack details based on actual implementation
+   ```bash
+   gh issue edit [epic-number] --body "$(cat <<'EOF'
+   [Updated epic body with checked items and notes]
+   EOF
+   )"
+   ```
+
+### Step 8: Notify About Follow-ups
 
 Check for:
 - TODO comments added in this PR
@@ -108,7 +134,7 @@ Check for:
 
 Report any follow-up items to user.
 
-### Step 8: Generate Summary
+### Step 9: Generate Summary
 
 Output format:
 
@@ -127,6 +153,7 @@ Output format:
 - [x] Remote branch pruned
 - [x] CHANGELOG verified
 - [x] Related issues closed
+- [x] Parent epic updated (if applicable)
 
 ### Release Status
 

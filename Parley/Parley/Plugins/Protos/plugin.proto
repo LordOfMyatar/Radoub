@@ -39,6 +39,12 @@ service UIService {
   rpc RegisterPanel (RegisterPanelRequest) returns (RegisterPanelResponse);
   rpc UpdatePanelContent (UpdatePanelContentRequest) returns (UpdatePanelContentResponse);
   rpc ClosePanel (ClosePanelRequest) returns (ClosePanelResponse);
+
+  // Theme (Epic 3 Phase 2 / #229)
+  rpc GetTheme (GetThemeRequest) returns (GetThemeResponse);
+
+  // Speaker colors (Epic 40 Phase 2)
+  rpc GetSpeakerColors (GetSpeakerColorsRequest) returns (GetSpeakerColorsResponse);
 }
 
 // Dialog service (Plugin → Host)
@@ -231,6 +237,16 @@ message ClosePanelResponse {
   bool success = 1;
 }
 
+// Theme messages (Epic 3 Phase 2 / #229)
+message GetThemeRequest {
+}
+
+message GetThemeResponse {
+  string theme_id = 1;       // e.g., "org.parley.theme.dark"
+  string theme_name = 2;     // e.g., "Dark"
+  bool is_dark = 3;          // True if dark theme, false if light
+}
+
 // Dialog structure messages (Epic 3 / #227)
 message GetDialogStructureRequest {
 }
@@ -251,9 +267,25 @@ message DialogNodeProto {
   string speaker = 4;         // Speaker tag (for NPC entries)
   bool is_link = 5;           // Whether this is a link to another node
   string link_target = 6;     // Target node ID if is_link is true
+  bool has_condition = 7;     // Has conditional script (ScriptAppears)
+  bool has_action = 8;        // Has action script (ScriptAction)
+  string condition_script = 9; // Condition script name (if any)
+  string action_script = 10;  // Action script name (if any)
 }
 
 message DialogLinkProto {
   string source = 1;          // Source node ID
   string target = 2;          // Target node ID
+  bool has_condition = 3;     // Has conditional script on this edge
+  string condition_script = 4; // Condition script name (if any)
+}
+
+// Speaker colors messages (Epic 40 Phase 2)
+message GetSpeakerColorsRequest {
+}
+
+message GetSpeakerColorsResponse {
+  string pc_color = 1;         // Hex color for PC nodes (e.g., "#4FC3F7")
+  string owner_color = 2;      // Hex color for Owner/default NPC nodes
+  map<string, string> speaker_colors = 3;  // speaker_tag -> hex color for named NPCs
 }

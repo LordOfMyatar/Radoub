@@ -15,6 +15,8 @@ from .plugin_pb2 import (
     RegisterPanelRequest,
     UpdatePanelContentRequest,
     ClosePanelRequest,
+    GetThemeRequest,
+    GetSpeakerColorsRequest,
 )
 from .plugin_pb2_grpc import (
     AudioServiceStub,
@@ -91,6 +93,51 @@ class ParleyClient:
             print(f"gRPC error: {e}")
             return -1
 
+    def get_theme(self) -> dict:
+        """
+        Get the current theme settings from Parley.
+
+        Returns:
+            Dict with theme_id, theme_name, is_dark
+        """
+        try:
+            request = GetThemeRequest()
+            response = self.ui.GetTheme(request)
+            return {
+                "theme_id": response.theme_id,
+                "theme_name": response.theme_name,
+                "is_dark": response.is_dark,
+            }
+        except grpc.RpcError as e:
+            print(f"gRPC error getting theme: {e}")
+            return {"theme_id": "unknown", "theme_name": "unknown", "is_dark": True}
+
+    def get_speaker_colors(self) -> dict:
+        """
+        Get the speaker color settings from Parley.
+
+        Returns:
+            Dict with:
+                - pc_color: Hex color for PC nodes (e.g., "#4FC3F7")
+                - owner_color: Hex color for Owner/default NPC nodes
+                - speaker_colors: Dict of speaker_tag -> hex color for named NPCs
+        """
+        try:
+            request = GetSpeakerColorsRequest()
+            response = self.ui.GetSpeakerColors(request)
+            return {
+                "pc_color": response.pc_color,
+                "owner_color": response.owner_color,
+                "speaker_colors": dict(response.speaker_colors),
+            }
+        except grpc.RpcError as e:
+            print(f"gRPC error getting speaker colors: {e}")
+            return {
+                "pc_color": "#4FC3F7",
+                "owner_color": "#FF8A65",
+                "speaker_colors": {},
+            }
+
     def play_audio(self, file_path: str) -> bool:
         """
         Request audio playback in Parley.
@@ -164,8 +211,9 @@ class ParleyClient:
                 - error_message: str (if not successful)
                 - dialog_id: str
                 - dialog_name: str
-                - nodes: list of dicts with id, type, text, speaker, is_link, link_target
-                - links: list of dicts with source, target
+                - nodes: list of dicts with id, type, text, speaker, is_link, link_target,
+                         has_condition, has_action, condition_script, action_script
+                - links: list of dicts with source, target, has_condition, condition_script
         """
         try:
             request = GetDialogStructureRequest()
@@ -179,6 +227,7 @@ class ParleyClient:
                     "links": [],
                 }
 
+            # Phase 2: Include script indicator fields (#228-#232)
             nodes = [
                 {
                     "id": node.id,
@@ -187,12 +236,21 @@ class ParleyClient:
                     "speaker": node.speaker,
                     "is_link": node.is_link,
                     "link_target": node.link_target,
+                    "has_condition": node.has_condition,
+                    "has_action": node.has_action,
+                    "condition_script": node.condition_script,
+                    "action_script": node.action_script,
                 }
                 for node in response.nodes
             ]
 
             links = [
-                {"source": link.source, "target": link.target}
+                {
+                    "source": link.source,
+                    "target": link.target,
+                    "has_condition": link.has_condition,
+                    "condition_script": link.condition_script,
+                }
                 for link in response.links
             ]
 

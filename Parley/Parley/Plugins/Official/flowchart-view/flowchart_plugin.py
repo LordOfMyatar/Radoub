@@ -7,17 +7,26 @@ supporting zoom, pan, auto-layout, and export to PNG/SVG.
 
 Epic 3: Advanced Visualization (Epic #40)
 Phase 1: Foundation (#223-#227)
+Phase 2: Layout and Visual Design (#228-#232)
 """
 
+import sys
 import time
 import json
 import threading
 from typing import Optional, Dict, Any, List
+
+# Force unbuffered output so logs appear immediately
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
+
 from parley_plugin import ParleyClient
 
 
-# D3.js flowchart HTML template
-# Uses D3.js v7 from CDN for force-directed graph layout
+# D3.js + dagre.js flowchart HTML template
+# Uses dagre-d3 for Sugiyama hierarchical layout (#228)
+# Supports theme awareness (#229), speaker colors (#230),
+# script indicators (#231), and link node styling (#232)
 FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
 <html>
 <head>
@@ -33,7 +42,27 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             height: 100%;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }}
+        /* Theme-aware colors (#229) */
+        body.dark {{
             background: #1e1e1e;
+            --text-primary: #ecf0f1;
+            --text-secondary: #95a5a6;
+            --control-bg: #333;
+            --control-border: #555;
+            --control-hover: #444;
+            --link-color: #555;
+            --link-condition: #e74c3c;
+        }}
+        body.light {{
+            background: #f5f5f5;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --control-bg: #fff;
+            --control-border: #ccc;
+            --control-hover: #e0e0e0;
+            --link-color: #95a5a6;
+            --link-condition: #c0392b;
         }}
         #flowchart {{
             width: 100%;
@@ -47,6 +76,7 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             rx: 6;
             ry: 6;
         }}
+        /* Node type colors - NPC (#230 - speaker-based coloring handled in JS) */
         .node.npc rect {{
             fill: #2d5a27;
             stroke: #4a9c3f;
@@ -59,35 +89,69 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             fill: #5a2d5a;
             stroke: #9b59b6;
         }}
+        /* Link node styling (#232) - grayed appearance */
         .node.link rect {{
-            fill: #6e4a1a;
-            stroke: #e67e22;
+            fill: #4a4a4a;
+            stroke: #888;
+            stroke-dasharray: 4,2;
+            opacity: 0.7;
         }}
         .node.selected rect {{
             stroke: #f1c40f;
             stroke-width: 3px;
         }}
         .node text {{
-            fill: #ecf0f1;
+            fill: var(--text-primary, #ecf0f1);
             font-size: 11px;
             pointer-events: none;
         }}
         .node .node-type {{
             font-size: 9px;
-            fill: #95a5a6;
+            fill: var(--text-secondary, #95a5a6);
             text-transform: uppercase;
         }}
-        .link {{
-            fill: none;
-            stroke: #555;
+        .node .speaker-tag {{
+            font-size: 9px;
+            font-weight: bold;
+        }}
+        /* Script indicators (#231) */
+        .node .script-indicator {{
+            font-size: 10px;
+            fill: #f39c12;
+        }}
+        .node .script-indicator.condition {{
+            fill: #e74c3c;
+        }}
+        .node .script-indicator.action {{
+            fill: #27ae60;
+        }}
+        /* Edge styles - path element has the class directly */
+        path.edgePath {{
+            stroke: var(--link-color, #555);
             stroke-width: 2px;
+            fill: none;
         }}
-        .link.highlight {{
-            stroke: #f1c40f;
-            stroke-width: 3px;
+        /* Conditional edge styling (#231) */
+        path.edgePath.has-condition {{
+            stroke: var(--link-condition, #e74c3c);
+            stroke-dasharray: 5,3;
         }}
-        .arrowhead {{
-            fill: #555;
+        /* Link-to-link edges (#232) - dotted lines */
+        path.edgePath.to-link {{
+            stroke-dasharray: 3,3;
+            opacity: 0.6;
+        }}
+        .edgeLabel {{
+            font-size: 10px;
+            fill: var(--text-secondary, #95a5a6);
+        }}
+        .edge-condition-marker {{
+            font-size: 14px;
+            fill: #e74c3c;
+            pointer-events: none;
+        }}
+        marker {{
+            fill: var(--link-color, #555);
         }}
         #controls {{
             position: absolute;
@@ -98,28 +162,48 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             z-index: 100;
         }}
         #controls button {{
-            background: #333;
-            color: #fff;
-            border: 1px solid #555;
+            background: var(--control-bg, #333);
+            color: var(--text-primary, #fff);
+            border: 1px solid var(--control-border, #555);
             padding: 6px 12px;
             cursor: pointer;
             border-radius: 4px;
             font-size: 12px;
         }}
         #controls button:hover {{
-            background: #444;
+            background: var(--control-hover, #444);
         }}
         #info {{
             position: absolute;
             bottom: 10px;
             left: 10px;
-            color: #888;
+            color: var(--text-secondary, #888);
             font-size: 11px;
             z-index: 100;
         }}
+        #legend {{
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            gap: 12px;
+            font-size: 10px;
+            color: var(--text-secondary, #888);
+            z-index: 100;
+        }}
+        #legend .legend-item {{
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }}
+        #legend .legend-color {{
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }}
     </style>
 </head>
-<body>
+<body class="{theme}">
     <div id="controls">
         <button onclick="zoomIn()">+</button>
         <button onclick="zoomOut()">-</button>
@@ -130,34 +214,60 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
         <span id="dialog-name">{dialog_name}</span> |
         <span id="node-count">{node_count} nodes</span>
     </div>
+    <div id="legend">
+        <div class="legend-item"><div class="legend-color" style="background:#2d5a27"></div>NPC</div>
+        <div class="legend-item"><div class="legend-color" style="background:#1a4a6e"></div>PC</div>
+        <div class="legend-item"><div class="legend-color" style="background:#5a2d5a"></div>Root</div>
+        <div class="legend-item"><div class="legend-color" style="background:#4a4a4a;border:1px dashed #888"></div>Link</div>
+        <div class="legend-item"><span style="color:#27ae60">⚡</span>Action</div>
+        <div class="legend-item"><span style="color:#e74c3c">❓</span>Condition</div>
+    </div>
     <svg id="flowchart"></svg>
 
+    <!-- D3.js v7 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- dagre for layout algorithm -->
+    <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
     <script>
-        // Dialog data injected by Python
+        // Dialog data and config injected by Python
         const dialogData = {dialog_data};
+        const speakerColors = {speaker_colors};
 
         const svg = d3.select("#flowchart");
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        let width = window.innerWidth;
+        let height = window.innerHeight;
 
         svg.attr("width", width).attr("height", height);
 
         // Create container group for zoom/pan
-        const g = svg.append("g");
+        const g = svg.append("g").attr("class", "graph-container");
 
         // Define arrowhead marker
-        svg.append("defs").append("marker")
+        const defs = svg.append("defs");
+        defs.append("marker")
             .attr("id", "arrowhead")
             .attr("viewBox", "0 -5 10 10")
-            .attr("refX", 20)
+            .attr("refX", 8)
             .attr("refY", 0)
             .attr("markerWidth", 6)
             .attr("markerHeight", 6)
             .attr("orient", "auto")
             .append("path")
             .attr("d", "M0,-5L10,0L0,5")
-            .attr("class", "arrowhead");
+            .attr("fill", "var(--link-color, #555)");
+
+        // Conditional edge marker (red)
+        defs.append("marker")
+            .attr("id", "arrowhead-condition")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 8)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("fill", "var(--link-condition, #e74c3c)");
 
         // Set up zoom behavior
         const zoom = d3.zoom()
@@ -170,101 +280,206 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
         const nodes = dialogData.nodes || [];
         const links = dialogData.links || [];
 
-        // Create force simulation
-        const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links)
-                .id(d => d.id)
-                .distance(120))
-            .force("charge", d3.forceManyBody().strength(-400))
-            .force("center", d3.forceCenter(width / 2, height / 2))
-            .force("collision", d3.forceCollide().radius(60));
+        // Create dagre graph for Sugiyama layout (#228)
+        const dagreGraph = new dagre.graphlib.Graph();
+        dagreGraph.setGraph({{
+            rankdir: "TB",     // Top to bottom (Entry at top)
+            nodesep: 60,       // Horizontal separation
+            ranksep: 80,       // Vertical separation between ranks
+            marginx: 20,
+            marginy: 20
+        }});
+        dagreGraph.setDefaultEdgeLabel(() => ({{}}));
 
-        // Draw links
-        const link = g.append("g")
-            .attr("class", "links")
-            .selectAll("path")
-            .data(links)
-            .join("path")
-            .attr("class", "link")
-            .attr("marker-end", "url(#arrowhead)");
+        // Node dimensions
+        const nodeWidth = 160;
+        const nodeHeight = 60;
 
-        // Draw nodes
-        const node = g.append("g")
-            .attr("class", "nodes")
-            .selectAll("g")
-            .data(nodes)
-            .join("g")
-            .attr("class", d => `node ${{d.type || 'npc'}}`)
-            .call(d3.drag()
-                .on("start", dragstarted)
-                .on("drag", dragged)
-                .on("end", dragended));
+        // Add nodes to dagre
+        nodes.forEach(node => {{
+            dagreGraph.setNode(node.id, {{
+                width: nodeWidth,
+                height: nodeHeight,
+                ...node
+            }});
+        }});
 
-        // Node rectangles
-        node.append("rect")
-            .attr("width", 140)
-            .attr("height", 50)
-            .attr("x", -70)
-            .attr("y", -25);
+        // Add edges to dagre
+        links.forEach(link => {{
+            dagreGraph.setEdge(link.source, link.target, {{
+                hasCondition: link.has_condition || false,
+                conditionScript: link.condition_script || ""
+            }});
+        }});
 
-        // Node type label
-        node.append("text")
-            .attr("class", "node-type")
-            .attr("x", -65)
-            .attr("y", -10)
-            .text(d => d.type ? d.type.toUpperCase() : "NPC");
+        // Run the layout algorithm
+        dagre.layout(dagreGraph);
 
-        // Node text (truncated)
-        node.append("text")
-            .attr("x", -65)
-            .attr("y", 8)
-            .text(d => truncateText(d.text || d.id, 20));
+        // Get speaker color for NPC nodes (#230)
+        // Uses colors from Parley settings via GetSpeakerColors API
+        function getSpeakerColor(nodeType, speaker) {{
+            // PC nodes use the PC color
+            if (nodeType === "pc") {{
+                return speakerColors["_pc"] || "#4FC3F7";
+            }}
+            // Named NPC speakers - check API colors first
+            if (speaker && speakerColors[speaker]) {{
+                return speakerColors[speaker];
+            }}
+            // Owner/default NPC (empty speaker) uses owner color
+            if (!speaker || speaker === "") {{
+                return speakerColors["_owner"] || "#FF8A65";
+            }}
+            // Fallback for unknown speakers - generate from hash
+            let hash = 0;
+            for (let i = 0; i < speaker.length; i++) {{
+                hash = speaker.charCodeAt(i) + ((hash << 5) - hash);
+            }}
+            const hue = Math.abs(hash % 360);
+            return `hsl(${{hue}}, 50%, 35%)`;
+        }}
 
-        // Click handler
-        node.on("click", (event, d) => {{
-            // Remove previous selection
-            node.classed("selected", false);
-            // Select clicked node
-            d3.select(event.currentTarget).classed("selected", true);
-            // Notify parent (if bridge exists)
-            if (window.notifyNodeSelected) {{
-                window.notifyNodeSelected(d.id);
+        // Build script indicator text (#231)
+        function getScriptIndicators(node) {{
+            let indicators = [];
+            if (node.has_condition) indicators.push("❓");
+            if (node.has_action) indicators.push("⚡");
+            return indicators.join(" ");
+        }}
+
+        // Draw edges first (so they appear behind nodes)
+        const edgeGroup = g.append("g").attr("class", "edges");
+
+        dagreGraph.edges().forEach(e => {{
+            const edge = dagreGraph.edge(e);
+            const sourceNode = dagreGraph.node(e.v);
+            const targetNode = dagreGraph.node(e.w);
+
+            if (!sourceNode || !targetNode) return;
+
+            // Determine edge class
+            let edgeClass = "edgePath";
+            if (edge.hasCondition) edgeClass += " has-condition";
+            if (targetNode.type === "link") edgeClass += " to-link";
+
+            // Get edge points for path
+            const points = edge.points || [
+                {{ x: sourceNode.x, y: sourceNode.y + nodeHeight/2 }},
+                {{ x: targetNode.x, y: targetNode.y - nodeHeight/2 }}
+            ];
+
+            // Create path
+            edgeGroup.append("path")
+                .attr("class", edgeClass)
+                .attr("d", d3.line()
+                    .x(d => d.x)
+                    .y(d => d.y)
+                    .curve(d3.curveBasis)(points))
+                .attr("marker-end", edge.hasCondition ? "url(#arrowhead-condition)" : "url(#arrowhead)");
+
+            // Add condition marker ❓ at midpoint of conditional edges
+            if (edge.hasCondition && points.length >= 2) {{
+                const midIdx = Math.floor(points.length / 2);
+                const midPoint = points[midIdx];
+                edgeGroup.append("text")
+                    .attr("class", "edge-condition-marker")
+                    .attr("x", midPoint.x + 5)
+                    .attr("y", midPoint.y - 5)
+                    .text("❓");
             }}
         }});
 
-        // Simulation tick
-        simulation.on("tick", () => {{
-            link.attr("d", d => {{
-                const dx = d.target.x - d.source.x;
-                const dy = d.target.y - d.source.y;
-                return `M${{d.source.x}},${{d.source.y}} L${{d.target.x}},${{d.target.y}}`;
+        // Draw nodes
+        const nodeGroup = g.append("g").attr("class", "nodes");
+
+        dagreGraph.nodes().forEach(nodeId => {{
+            const node = dagreGraph.node(nodeId);
+            if (!node) return;
+
+            const nodeG = nodeGroup.append("g")
+                .attr("class", `node ${{node.type || 'npc'}}`)
+                .attr("transform", `translate(${{node.x - nodeWidth/2}}, ${{node.y - nodeHeight/2}})`)
+                .attr("data-id", node.id)
+                .style("cursor", "pointer");
+
+            // Node rectangle - apply Parley speaker colors (#230)
+            const rect = nodeG.append("rect")
+                .attr("width", nodeWidth)
+                .attr("height", nodeHeight)
+                .attr("rx", 6)
+                .attr("ry", 6);
+
+            // Apply Parley color scheme for NPC and PC nodes
+            if (node.type === "npc" || node.type === "pc") {{
+                const nodeColor = getSpeakerColor(node.type, node.speaker || "");
+                if (nodeColor) {{
+                    rect.style("fill", nodeColor);
+                    // Lighter stroke
+                    const strokeColor = d3.color(nodeColor);
+                    if (strokeColor) {{
+                        rect.style("stroke", strokeColor.brighter(0.5));
+                    }}
+                }}
+            }}
+
+            // Type label with speaker tag (#230)
+            let typeLabel = (node.type || "npc").toUpperCase();
+            if (node.type === "npc" && node.speaker) {{
+                typeLabel = node.speaker.substring(0, 12);
+                if (node.speaker.length > 12) typeLabel += "…";
+            }}
+
+            nodeG.append("text")
+                .attr("class", node.speaker ? "speaker-tag" : "node-type")
+                .attr("x", 8)
+                .attr("y", 14)
+                .text(typeLabel);
+
+            // Script indicators (#231)
+            const indicators = getScriptIndicators(node);
+            if (indicators) {{
+                nodeG.append("text")
+                    .attr("class", "script-indicator")
+                    .attr("x", nodeWidth - 8)
+                    .attr("y", 14)
+                    .attr("text-anchor", "end")
+                    .text(indicators);
+            }}
+
+            // Node text (truncated)
+            const text = node.text || node.id;
+            const truncated = text.length > 22 ? text.substring(0, 22) + "…" : text;
+            nodeG.append("text")
+                .attr("x", 8)
+                .attr("y", 36)
+                .text(truncated);
+
+            // Link target indicator for link nodes (#232)
+            if (node.is_link && node.link_target) {{
+                nodeG.append("text")
+                    .attr("x", 8)
+                    .attr("y", 52)
+                    .attr("class", "node-type")
+                    .text(`→ ${{node.link_target}}`);
+            }}
+
+            // Click handler
+            nodeG.on("click", function(event) {{
+                // Remove previous selection
+                d3.selectAll(".node").classed("selected", false);
+                // Select clicked node
+                d3.select(this).classed("selected", true);
+                // Notify parent (if bridge exists)
+                if (window.notifyNodeSelected) {{
+                    window.notifyNodeSelected(node.id);
+                }}
             }});
-
-            node.attr("transform", d => `translate(${{d.x}},${{d.y}})`);
         }});
-
-        // Drag functions
-        function dragstarted(event) {{
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            event.subject.fx = event.subject.x;
-            event.subject.fy = event.subject.y;
-        }}
-
-        function dragged(event) {{
-            event.subject.fx = event.x;
-            event.subject.fy = event.y;
-        }}
-
-        function dragended(event) {{
-            if (!event.active) simulation.alphaTarget(0);
-            event.subject.fx = null;
-            event.subject.fy = null;
-        }}
 
         // Helper functions
         function truncateText(text, maxLen) {{
             if (!text) return "";
-            return text.length > maxLen ? text.substring(0, maxLen) + "..." : text;
+            return text.length > maxLen ? text.substring(0, maxLen) + "…" : text;
         }}
 
         // Zoom controls
@@ -282,6 +497,8 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
 
         function fitToScreen() {{
             const bounds = g.node().getBBox();
+            if (bounds.width === 0 || bounds.height === 0) return;
+
             const fullWidth = width;
             const fullHeight = height;
             const bWidth = bounds.width;
@@ -289,18 +506,18 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             const scale = 0.9 * Math.min(fullWidth / bWidth, fullHeight / bHeight);
             const tx = (fullWidth - scale * bWidth) / 2 - scale * bounds.x;
             const ty = (fullHeight - scale * bHeight) / 2 - scale * bounds.y;
-            svg.transition().call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+            svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
         }}
 
         // Handle window resize
         window.addEventListener("resize", () => {{
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            svg.attr("width", w).attr("height", h);
+            width = window.innerWidth;
+            height = window.innerHeight;
+            svg.attr("width", width).attr("height", height);
         }});
 
-        // Initial fit after simulation settles
-        setTimeout(fitToScreen, 1500);
+        // Initial fit after render
+        setTimeout(fitToScreen, 100);
     </script>
 </body>
 </html>
@@ -320,6 +537,7 @@ class FlowchartPlugin:
         self.running = False
         self.current_dialog_id: Optional[str] = None
         self.current_dialog_name: Optional[str] = None
+        self._last_structure_hash: Optional[str] = None
 
         # Plugin state
         self._initialized = False
@@ -341,13 +559,7 @@ class FlowchartPlugin:
                 print("[Flowchart] Warning: Panel registration failed")
                 # Continue anyway - panel registration is non-fatal for now
 
-            # Show startup notification
-            self.client.show_notification(
-                "Flowchart View",
-                "Plugin loaded. Flowchart panel registered."
-            )
-
-            # Query initial dialog state
+            # Query initial dialog state (no startup notification - panel presence is enough)
             self._refresh_dialog_state()
 
             self._initialized = True
@@ -450,18 +662,36 @@ class FlowchartPlugin:
 
     def _refresh_dialog_state(self):
         """Refresh the current dialog state from Parley."""
-        if self.client:
-            dialog_id, dialog_name = self.client.get_current_dialog()
+        if not self.client:
+            return
 
-            if dialog_id != self.current_dialog_id:
-                self.current_dialog_id = dialog_id
-                self.current_dialog_name = dialog_name
+        dialog_id, dialog_name = self.client.get_current_dialog()
 
-                if dialog_id:
-                    print(f"[Flowchart] Dialog loaded: {dialog_name}")
-                    self._on_dialog_changed()
-                else:
-                    print("[Flowchart] No dialog loaded")
+        # Check for dialog change (open/close)
+        if dialog_id != self.current_dialog_id:
+            self.current_dialog_id = dialog_id
+            self.current_dialog_name = dialog_name
+            self._last_structure_hash = None  # Reset hash on dialog change
+
+            if dialog_id:
+                print(f"[Flowchart] Dialog loaded: {dialog_name}")
+                self._on_dialog_changed()
+            else:
+                print("[Flowchart] No dialog loaded")
+                self._update_panel_placeholder()
+        elif dialog_id:
+            # Same dialog - check if content changed
+            structure = self.client.get_dialog_structure()
+            if structure.get("success", False):
+                # Compute simple hash of structure
+                import hashlib
+                struct_json = json.dumps(structure, sort_keys=True)
+                current_hash = hashlib.md5(struct_json.encode()).hexdigest()
+
+                if current_hash != self._last_structure_hash:
+                    print(f"[Flowchart] Dialog content changed, re-rendering")
+                    self._last_structure_hash = current_hash
+                    self._render_flowchart_with_data(structure)
 
     def _on_dialog_changed(self):
         """
@@ -483,15 +713,27 @@ class FlowchartPlugin:
 
     def _render_flowchart(self):
         """
-        Render the current dialog as a D3.js flowchart.
+        Render the current dialog as a D3.js + dagre.js flowchart.
 
-        Generates HTML with embedded dialog data for D3.js visualization.
+        Generates HTML with embedded dialog data for Sugiyama layout visualization.
+        Phase 2: Includes theme awareness, speaker colors, script indicators.
         """
         if not self.client or not self._panel_registered:
             return
 
         # Get dialog structure from Parley API (#227)
         structure = self.client.get_dialog_structure()
+        self._render_flowchart_with_data(structure)
+
+    def _render_flowchart_with_data(self, structure: Dict[str, Any]):
+        """
+        Render flowchart with pre-fetched structure data.
+
+        Args:
+            structure: Dialog structure from get_dialog_structure API
+        """
+        if not self.client or not self._panel_registered:
+            return
 
         if not structure.get("success", False):
             # Fall back to demo data if API fails
@@ -505,11 +747,20 @@ class FlowchartPlugin:
             }
             print(f"[Flowchart] Got {len(dialog_data['nodes'])} nodes from Parley API")
 
+        # Extract unique speakers and assign colors (#230)
+        speaker_colors = self._generate_speaker_colors(dialog_data.get("nodes", []))
+
+        # Get theme from Parley settings (#229)
+        theme_info = self.client.get_theme()
+        theme = "dark" if theme_info.get("is_dark", True) else "light"
+
         # Generate HTML with dialog data
         html = FLOWCHART_HTML_TEMPLATE.format(
             dialog_name=self.current_dialog_name or "Untitled",
             node_count=len(dialog_data.get("nodes", [])),
             dialog_data=json.dumps(dialog_data),
+            speaker_colors=json.dumps(speaker_colors),
+            theme=theme,
         )
 
         # Send to panel
@@ -524,42 +775,113 @@ class FlowchartPlugin:
         else:
             print(f"[Flowchart] Failed to render: {error_msg}")
 
-    def _generate_demo_graph_data(self) -> Dict[str, Any]:
+    def _generate_speaker_colors(self, nodes: List[Dict[str, Any]]) -> Dict[str, str]:
         """
-        Generate demo graph data for testing D3.js rendering.
+        Get speaker colors from Parley settings, with fallback to local generation.
 
-        Returns a sample dialog structure to verify the visualization works.
-        This will be replaced with real dialog data in Phase 2 (#227).
+        Calls the GetSpeakerColors API to use the same colors as Parley's tree view.
+        Falls back to generating colors locally if the API fails.
+
+        Args:
+            nodes: List of dialog nodes
 
         Returns:
-            Dict with 'nodes' and 'links' arrays for D3.js
+            Dict mapping speaker names to hex colors, plus "_pc" and "_owner" keys
         """
-        # Demo dialog tree structure
+        colors = {}
+
+        # Try to get colors from Parley API first
+        if self.client:
+            try:
+                parley_colors = self.client.get_speaker_colors()
+                colors["_pc"] = parley_colors.get("pc_color", "#4FC3F7")
+                colors["_owner"] = parley_colors.get("owner_color", "#FF8A65")
+                colors.update(parley_colors.get("speaker_colors", {}))
+                print(f"[Flowchart] Got speaker colors from Parley: PC={colors['_pc']}, Owner={colors['_owner']}, {len(parley_colors.get('speaker_colors', {}))} named speakers")
+                return colors
+            except Exception as e:
+                print(f"[Flowchart] Failed to get speaker colors from API, using fallback: {e}")
+
+        # Fallback: generate colors locally
+        colors["_pc"] = "#4FC3F7"  # Default PC blue
+        colors["_owner"] = "#FF8A65"  # Default Owner orange
+
+        # Predefined palette for named speakers
+        palette = [
+            "#BA68C8",  # Purple
+            "#26A69A",  # Teal
+            "#FFD54F",  # Amber
+            "#F48FB1",  # Pink
+            "#8e4585",  # Violet
+            "#5a4d2d",  # Brown
+        ]
+
+        # Collect unique speakers
+        speakers = set()
+        for node in nodes:
+            speaker = node.get("speaker", "")
+            if speaker and node.get("type") == "npc":
+                speakers.add(speaker)
+
+        # Assign colors to named speakers
+        for i, speaker in enumerate(sorted(speakers)):
+            if i < len(palette):
+                colors[speaker] = palette[i]
+            else:
+                # Generate hash-based color for overflow
+                hash_val = sum(ord(c) for c in speaker)
+                hue = hash_val % 360
+                colors[speaker] = f"hsl({hue}, 50%, 35%)"
+
+        return colors
+
+    def _generate_demo_graph_data(self) -> Dict[str, Any]:
+        """
+        Generate demo graph data for testing dagre.js rendering.
+
+        Returns a sample dialog structure to verify the visualization works.
+        Phase 2: Includes speaker, script indicators for demo.
+
+        Returns:
+            Dict with 'nodes' and 'links' arrays for dagre.js
+        """
+        # Demo dialog tree structure with Phase 2 features
         nodes = [
-            {"id": "root", "type": "root", "text": "Dialog Start"},
-            {"id": "npc_1", "type": "npc", "text": "Hello, traveler!"},
-            {"id": "pc_1", "type": "pc", "text": "Greetings."},
-            {"id": "pc_2", "type": "pc", "text": "What do you want?"},
-            {"id": "pc_3", "type": "pc", "text": "[Leave]"},
-            {"id": "npc_2", "type": "npc", "text": "I have a quest."},
-            {"id": "npc_3", "type": "npc", "text": "No need to be rude!"},
-            {"id": "pc_4", "type": "pc", "text": "Tell me more."},
-            {"id": "pc_5", "type": "pc", "text": "Not interested."},
-            {"id": "npc_4", "type": "npc", "text": "There's a cave..."},
-            {"id": "link_1", "type": "link", "text": "-> Quest Accepted"},
+            {"id": "root", "type": "root", "text": "Dialog Start", "speaker": ""},
+            {"id": "npc_1", "type": "npc", "text": "Hello, traveler!", "speaker": "Guard",
+             "has_action": False, "has_condition": False},
+            {"id": "pc_1", "type": "pc", "text": "Greetings.", "speaker": "",
+             "has_action": False, "has_condition": False},
+            {"id": "pc_2", "type": "pc", "text": "What do you want?", "speaker": "",
+             "has_action": False, "has_condition": False},
+            {"id": "pc_3", "type": "pc", "text": "[Leave]", "speaker": "",
+             "has_action": True, "has_condition": False, "action_script": "nw_walk_wp"},
+            {"id": "npc_2", "type": "npc", "text": "I have a quest for you.", "speaker": "Guard",
+             "has_action": True, "has_condition": False, "action_script": "sc_start_quest"},
+            {"id": "npc_3", "type": "npc", "text": "No need to be rude!", "speaker": "Guard",
+             "has_action": False, "has_condition": False},
+            {"id": "pc_4", "type": "pc", "text": "Tell me more.", "speaker": "",
+             "has_action": False, "has_condition": False},
+            {"id": "pc_5", "type": "pc", "text": "Not interested.", "speaker": "",
+             "has_action": False, "has_condition": False},
+            {"id": "npc_4", "type": "npc", "text": "There's a cave nearby...", "speaker": "Merchant",
+             "has_action": False, "has_condition": False},
+            {"id": "link_1", "type": "link", "text": "-> Quest Accepted", "speaker": "",
+             "is_link": True, "link_target": "npc_2",
+             "has_action": False, "has_condition": True, "condition_script": "gc_has_item"},
         ]
 
         links = [
-            {"source": "root", "target": "npc_1"},
-            {"source": "npc_1", "target": "pc_1"},
-            {"source": "npc_1", "target": "pc_2"},
-            {"source": "npc_1", "target": "pc_3"},
-            {"source": "pc_1", "target": "npc_2"},
-            {"source": "pc_2", "target": "npc_3"},
-            {"source": "npc_2", "target": "pc_4"},
-            {"source": "npc_2", "target": "pc_5"},
-            {"source": "pc_4", "target": "npc_4"},
-            {"source": "npc_4", "target": "link_1"},
+            {"source": "root", "target": "npc_1", "has_condition": False},
+            {"source": "npc_1", "target": "pc_1", "has_condition": False},
+            {"source": "npc_1", "target": "pc_2", "has_condition": False},
+            {"source": "npc_1", "target": "pc_3", "has_condition": False},
+            {"source": "pc_1", "target": "npc_2", "has_condition": False},
+            {"source": "pc_2", "target": "npc_3", "has_condition": False},
+            {"source": "npc_2", "target": "pc_4", "has_condition": True, "condition_script": "gc_check_skill"},
+            {"source": "npc_2", "target": "pc_5", "has_condition": False},
+            {"source": "pc_4", "target": "npc_4", "has_condition": False},
+            {"source": "npc_4", "target": "link_1", "has_condition": False},
         ]
 
         return {"nodes": nodes, "links": links}

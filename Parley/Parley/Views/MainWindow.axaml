@@ -92,6 +92,8 @@
                     <MenuItem Header="Super Reader (20pt)" Click="OnFontSizeClick" Tag="20"/>
                     <MenuItem Header="Maximum (24pt)" Click="OnFontSizeClick" Tag="24"/>
                 </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Plugin Panels" Name="PluginPanelsMenuItem" Click="OnPluginPanelsClick"/>
             </MenuItem>
             <MenuItem Header="_Settings">
                 <MenuItem Header="_Preferences..." Click="OnPreferencesClick"/>

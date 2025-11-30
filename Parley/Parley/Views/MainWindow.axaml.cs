@@ -145,20 +145,9 @@ namespace DialogEditor.Views
                 var startedPlugins = await _pluginManager.StartEnabledPluginsAsync();
                 if (startedPlugins.Count > 0)
                 {
-                    var message = $"Plugins started:\n• {string.Join("\n• ", startedPlugins)}";
-                    var msgBox = new Window
-                    {
-                        Title = "Plugins Active",
-                        Width = 400,
-                        Height = 200,
-                        Content = new TextBlock
-                        {
-                            Text = message,
-                            Margin = new Thickness(20),
-                            TextWrapping = global::Avalonia.Media.TextWrapping.Wrap
-                        }
-                    };
-                    msgBox.Show(); // Non-modal - doesn't block main window
+                    // Show in status bar instead of popup (less intrusive)
+                    _viewModel.StatusMessage = $"Plugins active: {string.Join(", ", startedPlugins)}";
+                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"Started plugins: {string.Join(", ", startedPlugins)}");
                 }
             };
             this.Closing += OnWindowClosing;
@@ -402,12 +391,23 @@ namespace DialogEditor.Views
                     await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
                 }
 
-                // Now close (unhook event to prevent recursion)
+                // Now close (unhook event to prevent recursion, cleanup runs in second close)
                 this.Closing -= OnWindowClosing;
+                CleanupOnClose();
                 this.Close();
+                return;
             }
 
             // Clean up resources when window actually closes
+            CleanupOnClose();
+        }
+
+        /// <summary>
+        /// Clean up all resources when the window closes.
+        /// Called from OnWindowClosing in both cancel/reclose path and normal close path.
+        /// </summary>
+        private void CleanupOnClose()
+        {
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
             _audioService.Dispose();
@@ -1064,6 +1064,24 @@ namespace DialogEditor.Views
                     // Global application now handled via App.xaml styles and App.ApplyFontSize()
                 }
             }
+        }
+
+        private void OnPluginPanelsClick(object? sender, RoutedEventArgs e)
+        {
+            var closedPanels = _pluginPanelManager.GetClosedPanels().ToList();
+            if (closedPanels.Count == 0)
+            {
+                _viewModel.StatusMessage = "No closed plugin panels to reopen";
+                return;
+            }
+
+            // Reopen all closed panels
+            foreach (var panel in closedPanels)
+            {
+                _pluginPanelManager.ReopenPanel(panel);
+            }
+
+            _viewModel.StatusMessage = $"Reopened {closedPanels.Count} plugin panel(s)";
         }
 
         // Theme methods

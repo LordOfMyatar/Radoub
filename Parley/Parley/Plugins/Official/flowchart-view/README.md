@@ -7,32 +7,32 @@ Flowchart visualization for Parley dialog trees.
 This plugin provides a visual flowchart representation of dialog trees, complementing Parley's tree view with a graphical node-and-edge display.
 
 **Epic**: #40 (Epic 3: Advanced Visualization)
-**Status**: Phase 1 - Foundation
+**Status**: Phase 2 Complete
 
-## Features (Planned)
+## Features
 
-### Phase 1 - Foundation
+### Phase 1 - Foundation (Complete)
 - [x] Plugin scaffold and manifest (#223)
-- [ ] Dockable/floating panel registration (#224)
-- [ ] WebView.Avalonia.Cross integration (#225)
-- [ ] Basic D3.js graph rendering (#226)
-- [ ] Live dialog data integration (#227)
+- [x] Dockable/floating panel registration (#224)
+- [x] WebView.Avalonia.Cross integration (#225)
+- [x] Basic D3.js graph rendering (#226)
+- [x] Live dialog data integration (#227)
 
-### Phase 2 - Layout and Visual Design
-- [ ] Sugiyama auto-layout (dagre.js)
-- [ ] Theme awareness
-- [ ] NPC speaker color/shape integration
-- [ ] Script indicators on nodes
-- [ ] Link node styling
+### Phase 2 - Layout and Visual Design (Complete)
+- [x] Sugiyama auto-layout (dagre.js) (#228)
+- [x] Theme awareness - dark/light mode (#229)
+- [x] NPC speaker color integration via GetSpeakerColors API (#230)
+- [x] Script indicators on nodes - ⚡ action, ❓ condition (#231)
+- [x] Link node styling - dashed borders, reduced opacity (#232)
 
-### Phase 3 - Interaction and Navigation
-- [ ] Zoom and pan controls
+### Phase 3 - Interaction and Navigation (Planned)
+- [x] Zoom and pan controls (basic)
 - [ ] Bidirectional node selection sync
 - [ ] User-controllable refresh settings
 - [ ] Minimap navigation panel
 - [ ] Circular reference handling
 
-### Phase 4 - Advanced Features
+### Phase 4 - Advanced Features (Planned)
 - [ ] PNG export
 - [ ] SVG export
 - [ ] Drag-drop node repositioning (optional)

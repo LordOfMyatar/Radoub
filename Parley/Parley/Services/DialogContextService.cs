@@ -117,13 +117,24 @@ namespace DialogEditor.Services
             processedEntries.Add(entryIndex);
             var entryId = $"entry_{entryIndex}";
 
-            // Add entry node
+            // Get entry text, with fallback for empty strings
+            var entryText = entry.Text?.GetDefault() ?? "";
+            if (string.IsNullOrWhiteSpace(entryText))
+            {
+                // Empty entry - show [Continue] or [End Dialog] based on whether it has children
+                entryText = entry.Pointers.Count > 0 ? "[Continue]" : "[End Dialog]";
+            }
+
+            // Add entry node with script indicators
+            var hasAction = !string.IsNullOrEmpty(entry.ScriptAction);
             nodes.Add(new DialogNodeInfo
             {
                 Id = entryId,
                 Type = "npc",
-                Text = entry.Text?.GetDefault() ?? "",
-                Speaker = entry.Speaker ?? ""
+                Text = entryText,
+                Speaker = entry.Speaker ?? "",
+                HasAction = hasAction,
+                ActionScript = entry.ScriptAction ?? ""
             });
 
             // Process reply children
@@ -134,10 +145,14 @@ namespace DialogEditor.Services
                 {
                     var replyId = $"reply_{replyIndex}";
 
+                    // Check for condition on this pointer
+                    var hasCondition = !string.IsNullOrEmpty(pointer.ScriptAppears);
+                    var conditionScript = pointer.ScriptAppears ?? "";
+
                     // Check if this is a link reference
                     if (pointer.IsLink)
                     {
-                        // Add link node indicator
+                        // Add link node indicator with condition info
                         var linkNodeId = $"link_{entryIndex}_{replyIndex}";
                         nodes.Add(new DialogNodeInfo
                         {
@@ -145,13 +160,21 @@ namespace DialogEditor.Services
                             Type = "link",
                             Text = $"-> Reply {replyIndex}",
                             IsLink = true,
-                            LinkTarget = replyId
+                            LinkTarget = replyId,
+                            HasCondition = hasCondition,
+                            ConditionScript = conditionScript
                         });
                         links.Add(new DialogLinkInfo { Source = entryId, Target = linkNodeId });
                     }
                     else
                     {
-                        links.Add(new DialogLinkInfo { Source = entryId, Target = replyId });
+                        links.Add(new DialogLinkInfo
+                        {
+                            Source = entryId,
+                            Target = replyId,
+                            HasCondition = hasCondition,
+                            ConditionScript = conditionScript
+                        });
                         ProcessReply(_currentDialog.Replies[replyIndex], replyIndex, nodes, links,
                             processedEntries, processedReplies);
                     }
@@ -168,13 +191,24 @@ namespace DialogEditor.Services
             processedReplies.Add(replyIndex);
             var replyId = $"reply_{replyIndex}";
 
-            // Add reply node
+            // Get reply text, with fallback for empty strings
+            var replyText = reply.Text?.GetDefault() ?? "";
+            if (string.IsNullOrWhiteSpace(replyText))
+            {
+                // Empty reply - show [Continue] or [End Dialog] based on whether it has children
+                replyText = reply.Pointers.Count > 0 ? "[Continue]" : "[End Dialog]";
+            }
+
+            // Add reply node with script indicators
+            var hasAction = !string.IsNullOrEmpty(reply.ScriptAction);
             nodes.Add(new DialogNodeInfo
             {
                 Id = replyId,
                 Type = "pc",
-                Text = reply.Text?.GetDefault() ?? "",
-                Speaker = ""
+                Text = replyText,
+                Speaker = "",
+                HasAction = hasAction,
+                ActionScript = reply.ScriptAction ?? ""
             });
 
             // Process entry children
@@ -185,10 +219,14 @@ namespace DialogEditor.Services
                 {
                     var entryId = $"entry_{entryIndex}";
 
+                    // Check for condition on this pointer
+                    var hasCondition = !string.IsNullOrEmpty(pointer.ScriptAppears);
+                    var conditionScript = pointer.ScriptAppears ?? "";
+
                     // Check if this is a link reference
                     if (pointer.IsLink)
                     {
-                        // Add link node indicator
+                        // Add link node indicator with condition info
                         var linkNodeId = $"link_{replyIndex}_{entryIndex}";
                         nodes.Add(new DialogNodeInfo
                         {
@@ -196,13 +234,21 @@ namespace DialogEditor.Services
                             Type = "link",
                             Text = $"-> Entry {entryIndex}",
                             IsLink = true,
-                            LinkTarget = entryId
+                            LinkTarget = entryId,
+                            HasCondition = hasCondition,
+                            ConditionScript = conditionScript
                         });
                         links.Add(new DialogLinkInfo { Source = replyId, Target = linkNodeId });
                     }
                     else
                     {
-                        links.Add(new DialogLinkInfo { Source = replyId, Target = entryId });
+                        links.Add(new DialogLinkInfo
+                        {
+                            Source = replyId,
+                            Target = entryId,
+                            HasCondition = hasCondition,
+                            ConditionScript = conditionScript
+                        });
                         ProcessEntry(_currentDialog.Entries[entryIndex], entryIndex, nodes, links,
                             processedEntries, processedReplies);
                     }
@@ -224,6 +270,10 @@ namespace DialogEditor.Services
         public string Speaker { get; set; } = "";
         public bool IsLink { get; set; }
         public string LinkTarget { get; set; } = "";
+        public bool HasCondition { get; set; }
+        public bool HasAction { get; set; }
+        public string ConditionScript { get; set; } = "";
+        public string ActionScript { get; set; } = "";
     }
 
     /// <summary>
@@ -233,5 +283,7 @@ namespace DialogEditor.Services
     {
         public string Source { get; set; } = "";
         public string Target { get; set; } = "";
+        public bool HasCondition { get; set; }
+        public string ConditionScript { get; set; } = "";
     }
 }

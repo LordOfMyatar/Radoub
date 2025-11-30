@@ -40,3 +40,17 @@ python -m grpc_tools.protoc `
 - Regenerate whenever `plugin.proto` changes
 - The C# side uses Grpc.Tools which auto-generates during build
 - Python side requires manual generation (or build script)
+
+## Post-Generation Fix Required
+
+After regenerating, you **must** fix the import in `plugin_pb2_grpc.py`:
+
+```python
+# WRONG (generated default):
+import plugin_pb2 as plugin__pb2
+
+# CORRECT (for package imports):
+from . import plugin_pb2 as plugin__pb2
+```
+
+This is required because the module is used as a package (`from parley_plugin import ...`), and Python needs relative imports to find sibling modules within the package.

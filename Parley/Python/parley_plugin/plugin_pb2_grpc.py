@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import plugin_pb2 as plugin__pb2
+from . import plugin_pb2 as plugin__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -504,6 +504,16 @@ class UIServiceStub(object):
                 request_serializer=plugin__pb2.ClosePanelRequest.SerializeToString,
                 response_deserializer=plugin__pb2.ClosePanelResponse.FromString,
                 _registered_method=True)
+        self.GetTheme = channel.unary_unary(
+                '/parley.plugin.UIService/GetTheme',
+                request_serializer=plugin__pb2.GetThemeRequest.SerializeToString,
+                response_deserializer=plugin__pb2.GetThemeResponse.FromString,
+                _registered_method=True)
+        self.GetSpeakerColors = channel.unary_unary(
+                '/parley.plugin.UIService/GetSpeakerColors',
+                request_serializer=plugin__pb2.GetSpeakerColorsRequest.SerializeToString,
+                response_deserializer=plugin__pb2.GetSpeakerColorsResponse.FromString,
+                _registered_method=True)
 
 
 class UIServiceServicer(object):
@@ -541,6 +551,20 @@ class UIServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetTheme(self, request, context):
+        """Theme (Epic 3 Phase 2 / #229)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetSpeakerColors(self, request, context):
+        """Speaker colors (Epic 40 Phase 2)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_UIServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -568,6 +592,16 @@ def add_UIServiceServicer_to_server(servicer, server):
                     servicer.ClosePanel,
                     request_deserializer=plugin__pb2.ClosePanelRequest.FromString,
                     response_serializer=plugin__pb2.ClosePanelResponse.SerializeToString,
+            ),
+            'GetTheme': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetTheme,
+                    request_deserializer=plugin__pb2.GetThemeRequest.FromString,
+                    response_serializer=plugin__pb2.GetThemeResponse.SerializeToString,
+            ),
+            'GetSpeakerColors': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSpeakerColors,
+                    request_deserializer=plugin__pb2.GetSpeakerColorsRequest.FromString,
+                    response_serializer=plugin__pb2.GetSpeakerColorsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -716,6 +750,60 @@ class UIService(object):
             metadata,
             _registered_method=True)
 
+    @staticmethod
+    def GetTheme(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/GetTheme',
+            plugin__pb2.GetThemeRequest.SerializeToString,
+            plugin__pb2.GetThemeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSpeakerColors(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/GetSpeakerColors',
+            plugin__pb2.GetSpeakerColorsRequest.SerializeToString,
+            plugin__pb2.GetSpeakerColorsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
 
 class DialogServiceStub(object):
     """Dialog service (Plugin → Host)
@@ -737,6 +825,11 @@ class DialogServiceStub(object):
                 request_serializer=plugin__pb2.GetSelectedNodeRequest.SerializeToString,
                 response_deserializer=plugin__pb2.GetSelectedNodeResponse.FromString,
                 _registered_method=True)
+        self.GetDialogStructure = channel.unary_unary(
+                '/parley.plugin.DialogService/GetDialogStructure',
+                request_serializer=plugin__pb2.GetDialogStructureRequest.SerializeToString,
+                response_deserializer=plugin__pb2.GetDialogStructureResponse.FromString,
+                _registered_method=True)
 
 
 class DialogServiceServicer(object):
@@ -755,6 +848,12 @@ class DialogServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetDialogStructure(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DialogServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -767,6 +866,11 @@ def add_DialogServiceServicer_to_server(servicer, server):
                     servicer.GetSelectedNode,
                     request_deserializer=plugin__pb2.GetSelectedNodeRequest.FromString,
                     response_serializer=plugin__pb2.GetSelectedNodeResponse.SerializeToString,
+            ),
+            'GetDialogStructure': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetDialogStructure,
+                    request_deserializer=plugin__pb2.GetDialogStructureRequest.FromString,
+                    response_serializer=plugin__pb2.GetDialogStructureResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -824,6 +928,33 @@ class DialogService(object):
             '/parley.plugin.DialogService/GetSelectedNode',
             plugin__pb2.GetSelectedNodeRequest.SerializeToString,
             plugin__pb2.GetSelectedNodeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetDialogStructure(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.DialogService/GetDialogStructure',
+            plugin__pb2.GetDialogStructureRequest.SerializeToString,
+            plugin__pb2.GetDialogStructureResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -317,11 +317,36 @@ namespace DialogEditor.Plugins.Services
         }
 
         /// <summary>
+        /// Static helper to raise PanelRegistered event (used by UIServiceImpl).
+        /// </summary>
+        public static void RaisePanelRegistered(PanelInfo panelInfo)
+        {
+            _registeredPanels.AddOrUpdate(panelInfo.FullPanelId, panelInfo, (_, __) => panelInfo);
+            PanelRegistered?.Invoke(null, new PanelRegisteredEventArgs(panelInfo));
+        }
+
+        /// <summary>
+        /// Static helper to raise PanelContentUpdated event (used by UIServiceImpl).
+        /// </summary>
+        public static void RaisePanelContentUpdated(string fullPanelId, string contentType, string content)
+        {
+            PanelContentUpdated?.Invoke(null, new PanelContentUpdatedEventArgs(fullPanelId, contentType, content));
+        }
+
+        /// <summary>
         /// Get all registered panels for a plugin.
         /// </summary>
         public static IEnumerable<PanelInfo> GetPanelsForPlugin(string pluginId)
         {
             return _registeredPanels.Values.Where(p => p.PluginId == pluginId);
+        }
+
+        /// <summary>
+        /// Get all registered panels across all plugins.
+        /// </summary>
+        public static IEnumerable<PanelInfo> GetAllRegisteredPanels()
+        {
+            return _registeredPanels.Values;
         }
 
         /// <summary>
