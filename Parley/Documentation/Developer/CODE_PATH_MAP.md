@@ -1,7 +1,7 @@
 # Code Path Map - Parley Architecture
 
 **Purpose**: Track active code paths for file operations and UI workflows
-**Last Updated**: 2025-11-22 (Epic #163 MainWindow Refactoring Complete)
+**Last Updated**: 2025-11-29 (Epic 40 Phase 1: Plugin System Foundation)
 **Note**: This information was discovered and written by Claude AI.
 
 ---
@@ -41,6 +41,12 @@
 **KeyboardShortcutManager** (215 lines): Data-driven keyboard shortcuts with 20+ mappings (2025-11-22)
 **DebugAndLoggingHandler** (311 lines): Log export, scrap operations, debug console (2025-11-22)
 **WindowPersistenceManager** (252 lines): Window/panel persistence and screen validation (2025-11-22)
+
+### Plugin System (Epic 40 - PR #244)
+**DialogContextService** (~237 lines): Singleton providing dialog state to plugins (2025-11-29)
+**PluginGrpcServer** (~386 lines): gRPC server hosting plugin services (2025-11-29)
+**PluginPanelManager** (~200 lines): Panel registration and lifecycle management (2025-11-29)
+**PluginUIService** (~150 lines): UI operations for plugins (notifications, dialogs) (2025-11-29)
 
 ### ViewModels & UI
 **MainViewModel** (~1,258 lines as of Phase 7): **REFACTORING COMPLETE - GOAL EXCEEDED ✅**
@@ -415,7 +421,94 @@ DebugLogger callback (DebugLogger.cs:20-60)
 2. Verify struct count, field count, StartingList count
 3. Test in Aurora Editor (tree structure, script names)
 
+---
 
+## PLUGIN SYSTEM PATH (Epic 40)
 
+**Entry Point**: Plugin process connects via gRPC on startup
+
+### Plugin Initialization Flow
+```
+Python Plugin (flowchart_plugin.py)
+  ↓ Read PARLEY_GRPC_PORT env var
+  ↓
+ParleyClient.__init__ (client.py)
+  ↓ Connect to localhost:{port}
+  ↓ Create service stubs (AudioService, UIService, DialogService)
+  ↓
+Plugin.initialize()
+  ↓ register_panel() → gRPC → PluginGrpcServer
+  ↓
+UIServiceImpl.RegisterPanel (PluginGrpcServer.cs)
+  ↓ Dispatcher.UIThread.InvokeAsync
+  ↓
+PluginPanelManager.RegisterPanel (PluginPanelManager.cs)
+  ↓ Create PluginPanelWindow
+  ↓ Store in _panels dictionary
+  ↓ Return panel_id to plugin
+```
+
+### Dialog Data Query Flow
+```
+Plugin requests dialog structure
+  ↓
+ParleyClient.get_dialog_structure() (client.py)
+  ↓ gRPC call
+  ↓
+DialogServiceImpl.GetDialogStructure (PluginGrpcServer.cs)
+  ↓
+DialogContextService.Instance.GetDialogStructure (DialogContextService.cs)
+  ↓ Traverse dialog tree (Starts → Entries → Replies)
+  ↓ Build nodes[] and links[] arrays
+  ↓ Return to plugin as protobuf
+  ↓
+Plugin renders D3.js flowchart (flowchart_plugin.py)
+```
+
+### Panel Content Update Flow
+```
+Plugin.update_panel_content() (client.py)
+  ↓ gRPC: UpdatePanelContentRequest
+  ↓
+UIServiceImpl.UpdatePanelContent (PluginGrpcServer.cs)
+  ↓ Dispatcher.UIThread.InvokeAsync
+  ↓
+PluginPanelManager.UpdatePanelContent (PluginPanelManager.cs)
+  ↓ Lookup panel by ID
+  ↓
+PluginPanelWindow.UpdateContent (PluginPanelWindow.axaml.cs)
+  ↓ content_type == "html" → WebView.LoadHtml()
+  ↓ content_type == "url" → WebView.LoadUrl()
+```
+
+### State Synchronization
+```
+MainViewModel property change (MainViewModel.cs)
+  ↓ CurrentDialog setter
+  ↓
+DialogContextService.Instance.CurrentDialog = value
+  ↓ Fires DialogChanged event
+  ↓
+[Plugins poll or subscribe for changes]
+```
+
+### Key Components
+
+**Proto Definitions** (plugin.proto):
+- `DialogService`: GetCurrentDialog, GetSelectedNode, GetDialogStructure
+- `UIService`: ShowNotification, ShowDialog, RegisterPanel, UpdatePanelContent
+- `AudioService`: PlayAudio, StopAudio
+
+**State Provider**:
+- `DialogContextService` singleton - decouples plugins from MainViewModel
+- Provides: CurrentDialog, CurrentFileName, SelectedNodeId
+- Methods: GetDialogStructure() returns (nodes, links) for D3.js
+
+**Panel Management**:
+- `PluginPanelManager` - registry of active panels
+- `PluginPanelWindow` - WebView-based panel window
+- Supports: docking positions, floating, close behavior
+
+---
 
 

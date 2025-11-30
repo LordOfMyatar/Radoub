@@ -109,6 +109,8 @@ Scan for:
 - New public APIs without XML docs
 - README updates needed for new features
 - User-facing changes that need documentation
+- Claude file updates
+- Code_Path_Map updates
 
 ### Step 7: Generate Checklist
 
