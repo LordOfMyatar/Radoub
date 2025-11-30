@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:webview="clr-namespace:WebViewControl;assembly=WebViewControl.Avalonia"
         x:Class="DialogEditor.Views.PluginPanelWindow"
         Title="Plugin Panel"
         Width="600" Height="400"
@@ -7,9 +8,15 @@
         Icon="avares://Parley/Assets/parley.ico">
 
     <Grid>
-        <!-- Content area - WebView will be added programmatically -->
+        <!-- WebView for HTML/JavaScript content -->
+        <webview:WebView x:Name="PanelWebView"
+                         Focusable="True"
+                         IsVisible="False"/>
+
+        <!-- Fallback TextBlock for non-HTML content -->
         <Border x:Name="ContentBorder"
-                Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                IsVisible="False">
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto">
                 <TextBlock x:Name="ContentTextBlock"

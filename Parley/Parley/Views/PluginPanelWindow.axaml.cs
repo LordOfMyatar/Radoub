@@ -3,13 +3,13 @@ using Avalonia.Threading;
 using DialogEditor.Plugins.Services;
 using DialogEditor.Services;
 using System;
+using WebViewControl;
 
 namespace DialogEditor.Views
 {
     /// <summary>
-    /// Floating window for plugin panels.
-    /// Initially uses TextBlock for content display.
-    /// WebView integration will be added in a follow-up when API is clarified.
+    /// Floating window for plugin panels with WebView support.
+    /// Uses WebViewControl-Avalonia (CefGlue/Chromium) for HTML/URL content.
     /// Epic 3 / Issue #225
     /// </summary>
     public partial class PluginPanelWindow : Window
@@ -96,8 +96,7 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Update the panel content.
-        /// Currently displays content as text. WebView rendering to be added.
+        /// Update the panel content using WebView for HTML/URL or TextBlock for other types.
         /// </summary>
         /// <param name="contentType">Type of content: "html", "url", or "json"</param>
         /// <param name="content">The content to display</param>
@@ -112,29 +111,36 @@ namespace DialogEditor.Views
 
             try
             {
-                // Hide placeholder, show content
+                // Hide placeholder
                 PlaceholderBorder.IsVisible = false;
-                ContentBorder.IsVisible = true;
 
                 switch (contentType.ToLower())
                 {
                     case "html":
-                        // For now, display HTML as text
-                        // TODO: Integrate WebView for proper HTML rendering (#225)
-                        ContentTextBlock.Text = $"[HTML Content Preview]\n\n{StripHtmlTags(content)}";
+                        // Use WebView for HTML rendering
+                        ContentBorder.IsVisible = false;
+                        PanelWebView.IsVisible = true;
+                        PanelWebView.LoadHtml(content);
                         break;
 
                     case "url":
-                        // Display URL info
-                        ContentTextBlock.Text = $"[URL Content]\n\nNavigate to: {content}\n\n(WebView integration pending)";
+                        // Use WebView to navigate to URL
+                        ContentBorder.IsVisible = false;
+                        PanelWebView.IsVisible = true;
+                        PanelWebView.LoadUrl(content);
                         break;
 
                     case "json":
-                        // Pretty-print JSON
-                        ContentTextBlock.Text = $"[JSON Content]\n\n{content}";
+                        // Use TextBlock for JSON display
+                        PanelWebView.IsVisible = false;
+                        ContentBorder.IsVisible = true;
+                        ContentTextBlock.Text = content;
                         break;
 
                     default:
+                        // Use TextBlock for unknown content types
+                        PanelWebView.IsVisible = false;
+                        ContentBorder.IsVisible = true;
                         ContentTextBlock.Text = $"[{contentType}]\n\n{content}";
                         break;
                 }
@@ -147,74 +153,6 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogPlugin(LogLevel.ERROR,
                     $"Error updating panel content: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Simple HTML tag stripper for preview purposes.
-        /// </summary>
-        private static string StripHtmlTags(string html)
-        {
-            if (string.IsNullOrEmpty(html))
-                return string.Empty;
-
-            // Simple regex-free approach for basic HTML stripping
-            var result = html;
-
-            // Remove style and script blocks
-            while (true)
-            {
-                var styleStart = result.IndexOf("<style", StringComparison.OrdinalIgnoreCase);
-                if (styleStart < 0) break;
-                var styleEnd = result.IndexOf("</style>", styleStart, StringComparison.OrdinalIgnoreCase);
-                if (styleEnd < 0) break;
-                result = result.Remove(styleStart, styleEnd - styleStart + 8);
-            }
-
-            while (true)
-            {
-                var scriptStart = result.IndexOf("<script", StringComparison.OrdinalIgnoreCase);
-                if (scriptStart < 0) break;
-                var scriptEnd = result.IndexOf("</script>", scriptStart, StringComparison.OrdinalIgnoreCase);
-                if (scriptEnd < 0) break;
-                result = result.Remove(scriptStart, scriptEnd - scriptStart + 9);
-            }
-
-            // Remove all tags
-            var inTag = false;
-            var output = new System.Text.StringBuilder();
-            foreach (var c in result)
-            {
-                if (c == '<')
-                {
-                    inTag = true;
-                    continue;
-                }
-                if (c == '>')
-                {
-                    inTag = false;
-                    continue;
-                }
-                if (!inTag)
-                {
-                    output.Append(c);
-                }
-            }
-
-            // Decode common HTML entities
-            var text = output.ToString();
-            text = text.Replace("&nbsp;", " ");
-            text = text.Replace("&lt;", "<");
-            text = text.Replace("&gt;", ">");
-            text = text.Replace("&amp;", "&");
-            text = text.Replace("&quot;", "\"");
-
-            // Collapse whitespace
-            while (text.Contains("  "))
-            {
-                text = text.Replace("  ", " ");
-            }
-
-            return text.Trim();
         }
     }
 }

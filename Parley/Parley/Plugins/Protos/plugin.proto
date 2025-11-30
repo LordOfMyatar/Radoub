@@ -45,6 +45,7 @@ service UIService {
 service DialogService {
   rpc GetCurrentDialog (GetCurrentDialogRequest) returns (GetCurrentDialogResponse);
   rpc GetSelectedNode (GetSelectedNodeRequest) returns (GetSelectedNodeResponse);
+  rpc GetDialogStructure (GetDialogStructureRequest) returns (GetDialogStructureResponse);
 }
 
 // File service (Plugin → Host)
@@ -228,4 +229,31 @@ message ClosePanelRequest {
 
 message ClosePanelResponse {
   bool success = 1;
+}
+
+// Dialog structure messages (Epic 3 / #227)
+message GetDialogStructureRequest {
+}
+
+message GetDialogStructureResponse {
+  bool success = 1;
+  string error_message = 2;
+  string dialog_id = 3;
+  string dialog_name = 4;
+  repeated DialogNodeProto nodes = 5;
+  repeated DialogLinkProto links = 6;
+}
+
+message DialogNodeProto {
+  string id = 1;              // Unique node ID (e.g., "entry_0", "reply_3")
+  string type = 2;            // "npc", "pc", "root", or "link"
+  string text = 3;            // Node text (first language found)
+  string speaker = 4;         // Speaker tag (for NPC entries)
+  bool is_link = 5;           // Whether this is a link to another node
+  string link_target = 6;     // Target node ID if is_link is true
+}
+
+message DialogLinkProto {
+  string source = 1;          // Source node ID
+  string target = 2;          // Target node ID
 }

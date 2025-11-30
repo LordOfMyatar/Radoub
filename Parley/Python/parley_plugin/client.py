@@ -11,6 +11,7 @@ from .plugin_pb2 import (
     ShowDialogRequest,
     GetCurrentDialogRequest,
     GetSelectedNodeRequest,
+    GetDialogStructureRequest,
     RegisterPanelRequest,
     UpdatePanelContentRequest,
     ClosePanelRequest,
@@ -152,6 +153,64 @@ class ParleyClient:
         except grpc.RpcError as e:
             print(f"gRPC error: {e}")
             return ("", "")
+
+    def get_dialog_structure(self) -> dict:
+        """
+        Get the full dialog structure for flowchart visualization.
+
+        Returns:
+            Dict with keys:
+                - success: bool
+                - error_message: str (if not successful)
+                - dialog_id: str
+                - dialog_name: str
+                - nodes: list of dicts with id, type, text, speaker, is_link, link_target
+                - links: list of dicts with source, target
+        """
+        try:
+            request = GetDialogStructureRequest()
+            response = self.dialog.GetDialogStructure(request)
+
+            if not response.success:
+                return {
+                    "success": False,
+                    "error_message": response.error_message,
+                    "nodes": [],
+                    "links": [],
+                }
+
+            nodes = [
+                {
+                    "id": node.id,
+                    "type": node.type,
+                    "text": node.text,
+                    "speaker": node.speaker,
+                    "is_link": node.is_link,
+                    "link_target": node.link_target,
+                }
+                for node in response.nodes
+            ]
+
+            links = [
+                {"source": link.source, "target": link.target}
+                for link in response.links
+            ]
+
+            return {
+                "success": True,
+                "dialog_id": response.dialog_id,
+                "dialog_name": response.dialog_name,
+                "nodes": nodes,
+                "links": links,
+            }
+        except grpc.RpcError as e:
+            print(f"gRPC error: {e}")
+            return {
+                "success": False,
+                "error_message": str(e),
+                "nodes": [],
+                "links": [],
+            }
 
     def register_panel(
         self,

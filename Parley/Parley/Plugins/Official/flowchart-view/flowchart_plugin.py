@@ -12,8 +12,299 @@ Phase 1: Foundation (#223-#227)
 import time
 import json
 import threading
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from parley_plugin import ParleyClient
+
+
+# D3.js flowchart HTML template
+# Uses D3.js v7 from CDN for force-directed graph layout
+FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        * {{
+            box-sizing: border-box;
+        }}
+        html, body {{
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1e1e1e;
+        }}
+        #flowchart {{
+            width: 100%;
+            height: 100%;
+        }}
+        .node {{
+            cursor: pointer;
+        }}
+        .node rect {{
+            stroke-width: 2px;
+            rx: 6;
+            ry: 6;
+        }}
+        .node.npc rect {{
+            fill: #2d5a27;
+            stroke: #4a9c3f;
+        }}
+        .node.pc rect {{
+            fill: #1a4a6e;
+            stroke: #3498db;
+        }}
+        .node.root rect {{
+            fill: #5a2d5a;
+            stroke: #9b59b6;
+        }}
+        .node.link rect {{
+            fill: #6e4a1a;
+            stroke: #e67e22;
+        }}
+        .node.selected rect {{
+            stroke: #f1c40f;
+            stroke-width: 3px;
+        }}
+        .node text {{
+            fill: #ecf0f1;
+            font-size: 11px;
+            pointer-events: none;
+        }}
+        .node .node-type {{
+            font-size: 9px;
+            fill: #95a5a6;
+            text-transform: uppercase;
+        }}
+        .link {{
+            fill: none;
+            stroke: #555;
+            stroke-width: 2px;
+        }}
+        .link.highlight {{
+            stroke: #f1c40f;
+            stroke-width: 3px;
+        }}
+        .arrowhead {{
+            fill: #555;
+        }}
+        #controls {{
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 100;
+        }}
+        #controls button {{
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+        }}
+        #controls button:hover {{
+            background: #444;
+        }}
+        #info {{
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #888;
+            font-size: 11px;
+            z-index: 100;
+        }}
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button onclick="zoomIn()">+</button>
+        <button onclick="zoomOut()">-</button>
+        <button onclick="resetZoom()">Reset</button>
+        <button onclick="fitToScreen()">Fit</button>
+    </div>
+    <div id="info">
+        <span id="dialog-name">{dialog_name}</span> |
+        <span id="node-count">{node_count} nodes</span>
+    </div>
+    <svg id="flowchart"></svg>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // Dialog data injected by Python
+        const dialogData = {dialog_data};
+
+        const svg = d3.select("#flowchart");
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        svg.attr("width", width).attr("height", height);
+
+        // Create container group for zoom/pan
+        const g = svg.append("g");
+
+        // Define arrowhead marker
+        svg.append("defs").append("marker")
+            .attr("id", "arrowhead")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 20)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("class", "arrowhead");
+
+        // Set up zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on("zoom", (event) => g.attr("transform", event.transform));
+
+        svg.call(zoom);
+
+        // Parse nodes and links
+        const nodes = dialogData.nodes || [];
+        const links = dialogData.links || [];
+
+        // Create force simulation
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links)
+                .id(d => d.id)
+                .distance(120))
+            .force("charge", d3.forceManyBody().strength(-400))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(60));
+
+        // Draw links
+        const link = g.append("g")
+            .attr("class", "links")
+            .selectAll("path")
+            .data(links)
+            .join("path")
+            .attr("class", "link")
+            .attr("marker-end", "url(#arrowhead)");
+
+        // Draw nodes
+        const node = g.append("g")
+            .attr("class", "nodes")
+            .selectAll("g")
+            .data(nodes)
+            .join("g")
+            .attr("class", d => `node ${{d.type || 'npc'}}`)
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        // Node rectangles
+        node.append("rect")
+            .attr("width", 140)
+            .attr("height", 50)
+            .attr("x", -70)
+            .attr("y", -25);
+
+        // Node type label
+        node.append("text")
+            .attr("class", "node-type")
+            .attr("x", -65)
+            .attr("y", -10)
+            .text(d => d.type ? d.type.toUpperCase() : "NPC");
+
+        // Node text (truncated)
+        node.append("text")
+            .attr("x", -65)
+            .attr("y", 8)
+            .text(d => truncateText(d.text || d.id, 20));
+
+        // Click handler
+        node.on("click", (event, d) => {{
+            // Remove previous selection
+            node.classed("selected", false);
+            // Select clicked node
+            d3.select(event.currentTarget).classed("selected", true);
+            // Notify parent (if bridge exists)
+            if (window.notifyNodeSelected) {{
+                window.notifyNodeSelected(d.id);
+            }}
+        }});
+
+        // Simulation tick
+        simulation.on("tick", () => {{
+            link.attr("d", d => {{
+                const dx = d.target.x - d.source.x;
+                const dy = d.target.y - d.source.y;
+                return `M${{d.source.x}},${{d.source.y}} L${{d.target.x}},${{d.target.y}}`;
+            }});
+
+            node.attr("transform", d => `translate(${{d.x}},${{d.y}})`);
+        }});
+
+        // Drag functions
+        function dragstarted(event) {{
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+        }}
+
+        function dragged(event) {{
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+        }}
+
+        function dragended(event) {{
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+        }}
+
+        // Helper functions
+        function truncateText(text, maxLen) {{
+            if (!text) return "";
+            return text.length > maxLen ? text.substring(0, maxLen) + "..." : text;
+        }}
+
+        // Zoom controls
+        function zoomIn() {{
+            svg.transition().call(zoom.scaleBy, 1.3);
+        }}
+
+        function zoomOut() {{
+            svg.transition().call(zoom.scaleBy, 0.7);
+        }}
+
+        function resetZoom() {{
+            svg.transition().call(zoom.transform, d3.zoomIdentity);
+        }}
+
+        function fitToScreen() {{
+            const bounds = g.node().getBBox();
+            const fullWidth = width;
+            const fullHeight = height;
+            const bWidth = bounds.width;
+            const bHeight = bounds.height;
+            const scale = 0.9 * Math.min(fullWidth / bWidth, fullHeight / bHeight);
+            const tx = (fullWidth - scale * bWidth) / 2 - scale * bounds.x;
+            const ty = (fullHeight - scale * bHeight) / 2 - scale * bounds.y;
+            svg.transition().call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+        }}
+
+        // Handle window resize
+        window.addEventListener("resize", () => {{
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            svg.attr("width", w).attr("height", h);
+        }});
+
+        // Initial fit after simulation settles
+        setTimeout(fitToScreen, 1500);
+    </script>
+</body>
+</html>
+'''
 
 
 class FlowchartPlugin:
@@ -182,14 +473,96 @@ class FlowchartPlugin:
         - The dialog is closed
         """
         if not self.current_dialog_id:
-            # Dialog closed - clear flowchart
-            print("[Flowchart] Dialog closed, clearing view")
+            # Dialog closed - show placeholder
+            print("[Flowchart] Dialog closed, showing placeholder")
+            self._update_panel_placeholder()
             return
 
-        # TODO: Fetch full dialog structure via GetCurrentDialog API (#103)
-        # TODO: Transform dialog to graph format
-        # TODO: Render via D3.js in WebView panel (#226, #227)
-        print(f"[Flowchart] Would render flowchart for: {self.current_dialog_name}")
+        print(f"[Flowchart] Rendering flowchart for: {self.current_dialog_name}")
+        self._render_flowchart()
+
+    def _render_flowchart(self):
+        """
+        Render the current dialog as a D3.js flowchart.
+
+        Generates HTML with embedded dialog data for D3.js visualization.
+        """
+        if not self.client or not self._panel_registered:
+            return
+
+        # Get dialog structure from Parley API (#227)
+        structure = self.client.get_dialog_structure()
+
+        if not structure.get("success", False):
+            # Fall back to demo data if API fails
+            print(f"[Flowchart] Failed to get structure: {structure.get('error_message', 'Unknown error')}")
+            dialog_data = self._generate_demo_graph_data()
+        else:
+            # Use real dialog data
+            dialog_data = {
+                "nodes": structure.get("nodes", []),
+                "links": structure.get("links", []),
+            }
+            print(f"[Flowchart] Got {len(dialog_data['nodes'])} nodes from Parley API")
+
+        # Generate HTML with dialog data
+        html = FLOWCHART_HTML_TEMPLATE.format(
+            dialog_name=self.current_dialog_name or "Untitled",
+            node_count=len(dialog_data.get("nodes", [])),
+            dialog_data=json.dumps(dialog_data),
+        )
+
+        # Send to panel
+        success, error_msg = self.client.update_panel_content(
+            panel_id="flowchart-view",
+            content_type="html",
+            content=html,
+        )
+
+        if success:
+            print(f"[Flowchart] Rendered {len(dialog_data['nodes'])} nodes")
+        else:
+            print(f"[Flowchart] Failed to render: {error_msg}")
+
+    def _generate_demo_graph_data(self) -> Dict[str, Any]:
+        """
+        Generate demo graph data for testing D3.js rendering.
+
+        Returns a sample dialog structure to verify the visualization works.
+        This will be replaced with real dialog data in Phase 2 (#227).
+
+        Returns:
+            Dict with 'nodes' and 'links' arrays for D3.js
+        """
+        # Demo dialog tree structure
+        nodes = [
+            {"id": "root", "type": "root", "text": "Dialog Start"},
+            {"id": "npc_1", "type": "npc", "text": "Hello, traveler!"},
+            {"id": "pc_1", "type": "pc", "text": "Greetings."},
+            {"id": "pc_2", "type": "pc", "text": "What do you want?"},
+            {"id": "pc_3", "type": "pc", "text": "[Leave]"},
+            {"id": "npc_2", "type": "npc", "text": "I have a quest."},
+            {"id": "npc_3", "type": "npc", "text": "No need to be rude!"},
+            {"id": "pc_4", "type": "pc", "text": "Tell me more."},
+            {"id": "pc_5", "type": "pc", "text": "Not interested."},
+            {"id": "npc_4", "type": "npc", "text": "There's a cave..."},
+            {"id": "link_1", "type": "link", "text": "-> Quest Accepted"},
+        ]
+
+        links = [
+            {"source": "root", "target": "npc_1"},
+            {"source": "npc_1", "target": "pc_1"},
+            {"source": "npc_1", "target": "pc_2"},
+            {"source": "npc_1", "target": "pc_3"},
+            {"source": "pc_1", "target": "npc_2"},
+            {"source": "pc_2", "target": "npc_3"},
+            {"source": "npc_2", "target": "pc_4"},
+            {"source": "npc_2", "target": "pc_5"},
+            {"source": "pc_4", "target": "npc_4"},
+            {"source": "npc_4", "target": "link_1"},
+        ]
+
+        return {"nodes": nodes, "links": links}
 
     def _on_node_selected(self, node_id: str):
         """

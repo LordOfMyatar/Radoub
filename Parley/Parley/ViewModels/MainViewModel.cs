@@ -44,6 +44,8 @@ namespace DialogEditor.ViewModels
                 if (SetProperty(ref _currentDialog, value))
                 {
                     OnPropertyChanged(nameof(CanRestoreFromScrap));
+                    // Sync with DialogContextService for plugin access (#227)
+                    DialogContextService.Instance.CurrentDialog = value;
                 }
             }
         }
@@ -62,6 +64,9 @@ namespace DialogEditor.ViewModels
                     _scrapManager.UpdateScrapEntriesForFile(value);
                     OnPropertyChanged(nameof(ScrapCount));
                     OnPropertyChanged(nameof(ScrapTabHeader));
+
+                    // Sync with DialogContextService for plugin access (#227)
+                    DialogContextService.Instance.CurrentFileName = value;
                 }
             }
         }
