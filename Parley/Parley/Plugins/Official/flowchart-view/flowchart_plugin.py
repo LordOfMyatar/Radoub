@@ -10,10 +10,16 @@ Phase 1: Foundation (#223-#227)
 Phase 2: Layout and Visual Design (#228-#232)
 """
 
+import sys
 import time
 import json
 import threading
 from typing import Optional, Dict, Any, List
+
+# Force unbuffered output so logs appear immediately
+sys.stdout.reconfigure(line_buffering=True)
+sys.stderr.reconfigure(line_buffering=True)
+
 from parley_plugin import ParleyClient
 
 
@@ -119,25 +125,30 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
         .node .script-indicator.action {{
             fill: #27ae60;
         }}
-        /* Edge styles */
-        .edgePath path {{
+        /* Edge styles - path element has the class directly */
+        path.edgePath {{
             stroke: var(--link-color, #555);
             stroke-width: 2px;
             fill: none;
         }}
         /* Conditional edge styling (#231) */
-        .edgePath.has-condition path {{
+        path.edgePath.has-condition {{
             stroke: var(--link-condition, #e74c3c);
             stroke-dasharray: 5,3;
         }}
         /* Link-to-link edges (#232) - dotted lines */
-        .edgePath.to-link path {{
+        path.edgePath.to-link {{
             stroke-dasharray: 3,3;
             opacity: 0.6;
         }}
         .edgeLabel {{
             font-size: 10px;
             fill: var(--text-secondary, #95a5a6);
+        }}
+        .edge-condition-marker {{
+            font-size: 14px;
+            fill: #e74c3c;
+            pointer-events: none;
         }}
         marker {{
             fill: var(--link-color, #555);
@@ -305,10 +316,21 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
         dagre.layout(dagreGraph);
 
         // Get speaker color for NPC nodes (#230)
-        function getSpeakerColor(speaker) {{
-            if (!speaker || speaker === "") return null;
-            if (speakerColors[speaker]) return speakerColors[speaker];
-            // Generate consistent color from speaker name
+        // Uses colors from Parley settings via GetSpeakerColors API
+        function getSpeakerColor(nodeType, speaker) {{
+            // PC nodes use the PC color
+            if (nodeType === "pc") {{
+                return speakerColors["_pc"] || "#4FC3F7";
+            }}
+            // Named NPC speakers - check API colors first
+            if (speaker && speakerColors[speaker]) {{
+                return speakerColors[speaker];
+            }}
+            // Owner/default NPC (empty speaker) uses owner color
+            if (!speaker || speaker === "") {{
+                return speakerColors["_owner"] || "#FF8A65";
+            }}
+            // Fallback for unknown speakers - generate from hash
             let hash = 0;
             for (let i = 0; i < speaker.length; i++) {{
                 hash = speaker.charCodeAt(i) + ((hash << 5) - hash);
@@ -340,20 +362,31 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             if (edge.hasCondition) edgeClass += " has-condition";
             if (targetNode.type === "link") edgeClass += " to-link";
 
+            // Get edge points for path
+            const points = edge.points || [
+                {{ x: sourceNode.x, y: sourceNode.y + nodeHeight/2 }},
+                {{ x: targetNode.x, y: targetNode.y - nodeHeight/2 }}
+            ];
+
             // Create path
-            const path = edgeGroup.append("path")
+            edgeGroup.append("path")
                 .attr("class", edgeClass)
-                .attr("d", () => {{
-                    const points = edge.points || [
-                        {{ x: sourceNode.x, y: sourceNode.y + nodeHeight/2 }},
-                        {{ x: targetNode.x, y: targetNode.y - nodeHeight/2 }}
-                    ];
-                    return d3.line()
-                        .x(d => d.x)
-                        .y(d => d.y)
-                        .curve(d3.curveBasis)(points);
-                }})
+                .attr("d", d3.line()
+                    .x(d => d.x)
+                    .y(d => d.y)
+                    .curve(d3.curveBasis)(points))
                 .attr("marker-end", edge.hasCondition ? "url(#arrowhead-condition)" : "url(#arrowhead)");
+
+            // Add condition marker ❓ at midpoint of conditional edges
+            if (edge.hasCondition && points.length >= 2) {{
+                const midIdx = Math.floor(points.length / 2);
+                const midPoint = points[midIdx];
+                edgeGroup.append("text")
+                    .attr("class", "edge-condition-marker")
+                    .attr("x", midPoint.x + 5)
+                    .attr("y", midPoint.y - 5)
+                    .text("❓");
+            }}
         }});
 
         // Draw nodes
@@ -369,20 +402,23 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
                 .attr("data-id", node.id)
                 .style("cursor", "pointer");
 
-            // Node rectangle - apply speaker color for NPC (#230)
+            // Node rectangle - apply Parley speaker colors (#230)
             const rect = nodeG.append("rect")
                 .attr("width", nodeWidth)
                 .attr("height", nodeHeight)
                 .attr("rx", 6)
                 .attr("ry", 6);
 
-            // Apply speaker-specific color for NPC nodes
-            if (node.type === "npc" && node.speaker) {{
-                const speakerColor = getSpeakerColor(node.speaker);
-                if (speakerColor) {{
-                    rect.style("fill", speakerColor);
+            // Apply Parley color scheme for NPC and PC nodes
+            if (node.type === "npc" || node.type === "pc") {{
+                const nodeColor = getSpeakerColor(node.type, node.speaker || "");
+                if (nodeColor) {{
+                    rect.style("fill", nodeColor);
                     // Lighter stroke
-                    rect.style("stroke", d3.color(speakerColor).brighter(0.5));
+                    const strokeColor = d3.color(nodeColor);
+                    if (strokeColor) {{
+                        rect.style("stroke", strokeColor.brighter(0.5));
+                    }}
                 }}
             }}
 
@@ -501,6 +537,7 @@ class FlowchartPlugin:
         self.running = False
         self.current_dialog_id: Optional[str] = None
         self.current_dialog_name: Optional[str] = None
+        self._last_structure_hash: Optional[str] = None
 
         # Plugin state
         self._initialized = False
@@ -522,13 +559,7 @@ class FlowchartPlugin:
                 print("[Flowchart] Warning: Panel registration failed")
                 # Continue anyway - panel registration is non-fatal for now
 
-            # Show startup notification
-            self.client.show_notification(
-                "Flowchart View",
-                "Plugin loaded. Flowchart panel registered."
-            )
-
-            # Query initial dialog state
+            # Query initial dialog state (no startup notification - panel presence is enough)
             self._refresh_dialog_state()
 
             self._initialized = True
@@ -631,18 +662,36 @@ class FlowchartPlugin:
 
     def _refresh_dialog_state(self):
         """Refresh the current dialog state from Parley."""
-        if self.client:
-            dialog_id, dialog_name = self.client.get_current_dialog()
+        if not self.client:
+            return
 
-            if dialog_id != self.current_dialog_id:
-                self.current_dialog_id = dialog_id
-                self.current_dialog_name = dialog_name
+        dialog_id, dialog_name = self.client.get_current_dialog()
 
-                if dialog_id:
-                    print(f"[Flowchart] Dialog loaded: {dialog_name}")
-                    self._on_dialog_changed()
-                else:
-                    print("[Flowchart] No dialog loaded")
+        # Check for dialog change (open/close)
+        if dialog_id != self.current_dialog_id:
+            self.current_dialog_id = dialog_id
+            self.current_dialog_name = dialog_name
+            self._last_structure_hash = None  # Reset hash on dialog change
+
+            if dialog_id:
+                print(f"[Flowchart] Dialog loaded: {dialog_name}")
+                self._on_dialog_changed()
+            else:
+                print("[Flowchart] No dialog loaded")
+                self._update_panel_placeholder()
+        elif dialog_id:
+            # Same dialog - check if content changed
+            structure = self.client.get_dialog_structure()
+            if structure.get("success", False):
+                # Compute simple hash of structure
+                import hashlib
+                struct_json = json.dumps(structure, sort_keys=True)
+                current_hash = hashlib.md5(struct_json.encode()).hexdigest()
+
+                if current_hash != self._last_structure_hash:
+                    print(f"[Flowchart] Dialog content changed, re-rendering")
+                    self._last_structure_hash = current_hash
+                    self._render_flowchart_with_data(structure)
 
     def _on_dialog_changed(self):
         """
@@ -674,6 +723,17 @@ class FlowchartPlugin:
 
         # Get dialog structure from Parley API (#227)
         structure = self.client.get_dialog_structure()
+        self._render_flowchart_with_data(structure)
+
+    def _render_flowchart_with_data(self, structure: Dict[str, Any]):
+        """
+        Render flowchart with pre-fetched structure data.
+
+        Args:
+            structure: Dialog structure from get_dialog_structure API
+        """
+        if not self.client or not self._panel_registered:
+            return
 
         if not structure.get("success", False):
             # Fall back to demo data if API fails
@@ -690,9 +750,9 @@ class FlowchartPlugin:
         # Extract unique speakers and assign colors (#230)
         speaker_colors = self._generate_speaker_colors(dialog_data.get("nodes", []))
 
-        # Determine theme (#229) - default to dark for now
-        # TODO: Get actual theme from Parley settings in Phase 3
-        theme = "dark"
+        # Get theme from Parley settings (#229)
+        theme_info = self.client.get_theme()
+        theme = "dark" if theme_info.get("is_dark", True) else "light"
 
         # Generate HTML with dialog data
         html = FLOWCHART_HTML_TEMPLATE.format(
@@ -717,26 +777,43 @@ class FlowchartPlugin:
 
     def _generate_speaker_colors(self, nodes: List[Dict[str, Any]]) -> Dict[str, str]:
         """
-        Generate consistent colors for each unique speaker (#230).
+        Get speaker colors from Parley settings, with fallback to local generation.
 
-        Uses predefined palette for common speakers, hash-based colors for others.
+        Calls the GetSpeakerColors API to use the same colors as Parley's tree view.
+        Falls back to generating colors locally if the API fails.
 
         Args:
             nodes: List of dialog nodes
 
         Returns:
-            Dict mapping speaker names to hex colors
+            Dict mapping speaker names to hex colors, plus "_pc" and "_owner" keys
         """
-        # Predefined palette for common speakers
+        colors = {}
+
+        # Try to get colors from Parley API first
+        if self.client:
+            try:
+                parley_colors = self.client.get_speaker_colors()
+                colors["_pc"] = parley_colors.get("pc_color", "#4FC3F7")
+                colors["_owner"] = parley_colors.get("owner_color", "#FF8A65")
+                colors.update(parley_colors.get("speaker_colors", {}))
+                print(f"[Flowchart] Got speaker colors from Parley: PC={colors['_pc']}, Owner={colors['_owner']}, {len(parley_colors.get('speaker_colors', {}))} named speakers")
+                return colors
+            except Exception as e:
+                print(f"[Flowchart] Failed to get speaker colors from API, using fallback: {e}")
+
+        # Fallback: generate colors locally
+        colors["_pc"] = "#4FC3F7"  # Default PC blue
+        colors["_owner"] = "#FF8A65"  # Default Owner orange
+
+        # Predefined palette for named speakers
         palette = [
-            "#2d5a27",  # Green (default NPC)
-            "#8e4585",  # Purple
+            "#BA68C8",  # Purple
+            "#26A69A",  # Teal
+            "#FFD54F",  # Amber
+            "#F48FB1",  # Pink
+            "#8e4585",  # Violet
             "#5a4d2d",  # Brown
-            "#2d4a5a",  # Teal
-            "#5a2d2d",  # Maroon
-            "#4a5a2d",  # Olive
-            "#5a5a2d",  # Gold
-            "#3d5a4d",  # Forest
         ]
 
         # Collect unique speakers
@@ -746,8 +823,7 @@ class FlowchartPlugin:
             if speaker and node.get("type") == "npc":
                 speakers.add(speaker)
 
-        # Assign colors
-        colors = {}
+        # Assign colors to named speakers
         for i, speaker in enumerate(sorted(speakers)):
             if i < len(palette):
                 colors[speaker] = palette[i]

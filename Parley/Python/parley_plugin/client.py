@@ -15,6 +15,8 @@ from .plugin_pb2 import (
     RegisterPanelRequest,
     UpdatePanelContentRequest,
     ClosePanelRequest,
+    GetThemeRequest,
+    GetSpeakerColorsRequest,
 )
 from .plugin_pb2_grpc import (
     AudioServiceStub,
@@ -90,6 +92,51 @@ class ParleyClient:
         except grpc.RpcError as e:
             print(f"gRPC error: {e}")
             return -1
+
+    def get_theme(self) -> dict:
+        """
+        Get the current theme settings from Parley.
+
+        Returns:
+            Dict with theme_id, theme_name, is_dark
+        """
+        try:
+            request = GetThemeRequest()
+            response = self.ui.GetTheme(request)
+            return {
+                "theme_id": response.theme_id,
+                "theme_name": response.theme_name,
+                "is_dark": response.is_dark,
+            }
+        except grpc.RpcError as e:
+            print(f"gRPC error getting theme: {e}")
+            return {"theme_id": "unknown", "theme_name": "unknown", "is_dark": True}
+
+    def get_speaker_colors(self) -> dict:
+        """
+        Get the speaker color settings from Parley.
+
+        Returns:
+            Dict with:
+                - pc_color: Hex color for PC nodes (e.g., "#4FC3F7")
+                - owner_color: Hex color for Owner/default NPC nodes
+                - speaker_colors: Dict of speaker_tag -> hex color for named NPCs
+        """
+        try:
+            request = GetSpeakerColorsRequest()
+            response = self.ui.GetSpeakerColors(request)
+            return {
+                "pc_color": response.pc_color,
+                "owner_color": response.owner_color,
+                "speaker_colors": dict(response.speaker_colors),
+            }
+        except grpc.RpcError as e:
+            print(f"gRPC error getting speaker colors: {e}")
+            return {
+                "pc_color": "#4FC3F7",
+                "owner_color": "#FF8A65",
+                "speaker_colors": {},
+            }
 
     def play_audio(self, file_path: str) -> bool:
         """

@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using DialogEditor.Plugins.Proto;
 using DialogEditor.Services;
+using DialogEditor.Utils;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Grpc.Core;
@@ -163,22 +165,46 @@ namespace DialogEditor.Plugins.Services
             {
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin notification: {request.Title} - {request.Message}");
 
-                // Show notification window on UI thread
-                Dispatcher.UIThread.Post(() =>
+                // Show toast notification that auto-closes after 3 seconds
+                Dispatcher.UIThread.Post(async () =>
                 {
                     var window = new Window
                     {
                         Title = request.Title,
-                        Width = 400,
-                        Height = 150,
+                        Width = 350,
+                        Height = 100,
+                        WindowStartupLocation = WindowStartupLocation.Manual,
+                        SystemDecorations = SystemDecorations.BorderOnly,
+                        CanResize = false,
+                        ShowInTaskbar = false,
+                        Topmost = true,
                         Content = new TextBlock
                         {
-                            Text = request.Message,
-                            Margin = new Avalonia.Thickness(20),
-                            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                            Text = $"{request.Title}: {request.Message}",
+                            Margin = new Avalonia.Thickness(15),
+                            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
                         }
                     };
+
+                    // Position in bottom-right corner
+                    var screen = window.Screens.Primary;
+                    if (screen != null)
+                    {
+                        var workArea = screen.WorkingArea;
+                        window.Position = new Avalonia.PixelPoint(
+                            workArea.Right - (int)window.Width - 20,
+                            workArea.Bottom - (int)window.Height - 20);
+                    }
+
                     window.Show();
+
+                    // Auto-close after 3 seconds
+                    await Task.Delay(3000);
+                    if (window.IsVisible)
+                    {
+                        window.Close();
+                    }
                 });
 
                 return Task.FromResult(new ShowNotificationResponse
@@ -196,44 +222,170 @@ namespace DialogEditor.Plugins.Services
             }
         }
 
-        public override async Task<ShowDialogResponse> ShowDialog(ShowDialogRequest request, ServerCallContext context)
+        public override Task<ShowDialogResponse> ShowDialog(ShowDialogRequest request, ServerCallContext context)
         {
             try
             {
-                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin dialog: {request.Title} - {request.Message}");
+                // TODO: Implement proper dialog with buttons (Issue #105)
+                // For now, just log the request - don't spawn a window that hangs around
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin dialog (stub): {request.Title} - {request.Message}");
 
-                // See #105 - Complete plugin UI notification and dialog APIs
-                // For now, just show message and return 0
-
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    var window = new Window
-                    {
-                        Title = request.Title,
-                        Width = 400,
-                        Height = 200,
-                        Content = new TextBlock
-                        {
-                            Text = request.Message,
-                            Margin = new Avalonia.Thickness(20),
-                            TextWrapping = Avalonia.Media.TextWrapping.Wrap
-                        }
-                    };
-                    window.Show();
-                });
-
-                return new ShowDialogResponse
+                return Task.FromResult(new ShowDialogResponse
                 {
                     ButtonIndex = 0
-                };
+                });
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Show dialog failed: {ex.Message}");
-                return new ShowDialogResponse
+                return Task.FromResult(new ShowDialogResponse
                 {
                     ButtonIndex = -1
+                });
+            }
+        }
+
+        public override Task<RegisterPanelResponse> RegisterPanel(RegisterPanelRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var fullPanelId = $"plugin:{request.PanelId}";
+
+                UnifiedLogger.LogPlugin(LogLevel.INFO,
+                    $"Panel registered: {fullPanelId} - {request.Title} ({request.Position}, {request.RenderMode})");
+
+                // Raise event for UI layer to create actual panel
+                PluginUIService.RaisePanelRegistered(new PanelInfo
+                {
+                    PluginId = "plugin",
+                    PanelId = request.PanelId,
+                    FullPanelId = fullPanelId,
+                    Title = request.Title,
+                    Position = request.Position ?? "right",
+                    RenderMode = request.RenderMode ?? "webview",
+                    InitialWidth = request.InitialWidth > 0 ? request.InitialWidth : 400,
+                    InitialHeight = request.InitialHeight > 0 ? request.InitialHeight : 300,
+                    CanFloat = request.CanFloat,
+                    CanClose = request.CanClose
+                });
+
+                return Task.FromResult(new RegisterPanelResponse
+                {
+                    Success = true,
+                    ActualPanelId = fullPanelId
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Failed to register panel: {ex.Message}");
+                return Task.FromResult(new RegisterPanelResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                });
+            }
+        }
+
+        public override Task<UpdatePanelContentResponse> UpdatePanelContent(UpdatePanelContentRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var fullPanelId = $"plugin:{request.PanelId}";
+
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                    $"Panel content update: {fullPanelId} - {request.ContentType} ({request.Content?.Length ?? 0} bytes)");
+
+                // Raise event for UI layer to update panel content
+                PluginUIService.RaisePanelContentUpdated(fullPanelId, request.ContentType, request.Content ?? "");
+
+                return Task.FromResult(new UpdatePanelContentResponse
+                {
+                    Success = true
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Failed to update panel content: {ex.Message}");
+                return Task.FromResult(new UpdatePanelContentResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                });
+            }
+        }
+
+        public override Task<GetThemeResponse> GetTheme(GetThemeRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var themeId = SettingsService.Instance.CurrentThemeId;
+                var isDark = themeId.Contains("dark", StringComparison.OrdinalIgnoreCase);
+
+                // Extract theme name from ID (e.g., "org.parley.theme.dark" -> "dark")
+                var themeName = themeId.Split('.').LastOrDefault() ?? "unknown";
+
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"GetTheme: {themeId} (isDark={isDark})");
+
+                return Task.FromResult(new GetThemeResponse
+                {
+                    ThemeId = themeId,
+                    ThemeName = themeName,
+                    IsDark = isDark
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"GetTheme failed: {ex.Message}");
+                return Task.FromResult(new GetThemeResponse
+                {
+                    ThemeId = "org.parley.theme.light",
+                    ThemeName = "light",
+                    IsDark = false
+                });
+            }
+        }
+
+        public override Task<GetSpeakerColorsResponse> GetSpeakerColors(GetSpeakerColorsRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var response = new GetSpeakerColorsResponse
+                {
+                    PcColor = SpeakerVisualHelper.GetSpeakerColor("", isPC: true),
+                    OwnerColor = SpeakerVisualHelper.GetSpeakerColor("", isPC: false)
                 };
+
+                // Get colors for all unique speakers in the current dialog
+                var dialogContext = DialogContextService.Instance;
+                if (dialogContext.CurrentDialog != null)
+                {
+                    var speakers = dialogContext.CurrentDialog.Entries
+                        .Select(e => e.Speaker)
+                        .Where(s => !string.IsNullOrEmpty(s))
+                        .Distinct();
+
+                    foreach (var speaker in speakers)
+                    {
+                        if (!string.IsNullOrEmpty(speaker))
+                        {
+                            response.SpeakerColors[speaker] = SpeakerVisualHelper.GetSpeakerColor(speaker, isPC: false);
+                        }
+                    }
+                }
+
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                    $"GetSpeakerColors: PC={response.PcColor}, Owner={response.OwnerColor}, {response.SpeakerColors.Count} named speakers");
+
+                return Task.FromResult(response);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"GetSpeakerColors failed: {ex.Message}");
+                return Task.FromResult(new GetSpeakerColorsResponse
+                {
+                    PcColor = SpeakerVisualHelper.ColorPalette.Blue,
+                    OwnerColor = SpeakerVisualHelper.ColorPalette.Orange
+                });
             }
         }
     }

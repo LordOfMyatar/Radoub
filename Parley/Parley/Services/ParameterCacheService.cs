@@ -40,25 +40,9 @@ namespace DialogEditor.Services
         /// </summary>
         private string GetCacheFilePath()
         {
-            string appDataPath;
-
-            if (OperatingSystem.IsWindows())
-            {
-                appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            }
-            else if (OperatingSystem.IsMacOS())
-            {
-                appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Application Support");
-            }
-            else // Linux
-            {
-                var xdgConfigHome = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
-                appDataPath = !string.IsNullOrWhiteSpace(xdgConfigHome)
-                    ? xdgConfigHome
-                    : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config");
-            }
-
-            var parleyDir = Path.Combine(appDataPath, "Parley");
+            // Use ~/Parley for cross-platform consistency
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var parleyDir = Path.Combine(userProfile, "Parley");
             Directory.CreateDirectory(parleyDir); // Ensure directory exists
             return Path.Combine(parleyDir, CacheFileName);
         }

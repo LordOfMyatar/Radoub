@@ -61,7 +61,8 @@ namespace DialogEditor.Plugins
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = _pythonPath,
-                        Arguments = $"{_entryPoint} --pipe {_pipeName}",
+                        // -u = unbuffered stdout/stderr for real-time log capture
+                        Arguments = $"-u {_entryPoint} --pipe {_pipeName}",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,

@@ -117,13 +117,21 @@ namespace DialogEditor.Services
             processedEntries.Add(entryIndex);
             var entryId = $"entry_{entryIndex}";
 
+            // Get entry text, with fallback for empty strings
+            var entryText = entry.Text?.GetDefault() ?? "";
+            if (string.IsNullOrWhiteSpace(entryText))
+            {
+                // Empty entry - show [Continue] or [End Dialog] based on whether it has children
+                entryText = entry.Pointers.Count > 0 ? "[Continue]" : "[End Dialog]";
+            }
+
             // Add entry node with script indicators
             var hasAction = !string.IsNullOrEmpty(entry.ScriptAction);
             nodes.Add(new DialogNodeInfo
             {
                 Id = entryId,
                 Type = "npc",
-                Text = entry.Text?.GetDefault() ?? "",
+                Text = entryText,
                 Speaker = entry.Speaker ?? "",
                 HasAction = hasAction,
                 ActionScript = entry.ScriptAction ?? ""
@@ -183,13 +191,21 @@ namespace DialogEditor.Services
             processedReplies.Add(replyIndex);
             var replyId = $"reply_{replyIndex}";
 
+            // Get reply text, with fallback for empty strings
+            var replyText = reply.Text?.GetDefault() ?? "";
+            if (string.IsNullOrWhiteSpace(replyText))
+            {
+                // Empty reply - show [Continue] or [End Dialog] based on whether it has children
+                replyText = reply.Pointers.Count > 0 ? "[Continue]" : "[End Dialog]";
+            }
+
             // Add reply node with script indicators
             var hasAction = !string.IsNullOrEmpty(reply.ScriptAction);
             nodes.Add(new DialogNodeInfo
             {
                 Id = replyId,
                 Type = "pc",
-                Text = reply.Text?.GetDefault() ?? "",
+                Text = replyText,
                 Speaker = "",
                 HasAction = hasAction,
                 ActionScript = reply.ScriptAction ?? ""

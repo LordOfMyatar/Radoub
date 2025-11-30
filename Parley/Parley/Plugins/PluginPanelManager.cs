@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using DialogEditor.Plugins.Services;
@@ -141,6 +143,33 @@ namespace DialogEditor.Plugins
                 }
             }
         }
+
+        /// <summary>
+        /// Reopen a closed panel window.
+        /// </summary>
+        public void ReopenPanel(PanelInfo panelInfo)
+        {
+            if (_isDisposed) return;
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                CreatePanelWindow(panelInfo);
+            });
+        }
+
+        /// <summary>
+        /// Get list of all registered panels that are currently closed.
+        /// </summary>
+        public IEnumerable<PanelInfo> GetClosedPanels()
+        {
+            return PluginUIService.GetAllRegisteredPanels()
+                .Where(p => !_panelWindows.ContainsKey(p.FullPanelId));
+        }
+
+        /// <summary>
+        /// Check if any panels are currently closed.
+        /// </summary>
+        public bool HasClosedPanels => GetClosedPanels().Any();
 
         /// <summary>
         /// Close all plugin panel windows.

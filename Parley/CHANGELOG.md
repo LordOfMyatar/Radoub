@@ -24,11 +24,20 @@ Second phase of the ChatMapper-style flowchart view plugin (Epic 3).
 - [x] #231 - Script indicators on nodes - ⚡ action, ❓ condition icons
 - [x] #232 - Link node styling (grayed + dotted) - Dashed borders, reduced opacity
 
+**Additional Improvements**:
+- Added `GetSpeakerColors` gRPC API - Flowchart now uses Parley's configured speaker colors
+- Added View > Plugin Panels menu item - Reopen closed plugin panels
+- Empty nodes display `[Continue]` or `[End Dialog]` instead of blank text
+- Changed settings path to `~/Parley` for cross-platform consistency
+- Plugin startup notification moved to status bar (non-intrusive)
+- Updated `deploy-plugins.ps1` to regenerate Python proto stubs automatically
+
 **Technical Details**:
 - Extended DialogNodeProto with HasCondition, HasAction, ConditionScript, ActionScript
 - Extended DialogLinkProto with HasCondition, ConditionScript for edge styling
 - dagre.js v0.8.5 for Sugiyama layout algorithm
 - D3.js v7 for rendering and interactivity
+- GetSpeakerColors RPC returns PC, Owner, and named speaker colors from SpeakerVisualHelper
 
 ---
 

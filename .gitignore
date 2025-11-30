@@ -28,6 +28,7 @@ Desktop.ini
 *.temp
 *.cache
 ~$*
+nul
 
 # Python
 __pycache__/
