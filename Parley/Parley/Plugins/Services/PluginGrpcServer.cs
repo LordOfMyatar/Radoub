@@ -155,7 +155,14 @@ namespace DialogEditor.Plugins.Services
     }
 
     /// <summary>
-    /// UI service implementation
+    /// UI service implementation for gRPC endpoints.
+    ///
+    /// NOTE: This is the active implementation used by the gRPC server.
+    /// PluginUIService also extends UIServiceBase but is not currently wired to gRPC.
+    /// When proper sandboxing is implemented (#104), security context should be
+    /// integrated here or UIServiceImpl should delegate to PluginUIService instance methods.
+    ///
+    /// Current state: No per-plugin security context - all plugins share same permissions.
     /// </summary>
     internal class UIServiceImpl : Proto.UIService.UIServiceBase
     {
@@ -314,6 +321,22 @@ namespace DialogEditor.Plugins.Services
             }
         }
 
+        public override Task<IsPanelOpenResponse> IsPanelOpen(IsPanelOpenRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var fullPanelId = $"plugin:{request.PanelId}";
+                var isOpen = PluginUIService.IsPanelOpen(fullPanelId);
+
+                return Task.FromResult(new IsPanelOpenResponse { IsOpen = isOpen });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"IsPanelOpen check failed: {ex.Message}");
+                return Task.FromResult(new IsPanelOpenResponse { IsOpen = false });
+            }
+        }
+
         public override Task<GetThemeResponse> GetTheme(GetThemeRequest request, ServerCallContext context)
         {
             try
@@ -444,6 +467,56 @@ namespace DialogEditor.Plugins.Services
             }
         }
 
+        /// <summary>
+        /// Select a node programmatically from a plugin (Epic 40 Phase 3 / #234).
+        /// </summary>
+        public override Task<SelectNodeResponse> SelectNode(SelectNodeRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var dialogContext = DialogContextService.Instance;
+                var nodeId = request.NodeId;
+
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"SelectNode request: {nodeId}");
+
+                if (string.IsNullOrEmpty(nodeId))
+                {
+                    return Task.FromResult(new SelectNodeResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Node ID is required"
+                    });
+                }
+
+                // Request node selection - this raises an event for the View layer
+                bool success = dialogContext.RequestNodeSelection(nodeId);
+
+                if (success)
+                {
+                    UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"SelectNode: Requested selection of {nodeId}");
+                }
+                else
+                {
+                    UnifiedLogger.LogPlugin(LogLevel.WARN, $"SelectNode: Invalid node ID {nodeId}");
+                }
+
+                return Task.FromResult(new SelectNodeResponse
+                {
+                    Success = success,
+                    ErrorMessage = success ? "" : $"Invalid node ID: {nodeId}"
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"SelectNode failed: {ex.Message}");
+                return Task.FromResult(new SelectNodeResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                });
+            }
+        }
+
         public override Task<GetDialogStructureResponse> GetDialogStructure(GetDialogStructureRequest request, ServerCallContext context)
         {
             try
@@ -497,7 +570,7 @@ namespace DialogEditor.Plugins.Services
                     });
                 }
 
-                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"GetDialogStructure: {nodes.Count} nodes, {links.Count} links");
+                // Reduce log spam - only log on errors (#235)
 
                 return Task.FromResult(response);
             }

@@ -59,9 +59,24 @@ namespace DialogEditor.Services
         public event EventHandler? DialogChanged;
 
         /// <summary>
+        /// Manually notify that dialog content has changed (for plugin refresh requests #235).
+        /// Call this to force plugins to re-fetch dialog structure.
+        /// </summary>
+        public void NotifyDialogChanged()
+        {
+            DialogChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
         /// Event fired when selected node changes
         /// </summary>
         public event EventHandler? NodeSelectionChanged;
+
+        /// <summary>
+        /// Event fired when a plugin requests node selection (Epic 40 Phase 3 / #234).
+        /// The View layer subscribes to this to update the TreeView selection.
+        /// </summary>
+        public event EventHandler<NodeSelectionRequestedEventArgs>? NodeSelectionRequested;
 
         /// <summary>
         /// Get dialog structure as nodes and links for flowchart visualization.
@@ -152,13 +167,19 @@ namespace DialogEditor.Services
                     // Check if this is a link reference
                     if (pointer.IsLink)
                     {
+                        // Get the target reply's text for display
+                        var targetReply = _currentDialog.Replies[replyIndex];
+                        var linkText = targetReply.Text?.GetDefault() ?? "";
+                        if (string.IsNullOrWhiteSpace(linkText))
+                            linkText = "[Continue]";
+
                         // Add link node indicator with condition info
                         var linkNodeId = $"link_{entryIndex}_{replyIndex}";
                         nodes.Add(new DialogNodeInfo
                         {
                             Id = linkNodeId,
                             Type = "link",
-                            Text = $"-> Reply {replyIndex}",
+                            Text = linkText,
                             IsLink = true,
                             LinkTarget = replyId,
                             HasCondition = hasCondition,
@@ -226,13 +247,19 @@ namespace DialogEditor.Services
                     // Check if this is a link reference
                     if (pointer.IsLink)
                     {
+                        // Get the target entry's text for display
+                        var targetEntry = _currentDialog.Entries[entryIndex];
+                        var linkText = targetEntry.Text?.GetDefault() ?? "";
+                        if (string.IsNullOrWhiteSpace(linkText))
+                            linkText = "[Continue]";
+
                         // Add link node indicator with condition info
                         var linkNodeId = $"link_{replyIndex}_{entryIndex}";
                         nodes.Add(new DialogNodeInfo
                         {
                             Id = linkNodeId,
                             Type = "link",
-                            Text = $"-> Entry {entryIndex}",
+                            Text = linkText,
                             IsLink = true,
                             LinkTarget = entryId,
                             HasCondition = hasCondition,
@@ -256,7 +283,72 @@ namespace DialogEditor.Services
             }
         }
 
+        /// <summary>
+        /// Request selection of a node from a plugin (Epic 40 Phase 3 / #234).
+        /// Raises NodeSelectionRequested event for the View layer to handle.
+        /// </summary>
+        /// <param name="nodeId">Node ID to select (e.g., "entry_0", "reply_3")</param>
+        /// <returns>True if request was raised, false if invalid node ID</returns>
+        public bool RequestNodeSelection(string nodeId)
+        {
+            if (string.IsNullOrEmpty(nodeId) || _currentDialog == null)
+                return false;
+
+            // Validate node ID format and existence
+            if (!IsValidNodeId(nodeId))
+                return false;
+
+            // Raise event for View layer to handle the actual selection
+            NodeSelectionRequested?.Invoke(this, new NodeSelectionRequestedEventArgs(nodeId));
+            return true;
+        }
+
+        /// <summary>
+        /// Validate that a node ID exists in the current dialog.
+        /// </summary>
+        private bool IsValidNodeId(string nodeId)
+        {
+            if (_currentDialog == null)
+                return false;
+
+            // Parse node ID format: "entry_N", "reply_N", "root", "link_X_Y"
+            if (nodeId == "root")
+                return true;
+
+            if (nodeId.StartsWith("entry_"))
+            {
+                if (int.TryParse(nodeId.Substring(6), out int index))
+                    return index >= 0 && index < _currentDialog.Entries.Count;
+            }
+            else if (nodeId.StartsWith("reply_"))
+            {
+                if (int.TryParse(nodeId.Substring(6), out int index))
+                    return index >= 0 && index < _currentDialog.Replies.Count;
+            }
+            else if (nodeId.StartsWith("link_"))
+            {
+                // Link nodes are virtual - they reference existing entries/replies
+                // Format: "link_parentIndex_targetIndex"
+                return true; // Accept link nodes as valid
+            }
+
+            return false;
+        }
+
         private DialogContextService() { }
+    }
+
+    /// <summary>
+    /// Event args for node selection requests from plugins (Epic 40 Phase 3 / #234)
+    /// </summary>
+    public class NodeSelectionRequestedEventArgs : EventArgs
+    {
+        public string NodeId { get; }
+
+        public NodeSelectionRequestedEventArgs(string nodeId)
+        {
+            NodeId = nodeId;
+        }
     }
 
     /// <summary>

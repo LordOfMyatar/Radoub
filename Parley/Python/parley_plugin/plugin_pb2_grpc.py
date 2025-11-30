@@ -504,6 +504,16 @@ class UIServiceStub(object):
                 request_serializer=plugin__pb2.ClosePanelRequest.SerializeToString,
                 response_deserializer=plugin__pb2.ClosePanelResponse.FromString,
                 _registered_method=True)
+        self.IsPanelOpen = channel.unary_unary(
+                '/parley.plugin.UIService/IsPanelOpen',
+                request_serializer=plugin__pb2.IsPanelOpenRequest.SerializeToString,
+                response_deserializer=plugin__pb2.IsPanelOpenResponse.FromString,
+                _registered_method=True)
+        self.GetPanelSetting = channel.unary_unary(
+                '/parley.plugin.UIService/GetPanelSetting',
+                request_serializer=plugin__pb2.GetPanelSettingRequest.SerializeToString,
+                response_deserializer=plugin__pb2.GetPanelSettingResponse.FromString,
+                _registered_method=True)
         self.GetTheme = channel.unary_unary(
                 '/parley.plugin.UIService/GetTheme',
                 request_serializer=plugin__pb2.GetThemeRequest.SerializeToString,
@@ -551,6 +561,19 @@ class UIServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def IsPanelOpen(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetPanelSetting(self, request, context):
+        """Panel settings (#235)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetTheme(self, request, context):
         """Theme (Epic 3 Phase 2 / #229)
         """
@@ -592,6 +615,16 @@ def add_UIServiceServicer_to_server(servicer, server):
                     servicer.ClosePanel,
                     request_deserializer=plugin__pb2.ClosePanelRequest.FromString,
                     response_serializer=plugin__pb2.ClosePanelResponse.SerializeToString,
+            ),
+            'IsPanelOpen': grpc.unary_unary_rpc_method_handler(
+                    servicer.IsPanelOpen,
+                    request_deserializer=plugin__pb2.IsPanelOpenRequest.FromString,
+                    response_serializer=plugin__pb2.IsPanelOpenResponse.SerializeToString,
+            ),
+            'GetPanelSetting': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetPanelSetting,
+                    request_deserializer=plugin__pb2.GetPanelSettingRequest.FromString,
+                    response_serializer=plugin__pb2.GetPanelSettingResponse.SerializeToString,
             ),
             'GetTheme': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTheme,
@@ -751,6 +784,60 @@ class UIService(object):
             _registered_method=True)
 
     @staticmethod
+    def IsPanelOpen(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/IsPanelOpen',
+            plugin__pb2.IsPanelOpenRequest.SerializeToString,
+            plugin__pb2.IsPanelOpenResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetPanelSetting(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/GetPanelSetting',
+            plugin__pb2.GetPanelSettingRequest.SerializeToString,
+            plugin__pb2.GetPanelSettingResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def GetTheme(request,
             target,
             options=(),
@@ -825,6 +912,11 @@ class DialogServiceStub(object):
                 request_serializer=plugin__pb2.GetSelectedNodeRequest.SerializeToString,
                 response_deserializer=plugin__pb2.GetSelectedNodeResponse.FromString,
                 _registered_method=True)
+        self.SelectNode = channel.unary_unary(
+                '/parley.plugin.DialogService/SelectNode',
+                request_serializer=plugin__pb2.SelectNodeRequest.SerializeToString,
+                response_deserializer=plugin__pb2.SelectNodeResponse.FromString,
+                _registered_method=True)
         self.GetDialogStructure = channel.unary_unary(
                 '/parley.plugin.DialogService/GetDialogStructure',
                 request_serializer=plugin__pb2.GetDialogStructureRequest.SerializeToString,
@@ -848,6 +940,12 @@ class DialogServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SelectNode(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetDialogStructure(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -866,6 +964,11 @@ def add_DialogServiceServicer_to_server(servicer, server):
                     servicer.GetSelectedNode,
                     request_deserializer=plugin__pb2.GetSelectedNodeRequest.FromString,
                     response_serializer=plugin__pb2.GetSelectedNodeResponse.SerializeToString,
+            ),
+            'SelectNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.SelectNode,
+                    request_deserializer=plugin__pb2.SelectNodeRequest.FromString,
+                    response_serializer=plugin__pb2.SelectNodeResponse.SerializeToString,
             ),
             'GetDialogStructure': grpc.unary_unary_rpc_method_handler(
                     servicer.GetDialogStructure,
@@ -928,6 +1031,33 @@ class DialogService(object):
             '/parley.plugin.DialogService/GetSelectedNode',
             plugin__pb2.GetSelectedNodeRequest.SerializeToString,
             plugin__pb2.GetSelectedNodeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SelectNode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.DialogService/SelectNode',
+            plugin__pb2.SelectNodeRequest.SerializeToString,
+            plugin__pb2.SelectNodeResponse.FromString,
             options,
             channel_credentials,
             insecure,

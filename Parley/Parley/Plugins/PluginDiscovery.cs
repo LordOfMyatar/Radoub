@@ -155,12 +155,20 @@ namespace DialogEditor.Plugins
         }
 
         /// <summary>
-        /// Get plugin by ID
+        /// Get plugin by ID or folder name (#235).
+        /// Matches against both the manifest plugin ID and the folder name.
         /// </summary>
         public DiscoveredPlugin? GetPluginById(string pluginId)
         {
-            return _discoveredPlugins.FirstOrDefault(p =>
+            // First try exact match on manifest ID
+            var byId = _discoveredPlugins.FirstOrDefault(p =>
                 p.Manifest.Plugin.Id.Equals(pluginId, StringComparison.OrdinalIgnoreCase));
+            if (byId != null)
+                return byId;
+
+            // Also try matching by folder name (for panel reopen support)
+            return _discoveredPlugins.FirstOrDefault(p =>
+                Path.GetFileName(p.PluginDirectory).Equals(pluginId, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>

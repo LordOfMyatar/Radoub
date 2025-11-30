@@ -10,6 +10,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.35-alpha] - 2025-11-30
+**Branch**: `parley/feat/epic-40-phase3-interaction` | **PR**: #249
+
+### Epic 40 Phase 3: Interaction and Navigation (#234-#237)
+
+Third phase of the ChatMapper-style flowchart view plugin (Epic 3).
+
+**Work Items**:
+- [x] #234 - Bidirectional node selection sync
+- [x] #235 - User-controllable refresh settings (partial - toggle persistence has race condition, deferred)
+- [ ] #236 - Minimap navigation panel (deferred to future phase)
+- [x] #237 - Circular reference handling (already implemented via IsLink + processedX tracking)
+
+**Implemented (#234)**:
+- Added `SelectNode` gRPC RPC - plugins can request Parley to select a node in the tree view
+- Added `DialogContextService.SelectedNodeId` tracking - syncs tree selection to plugins
+- Added `NodeSelectionRequested` event - plugins can request selection changes
+- JavaScript bridge in `PluginPanelWindow` - flowchart node clicks propagate to Parley
+- Flowchart highlights selected node and scrolls into view when Parley selection changes
+- Initial selection state passed to flowchart HTML on render
+- Extracted `PluginSelectionSyncHelper` to keep MainWindow clean (~200 lines moved)
+
+**Implemented (#235)**:
+- Added manual refresh button (⟳) to force flowchart re-render
+- Added auto-refresh toggle (⏸/▶) to pause/resume automatic updates
+- Added sync selection toggle checkbox to enable/disable bidirectional navigation
+- Added `GetPanelSetting` gRPC API for plugins to query UI toggle states
+- Panel settings stored in C# PluginUIService for persistence attempts
+- **Known Issue**: Toggle persistence has race condition when dialog changes fire before settings are stored
+
+**Security Hardening**:
+- Bundled D3.js and dagre.js locally (removed CDN dependency for supply chain security)
+- Sanitized PYTHONPATH in PluginHost (no longer inherits potentially malicious paths)
+- Refactored flowchart_plugin.py from 1157 to 550 lines (split to templates/static/vendor)
+
+**Already Done (#237)**:
+- `GetDialogStructure` uses `processedEntries`/`processedReplies` HashSets to prevent infinite recursion
+- `IsLink` pointers create terminal "link" nodes instead of recursing into targets
+- Link nodes styled with dashed borders and reduced opacity (Phase 2 #232)
+
+---
+
 ## [0.1.34-alpha] - 2025-11-29
 **Branch**: `parley/feat/epic-40-phase2-layout` | **PR**: #245
 

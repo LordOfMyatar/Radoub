@@ -38,6 +38,7 @@ namespace DialogEditor.Views
         private readonly KeyboardShortcutManager _keyboardShortcutManager; // Manages keyboard shortcuts
         private readonly DebugAndLoggingHandler _debugAndLoggingHandler; // Handles debug and logging operations
         private readonly WindowPersistenceManager _windowPersistenceManager; // Manages window and panel persistence
+        private readonly PluginSelectionSyncHelper _pluginSelectionSyncHelper; // Handles plugin ↔ tree selection sync (#234)
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -72,6 +73,7 @@ namespace DialogEditor.Views
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
             _pluginPanelManager = new PluginPanelManager(this);
+            _pluginPanelManager.SetPluginManager(_pluginManager); // For panel reopen restart (#235)
             _propertyPopulator = new PropertyPanelPopulator(this);
             _propertyAutoSaveService = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
@@ -107,6 +109,16 @@ namespace DialogEditor.Views
             _windowPersistenceManager = new WindowPersistenceManager(
                 window: this,
                 findControl: this.FindControl<Control>);
+            _pluginSelectionSyncHelper = new PluginSelectionSyncHelper(
+                viewModel: _viewModel,
+                findControl: this.FindControl<Control>,
+                getSelectedNode: () => _selectedNode,
+                setSelectedTreeItem: node =>
+                {
+                    var treeView = this.FindControl<TreeView>("DialogTreeView");
+                    if (treeView != null)
+                        treeView.SelectedItem = node;
+                });
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -440,6 +452,9 @@ namespace DialogEditor.Views
 
             // Close plugin panel windows (Epic 3 / #225)
             _pluginPanelManager.Dispose();
+
+            // Dispose plugin selection sync helper (Epic 40 Phase 3 / #234)
+            _pluginSelectionSyncHelper.Dispose();
 
             // Save window position on close
             _windowPersistenceManager.SaveWindowPosition();
@@ -1068,16 +1083,34 @@ namespace DialogEditor.Views
 
         private void OnPluginPanelsClick(object? sender, RoutedEventArgs e)
         {
+            // Debug: Log all registered panels
+            var allPanels = DialogEditor.Plugins.Services.PluginUIService.GetAllRegisteredPanels().ToList();
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"OnPluginPanelsClick: {allPanels.Count} registered panels total");
+            foreach (var p in allPanels)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"  Panel: {p.FullPanelId}, PanelId={p.PanelId}, PluginId={p.PluginId}");
+            }
+
             var closedPanels = _pluginPanelManager.GetClosedPanels().ToList();
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"OnPluginPanelsClick: {closedPanels.Count} closed panels");
+
             if (closedPanels.Count == 0)
             {
-                _viewModel.StatusMessage = "No closed plugin panels to reopen";
+                if (allPanels.Count == 0)
+                {
+                    _viewModel.StatusMessage = "No plugin panels registered (plugin may not have started)";
+                }
+                else
+                {
+                    _viewModel.StatusMessage = "All plugin panels are already open";
+                }
                 return;
             }
 
             // Reopen all closed panels
             foreach (var panel in closedPanels)
             {
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Reopening panel: {panel.FullPanelId}");
                 _pluginPanelManager.ReopenPanel(panel);
             }
 
@@ -1336,7 +1369,7 @@ namespace DialogEditor.Views
         }
 
         private TreeViewSafeNode? _selectedNode;
-        private bool _isSettingSelectionProgrammatically = false;
+        private bool _isSettingSelectionProgrammatically = false;  // For ViewModel SelectedTreeNode binding feedback
 
         private void OnDialogTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
@@ -1350,12 +1383,15 @@ namespace DialogEditor.Views
             var treeView = sender as TreeView;
             _selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
 
-            // Update ViewModel's selected tree node for Restore button enabling
-            // Skip if we're setting selection programmatically to avoid feedback loop
-            if (_viewModel != null && !_isSettingSelectionProgrammatically)
+            // Update ViewModel's selected tree node for Restore button enabling and bindings
+            // Always update - the flags prevent View→ViewModel→View feedback loops elsewhere
+            if (_viewModel != null)
             {
                 _viewModel.SelectedTreeNode = _selectedNode;
             }
+
+            // Update DialogContextService.SelectedNodeId for plugin sync (Epic 40 Phase 3 / #234)
+            _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode();
 
             // Show/hide panels based on node type
             var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");
@@ -3264,8 +3300,9 @@ namespace DialogEditor.Views
             {
                 var selectedNode = _viewModel.SelectedTreeNode;
                 // Only handle non-ROOT programmatic selection
-                // Skip if selection came from TreeView (flag set by SelectionChanged handler)
-                if (selectedNode != null && !(selectedNode is TreeViewRootNode) && !_isSettingSelectionProgrammatically)
+                // Skip if selection came from TreeView or plugin sync (flags set by respective handlers)
+                if (selectedNode != null && !(selectedNode is TreeViewRootNode) &&
+                    !_isSettingSelectionProgrammatically && !_pluginSelectionSyncHelper.IsSettingSelectionProgrammatically)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG,
                         $"View: SelectedTreeNode changed to '{selectedNode.DisplayText}', scheduling selection");

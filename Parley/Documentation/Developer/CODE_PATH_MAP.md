@@ -9,6 +9,7 @@
 ## ARCHITECTURE OVERVIEW
 
 ### Parsers & Writers
+
 **DialogParser** (~4143 lines): Main parser - delegates to support classes
 **DialogBuilder** (637 lines): Builds Dialog models from GFF structs
 **DialogWriter** (2513 lines): Handles all write/serialization operations
@@ -16,6 +17,7 @@
 **GffIndexFixer** (~400 lines): Fixes field indices for Aurora compatibility
 
 ### Services & Managers (Epic #99 + #163 Refactoring)
+
 **DialogFileService** (~200 lines): Facade for file operations (load/save)
 **UndoManager** (~150 lines): Manages undo/redo state history
 **DialogClipboardService** (~300 lines): Copy/paste operations
@@ -34,6 +36,7 @@
 **DebugLogger** (~180 lines): UI debug console with log level filtering
 
 ### MainWindow Services (Epic #163 - PR #164)
+
 **PropertyAutoSaveService** (245 lines): Auto-save property changes with strategy pattern (2025-11-22)
 **ScriptParameterUIManager** (352 lines): Parameter UI management for conditions/actions (2025-11-22)
 **NodeCreationHelper** (229 lines): Smart node creation with debouncing and tree navigation (2025-11-22)
@@ -43,18 +46,22 @@
 **WindowPersistenceManager** (252 lines): Window/panel persistence and screen validation (2025-11-22)
 
 ### Plugin System (Epic 40 - PR #244)
+
 **DialogContextService** (~237 lines): Singleton providing dialog state to plugins (2025-11-29)
 **PluginGrpcServer** (~386 lines): gRPC server hosting plugin services (2025-11-29)
 **PluginPanelManager** (~200 lines): Panel registration and lifecycle management (2025-11-29)
 **PluginUIService** (~150 lines): UI operations for plugins (notifications, dialogs) (2025-11-29)
 
 ### ViewModels & UI
+
 **MainViewModel** (~1,258 lines as of Phase 7): **REFACTORING COMPLETE - GOAL EXCEEDED ✅**
+
 - Down from ~2,956 lines (Phase 7: -1,698 lines, 57% reduction)
 - **Target Exceeded**: Now 258 lines BELOW 1,000 line goal
 - Phase 7 Extractions: IndexManager, NodeCloningService, ReferenceManager, PasteOperationsManager, RestoreFromScrap
 
 **MainWindow.axaml.cs** (2,603 lines): **EPIC #163 REFACTORING COMPLETE ✅**
+
 - Down from 4,126 lines (Epic #163: -1,523 lines, 37% reduction)
 - **7 Services Extracted**: PropertyAutoSave, ScriptParameterUI, NodeCreation, ResourceBrowser, KeyboardShortcuts, DebugLogging, WindowPersistence
 - Implements IKeyboardShortcutHandler interface
@@ -68,6 +75,7 @@
 **Entry Point**: User clicks Save → MainWindow → FileOperationsHandler
 
 ### Call Chain (Current Architecture)
+
 ```
 FileOperationsHandler.OnSaveClick (FileOperationsHandler.cs)
   ↓
@@ -96,6 +104,7 @@ DialogWriter.WriteListIndices (DialogWriter.cs:2186)
 ### Key Methods in DialogWriter
 
 **Field Creation Methods**:
+
 - CreateRootFields (DialogWriter.cs:767) - 9 BioWare root fields
 - CreateSingleEntryFields (DialogWriter.cs:896) - 12 fields per entry
 - CreateSingleReplyFields (DialogWriter.cs:1013) - 11 fields per reply
@@ -103,15 +112,18 @@ DialogWriter.WriteListIndices (DialogWriter.cs:2186)
 - CreateStartingFields (DialogWriter.cs:1114) - 3 fields per start
 
 **Struct Creation Methods**:
+
 - CreateInterleavedStructs (DialogWriter.cs:3361) - Conversation-flow order
 - CreateDynamicParameterStructs (DialogWriter.cs:3847) - ActionParams/ConditionParams
 
 **Calculation Methods**:
+
 - CalculateListIndicesOffsets (DialogWriter.cs:54) - Pre-calculates list offsets
 - CalculateEntryFieldCount (DialogWriter.cs:2244) - Count fields per entry
 - CalculateReplyFieldCount (DialogWriter.cs:2254) - Count fields per reply
 
 **Binary Writing**:
+
 - WriteBinaryGff (DialogWriter.cs:1684) - Main binary serialization
 - WriteFieldIndices (DialogWriter.cs:2101) - Aurora field index format
 - WriteListIndices (DialogWriter.cs:2186) - ListIndices section
@@ -123,6 +135,7 @@ DialogWriter.WriteListIndices (DialogWriter.cs:2186)
 **Entry Point**: User clicks Open → MainWindow → FileOperationsHandler
 
 ### Call Chain (Current Architecture)
+
 ```
 FileOperationsHandler.OnOpenClick (FileOperationsHandler.cs)
   ↓
@@ -157,6 +170,7 @@ DialogBuilder.BuildDialogPtrFromStruct (DialogBuilder.cs:185)
 **Entry Point**: User right-clicks node → Delete → MainViewModel.DeleteNode
 
 ### Call Chain (Current Architecture - Phase 6)
+
 ```
 MainViewModel.DeleteNode (MainViewModel.cs:926)
   ↓ Save undo state
@@ -205,17 +219,20 @@ MainViewModel.RefreshTreeView (MainViewModel.cs:1242)
 ### Key Components
 
 **Orphan Detection (2025-11-18 Fix)**:
+
 - `CollectReachableNodes` (OrphanNodeManager.cs:170) - **ONLY traverses regular pointers (IsLink=false)**
 - Nodes with only child link (IsLink=true) references are considered unreachable → orphaned
 - Example: Chef reply with only child link from "I go through that sometimes..." becomes orphaned
 
 **Scrap Integration**:
+
 - Deleted nodes added to scrap with reason "deleted"
 - Orphaned link children added with reason "orphaned link child"
 - Orphaned nodes added with reason "orphaned after deletion"
 - All recoverable from Scrap tab
 
 **Link Handling**:
+
 - Nodes with incoming links get warning logged
 - Links are NOT followed during deletion (Aurora behavior: delete parent = delete subtree)
 - Child links (IsLink=true) do NOT prevent orphaning (2025-11-18 fix)
@@ -227,6 +244,7 @@ MainViewModel.RefreshTreeView (MainViewModel.cs:1242)
 **Entry Point**: User right-clicks → Paste as Duplicate → MainViewModel.PasteAsDuplicate
 
 ### Call Chain (Phase 7 Architecture - 2025-11-19)
+
 ```
 MainViewModel.PasteAsDuplicate (MainViewModel.cs:1280)
   ↓ Save undo state
@@ -263,15 +281,18 @@ MainViewModel updates StatusMessage and refreshes tree
 ### Key Components
 
 **Result Pattern**:
+
 - `PasteResult` - Success flag, status message, pasted node reference
 - Clean separation: Service handles logic, ViewModel handles UI
 
 **Type Validation**:
+
 - ROOT only accepts Entry nodes (NPC speech)
 - Entry→Reply alternation enforced (conversation structure)
 - PC Reply auto-converted to Entry at ROOT
 
 **Index Management**:
+
 - Uses `IndexManager.RecalculatePointerIndices` after paste
 - Ensures pointer.Index matches list position
 
@@ -282,6 +303,7 @@ MainViewModel updates StatusMessage and refreshes tree
 **Entry Point**: User selects scrap entry + tree parent → Restore → MainViewModel.RestoreFromScrap
 
 ### Call Chain (Phase 7 Architecture - 2025-11-19)
+
 ```
 MainViewModel.RestoreFromScrap (MainViewModel.cs:1441)
   ↓ Save undo state
@@ -321,20 +343,24 @@ MainViewModel updates StatusMessage and refreshes tree
 ### Key Components
 
 **Result Pattern**:
+
 - `RestoreResult` - Success flag, status message, restored node reference
 - Clean separation: Service handles logic, ViewModel handles UI
 
 **Validation Rules**:
+
 - Same as paste: Entry→Reply alternation enforced
 - ROOT validation: Only Entry nodes allowed
 - No type conversion (unlike paste)
 
 **Transaction Safety**:
+
 - Node only removed from scrap AFTER successful restoration
 - Validation runs BEFORE making any changes
 - If validation fails, scrap entry preserved
 
 **Index Management**:
+
 - Uses `IndexManager.RecalculatePointerIndices` after restoration
 - Ensures all pointers stay synchronized with list positions
 
@@ -345,6 +371,7 @@ MainViewModel updates StatusMessage and refreshes tree
 **Entry Point**: `UnifiedLogger.Log*()` methods called throughout codebase
 
 ### Call Chain (Logging to UI)
+
 ```
 UnifiedLogger.LogApplication/LogUI/LogParser/etc. (UnifiedLogger.cs)
   ↓ Automatic path sanitization
@@ -366,11 +393,13 @@ DebugLogger callback (DebugLogger.cs:20-60)
 ```
 
 ### Log Level Filtering
+
 **Filter UI**: Debug tab → ComboBox (Error/Warning/Info/Debug/Trace)
 **Filter Logic**: DebugLogger.SetLogLevelFilter() → RefreshDisplay()
 **Default Level**: INFO (shows ERROR, WARN, INFO only)
 
 **IMPORTANT**: Filtering logic is in **DebugLogger**, NOT MainViewModel
+
 - MainViewModel just displays messages it receives
 - DebugLogger handles all parsing, storage, and filtering
 
@@ -379,6 +408,7 @@ DebugLogger callback (DebugLogger.cs:20-60)
 ## USAGE GUIDELINES
 
 **Before Adding New Logic**:
+
 1. **Check CLAUDE.md** - Is MainViewModel actively being refactored?
 2. **DO NOT add to MainViewModel** - Create new service/manager instead
 3. **Check this map** - Which component in the chain needs changes?
@@ -386,27 +416,32 @@ DebugLogger callback (DebugLogger.cs:20-60)
 5. **Run regression tests** before committing
 
 **Before Adding New Write Logic**:
+
 1. Check DialogWriter first - most write logic is there
 2. Verify field counts match Aurora spec
 3. Test round-trip (save → load → verify)
 
 **Before Adding New Read Logic**:
+
 1. Check GffBinaryReader first - might be there instead of DialogParser
 2. Check DialogBuilder - model construction happens here
 3. Verify structs vs fields - don't confuse the two
 4. Test with multiple DLG files (simple and complex)
 
 **Before Adding New UI Logic**:
+
 1. Check if handler class already exists for this area
 2. If no handler, consider creating one instead of adding to MainWindow
 3. MainViewModel should only coordinate state, not contain business logic
 
 **When Lost**:
+
 1. Add logging with unique emoji/prefix
 2. Run test - if logging doesn't appear, check call chain
 3. Update this map when you find the actual path
 
 **MainViewModel Refactoring Note**:
+
 - MainViewModel is intentionally not mapped in detail here (too large, actively changing)
 - Focus is on stable service/parser paths
 - As MainViewModel gets refactored, those services will be added to this map
@@ -417,6 +452,7 @@ DebugLogger callback (DebugLogger.cs:20-60)
 ## REGRESSION TESTING
 
 **Before Parser Changes**:
+
 1. Run `TestingTools/Scripts/QuickRegressionCheck.ps1`
 2. Verify struct count, field count, StartingList count
 3. Test in Aurora Editor (tree structure, script names)
@@ -428,6 +464,7 @@ DebugLogger callback (DebugLogger.cs:20-60)
 **Entry Point**: Plugin process connects via gRPC on startup
 
 ### Plugin Initialization Flow
+
 ```
 Python Plugin (flowchart_plugin.py)
   ↓ Read PARLEY_GRPC_PORT env var
@@ -449,6 +486,7 @@ PluginPanelManager.RegisterPanel (PluginPanelManager.cs)
 ```
 
 ### Dialog Data Query Flow
+
 ```
 Plugin requests dialog structure
   ↓
@@ -466,6 +504,7 @@ Plugin renders D3.js flowchart (flowchart_plugin.py)
 ```
 
 ### Panel Content Update Flow
+
 ```
 Plugin.update_panel_content() (client.py)
   ↓ gRPC: UpdatePanelContentRequest
@@ -482,6 +521,7 @@ PluginPanelWindow.UpdateContent (PluginPanelWindow.axaml.cs)
 ```
 
 ### State Synchronization
+
 ```
 MainViewModel property change (MainViewModel.cs)
   ↓ CurrentDialog setter
@@ -495,20 +535,21 @@ DialogContextService.Instance.CurrentDialog = value
 ### Key Components
 
 **Proto Definitions** (plugin.proto):
+
 - `DialogService`: GetCurrentDialog, GetSelectedNode, GetDialogStructure
 - `UIService`: ShowNotification, ShowDialog, RegisterPanel, UpdatePanelContent
 - `AudioService`: PlayAudio, StopAudio
 
 **State Provider**:
+
 - `DialogContextService` singleton - decouples plugins from MainViewModel
 - Provides: CurrentDialog, CurrentFileName, SelectedNodeId
 - Methods: GetDialogStructure() returns (nodes, links) for D3.js
 
 **Panel Management**:
+
 - `PluginPanelManager` - registry of active panels
 - `PluginPanelWindow` - WebView-based panel window
 - Supports: docking positions, floating, close behavior
 
 ---
-
-

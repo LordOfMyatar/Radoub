@@ -39,6 +39,10 @@ service UIService {
   rpc RegisterPanel (RegisterPanelRequest) returns (RegisterPanelResponse);
   rpc UpdatePanelContent (UpdatePanelContentRequest) returns (UpdatePanelContentResponse);
   rpc ClosePanel (ClosePanelRequest) returns (ClosePanelResponse);
+  rpc IsPanelOpen (IsPanelOpenRequest) returns (IsPanelOpenResponse);
+
+  // Panel settings (#235)
+  rpc GetPanelSetting (GetPanelSettingRequest) returns (GetPanelSettingResponse);
 
   // Theme (Epic 3 Phase 2 / #229)
   rpc GetTheme (GetThemeRequest) returns (GetThemeResponse);
@@ -51,6 +55,7 @@ service UIService {
 service DialogService {
   rpc GetCurrentDialog (GetCurrentDialogRequest) returns (GetCurrentDialogResponse);
   rpc GetSelectedNode (GetSelectedNodeRequest) returns (GetSelectedNodeResponse);
+  rpc SelectNode (SelectNodeRequest) returns (SelectNodeResponse);
   rpc GetDialogStructure (GetDialogStructureRequest) returns (GetDialogStructureResponse);
 }
 
@@ -158,6 +163,16 @@ message GetSelectedNodeResponse {
   string node_text = 2;
 }
 
+// SelectNode - programmatically select a node in Parley's tree view (Epic 40 Phase 3 / #234)
+message SelectNodeRequest {
+  string node_id = 1;           // Node ID to select (e.g., "entry_0", "reply_3")
+}
+
+message SelectNodeResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
 // File service messages
 message OpenFileDialogRequest {
   string title = 1;
@@ -235,6 +250,26 @@ message ClosePanelRequest {
 
 message ClosePanelResponse {
   bool success = 1;
+}
+
+// IsPanelOpen - check if panel is still open (#235)
+message IsPanelOpenRequest {
+  string panel_id = 1;           // Panel ID to check
+}
+
+message IsPanelOpenResponse {
+  bool is_open = 1;              // True if panel window is open
+}
+
+// GetPanelSetting - get a panel setting from UI (#235)
+message GetPanelSettingRequest {
+  string panel_id = 1;           // Panel ID
+  string setting_name = 2;       // Setting name (e.g., "sync_selection", "auto_refresh")
+}
+
+message GetPanelSettingResponse {
+  bool found = 1;                // True if setting exists
+  string value = 2;              // Setting value (empty if not found)
 }
 
 // Theme messages (Epic 3 Phase 2 / #229)

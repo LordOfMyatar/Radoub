@@ -25,6 +25,19 @@ namespace DialogEditor.Plugins.Services
         private static readonly ConcurrentDictionary<string, PanelInfo> _registeredPanels = new();
 
         /// <summary>
+        /// Tracks which panel windows are currently open (#235).
+        /// Key: fullPanelId, Value: true if window is open
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, bool> _panelWindowOpen = new();
+
+        /// <summary>
+        /// Stores panel-specific settings from UI (#235).
+        /// Key: fullPanelId:settingName, Value: setting value
+        /// Used for sync_selection, auto_refresh, etc.
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, string> _panelSettings = new();
+
+        /// <summary>
         /// Event raised when a panel is registered.
         /// UI layer should subscribe to this to create actual panel windows.
         /// </summary>
@@ -39,6 +52,12 @@ namespace DialogEditor.Plugins.Services
         /// Event raised when a panel should be closed.
         /// </summary>
         public static event EventHandler<PanelClosedEventArgs>? PanelClosed;
+
+        /// <summary>
+        /// Event raised when a plugin setting changes from UI (#235).
+        /// Plugins can subscribe to receive settings like sync_selection, auto_refresh.
+        /// </summary>
+        public static event EventHandler<PluginSettingChangedEventArgs>? PluginSettingChanged;
 
         public PluginUIService(PluginSecurityContext security)
         {
@@ -177,6 +196,8 @@ namespace DialogEditor.Plugins.Services
 
                 // Register panel (or update if already exists)
                 _registeredPanels.AddOrUpdate(fullPanelId, panelInfo, (_, __) => panelInfo);
+                // Mark window as open when registered (#235)
+                _panelWindowOpen[fullPanelId] = true;
 
                 UnifiedLogger.LogPlugin(LogLevel.INFO,
                     $"Panel registered: {fullPanelId} - {request.Title} ({position}, {renderMode})");
@@ -290,10 +311,12 @@ namespace DialogEditor.Plugins.Services
                 var pluginId = _security.PluginId;
                 var fullPanelId = $"{pluginId}:{request.PanelId}";
 
+                UnifiedLogger.LogPlugin(LogLevel.WARN, $"ClosePanel called for: {fullPanelId} - THIS REMOVES REGISTRATION!");
+
                 // Remove from registry
                 if (_registeredPanels.TryRemove(fullPanelId, out _))
                 {
-                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel closed: {fullPanelId}");
+                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel closed and unregistered: {fullPanelId}");
 
                     // Raise event for UI layer to close panel
                     PanelClosed?.Invoke(this, new PanelClosedEventArgs(fullPanelId));
@@ -317,11 +340,63 @@ namespace DialogEditor.Plugins.Services
         }
 
         /// <summary>
+        /// Check if a panel window is currently open (#235).
+        /// Used by plugins to determine if they should continue polling.
+        /// Returns false when user closes the window (even if panel is still registered).
+        /// </summary>
+        public override Task<IsPanelOpenResponse> IsPanelOpen(IsPanelOpenRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var pluginId = _security.PluginId;
+                var fullPanelId = $"{pluginId}:{request.PanelId}";
+
+                // Check window state, not just registration (#235)
+                // Panel stays registered for potential reopen, but window may be closed
+                var isOpen = _panelWindowOpen.TryGetValue(fullPanelId, out var windowOpen) && windowOpen;
+
+                return Task.FromResult(new IsPanelOpenResponse { IsOpen = isOpen });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"IsPanelOpen check failed: {ex.Message}");
+                return Task.FromResult(new IsPanelOpenResponse { IsOpen = false });
+            }
+        }
+
+        /// <summary>
+        /// Get a panel setting value (#235).
+        /// Used by plugins to retrieve UI toggle states like sync_selection.
+        /// </summary>
+        public override Task<GetPanelSettingResponse> GetPanelSetting(GetPanelSettingRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var pluginId = _security.PluginId;
+                var fullPanelId = $"{pluginId}:{request.PanelId}";
+
+                var value = GetPanelSetting(fullPanelId, request.SettingName);
+
+                return Task.FromResult(new GetPanelSettingResponse
+                {
+                    Found = value != null,
+                    Value = value ?? ""
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"GetPanelSetting failed: {ex.Message}");
+                return Task.FromResult(new GetPanelSettingResponse { Found = false, Value = "" });
+            }
+        }
+
+        /// <summary>
         /// Static helper to raise PanelRegistered event (used by UIServiceImpl).
         /// </summary>
         public static void RaisePanelRegistered(PanelInfo panelInfo)
         {
             _registeredPanels.AddOrUpdate(panelInfo.FullPanelId, panelInfo, (_, __) => panelInfo);
+            _panelWindowOpen[panelInfo.FullPanelId] = true;  // Mark window as open (#235)
             PanelRegistered?.Invoke(null, new PanelRegisteredEventArgs(panelInfo));
         }
 
@@ -346,7 +421,69 @@ namespace DialogEditor.Plugins.Services
         /// </summary>
         public static IEnumerable<PanelInfo> GetAllRegisteredPanels()
         {
+            var count = _registeredPanels.Count;
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                $"GetAllRegisteredPanels: {count} panels in registry: [{string.Join(", ", _registeredPanels.Keys)}]");
             return _registeredPanels.Values;
+        }
+
+        /// <summary>
+        /// Check if a panel window is currently open (#235).
+        /// Used by plugins to determine if they should continue polling.
+        /// Returns false if window was closed by user (even if panel is still registered).
+        /// </summary>
+        public static bool IsPanelOpen(string fullPanelId)
+        {
+            // Check if window is currently open, not just registered
+            var isOpen = _panelWindowOpen.TryGetValue(fullPanelId, out var windowOpen) && windowOpen;
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                $"IsPanelOpen({fullPanelId}): windowOpen={windowOpen}, result={isOpen}, registered={_registeredPanels.ContainsKey(fullPanelId)}");
+            return isOpen;
+        }
+
+        /// <summary>
+        /// Mark a panel window as closed when user closes the window (#235).
+        /// Keeps panel registration for potential reopen, but signals plugin to exit.
+        /// </summary>
+        public static void MarkPanelWindowClosed(string fullPanelId)
+        {
+            _panelWindowOpen[fullPanelId] = false;
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel window marked closed: {fullPanelId}");
+        }
+
+        /// <summary>
+        /// Mark a panel window as open when it's created/reopened (#235).
+        /// </summary>
+        public static void MarkPanelWindowOpen(string fullPanelId)
+        {
+            _panelWindowOpen[fullPanelId] = true;
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel window marked open: {fullPanelId}");
+        }
+
+        /// <summary>
+        /// Broadcast a setting change from UI to plugin (#235).
+        /// Used for toggle states like sync_selection, auto_refresh that need to persist across re-renders.
+        /// Also stores the setting for later retrieval by plugins via GetPanelSetting.
+        /// </summary>
+        public static void BroadcastPluginSetting(string fullPanelId, string settingName, string settingValue)
+        {
+            // Store setting for persistence across re-renders
+            var key = $"{fullPanelId}:{settingName}";
+            _panelSettings[key] = settingValue;
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"Stored setting: {key} = {settingValue}");
+
+            // Raise event for any listeners
+            PluginSettingChanged?.Invoke(null, new PluginSettingChangedEventArgs(fullPanelId, settingName, settingValue));
+        }
+
+        /// <summary>
+        /// Get a stored panel setting (#235).
+        /// Returns null if setting not found.
+        /// </summary>
+        public static string? GetPanelSetting(string fullPanelId, string settingName)
+        {
+            var key = $"{fullPanelId}:{settingName}";
+            return _panelSettings.TryGetValue(key, out var value) ? value : null;
         }
 
         /// <summary>
@@ -362,6 +499,7 @@ namespace DialogEditor.Plugins.Services
             {
                 if (_registeredPanels.TryRemove(key, out _))
                 {
+                    _panelWindowOpen.TryRemove(key, out _);  // Also remove from window tracking (#235)
                     PanelClosed?.Invoke(null, new PanelClosedEventArgs(key));
                 }
             }
@@ -431,6 +569,23 @@ namespace DialogEditor.Plugins.Services
         public PanelClosedEventArgs(string fullPanelId)
         {
             FullPanelId = fullPanelId;
+        }
+    }
+
+    /// <summary>
+    /// Event args for plugin setting changes from UI (#235).
+    /// </summary>
+    public class PluginSettingChangedEventArgs : EventArgs
+    {
+        public string FullPanelId { get; }
+        public string SettingName { get; }
+        public string SettingValue { get; }
+
+        public PluginSettingChangedEventArgs(string fullPanelId, string settingName, string settingValue)
+        {
+            FullPanelId = fullPanelId;
+            SettingName = settingName;
+            SettingValue = settingValue;
         }
     }
 }
