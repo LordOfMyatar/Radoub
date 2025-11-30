@@ -1,6 +1,6 @@
 # Flowchart View Plugin
 
-ChatMapper-style flowchart visualization for Parley dialog trees.
+Flowchart visualization for Parley dialog trees.
 
 ## Overview
 
