@@ -295,14 +295,14 @@ namespace DialogEditor.Models
                     if (pointer.IsLink)
                     {
                         DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating link node for '{pointer.Node.DisplayText}' (IsLink=true)");
-                        var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Link", pointer);
+                        var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Link", pointer, _originalNode);
                         _children.Add(linkNode);
                     }
                     // Check if node is in our ancestor chain (circular reference within this path)
                     else if (_ancestorNodes.Contains(pointer.Node))
                     {
                         DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating circular link for '{pointer.Node.DisplayText}' (ancestor chain protection)");
-                        var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Circular");
+                        var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Circular", null, _originalNode);
                         _children.Add(linkNode);
                     }
                     else
@@ -359,13 +359,20 @@ namespace DialogEditor.Models
     {
         private readonly DialogNode _linkedNode;
         private readonly string _linkType;
+        private readonly DialogNode? _parentNode;  // Parent node for link ID construction (#234)
 
-        public TreeViewSafeLinkNode(DialogNode linkedNode, int depth, string linkType = "Link", DialogPtr? sourcePointer = null)
+        public TreeViewSafeLinkNode(DialogNode linkedNode, int depth, string linkType = "Link", DialogPtr? sourcePointer = null, DialogNode? parentNode = null)
             : base(linkedNode, new HashSet<DialogNode>(), depth, sourcePointer)
         {
             _linkedNode = linkedNode;
             _linkType = linkType;
+            _parentNode = parentNode;
         }
+
+        /// <summary>
+        /// The parent node that contains the pointer to this link (for link ID construction #234)
+        /// </summary>
+        public DialogNode? ParentNode => _parentNode;
 
         // DisplayText now uses base class implementation which properly handles:
         // - Empty text showing as [CONTINUE]
@@ -423,6 +430,12 @@ namespace DialogEditor.Models
         public override string NodeColor => "Gray";
         public bool IsRoot => true;
         public Dialog Dialog => _dialog;
+
+        /// <summary>
+        /// Override HasChildren to check actual Children collection instead of pointers.
+        /// ROOT node's children are added directly by PopulateDialogNodes, not via pointers.
+        /// </summary>
+        public override bool HasChildren => Children != null && Children.Count > 0;
     }
 
     /// <summary>

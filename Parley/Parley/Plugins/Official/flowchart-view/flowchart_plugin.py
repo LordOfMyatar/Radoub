@@ -53,6 +53,8 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             --control-hover: #444;
             --link-color: #555;
             --link-condition: #e74c3c;
+            --selection-color: #f1c40f;
+            --selection-glow: rgba(241, 196, 15, 0.6);
         }}
         body.light {{
             background: #f5f5f5;
@@ -63,6 +65,8 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             --control-hover: #e0e0e0;
             --link-color: #95a5a6;
             --link-condition: #c0392b;
+            --selection-color: #d4ac0d;
+            --selection-glow: rgba(212, 172, 13, 0.5);
         }}
         #flowchart {{
             width: 100%;
@@ -96,9 +100,18 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             stroke-dasharray: 4,2;
             opacity: 0.7;
         }}
+        /* Selection highlight - theme-aware (#234) */
         .node.selected rect {{
-            stroke: #f1c40f;
-            stroke-width: 3px;
+            stroke: var(--selection-color) !important;
+            stroke-width: 4px !important;
+            filter: drop-shadow(0 0 8px var(--selection-glow)) drop-shadow(0 0 12px var(--selection-glow));
+        }}
+        /* Secondary highlight for link target nodes (#234) */
+        .node.target-highlight rect {{
+            stroke: var(--selection-color) !important;
+            stroke-width: 3px !important;
+            stroke-dasharray: 6,3 !important;
+            filter: drop-shadow(0 0 4px var(--selection-glow));
         }}
         .node text {{
             fill: var(--text-primary, #ecf0f1);
@@ -232,6 +245,7 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
         // Dialog data and config injected by Python
         const dialogData = {dialog_data};
         const speakerColors = {speaker_colors};
+        const initialSelectedNodeId = {selected_node_id};
 
         const svg = d3.select("#flowchart");
         let width = window.innerWidth;
@@ -463,18 +477,107 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
                     .text(`→ ${{node.link_target}}`);
             }}
 
-            // Click handler
+            // Click handler (Epic 40 Phase 3 / #234)
             nodeG.on("click", function(event) {{
-                // Remove previous selection
+                // Remove previous selection and target highlights
                 d3.selectAll(".node").classed("selected", false);
+                d3.selectAll(".node").classed("target-highlight", false);
+
                 // Select clicked node
                 d3.select(this).classed("selected", true);
-                // Notify parent (if bridge exists)
-                if (window.notifyNodeSelected) {{
-                    window.notifyNodeSelected(node.id);
+
+                // Determine what ID to send to Parley for tree selection
+                let selectionId = node.id;
+
+                // If this is a link node, also highlight the target node (#234)
+                // Send the TARGET id to Parley (for tree selection), not the link id
+                if (node.is_link && node.link_target) {{
+                    d3.selectAll(".node").each(function() {{
+                        const el = d3.select(this);
+                        if (el.attr("data-id") === node.link_target) {{
+                            el.classed("target-highlight", true);
+                        }}
+                    }});
+                    // Send target ID so Parley selects the actual node in tree
+                    // This prevents the plugin from detecting a mismatch and re-rendering
+                    selectionId = node.link_target;
+                    console.log("[Flowchart] Link node clicked:", node.id, "-> selecting target:", node.link_target);
+                }} else {{
+                    console.log("[Flowchart] Node clicked:", node.id);
                 }}
+
+                // Notify Parley via custom URL scheme (BeforeNavigate interception)
+                window.location.href = "parley://selectnode/" + encodeURIComponent(selectionId);
             }});
         }});
+
+        // Function to select a node by ID (called when Parley selection changes)
+        function selectNodeById(nodeId) {{
+            if (!nodeId) return;
+
+            // Clear all highlights
+            d3.selectAll(".node").classed("selected", false);
+            d3.selectAll(".node").classed("target-highlight", false);
+
+            // Find the node data to check if it's a link
+            const nodeData = nodes.find(n => n.id === nodeId);
+
+            d3.selectAll(".node").each(function() {{
+                const el = d3.select(this);
+                if (el.attr("data-id") === nodeId) {{
+                    el.classed("selected", true);
+                    // Scroll node into view
+                    scrollToNode(el);
+                }}
+            }});
+
+            // If selecting a link node, also highlight its target (#234)
+            if (nodeData && nodeData.is_link && nodeData.link_target) {{
+                d3.selectAll(".node").each(function() {{
+                    const el = d3.select(this);
+                    if (el.attr("data-id") === nodeData.link_target) {{
+                        el.classed("target-highlight", true);
+                    }}
+                }});
+            }}
+        }}
+
+        // Scroll the SVG to center on a node
+        function scrollToNode(nodeEl) {{
+            try {{
+                const node = nodeEl.node();
+                if (!node) return;
+                const bbox = node.getBBox();
+                const transform = nodeEl.attr("transform");
+                // Extract translate values
+                const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
+                if (match) {{
+                    const tx = parseFloat(match[1]) + bbox.width / 2;
+                    const ty = parseFloat(match[2]) + bbox.height / 2;
+                    // Center the view on this node
+                    const scale = d3.zoomTransform(svg.node()).k || 1;
+                    const newX = width / 2 - tx * scale;
+                    const newY = height / 2 - ty * scale;
+                    svg.transition().duration(300).call(
+                        zoom.transform,
+                        d3.zoomIdentity.translate(newX, newY).scale(scale)
+                    );
+                }}
+            }} catch (e) {{
+                console.log("scrollToNode error:", e);
+            }}
+        }}
+
+        // Apply initial selection if provided
+        // Skip fitToScreen if selecting a node - just scroll to it instead
+        if (initialSelectedNodeId) {{
+            setTimeout(() => {{
+                selectNodeById(initialSelectedNodeId);
+            }}, 100);
+        }} else {{
+            // Initial fit only when no selection (first load)
+            setTimeout(fitToScreen, 100);
+        }}
 
         // Helper functions
         function truncateText(text, maxLen) {{
@@ -515,9 +618,6 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             height = window.innerHeight;
             svg.attr("width", width).attr("height", height);
         }});
-
-        // Initial fit after render
-        setTimeout(fitToScreen, 100);
     </script>
 </body>
 </html>
@@ -538,6 +638,7 @@ class FlowchartPlugin:
         self.current_dialog_id: Optional[str] = None
         self.current_dialog_name: Optional[str] = None
         self._last_structure_hash: Optional[str] = None
+        self._last_selected_node_id: Optional[str] = None  # Track selection for bidirectional sync (#234)
 
         # Plugin state
         self._initialized = False
@@ -754,6 +855,14 @@ class FlowchartPlugin:
         theme_info = self.client.get_theme()
         theme = "dark" if theme_info.get("is_dark", True) else "light"
 
+        # Get current selection for initial highlight (#234)
+        selected_node_id = self._last_selected_node_id
+        if not selected_node_id and self.client:
+            node_id, _ = self.client.get_selected_node()
+            if node_id:
+                selected_node_id = node_id
+                self._last_selected_node_id = node_id
+
         # Generate HTML with dialog data
         html = FLOWCHART_HTML_TEMPLATE.format(
             dialog_name=self.current_dialog_name or "Untitled",
@@ -761,6 +870,7 @@ class FlowchartPlugin:
             dialog_data=json.dumps(dialog_data),
             speaker_colors=json.dumps(speaker_colors),
             theme=theme,
+            selected_node_id=json.dumps(selected_node_id),  # null or "entry_0" etc
         )
 
         # Send to panel
@@ -886,18 +996,26 @@ class FlowchartPlugin:
 
         return {"nodes": nodes, "links": links}
 
-    def _on_node_selected(self, node_id: str):
+    def _on_flowchart_node_clicked(self, node_id: str):
         """
-        Handle node selection events.
-
-        Syncs selection between tree view and flowchart.
+        Handle node click in the flowchart (Epic 40 Phase 3 / #234).
+        Calls Parley's SelectNode API to sync selection back to tree view.
 
         Args:
-            node_id: ID of the selected node
+            node_id: ID of the clicked node
         """
-        # TODO: Highlight node in flowchart (#234)
-        # TODO: Scroll flowchart to show selected node
-        print(f"[Flowchart] Node selected: {node_id}")
+        if not self.client:
+            return
+
+        print(f"[Flowchart] User clicked node: {node_id}")
+
+        # Request Parley to select this node in the tree view
+        success, error = self.client.select_node(node_id)
+        if success:
+            print(f"[Flowchart] Successfully requested selection of {node_id}")
+            self._last_selected_node_id = node_id  # Update tracking to avoid feedback loop
+        else:
+            print(f"[Flowchart] Failed to select node: {error}")
 
     def run(self):
         """
@@ -918,12 +1036,16 @@ class FlowchartPlugin:
                 # Will be replaced with proper event subscription in Epic 0 completion
                 self._refresh_dialog_state()
 
-                # Also check selected node
+                # Check for selection changes (bidirectional sync #234)
+                # NOTE: We only track selection, we do NOT re-render on selection changes.
+                # Re-rendering would wipe out the JavaScript highlight state set by flowchart clicks.
+                # The flowchart JS handles its own highlighting when user clicks in flowchart.
+                # Tree→Flow sync would require ExecuteJavaScript which isn't available.
                 if self.client:
                     node_id, node_text = self.client.get_selected_node()
-                    if node_id:
-                        # Could track previous selection to detect changes
-                        pass
+                    if node_id and node_id != self._last_selected_node_id:
+                        self._last_selected_node_id = node_id
+                        print(f"[Flowchart] Selection changed to: {node_id} (tracking only, no re-render)")
 
                 time.sleep(poll_interval)
 

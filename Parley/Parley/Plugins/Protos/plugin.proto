@@ -51,6 +51,7 @@ service UIService {
 service DialogService {
   rpc GetCurrentDialog (GetCurrentDialogRequest) returns (GetCurrentDialogResponse);
   rpc GetSelectedNode (GetSelectedNodeRequest) returns (GetSelectedNodeResponse);
+  rpc SelectNode (SelectNodeRequest) returns (SelectNodeResponse);
   rpc GetDialogStructure (GetDialogStructureRequest) returns (GetDialogStructureResponse);
 }
 
@@ -156,6 +157,16 @@ message GetSelectedNodeRequest {
 message GetSelectedNodeResponse {
   string node_id = 1;
   string node_text = 2;
+}
+
+// SelectNode - programmatically select a node in Parley's tree view (Epic 40 Phase 3 / #234)
+message SelectNodeRequest {
+  string node_id = 1;           // Node ID to select (e.g., "entry_0", "reply_3")
+}
+
+message SelectNodeResponse {
+  bool success = 1;
+  string error_message = 2;
 }
 
 // File service messages

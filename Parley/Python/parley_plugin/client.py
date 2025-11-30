@@ -11,6 +11,7 @@ from .plugin_pb2 import (
     ShowDialogRequest,
     GetCurrentDialogRequest,
     GetSelectedNodeRequest,
+    SelectNodeRequest,
     GetDialogStructureRequest,
     RegisterPanelRequest,
     UpdatePanelContentRequest,
@@ -200,6 +201,24 @@ class ParleyClient:
         except grpc.RpcError as e:
             print(f"gRPC error: {e}")
             return ("", "")
+
+    def select_node(self, node_id: str) -> tuple:
+        """
+        Select a node in Parley's tree view (Epic 40 Phase 3 / #234).
+
+        Args:
+            node_id: Node ID to select (e.g., "entry_0", "reply_3", "root")
+
+        Returns:
+            Tuple of (success: bool, error_message: str)
+        """
+        try:
+            request = SelectNodeRequest(node_id=node_id)
+            response = self.dialog.SelectNode(request)
+            return (response.success, response.error_message)
+        except grpc.RpcError as e:
+            print(f"gRPC error: {e}")
+            return (False, str(e))
 
     def get_dialog_structure(self) -> dict:
         """

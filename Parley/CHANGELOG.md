@@ -18,10 +18,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Third phase of the ChatMapper-style flowchart view plugin (Epic 3).
 
 **Work Items**:
-- [ ] #234 - Bidirectional node selection sync
+- [x] #234 - Bidirectional node selection sync
 - [ ] #235 - User-controllable refresh settings
 - [ ] #236 - Minimap navigation panel
-- [ ] #237 - Circular reference handling
+- [x] #237 - Circular reference handling (already implemented via IsLink + processedX tracking)
+
+**Implemented (#234)**:
+- Added `SelectNode` gRPC RPC - plugins can request Parley to select a node in the tree view
+- Added `DialogContextService.SelectedNodeId` tracking - syncs tree selection to plugins
+- Added `NodeSelectionRequested` event - plugins can request selection changes
+- JavaScript bridge in `PluginPanelWindow` - flowchart node clicks propagate to Parley
+- Flowchart highlights selected node and scrolls into view when Parley selection changes
+- Initial selection state passed to flowchart HTML on render
+- Extracted `PluginSelectionSyncHelper` to keep MainWindow clean (~200 lines moved)
+
+**Already Done (#237)**:
+- `GetDialogStructure` uses `processedEntries`/`processedReplies` HashSets to prevent infinite recursion
+- `IsLink` pointers create terminal "link" nodes instead of recursing into targets
+- Link nodes styled with dashed borders and reduced opacity (Phase 2 #232)
 
 ---
 

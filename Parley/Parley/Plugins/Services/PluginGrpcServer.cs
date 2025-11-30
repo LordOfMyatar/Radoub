@@ -444,6 +444,56 @@ namespace DialogEditor.Plugins.Services
             }
         }
 
+        /// <summary>
+        /// Select a node programmatically from a plugin (Epic 40 Phase 3 / #234).
+        /// </summary>
+        public override Task<SelectNodeResponse> SelectNode(SelectNodeRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var dialogContext = DialogContextService.Instance;
+                var nodeId = request.NodeId;
+
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"SelectNode request: {nodeId}");
+
+                if (string.IsNullOrEmpty(nodeId))
+                {
+                    return Task.FromResult(new SelectNodeResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Node ID is required"
+                    });
+                }
+
+                // Request node selection - this raises an event for the View layer
+                bool success = dialogContext.RequestNodeSelection(nodeId);
+
+                if (success)
+                {
+                    UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"SelectNode: Requested selection of {nodeId}");
+                }
+                else
+                {
+                    UnifiedLogger.LogPlugin(LogLevel.WARN, $"SelectNode: Invalid node ID {nodeId}");
+                }
+
+                return Task.FromResult(new SelectNodeResponse
+                {
+                    Success = success,
+                    ErrorMessage = success ? "" : $"Invalid node ID: {nodeId}"
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"SelectNode failed: {ex.Message}");
+                return Task.FromResult(new SelectNodeResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                });
+            }
+        }
+
         public override Task<GetDialogStructureResponse> GetDialogStructure(GetDialogStructureRequest request, ServerCallContext context)
         {
             try
