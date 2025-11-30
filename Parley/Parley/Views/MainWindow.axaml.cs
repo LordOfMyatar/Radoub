@@ -1096,7 +1096,14 @@ namespace DialogEditor.Views
 
             if (closedPanels.Count == 0)
             {
-                _viewModel.StatusMessage = "No closed plugin panels to reopen";
+                if (allPanels.Count == 0)
+                {
+                    _viewModel.StatusMessage = "No plugin panels registered (plugin may not have started)";
+                }
+                else
+                {
+                    _viewModel.StatusMessage = "All plugin panels are already open";
+                }
                 return;
             }
 
