@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.34-alpha] - 2025-11-29
+**Branch**: `parley/feat/epic-40-phase2-layout` | **PR**: #TBD
+
+### Epic 40 Phase 2: Layout and Visual Design (#228-#232)
+
+Second phase of the ChatMapper-style flowchart view plugin (Epic 3).
+
+**Work Items**:
+- [ ] #228 - Sugiyama auto-layout (dagre.js)
+- [ ] #229 - Theme awareness
+- [ ] #230 - NPC speaker color/shape integration
+- [ ] #231 - Script indicators on nodes
+- [ ] #232 - Link node styling (grayed + dotted)
+
+---
+
 ## [0.1.33-alpha] - 2025-11-29
 **Branch**: `parley/feat/epic-40-phase1-foundation` | **PR**: #244
 
