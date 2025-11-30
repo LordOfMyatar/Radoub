@@ -420,15 +420,10 @@ function toggleAutoRefresh() {
 
 // Selection sync toggle (#235)
 // syncSelectionEnabled is set by the HTML template
-// Called by onchange on checkbox - read checkbox state directly to avoid sync issues
+// Called by onclick - fires immediately on click before page can reload
 function toggleSyncSelection() {
-    const checkbox = document.getElementById("syncCheckbox");
-    if (checkbox) {
-        // Read directly from checkbox to ensure JS state matches UI state
-        syncSelectionEnabled = checkbox.checked;
-    } else {
-        syncSelectionEnabled = !syncSelectionEnabled;
-    }
+    // Toggle state - onclick fires before checkbox.checked updates visually
+    syncSelectionEnabled = !syncSelectionEnabled;
     console.log("[Flowchart] Sync selection:", syncSelectionEnabled ? "enabled" : "disabled");
     // Notify Parley of the change so it persists across re-renders (#235)
     sendSettingToParley("parley://synctoggle/" + (syncSelectionEnabled ? "on" : "off"));

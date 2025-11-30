@@ -15,7 +15,7 @@
         <button onclick="requestRefresh()" title="Refresh flowchart">⟳</button>
         <button id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Toggle auto-refresh">{{auto_refresh_icon}}</button>
         <label class="sync-toggle" title="Sync selection with tree view">
-            <input type="checkbox" id="syncCheckbox" onchange="toggleSyncSelection()" {{sync_checked}}>
+            <input type="checkbox" id="syncCheckbox" onclick="toggleSyncSelection()" {{sync_checked}}>
             <span>Sync</span>
         </label>
     </div>

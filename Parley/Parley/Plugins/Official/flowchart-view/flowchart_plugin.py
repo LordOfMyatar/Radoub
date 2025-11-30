@@ -316,7 +316,9 @@ class FlowchartPlugin:
                 self._last_selected_node_id = node_id
 
         # Check for stored UI toggle settings (#235)
-        # This persists settings across re-renders
+        # Settings are stored in C# when user toggles in UI
+        # We only update Python state if C# has a stored value (user explicitly changed it)
+        # This prevents race conditions where page reload happens before toggle is stored
         found, stored_sync = self.client.get_panel_setting("flowchart-view", "sync_selection")
         if found:
             self._sync_selection_enabled = stored_sync == "true"
