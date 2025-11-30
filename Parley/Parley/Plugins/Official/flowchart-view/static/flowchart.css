@@ -191,6 +191,29 @@ marker {
     background: var(--control-hover, #444);
 }
 
+/* Sync selection toggle (#235) */
+#controls .sync-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--control-bg, #333);
+    color: var(--text-primary, #fff);
+    border: 1px solid var(--control-border, #555);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+#controls .sync-toggle:hover {
+    background: var(--control-hover, #444);
+}
+
+#controls .sync-toggle input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+}
+
 #info {
     position: absolute;
     bottom: 10px;

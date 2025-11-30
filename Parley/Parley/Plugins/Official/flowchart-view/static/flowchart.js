@@ -7,7 +7,7 @@
  */
 
 // These globals are set by the HTML template before this script loads
-// dialogData, speakerColors, initialSelectedNodeId
+// dialogData, speakerColors, initialSelectedNodeId, syncSelectionEnabled
 
 const svg = d3.select("#flowchart");
 let width = window.innerWidth;
@@ -261,9 +261,11 @@ dagreGraph.nodes().forEach(nodeId => {
             });
         }
 
-        // Send node ID to Parley via custom URL scheme
+        // Send node ID to Parley via custom URL scheme (if sync enabled)
         console.log("[Flowchart] Node clicked:", node.id);
-        window.location.href = "parley://selectnode/" + encodeURIComponent(node.id);
+        if (syncSelectionEnabled) {
+            window.location.href = "parley://selectnode/" + encodeURIComponent(node.id);
+        }
     });
 });
 
@@ -286,9 +288,13 @@ dagreGraph.nodes().forEach(nodeId => {
 /**
  * Select a node by ID (called when Parley selection changes)
  * Exposed as window.selectNodeById for C# ExecuteScript calls (#234)
+ * Respects syncSelectionEnabled setting (#235)
  */
 window.selectNodeById = function(nodeId) {
     if (!nodeId) return;
+
+    // If sync is disabled, ignore incoming selection requests (#235)
+    if (!syncSelectionEnabled) return;
 
     // Clear all highlights
     d3.selectAll(".node").classed("selected", false);
@@ -395,6 +401,15 @@ function toggleAutoRefresh() {
     btn.textContent = autoRefreshEnabled ? "⏸" : "▶";
     btn.title = autoRefreshEnabled ? "Pause auto-refresh" : "Resume auto-refresh";
     window.location.href = "parley://autorefresh/" + (autoRefreshEnabled ? "on" : "off");
+}
+
+// Selection sync toggle (#235)
+// syncSelectionEnabled is set by the HTML template
+function toggleSyncSelection() {
+    syncSelectionEnabled = !syncSelectionEnabled;
+    const checkbox = document.getElementById("syncCheckbox");
+    if (checkbox) checkbox.checked = syncSelectionEnabled;
+    console.log("[Flowchart] Sync selection:", syncSelectionEnabled ? "enabled" : "disabled");
 }
 
 // Handle window resize

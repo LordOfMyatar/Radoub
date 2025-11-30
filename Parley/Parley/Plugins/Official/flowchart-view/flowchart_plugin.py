@@ -50,6 +50,7 @@ class FlowchartPlugin:
 
         # Refresh settings (#235)
         self._auto_refresh_enabled = True  # Default: auto-refresh on
+        self._sync_selection_enabled = True  # Default: bidirectional sync on
         self._refresh_interval = 2.0  # Default: 2 seconds
         self._poll_count = 0  # For reducing log verbosity
         self._logged_no_dialog = False  # Avoid spamming "no dialog" message
@@ -316,6 +317,7 @@ class FlowchartPlugin:
 
         # Generate HTML from template with bundled assets
         auto_refresh_icon = "⏸" if self._auto_refresh_enabled else "▶"
+        sync_checked = "checked" if self._sync_selection_enabled else ""
 
         html = self._template_cache
         html = html.replace("{{css_content}}", self._css_cache)
@@ -330,6 +332,8 @@ class FlowchartPlugin:
         html = html.replace("{{selected_node_id}}", json.dumps(selected_node_id))
         html = html.replace("{{auto_refresh_icon}}", auto_refresh_icon)
         html = html.replace("{{auto_refresh_enabled}}", "true" if self._auto_refresh_enabled else "false")
+        html = html.replace("{{sync_selection_enabled}}", "true" if self._sync_selection_enabled else "false")
+        html = html.replace("{{sync_checked}}", sync_checked)
 
         # Send to panel
         success, error_msg = self.client.update_panel_content(

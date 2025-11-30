@@ -14,6 +14,10 @@
         <button onclick="fitToScreen()">Fit</button>
         <button onclick="requestRefresh()" title="Refresh flowchart">⟳</button>
         <button id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Toggle auto-refresh">{{auto_refresh_icon}}</button>
+        <label class="sync-toggle" title="Sync selection with tree view">
+            <input type="checkbox" id="syncCheckbox" onchange="toggleSyncSelection()" {{sync_checked}}>
+            <span>Sync</span>
+        </label>
     </div>
     <div id="info">
         <span id="dialog-name">{{dialog_name}}</span> |
@@ -43,6 +47,7 @@
         const speakerColors = {{speaker_colors}};
         const initialSelectedNodeId = {{selected_node_id}};
         let autoRefreshEnabled = {{auto_refresh_enabled}};
+        let syncSelectionEnabled = {{sync_selection_enabled}};
 
         {{js_content}}
     </script>
