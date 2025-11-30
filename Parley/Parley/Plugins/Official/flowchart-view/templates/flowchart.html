@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        {{css_content}}
+    </style>
+</head>
+<body class="{{theme}}">
+    <div id="controls">
+        <button onclick="zoomIn()">+</button>
+        <button onclick="zoomOut()">-</button>
+        <button onclick="resetZoom()">Reset</button>
+        <button onclick="fitToScreen()">Fit</button>
+        <button onclick="requestRefresh()" title="Refresh flowchart">⟳</button>
+        <button id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Toggle auto-refresh">{{auto_refresh_icon}}</button>
+    </div>
+    <div id="info">
+        <span id="dialog-name">{{dialog_name}}</span> |
+        <span id="node-count">{{node_count}} nodes</span>
+    </div>
+    <div id="legend">
+        <div class="legend-item"><div class="legend-color" style="background:#2d5a27"></div>NPC</div>
+        <div class="legend-item"><div class="legend-color" style="background:#1a4a6e"></div>PC</div>
+        <div class="legend-item"><div class="legend-color" style="background:#5a2d5a"></div>Root</div>
+        <div class="legend-item"><div class="legend-color" style="background:#4a4a4a;border:1px dashed #888"></div>Link</div>
+        <div class="legend-item"><span style="color:#27ae60">⚡</span>Action</div>
+        <div class="legend-item"><span style="color:#e74c3c">❓</span>Condition</div>
+    </div>
+    <svg id="flowchart"></svg>
+
+    <!-- D3.js v7 (bundled locally for security) -->
+    <script>
+        {{d3_content}}
+    </script>
+    <!-- dagre for layout algorithm (bundled locally for security) -->
+    <script>
+        {{dagre_content}}
+    </script>
+    <script>
+        // Dialog data and config injected by Python
+        const dialogData = {{dialog_data}};
+        const speakerColors = {{speaker_colors}};
+        const initialSelectedNodeId = {{selected_node_id}};
+        let autoRefreshEnabled = {{auto_refresh_enabled}};
+
+        {{js_content}}
+    </script>
+</body>
+</html>

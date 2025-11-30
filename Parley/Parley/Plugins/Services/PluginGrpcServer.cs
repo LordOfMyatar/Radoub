@@ -155,7 +155,14 @@ namespace DialogEditor.Plugins.Services
     }
 
     /// <summary>
-    /// UI service implementation
+    /// UI service implementation for gRPC endpoints.
+    ///
+    /// NOTE: This is the active implementation used by the gRPC server.
+    /// PluginUIService also extends UIServiceBase but is not currently wired to gRPC.
+    /// When proper sandboxing is implemented (#104), security context should be
+    /// integrated here or UIServiceImpl should delegate to PluginUIService instance methods.
+    ///
+    /// Current state: No per-plugin security context - all plugins share same permissions.
     /// </summary>
     internal class UIServiceImpl : Proto.UIService.UIServiceBase
     {

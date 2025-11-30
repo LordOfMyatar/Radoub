@@ -70,14 +70,15 @@ namespace DialogEditor.Plugins
                     }
                 };
 
-                // Set PYTHONPATH environment variable
+                // Set PYTHONPATH environment variable (sanitized for security)
+                // Only include our known-safe parley_plugin path, don't inherit from environment
                 if (!string.IsNullOrEmpty(pythonLibPath))
                 {
-                    var existingPythonPath = Environment.GetEnvironmentVariable("PYTHONPATH") ?? "";
-                    var newPythonPath = string.IsNullOrEmpty(existingPythonPath)
-                        ? pythonLibPath
-                        : $"{pythonLibPath}{Path.PathSeparator}{existingPythonPath}";
-                    _process.StartInfo.EnvironmentVariables["PYTHONPATH"] = newPythonPath;
+                    // Security: Don't inherit existing PYTHONPATH which could contain malicious paths
+                    // Only set our trusted parley_plugin library path
+                    _process.StartInfo.EnvironmentVariables["PYTHONPATH"] = pythonLibPath;
+                    UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                        $"Set sanitized PYTHONPATH for plugin {PluginId}");
                 }
 
                 // Pass gRPC port to plugin via environment variable

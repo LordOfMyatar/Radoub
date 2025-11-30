@@ -6,12 +6,18 @@ Displays dialog nodes as colored boxes with connecting lines,
 supporting zoom, pan, auto-layout, and bidirectional selection sync.
 
 Epic #40: Advanced Visualization
+
+Refactored for security and maintainability:
+- D3.js and dagre.js bundled locally (no CDN)
+- CSS, JS, and HTML separated into static/templates
 """
 
+import os
 import sys
 import time
 import json
-import threading
+import hashlib
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 
 # Force unbuffered output so logs appear immediately
@@ -19,638 +25,6 @@ sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
 
 from parley_plugin import ParleyClient
-
-
-# D3.js + dagre.js flowchart HTML template
-# Uses dagre-d3 for Sugiyama hierarchical layout (#228)
-# Supports theme awareness (#229), speaker colors (#230),
-# script indicators (#231), and link node styling (#232)
-FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        * {{
-            box-sizing: border-box;
-        }}
-        html, body {{
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }}
-        /* Theme-aware colors (#229) */
-        body.dark {{
-            background: #1e1e1e;
-            --text-primary: #ecf0f1;
-            --text-secondary: #95a5a6;
-            --control-bg: #333;
-            --control-border: #555;
-            --control-hover: #444;
-            --link-color: #555;
-            --link-condition: #e74c3c;
-            --selection-color: #f1c40f;
-            --selection-glow: rgba(241, 196, 15, 0.6);
-        }}
-        body.light {{
-            background: #f5f5f5;
-            --text-primary: #2c3e50;
-            --text-secondary: #7f8c8d;
-            --control-bg: #fff;
-            --control-border: #ccc;
-            --control-hover: #e0e0e0;
-            --link-color: #95a5a6;
-            --link-condition: #c0392b;
-            --selection-color: #d4ac0d;
-            --selection-glow: rgba(212, 172, 13, 0.5);
-        }}
-        #flowchart {{
-            width: 100%;
-            height: 100%;
-        }}
-        .node {{
-            cursor: pointer;
-        }}
-        .node rect {{
-            stroke-width: 2px;
-            rx: 6;
-            ry: 6;
-        }}
-        /* Node type colors - NPC (#230 - speaker-based coloring handled in JS) */
-        .node.npc rect {{
-            fill: #2d5a27;
-            stroke: #4a9c3f;
-        }}
-        .node.pc rect {{
-            fill: #1a4a6e;
-            stroke: #3498db;
-        }}
-        .node.root rect {{
-            fill: #5a2d5a;
-            stroke: #9b59b6;
-        }}
-        /* Link node styling (#232) - grayed appearance */
-        .node.link rect {{
-            fill: #4a4a4a;
-            stroke: #888;
-            stroke-dasharray: 4,2;
-            opacity: 0.7;
-        }}
-        /* Selection highlight - theme-aware (#234) */
-        .node.selected rect {{
-            stroke: var(--selection-color) !important;
-            stroke-width: 4px !important;
-            filter: drop-shadow(0 0 8px var(--selection-glow)) drop-shadow(0 0 12px var(--selection-glow));
-        }}
-        /* Secondary highlight for link target nodes (#234) */
-        .node.target-highlight rect {{
-            stroke: var(--selection-color) !important;
-            stroke-width: 3px !important;
-            stroke-dasharray: 6,3 !important;
-            filter: drop-shadow(0 0 4px var(--selection-glow));
-        }}
-        .node text {{
-            fill: var(--text-primary, #ecf0f1);
-            font-size: 11px;
-            pointer-events: none;
-        }}
-        .node .node-type {{
-            font-size: 9px;
-            fill: var(--text-secondary, #95a5a6);
-            text-transform: uppercase;
-        }}
-        .node .speaker-tag {{
-            font-size: 9px;
-            font-weight: bold;
-        }}
-        /* Script indicators (#231) */
-        .node .script-indicator {{
-            font-size: 10px;
-            fill: #f39c12;
-        }}
-        .node .script-indicator.condition {{
-            fill: #e74c3c;
-        }}
-        .node .script-indicator.action {{
-            fill: #27ae60;
-        }}
-        /* Edge styles - path element has the class directly */
-        path.edgePath {{
-            stroke: var(--link-color, #555);
-            stroke-width: 2px;
-            fill: none;
-        }}
-        /* Conditional edge styling (#231) */
-        path.edgePath.has-condition {{
-            stroke: var(--link-condition, #e74c3c);
-            stroke-dasharray: 5,3;
-        }}
-        /* Link-to-link edges (#232) - dotted lines */
-        path.edgePath.to-link {{
-            stroke-dasharray: 3,3;
-            opacity: 0.6;
-        }}
-        .edgeLabel {{
-            font-size: 10px;
-            fill: var(--text-secondary, #95a5a6);
-        }}
-        .edge-condition-marker {{
-            font-size: 14px;
-            fill: #e74c3c;
-            pointer-events: none;
-        }}
-        .node-action-marker {{
-            font-size: 14px;
-            fill: #f39c12;
-            pointer-events: none;
-        }}
-        marker {{
-            fill: var(--link-color, #555);
-        }}
-        #controls {{
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            display: flex;
-            gap: 5px;
-            z-index: 100;
-        }}
-        #controls button {{
-            background: var(--control-bg, #333);
-            color: var(--text-primary, #fff);
-            border: 1px solid var(--control-border, #555);
-            padding: 6px 12px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-size: 12px;
-        }}
-        #controls button:hover {{
-            background: var(--control-hover, #444);
-        }}
-        #info {{
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: var(--text-secondary, #888);
-            font-size: 11px;
-            z-index: 100;
-        }}
-        #legend {{
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            display: flex;
-            gap: 12px;
-            font-size: 10px;
-            color: var(--text-secondary, #888);
-            z-index: 100;
-        }}
-        #legend .legend-item {{
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }}
-        #legend .legend-color {{
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
-        }}
-    </style>
-</head>
-<body class="{theme}">
-    <div id="controls">
-        <button onclick="zoomIn()">+</button>
-        <button onclick="zoomOut()">-</button>
-        <button onclick="resetZoom()">Reset</button>
-        <button onclick="fitToScreen()">Fit</button>
-        <button onclick="requestRefresh()" title="Refresh flowchart">⟳</button>
-        <button id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Toggle auto-refresh">{auto_refresh_icon}</button>
-    </div>
-    <div id="info">
-        <span id="dialog-name">{dialog_name}</span> |
-        <span id="node-count">{node_count} nodes</span>
-    </div>
-    <div id="legend">
-        <div class="legend-item"><div class="legend-color" style="background:#2d5a27"></div>NPC</div>
-        <div class="legend-item"><div class="legend-color" style="background:#1a4a6e"></div>PC</div>
-        <div class="legend-item"><div class="legend-color" style="background:#5a2d5a"></div>Root</div>
-        <div class="legend-item"><div class="legend-color" style="background:#4a4a4a;border:1px dashed #888"></div>Link</div>
-        <div class="legend-item"><span style="color:#27ae60">⚡</span>Action</div>
-        <div class="legend-item"><span style="color:#e74c3c">❓</span>Condition</div>
-    </div>
-    <svg id="flowchart"></svg>
-
-    <!-- D3.js v7 -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <!-- dagre for layout algorithm -->
-    <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
-    <script>
-        // Dialog data and config injected by Python
-        const dialogData = {dialog_data};
-        const speakerColors = {speaker_colors};
-        const initialSelectedNodeId = {selected_node_id};
-
-        const svg = d3.select("#flowchart");
-        let width = window.innerWidth;
-        let height = window.innerHeight;
-
-        svg.attr("width", width).attr("height", height);
-
-        // Create container group for zoom/pan
-        const g = svg.append("g").attr("class", "graph-container");
-
-        // Define arrowhead marker
-        const defs = svg.append("defs");
-        defs.append("marker")
-            .attr("id", "arrowhead")
-            .attr("viewBox", "0 -5 10 10")
-            .attr("refX", 8)
-            .attr("refY", 0)
-            .attr("markerWidth", 6)
-            .attr("markerHeight", 6)
-            .attr("orient", "auto")
-            .append("path")
-            .attr("d", "M0,-5L10,0L0,5")
-            .attr("fill", "var(--link-color, #555)");
-
-        // Conditional edge marker (red)
-        defs.append("marker")
-            .attr("id", "arrowhead-condition")
-            .attr("viewBox", "0 -5 10 10")
-            .attr("refX", 8)
-            .attr("refY", 0)
-            .attr("markerWidth", 6)
-            .attr("markerHeight", 6)
-            .attr("orient", "auto")
-            .append("path")
-            .attr("d", "M0,-5L10,0L0,5")
-            .attr("fill", "var(--link-condition, #e74c3c)");
-
-        // Set up zoom behavior
-        const zoom = d3.zoom()
-            .scaleExtent([0.1, 4])
-            .on("zoom", (event) => g.attr("transform", event.transform));
-
-        svg.call(zoom);
-
-        // Parse nodes and links
-        const nodes = dialogData.nodes || [];
-        const links = dialogData.links || [];
-
-        // Create dagre graph for Sugiyama layout (#228)
-        const dagreGraph = new dagre.graphlib.Graph();
-        dagreGraph.setGraph({{
-            rankdir: "TB",     // Top to bottom (Entry at top)
-            nodesep: 60,       // Horizontal separation
-            ranksep: 80,       // Vertical separation between ranks
-            marginx: 20,
-            marginy: 20
-        }});
-        dagreGraph.setDefaultEdgeLabel(() => ({{}}));
-
-        // Node dimensions
-        const nodeWidth = 160;
-        const nodeHeight = 60;
-
-        // Add nodes to dagre
-        nodes.forEach(node => {{
-            dagreGraph.setNode(node.id, {{
-                width: nodeWidth,
-                height: nodeHeight,
-                ...node
-            }});
-        }});
-
-        // Add edges to dagre
-        links.forEach(link => {{
-            dagreGraph.setEdge(link.source, link.target, {{
-                hasCondition: link.has_condition || false,
-                conditionScript: link.condition_script || ""
-            }});
-        }});
-
-        // Run the layout algorithm
-        dagre.layout(dagreGraph);
-
-        // Get speaker color for NPC nodes (#230)
-        // Uses colors from Parley settings via GetSpeakerColors API
-        function getSpeakerColor(nodeType, speaker) {{
-            // PC nodes use the PC color
-            if (nodeType === "pc") {{
-                return speakerColors["_pc"] || "#4FC3F7";
-            }}
-            // Named NPC speakers - check API colors first
-            if (speaker && speakerColors[speaker]) {{
-                return speakerColors[speaker];
-            }}
-            // Owner/default NPC (empty speaker) uses owner color
-            if (!speaker || speaker === "") {{
-                return speakerColors["_owner"] || "#FF8A65";
-            }}
-            // Fallback for unknown speakers - generate from hash
-            let hash = 0;
-            for (let i = 0; i < speaker.length; i++) {{
-                hash = speaker.charCodeAt(i) + ((hash << 5) - hash);
-            }}
-            const hue = Math.abs(hash % 360);
-            return `hsl(${{hue}}, 50%, 35%)`;
-        }}
-
-        // Build script indicator text (#231)
-        // Note: ⚡ for action scripts now shown as floating marker above nodes (#235)
-        function getScriptIndicators(node) {{
-            let indicators = [];
-            if (node.has_condition) indicators.push("❓");  // Only for link nodes
-            return indicators.join(" ");
-        }}
-
-        // Draw edges first (so they appear behind nodes)
-        const edgeGroup = g.append("g").attr("class", "edges");
-
-        dagreGraph.edges().forEach(e => {{
-            const edge = dagreGraph.edge(e);
-            const sourceNode = dagreGraph.node(e.v);
-            const targetNode = dagreGraph.node(e.w);
-
-            if (!sourceNode || !targetNode) return;
-
-            // Determine edge class
-            let edgeClass = "edgePath";
-            if (edge.hasCondition) edgeClass += " has-condition";
-            if (targetNode.type === "link") edgeClass += " to-link";
-
-            // Get edge points for path
-            const points = edge.points || [
-                {{ x: sourceNode.x, y: sourceNode.y + nodeHeight/2 }},
-                {{ x: targetNode.x, y: targetNode.y - nodeHeight/2 }}
-            ];
-
-            // Create path
-            edgeGroup.append("path")
-                .attr("class", edgeClass)
-                .attr("d", d3.line()
-                    .x(d => d.x)
-                    .y(d => d.y)
-                    .curve(d3.curveBasis)(points))
-                .attr("marker-end", edge.hasCondition ? "url(#arrowhead-condition)" : "url(#arrowhead)");
-
-            // Add condition marker ❓ at midpoint of conditional edges
-            if (edge.hasCondition && points.length >= 2) {{
-                const midIdx = Math.floor(points.length / 2);
-                const midPoint = points[midIdx];
-                edgeGroup.append("text")
-                    .attr("class", "edge-condition-marker")
-                    .attr("x", midPoint.x + 5)
-                    .attr("y", midPoint.y - 5)
-                    .text("❓");
-            }}
-        }});
-
-        // Draw nodes
-        const nodeGroup = g.append("g").attr("class", "nodes");
-
-        dagreGraph.nodes().forEach(nodeId => {{
-            const node = dagreGraph.node(nodeId);
-            if (!node) return;
-
-            const nodeG = nodeGroup.append("g")
-                .attr("class", `node ${{node.type || 'npc'}}`)
-                .attr("transform", `translate(${{node.x - nodeWidth/2}}, ${{node.y - nodeHeight/2}})`)
-                .attr("data-id", node.id)
-                .style("cursor", "pointer");
-
-            // Node rectangle - apply Parley speaker colors (#230)
-            const rect = nodeG.append("rect")
-                .attr("width", nodeWidth)
-                .attr("height", nodeHeight)
-                .attr("rx", 6)
-                .attr("ry", 6);
-
-            // Apply Parley color scheme for NPC and PC nodes
-            if (node.type === "npc" || node.type === "pc") {{
-                const nodeColor = getSpeakerColor(node.type, node.speaker || "");
-                if (nodeColor) {{
-                    rect.style("fill", nodeColor);
-                    // Lighter stroke
-                    const strokeColor = d3.color(nodeColor);
-                    if (strokeColor) {{
-                        rect.style("stroke", strokeColor.brighter(0.5));
-                    }}
-                }}
-            }}
-
-            // Type label with speaker tag (#230)
-            let typeLabel = (node.type || "npc").toUpperCase();
-            if (node.type === "npc" && node.speaker) {{
-                typeLabel = node.speaker.substring(0, 12);
-                if (node.speaker.length > 12) typeLabel += "…";
-            }}
-
-            nodeG.append("text")
-                .attr("class", node.speaker ? "speaker-tag" : "node-type")
-                .attr("x", 8)
-                .attr("y", 14)
-                .text(typeLabel);
-
-            // Script indicators (#231)
-            const indicators = getScriptIndicators(node);
-            if (indicators) {{
-                nodeG.append("text")
-                    .attr("class", "script-indicator")
-                    .attr("x", nodeWidth - 8)
-                    .attr("y", 14)
-                    .attr("text-anchor", "end")
-                    .text(indicators);
-            }}
-
-            // Node text (truncated)
-            const text = node.text || node.id;
-            const truncated = text.length > 22 ? text.substring(0, 22) + "…" : text;
-            nodeG.append("text")
-                .attr("x", 8)
-                .attr("y", 36)
-                .text(truncated);
-
-            // Link target indicator for link nodes (#232)
-            if (node.is_link && node.link_target) {{
-                nodeG.append("text")
-                    .attr("x", 8)
-                    .attr("y", 52)
-                    .attr("class", "node-type")
-                    .text(`→ ${{node.link_target}}`);
-            }}
-
-            // Click handler (Epic 40 Phase 3 / #234)
-            nodeG.on("click", function(event) {{
-                // Remove previous selection and target highlights
-                d3.selectAll(".node").classed("selected", false);
-                d3.selectAll(".node").classed("target-highlight", false);
-
-                // Select clicked node
-                d3.select(this).classed("selected", true);
-
-                // If this is a link node, also highlight the target node (#234)
-                if (node.is_link && node.link_target) {{
-                    d3.selectAll(".node").each(function() {{
-                        const el = d3.select(this);
-                        if (el.attr("data-id") === node.link_target) {{
-                            el.classed("target-highlight", true);
-                        }}
-                    }});
-                }}
-
-                // Always send the clicked node's ID - Parley will handle link IDs appropriately
-                console.log("[Flowchart] Node clicked:", node.id);
-                window.location.href = "parley://selectnode/" + encodeURIComponent(node.id);
-            }});
-        }});
-
-        // Draw action script markers above nodes (#235)
-        // Similar to condition markers on edges, but positioned above nodes with action scripts
-        const markerGroup = g.append("g").attr("class", "markers");
-
-        dagreGraph.nodes().forEach(nodeId => {{
-            const node = dagreGraph.node(nodeId);
-            if (!node || !node.has_action) return;
-
-            // Position marker above the node, aligned to left edge
-            markerGroup.append("text")
-                .attr("class", "node-action-marker")
-                .attr("x", node.x - nodeWidth/2 + 8)
-                .attr("y", node.y - nodeHeight/2 - 8)
-                .attr("text-anchor", "start")
-                .text("⚡");
-        }});
-
-        // Function to select a node by ID (called when Parley selection changes)
-        // Exposed as window.selectNodeById for C# ExecuteScript calls (#234)
-        window.selectNodeById = function(nodeId) {{
-            if (!nodeId) return;
-
-            // Clear all highlights
-            d3.selectAll(".node").classed("selected", false);
-            d3.selectAll(".node").classed("target-highlight", false);
-
-            // Find the node data to check if it's a link
-            const nodeData = nodes.find(n => n.id === nodeId);
-
-            d3.selectAll(".node").each(function() {{
-                const el = d3.select(this);
-                if (el.attr("data-id") === nodeId) {{
-                    el.classed("selected", true);
-                    // Scroll node into view
-                    scrollToNode(el);
-                }}
-            }});
-
-            // If selecting a link node, also highlight its target (#234)
-            if (nodeData && nodeData.is_link && nodeData.link_target) {{
-                d3.selectAll(".node").each(function() {{
-                    const el = d3.select(this);
-                    if (el.attr("data-id") === nodeData.link_target) {{
-                        el.classed("target-highlight", true);
-                    }}
-                }});
-            }}
-        }}
-
-        // Scroll the SVG to center on a node
-        function scrollToNode(nodeEl) {{
-            try {{
-                const node = nodeEl.node();
-                if (!node) return;
-                const bbox = node.getBBox();
-                const transform = nodeEl.attr("transform");
-                // Extract translate values
-                const match = /translate\(([^,]+),\s*([^)]+)\)/.exec(transform);
-                if (match) {{
-                    const tx = parseFloat(match[1]) + bbox.width / 2;
-                    const ty = parseFloat(match[2]) + bbox.height / 2;
-                    // Center the view on this node
-                    const scale = d3.zoomTransform(svg.node()).k || 1;
-                    const newX = width / 2 - tx * scale;
-                    const newY = height / 2 - ty * scale;
-                    svg.transition().duration(300).call(
-                        zoom.transform,
-                        d3.zoomIdentity.translate(newX, newY).scale(scale)
-                    );
-                }}
-            }} catch (e) {{
-                console.log("scrollToNode error:", e);
-            }}
-        }}
-
-        // Apply initial selection if provided
-        // Skip fitToScreen if selecting a node - just scroll to it instead
-        if (initialSelectedNodeId) {{
-            setTimeout(() => {{
-                window.selectNodeById(initialSelectedNodeId);
-            }}, 100);
-        }} else {{
-            // Initial fit only when no selection (first load)
-            setTimeout(fitToScreen, 100);
-        }}
-
-        // Helper functions
-        function truncateText(text, maxLen) {{
-            if (!text) return "";
-            return text.length > maxLen ? text.substring(0, maxLen) + "…" : text;
-        }}
-
-        // Zoom controls
-        function zoomIn() {{
-            svg.transition().call(zoom.scaleBy, 1.3);
-        }}
-
-        function zoomOut() {{
-            svg.transition().call(zoom.scaleBy, 0.7);
-        }}
-
-        function resetZoom() {{
-            svg.transition().call(zoom.transform, d3.zoomIdentity);
-        }}
-
-        function fitToScreen() {{
-            const bounds = g.node().getBBox();
-            if (bounds.width === 0 || bounds.height === 0) return;
-
-            const fullWidth = width;
-            const fullHeight = height;
-            const bWidth = bounds.width;
-            const bHeight = bounds.height;
-            const scale = 0.9 * Math.min(fullWidth / bWidth, fullHeight / bHeight);
-            const tx = (fullWidth - scale * bWidth) / 2 - scale * bounds.x;
-            const ty = (fullHeight - scale * bHeight) / 2 - scale * bounds.y;
-            svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
-        }}
-
-        // Manual refresh button (#235)
-        function requestRefresh() {{
-            window.location.href = "parley://refresh";
-        }}
-
-        // Auto-refresh toggle (#235)
-        let autoRefreshEnabled = {auto_refresh_enabled};
-        function toggleAutoRefresh() {{
-            autoRefreshEnabled = !autoRefreshEnabled;
-            const btn = document.getElementById("autoRefreshBtn");
-            btn.textContent = autoRefreshEnabled ? "⏸" : "▶";
-            btn.title = autoRefreshEnabled ? "Pause auto-refresh" : "Resume auto-refresh";
-            window.location.href = "parley://autorefresh/" + (autoRefreshEnabled ? "on" : "off");
-        }}
-
-        // Handle window resize
-        window.addEventListener("resize", () => {{
-            width = window.innerWidth;
-            height = window.innerHeight;
-            svg.attr("width", width).attr("height", height);
-        }});
-    </script>
-</body>
-</html>
-'''
 
 
 class FlowchartPlugin:
@@ -680,6 +54,35 @@ class FlowchartPlugin:
         self._poll_count = 0  # For reducing log verbosity
         self._logged_no_dialog = False  # Avoid spamming "no dialog" message
 
+        # Paths to bundled assets
+        self._plugin_dir = Path(__file__).parent
+        self._template_path = self._plugin_dir / "templates" / "flowchart.html"
+        self._css_path = self._plugin_dir / "static" / "flowchart.css"
+        self._js_path = self._plugin_dir / "static" / "flowchart.js"
+        self._d3_path = self._plugin_dir / "vendor" / "d3.v7.min.js"
+        self._dagre_path = self._plugin_dir / "vendor" / "dagre.min.js"
+
+        # Cache loaded assets
+        self._template_cache: Optional[str] = None
+        self._css_cache: Optional[str] = None
+        self._js_cache: Optional[str] = None
+        self._d3_cache: Optional[str] = None
+        self._dagre_cache: Optional[str] = None
+
+    def _load_assets(self) -> bool:
+        """Load static assets from disk. Returns True if successful."""
+        try:
+            self._template_cache = self._template_path.read_text(encoding="utf-8")
+            self._css_cache = self._css_path.read_text(encoding="utf-8")
+            self._js_cache = self._js_path.read_text(encoding="utf-8")
+            self._d3_cache = self._d3_path.read_text(encoding="utf-8")
+            self._dagre_cache = self._dagre_path.read_text(encoding="utf-8")
+            print("[Flowchart] Loaded bundled assets (D3, dagre, CSS, JS)")
+            return True
+        except Exception as e:
+            print(f"[Flowchart] Failed to load assets: {e}")
+            return False
+
     def initialize(self) -> bool:
         """
         Initialize the plugin and connect to Parley.
@@ -688,6 +91,11 @@ class FlowchartPlugin:
             True if initialization successful, False otherwise
         """
         try:
+            # Load static assets first
+            if not self._load_assets():
+                print("[Flowchart] Cannot start without bundled assets")
+                return False
+
             self.client = ParleyClient()
             print("[Flowchart] Connected to Parley gRPC server")
 
@@ -824,7 +232,6 @@ class FlowchartPlugin:
             structure = self.client.get_dialog_structure()
             if structure.get("success", False):
                 # Compute simple hash of structure
-                import hashlib
                 struct_json = json.dumps(structure, sort_keys=True)
                 current_hash = hashlib.md5(struct_json.encode()).hexdigest()
 
@@ -891,7 +298,6 @@ class FlowchartPlugin:
                 "nodes": structure.get("nodes", []),
                 "links": structure.get("links", []),
             }
-            # Only log on first render or significant changes (reduce log spam #235)
 
         # Extract unique speakers and assign colors (#230)
         speaker_colors = self._generate_speaker_colors(dialog_data.get("nodes", []))
@@ -908,18 +314,22 @@ class FlowchartPlugin:
                 selected_node_id = node_id
                 self._last_selected_node_id = node_id
 
-        # Generate HTML with dialog data
+        # Generate HTML from template with bundled assets
         auto_refresh_icon = "⏸" if self._auto_refresh_enabled else "▶"
-        html = FLOWCHART_HTML_TEMPLATE.format(
-            dialog_name=self.current_dialog_name or "Untitled",
-            node_count=len(dialog_data.get("nodes", [])),
-            dialog_data=json.dumps(dialog_data),
-            speaker_colors=json.dumps(speaker_colors),
-            theme=theme,
-            selected_node_id=json.dumps(selected_node_id),  # null or "entry_0" etc
-            auto_refresh_icon=auto_refresh_icon,
-            auto_refresh_enabled="true" if self._auto_refresh_enabled else "false",
-        )
+
+        html = self._template_cache
+        html = html.replace("{{css_content}}", self._css_cache)
+        html = html.replace("{{d3_content}}", self._d3_cache)
+        html = html.replace("{{dagre_content}}", self._dagre_cache)
+        html = html.replace("{{js_content}}", self._js_cache)
+        html = html.replace("{{theme}}", theme)
+        html = html.replace("{{dialog_name}}", self.current_dialog_name or "Untitled")
+        html = html.replace("{{node_count}}", str(len(dialog_data.get("nodes", []))))
+        html = html.replace("{{dialog_data}}", json.dumps(dialog_data))
+        html = html.replace("{{speaker_colors}}", json.dumps(speaker_colors))
+        html = html.replace("{{selected_node_id}}", json.dumps(selected_node_id))
+        html = html.replace("{{auto_refresh_icon}}", auto_refresh_icon)
+        html = html.replace("{{auto_refresh_enabled}}", "true" if self._auto_refresh_enabled else "false")
 
         # Send to panel
         success, error_msg = self.client.update_panel_content(
@@ -953,7 +363,6 @@ class FlowchartPlugin:
                 colors["_pc"] = parley_colors.get("pc_color", "#4FC3F7")
                 colors["_owner"] = parley_colors.get("owner_color", "#FF8A65")
                 colors.update(parley_colors.get("speaker_colors", {}))
-                # Speaker colors fetched from Parley (reduce log spam #235)
                 return colors
             except Exception as e:
                 print(f"[Flowchart] Failed to get speaker colors from API, using fallback: {e}")
@@ -1042,27 +451,6 @@ class FlowchartPlugin:
 
         return {"nodes": nodes, "links": links}
 
-    def _on_flowchart_node_clicked(self, node_id: str):
-        """
-        Handle node click in the flowchart (Epic 40 Phase 3 / #234).
-        Calls Parley's SelectNode API to sync selection back to tree view.
-
-        Args:
-            node_id: ID of the clicked node
-        """
-        if not self.client:
-            return
-
-        print(f"[Flowchart] User clicked node: {node_id}")
-
-        # Request Parley to select this node in the tree view
-        success, error = self.client.select_node(node_id)
-        if success:
-            print(f"[Flowchart] Successfully requested selection of {node_id}")
-            self._last_selected_node_id = node_id  # Update tracking to avoid feedback loop
-        else:
-            print(f"[Flowchart] Failed to select node: {error}")
-
     def run(self):
         """
         Main plugin loop.
@@ -1075,21 +463,17 @@ class FlowchartPlugin:
         while self.running:
             try:
                 # Check if panel is still open (#235)
-                # If panel was closed by user, stop the plugin gracefully
-                # Don't unregister panel - user may reopen it later
                 if self.client and self._panel_registered:
                     if not self.client.is_panel_open("flowchart-view"):
                         print("[Flowchart] Panel closed by user, stopping plugin")
-                        self._window_closed_by_user = True  # Track for shutdown (#235)
+                        self._window_closed_by_user = True
                         break
 
                 # Only poll when auto-refresh is enabled (#235)
                 if self._auto_refresh_enabled:
                     self._refresh_dialog_state()
 
-                    # Track selection changes for logging (bidirectional sync #234)
-                    # NOTE: Tree→Flow sync is now handled by PluginPanelWindow using ExecuteScript
-                    # This tracking is informational only - the C# side handles the actual sync
+                    # Track selection changes for bidirectional sync (#234)
                     if self.client:
                         node_id, node_text = self.client.get_selected_node()
                         if node_id and node_id != self._last_selected_node_id:
@@ -1112,7 +496,6 @@ class FlowchartPlugin:
         if self.client:
             try:
                 # Only unregister panel if NOT exiting due to user closing window (#235)
-                # When user closes the window, keep panel registered so it can be reopened
                 if self._panel_registered and not self._window_closed_by_user:
                     self.client.close_panel("flowchart-view")
                     self._panel_registered = False
