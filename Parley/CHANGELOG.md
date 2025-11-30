@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.35-alpha] - 2025-11-29
+**Branch**: `parley/feat/epic-40-phase3-interaction` | **PR**: #TBD
+
+### Epic 40 Phase 3: Interaction and Navigation (#234-#237)
+
+Third phase of the ChatMapper-style flowchart view plugin (Epic 3).
+
+**Work Items**:
+- [ ] #234 - Bidirectional node selection sync
+- [ ] #235 - User-controllable refresh settings
+- [ ] #236 - Minimap navigation panel
+- [ ] #237 - Circular reference handling
+
+---
+
 ## [0.1.34-alpha] - 2025-11-29
 **Branch**: `parley/feat/epic-40-phase2-layout` | **PR**: #245
 
