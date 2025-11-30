@@ -25,6 +25,12 @@ namespace DialogEditor.Plugins.Services
         private static readonly ConcurrentDictionary<string, PanelInfo> _registeredPanels = new();
 
         /// <summary>
+        /// Tracks which panel windows are currently open (#235).
+        /// Key: fullPanelId, Value: true if window is open
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, bool> _panelWindowOpen = new();
+
+        /// <summary>
         /// Event raised when a panel is registered.
         /// UI layer should subscribe to this to create actual panel windows.
         /// </summary>
@@ -177,6 +183,8 @@ namespace DialogEditor.Plugins.Services
 
                 // Register panel (or update if already exists)
                 _registeredPanels.AddOrUpdate(fullPanelId, panelInfo, (_, __) => panelInfo);
+                // Mark window as open when registered (#235)
+                _panelWindowOpen[fullPanelId] = true;
 
                 UnifiedLogger.LogPlugin(LogLevel.INFO,
                     $"Panel registered: {fullPanelId} - {request.Title} ({position}, {renderMode})");
@@ -290,10 +298,12 @@ namespace DialogEditor.Plugins.Services
                 var pluginId = _security.PluginId;
                 var fullPanelId = $"{pluginId}:{request.PanelId}";
 
+                UnifiedLogger.LogPlugin(LogLevel.WARN, $"ClosePanel called for: {fullPanelId} - THIS REMOVES REGISTRATION!");
+
                 // Remove from registry
                 if (_registeredPanels.TryRemove(fullPanelId, out _))
                 {
-                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel closed: {fullPanelId}");
+                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel closed and unregistered: {fullPanelId}");
 
                     // Raise event for UI layer to close panel
                     PanelClosed?.Invoke(this, new PanelClosedEventArgs(fullPanelId));
@@ -317,11 +327,37 @@ namespace DialogEditor.Plugins.Services
         }
 
         /// <summary>
+        /// Check if a panel window is currently open (#235).
+        /// Used by plugins to determine if they should continue polling.
+        /// Returns false when user closes the window (even if panel is still registered).
+        /// </summary>
+        public override Task<IsPanelOpenResponse> IsPanelOpen(IsPanelOpenRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var pluginId = _security.PluginId;
+                var fullPanelId = $"{pluginId}:{request.PanelId}";
+
+                // Check window state, not just registration (#235)
+                // Panel stays registered for potential reopen, but window may be closed
+                var isOpen = _panelWindowOpen.TryGetValue(fullPanelId, out var windowOpen) && windowOpen;
+
+                return Task.FromResult(new IsPanelOpenResponse { IsOpen = isOpen });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"IsPanelOpen check failed: {ex.Message}");
+                return Task.FromResult(new IsPanelOpenResponse { IsOpen = false });
+            }
+        }
+
+        /// <summary>
         /// Static helper to raise PanelRegistered event (used by UIServiceImpl).
         /// </summary>
         public static void RaisePanelRegistered(PanelInfo panelInfo)
         {
             _registeredPanels.AddOrUpdate(panelInfo.FullPanelId, panelInfo, (_, __) => panelInfo);
+            _panelWindowOpen[panelInfo.FullPanelId] = true;  // Mark window as open (#235)
             PanelRegistered?.Invoke(null, new PanelRegisteredEventArgs(panelInfo));
         }
 
@@ -350,6 +386,39 @@ namespace DialogEditor.Plugins.Services
         }
 
         /// <summary>
+        /// Check if a panel window is currently open (#235).
+        /// Used by plugins to determine if they should continue polling.
+        /// Returns false if window was closed by user (even if panel is still registered).
+        /// </summary>
+        public static bool IsPanelOpen(string fullPanelId)
+        {
+            // Check if window is currently open, not just registered
+            var isOpen = _panelWindowOpen.TryGetValue(fullPanelId, out var windowOpen) && windowOpen;
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                $"IsPanelOpen({fullPanelId}): windowOpen={windowOpen}, result={isOpen}, registered={_registeredPanels.ContainsKey(fullPanelId)}");
+            return isOpen;
+        }
+
+        /// <summary>
+        /// Mark a panel window as closed when user closes the window (#235).
+        /// Keeps panel registration for potential reopen, but signals plugin to exit.
+        /// </summary>
+        public static void MarkPanelWindowClosed(string fullPanelId)
+        {
+            _panelWindowOpen[fullPanelId] = false;
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel window marked closed: {fullPanelId}");
+        }
+
+        /// <summary>
+        /// Mark a panel window as open when it's created/reopened (#235).
+        /// </summary>
+        public static void MarkPanelWindowOpen(string fullPanelId)
+        {
+            _panelWindowOpen[fullPanelId] = true;
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel window marked open: {fullPanelId}");
+        }
+
+        /// <summary>
         /// Clean up all panels for a plugin (called on plugin shutdown).
         /// </summary>
         public static void CleanupPluginPanels(string pluginId)
@@ -362,6 +431,7 @@ namespace DialogEditor.Plugins.Services
             {
                 if (_registeredPanels.TryRemove(key, out _))
                 {
+                    _panelWindowOpen.TryRemove(key, out _);  // Also remove from window tracking (#235)
                     PanelClosed?.Invoke(null, new PanelClosedEventArgs(key));
                 }
             }

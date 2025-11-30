@@ -314,6 +314,22 @@ namespace DialogEditor.Plugins.Services
             }
         }
 
+        public override Task<IsPanelOpenResponse> IsPanelOpen(IsPanelOpenRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var fullPanelId = $"plugin:{request.PanelId}";
+                var isOpen = PluginUIService.IsPanelOpen(fullPanelId);
+
+                return Task.FromResult(new IsPanelOpenResponse { IsOpen = isOpen });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"IsPanelOpen check failed: {ex.Message}");
+                return Task.FromResult(new IsPanelOpenResponse { IsOpen = false });
+            }
+        }
+
         public override Task<GetThemeResponse> GetTheme(GetThemeRequest request, ServerCallContext context)
         {
             try
@@ -547,7 +563,7 @@ namespace DialogEditor.Plugins.Services
                     });
                 }
 
-                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"GetDialogStructure: {nodes.Count} nodes, {links.Count} links");
+                // Reduce log spam - only log on errors (#235)
 
                 return Task.FromResult(response);
             }

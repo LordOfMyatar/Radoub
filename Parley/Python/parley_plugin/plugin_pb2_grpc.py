@@ -504,6 +504,11 @@ class UIServiceStub(object):
                 request_serializer=plugin__pb2.ClosePanelRequest.SerializeToString,
                 response_deserializer=plugin__pb2.ClosePanelResponse.FromString,
                 _registered_method=True)
+        self.IsPanelOpen = channel.unary_unary(
+                '/parley.plugin.UIService/IsPanelOpen',
+                request_serializer=plugin__pb2.IsPanelOpenRequest.SerializeToString,
+                response_deserializer=plugin__pb2.IsPanelOpenResponse.FromString,
+                _registered_method=True)
         self.GetTheme = channel.unary_unary(
                 '/parley.plugin.UIService/GetTheme',
                 request_serializer=plugin__pb2.GetThemeRequest.SerializeToString,
@@ -551,6 +556,12 @@ class UIServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def IsPanelOpen(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetTheme(self, request, context):
         """Theme (Epic 3 Phase 2 / #229)
         """
@@ -592,6 +603,11 @@ def add_UIServiceServicer_to_server(servicer, server):
                     servicer.ClosePanel,
                     request_deserializer=plugin__pb2.ClosePanelRequest.FromString,
                     response_serializer=plugin__pb2.ClosePanelResponse.SerializeToString,
+            ),
+            'IsPanelOpen': grpc.unary_unary_rpc_method_handler(
+                    servicer.IsPanelOpen,
+                    request_deserializer=plugin__pb2.IsPanelOpenRequest.FromString,
+                    response_serializer=plugin__pb2.IsPanelOpenResponse.SerializeToString,
             ),
             'GetTheme': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTheme,
@@ -740,6 +756,33 @@ class UIService(object):
             '/parley.plugin.UIService/ClosePanel',
             plugin__pb2.ClosePanelRequest.SerializeToString,
             plugin__pb2.ClosePanelResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def IsPanelOpen(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/IsPanelOpen',
+            plugin__pb2.IsPanelOpenRequest.SerializeToString,
+            plugin__pb2.IsPanelOpenResponse.FromString,
             options,
             channel_credentials,
             insecure,

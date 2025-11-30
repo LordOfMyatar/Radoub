@@ -19,6 +19,7 @@ namespace DialogEditor.Plugins
     {
         private readonly ConcurrentDictionary<string, PluginPanelWindow> _panelWindows = new();
         private readonly Window _ownerWindow;
+        private PluginManager? _pluginManager;
         private bool _isDisposed;
 
         public PluginPanelManager(Window ownerWindow)
@@ -30,6 +31,14 @@ namespace DialogEditor.Plugins
             PluginUIService.PanelClosed += OnPanelClosed;
 
             UnifiedLogger.LogPlugin(LogLevel.INFO, "Plugin panel manager initialized");
+        }
+
+        /// <summary>
+        /// Set the plugin manager for restarting plugins on panel reopen (#235).
+        /// </summary>
+        public void SetPluginManager(PluginManager pluginManager)
+        {
+            _pluginManager = pluginManager;
         }
 
         private void OnPanelRegistered(object? sender, PanelRegisteredEventArgs e)
@@ -115,6 +124,9 @@ namespace DialogEditor.Plugins
 
                 _panelWindows[panelInfo.FullPanelId] = window;
 
+                // Mark window as open (#235)
+                PluginUIService.MarkPanelWindowOpen(panelInfo.FullPanelId);
+
                 // Show as non-modal (users can interact with main window)
                 window.Show();
 
@@ -145,16 +157,76 @@ namespace DialogEditor.Plugins
         }
 
         /// <summary>
-        /// Reopen a closed panel window.
+        /// Reopen a closed panel window (#235).
+        /// If the plugin has exited, restart it so it can re-register and send content.
         /// </summary>
         public void ReopenPanel(PanelInfo panelInfo)
         {
             if (_isDisposed) return;
 
-            Dispatcher.UIThread.Post(() =>
+            // Extract plugin ID from fullPanelId
+            // Format from gRPC server: "plugin:{panelId}" where panelId is the plugin folder name
+            // Example: "plugin:flowchart-view" -> plugin ID is "flowchart-view"
+            var pluginId = panelInfo.PanelId;  // PanelId is the plugin folder name (e.g., "flowchart-view")
+
+            // Fallback: try to extract from FullPanelId if PanelId is empty
+            if (string.IsNullOrEmpty(pluginId) && panelInfo.FullPanelId.Contains(":"))
             {
-                CreatePanelWindow(panelInfo);
-            });
+                // FullPanelId format: "plugin:flowchart-view"
+                pluginId = panelInfo.FullPanelId.Split(':')[1];
+            }
+
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                $"ReopenPanel: FullPanelId={panelInfo.FullPanelId}, PanelId={panelInfo.PanelId}, extracted pluginId={pluginId}");
+
+            // Check if plugin is still running
+            bool pluginRunning = _pluginManager?.IsPluginLoaded(pluginId) ?? false;
+            if (!pluginRunning && _pluginManager != null)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Restarting plugin for panel reopen: {pluginId}");
+
+                // Find and restart the plugin
+                var discovered = _pluginManager.Discovery.GetPluginById(pluginId);
+                if (discovered != null)
+                {
+                    var host = new PluginHost(discovered);
+                    if (host.Start())
+                    {
+                        UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin restarted: {pluginId}");
+                        // Plugin will re-register panel and create window automatically
+                        return;
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Failed to restart plugin: {pluginId}");
+                    }
+                }
+                else
+                {
+                    // Try to reload via StartEnabledPluginsAsync which handles discovery
+                    UnifiedLogger.LogPlugin(LogLevel.WARN, $"Plugin not found in discovery: {pluginId}, rescanning...");
+                    _pluginManager.Discovery.ScanForPlugins();
+                    discovered = _pluginManager.Discovery.GetPluginById(pluginId);
+                    if (discovered != null)
+                    {
+                        var host = new PluginHost(discovered);
+                        if (host.Start())
+                        {
+                            UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin restarted after rescan: {pluginId}");
+                            return;
+                        }
+                    }
+                    UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Could not find plugin to restart: {pluginId}");
+                }
+            }
+            else
+            {
+                // Plugin still running, just create the window
+                Dispatcher.UIThread.Post(() =>
+                {
+                    CreatePanelWindow(panelInfo);
+                });
+            }
         }
 
         /// <summary>

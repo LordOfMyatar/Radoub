@@ -209,8 +209,30 @@ namespace Parley.Views.Helpers
                     targetDialogNode = dialog.Replies[index];
                 }
             }
-            // Note: link_ IDs are no longer sent - flowchart now sends the target ID directly
-            // This simplifies selection sync and prevents re-render loops
+            else if (nodeId.StartsWith("link_"))
+            {
+                // Link node format: "link_{parentIndex}_{targetIndex}"
+                // Find the link node in the tree by finding the parent, then finding the link child
+                var linkNode = FindLinkNodeById(nodeId, dialog);
+                if (linkNode != null)
+                {
+                    _isSettingSelectionProgrammatically = true;
+                    try
+                    {
+                        _setSelectedTreeItem(linkNode);
+                        UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"Selected link node: {linkNode.DisplayText}");
+                    }
+                    finally
+                    {
+                        _isSettingSelectionProgrammatically = false;
+                    }
+                }
+                else
+                {
+                    UnifiedLogger.LogPlugin(LogLevel.WARN, $"SelectNodeById: Could not find link node {nodeId}");
+                }
+                return;
+            }
 
             if (targetDialogNode == null)
             {
@@ -272,6 +294,133 @@ namespace Parley.Views.Helpers
                     node.PopulateChildren();
 
                     var found = FindTreeViewNodeByDialogNode(node.Children, targetNode, maxDepth - 1);
+                    if (found != null)
+                        return found;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Find a link node in the tree by its ID.
+        /// Link ID format: "link_{parentIndex}_{targetIndex}"
+        /// Entry→Reply: link_{entryIndex}_{replyIndex}
+        /// Reply→Entry: link_{replyIndex}_{entryIndex}
+        /// </summary>
+        private TreeViewSafeLinkNode? FindLinkNodeById(string linkId, Dialog dialog)
+        {
+            // Parse link ID: "link_{parentIndex}_{targetIndex}"
+            var parts = linkId.Split('_');
+            if (parts.Length != 3)
+                return null;
+
+            if (!int.TryParse(parts[1], out int idx1) ||
+                !int.TryParse(parts[2], out int idx2))
+                return null;
+
+            // Try both interpretations and verify by checking actual pointers
+            DialogNode? parentNode = null;
+            DialogNode? targetNode = null;
+
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"FindLinkNodeById: Parsing {linkId} -> idx1={idx1}, idx2={idx2}");
+
+            // Try entry→reply: idx1 is entry index, idx2 is reply index
+            if (idx1 < dialog.Entries.Count && idx2 < dialog.Replies.Count)
+            {
+                var entry = dialog.Entries[idx1];
+                var reply = dialog.Replies[idx2];
+                // Verify this entry actually has a link pointer to this reply
+                var hasLinkPointer = entry.Pointers.Any(p => p.IsLink && p.Index == idx2);
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"FindLinkNodeById: Trying Entry[{idx1}]→Reply[{idx2}], hasLinkPointer={hasLinkPointer}");
+                if (hasLinkPointer)
+                {
+                    parentNode = entry;
+                    targetNode = reply;
+                }
+            }
+
+            // If not found, try reply→entry: idx1 is reply index, idx2 is entry index
+            if (parentNode == null && idx1 < dialog.Replies.Count && idx2 < dialog.Entries.Count)
+            {
+                var reply = dialog.Replies[idx1];
+                var entry = dialog.Entries[idx2];
+                // Verify this reply actually has a link pointer to this entry
+                var hasLinkPointer = reply.Pointers.Any(p => p.IsLink && p.Index == idx2);
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"FindLinkNodeById: Trying Reply[{idx1}]→Entry[{idx2}], hasLinkPointer={hasLinkPointer}");
+                if (hasLinkPointer)
+                {
+                    parentNode = reply;
+                    targetNode = entry;
+                }
+            }
+
+            if (parentNode == null || targetNode == null)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"FindLinkNodeById: Could not resolve link {linkId}");
+                return null;
+            }
+
+            // Search the entire tree for a link node matching both parent and target
+            // This handles cases where the same DialogNode appears multiple times in the tree
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"FindLinkNodeById: Searching tree for link from '{parentNode.DisplayText}' to '{targetNode.DisplayText}'");
+            var linkNode = FindLinkNodeInTree(_viewModel.DialogNodes, parentNode, targetNode);
+            if (linkNode != null)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"FindLinkNodeById: Found link node '{linkNode.DisplayText}'");
+            }
+            else
+            {
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"FindLinkNodeById: Link node not found in tree");
+            }
+            return linkNode;
+        }
+
+        /// <summary>
+        /// Search the entire tree for a link node matching both parent and target DialogNodes.
+        /// This method handles the case where the same DialogNode appears multiple times in the tree.
+        /// </summary>
+        private TreeViewSafeLinkNode? FindLinkNodeInTree(
+            IEnumerable<TreeViewSafeNode> nodes,
+            DialogNode parentNode,
+            DialogNode targetNode,
+            int maxDepth = 50)
+        {
+            if (maxDepth <= 0)
+                return null;
+
+            foreach (var node in nodes)
+            {
+                // Check if this node is the parent we're looking for
+                if (node.OriginalNode == parentNode)
+                {
+                    // Expand and populate children to find the link
+                    if (!node.IsExpanded)
+                        node.IsExpanded = true;
+                    node.PopulateChildren();
+
+                    if (node.Children != null)
+                    {
+                        foreach (var child in node.Children)
+                        {
+                            if (child is TreeViewSafeLinkNode linkNode && linkNode.OriginalNode == targetNode)
+                            {
+                                return linkNode;
+                            }
+                        }
+                    }
+                    // Don't return null here - there might be another instance of this parent
+                    // in the tree that has the link we're looking for
+                }
+
+                // Recursively search children
+                if (node.HasChildren && node.Children != null)
+                {
+                    if (!node.IsExpanded)
+                        node.IsExpanded = true;
+                    node.PopulateChildren();
+
+                    var found = FindLinkNodeInTree(node.Children, parentNode, targetNode, maxDepth - 1);
                     if (found != null)
                         return found;
                 }

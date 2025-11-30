@@ -39,6 +39,7 @@ service UIService {
   rpc RegisterPanel (RegisterPanelRequest) returns (RegisterPanelResponse);
   rpc UpdatePanelContent (UpdatePanelContentRequest) returns (UpdatePanelContentResponse);
   rpc ClosePanel (ClosePanelRequest) returns (ClosePanelResponse);
+  rpc IsPanelOpen (IsPanelOpenRequest) returns (IsPanelOpenResponse);
 
   // Theme (Epic 3 Phase 2 / #229)
   rpc GetTheme (GetThemeRequest) returns (GetThemeResponse);
@@ -246,6 +247,15 @@ message ClosePanelRequest {
 
 message ClosePanelResponse {
   bool success = 1;
+}
+
+// IsPanelOpen - check if panel is still open (#235)
+message IsPanelOpenRequest {
+  string panel_id = 1;           // Panel ID to check
+}
+
+message IsPanelOpenResponse {
+  bool is_open = 1;              // True if panel window is open
 }
 
 // Theme messages (Epic 3 Phase 2 / #229)

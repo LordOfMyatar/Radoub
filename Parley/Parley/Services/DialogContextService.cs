@@ -59,6 +59,15 @@ namespace DialogEditor.Services
         public event EventHandler? DialogChanged;
 
         /// <summary>
+        /// Manually notify that dialog content has changed (for plugin refresh requests #235).
+        /// Call this to force plugins to re-fetch dialog structure.
+        /// </summary>
+        public void NotifyDialogChanged()
+        {
+            DialogChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
         /// Event fired when selected node changes
         /// </summary>
         public event EventHandler? NodeSelectionChanged;

@@ -73,6 +73,7 @@ namespace DialogEditor.Views
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
             _pluginPanelManager = new PluginPanelManager(this);
+            _pluginPanelManager.SetPluginManager(_pluginManager); // For panel reopen restart (#235)
             _propertyPopulator = new PropertyPanelPopulator(this);
             _propertyAutoSaveService = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
@@ -1082,7 +1083,17 @@ namespace DialogEditor.Views
 
         private void OnPluginPanelsClick(object? sender, RoutedEventArgs e)
         {
+            // Debug: Log all registered panels
+            var allPanels = DialogEditor.Plugins.Services.PluginUIService.GetAllRegisteredPanels().ToList();
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"OnPluginPanelsClick: {allPanels.Count} registered panels total");
+            foreach (var p in allPanels)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"  Panel: {p.FullPanelId}, PanelId={p.PanelId}, PluginId={p.PluginId}");
+            }
+
             var closedPanels = _pluginPanelManager.GetClosedPanels().ToList();
+            UnifiedLogger.LogPlugin(LogLevel.INFO, $"OnPluginPanelsClick: {closedPanels.Count} closed panels");
+
             if (closedPanels.Count == 0)
             {
                 _viewModel.StatusMessage = "No closed plugin panels to reopen";
@@ -1092,6 +1103,7 @@ namespace DialogEditor.Views
             // Reopen all closed panels
             foreach (var panel in closedPanels)
             {
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Reopening panel: {panel.FullPanelId}");
                 _pluginPanelManager.ReopenPanel(panel);
             }
 

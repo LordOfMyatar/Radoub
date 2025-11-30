@@ -120,6 +120,10 @@ namespace DialogEditor.Views
             PanelWebView.BeforeNavigate -= OnBeforeNavigate;
             DialogContextService.Instance.NodeSelectionChanged -= OnNodeSelectionChanged;
 
+            // Mark panel window as closed so plugin can detect (#235)
+            // Don't unregister completely - keep panel info for potential reopen
+            PluginUIService.MarkPanelWindowClosed(_panelId);
+
             UnifiedLogger.LogPlugin(LogLevel.INFO, $"Plugin panel window closed: {_panelId}");
         }
 
@@ -186,6 +190,18 @@ namespace DialogEditor.Views
                 Dispatcher.UIThread.Post(() =>
                 {
                     OnJavascriptNodeSelected(nodeId);
+                });
+            }
+            // Manual refresh request (#235)
+            else if (url.Equals("parley://refresh", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Cancel();
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, "BeforeNavigate intercepted: refresh");
+
+                // Trigger dialog change event to force flowchart re-render
+                Dispatcher.UIThread.Post(() =>
+                {
+                    DialogContextService.Instance.NotifyDialogChanged();
                 });
             }
         }

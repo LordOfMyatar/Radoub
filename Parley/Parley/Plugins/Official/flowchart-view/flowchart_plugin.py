@@ -3,11 +3,9 @@ Flowchart View Plugin for Parley
 
 ChatMapper-style flowchart visualization for dialog trees.
 Displays dialog nodes as colored boxes with connecting lines,
-supporting zoom, pan, auto-layout, and export to PNG/SVG.
+supporting zoom, pan, auto-layout, and bidirectional selection sync.
 
-Epic 3: Advanced Visualization (Epic #40)
-Phase 1: Foundation (#223-#227)
-Phase 2: Layout and Visual Design (#228-#232)
+Epic #40: Advanced Visualization
 """
 
 import sys
@@ -163,6 +161,11 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             fill: #e74c3c;
             pointer-events: none;
         }}
+        .node-action-marker {{
+            font-size: 14px;
+            fill: #f39c12;
+            pointer-events: none;
+        }}
         marker {{
             fill: var(--link-color, #555);
         }}
@@ -222,6 +225,8 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
         <button onclick="zoomOut()">-</button>
         <button onclick="resetZoom()">Reset</button>
         <button onclick="fitToScreen()">Fit</button>
+        <button onclick="requestRefresh()" title="Refresh flowchart">⟳</button>
+        <button id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Toggle auto-refresh">{auto_refresh_icon}</button>
     </div>
     <div id="info">
         <span id="dialog-name">{dialog_name}</span> |
@@ -354,10 +359,10 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
         }}
 
         // Build script indicator text (#231)
+        // Note: ⚡ for action scripts now shown as floating marker above nodes (#235)
         function getScriptIndicators(node) {{
             let indicators = [];
-            if (node.has_condition) indicators.push("❓");
-            if (node.has_action) indicators.push("⚡");
+            if (node.has_condition) indicators.push("❓");  // Only for link nodes
             return indicators.join(" ");
         }}
 
@@ -486,11 +491,7 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
                 // Select clicked node
                 d3.select(this).classed("selected", true);
 
-                // Determine what ID to send to Parley for tree selection
-                let selectionId = node.id;
-
                 // If this is a link node, also highlight the target node (#234)
-                // Send the TARGET id to Parley (for tree selection), not the link id
                 if (node.is_link && node.link_target) {{
                     d3.selectAll(".node").each(function() {{
                         const el = d3.select(this);
@@ -498,21 +499,34 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
                             el.classed("target-highlight", true);
                         }}
                     }});
-                    // Send target ID so Parley selects the actual node in tree
-                    // This prevents the plugin from detecting a mismatch and re-rendering
-                    selectionId = node.link_target;
-                    console.log("[Flowchart] Link node clicked:", node.id, "-> selecting target:", node.link_target);
-                }} else {{
-                    console.log("[Flowchart] Node clicked:", node.id);
                 }}
 
-                // Notify Parley via custom URL scheme (BeforeNavigate interception)
-                window.location.href = "parley://selectnode/" + encodeURIComponent(selectionId);
+                // Always send the clicked node's ID - Parley will handle link IDs appropriately
+                console.log("[Flowchart] Node clicked:", node.id);
+                window.location.href = "parley://selectnode/" + encodeURIComponent(node.id);
             }});
         }});
 
+        // Draw action script markers above nodes (#235)
+        // Similar to condition markers on edges, but positioned above nodes with action scripts
+        const markerGroup = g.append("g").attr("class", "markers");
+
+        dagreGraph.nodes().forEach(nodeId => {{
+            const node = dagreGraph.node(nodeId);
+            if (!node || !node.has_action) return;
+
+            // Position marker above the node, aligned to left edge
+            markerGroup.append("text")
+                .attr("class", "node-action-marker")
+                .attr("x", node.x - nodeWidth/2 + 8)
+                .attr("y", node.y - nodeHeight/2 - 8)
+                .attr("text-anchor", "start")
+                .text("⚡");
+        }});
+
         // Function to select a node by ID (called when Parley selection changes)
-        function selectNodeById(nodeId) {{
+        // Exposed as window.selectNodeById for C# ExecuteScript calls (#234)
+        window.selectNodeById = function(nodeId) {{
             if (!nodeId) return;
 
             // Clear all highlights
@@ -572,7 +586,7 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
         // Skip fitToScreen if selecting a node - just scroll to it instead
         if (initialSelectedNodeId) {{
             setTimeout(() => {{
-                selectNodeById(initialSelectedNodeId);
+                window.selectNodeById(initialSelectedNodeId);
             }}, 100);
         }} else {{
             // Initial fit only when no selection (first load)
@@ -612,6 +626,21 @@ FLOWCHART_HTML_TEMPLATE = '''<!DOCTYPE html>
             svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
         }}
 
+        // Manual refresh button (#235)
+        function requestRefresh() {{
+            window.location.href = "parley://refresh";
+        }}
+
+        // Auto-refresh toggle (#235)
+        let autoRefreshEnabled = {auto_refresh_enabled};
+        function toggleAutoRefresh() {{
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const btn = document.getElementById("autoRefreshBtn");
+            btn.textContent = autoRefreshEnabled ? "⏸" : "▶";
+            btn.title = autoRefreshEnabled ? "Pause auto-refresh" : "Resume auto-refresh";
+            window.location.href = "parley://autorefresh/" + (autoRefreshEnabled ? "on" : "off");
+        }}
+
         // Handle window resize
         window.addEventListener("resize", () => {{
             width = window.innerWidth;
@@ -643,6 +672,13 @@ class FlowchartPlugin:
         # Plugin state
         self._initialized = False
         self._panel_registered = False
+        self._window_closed_by_user = False  # Track if exiting due to user close (#235)
+
+        # Refresh settings (#235)
+        self._auto_refresh_enabled = True  # Default: auto-refresh on
+        self._refresh_interval = 2.0  # Default: 2 seconds
+        self._poll_count = 0  # For reducing log verbosity
+        self._logged_no_dialog = False  # Avoid spamming "no dialog" message
 
     def initialize(self) -> bool:
         """
@@ -776,9 +812,12 @@ class FlowchartPlugin:
 
             if dialog_id:
                 print(f"[Flowchart] Dialog loaded: {dialog_name}")
+                self._logged_no_dialog = False
                 self._on_dialog_changed()
             else:
-                print("[Flowchart] No dialog loaded")
+                if not self._logged_no_dialog:
+                    print("[Flowchart] No dialog loaded")
+                    self._logged_no_dialog = True
                 self._update_panel_placeholder()
         elif dialog_id:
             # Same dialog - check if content changed
@@ -793,6 +832,12 @@ class FlowchartPlugin:
                     print(f"[Flowchart] Dialog content changed, re-rendering")
                     self._last_structure_hash = current_hash
                     self._render_flowchart_with_data(structure)
+            else:
+                # Log structure fetch failures sparingly (every 30 polls = ~1 min)
+                self._poll_count += 1
+                if self._poll_count % 30 == 1:
+                    error_msg = structure.get("error_message", "Unknown error")
+                    print(f"[Flowchart] Failed to get dialog structure: {error_msg}")
 
     def _on_dialog_changed(self):
         """
@@ -846,7 +891,7 @@ class FlowchartPlugin:
                 "nodes": structure.get("nodes", []),
                 "links": structure.get("links", []),
             }
-            print(f"[Flowchart] Got {len(dialog_data['nodes'])} nodes from Parley API")
+            # Only log on first render or significant changes (reduce log spam #235)
 
         # Extract unique speakers and assign colors (#230)
         speaker_colors = self._generate_speaker_colors(dialog_data.get("nodes", []))
@@ -864,6 +909,7 @@ class FlowchartPlugin:
                 self._last_selected_node_id = node_id
 
         # Generate HTML with dialog data
+        auto_refresh_icon = "⏸" if self._auto_refresh_enabled else "▶"
         html = FLOWCHART_HTML_TEMPLATE.format(
             dialog_name=self.current_dialog_name or "Untitled",
             node_count=len(dialog_data.get("nodes", [])),
@@ -871,6 +917,8 @@ class FlowchartPlugin:
             speaker_colors=json.dumps(speaker_colors),
             theme=theme,
             selected_node_id=json.dumps(selected_node_id),  # null or "entry_0" etc
+            auto_refresh_icon=auto_refresh_icon,
+            auto_refresh_enabled="true" if self._auto_refresh_enabled else "false",
         )
 
         # Send to panel
@@ -880,9 +928,7 @@ class FlowchartPlugin:
             content=html,
         )
 
-        if success:
-            print(f"[Flowchart] Rendered {len(dialog_data['nodes'])} nodes")
-        else:
+        if not success:
             print(f"[Flowchart] Failed to render: {error_msg}")
 
     def _generate_speaker_colors(self, nodes: List[Dict[str, Any]]) -> Dict[str, str]:
@@ -907,7 +953,7 @@ class FlowchartPlugin:
                 colors["_pc"] = parley_colors.get("pc_color", "#4FC3F7")
                 colors["_owner"] = parley_colors.get("owner_color", "#FF8A65")
                 colors.update(parley_colors.get("speaker_colors", {}))
-                print(f"[Flowchart] Got speaker colors from Parley: PC={colors['_pc']}, Owner={colors['_owner']}, {len(parley_colors.get('speaker_colors', {}))} named speakers")
+                # Speaker colors fetched from Parley (reduce log spam #235)
                 return colors
             except Exception as e:
                 print(f"[Flowchart] Failed to get speaker colors from API, using fallback: {e}")
@@ -1026,35 +1072,37 @@ class FlowchartPlugin:
         self.running = True
         print("[Flowchart] Plugin running...")
 
-        # Main loop - poll for changes
-        # In Phase 2+, this will be replaced with event subscriptions
-        poll_interval = 2.0  # seconds
-
         while self.running:
             try:
-                # Periodic state refresh (POC approach)
-                # Will be replaced with proper event subscription in Epic 0 completion
-                self._refresh_dialog_state()
+                # Check if panel is still open (#235)
+                # If panel was closed by user, stop the plugin gracefully
+                # Don't unregister panel - user may reopen it later
+                if self.client and self._panel_registered:
+                    if not self.client.is_panel_open("flowchart-view"):
+                        print("[Flowchart] Panel closed by user, stopping plugin")
+                        self._window_closed_by_user = True  # Track for shutdown (#235)
+                        break
 
-                # Check for selection changes (bidirectional sync #234)
-                # NOTE: We only track selection, we do NOT re-render on selection changes.
-                # Re-rendering would wipe out the JavaScript highlight state set by flowchart clicks.
-                # The flowchart JS handles its own highlighting when user clicks in flowchart.
-                # Tree→Flow sync would require ExecuteJavaScript which isn't available.
-                if self.client:
-                    node_id, node_text = self.client.get_selected_node()
-                    if node_id and node_id != self._last_selected_node_id:
-                        self._last_selected_node_id = node_id
-                        print(f"[Flowchart] Selection changed to: {node_id} (tracking only, no re-render)")
+                # Only poll when auto-refresh is enabled (#235)
+                if self._auto_refresh_enabled:
+                    self._refresh_dialog_state()
 
-                time.sleep(poll_interval)
+                    # Track selection changes for logging (bidirectional sync #234)
+                    # NOTE: Tree→Flow sync is now handled by PluginPanelWindow using ExecuteScript
+                    # This tracking is informational only - the C# side handles the actual sync
+                    if self.client:
+                        node_id, node_text = self.client.get_selected_node()
+                        if node_id and node_id != self._last_selected_node_id:
+                            self._last_selected_node_id = node_id
+
+                time.sleep(self._refresh_interval)
 
             except KeyboardInterrupt:
                 print("[Flowchart] Interrupted")
                 break
             except Exception as e:
                 print(f"[Flowchart] Error in main loop: {e}")
-                time.sleep(poll_interval)
+                time.sleep(self._refresh_interval)
 
     def shutdown(self):
         """Clean up resources and disconnect."""
@@ -1063,15 +1111,17 @@ class FlowchartPlugin:
 
         if self.client:
             try:
-                # Close the panel
-                if self._panel_registered:
+                # Only unregister panel if NOT exiting due to user closing window (#235)
+                # When user closes the window, keep panel registered so it can be reopened
+                if self._panel_registered and not self._window_closed_by_user:
                     self.client.close_panel("flowchart-view")
                     self._panel_registered = False
 
-                self.client.show_notification(
-                    "Flowchart View",
-                    "Plugin stopped."
-                )
+                if not self._window_closed_by_user:
+                    self.client.show_notification(
+                        "Flowchart View",
+                        "Plugin stopped."
+                    )
             except Exception:
                 pass  # May fail if Parley is already closing
 
@@ -1084,12 +1134,7 @@ class FlowchartPlugin:
 
 def main():
     """Entry point for the Flowchart View plugin."""
-    print("=" * 60)
-    print("FLOWCHART VIEW PLUGIN")
-    print("Epic 3: Advanced Visualization")
-    print("=" * 60)
-    print("Plugin ID: org.parley.flowchart")
-    print("=" * 60)
+    print("[Flowchart] Starting plugin...")
 
     plugin = FlowchartPlugin()
 
@@ -1105,9 +1150,7 @@ def main():
     finally:
         plugin.shutdown()
 
-    print("=" * 60)
-    print("FLOWCHART VIEW PLUGIN EXITED")
-    print("=" * 60)
+    print("[Flowchart] Plugin exited")
 
 
 if __name__ == "__main__":

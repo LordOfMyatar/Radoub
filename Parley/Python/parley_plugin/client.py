@@ -16,6 +16,7 @@ from .plugin_pb2 import (
     RegisterPanelRequest,
     UpdatePanelContentRequest,
     ClosePanelRequest,
+    IsPanelOpenRequest,
     GetThemeRequest,
     GetSpeakerColorsRequest,
 )
@@ -375,6 +376,24 @@ class ParleyClient:
             return response.success
         except grpc.RpcError as e:
             print(f"gRPC error: {e}")
+            return False
+
+    def is_panel_open(self, panel_id: str) -> bool:
+        """
+        Check if a panel is currently open (#235).
+
+        Args:
+            panel_id: ID of the panel to check
+
+        Returns:
+            True if panel window is open
+        """
+        try:
+            request = IsPanelOpenRequest(panel_id=panel_id)
+            response = self.ui.IsPanelOpen(request)
+            return response.is_open
+        except grpc.RpcError as e:
+            # Connection error likely means Parley is closed
             return False
 
     def close(self):
