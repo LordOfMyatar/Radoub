@@ -315,11 +315,15 @@ class FlowchartPlugin:
                 selected_node_id = node_id
                 self._last_selected_node_id = node_id
 
-        # Check for stored sync_selection setting from UI toggle (#235)
-        # This persists the setting across re-renders
+        # Check for stored UI toggle settings (#235)
+        # This persists settings across re-renders
         found, stored_sync = self.client.get_panel_setting("flowchart-view", "sync_selection")
         if found:
             self._sync_selection_enabled = stored_sync == "true"
+
+        found, stored_auto = self.client.get_panel_setting("flowchart-view", "auto_refresh")
+        if found:
+            self._auto_refresh_enabled = stored_auto == "true"
 
         # Generate HTML from template with bundled assets
         auto_refresh_icon = "⏸" if self._auto_refresh_enabled else "▶"
