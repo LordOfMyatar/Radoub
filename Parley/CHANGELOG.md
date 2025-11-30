@@ -18,11 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Second phase of the ChatMapper-style flowchart view plugin (Epic 3).
 
 **Work Items**:
-- [ ] #228 - Sugiyama auto-layout (dagre.js)
-- [ ] #229 - Theme awareness
-- [ ] #230 - NPC speaker color/shape integration
-- [ ] #231 - Script indicators on nodes
-- [ ] #232 - Link node styling (grayed + dotted)
+- [x] #228 - Sugiyama auto-layout (dagre.js) - Top-to-bottom hierarchical layout
+- [x] #229 - Theme awareness - Dark/light mode CSS variables
+- [x] #230 - NPC speaker color/shape integration - Consistent palette per speaker
+- [x] #231 - Script indicators on nodes - ⚡ action, ❓ condition icons
+- [x] #232 - Link node styling (grayed + dotted) - Dashed borders, reduced opacity
+
+**Technical Details**:
+- Extended DialogNodeProto with HasCondition, HasAction, ConditionScript, ActionScript
+- Extended DialogLinkProto with HasCondition, ConditionScript for edge styling
+- dagre.js v0.8.5 for Sugiyama layout algorithm
+- D3.js v7 for rendering and interactivity
 
 ---
 
