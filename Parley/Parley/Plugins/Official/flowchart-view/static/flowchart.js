@@ -405,11 +405,18 @@ function toggleAutoRefresh() {
 
 // Selection sync toggle (#235)
 // syncSelectionEnabled is set by the HTML template
+// Called by onchange on checkbox - read checkbox state directly to avoid sync issues
 function toggleSyncSelection() {
-    syncSelectionEnabled = !syncSelectionEnabled;
     const checkbox = document.getElementById("syncCheckbox");
-    if (checkbox) checkbox.checked = syncSelectionEnabled;
+    if (checkbox) {
+        // Read directly from checkbox to ensure JS state matches UI state
+        syncSelectionEnabled = checkbox.checked;
+    } else {
+        syncSelectionEnabled = !syncSelectionEnabled;
+    }
     console.log("[Flowchart] Sync selection:", syncSelectionEnabled ? "enabled" : "disabled");
+    // Notify Parley of the change so it persists across re-renders (#235)
+    window.location.href = "parley://synctoggle/" + (syncSelectionEnabled ? "on" : "off");
 }
 
 // Handle window resize

@@ -204,6 +204,32 @@ namespace DialogEditor.Views
                     DialogContextService.Instance.NotifyDialogChanged();
                 });
             }
+            // Auto-refresh toggle (#235)
+            else if (url.StartsWith("parley://autorefresh/", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Cancel();
+                var state = url.Substring("parley://autorefresh/".Length);
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"BeforeNavigate intercepted: autorefresh/{state}");
+
+                // Notify plugin of auto-refresh preference change via broadcast
+                Dispatcher.UIThread.Post(() =>
+                {
+                    PluginUIService.BroadcastPluginSetting(_panelId, "auto_refresh", state == "on" ? "true" : "false");
+                });
+            }
+            // Sync selection toggle (#235)
+            else if (url.StartsWith("parley://synctoggle/", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Cancel();
+                var state = url.Substring("parley://synctoggle/".Length);
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"BeforeNavigate intercepted: synctoggle/{state}");
+
+                // Notify plugin of sync preference change via broadcast
+                Dispatcher.UIThread.Post(() =>
+                {
+                    PluginUIService.BroadcastPluginSetting(_panelId, "sync_selection", state == "on" ? "true" : "false");
+                });
+            }
         }
 
         private void OnPanelContentUpdated(object? sender, PanelContentUpdatedEventArgs e)

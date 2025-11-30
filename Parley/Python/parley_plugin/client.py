@@ -17,6 +17,7 @@ from .plugin_pb2 import (
     UpdatePanelContentRequest,
     ClosePanelRequest,
     IsPanelOpenRequest,
+    GetPanelSettingRequest,
     GetThemeRequest,
     GetSpeakerColorsRequest,
 )
@@ -395,6 +396,30 @@ class ParleyClient:
         except grpc.RpcError as e:
             # Connection error likely means Parley is closed
             return False
+
+    def get_panel_setting(self, panel_id: str, setting_name: str) -> tuple:
+        """
+        Get a panel setting value from Parley UI (#235).
+
+        Used to retrieve UI toggle states like sync_selection, auto_refresh
+        that persist across page re-renders.
+
+        Args:
+            panel_id: ID of the panel
+            setting_name: Name of the setting (e.g., "sync_selection", "auto_refresh")
+
+        Returns:
+            Tuple of (found: bool, value: str)
+            - found: True if setting exists
+            - value: Setting value, empty string if not found
+        """
+        try:
+            request = GetPanelSettingRequest(panel_id=panel_id, setting_name=setting_name)
+            response = self.ui.GetPanelSetting(request)
+            return (response.found, response.value)
+        except grpc.RpcError as e:
+            # Connection error or API not available
+            return (False, "")
 
     def close(self):
         """Close the gRPC channel."""

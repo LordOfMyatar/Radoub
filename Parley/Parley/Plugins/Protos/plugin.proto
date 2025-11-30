@@ -41,6 +41,9 @@ service UIService {
   rpc ClosePanel (ClosePanelRequest) returns (ClosePanelResponse);
   rpc IsPanelOpen (IsPanelOpenRequest) returns (IsPanelOpenResponse);
 
+  // Panel settings (#235)
+  rpc GetPanelSetting (GetPanelSettingRequest) returns (GetPanelSettingResponse);
+
   // Theme (Epic 3 Phase 2 / #229)
   rpc GetTheme (GetThemeRequest) returns (GetThemeResponse);
 
@@ -256,6 +259,17 @@ message IsPanelOpenRequest {
 
 message IsPanelOpenResponse {
   bool is_open = 1;              // True if panel window is open
+}
+
+// GetPanelSetting - get a panel setting from UI (#235)
+message GetPanelSettingRequest {
+  string panel_id = 1;           // Panel ID
+  string setting_name = 2;       // Setting name (e.g., "sync_selection", "auto_refresh")
+}
+
+message GetPanelSettingResponse {
+  bool found = 1;                // True if setting exists
+  string value = 2;              // Setting value (empty if not found)
 }
 
 // Theme messages (Epic 3 Phase 2 / #229)

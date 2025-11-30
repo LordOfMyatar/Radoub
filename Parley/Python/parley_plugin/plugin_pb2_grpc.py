@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from . import plugin_pb2 as plugin__pb2
+import plugin_pb2 as plugin__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -509,6 +509,11 @@ class UIServiceStub(object):
                 request_serializer=plugin__pb2.IsPanelOpenRequest.SerializeToString,
                 response_deserializer=plugin__pb2.IsPanelOpenResponse.FromString,
                 _registered_method=True)
+        self.GetPanelSetting = channel.unary_unary(
+                '/parley.plugin.UIService/GetPanelSetting',
+                request_serializer=plugin__pb2.GetPanelSettingRequest.SerializeToString,
+                response_deserializer=plugin__pb2.GetPanelSettingResponse.FromString,
+                _registered_method=True)
         self.GetTheme = channel.unary_unary(
                 '/parley.plugin.UIService/GetTheme',
                 request_serializer=plugin__pb2.GetThemeRequest.SerializeToString,
@@ -562,6 +567,13 @@ class UIServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetPanelSetting(self, request, context):
+        """Panel settings (#235)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetTheme(self, request, context):
         """Theme (Epic 3 Phase 2 / #229)
         """
@@ -608,6 +620,11 @@ def add_UIServiceServicer_to_server(servicer, server):
                     servicer.IsPanelOpen,
                     request_deserializer=plugin__pb2.IsPanelOpenRequest.FromString,
                     response_serializer=plugin__pb2.IsPanelOpenResponse.SerializeToString,
+            ),
+            'GetPanelSetting': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetPanelSetting,
+                    request_deserializer=plugin__pb2.GetPanelSettingRequest.FromString,
+                    response_serializer=plugin__pb2.GetPanelSettingResponse.SerializeToString,
             ),
             'GetTheme': grpc.unary_unary_rpc_method_handler(
                     servicer.GetTheme,
@@ -783,6 +800,33 @@ class UIService(object):
             '/parley.plugin.UIService/IsPanelOpen',
             plugin__pb2.IsPanelOpenRequest.SerializeToString,
             plugin__pb2.IsPanelOpenResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetPanelSetting(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/parley.plugin.UIService/GetPanelSetting',
+            plugin__pb2.GetPanelSettingRequest.SerializeToString,
+            plugin__pb2.GetPanelSettingResponse.FromString,
             options,
             channel_credentials,
             insecure,

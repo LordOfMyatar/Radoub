@@ -31,6 +31,13 @@ namespace DialogEditor.Plugins.Services
         private static readonly ConcurrentDictionary<string, bool> _panelWindowOpen = new();
 
         /// <summary>
+        /// Stores panel-specific settings from UI (#235).
+        /// Key: fullPanelId:settingName, Value: setting value
+        /// Used for sync_selection, auto_refresh, etc.
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, string> _panelSettings = new();
+
+        /// <summary>
         /// Event raised when a panel is registered.
         /// UI layer should subscribe to this to create actual panel windows.
         /// </summary>
@@ -45,6 +52,12 @@ namespace DialogEditor.Plugins.Services
         /// Event raised when a panel should be closed.
         /// </summary>
         public static event EventHandler<PanelClosedEventArgs>? PanelClosed;
+
+        /// <summary>
+        /// Event raised when a plugin setting changes from UI (#235).
+        /// Plugins can subscribe to receive settings like sync_selection, auto_refresh.
+        /// </summary>
+        public static event EventHandler<PluginSettingChangedEventArgs>? PluginSettingChanged;
 
         public PluginUIService(PluginSecurityContext security)
         {
@@ -352,6 +365,32 @@ namespace DialogEditor.Plugins.Services
         }
 
         /// <summary>
+        /// Get a panel setting value (#235).
+        /// Used by plugins to retrieve UI toggle states like sync_selection.
+        /// </summary>
+        public override Task<GetPanelSettingResponse> GetPanelSetting(GetPanelSettingRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var pluginId = _security.PluginId;
+                var fullPanelId = $"{pluginId}:{request.PanelId}";
+
+                var value = GetPanelSetting(fullPanelId, request.SettingName);
+
+                return Task.FromResult(new GetPanelSettingResponse
+                {
+                    Found = value != null,
+                    Value = value ?? ""
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"GetPanelSetting failed: {ex.Message}");
+                return Task.FromResult(new GetPanelSettingResponse { Found = false, Value = "" });
+            }
+        }
+
+        /// <summary>
         /// Static helper to raise PanelRegistered event (used by UIServiceImpl).
         /// </summary>
         public static void RaisePanelRegistered(PanelInfo panelInfo)
@@ -419,6 +458,32 @@ namespace DialogEditor.Plugins.Services
         {
             _panelWindowOpen[fullPanelId] = true;
             UnifiedLogger.LogPlugin(LogLevel.INFO, $"Panel window marked open: {fullPanelId}");
+        }
+
+        /// <summary>
+        /// Broadcast a setting change from UI to plugin (#235).
+        /// Used for toggle states like sync_selection, auto_refresh that need to persist across re-renders.
+        /// Also stores the setting for later retrieval by plugins via GetPanelSetting.
+        /// </summary>
+        public static void BroadcastPluginSetting(string fullPanelId, string settingName, string settingValue)
+        {
+            // Store setting for persistence across re-renders
+            var key = $"{fullPanelId}:{settingName}";
+            _panelSettings[key] = settingValue;
+            UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"Stored setting: {key} = {settingValue}");
+
+            // Raise event for any listeners
+            PluginSettingChanged?.Invoke(null, new PluginSettingChangedEventArgs(fullPanelId, settingName, settingValue));
+        }
+
+        /// <summary>
+        /// Get a stored panel setting (#235).
+        /// Returns null if setting not found.
+        /// </summary>
+        public static string? GetPanelSetting(string fullPanelId, string settingName)
+        {
+            var key = $"{fullPanelId}:{settingName}";
+            return _panelSettings.TryGetValue(key, out var value) ? value : null;
         }
 
         /// <summary>
@@ -504,6 +569,23 @@ namespace DialogEditor.Plugins.Services
         public PanelClosedEventArgs(string fullPanelId)
         {
             FullPanelId = fullPanelId;
+        }
+    }
+
+    /// <summary>
+    /// Event args for plugin setting changes from UI (#235).
+    /// </summary>
+    public class PluginSettingChangedEventArgs : EventArgs
+    {
+        public string FullPanelId { get; }
+        public string SettingName { get; }
+        public string SettingValue { get; }
+
+        public PluginSettingChangedEventArgs(string fullPanelId, string settingName, string settingValue)
+        {
+            FullPanelId = fullPanelId;
+            SettingName = settingName;
+            SettingValue = settingValue;
         }
     }
 }
