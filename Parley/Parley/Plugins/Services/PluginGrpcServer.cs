@@ -326,7 +326,11 @@ namespace DialogEditor.Plugins.Services
                         Text = node.Text,
                         Speaker = node.Speaker,
                         IsLink = node.IsLink,
-                        LinkTarget = node.LinkTarget
+                        LinkTarget = node.LinkTarget,
+                        HasCondition = node.HasCondition,
+                        HasAction = node.HasAction,
+                        ConditionScript = node.ConditionScript,
+                        ActionScript = node.ActionScript
                     });
                 }
 
@@ -335,7 +339,9 @@ namespace DialogEditor.Plugins.Services
                     response.Links.Add(new DialogLinkProto
                     {
                         Source = link.Source,
-                        Target = link.Target
+                        Target = link.Target,
+                        HasCondition = link.HasCondition,
+                        ConditionScript = link.ConditionScript
                     });
                 }
 

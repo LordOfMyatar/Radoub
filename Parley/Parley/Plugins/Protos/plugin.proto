@@ -251,9 +251,15 @@ message DialogNodeProto {
   string speaker = 4;         // Speaker tag (for NPC entries)
   bool is_link = 5;           // Whether this is a link to another node
   string link_target = 6;     // Target node ID if is_link is true
+  bool has_condition = 7;     // Has conditional script (ScriptAppears)
+  bool has_action = 8;        // Has action script (ScriptAction)
+  string condition_script = 9; // Condition script name (if any)
+  string action_script = 10;  // Action script name (if any)
 }
 
 message DialogLinkProto {
   string source = 1;          // Source node ID
   string target = 2;          // Target node ID
+  bool has_condition = 3;     // Has conditional script on this edge
+  string condition_script = 4; // Condition script name (if any)
 }
