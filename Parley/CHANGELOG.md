@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.35-alpha] - 2025-11-29
-**Branch**: `parley/feat/epic-40-phase3-interaction` | **PR**: #TBD
+**Branch**: `parley/feat/epic-40-phase3-interaction` | **PR**: #249
 
 ### Epic 40 Phase 3: Interaction and Navigation (#234-#237)
 
