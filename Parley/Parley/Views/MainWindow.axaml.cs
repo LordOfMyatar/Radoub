@@ -29,6 +29,7 @@ namespace DialogEditor.Views
         private readonly AudioService _audioService;
         private readonly CreatureService _creatureService;
         private readonly PluginManager _pluginManager;
+        private readonly PluginPanelManager _pluginPanelManager; // Manages plugin panel windows (Epic 3 / #225)
         private readonly PropertyPanelPopulator _propertyPopulator; // Helper for populating properties panel
         private readonly PropertyAutoSaveService _propertyAutoSaveService; // Handles auto-saving of node properties
         private readonly ScriptParameterUIManager _parameterUIManager; // Manages script parameter UI and synchronization
@@ -70,6 +71,7 @@ namespace DialogEditor.Views
             _audioService = new AudioService();
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
+            _pluginPanelManager = new PluginPanelManager(this);
             _propertyPopulator = new PropertyPanelPopulator(this);
             _propertyAutoSaveService = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
@@ -435,6 +437,9 @@ namespace DialogEditor.Views
                 _activeSoundBrowserWindow.Close();
                 _activeSoundBrowserWindow = null;
             }
+
+            // Close plugin panel windows (Epic 3 / #225)
+            _pluginPanelManager.Dispose();
 
             // Save window position on close
             _windowPersistenceManager.SaveWindowPosition();

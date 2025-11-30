@@ -1,0 +1,19 @@
+{
+  "manifestVersion": "1.0",
+  "plugin": {
+    "id": "org.parley.flowchart",
+    "name": "Flowchart View",
+    "version": "0.1.0",
+    "author": "Parley Team",
+    "description": "ChatMapper-style flowchart visualization for dialog trees. Displays nodes as colored boxes with connecting lines, supporting zoom, pan, and auto-layout.",
+    "parleyVersion": ">=0.1.33"
+  },
+  "permissions": [
+    "ui.create_panel",
+    "ui.show_notification",
+    "dialog.read",
+    "dialog.subscribe_changes"
+  ],
+  "entry_point": "flowchart_plugin.py",
+  "trust_level": "official"
+}

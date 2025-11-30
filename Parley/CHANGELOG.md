@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.33-alpha] - 2025-11-29
+**Branch**: `parley/feat/epic-40-phase1-foundation` | **PR**: #244
+
+### Epic 40 Phase 1: Flowchart Foundation (#223-#227)
+
+First phase of the ChatMapper-style flowchart view plugin (Epic 3).
+
+**Work Items**:
+- [ ] #223 - Plugin scaffold and manifest
+- [ ] #224 - Dockable/floating panel registration
+- [ ] #225 - WebView.Avalonia.Cross integration
+- [ ] #226 - Basic D3.js graph rendering
+- [ ] #227 - Live dialog data integration
+
+---
+
 ## [0.1.32-alpha] - 2025-11-28
 **Branch**: `parley/feat/issue-146-builtin-scripts` | **PR**: #219
 

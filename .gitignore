@@ -28,6 +28,15 @@ Desktop.ini
 *.temp
 *.cache
 ~$*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
 /.claude/settings.local.json
 NonPublic
 TestOutput

@@ -247,13 +247,22 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // See #103 - Implement GetCurrentDialog and GetSelectedNode APIs
-                // For now, return empty response
+                var dialogContext = DialogContextService.Instance;
+                var dialog = dialogContext.CurrentDialog;
+
+                if (dialog == null)
+                {
+                    return Task.FromResult(new GetCurrentDialogResponse
+                    {
+                        DialogId = "",
+                        DialogName = ""
+                    });
+                }
 
                 return Task.FromResult(new GetCurrentDialogResponse
                 {
-                    DialogId = "",
-                    DialogName = ""
+                    DialogId = dialogContext.CurrentFileName ?? "untitled",
+                    DialogName = System.IO.Path.GetFileNameWithoutExtension(dialogContext.CurrentFileName ?? "Untitled")
                 });
             }
             catch (Exception ex)
@@ -267,19 +276,81 @@ namespace DialogEditor.Plugins.Services
         {
             try
             {
-                // See #103 - Implement GetCurrentDialog and GetSelectedNode APIs
-                // For now, return empty response
+                var dialogContext = DialogContextService.Instance;
+                var nodeId = dialogContext.SelectedNodeId;
 
                 return Task.FromResult(new GetSelectedNodeResponse
                 {
-                    NodeId = "",
-                    NodeText = ""
+                    NodeId = nodeId ?? "",
+                    NodeText = "" // TODO: Look up actual node text
                 });
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Get selected node failed: {ex.Message}");
                 return Task.FromResult(new GetSelectedNodeResponse());
+            }
+        }
+
+        public override Task<GetDialogStructureResponse> GetDialogStructure(GetDialogStructureRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var dialogContext = DialogContextService.Instance;
+                var dialog = dialogContext.CurrentDialog;
+
+                if (dialog == null)
+                {
+                    return Task.FromResult(new GetDialogStructureResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "No dialog loaded"
+                    });
+                }
+
+                var (nodes, links) = dialogContext.GetDialogStructure();
+
+                var response = new GetDialogStructureResponse
+                {
+                    Success = true,
+                    DialogId = dialogContext.CurrentFileName ?? "untitled",
+                    DialogName = System.IO.Path.GetFileNameWithoutExtension(dialogContext.CurrentFileName ?? "Untitled")
+                };
+
+                foreach (var node in nodes)
+                {
+                    response.Nodes.Add(new DialogNodeProto
+                    {
+                        Id = node.Id,
+                        Type = node.Type,
+                        Text = node.Text,
+                        Speaker = node.Speaker,
+                        IsLink = node.IsLink,
+                        LinkTarget = node.LinkTarget
+                    });
+                }
+
+                foreach (var link in links)
+                {
+                    response.Links.Add(new DialogLinkProto
+                    {
+                        Source = link.Source,
+                        Target = link.Target
+                    });
+                }
+
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"GetDialogStructure: {nodes.Count} nodes, {links.Count} links");
+
+                return Task.FromResult(response);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Get dialog structure failed: {ex.Message}");
+                return Task.FromResult(new GetDialogStructureResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                });
             }
         }
     }
