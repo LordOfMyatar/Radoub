@@ -393,14 +393,29 @@ function requestRefresh() {
     window.location.href = "parley://refresh";
 }
 
+// Send setting to Parley via iframe navigation (more reliable than location.href) (#235)
+// Uses a hidden iframe to avoid race conditions with page reloads
+function sendSettingToParley(url) {
+    // Create or reuse hidden iframe for settings communication
+    let iframe = document.getElementById("parleySettingsFrame");
+    if (!iframe) {
+        iframe = document.createElement("iframe");
+        iframe.id = "parleySettingsFrame";
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+    }
+    iframe.src = url;
+}
+
 // Auto-refresh toggle (#235)
 // autoRefreshEnabled is set by the HTML template
 function toggleAutoRefresh() {
-    autoRefreshEnabled = !autoRefreshEnabled;
     const btn = document.getElementById("autoRefreshBtn");
+    // Read current state from button to avoid desync
+    autoRefreshEnabled = btn.textContent === "▶";  // Was paused, now enabling
     btn.textContent = autoRefreshEnabled ? "⏸" : "▶";
     btn.title = autoRefreshEnabled ? "Pause auto-refresh" : "Resume auto-refresh";
-    window.location.href = "parley://autorefresh/" + (autoRefreshEnabled ? "on" : "off");
+    sendSettingToParley("parley://autorefresh/" + (autoRefreshEnabled ? "on" : "off"));
 }
 
 // Selection sync toggle (#235)
@@ -416,7 +431,7 @@ function toggleSyncSelection() {
     }
     console.log("[Flowchart] Sync selection:", syncSelectionEnabled ? "enabled" : "disabled");
     // Notify Parley of the change so it persists across re-renders (#235)
-    window.location.href = "parley://synctoggle/" + (syncSelectionEnabled ? "on" : "off");
+    sendSettingToParley("parley://synctoggle/" + (syncSelectionEnabled ? "on" : "off"));
 }
 
 // Handle window resize
