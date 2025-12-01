@@ -10,6 +10,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.36-alpha] - 2025-11-30
+**Branch**: `parley/fix/sandbox-security-hardening` | **PR**: #256
+
+### Security Hardening for Sandboxed File I/O (#254)
+
+Strengthens plugin security model with quick wins that don't require code signing.
+
+**Implemented**:
+- Add file size limits (10 MB default) to prevent disk fill DoS attacks
+- Add symlink protection to prevent sandbox escape via ReparsePoint
+- Per-plugin sandbox directories (`~/Parley/PluginData/{pluginId}/`)
+- Wire FileServiceImpl to PluginFileService (security-checked implementation)
+
+**Security Checklist**:
+- [x] Path traversal prevention (already implemented)
+- [x] File size limits (this PR)
+- [x] Symlink blocking (this PR)
+- [x] Per-plugin isolation (this PR)
+- [x] Audit logging (already implemented)
+
+---
+
 ## [0.1.35-alpha] - 2025-11-30
 **Branch**: `parley/feat/epic-40-phase3-interaction` | **PR**: #249
 

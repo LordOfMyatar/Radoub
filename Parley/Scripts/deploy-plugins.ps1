@@ -1,13 +1,13 @@
 # Deploy Parley plugins to user's plugin folder
-# Run from repo root: .\Parley\deploy-plugins.ps1
+# Run from Parley/Scripts: .\deploy-plugins.ps1
 
 $ErrorActionPreference = "Stop"
 
-# Source paths (repo)
-$RepoRoot = Split-Path -Parent $PSScriptRoot
-$PluginSource = Join-Path $RepoRoot "Parley\Parley\Plugins\Official"
-$PythonSource = Join-Path $RepoRoot "Parley\Python\parley_plugin"
-$ProtoSource = Join-Path $RepoRoot "Parley\Parley\Plugins\Protos\plugin.proto"
+# Source paths - Scripts is inside Parley/
+$ParleyRoot = Split-Path -Parent $PSScriptRoot
+$PluginSource = Join-Path $ParleyRoot "Parley\Plugins\Official"
+$PythonSource = Join-Path $ParleyRoot "Python\parley_plugin"
+$ProtoSource = Join-Path $ParleyRoot "Parley\Plugins\Protos\plugin.proto"
 
 # Target paths (AppData)
 $ParleyData = Join-Path $env:USERPROFILE "Parley"
@@ -31,7 +31,7 @@ if (-not (Test-Path $PythonTarget)) {
 # Regenerate Python gRPC stubs from proto file
 Write-Host ""
 Write-Host "Regenerating Python gRPC stubs..." -ForegroundColor Yellow
-$ProtoDir = Join-Path $RepoRoot "Parley\Parley\Plugins\Protos"
+$ProtoDir = Join-Path $ParleyRoot "Parley\Plugins\Protos"
 $PythonOutputDir = $PythonSource
 
 Push-Location $PythonOutputDir
