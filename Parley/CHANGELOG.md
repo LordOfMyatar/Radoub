@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.36-alpha] - 2025-11-30
-**Branch**: `parley/fix/sandbox-security-hardening` | **PR**: #TBD
+**Branch**: `parley/fix/sandbox-security-hardening` | **PR**: #256
 
 ### Security Hardening for Sandboxed File I/O (#254)
 
