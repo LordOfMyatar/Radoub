@@ -48,8 +48,8 @@ namespace DialogEditor.Plugins
                     return false;
                 }
 
-                // Start gRPC server
-                _grpcServer = new PluginGrpcServer();
+                // Start gRPC server with plugin manifest for security context
+                _grpcServer = new PluginGrpcServer(_plugin.Manifest);
                 _grpcServer.Start();
 
                 // Set up Python path to include parley_plugin library

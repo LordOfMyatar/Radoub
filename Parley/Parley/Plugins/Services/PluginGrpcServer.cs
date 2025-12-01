@@ -16,21 +16,36 @@ using Microsoft.Extensions.Hosting;
 namespace DialogEditor.Plugins.Services
 {
     /// <summary>
-    /// gRPC server that hosts all plugin services
+    /// gRPC server that hosts all plugin services for a single plugin
     /// </summary>
     public class PluginGrpcServer : IDisposable
     {
         private readonly IHost _host;
         private readonly int _port;
+        private readonly string _pluginId;
+        private readonly PluginManifest _manifest;
         private bool _isDisposed;
 
         public int Port => _port;
         public bool IsRunning => _host != null;
+        public string PluginId => _pluginId;
 
-        public PluginGrpcServer()
+        public PluginGrpcServer(PluginManifest manifest)
         {
+            _manifest = manifest ?? throw new ArgumentNullException(nameof(manifest));
+            _pluginId = manifest.Plugin.Id;
+
             // Find available port
             _port = FindAvailablePort();
+
+            // Create security context for this plugin
+            var permissionChecker = new PermissionChecker(manifest);
+            var rateLimiter = new Security.RateLimiter();
+            var auditLog = new Security.SecurityAuditLog();
+            var securityContext = new Security.PluginSecurityContext(_pluginId, permissionChecker, rateLimiter, auditLog);
+
+            // Create file service with security context
+            var fileService = new PluginFileService(securityContext);
 
             // Create Kestrel host with gRPC services
             _host = Host.CreateDefaultBuilder()
@@ -47,6 +62,8 @@ namespace DialogEditor.Plugins.Services
                     webBuilder.ConfigureServices(services =>
                     {
                         services.AddGrpc();
+                        // Register the security-aware file service instance
+                        services.AddSingleton(fileService);
                     });
 
                     webBuilder.Configure(app =>
@@ -57,7 +74,8 @@ namespace DialogEditor.Plugins.Services
                             endpoints.MapGrpcService<AudioServiceImpl>();
                             endpoints.MapGrpcService<UIServiceImpl>();
                             endpoints.MapGrpcService<DialogServiceImpl>();
-                            endpoints.MapGrpcService<FileServiceImpl>();
+                            // Use the security-aware file service
+                            endpoints.MapGrpcService<PluginFileService>();
                         });
                     });
                 })
@@ -586,103 +604,5 @@ namespace DialogEditor.Plugins.Services
         }
     }
 
-    /// <summary>
-    /// File service implementation
-    /// </summary>
-    internal class FileServiceImpl : Proto.FileService.FileServiceBase
-    {
-        public override Task<OpenFileDialogResponse> OpenFileDialog(OpenFileDialogRequest request, ServerCallContext context)
-        {
-            try
-            {
-                // See #104 - Implement sandboxed file I/O for plugins
-
-                return Task.FromResult(new OpenFileDialogResponse
-                {
-                    FilePath = "",
-                    Cancelled = true
-                });
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Open file dialog failed: {ex.Message}");
-                return Task.FromResult(new OpenFileDialogResponse
-                {
-                    Cancelled = true
-                });
-            }
-        }
-
-        public override Task<SaveFileDialogResponse> SaveFileDialog(SaveFileDialogRequest request, ServerCallContext context)
-        {
-            try
-            {
-                // See #104 - Implement sandboxed file I/O for plugins
-
-                return Task.FromResult(new SaveFileDialogResponse
-                {
-                    FilePath = "",
-                    Cancelled = true
-                });
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Save file dialog failed: {ex.Message}");
-                return Task.FromResult(new SaveFileDialogResponse
-                {
-                    Cancelled = true
-                });
-            }
-        }
-
-        public override Task<ReadFileResponse> ReadFile(ReadFileRequest request, ServerCallContext context)
-        {
-            try
-            {
-                // See #104 - Implement sandboxed file I/O for plugins
-
-                UnifiedLogger.LogPlugin(LogLevel.WARN, $"Plugin attempted to read file: {request.FilePath}");
-
-                return Task.FromResult(new ReadFileResponse
-                {
-                    Success = false,
-                    ErrorMessage = "Not implemented"
-                });
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Read file failed: {ex.Message}");
-                return Task.FromResult(new ReadFileResponse
-                {
-                    Success = false,
-                    ErrorMessage = ex.Message
-                });
-            }
-        }
-
-        public override Task<WriteFileResponse> WriteFile(WriteFileRequest request, ServerCallContext context)
-        {
-            try
-            {
-                // See #104 - Implement sandboxed file I/O for plugins
-
-                UnifiedLogger.LogPlugin(LogLevel.WARN, $"Plugin attempted to write file: {request.FilePath}");
-
-                return Task.FromResult(new WriteFileResponse
-                {
-                    Success = false,
-                    ErrorMessage = "Not implemented"
-                });
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Write file failed: {ex.Message}");
-                return Task.FromResult(new WriteFileResponse
-                {
-                    Success = false,
-                    ErrorMessage = ex.Message
-                });
-            }
-        }
-    }
+    // FileServiceImpl removed - now using PluginFileService with security context (#254)
 }
