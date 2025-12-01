@@ -2,6 +2,8 @@
 
 **Neverwinter Nights Modding Toolset**
 
+*Bringing dead workflows back to life.*
+
 A collection of cross-platform tools for creating and editing Neverwinter Nights modules. Built with modern technology while respecting the Aurora Engine's legacy.
 
 > *Radoub* (French, "careening") - The process of repairing a ship's hull. Like undead pirates maintaining their vessel for eternal voyages, these tools help keep your NWN modules shipshape for adventures to come.

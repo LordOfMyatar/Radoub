@@ -1,5 +1,7 @@
 # Parley
 
+*Not all treasure is silver and gold, mate. Sometimes it's a readable dialog editor.*
+
 ## What is Parley?
 
 Parley is a conversation editor designed for Neverwinter Nights conversation files based off of the conversation editor from Aurora Toolset. It aims to improve usability via a modern user interface. It allows you to work on conversation files outside of the Aurora Toolset.
