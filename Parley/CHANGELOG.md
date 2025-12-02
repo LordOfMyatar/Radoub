@@ -13,6 +13,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.37-alpha] - 2025-12-02
+**Branch**: `parley/feat/plugin-packaging` | **PR**: #TBD
+
+### Feature: Self-contained plugin packaging (#248)
+
+---
+
 ## [0.1.36-alpha] - 2025-11-30
 **Branch**: `parley/fix/sandbox-security-hardening` | **PR**: #256
 
