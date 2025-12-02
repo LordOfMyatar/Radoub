@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+- Bump Avalonia packages to 11.3.9 (from 11.3.6)
+
 ---
 
 ## [0.1.36-alpha] - 2025-11-30
