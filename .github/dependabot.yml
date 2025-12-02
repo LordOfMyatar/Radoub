@@ -1,0 +1,31 @@
+# Dependabot configuration for Radoub toolset
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+updates:
+  # NuGet packages for Parley
+  - package-ecosystem: "nuget"
+    directory: "/Parley"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "[Parley]"
+
+  # NuGet packages for Radoub.Formats shared library
+  - package-ecosystem: "nuget"
+    directory: "/Radoub.Formats"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "[Radoub]"
+
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci"
