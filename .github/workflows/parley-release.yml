@@ -182,7 +182,7 @@ jobs:
 
     # Upload artifacts for release
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.artifact-name }}
         path: |
