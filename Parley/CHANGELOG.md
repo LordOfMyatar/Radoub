@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.37-alpha] - 2025-12-02
-**Branch**: `parley/feat/plugin-packaging` | **PR**: #TBD
+**Branch**: `parley/feat/plugin-packaging` | **PR**: #276
 
 ### Feature: Self-contained plugin packaging (#248)
 
