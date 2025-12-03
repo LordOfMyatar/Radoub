@@ -13,6 +13,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.38-alpha] - TBD
+**Branch**: `parley/feat/epic-40-phase4-export` | **PR**: #TBD
+
+### Epic 40 Phase 4: Export Features (#238-#240)
+
+Fourth phase of the ChatMapper-style flowchart view plugin (Epic 3).
+
+**Work Items**:
+- [ ] #238 - PNG export
+- [ ] #239 - SVG export
+- [ ] #240 - Drag-drop node repositioning (optional/low priority)
+
+---
+
 ## [0.1.37-alpha] - 2025-12-02
 **Branch**: `parley/feat/plugin-packaging` | **PR**: #276
 
