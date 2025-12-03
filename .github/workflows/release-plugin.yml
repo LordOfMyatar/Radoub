@@ -1,0 +1,77 @@
+# Plugin Release Workflow
+# Triggered by pushing tags like: plugin/flowchart-view/v0.1.0
+#
+# Usage:
+#   git tag plugin/flowchart-view/v0.1.0
+#   git push origin plugin/flowchart-view/v0.1.0
+#
+# Note: Builds on Windows but produces platform-agnostic ZIP (Python files only)
+
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - 'plugin/*/v*'
+
+jobs:
+  release:
+    runs-on: windows-latest  # PowerShell script; output is cross-platform
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse tag
+        id: tag
+        shell: pwsh
+        run: |
+          # tag = plugin/flowchart-view/v0.1.0
+          $tag = "${{ github.ref_name }}"
+          $parts = $tag -split '/'
+          $pluginName = $parts[1]
+          $version = $parts[2] -replace '^v', ''
+
+          Write-Host "Plugin: $pluginName"
+          Write-Host "Version: $version"
+
+          echo "plugin=$pluginName" >> $env:GITHUB_OUTPUT
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build Plugin ZIP
+        shell: pwsh
+        run: |
+          $pluginPath = "Parley/Parley/Plugins/Official/${{ steps.tag.outputs.plugin }}"
+
+          if (-not (Test-Path $pluginPath)) {
+            Write-Error "Plugin not found: $pluginPath"
+            exit 1
+          }
+
+          ./Parley/Scripts/build-plugin-zip.ps1 `
+            -PluginPath $pluginPath `
+            -OutputPath "${{ github.workspace }}"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "${{ steps.tag.outputs.plugin }} v${{ steps.tag.outputs.version }}"
+          files: "*.zip"
+          body: |
+            ## ${{ steps.tag.outputs.plugin }} v${{ steps.tag.outputs.version }}
+
+            ### Installation (Windows, Linux, macOS)
+
+            1. Download the ZIP file below
+            2. Extract to your Parley folder:
+               - Windows: `%USERPROFILE%\Parley\`
+               - Linux/macOS: `~/Parley/`
+            3. Restart Parley to discover the plugin
+            4. Enable in Settings → Plugins tab
+            5. Restart Parley again to start the plugin
+
+            See [Using Plugins](https://github.com/LordOfMyatar/Radoub/blob/main/Parley/Documentation/User/Using_Plugins.md) for detailed instructions.
+          draft: false
+          prerelease: true

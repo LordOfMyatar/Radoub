@@ -39,37 +39,48 @@ Plugins extend Parley's functionality without modifying the core application. Th
 
 ### Plugin Location
 
-**During Alpha:**
-All plugins are installed to `~/Parley/Plugins/Community/`
-- Windows: `~\Parley\Plugins\Community\`
-- macOS/Linux: `~/Parley/Plugins/Community/`
+Plugins are installed to your Parley data folder:
 
-**Note:** Official plugin bundling and trust levels will be implemented in future releases.
+| Platform | Path |
+|----------|------|
+| Windows | `%USERPROFILE%\Parley\` |
+| Linux | `~/Parley/` |
+| macOS | `~/Parley/` |
+
+After installation, the structure looks like:
+```
+~/Parley/
+├── Plugins/
+│   └── plugin-name/
+│       ├── plugin.json
+│       ├── plugin.py
+│       └── ...
+├── Python/
+│   └── parley_plugin/    # Client library (included in plugin ZIPs)
+│       └── ...
+└── ...
+```
 
 ### Installing a Plugin
 
-1. **Download the plugin** to your computer
-   - Usually a `.zip` file containing plugin files
+1. **Download the plugin ZIP** to your computer
+   - Example: `flowchart-view-0.1.0.zip`
 
-2. **Extract to Community folder**
-   - Create the folder if it doesn't exist: `~/Parley/Plugins/Community/`
-   - You can also open the plugin folder from the plugin settings interface
-   - Extract the plugin so the structure looks like:
-     ```
-     ~/Parley/Plugins/Community/
-     └── my-plugin/
-         ├── plugin.json
-         ├── main.py
-         └── (other plugin files)
-     ```
+2. **Extract to your Parley folder**
+   - Windows: Extract to `%USERPROFILE%\Parley\`
+   - Linux/macOS: Extract to `~/Parley/`
+   - The ZIP contains the correct folder structure - just extract directly
 
-3. **Restart Parley** to load the new plugin
+3. **Restart Parley** to discover the new plugin
 
 4. **Enable the plugin** in Settings
    - Open Settings → Plugins tab
    - Find your plugin in the list
    - Toggle it ON
-   - Restart Parley again
+
+5. **Restart Parley again** to start the plugin
+
+**Note:** Two restarts are required - once to discover, once to start after enabling.
 
 ### Verifying Installation
 
@@ -144,7 +155,7 @@ The log shows:
 ### Uninstalling Plugins
 
 1. Disable the plugin in Settings
-2. Delete the plugin folder from `~/Parley/Plugins/Community/`
+2. Delete the plugin folder from `~/Parley/Plugins/`
 3. Restart Parley
 
 [Back to TOC](#table-of-contents)
@@ -154,7 +165,7 @@ The log shows:
 ### Plugin Not Appearing in List
 
 **Check folder structure:**
-- Plugin must be in `~/Parley/Plugins/Community/plugin-name/`
+- Plugin must be in `~/Parley/Plugins/plugin-name/`
 - Must contain `plugin.json` file
 - Check Settings → Plugins tab for any error messages
 
@@ -181,7 +192,7 @@ The log shows:
 3. Re-enable plugins one at a time to identify the problem
 
 **Alternative:**
-- Delete or move the problem plugin from `~/Parley/Plugins/Community/`
+- Delete or move the problem plugin from `~/Parley/Plugins/`
 
 ### Plugin Not Doing Anything
 
@@ -206,16 +217,15 @@ During alpha development, plugin security features are limited. Trust levels and
 
 **Current Capabilities:**
 - Plugins run as separate Python processes
-- Can send notifications and dialogs to Parley via gRPC
+- Can send notifications and create UI panels via gRPC
 - Can query dialog data (when loaded)
 - All output logged to `~/Parley/Logs/Session_*/Plugin_*.log`
 - Plugins run in isolation (crash won't affect Parley)
 
-**Future Features:**
-- Permission system for file access
+**Future Features (requires code signing):**
+- Permission system enforcement
 - Sandboxed file operations
-- Audio playback control
-- More dialog editing capabilities
+- Trust level verification
 
 ### Reporting Problems
 

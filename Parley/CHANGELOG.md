@@ -13,6 +13,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.37-alpha] - 2025-12-02
+**Branch**: `parley/feat/plugin-packaging` | **PR**: #276
+
+### Feature: Self-contained plugin packaging (#248)
+
+Distributable ZIP packages for plugins that users can extract directly to `~/Parley/`.
+
+**Added**:
+- `build-plugin-zip.ps1` - Build script to create distributable ZIP packages
+- Auto-generates README.txt with installation instructions
+- Includes parley_plugin client library in package
+- Plugin Package Format specification (NonPublic/Plugin_Package_Format.md)
+- GitHub Actions workflow for automated plugin releases (`release-plugin.yml`)
+- Plugins section in README with download links
+
+**ZIP Structure**:
+```
+plugin-name-X.Y.Z.zip
+├── Plugins/plugin-name/    # Plugin files
+├── Python/parley_plugin/   # Client library
+└── README.txt              # Installation instructions
+```
+
+---
+
 ## [0.1.36-alpha] - 2025-11-30
 **Branch**: `parley/fix/sandbox-security-hardening` | **PR**: #256
 
