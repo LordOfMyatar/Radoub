@@ -13,6 +13,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.38-alpha] - TBD
+**Branch**: `parley/feat/epic-40-phase4-export` | **PR**: #277
+
+### Epic 40 Phase 4: Export Features (#238-#240)
+
+Fourth phase of the ChatMapper-style flowchart view plugin (Epic 3).
+
+**Work Items**:
+- [x] #238 - PNG export
+- [x] #239 - SVG export
+- [ ] #240 - Drag-drop node repositioning (deferred - requires tree view implementation first)
+
+**Implemented (#238, #239)**:
+- Added SVG and PNG export buttons to flowchart toolbar
+- Export generates proper self-contained files with embedded styles
+- PNG exports at 2x resolution for high quality
+- Theme-aware exports (matches current dark/light mode)
+- File save dialog with dialog name as default filename
+- Chunked data transfer for large flowcharts (>20KB base64)
+- JavaScript-side rendering with canvas API for PNG conversion
+
+**Improved: Node Text Visibility**:
+- Redesigned node styling: thick colored border with theme background
+- Speaker/type color now shows as 4px border instead of fill
+- Text always uses theme colors against theme background (readable in all themes)
+- Updated legend to match new border-style node representation
+
+---
+
 ## [0.1.37-alpha] - 2025-12-02
 **Branch**: `parley/feat/plugin-packaging` | **PR**: #276
 

@@ -355,6 +355,29 @@ namespace DialogEditor.Plugins.Services
             }
         }
 
+        public override Task<GetPanelSettingResponse> GetPanelSetting(GetPanelSettingRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var fullPanelId = $"plugin:{request.PanelId}";
+                var value = PluginUIService.GetPanelSetting(fullPanelId, request.SettingName);
+
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG,
+                    $"GetPanelSetting: {fullPanelId}:{request.SettingName} = {value ?? "(not found)"}");
+
+                return Task.FromResult(new GetPanelSettingResponse
+                {
+                    Found = value != null,
+                    Value = value ?? ""
+                });
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"GetPanelSetting failed: {ex.Message}");
+                return Task.FromResult(new GetPanelSettingResponse { Found = false, Value = "" });
+            }
+        }
+
         public override Task<GetThemeResponse> GetTheme(GetThemeRequest request, ServerCallContext context)
         {
             try
@@ -393,10 +416,12 @@ namespace DialogEditor.Plugins.Services
                 var response = new GetSpeakerColorsResponse
                 {
                     PcColor = SpeakerVisualHelper.GetSpeakerColor("", isPC: true),
-                    OwnerColor = SpeakerVisualHelper.GetSpeakerColor("", isPC: false)
+                    OwnerColor = SpeakerVisualHelper.GetSpeakerColor("", isPC: false),
+                    PcShape = SpeakerVisualHelper.GetSpeakerShape("", isPC: true).ToString(),
+                    OwnerShape = SpeakerVisualHelper.GetSpeakerShape("", isPC: false).ToString()
                 };
 
-                // Get colors for all unique speakers in the current dialog
+                // Get colors and shapes for all unique speakers in the current dialog
                 var dialogContext = DialogContextService.Instance;
                 if (dialogContext.CurrentDialog != null)
                 {
@@ -409,13 +434,17 @@ namespace DialogEditor.Plugins.Services
                     {
                         if (!string.IsNullOrEmpty(speaker))
                         {
-                            response.SpeakerColors[speaker] = SpeakerVisualHelper.GetSpeakerColor(speaker, isPC: false);
+                            var color = SpeakerVisualHelper.GetSpeakerColor(speaker, isPC: false);
+                            var shape = SpeakerVisualHelper.GetSpeakerShape(speaker, isPC: false);
+                            response.SpeakerColors[speaker] = color;
+                            response.SpeakerShapes[speaker] = shape.ToString();
+                            UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"GetSpeakerColors: '{speaker}' -> {color}, {shape}");
                         }
                     }
                 }
 
                 UnifiedLogger.LogPlugin(LogLevel.DEBUG,
-                    $"GetSpeakerColors: PC={response.PcColor}, Owner={response.OwnerColor}, {response.SpeakerColors.Count} named speakers");
+                    $"GetSpeakerColors: PC={response.PcColor}/{response.PcShape}, Owner={response.OwnerColor}/{response.OwnerShape}, {response.SpeakerColors.Count} named speakers");
 
                 return Task.FromResult(response);
             }
@@ -425,7 +454,9 @@ namespace DialogEditor.Plugins.Services
                 return Task.FromResult(new GetSpeakerColorsResponse
                 {
                     PcColor = SpeakerVisualHelper.ColorPalette.Blue,
-                    OwnerColor = SpeakerVisualHelper.ColorPalette.Orange
+                    OwnerColor = SpeakerVisualHelper.ColorPalette.Orange,
+                    PcShape = "Circle",
+                    OwnerShape = "Square"
                 });
             }
         }
