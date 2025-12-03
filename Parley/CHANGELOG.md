@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.38-alpha] - TBD
+## [0.1.38-alpha] - 2025-12-03
 **Branch**: `parley/feat/epic-40-phase4-export` | **PR**: #277
 
 ### Epic 40 Phase 4: Export Features (#238-#240)
@@ -39,6 +39,12 @@ Fourth phase of the ChatMapper-style flowchart view plugin (Epic 3).
 - Speaker/type color now shows as 4px border instead of fill
 - Text always uses theme colors against theme background (readable in all themes)
 - Updated legend to match new border-style node representation
+
+**Improved: Node Content Display**:
+- Word wrap with dynamic node heights (64 chars default, configurable)
+- Speaker shape icons (Circle, Square, Triangle, Diamond, Pentagon, Star)
+- Shapes sync with Parley preferences via extended gRPC API
+- Increased speaker tag display from 10 to 24 characters
 
 ---
 
