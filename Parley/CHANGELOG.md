@@ -25,6 +25,8 @@ Distributable ZIP packages for plugins that users can extract directly to `~/Par
 - Auto-generates README.txt with installation instructions
 - Includes parley_plugin client library in package
 - Plugin Package Format specification (NonPublic/Plugin_Package_Format.md)
+- GitHub Actions workflow for automated plugin releases (`release-plugin.yml`)
+- Plugins section in README with download links
 
 **ZIP Structure**:
 ```

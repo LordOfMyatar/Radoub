@@ -125,6 +125,26 @@ The neverwinter.nim toolset is the recommended tool for working with NWN file fo
 
 ---
 
+## Plugins
+
+Parley supports Python-based plugins for extended functionality.
+
+### Available Plugins
+
+| Plugin | Description | Download |
+|--------|-------------|----------|
+| Flowchart View | ChatMapper-style flowchart visualization | [Releases](https://github.com/LordOfMyatar/Radoub/releases?q=flowchart-view) |
+
+### Installing Plugins
+
+1. Download the plugin ZIP from the link above
+2. Extract to your Parley folder (`~/Parley/`)
+3. Restart Parley, enable in Settings → Plugins, restart again
+
+See [Using Plugins](Documentation/User/Using_Plugins.md) for detailed instructions.
+
+---
+
 ## Known Issues
 
 See [GitHub Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is%3Aopen+label%3Aparley) for current bug list and feature requests.
