@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.38-alpha] - TBD
-**Branch**: `parley/feat/epic-40-phase4-export` | **PR**: #TBD
+**Branch**: `parley/feat/epic-40-phase4-export` | **PR**: #277
 
 ### Epic 40 Phase 4: Export Features (#238-#240)
 
