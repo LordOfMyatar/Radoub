@@ -125,18 +125,22 @@ body.light {
     font-weight: bold;
 }
 
-/* Script indicators (#231) */
+/* Speaker shape icon in header row */
+.node .speaker-shape {
+    pointer-events: none;
+}
+
+/* Script indicators - inside node header row */
 .node .script-indicator {
-    font-size: 10px;
+    font-size: 12px;
+}
+
+.node .script-indicator.action {
     fill: #f39c12;
 }
 
 .node .script-indicator.condition {
     fill: #e74c3c;
-}
-
-.node .script-indicator.action {
-    fill: #27ae60;
 }
 
 /* Edge styles - path element has the class directly */
@@ -166,12 +170,6 @@ path.edgePath.to-link {
 .edge-condition-marker {
     font-size: 14px;
     fill: #e74c3c;
-    pointer-events: none;
-}
-
-.node-action-marker {
-    font-size: 14px;
-    fill: #f39c12;
     pointer-events: none;
 }
 

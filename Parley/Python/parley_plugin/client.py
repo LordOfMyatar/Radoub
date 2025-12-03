@@ -117,13 +117,16 @@ class ParleyClient:
 
     def get_speaker_colors(self) -> dict:
         """
-        Get the speaker color settings from Parley.
+        Get the speaker color and shape settings from Parley.
 
         Returns:
             Dict with:
                 - pc_color: Hex color for PC nodes (e.g., "#4FC3F7")
                 - owner_color: Hex color for Owner/default NPC nodes
                 - speaker_colors: Dict of speaker_tag -> hex color for named NPCs
+                - pc_shape: Shape name for PC nodes (e.g., "Circle")
+                - owner_shape: Shape name for Owner/default NPC nodes (e.g., "Square")
+                - speaker_shapes: Dict of speaker_tag -> shape name for named NPCs
         """
         try:
             request = GetSpeakerColorsRequest()
@@ -132,6 +135,9 @@ class ParleyClient:
                 "pc_color": response.pc_color,
                 "owner_color": response.owner_color,
                 "speaker_colors": dict(response.speaker_colors),
+                "pc_shape": response.pc_shape if response.pc_shape else "Circle",
+                "owner_shape": response.owner_shape if response.owner_shape else "Square",
+                "speaker_shapes": dict(response.speaker_shapes) if response.speaker_shapes else {},
             }
         except grpc.RpcError as e:
             print(f"gRPC error getting speaker colors: {e}")
@@ -139,6 +145,9 @@ class ParleyClient:
                 "pc_color": "#4FC3F7",
                 "owner_color": "#FF8A65",
                 "speaker_colors": {},
+                "pc_shape": "Circle",
+                "owner_shape": "Square",
+                "speaker_shapes": {},
             }
 
     def play_audio(self, file_path: str) -> bool:

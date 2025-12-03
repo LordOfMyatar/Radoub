@@ -315,7 +315,7 @@ message DialogLinkProto {
   string condition_script = 4; // Condition script name (if any)
 }
 
-// Speaker colors messages (Epic 40 Phase 2)
+// Speaker colors and shapes messages (Epic 40 Phase 2/4)
 message GetSpeakerColorsRequest {
 }
 
@@ -323,4 +323,7 @@ message GetSpeakerColorsResponse {
   string pc_color = 1;         // Hex color for PC nodes (e.g., "#4FC3F7")
   string owner_color = 2;      // Hex color for Owner/default NPC nodes
   map<string, string> speaker_colors = 3;  // speaker_tag -> hex color for named NPCs
+  string pc_shape = 4;         // Shape name for PC nodes (e.g., "Circle")
+  string owner_shape = 5;      // Shape name for Owner/default NPC nodes (e.g., "Square")
+  map<string, string> speaker_shapes = 6;  // speaker_tag -> shape name for named NPCs
 }

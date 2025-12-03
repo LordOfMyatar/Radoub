@@ -7,7 +7,7 @@
  */
 
 // These globals are set by the HTML template before this script loads
-// dialogData, speakerColors, initialSelectedNodeId, syncSelectionEnabled
+// dialogData, speakerColors, speakerShapes, initialSelectedNodeId, syncSelectionEnabled, maxTextLength
 
 const svg = d3.select("#flowchart");
 let width = window.innerWidth;
@@ -67,15 +67,65 @@ dagreGraph.setGraph({
 });
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-// Node dimensions
-const nodeWidth = 160;
-const nodeHeight = 60;
+// Node dimensions - fixed width with word wrap
+const textLimit = (typeof maxTextLength !== 'undefined') ? maxTextLength : 64;
+const nodeWidth = 240;  // Fixed width, text wraps
+const lineHeight = 14;  // Line height for wrapped text
+const charsPerLine = 38;  // ~6px per char at 11px font, 240px - 16px padding
 
-// Add nodes to dagre
+/**
+ * Wrap text to multiple lines based on character limit per line
+ * Returns array of line strings
+ */
+function wrapText(text, maxCharsPerLine) {
+    if (!text) return [""];
+    const words = text.split(/\s+/);
+    const lines = [];
+    let currentLine = "";
+
+    for (const word of words) {
+        if (currentLine.length === 0) {
+            currentLine = word;
+        } else if (currentLine.length + 1 + word.length <= maxCharsPerLine) {
+            currentLine += " " + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    if (currentLine) lines.push(currentLine);
+
+    return lines.length > 0 ? lines : [""];
+}
+
+/**
+ * Calculate node height based on text content
+ * Header row (20px) + text lines + optional link target row
+ */
+function calcNodeHeight(node) {
+    const text = node.text || node.id;
+    const lines = wrapText(text, charsPerLine);
+    const maxLines = Math.ceil(textLimit / charsPerLine);  // Cap based on setting
+    const displayLines = Math.min(lines.length, maxLines);
+
+    let height = 24;  // Header row
+    height += displayLines * lineHeight;  // Text lines
+    height += 8;  // Bottom padding
+
+    if (node.is_link && node.link_target) {
+        height += lineHeight;  // Link target row
+    }
+
+    return Math.max(50, height);  // Minimum height
+}
+
+// Add nodes to dagre with dynamic heights
 nodes.forEach(node => {
+    const height = calcNodeHeight(node);
     dagreGraph.setNode(node.id, {
         width: nodeWidth,
-        height: nodeHeight,
+        height: height,
+        nodeHeight: height,  // Store for rendering
         ...node
     });
 });
@@ -118,12 +168,49 @@ function getSpeakerColor(nodeType, speaker) {
 }
 
 /**
- * Build script indicator text (#231)
+ * Shape name to SVG path mapping
+ * Shapes scaled to 10x10 viewport, centered at (5,5)
  */
-function getScriptIndicators(node) {
-    let indicators = [];
-    if (node.has_condition) indicators.push("❓");  // Only for link nodes
-    return indicators.join(" ");
+const shapePaths = {
+    "Circle": "M 5,1 A 4,4 0 1,1 5,9 A 4,4 0 1,1 5,1 Z",
+    "Square": "M 1,1 L 9,1 L 9,9 L 1,9 Z",
+    "Triangle": "M 5,1 L 9,9 L 1,9 Z",
+    "Diamond": "M 5,1 L 9,5 L 5,9 L 1,5 Z",
+    "Pentagon": "M 5,1 L 9,4 L 7.5,9 L 2.5,9 L 1,4 Z",
+    "Star": "M 5,1 L 6,4 L 9,4 L 6.5,6 L 7.5,9 L 5,7 L 2.5,9 L 3.5,6 L 1,4 L 4,4 Z"
+};
+
+/**
+ * Get speaker shape SVG path data
+ * Uses shapes from Parley API (speakerShapes), falling back to defaults
+ * Matches SpeakerVisualHelper shapes from Parley tree view
+ */
+function getSpeakerShape(nodeType, speaker) {
+    // PC nodes - use API shape or default to Circle
+    if (nodeType === "pc") {
+        const shapeName = speakerShapes["_pc"] || "Circle";
+        return shapePaths[shapeName] || shapePaths["Circle"];
+    }
+    // Owner (empty speaker on NPC) - use API shape or default to Square
+    if (nodeType === "npc" && (!speaker || speaker === "")) {
+        const shapeName = speakerShapes["_owner"] || "Square";
+        return shapePaths[shapeName] || shapePaths["Square"];
+    }
+    // Named NPCs - check API shapes first, fall back to hash-based
+    if (nodeType === "npc" && speaker) {
+        if (speakerShapes[speaker]) {
+            return shapePaths[speakerShapes[speaker]] || shapePaths["Triangle"];
+        }
+        // Fallback: hash-based shape assignment
+        const fallbackShapes = ["Triangle", "Diamond", "Pentagon", "Star"];
+        let hash = 0;
+        for (let i = 0; i < speaker.length; i++) {
+            hash = speaker.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return shapePaths[fallbackShapes[Math.abs(hash) % fallbackShapes.length]];
+    }
+    // Root/link nodes - no shape
+    return null;
 }
 
 // Draw edges first (so they appear behind nodes)
@@ -141,10 +228,12 @@ dagreGraph.edges().forEach(e => {
     if (edge.hasCondition) edgeClass += " has-condition";
     if (targetNode.type === "link") edgeClass += " to-link";
 
-    // Get edge points for path
+    // Get edge points for path (use stored node heights)
+    const srcHeight = sourceNode.nodeHeight || 60;
+    const tgtHeight = targetNode.nodeHeight || 60;
     const points = edge.points || [
-        { x: sourceNode.x, y: sourceNode.y + nodeHeight/2 },
-        { x: targetNode.x, y: targetNode.y - nodeHeight/2 }
+        { x: sourceNode.x, y: sourceNode.y + srcHeight/2 },
+        { x: targetNode.x, y: targetNode.y - tgtHeight/2 }
     ];
 
     // Create path
@@ -175,68 +264,130 @@ dagreGraph.nodes().forEach(nodeId => {
     const node = dagreGraph.node(nodeId);
     if (!node) return;
 
+    const thisHeight = node.nodeHeight || 60;
+
     const nodeG = nodeGroup.append("g")
         .attr("class", `node ${node.type || 'npc'}`)
-        .attr("transform", `translate(${node.x - nodeWidth/2}, ${node.y - nodeHeight/2})`)
+        .attr("transform", `translate(${node.x - nodeWidth/2}, ${node.y - thisHeight/2})`)
         .attr("data-id", node.id)
         .style("cursor", "pointer");
+
+    // Get speaker color and shape for this node
+    const nodeColor = getSpeakerColor(node.type, node.speaker || "");
+    const shapePath = getSpeakerShape(node.type, node.speaker || "");
 
     // Node rectangle - thick colored border with theme background
     // Border color identifies speaker/type, fill uses theme for readable text
     const rect = nodeG.append("rect")
         .attr("width", nodeWidth)
-        .attr("height", nodeHeight)
+        .attr("height", thisHeight)
         .attr("rx", 6)
         .attr("ry", 6);
 
     // Apply speaker color as stroke (border) for NPC and PC nodes
-    if (node.type === "npc" || node.type === "pc") {
-        const nodeColor = getSpeakerColor(node.type, node.speaker || "");
-        if (nodeColor) {
-            rect.style("stroke", nodeColor);
-        }
+    if ((node.type === "npc" || node.type === "pc") && nodeColor) {
+        rect.style("stroke", nodeColor);
     }
 
-    // Type label with speaker tag (#230)
+    // Left side: Shape icon + Type label (PC/NPC or speaker name)
+    // NWN tags are max 32 chars; show up to 20 to leave room for shape + script icons
+
+    let labelX = 8;  // Default text position
+
+    // Draw shape icon if available (PC, NPC, named speakers)
+    if (shapePath) {
+        nodeG.append("path")
+            .attr("class", "speaker-shape")
+            .attr("d", shapePath)
+            .attr("transform", "translate(4, 4)")  // Position at (4,4) so shape is at ~(9,9) center
+            .attr("fill", nodeColor)
+            .attr("stroke", "none");
+        labelX = 18;  // Move text right to make room for shape
+    }
+
     let typeLabel = (node.type || "npc").toUpperCase();
     if (node.type === "npc" && node.speaker) {
-        typeLabel = node.speaker.substring(0, 12);
-        if (node.speaker.length > 12) typeLabel += "…";
+        typeLabel = node.speaker.substring(0, 20);
+        if (node.speaker.length > 20) typeLabel += "…";
     }
 
     nodeG.append("text")
         .attr("class", node.speaker ? "speaker-tag" : "node-type")
-        .attr("x", 8)
+        .attr("x", labelX)
         .attr("y", 14)
         .text(typeLabel);
 
-    // Script indicators (#231)
-    const indicators = getScriptIndicators(node);
-    if (indicators) {
+    // Right side: Script indicators - Condition (❓) then Action (⚡)
+    // Layout: ... [❓] [⚡] |  (action is rightmost)
+    let rightX = nodeWidth - 8;
+
+    // Action indicator (rightmost)
+    if (node.has_action) {
         nodeG.append("text")
-            .attr("class", "script-indicator")
-            .attr("x", nodeWidth - 8)
+            .attr("class", "script-indicator action")
+            .attr("x", rightX)
             .attr("y", 14)
             .attr("text-anchor", "end")
-            .text(indicators);
+            .text("⚡");
+        rightX -= 16;  // Move left for next indicator
     }
 
-    // Node text (truncated)
+    // Condition indicator (left of action)
+    if (node.has_condition) {
+        nodeG.append("text")
+            .attr("class", "script-indicator condition")
+            .attr("x", rightX)
+            .attr("y", 14)
+            .attr("text-anchor", "end")
+            .text("❓");
+    }
+
+    // Node text with word wrap
     const text = node.text || node.id;
-    const truncated = text.length > 22 ? text.substring(0, 22) + "…" : text;
-    nodeG.append("text")
+    const textLines = wrapText(text, charsPerLine);
+    const maxLines = Math.ceil(textLimit / charsPerLine);
+    const displayLines = textLines.slice(0, maxLines);
+
+    // Add ellipsis to last line if truncated
+    if (textLines.length > maxLines && displayLines.length > 0) {
+        const lastIdx = displayLines.length - 1;
+        displayLines[lastIdx] = displayLines[lastIdx].substring(0, charsPerLine - 1) + "…";
+    }
+
+    const textEl = nodeG.append("text")
         .attr("x", 8)
-        .attr("y", 36)
-        .text(truncated);
+        .attr("y", 28);  // First line position
+
+    displayLines.forEach((line, i) => {
+        textEl.append("tspan")
+            .attr("x", 8)
+            .attr("dy", i === 0 ? 0 : lineHeight)
+            .text(line);
+    });
 
     // Link target indicator for link nodes (#232)
     if (node.is_link && node.link_target) {
+        const linkY = 28 + (displayLines.length * lineHeight) + 4;
         nodeG.append("text")
             .attr("x", 8)
-            .attr("y", 52)
+            .attr("y", linkY)
             .attr("class", "node-type")
             .text(`→ ${node.link_target}`);
     }
+
+    // Hover tooltip showing full text
+    const fullText = node.text || node.id;
+    let tooltipText = fullText;
+    if (node.speaker) {
+        tooltipText = `[${node.speaker}] ${fullText}`;
+    }
+    if (node.has_action && node.action_script) {
+        tooltipText += `\n⚡ Action: ${node.action_script}`;
+    }
+    if (node.has_condition && node.condition_script) {
+        tooltipText += `\n❓ Condition: ${node.condition_script}`;
+    }
+    nodeG.append("title").text(tooltipText);
 
     // Click handler (Epic 40 Phase 3 / #234)
     nodeG.on("click", function(event) {
@@ -263,22 +414,6 @@ dagreGraph.nodes().forEach(nodeId => {
             window.location.href = "parley://selectnode/" + encodeURIComponent(node.id);
         }
     });
-});
-
-// Draw action script markers above nodes (#235)
-const markerGroup = g.append("g").attr("class", "markers");
-
-dagreGraph.nodes().forEach(nodeId => {
-    const node = dagreGraph.node(nodeId);
-    if (!node || !node.has_action) return;
-
-    // Position marker above the node, aligned to left edge
-    markerGroup.append("text")
-        .attr("class", "node-action-marker")
-        .attr("x", node.x - nodeWidth/2 + 8)
-        .attr("y", node.y - nodeHeight/2 - 8)
-        .attr("text-anchor", "start")
-        .text("⚡");
 });
 
 /**
@@ -592,8 +727,10 @@ function getEmbeddedStyles() {
         .node text { fill: ${textPrimary}; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .node .node-type { font-size: 9px; fill: ${textSecondary}; }
         .node .speaker-tag { font-size: 9px; font-weight: bold; }
-        .node .script-indicator { font-size: 10px; fill: #f39c12; }
-        .node-action-marker { font-size: 14px; fill: #f39c12; }
+        .node .speaker-shape { pointer-events: none; }
+        .node .script-indicator { font-size: 12px; }
+        .node .script-indicator.action { fill: #f39c12; }
+        .node .script-indicator.condition { fill: #e74c3c; }
         .edge-condition-marker { font-size: 14px; fill: #e74c3c; }
         path.edgePath { stroke: ${linkColor}; stroke-width: 2px; fill: none; }
         path.edgePath.has-condition { stroke: ${linkCondition}; stroke-dasharray: 5,3; }

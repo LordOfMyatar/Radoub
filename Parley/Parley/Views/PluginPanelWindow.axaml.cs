@@ -206,10 +206,11 @@ namespace DialogEditor.Views
                 request.Cancel();
                 UnifiedLogger.LogPlugin(LogLevel.DEBUG, "BeforeNavigate intercepted: refresh");
 
-                // Trigger dialog change event to force flowchart re-render
+                // Signal force refresh to plugin via setting broadcast
+                // The plugin polls for this setting and triggers a full re-render
                 Dispatcher.UIThread.Post(() =>
                 {
-                    DialogContextService.Instance.NotifyDialogChanged();
+                    PluginUIService.BroadcastPluginSetting(_panelId, "force_refresh", DateTime.UtcNow.Ticks.ToString());
                 });
             }
             // Auto-refresh toggle (#235)
@@ -335,16 +336,29 @@ namespace DialogEditor.Views
                     fileBytes = Convert.FromBase64String(base64Data);
                 }
 
-                // Get dialog name for default filename
+                // Build filename: module_folder-dialog_name.ext
+                var modulePath = SettingsService.Instance.CurrentModulePath;
+                var moduleFolderName = !string.IsNullOrEmpty(modulePath)
+                    ? Path.GetFileName(modulePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+                    : null;
+
                 var dialogName = DialogContextService.Instance.CurrentFileName ?? "flowchart";
                 // Remove .dlg extension if present
                 if (dialogName.EndsWith(".dlg", StringComparison.OrdinalIgnoreCase))
                     dialogName = dialogName.Substring(0, dialogName.Length - 4);
+
+                // Combine module folder and dialog name
+                string baseFileName;
+                if (!string.IsNullOrEmpty(moduleFolderName))
+                    baseFileName = $"{moduleFolderName}-{dialogName}";
+                else
+                    baseFileName = dialogName;
+
                 // Remove any invalid filename characters
-                dialogName = string.Join("_", dialogName.Split(Path.GetInvalidFileNameChars()));
+                baseFileName = string.Join("_", baseFileName.Split(Path.GetInvalidFileNameChars()));
 
                 var extension = format.ToLower();
-                var defaultFileName = $"{dialogName}.{extension}";
+                var defaultFileName = $"{baseFileName}.{extension}";
 
                 // Show save file dialog
                 var storage = GetTopLevel(this)?.StorageProvider;

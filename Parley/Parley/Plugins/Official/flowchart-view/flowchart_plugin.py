@@ -52,8 +52,12 @@ class FlowchartPlugin:
         self._auto_refresh_enabled = True  # Default: auto-refresh on
         self._sync_selection_enabled = True  # Default: bidirectional sync on
         self._refresh_interval = 2.0  # Default: 2 seconds
+        self._last_force_refresh: Optional[str] = None  # Track force refresh signals
         self._poll_count = 0  # For reducing log verbosity
         self._logged_no_dialog = False  # Avoid spamming "no dialog" message
+
+        # Display settings
+        self._max_text_length = 64  # Max chars to show in node bubble (default 64)
 
         # Paths to bundled assets
         self._plugin_dir = Path(__file__).parent
@@ -211,6 +215,14 @@ class FlowchartPlugin:
         if not self.client:
             return
 
+        # Check for force refresh signal (user clicked refresh button)
+        force_refresh = False
+        found, force_val = self.client.get_panel_setting("flowchart-view", "force_refresh")
+        if found and force_val != self._last_force_refresh:
+            self._last_force_refresh = force_val
+            force_refresh = True
+            print("[Flowchart] Force refresh requested")
+
         dialog_id, dialog_name = self.client.get_current_dialog()
 
         # Check for dialog change (open/close)
@@ -229,15 +241,18 @@ class FlowchartPlugin:
                     self._logged_no_dialog = True
                 self._update_panel_placeholder()
         elif dialog_id:
-            # Same dialog - check if content changed
+            # Same dialog - check if content changed OR force refresh
             structure = self.client.get_dialog_structure()
             if structure.get("success", False):
                 # Compute simple hash of structure
                 struct_json = json.dumps(structure, sort_keys=True)
                 current_hash = hashlib.md5(struct_json.encode()).hexdigest()
 
-                if current_hash != self._last_structure_hash:
-                    print(f"[Flowchart] Dialog content changed, re-rendering")
+                if force_refresh or current_hash != self._last_structure_hash:
+                    if force_refresh:
+                        print(f"[Flowchart] Force re-rendering (speaker colors may have changed)")
+                    else:
+                        print(f"[Flowchart] Dialog content changed, re-rendering")
                     self._last_structure_hash = current_hash
                     self._render_flowchart_with_data(structure)
             else:
@@ -300,8 +315,8 @@ class FlowchartPlugin:
                 "links": structure.get("links", []),
             }
 
-        # Extract unique speakers and assign colors (#230)
-        speaker_colors = self._generate_speaker_colors(dialog_data.get("nodes", []))
+        # Extract unique speakers and assign colors/shapes (#230, Phase 4)
+        speaker_colors, speaker_shapes = self._generate_speaker_visuals(dialog_data.get("nodes", []))
 
         # Get theme from Parley settings (#229)
         theme_info = self.client.get_theme()
@@ -341,11 +356,13 @@ class FlowchartPlugin:
         html = html.replace("{{node_count}}", str(len(dialog_data.get("nodes", []))))
         html = html.replace("{{dialog_data}}", json.dumps(dialog_data))
         html = html.replace("{{speaker_colors}}", json.dumps(speaker_colors))
+        html = html.replace("{{speaker_shapes}}", json.dumps(speaker_shapes))
         html = html.replace("{{selected_node_id}}", json.dumps(selected_node_id))
         html = html.replace("{{auto_refresh_icon}}", auto_refresh_icon)
         html = html.replace("{{auto_refresh_enabled}}", "true" if self._auto_refresh_enabled else "false")
         html = html.replace("{{sync_selection_enabled}}", "true" if self._sync_selection_enabled else "false")
         html = html.replace("{{sync_checked}}", sync_checked)
+        html = html.replace("{{max_text_length}}", str(self._max_text_length))
 
         # Send to panel
         success, error_msg = self.client.update_panel_content(
@@ -357,35 +374,44 @@ class FlowchartPlugin:
         if not success:
             print(f"[Flowchart] Failed to render: {error_msg}")
 
-    def _generate_speaker_colors(self, nodes: List[Dict[str, Any]]) -> Dict[str, str]:
+    def _generate_speaker_visuals(self, nodes: List[Dict[str, Any]]) -> tuple:
         """
-        Get speaker colors from Parley settings, with fallback to local generation.
+        Get speaker colors and shapes from Parley settings, with fallback to local generation.
 
-        Calls the GetSpeakerColors API to use the same colors as Parley's tree view.
-        Falls back to generating colors locally if the API fails.
+        Calls the GetSpeakerColors API to use the same colors and shapes as Parley's tree view.
+        Falls back to generating locally if the API fails.
 
         Args:
             nodes: List of dialog nodes
 
         Returns:
-            Dict mapping speaker names to hex colors, plus "_pc" and "_owner" keys
+            Tuple of (colors_dict, shapes_dict) where:
+                - colors_dict maps speaker names to hex colors, plus "_pc" and "_owner" keys
+                - shapes_dict maps speaker names to shape names, plus "_pc" and "_owner" keys
         """
         colors = {}
+        shapes = {}
 
-        # Try to get colors from Parley API first
+        # Try to get colors and shapes from Parley API first
         if self.client:
             try:
-                parley_colors = self.client.get_speaker_colors()
-                colors["_pc"] = parley_colors.get("pc_color", "#4FC3F7")
-                colors["_owner"] = parley_colors.get("owner_color", "#FF8A65")
-                colors.update(parley_colors.get("speaker_colors", {}))
-                return colors
-            except Exception as e:
-                print(f"[Flowchart] Failed to get speaker colors from API, using fallback: {e}")
+                parley_visuals = self.client.get_speaker_colors()
+                colors["_pc"] = parley_visuals.get("pc_color", "#4FC3F7")
+                colors["_owner"] = parley_visuals.get("owner_color", "#FF8A65")
+                colors.update(parley_visuals.get("speaker_colors", {}))
 
-        # Fallback: generate colors locally
+                shapes["_pc"] = parley_visuals.get("pc_shape", "Circle")
+                shapes["_owner"] = parley_visuals.get("owner_shape", "Square")
+                shapes.update(parley_visuals.get("speaker_shapes", {}))
+                return colors, shapes
+            except Exception as e:
+                print(f"[Flowchart] Failed to get speaker visuals from API, using fallback: {e}")
+
+        # Fallback: generate locally
         colors["_pc"] = "#4FC3F7"  # Default PC blue
         colors["_owner"] = "#FF8A65"  # Default Owner orange
+        shapes["_pc"] = "Circle"
+        shapes["_owner"] = "Square"
 
         # Predefined palette for named speakers
         palette = [
@@ -397,6 +423,8 @@ class FlowchartPlugin:
             "#5a4d2d",  # Brown
         ]
 
+        shape_names = ["Triangle", "Diamond", "Pentagon", "Star"]
+
         # Collect unique speakers
         speakers = set()
         for node in nodes:
@@ -404,7 +432,7 @@ class FlowchartPlugin:
             if speaker and node.get("type") == "npc":
                 speakers.add(speaker)
 
-        # Assign colors to named speakers
+        # Assign colors and shapes to named speakers
         for i, speaker in enumerate(sorted(speakers)):
             if i < len(palette):
                 colors[speaker] = palette[i]
@@ -414,7 +442,11 @@ class FlowchartPlugin:
                 hue = hash_val % 360
                 colors[speaker] = f"hsl({hue}, 50%, 35%)"
 
-        return colors
+            # Hash-based shape assignment
+            hash_val = sum(ord(c) for c in speaker)
+            shapes[speaker] = shape_names[hash_val % len(shape_names)]
+
+        return colors, shapes
 
     def _generate_demo_graph_data(self) -> Dict[str, Any]:
         """
