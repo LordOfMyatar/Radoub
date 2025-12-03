@@ -23,7 +23,7 @@ Fourth phase of the ChatMapper-style flowchart view plugin (Epic 3).
 **Work Items**:
 - [x] #238 - PNG export
 - [x] #239 - SVG export
-- [ ] #240 - Drag-drop node repositioning (optional/low priority)
+- [ ] #240 - Drag-drop node repositioning (deferred - requires tree view implementation first)
 
 **Implemented (#238, #239)**:
 - Added SVG and PNG export buttons to flowchart toolbar
@@ -33,6 +33,12 @@ Fourth phase of the ChatMapper-style flowchart view plugin (Epic 3).
 - File save dialog with dialog name as default filename
 - Chunked data transfer for large flowcharts (>20KB base64)
 - JavaScript-side rendering with canvas API for PNG conversion
+
+**Improved: Node Text Visibility**:
+- Redesigned node styling: thick colored border with theme background
+- Speaker/type color now shows as 4px border instead of fill
+- Text always uses theme colors against theme background (readable in all themes)
+- Updated legend to match new border-style node representation
 
 ---
 

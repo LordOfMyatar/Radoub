@@ -181,23 +181,19 @@ dagreGraph.nodes().forEach(nodeId => {
         .attr("data-id", node.id)
         .style("cursor", "pointer");
 
-    // Node rectangle - apply Parley speaker colors (#230)
+    // Node rectangle - thick colored border with theme background
+    // Border color identifies speaker/type, fill uses theme for readable text
     const rect = nodeG.append("rect")
         .attr("width", nodeWidth)
         .attr("height", nodeHeight)
         .attr("rx", 6)
         .attr("ry", 6);
 
-    // Apply Parley color scheme for NPC and PC nodes
+    // Apply speaker color as stroke (border) for NPC and PC nodes
     if (node.type === "npc" || node.type === "pc") {
         const nodeColor = getSpeakerColor(node.type, node.speaker || "");
         if (nodeColor) {
-            rect.style("fill", nodeColor);
-            // Lighter stroke
-            const strokeColor = d3.color(nodeColor);
-            if (strokeColor) {
-                rect.style("stroke", strokeColor.brighter(0.5));
-            }
+            rect.style("stroke", nodeColor);
         }
     }
 
@@ -576,6 +572,7 @@ function exportPNG() {
 /**
  * Get embedded CSS styles for standalone SVG/PNG export
  * Inlines CSS variables with their current values
+ * Uses thick colored borders with theme background for readable text
  */
 function getEmbeddedStyles() {
     const isDark = document.body.classList.contains("dark");
@@ -583,13 +580,15 @@ function getEmbeddedStyles() {
     const textSecondary = isDark ? "#95a5a6" : "#7f8c8d";
     const linkColor = isDark ? "#555" : "#95a5a6";
     const linkCondition = isDark ? "#e74c3c" : "#c0392b";
+    const nodeBg = isDark ? "#2a2a2a" : "#ffffff";
+    const nodeBgAlt = isDark ? "#333" : "#f0f0f0";
 
     return `
-        .node rect { stroke-width: 2px; }
-        .node.npc rect { fill: #2d5a27; stroke: #4a9c3f; }
-        .node.pc rect { fill: #1a4a6e; stroke: #3498db; }
-        .node.root rect { fill: #5a2d5a; stroke: #9b59b6; }
-        .node.link rect { fill: #4a4a4a; stroke: #888; stroke-dasharray: 4,2; opacity: 0.7; }
+        .node rect { stroke-width: 4px; fill: ${nodeBg}; }
+        .node.npc rect { stroke: #4a9c3f; }
+        .node.pc rect { stroke: #3498db; }
+        .node.root rect { stroke: #9b59b6; fill: ${nodeBgAlt}; }
+        .node.link rect { stroke: #888; stroke-width: 3px; stroke-dasharray: 4,2; fill: ${nodeBgAlt}; opacity: 0.85; }
         .node text { fill: ${textPrimary}; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .node .node-type { font-size: 9px; fill: ${textSecondary}; }
         .node .speaker-tag { font-size: 9px; font-weight: bold; }

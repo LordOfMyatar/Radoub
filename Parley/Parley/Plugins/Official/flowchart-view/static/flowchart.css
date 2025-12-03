@@ -28,6 +28,8 @@ body.dark {
     --link-condition: #e74c3c;
     --selection-color: #f1c40f;
     --selection-glow: rgba(241, 196, 15, 0.6);
+    --node-bg: #2a2a2a;
+    --node-bg-alt: #333;
 }
 
 body.light {
@@ -41,6 +43,8 @@ body.light {
     --link-condition: #c0392b;
     --selection-color: #d4ac0d;
     --selection-glow: rgba(212, 172, 13, 0.5);
+    --node-bg: #ffffff;
+    --node-bg-alt: #f0f0f0;
 }
 
 #flowchart {
@@ -52,47 +56,54 @@ body.light {
     cursor: pointer;
 }
 
+/*
+ * Node styling - thick colored border with theme background
+ * Border color = speaker/type color for identification
+ * Fill = theme background for readable text
+ */
 .node rect {
-    stroke-width: 2px;
+    stroke-width: 4px;
     rx: 6;
     ry: 6;
+    fill: var(--node-bg, #2a2a2a);
 }
 
-/* Node type colors - NPC (#230 - speaker-based coloring handled in JS) */
+/* Default NPC stroke - overridden by JS for speaker colors */
 .node.npc rect {
-    fill: #2d5a27;
     stroke: #4a9c3f;
 }
 
+/* PC nodes - blue border */
 .node.pc rect {
-    fill: #1a4a6e;
     stroke: #3498db;
 }
 
+/* Root node - purple border */
 .node.root rect {
-    fill: #5a2d5a;
     stroke: #9b59b6;
+    fill: var(--node-bg-alt, #333);
 }
 
-/* Link node styling (#232) - grayed appearance */
+/* Link node styling (#232) - grayed dashed border */
 .node.link rect {
-    fill: #4a4a4a;
     stroke: #888;
+    stroke-width: 3px;
     stroke-dasharray: 4,2;
-    opacity: 0.7;
+    fill: var(--node-bg-alt, #333);
+    opacity: 0.85;
 }
 
 /* Selection highlight - theme-aware (#234) */
 .node.selected rect {
     stroke: var(--selection-color) !important;
-    stroke-width: 4px !important;
+    stroke-width: 5px !important;
     filter: drop-shadow(0 0 8px var(--selection-glow)) drop-shadow(0 0 12px var(--selection-glow));
 }
 
 /* Secondary highlight for link target nodes (#234) */
 .node.target-highlight rect {
     stroke: var(--selection-color) !important;
-    stroke-width: 3px !important;
+    stroke-width: 4px !important;
     stroke-dasharray: 6,3 !important;
     filter: drop-shadow(0 0 4px var(--selection-glow));
 }
@@ -252,4 +263,10 @@ marker {
     width: 12px;
     height: 12px;
     border-radius: 2px;
+}
+
+/* Legend items use borders to match node styling */
+#legend .legend-border {
+    background: var(--node-bg, #2a2a2a);
+    border: 3px solid;
 }
