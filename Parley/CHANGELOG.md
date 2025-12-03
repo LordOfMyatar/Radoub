@@ -21,9 +21,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Fourth phase of the ChatMapper-style flowchart view plugin (Epic 3).
 
 **Work Items**:
-- [ ] #238 - PNG export
-- [ ] #239 - SVG export
+- [x] #238 - PNG export
+- [x] #239 - SVG export
 - [ ] #240 - Drag-drop node repositioning (optional/low priority)
+
+**Implemented (#238, #239)**:
+- Added SVG and PNG export buttons to flowchart toolbar
+- Export generates proper self-contained files with embedded styles
+- PNG exports at 2x resolution for high quality
+- Theme-aware exports (matches current dark/light mode)
+- File save dialog with dialog name as default filename
+- Chunked data transfer for large flowcharts (>20KB base64)
+- JavaScript-side rendering with canvas API for PNG conversion
 
 ---
 

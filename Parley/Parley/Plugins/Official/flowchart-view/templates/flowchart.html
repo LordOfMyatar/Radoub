@@ -12,6 +12,10 @@
         <button onclick="zoomOut()">-</button>
         <button onclick="resetZoom()">Reset</button>
         <button onclick="fitToScreen()">Fit</button>
+        <span class="control-separator"></span>
+        <button onclick="exportSVG()" title="Export as SVG vector file">SVG</button>
+        <button onclick="exportPNG()" title="Export as PNG image">PNG</button>
+        <span class="control-separator"></span>
         <button onclick="requestRefresh()" title="Refresh flowchart">⟳</button>
         <button id="autoRefreshBtn" onclick="toggleAutoRefresh()" title="Toggle auto-refresh">{{auto_refresh_icon}}</button>
         <label class="sync-toggle" title="Sync selection with tree view">

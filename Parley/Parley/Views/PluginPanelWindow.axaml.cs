@@ -1,8 +1,12 @@
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using DialogEditor.Plugins.Services;
 using DialogEditor.Services;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Text.Json;
 using WebViewControl;
 
@@ -19,6 +23,10 @@ namespace DialogEditor.Views
         private bool _isInitialized;
         private bool _javascriptBridgeInitialized;
         private string? _lastJsSyncedNodeId;  // Prevent Flow→Tree→Flow loops (#234)
+
+        // Chunked export tracking (#238, #239)
+        private readonly Dictionary<string, StringBuilder> _exportChunks = new();
+        private readonly Dictionary<string, int> _expectedChunkCounts = new();
 
         public string PanelId => _panelId;
 
@@ -229,6 +237,145 @@ namespace DialogEditor.Views
                 {
                     PluginUIService.BroadcastPluginSetting(_panelId, "sync_selection", state == "on" ? "true" : "false");
                 });
+            }
+            // Single-request export (#238, #239)
+            else if (url.StartsWith("parley://export/", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Cancel();
+                // Format: parley://export/{format}/{base64data}
+                var path = url.Substring("parley://export/".Length);
+                var slashIndex = path.IndexOf('/');
+                if (slashIndex > 0)
+                {
+                    var format = path.Substring(0, slashIndex);
+                    var base64Data = path.Substring(slashIndex + 1);
+                    UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"Export intercepted: {format} ({base64Data.Length} chars)");
+
+                    Dispatcher.UIThread.Post(async () =>
+                    {
+                        await HandleExportAsync(format, base64Data);
+                    });
+                }
+            }
+            // Chunked export - receive a chunk (#238, #239)
+            else if (url.StartsWith("parley://export-chunk/", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Cancel();
+                // Format: parley://export-chunk/{format}/{exportId}/{chunkIndex}/{totalChunks}/{data}
+                var path = url.Substring("parley://export-chunk/".Length);
+                var parts = path.Split('/', 5);
+                if (parts.Length == 5)
+                {
+                    var format = parts[0];
+                    var exportId = parts[1];
+                    var chunkIndex = int.Parse(parts[2]);
+                    var totalChunks = int.Parse(parts[3]);
+                    var chunkData = parts[4];
+
+                    var key = $"{format}_{exportId}";
+                    if (!_exportChunks.ContainsKey(key))
+                    {
+                        _exportChunks[key] = new StringBuilder();
+                        _expectedChunkCounts[key] = totalChunks;
+                        UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"Export chunk started: {key}, expecting {totalChunks} chunks");
+                    }
+
+                    _exportChunks[key].Append(chunkData);
+                    UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"Export chunk {chunkIndex + 1}/{totalChunks} received for {key}");
+                }
+            }
+            // Chunked export - finalize (#238, #239)
+            else if (url.StartsWith("parley://export-done/", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Cancel();
+                // Format: parley://export-done/{format}/{exportId}
+                var path = url.Substring("parley://export-done/".Length);
+                var slashIndex = path.IndexOf('/');
+                if (slashIndex > 0)
+                {
+                    var format = path.Substring(0, slashIndex);
+                    var exportId = path.Substring(slashIndex + 1);
+                    var key = $"{format}_{exportId}";
+
+                    if (_exportChunks.TryGetValue(key, out var chunks))
+                    {
+                        var base64Data = chunks.ToString();
+                        _exportChunks.Remove(key);
+                        _expectedChunkCounts.Remove(key);
+
+                        UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"Export finalized: {format}, {base64Data.Length} chars total");
+
+                        Dispatcher.UIThread.Post(async () =>
+                        {
+                            await HandleExportAsync(format, base64Data);
+                        });
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handle export by showing save dialog and writing file (#238, #239)
+        /// </summary>
+        private async System.Threading.Tasks.Task HandleExportAsync(string format, string base64Data)
+        {
+            try
+            {
+                // Decode base64
+                byte[] fileBytes;
+                if (format.Equals("svg", StringComparison.OrdinalIgnoreCase))
+                {
+                    // SVG is text, decode UTF-8
+                    var svgString = Encoding.UTF8.GetString(Convert.FromBase64String(base64Data));
+                    fileBytes = Encoding.UTF8.GetBytes(svgString);
+                }
+                else
+                {
+                    // PNG is binary
+                    fileBytes = Convert.FromBase64String(base64Data);
+                }
+
+                // Get dialog name for default filename
+                var dialogName = DialogContextService.Instance.CurrentFileName ?? "flowchart";
+                // Remove .dlg extension if present
+                if (dialogName.EndsWith(".dlg", StringComparison.OrdinalIgnoreCase))
+                    dialogName = dialogName.Substring(0, dialogName.Length - 4);
+                // Remove any invalid filename characters
+                dialogName = string.Join("_", dialogName.Split(Path.GetInvalidFileNameChars()));
+
+                var extension = format.ToLower();
+                var defaultFileName = $"{dialogName}.{extension}";
+
+                // Show save file dialog
+                var storage = GetTopLevel(this)?.StorageProvider;
+                if (storage == null)
+                {
+                    UnifiedLogger.LogPlugin(LogLevel.ERROR, "Storage provider not available");
+                    return;
+                }
+
+                var fileType = format.Equals("svg", StringComparison.OrdinalIgnoreCase)
+                    ? new FilePickerFileType("SVG Files") { Patterns = new[] { "*.svg" } }
+                    : new FilePickerFileType("PNG Images") { Patterns = new[] { "*.png" } };
+
+                var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+                {
+                    Title = $"Export Flowchart as {format.ToUpper()}",
+                    SuggestedFileName = defaultFileName,
+                    FileTypeChoices = new[] { fileType },
+                    DefaultExtension = extension
+                });
+
+                if (file != null)
+                {
+                    await using var stream = await file.OpenWriteAsync();
+                    await stream.WriteAsync(fileBytes);
+                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"Flowchart exported to: {file.Name}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.ERROR, $"Export failed: {ex.Message}");
             }
         }
 

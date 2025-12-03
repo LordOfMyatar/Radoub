@@ -191,6 +191,14 @@ marker {
     background: var(--control-hover, #444);
 }
 
+/* Control separator (#238, #239) */
+#controls .control-separator {
+    width: 1px;
+    height: 24px;
+    background: var(--control-border, #555);
+    margin: 0 4px;
+}
+
 /* Sync selection toggle (#235) */
 #controls .sync-toggle {
     display: flex;

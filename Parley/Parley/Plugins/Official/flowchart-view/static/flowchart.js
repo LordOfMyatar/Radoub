@@ -435,3 +435,214 @@ window.addEventListener("resize", () => {
     height = window.innerHeight;
     svg.attr("width", width).attr("height", height);
 });
+
+/**
+ * Export flowchart as SVG (#239)
+ * Serializes the SVG element and sends to Parley for file saving
+ */
+function exportSVG() {
+    try {
+        // Clone the SVG to avoid modifying the displayed version
+        const svgElement = document.getElementById("flowchart");
+        const svgClone = svgElement.cloneNode(true);
+
+        // Apply current transform to make the export show the full graph
+        const graphContainer = svgClone.querySelector(".graph-container");
+        if (graphContainer) {
+            // Reset transform to show full graph at origin
+            graphContainer.removeAttribute("transform");
+        }
+
+        // Calculate bounding box of content
+        const bounds = g.node().getBBox();
+        const padding = 20;
+        const exportWidth = bounds.width + padding * 2;
+        const exportHeight = bounds.height + padding * 2;
+
+        // Update SVG dimensions and viewBox for export
+        svgClone.setAttribute("width", exportWidth);
+        svgClone.setAttribute("height", exportHeight);
+        svgClone.setAttribute("viewBox", `${bounds.x - padding} ${bounds.y - padding} ${exportWidth} ${exportHeight}`);
+
+        // Add xmlns for standalone SVG
+        svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+        // Embed CSS styles directly into SVG for standalone export
+        const styleElement = document.createElement("style");
+        styleElement.textContent = getEmbeddedStyles();
+        svgClone.insertBefore(styleElement, svgClone.firstChild);
+
+        // Serialize to string
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svgClone);
+
+        // Encode as base64 and send to Parley
+        const base64Data = btoa(unescape(encodeURIComponent(svgString)));
+
+        console.log("[Flowchart] Exporting SVG, size:", svgString.length, "bytes");
+        sendExportToParley("svg", base64Data);
+
+    } catch (e) {
+        console.error("[Flowchart] SVG export failed:", e);
+        alert("SVG export failed: " + e.message);
+    }
+}
+
+/**
+ * Export flowchart as PNG (#238)
+ * Renders the SVG to a canvas and converts to PNG
+ */
+function exportPNG() {
+    try {
+        const svgElement = document.getElementById("flowchart");
+
+        // Calculate content bounds
+        const bounds = g.node().getBBox();
+        const padding = 20;
+        const exportWidth = Math.ceil(bounds.width + padding * 2);
+        const exportHeight = Math.ceil(bounds.height + padding * 2);
+
+        // Create a temporary SVG with embedded styles
+        const svgClone = svgElement.cloneNode(true);
+        const graphContainer = svgClone.querySelector(".graph-container");
+        if (graphContainer) {
+            // Translate to origin
+            graphContainer.setAttribute("transform", `translate(${padding - bounds.x}, ${padding - bounds.y})`);
+        }
+
+        svgClone.setAttribute("width", exportWidth);
+        svgClone.setAttribute("height", exportHeight);
+        svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+        // Embed styles
+        const styleElement = document.createElement("style");
+        styleElement.textContent = getEmbeddedStyles();
+        svgClone.insertBefore(styleElement, svgClone.firstChild);
+
+        // Serialize SVG
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svgClone);
+
+        // Create an image from SVG
+        const img = new Image();
+        const svgBlob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = function() {
+            // Create canvas and draw image
+            const canvas = document.createElement("canvas");
+            // Use 2x scale for better quality
+            const scale = 2;
+            canvas.width = exportWidth * scale;
+            canvas.height = exportHeight * scale;
+
+            const ctx = canvas.getContext("2d");
+            ctx.scale(scale, scale);
+
+            // Fill background based on theme
+            const isDark = document.body.classList.contains("dark");
+            ctx.fillStyle = isDark ? "#1e1e1e" : "#f5f5f5";
+            ctx.fillRect(0, 0, exportWidth, exportHeight);
+
+            // Draw the SVG
+            ctx.drawImage(img, 0, 0, exportWidth, exportHeight);
+
+            // Convert to PNG base64
+            const pngDataUrl = canvas.toDataURL("image/png");
+            // Remove "data:image/png;base64," prefix
+            const base64Data = pngDataUrl.substring("data:image/png;base64,".length);
+
+            console.log("[Flowchart] Exporting PNG, dimensions:", exportWidth, "x", exportHeight);
+            sendExportToParley("png", base64Data);
+
+            // Cleanup
+            URL.revokeObjectURL(url);
+        };
+
+        img.onerror = function(e) {
+            console.error("[Flowchart] PNG image load failed:", e);
+            URL.revokeObjectURL(url);
+            alert("PNG export failed: Could not render image");
+        };
+
+        img.src = url;
+
+    } catch (e) {
+        console.error("[Flowchart] PNG export failed:", e);
+        alert("PNG export failed: " + e.message);
+    }
+}
+
+/**
+ * Get embedded CSS styles for standalone SVG/PNG export
+ * Inlines CSS variables with their current values
+ */
+function getEmbeddedStyles() {
+    const isDark = document.body.classList.contains("dark");
+    const textPrimary = isDark ? "#ecf0f1" : "#2c3e50";
+    const textSecondary = isDark ? "#95a5a6" : "#7f8c8d";
+    const linkColor = isDark ? "#555" : "#95a5a6";
+    const linkCondition = isDark ? "#e74c3c" : "#c0392b";
+
+    return `
+        .node rect { stroke-width: 2px; }
+        .node.npc rect { fill: #2d5a27; stroke: #4a9c3f; }
+        .node.pc rect { fill: #1a4a6e; stroke: #3498db; }
+        .node.root rect { fill: #5a2d5a; stroke: #9b59b6; }
+        .node.link rect { fill: #4a4a4a; stroke: #888; stroke-dasharray: 4,2; opacity: 0.7; }
+        .node text { fill: ${textPrimary}; font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .node .node-type { font-size: 9px; fill: ${textSecondary}; }
+        .node .speaker-tag { font-size: 9px; font-weight: bold; }
+        .node .script-indicator { font-size: 10px; fill: #f39c12; }
+        .node-action-marker { font-size: 14px; fill: #f39c12; }
+        .edge-condition-marker { font-size: 14px; fill: #e74c3c; }
+        path.edgePath { stroke: ${linkColor}; stroke-width: 2px; fill: none; }
+        path.edgePath.has-condition { stroke: ${linkCondition}; stroke-dasharray: 5,3; }
+        path.edgePath.to-link { stroke-dasharray: 3,3; opacity: 0.6; }
+        marker path { fill: ${linkColor}; }
+    `;
+}
+
+/**
+ * Send export data to Parley via custom URL scheme
+ * Uses chunked transfer for large data (base64 strings > 32KB can fail in URL)
+ */
+function sendExportToParley(format, base64Data) {
+    // For large exports, we need to chunk the data
+    // WebView URL length limits vary, so we use a reasonable chunk size
+    const CHUNK_SIZE = 20000;  // 20KB chunks
+
+    if (base64Data.length <= CHUNK_SIZE) {
+        // Small enough to send in one request
+        window.location.href = `parley://export/${format}/${base64Data}`;
+    } else {
+        // Need to chunk the data
+        const totalChunks = Math.ceil(base64Data.length / CHUNK_SIZE);
+        const exportId = Date.now().toString(36);  // Unique ID for this export
+
+        console.log(`[Flowchart] Large export: ${base64Data.length} bytes, ${totalChunks} chunks`);
+
+        // Send chunks with small delays to avoid overwhelming the handler
+        let chunkIndex = 0;
+
+        function sendNextChunk() {
+            if (chunkIndex >= totalChunks) {
+                // Send finalize signal
+                window.location.href = `parley://export-done/${format}/${exportId}`;
+                return;
+            }
+
+            const start = chunkIndex * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, base64Data.length);
+            const chunk = base64Data.substring(start, end);
+
+            // Format: parley://export-chunk/{format}/{exportId}/{chunkIndex}/{totalChunks}/{data}
+            sendSettingToParley(`parley://export-chunk/${format}/${exportId}/${chunkIndex}/${totalChunks}/${chunk}`);
+
+            chunkIndex++;
+            setTimeout(sendNextChunk, 50);  // Small delay between chunks
+        }
+
+        sendNextChunk();
+    }
+}
