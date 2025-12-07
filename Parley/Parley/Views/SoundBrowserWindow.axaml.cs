@@ -275,7 +275,12 @@ namespace DialogEditor.Views
                     return;
                 }
 
-                // 1. Game Resources (Override folder + base game folders + BIF archives)
+                // NWN Resource Priority Order (highest to lowest):
+                // 1. Override folder (loose files)
+                // 2. HAK files (module HAKs, then user hak folder)
+                // 3. Base game BIF archives
+
+                // 1. Override folder and loose files (highest priority)
                 if (includeGameResources)
                 {
                     var basePath = SettingsService.Instance.BaseGameInstallPath;
@@ -305,15 +310,9 @@ namespace DialogEditor.Views
                         if (Directory.Exists(dataPath))
                         {
                             ScanAllSoundFolders(dataPath);
-
-                            // Scan HAK files in game data folder (#220) - only if HAK checkbox enabled
-                            if (includeHakFiles)
-                            {
-                                await ScanPathForHaksAsync(dataPath);
-                            }
                         }
 
-                        // Scan language-specific data folders (#220)
+                        // Scan language-specific data folders
                         var langPath = Path.Combine(basePath, "lang");
                         if (Directory.Exists(langPath))
                         {
@@ -323,26 +322,25 @@ namespace DialogEditor.Views
                                 if (Directory.Exists(langDataPath))
                                 {
                                     ScanAllSoundFolders(langDataPath);
-                                    // Scan HAK files in language data folders - only if HAK checkbox enabled
-                                    if (includeHakFiles)
-                                    {
-                                        await ScanPathForHaksAsync(langDataPath);
-                                    }
                                 }
                             }
-                        }
-
-                        // Scan BIF archives via KEY file (#220) - only if checkbox enabled
-                        if (includeBifFiles)
-                        {
-                            await ScanBifArchivesAsync(basePath);
                         }
                     }
                 }
 
-                // 2. HAK files (scan NWN user hak folder and dialog directory)
+                // 2. HAK files (higher priority than BIF - scan BEFORE BIF)
                 if (includeHakFiles)
                 {
+                    // Scan dialog directory for module-specific HAKs (highest HAK priority)
+                    if (!string.IsNullOrEmpty(_dialogFilePath))
+                    {
+                        var dialogDir = Path.GetDirectoryName(_dialogFilePath);
+                        if (!string.IsNullOrEmpty(dialogDir) && Directory.Exists(dialogDir))
+                        {
+                            await ScanPathForHaksAsync(dialogDir);
+                        }
+                    }
+
                     // Scan NWN user hak folder
                     var userPath = SettingsService.Instance.NeverwinterNightsPath;
                     if (!string.IsNullOrEmpty(userPath) && Directory.Exists(userPath))
@@ -354,18 +352,42 @@ namespace DialogEditor.Views
                         }
                     }
 
-                    // Also scan dialog directory for module-specific HAKs
-                    if (!string.IsNullOrEmpty(_dialogFilePath))
+                    // Scan HAK files in game data folders
+                    var basePath = SettingsService.Instance.BaseGameInstallPath;
+                    if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
                     {
-                        var dialogDir = Path.GetDirectoryName(_dialogFilePath);
-                        if (!string.IsNullOrEmpty(dialogDir) && Directory.Exists(dialogDir))
+                        var dataPath = Path.Combine(basePath, "data");
+                        if (Directory.Exists(dataPath))
                         {
-                            await ScanPathForHaksAsync(dialogDir);
+                            await ScanPathForHaksAsync(dataPath);
+                        }
+
+                        var langPath = Path.Combine(basePath, "lang");
+                        if (Directory.Exists(langPath))
+                        {
+                            foreach (var langDir in Directory.GetDirectories(langPath))
+                            {
+                                var langDataPath = Path.Combine(langDir, "data");
+                                if (Directory.Exists(langDataPath))
+                                {
+                                    await ScanPathForHaksAsync(langDataPath);
+                                }
+                            }
                         }
                     }
                 }
 
-                // 3. Other location (user-specified folder)
+                // 3. BIF archives (lowest priority - base game resources)
+                if (includeGameResources && includeBifFiles)
+                {
+                    var basePath = SettingsService.Instance.BaseGameInstallPath;
+                    if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
+                    {
+                        await ScanBifArchivesAsync(basePath);
+                    }
+                }
+
+                // 4. Other location (user-specified folder - separate from NWN priority)
                 if (includeOtherLocation && !string.IsNullOrEmpty(_overridePath))
                 {
                     ScanPathForSounds(_overridePath, "Other");
