@@ -378,7 +378,7 @@ namespace DialogEditor.Views
                 }
 
                 // 3. BIF archives (lowest priority - base game resources)
-                if (includeGameResources && includeBifFiles)
+                if (includeBifFiles)
                 {
                     var basePath = SettingsService.Instance.BaseGameInstallPath;
                     if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
