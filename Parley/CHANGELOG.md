@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.39-alpha] - 2025-12-06
-**Branch**: `parley/fix/undo-redo-polish` | **PR**: #TBD
+**Branch**: `parley/fix/undo-redo-polish` | **PR**: #285
 
 ### Bug Fixes: Undo/Redo Polish (#253, #252)
 
