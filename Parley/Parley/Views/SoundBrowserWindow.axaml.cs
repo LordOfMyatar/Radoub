@@ -899,6 +899,10 @@ namespace DialogEditor.Views
                         : soundInfo.FileName;
                 PlayButton.IsEnabled = true;
 
+                // Reset status label before validation (clear stale messages from previous selection)
+                FileCountLabel.Text = "Validating...";
+                FileCountLabel.Foreground = SecondaryBrush;
+
                 // Validate sound file format against NWN specs
                 var skipValidation = DisableValidationCheckBox?.IsChecked == true;
                 try
