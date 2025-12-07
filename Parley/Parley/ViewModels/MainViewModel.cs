@@ -1597,6 +1597,15 @@ namespace DialogEditor.ViewModels
                 var selectedNode = _treeNavManager.FindNodeByPath(DialogNodes, state.SelectedNodePath);
                 if (selectedNode != null)
                 {
+                    // Issue #252: Expand ancestors to ensure selected node is visible
+                    _treeNavManager.ExpandAncestors(DialogNodes, selectedNode);
+
+                    // Also expand the selected node itself if it has children (to show restored children)
+                    if (selectedNode.HasChildren)
+                    {
+                        selectedNode.IsExpanded = true;
+                    }
+
                     SelectedTreeNode = selectedNode;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restored selection to: '{selectedNode.DisplayText}'");
                 }

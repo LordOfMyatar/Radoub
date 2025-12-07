@@ -1594,8 +1594,11 @@ namespace DialogEditor.Views
 
         // Issue #74: Track if we've already saved undo state for current edit session
         private string? _currentEditFieldName = null;
+        // Issue #253: Track original value to avoid blank undo entries
+        private string? _originalFieldValue = null;
+        private bool _undoStateSavedForCurrentEdit = false;
 
-        // Issue #74: Save undo state when field gains focus (before editing)
+        // Issue #74/#253: Track field value on focus, only save undo if value changes
         private void OnFieldGotFocus(object? sender, GotFocusEventArgs e)
         {
             if (_selectedNode == null || _isPopulatingProperties) return;
@@ -1604,11 +1607,36 @@ namespace DialogEditor.Views
             var control = sender as Control;
             if (control?.Name == null) return;
 
-            // Only save undo state once per field edit session
+            // Track original value when focus enters a new field
             if (_currentEditFieldName != control.Name)
             {
                 _currentEditFieldName = control.Name;
-                _viewModel.SaveUndoState($"Edit {GetFieldDisplayName(control.Name)}");
+                _originalFieldValue = GetFieldValue(control);
+                _undoStateSavedForCurrentEdit = false;
+            }
+        }
+
+        // Issue #253: Get the current value of a field control
+        private static string? GetFieldValue(Control control)
+        {
+            return control switch
+            {
+                TextBox tb => tb.Text,
+                _ => null
+            };
+        }
+
+        // Issue #253: Save undo state only if the field value has actually changed
+        private void SaveUndoIfValueChanged(Control control)
+        {
+            if (_undoStateSavedForCurrentEdit) return;
+            if (_viewModel.CurrentDialog == null) return;
+
+            var currentValue = GetFieldValue(control);
+            if (currentValue != _originalFieldValue)
+            {
+                _viewModel.SaveUndoState($"Edit {GetFieldDisplayName(control.Name ?? "")}");
+                _undoStateSavedForCurrentEdit = true;
             }
         }
 
@@ -1635,8 +1663,13 @@ namespace DialogEditor.Views
             var control = sender as Control;
             if (control == null) return;
 
+            // Issue #253: Save undo state only if value actually changed
+            SaveUndoIfValueChanged(control);
+
             // Clear the edit session tracker (Issue #74)
             _currentEditFieldName = null;
+            _originalFieldValue = null;
+            _undoStateSavedForCurrentEdit = false;
 
             // Auto-save the specific property that changed
             AutoSaveProperty(control.Name ?? "");

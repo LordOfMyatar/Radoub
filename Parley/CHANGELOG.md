@@ -19,8 +19,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Bug Fixes: Undo/Redo Polish (#253, #252)
 
 **Work Items**:
-- [ ] #253 - Possible blank/no-op undo entries being stored
-- [ ] #252 - Redo (Ctrl+Y) does not auto-expand parent nodes when restoring deleted children
+- [x] #253 - Possible blank/no-op undo entries being stored
+- [x] #252 - Redo (Ctrl+Y) does not auto-expand parent nodes when restoring deleted children
+
+**Fixed (#253)**:
+- Undo state now only saved when field value actually changes (not on focus alone)
+- Tracks original value on focus, compares on blur before pushing to undo stack
+- Eliminates spurious "blank" undo entries that required extra Ctrl+Z presses
+
+**Fixed (#252)**:
+- Added `ExpandAncestors()` to TreeNavigationManager for post-redo visibility
+- After undo/redo restores selection, ancestors are automatically expanded
+- Selected node is also expanded if it has children (to show restored children)
+
+**Tests Added**:
+- 4 new unit tests for ExpandAncestors functionality
+- Total test count: 314 passing (16 skipped GUI tests)
 
 ---
 

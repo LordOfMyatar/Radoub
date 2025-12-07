@@ -269,6 +269,57 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Issue #252: Expands all ancestor nodes to make a target node visible.
+        /// Used after redo to ensure restored nodes with children are visible.
+        /// </summary>
+        public void ExpandAncestors(ObservableCollection<TreeViewSafeNode> nodes, TreeViewSafeNode targetNode)
+        {
+            if (nodes == null || targetNode == null) return;
+
+            // Find and expand all ancestors of the target node
+            ExpandAncestorsRecursive(nodes, targetNode, null);
+        }
+
+        private bool ExpandAncestorsRecursive(ObservableCollection<TreeViewSafeNode> nodes, TreeViewSafeNode targetNode, HashSet<TreeViewSafeNode>? visited)
+        {
+            if (nodes == null) return false;
+
+            visited ??= new HashSet<TreeViewSafeNode>();
+
+            foreach (var node in nodes)
+            {
+                if (node == null) continue;
+
+                // Circular reference protection
+                if (!visited.Add(node)) continue;
+
+                // Found the target - it's in this branch, return true to expand parent
+                if (node == targetNode)
+                {
+                    return true;
+                }
+
+                // Check children
+                if (node.Children != null && node.Children.Count > 0)
+                {
+                    node.PopulateChildren();
+
+                    if (ExpandAncestorsRecursive(node.Children, targetNode, visited))
+                    {
+                        // Target is in this subtree - expand this node
+                        node.IsExpanded = true;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Expanded ancestor: {node.DisplayText}");
+                        return true;
+                    }
+                }
+
+                visited.Remove(node);
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Captures the entire tree structure as a text representation.
         /// Useful for debugging and logging.
         /// </summary>
