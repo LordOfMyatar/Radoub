@@ -53,6 +53,16 @@ namespace DialogEditor.Views
         /// True if this sound comes from a BIF file (requires extraction for playback).
         /// </summary>
         public bool IsFromBif => BifInfo != null;
+
+        /// <summary>
+        /// True if the file has a valid WAV header. False for invalid/corrupt files.
+        /// </summary>
+        public bool IsValidWav { get; set; } = true;
+
+        /// <summary>
+        /// If IsValidWav is false, describes why.
+        /// </summary>
+        public string InvalidWavReason { get; set; } = "";
     }
 
     /// <summary>
@@ -779,7 +789,14 @@ namespace DialogEditor.Views
                 string displayName;
                 IBrush foreground;
 
-                if (!sound.IsMono)
+                // Priority: invalid WAV > stereo > source type
+                if (!sound.IsValidWav)
+                {
+                    // Invalid WAV file (already validated and found to be non-standard)
+                    displayName = $"❌ {baseName}{sourceInfo} [invalid]";
+                    foreground = ErrorBrush;
+                }
+                else if (!sound.IsMono)
                 {
                     displayName = $"⚠️ {baseName}{sourceInfo} [stereo]";
                     foreground = WarningBrush;
@@ -808,10 +825,11 @@ namespace DialogEditor.Views
                 });
             }
 
-            // Build count text with HAK/BIF counts
+            // Build count text with HAK/BIF/invalid counts
             var hakCount = _filteredSounds.Count(s => s.IsFromHak);
             var bifCount = _filteredSounds.Count(s => s.IsFromBif);
             var stereoCount = _filteredSounds.Count(s => !s.IsMono);
+            var invalidCount = _filteredSounds.Count(s => !s.IsValidWav);
             var countText = $"{soundsToDisplay.Count} sound{(soundsToDisplay.Count == 1 ? "" : "s")}";
 
             var details = new List<string>();
@@ -821,6 +839,8 @@ namespace DialogEditor.Views
                 details.Add($"{hakCount} from HAK");
             if (!monoOnly && stereoCount > 0)
                 details.Add($"{stereoCount} stereo");
+            if (invalidCount > 0)
+                details.Add($"{invalidCount} invalid");
 
             if (details.Count > 0)
                 countText += $" ({string.Join(", ", details)})";
@@ -983,20 +1003,29 @@ namespace DialogEditor.Views
                     }
                 }
 
+                // Warn about invalid WAV but still attempt playback
+                var invalidWarning = !_selectedSoundInfo.IsValidWav
+                    ? " ⚠️ (invalid format)"
+                    : "";
+
                 _audioService.Play(pathToPlay);
                 CurrentSoundLabel.Text = _selectedSoundInfo.IsFromHak
-                    ? $"Playing: {_selectedSound} (from HAK)"
+                    ? $"Playing: {_selectedSound} (from HAK){invalidWarning}"
                     : _selectedSoundInfo.IsFromBif
-                        ? $"Playing: {_selectedSound} (from BIF)"
-                        : $"Playing: {_selectedSound}";
-                CurrentSoundLabel.Foreground = SuccessBrush;
+                        ? $"Playing: {_selectedSound} (from BIF){invalidWarning}"
+                        : $"Playing: {_selectedSound}{invalidWarning}";
+                CurrentSoundLabel.Foreground = !_selectedSoundInfo.IsValidWav ? WarningBrush : SuccessBrush;
                 StopButton.IsEnabled = true;
                 PlayButton.IsEnabled = false;
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to play sound: {ex.Message}");
-                CurrentSoundLabel.Text = $"❌ Error: {ex.Message}";
+                // Provide more context if this was an invalid WAV
+                var hint = !_selectedSoundInfo.IsValidWav
+                    ? $" ({_selectedSoundInfo.InvalidWavReason})"
+                    : "";
+                CurrentSoundLabel.Text = $"❌ Error: {ex.Message}{hint}";
                 CurrentSoundLabel.Foreground = ErrorBrush;
             }
         }
@@ -1026,11 +1055,20 @@ namespace DialogEditor.Views
                     // HAK ResRefs are already valid (they came from a working HAK file)
                     var validation = SoundValidator.Validate(tempPath, isVoiceOrSfx: true, skipFilenameCheck: true);
 
-                    // Update the cached mono status
+                    // Update the cached mono status and validity
                     soundInfo.IsMono = validation.IsMono;
+                    soundInfo.IsValidWav = validation.IsValidWav;
+                    soundInfo.InvalidWavReason = validation.InvalidWavReason;
 
                     var sourceInfo = $" (📦 {soundInfo.Source})";
-                    if (validation.HasIssues)
+
+                    // Show invalid WAV warning but don't block
+                    if (!validation.IsValidWav)
+                    {
+                        FileCountLabel.Text = $"⚠️ {validation.InvalidWavReason}{sourceInfo} - playback may fail";
+                        FileCountLabel.Foreground = WarningBrush;
+                    }
+                    else if (validation.HasIssues)
                     {
                         var issues = string.Join(", ", validation.Errors.Concat(validation.Warnings));
                         FileCountLabel.Text = validation.IsValid
@@ -1149,11 +1187,20 @@ namespace DialogEditor.Views
                 {
                     var validation = SoundValidator.Validate(tempPath, isVoiceOrSfx: true, skipFilenameCheck: true);
 
-                    // Update the cached mono status
+                    // Update the cached mono status and validity
                     soundInfo.IsMono = validation.IsMono;
+                    soundInfo.IsValidWav = validation.IsValidWav;
+                    soundInfo.InvalidWavReason = validation.InvalidWavReason;
 
                     var sourceInfo = $" (🎮 {soundInfo.Source})";
-                    if (validation.HasIssues)
+
+                    // Show invalid WAV warning but don't block
+                    if (!validation.IsValidWav)
+                    {
+                        FileCountLabel.Text = $"⚠️ {validation.InvalidWavReason}{sourceInfo} - playback may fail";
+                        FileCountLabel.Foreground = WarningBrush;
+                    }
+                    else if (validation.HasIssues)
                     {
                         var issues = string.Join(", ", validation.Errors.Concat(validation.Warnings));
                         FileCountLabel.Text = validation.IsValid
