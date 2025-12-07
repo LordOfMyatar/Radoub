@@ -119,13 +119,15 @@ namespace DialogEditor.Services
             valueTextBox.LostFocus += (s, e) => OnParameterChanged(isCondition, _getSelectedNode());
             grid.Children.Add(valueTextBox);
 
-            // Delete button
+            // Delete button - use "X" for better legibility across fonts
             var deleteButton = new Button
             {
-                Content = "×",
+                Content = "X",
                 Width = 25,
                 Height = 25,
-                FontSize = 16,
+                FontSize = 12,
+                FontWeight = Avalonia.Media.FontWeight.Bold,
+                Padding = new Thickness(0),
                 [Grid.ColumnProperty] = 4
             };
             deleteButton.Click += (s, e) =>
