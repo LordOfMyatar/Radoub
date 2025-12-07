@@ -253,10 +253,11 @@ namespace DialogEditor.Views
 
                 var includeGameResources = IncludeGameResourcesCheckBox?.IsChecked == true;
                 var includeHakFiles = IncludeHakFolderCheckBox?.IsChecked == true;
+                var includeBifFiles = IncludeBifFilesCheckBox?.IsChecked == true;
                 var includeOtherLocation = IncludeOtherLocationCheckBox?.IsChecked == true;
 
                 // Check if any source is selected
-                if (!includeGameResources && !includeHakFiles && !includeOtherLocation)
+                if (!includeGameResources && !includeHakFiles && !includeBifFiles && !includeOtherLocation)
                 {
                     FileCountLabel.Text = "Select at least one source";
                     FileCountLabel.Foreground = WarningBrush;
@@ -314,8 +315,11 @@ namespace DialogEditor.Views
                             }
                         }
 
-                        // Scan BIF archives via KEY file (#220)
-                        await ScanBifArchivesAsync(basePath);
+                        // Scan BIF archives via KEY file (#220) - only if checkbox enabled
+                        if (includeBifFiles)
+                        {
+                            await ScanBifArchivesAsync(basePath);
+                        }
                     }
                 }
 

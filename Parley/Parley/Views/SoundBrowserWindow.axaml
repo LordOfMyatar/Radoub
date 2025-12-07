@@ -51,6 +51,13 @@
                       ToolTip.Tip="Include sounds from HAK files in dialog directory"
                       Checked="OnSourceSelectionChanged"
                       Unchecked="OnSourceSelectionChanged"/>
+            <CheckBox x:Name="IncludeBifFilesCheckBox"
+                      Content="BIF archives"
+                      FontSize="11"
+                      IsChecked="True"
+                      ToolTip.Tip="Include base game sounds from BIF archives (slower)"
+                      Checked="OnSourceSelectionChanged"
+                      Unchecked="OnSourceSelectionChanged"/>
             <CheckBox x:Name="IncludeOtherLocationCheckBox"
                       Content="Other location"
                       FontSize="11"
@@ -96,11 +103,15 @@
                       FontSize="11"
                       Margin="15,0,0,0"
                       ToolTip.Tip="Disable on-selection format validation for HAK sounds (faster for large HAK collections)"/>
-            <TextBlock Grid.Column="3"
-                       Text="📦 = from HAK"
-                       FontSize="10"
-                       Foreground="LightBlue"
-                       VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="🎮 = BIF"
+                           FontSize="10"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="📦 = HAK"
+                           FontSize="10"
+                           Foreground="LightBlue"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
         </Grid>
 
         <!-- Search Box -->

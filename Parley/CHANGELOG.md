@@ -28,11 +28,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 **Solution**:
 
 #### BIF Archive Scanning
+- Added "BIF archives" checkbox to toggle scanning (can be slow for large installs)
 - Added KEY file parsing to index BIF archive contents
 - Scans `nwn_base.key` (NWN:EE) or `chitin.key` (Classic NWN)
 - Extracts WAV resources from BIF files on demand
 - Caches KEY and BIF data for faster subsequent scans
 - Base game sounds display with 🎮 icon and "BIF:filename" source
+- Legend updated to show both 🎮 (BIF) and 📦 (HAK) icons
 
 #### Subdata Folder Traversal
 - Now scans all `lang/XX/data/` folders for language-specific resources
