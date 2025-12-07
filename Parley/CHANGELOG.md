@@ -20,9 +20,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 **Issue**: #278 - Condition parameters panel needs scrollbar or auto-sizing
 
-**Problem**: When a script has many parameters, the condition/action parameters panel does not show a scrollbar. Users cannot access parameters that extend beyond the visible area.
+**Problem**: When a script has many parameters, the condition/action parameters panel does not show a scrollbar. Users cannot access parameters that extend beyond the visible area (~4-5 rows max).
 
-**Fix**: TBD
+**Root Cause**: ScrollViewer had `MaxHeight="120"` constraint that limited scrollable area, preventing access to parameters beyond the visible rows.
+
+**Fix**:
+- Removed `MaxHeight` from both Conditions and Actions parameter ScrollViewers
+- Changed middle row from `Height="Auto"` to `Height="*"` to fill available space
+- Parent Border's `MaxHeight="200"` now controls overall panel height
+- ScrollViewer can now scroll through all parameters within the Border's bounds
 
 ---
 

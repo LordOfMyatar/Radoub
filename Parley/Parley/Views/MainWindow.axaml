@@ -336,12 +336,12 @@
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for condition script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
-                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40" MaxHeight="120"
+                                <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40"
                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ConditionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
@@ -407,12 +407,12 @@
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for action script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
-                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40" MaxHeight="120"
+                                <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40"
                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ActionsParametersPanel" Margin="5"/>
                                 </ScrollViewer>
