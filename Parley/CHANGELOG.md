@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.41-alpha] - TBD
-**Branch**: `parley/fix/sound-browser-220` | **PR**: #TBD
+**Branch**: `parley/fix/sound-browser-220` | **PR**: #291
 
 ### Fix: Sound Browser Resource Scanning (#220)
 
