@@ -43,7 +43,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added duplicate key validation with persistent red border (stays until corrected)
 - All duplicate key textboxes are highlighted simultaneously
 - Warning shown in status bar with ⚠️ icon
+- **Critical**: Save is now BLOCKED when duplicate keys exist (prevents data corruption)
+- Status bar shows "⛔ Cannot save: Fix duplicate keys first!" when blocked
 - Added logging to track parameter processing for debugging
+
+### UX: Delete Button Improvements
+
+- Changed delete button from `×` to bold `X` for better legibility
+- Fixed button centering (was off-center/clipped)
+- Added right margin to parameter panel to prevent scrollbar overlap
 
 ### UX: Parameter Row Auto-Scroll & Focus
 

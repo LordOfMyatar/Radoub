@@ -128,6 +128,8 @@ namespace DialogEditor.Services
                 FontSize = 12,
                 FontWeight = Avalonia.Media.FontWeight.Bold,
                 Padding = new Thickness(0),
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 [Grid.ColumnProperty] = 4
             };
             deleteButton.Click += (s, e) =>
@@ -235,7 +237,38 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Checks if a parameter panel has any duplicate keys.
+        /// Issue #287: Used to block saving when duplicates exist.
+        /// </summary>
+        private bool HasDuplicateKeys(StackPanel panel)
+        {
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var child in panel.Children)
+            {
+                if (child is Grid paramGrid)
+                {
+                    var textBoxes = paramGrid.Children.OfType<TextBox>().ToList();
+                    if (textBoxes.Count >= 1)
+                    {
+                        string key = textBoxes[0].Text?.Trim() ?? "";
+                        if (!string.IsNullOrWhiteSpace(key))
+                        {
+                            if (!keys.Add(key))
+                            {
+                                // Duplicate found
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Called when parameter values change in the UI
+        /// Issue #287: Blocks save when duplicate keys exist to prevent data corruption
         /// </summary>
         public void OnParameterChanged(bool isCondition, TreeViewSafeNode? selectedNode = null)
         {
@@ -247,6 +280,17 @@ namespace DialogEditor.Services
                 UnifiedLogger.LogApplication(LogLevel.WARN,
                     $"OnParameterChanged: Early return - selectedNode={(selectedNode == null ? "null" : "not null")}, isPopulating={_isPopulatingProperties()}");
                 return;
+            }
+
+            // Issue #287: Check for duplicate keys BEFORE saving - block save if duplicates exist
+            var panelName = isCondition ? "ConditionsParametersPanel" : "ActionsParametersPanel";
+            var panel = _findControl(panelName) as StackPanel;
+            if (panel != null && HasDuplicateKeys(panel))
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"OnParameterChanged: BLOCKED - Duplicate keys detected in {panelName}. Parameters NOT saved.");
+                _setStatusMessage("⛔ Cannot save: Fix duplicate keys first!");
+                return; // Don't save, don't trigger autosave
             }
 
             var dialogNode = selectedNode.OriginalNode;
