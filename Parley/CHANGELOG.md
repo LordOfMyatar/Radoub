@@ -13,6 +13,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.39-alpha] - 2025-12-06
+**Branch**: `parley/fix/undo-redo-polish` | **PR**: #285
+
+### Bug Fixes: Undo/Redo Polish (#253, #252)
+
+**Work Items**:
+- [x] #253 - Possible blank/no-op undo entries being stored
+- [x] #252 - Redo (Ctrl+Y) does not auto-expand parent nodes when restoring deleted children
+
+**Fixed (#253)**:
+- Undo state now only saved when field value actually changes (not on focus alone)
+- Tracks original value on focus, compares on blur before pushing to undo stack
+- Eliminates spurious "blank" undo entries that required extra Ctrl+Z presses
+
+**Fixed (#252)**:
+- Tree state (selection, expansion paths) now stored WITH each undo state
+- On undo: restores to tree state BEFORE the action (shows what you were looking at)
+- On redo: restores to tree state AFTER the action (shows what you saw after)
+- Fixed lazy loading issue where `Children.Count` was checked before children were populated
+- All tree traversal methods now use `HasChildren` property and call `PopulateChildren()`
+
+**Technical Changes**:
+- `UndoState` class now stores `SelectedNodePath` and `ExpandedNodePaths`
+- `UndoManager.Undo/Redo` now return `UndoState` (was `Dialog`)
+- Updated unit tests for new return type
+
+**Tests Updated**:
+- Updated UndoRedoTests and UndoStackLimitTests for `UndoState` return type
+- Total test count: 314 passing (16 skipped GUI tests)
+
+---
+
 ## [0.1.38-alpha] - 2025-12-03
 **Branch**: `parley/feat/epic-40-phase4-export` | **PR**: #277
 

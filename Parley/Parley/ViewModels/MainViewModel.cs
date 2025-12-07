@@ -737,12 +737,15 @@ namespace DialogEditor.ViewModels
         /// <summary>
         /// Saves current state to undo stack before making changes.
         /// Issue #74: Made public to allow view to save state before property edits.
+        /// Issue #252: Now also saves tree UI state (selection, expansion) for proper restoration
         /// </summary>
         public void SaveUndoState(string description)
         {
             if (CurrentDialog != null && !_undoRedoService.IsRestoring)
             {
-                _undoRedoService.SaveState(CurrentDialog, description);
+                // Issue #252: Capture current tree state to restore on undo
+                var treeState = CaptureTreeState();
+                _undoRedoService.SaveState(CurrentDialog, description, treeState);
             }
         }
 
@@ -754,10 +757,10 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
-            // Capture tree state before undo
-            var treeState = CaptureTreeState();
+            // Issue #252: Capture current tree state (will be saved to redo stack)
+            var currentTreeState = CaptureTreeState();
 
-            var previousState = _undoRedoService.Undo(CurrentDialog, treeState);
+            var previousState = _undoRedoService.Undo(CurrentDialog, currentTreeState);
             if (previousState.Success && previousState.RestoredDialog != null)
             {
                 CurrentDialog = previousState.RestoredDialog;
@@ -768,6 +771,10 @@ namespace DialogEditor.ViewModels
                 // Without this, tree restoration triggers SaveUndoState causing infinite loop.
                 _undoRedoService.SetRestoring(true);
 
+                // Issue #252: Use the tree state that was SAVED with the undo state
+                // This restores selection to what it was BEFORE the action that was undone
+                var savedTreeState = previousState.TreeState;
+
                 // CRITICAL FIX (Issue #28): Don't use RefreshTreeView - it tries to restore
                 // expansion state using old node references that don't exist after undo.
                 // Instead, rebuild tree without expansion logic, then restore using paths.
@@ -775,10 +782,10 @@ namespace DialogEditor.ViewModels
                 {
                     PopulateDialogNodes(skipAutoSelect: true);
 
-                    // Restore expansion and selection after tree rebuilt using path-based state
+                    // Restore expansion and selection using the SAVED tree state
                     Dispatcher.UIThread.Post(() =>
                     {
-                        RestoreTreeState(treeState);
+                        RestoreTreeState(savedTreeState);
                         // Clear restoring flag after tree state is fully restored
                         _undoRedoService.SetRestoring(false);
                     }, global::Avalonia.Threading.DispatcherPriority.Loaded);
@@ -798,15 +805,19 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
-            // Capture tree state before redo
-            var treeState = CaptureTreeState();
+            // Capture current tree state to pass to redo (will be saved on undo stack)
+            var currentTreeState = CaptureTreeState();
 
-            var nextState = _undoRedoService.Redo(CurrentDialog, treeState);
+            var nextState = _undoRedoService.Redo(CurrentDialog, currentTreeState);
             if (nextState.Success && nextState.RestoredDialog != null)
             {
                 CurrentDialog = nextState.RestoredDialog;
                 // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
+
+                // Issue #252: Use the tree state that was saved WITH the redo state
+                // This restores selection/expansion to what it was AFTER the original action
+                var savedTreeState = nextState.TreeState;
 
                 // CRITICAL FIX: Extend IsRestoring to cover async tree rebuild.
                 // Without this, tree restoration triggers SaveUndoState causing infinite loop.
@@ -819,10 +830,10 @@ namespace DialogEditor.ViewModels
                 {
                     PopulateDialogNodes(skipAutoSelect: true);
 
-                    // Restore expansion and selection after tree rebuilt using path-based state
+                    // Issue #252: Restore expansion and selection from the SAVED tree state
                     Dispatcher.UIThread.Post(() =>
                     {
-                        RestoreTreeState(treeState);
+                        RestoreTreeState(savedTreeState);
                         // Clear restoring flag after tree state is fully restored
                         _undoRedoService.SetRestoring(false);
                     }, global::Avalonia.Threading.DispatcherPriority.Loaded);
@@ -1583,29 +1594,56 @@ namespace DialogEditor.ViewModels
         {
             if (state == null) return;
 
-            // Restore expanded nodes
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"🔄 RestoreTreeState: DialogNodes.Count={DialogNodes.Count}, ExpandedPaths={state.ExpandedNodePaths.Count}, SelectedPath='{state.SelectedNodePath}'");
+
+            // Get ROOT node
+            var rootNode = DialogNodes.OfType<TreeViewRootNode>().FirstOrDefault();
+
+            // Issue #252: Always ensure ROOT is expanded - it should never be collapsed
+            if (rootNode != null)
+            {
+                rootNode.IsExpanded = true;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"🔄 ROOT node found, Children.Count={rootNode.Children?.Count ?? 0}, IsExpanded={rootNode.IsExpanded}");
+            }
+
+            // Restore expanded nodes from captured state
             _treeNavManager.RestoreExpandedNodePaths(DialogNodes, state.ExpandedNodePaths);
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restored {state.ExpandedNodePaths.Count} expanded nodes");
 
-            // Get ROOT node as fallback
-            var rootNode = DialogNodes.OfType<TreeViewRootNode>().FirstOrDefault();
-
             // Restore selection if we had one captured
             if (!string.IsNullOrEmpty(state.SelectedNodePath))
             {
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"🔄 Looking for node with path: '{state.SelectedNodePath}'");
                 var selectedNode = _treeNavManager.FindNodeByPath(DialogNodes, state.SelectedNodePath);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"🔄 FindNodeByPath returned: {(selectedNode != null ? selectedNode.DisplayText : "null")}");
+
                 if (selectedNode != null)
                 {
+                    // Issue #252: Expand ancestors to ensure selected node is visible
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"🔄 Calling ExpandAncestors for '{selectedNode.DisplayText}'");
+                    _treeNavManager.ExpandAncestors(DialogNodes, selectedNode);
+
+                    // Also expand the selected node itself if it has children (to show restored children)
+                    if (selectedNode.HasChildren)
+                    {
+                        selectedNode.IsExpanded = true;
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"🔄 Expanded selected node '{selectedNode.DisplayText}'");
+                    }
+
                     SelectedTreeNode = selectedNode;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Restored selection to: '{selectedNode.DisplayText}'");
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"🔄 Restored selection to: '{selectedNode.DisplayText}'");
                 }
                 else
                 {
                     // Node not found (may have been deleted by undo) - fallback to ROOT
                     // This prevents orphaned TextBox focus with no backing node
+                    if (rootNode != null)
+                    {
+                        rootNode.IsExpanded = true; // Ensure ROOT visible when falling back
+                    }
                     SelectedTreeNode = rootNode;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not find node for path: '{state.SelectedNodePath}', fallback to ROOT");
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"🔄 Could not find node for path: '{state.SelectedNodePath}', fallback to ROOT");
                 }
             }
             else

@@ -46,17 +46,19 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Saves the current dialog state for undo
+        /// Issue #252: Now also saves tree UI state
         /// </summary>
-        public void SaveState(Dialog dialog, string description = "")
+        public void SaveState(Dialog dialog, string description = "", TreeState? treeState = null)
         {
             if (dialog == null) return;
-            _undoManager.SaveState(dialog, description);
+            _undoManager.SaveState(dialog, description, treeState?.SelectedNodePath, treeState?.ExpandedNodePaths);
         }
 
         /// <summary>
         /// Performs undo operation with tree state restoration
+        /// Issue #252: Returns the tree state that was saved WITH the undo state
         /// </summary>
-        public UndoRedoResult Undo(Dialog currentDialog, TreeState treeState)
+        public UndoRedoResult Undo(Dialog currentDialog, TreeState currentTreeState)
         {
             if (currentDialog == null || !_undoManager.CanUndo)
             {
@@ -65,20 +67,25 @@ namespace DialogEditor.Services
                     Success = false,
                     StatusMessage = "Nothing to undo",
                     RestoredDialog = null,
-                    TreeState = treeState
+                    TreeState = currentTreeState
                 };
             }
 
-            var previousState = _undoManager.Undo(currentDialog);
+            var previousState = _undoManager.Undo(currentDialog, currentTreeState.SelectedNodePath, currentTreeState.ExpandedNodePaths);
             if (previousState != null)
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Undo successful");
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Undo successful - will restore selection to: {previousState.SelectedNodePath ?? "none"}");
                 return new UndoRedoResult
                 {
                     Success = true,
                     StatusMessage = "Undo successful",
-                    RestoredDialog = previousState,
-                    TreeState = treeState
+                    RestoredDialog = previousState.Dialog,
+                    // Issue #252: Return the saved tree state, not the current one
+                    TreeState = new TreeState
+                    {
+                        SelectedNodePath = previousState.SelectedNodePath,
+                        ExpandedNodePaths = previousState.ExpandedNodePaths
+                    }
                 };
             }
             else
@@ -88,15 +95,16 @@ namespace DialogEditor.Services
                     Success = false,
                     StatusMessage = "Undo failed",
                     RestoredDialog = null,
-                    TreeState = treeState
+                    TreeState = currentTreeState
                 };
             }
         }
 
         /// <summary>
         /// Performs redo operation with tree state restoration
+        /// Issue #252: Returns the tree state that was saved WITH the redo state
         /// </summary>
-        public UndoRedoResult Redo(Dialog currentDialog, TreeState treeState)
+        public UndoRedoResult Redo(Dialog currentDialog, TreeState currentTreeState)
         {
             if (currentDialog == null || !_undoManager.CanRedo)
             {
@@ -105,20 +113,25 @@ namespace DialogEditor.Services
                     Success = false,
                     StatusMessage = "Nothing to redo",
                     RestoredDialog = null,
-                    TreeState = treeState
+                    TreeState = currentTreeState
                 };
             }
 
-            var nextState = _undoManager.Redo(currentDialog);
+            var nextState = _undoManager.Redo(currentDialog, currentTreeState.SelectedNodePath, currentTreeState.ExpandedNodePaths);
             if (nextState != null)
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Redo successful");
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Redo successful - will restore selection to: {nextState.SelectedNodePath ?? "none"}");
                 return new UndoRedoResult
                 {
                     Success = true,
                     StatusMessage = "Redo successful",
-                    RestoredDialog = nextState,
-                    TreeState = treeState
+                    RestoredDialog = nextState.Dialog,
+                    // Issue #252: Return the saved tree state, not the current one
+                    TreeState = new TreeState
+                    {
+                        SelectedNodePath = nextState.SelectedNodePath,
+                        ExpandedNodePaths = nextState.ExpandedNodePaths
+                    }
                 };
             }
             else
@@ -128,7 +141,7 @@ namespace DialogEditor.Services
                     Success = false,
                     StatusMessage = "Redo failed",
                     RestoredDialog = null,
-                    TreeState = treeState
+                    TreeState = currentTreeState
                 };
             }
         }

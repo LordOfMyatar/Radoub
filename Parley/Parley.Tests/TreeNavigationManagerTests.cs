@@ -313,6 +313,88 @@ namespace Parley.Tests
 
         #endregion
 
+        #region ExpandAncestors Tests (Issue #252)
+
+        [Fact]
+        public void ExpandAncestors_WithNestedNode_ExpandsParents()
+        {
+            // Arrange - Create tree: root -> child -> grandchild
+            var dialog = CreateNestedDialog();
+            var root = new TreeViewSafeNode(dialog.Entries[0]);
+            root.IsExpanded = false;
+
+            var child = new TreeViewSafeNode(dialog.Replies[0]);
+            child.IsExpanded = false;
+
+            var grandchild = new TreeViewSafeNode(dialog.Entries[1]);
+            grandchild.IsExpanded = false;
+
+            root.Children!.Clear();
+            root.Children.Add(child);
+            child.Children!.Clear();
+            child.Children.Add(grandchild);
+
+            var treeNodes = new ObservableCollection<TreeViewSafeNode> { root };
+
+            // Act - Expand ancestors of grandchild
+            _manager.ExpandAncestors(treeNodes, grandchild);
+
+            // Assert - Root and child should be expanded, grandchild should not
+            Assert.True(root.IsExpanded, "Root should be expanded");
+            Assert.True(child.IsExpanded, "Child should be expanded");
+            Assert.False(grandchild.IsExpanded, "Grandchild should remain collapsed");
+        }
+
+        [Fact]
+        public void ExpandAncestors_WithRootLevelNode_DoesNothing()
+        {
+            // Arrange
+            var dialog = CreateSimpleDialog();
+            var root = new TreeViewSafeNode(dialog.Entries[0]);
+            root.IsExpanded = false;
+
+            var treeNodes = new ObservableCollection<TreeViewSafeNode> { root };
+
+            // Act - Expand ancestors of root (has no ancestors)
+            _manager.ExpandAncestors(treeNodes, root);
+
+            // Assert - Root should still be collapsed (no ancestors to expand)
+            Assert.False(root.IsExpanded);
+        }
+
+        [Fact]
+        public void ExpandAncestors_WithNonExistentNode_DoesNothing()
+        {
+            // Arrange
+            var dialog = CreateSimpleDialog();
+            var root = new TreeViewSafeNode(dialog.Entries[0]);
+            root.IsExpanded = false;
+
+            var nonExistentNode = new TreeViewSafeNode(new DialogNode { Type = DialogNodeType.Entry });
+
+            var treeNodes = new ObservableCollection<TreeViewSafeNode> { root };
+
+            // Act - Expand ancestors of non-existent node
+            _manager.ExpandAncestors(treeNodes, nonExistentNode);
+
+            // Assert - Root should still be collapsed
+            Assert.False(root.IsExpanded);
+        }
+
+        [Fact]
+        public void ExpandAncestors_WithNullTarget_DoesNotThrow()
+        {
+            // Arrange
+            var dialog = CreateSimpleDialog();
+            var root = new TreeViewSafeNode(dialog.Entries[0]);
+            var treeNodes = new ObservableCollection<TreeViewSafeNode> { root };
+
+            // Act & Assert - Should not throw
+            _manager.ExpandAncestors(treeNodes, null!);
+        }
+
+        #endregion
+
         #region Tree Structure Capture Tests
 
         [Fact]
