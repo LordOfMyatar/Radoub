@@ -95,7 +95,12 @@ namespace DialogEditor.Services
                 [Grid.ColumnProperty] = 0
             };
 
-            // Issue #287: Validate for duplicate keys on focus lost
+            // Issue #287: Validate for duplicate keys on text change and focus lost
+            keyTextBox.TextChanged += (s, e) =>
+            {
+                // Re-validate on every change to clear red border when duplicate is resolved
+                ValidateDuplicateKeys(parent, keyTextBox, isCondition);
+            };
             keyTextBox.LostFocus += (s, e) =>
             {
                 ValidateDuplicateKeys(parent, keyTextBox, isCondition);
@@ -132,19 +137,43 @@ namespace DialogEditor.Services
             grid.Children.Add(deleteButton);
 
             parent.Children.Add(grid);
+
+            // Issue #287: Auto-scroll to the new row and focus the key textbox
+            // Use dispatcher to ensure the visual tree is updated before scrolling
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                // Find the parent ScrollViewer
+                var scrollViewerName = isCondition ? "ConditionsParamsScrollViewer" : "ActionsParamsScrollViewer";
+                var scrollViewer = _findControl(scrollViewerName) as ScrollViewer;
+                if (scrollViewer != null)
+                {
+                    // Scroll to the bottom where the new row was added
+                    scrollViewer.ScrollToEnd();
+                }
+
+                // Focus the key textbox
+                keyTextBox.Focus();
+            }, Avalonia.Threading.DispatcherPriority.Loaded);
         }
 
         /// <summary>
         /// Validates that a key is not duplicated in the parameter panel.
         /// Issue #287: Prevents duplicate keys which would cause data loss.
+        /// Red border stays until the duplicate is corrected.
         /// </summary>
         private void ValidateDuplicateKeys(StackPanel parent, TextBox currentKeyTextBox, bool isCondition)
         {
             string currentKey = currentKeyTextBox.Text?.Trim() ?? "";
-            if (string.IsNullOrWhiteSpace(currentKey)) return;
+
+            // If key is empty, clear any warning state
+            if (string.IsNullOrWhiteSpace(currentKey))
+            {
+                ClearDuplicateWarning(currentKeyTextBox);
+                return;
+            }
 
             int duplicateCount = 0;
-            TextBox? firstDuplicate = null;
+            var allKeyTextBoxes = new List<TextBox>();
 
             foreach (var child in parent.Children)
             {
@@ -159,10 +188,7 @@ namespace DialogEditor.Services
                         if (key.Equals(currentKey, StringComparison.Ordinal))
                         {
                             duplicateCount++;
-                            if (keyTextBox != currentKeyTextBox && firstDuplicate == null)
-                            {
-                                firstDuplicate = keyTextBox;
-                            }
+                            allKeyTextBoxes.Add(keyTextBox);
                         }
                     }
                 }
@@ -170,33 +196,39 @@ namespace DialogEditor.Services
 
             if (duplicateCount > 1)
             {
-                // Show warning - duplicate key detected
+                // Show warning - duplicate key detected (stays red until corrected)
                 currentKeyTextBox.BorderBrush = Brushes.Red;
                 currentKeyTextBox.BorderThickness = new Thickness(2);
-                _setStatusMessage($"Warning: Duplicate key '{currentKey}' - only one value will be saved!");
+
+                // Also mark all other textboxes with the same key
+                foreach (var tb in allKeyTextBoxes)
+                {
+                    tb.BorderBrush = Brushes.Red;
+                    tb.BorderThickness = new Thickness(2);
+                }
+
+                _setStatusMessage($"⚠️ Duplicate key '{currentKey}' - only one value will be saved!");
 
                 UnifiedLogger.LogApplication(LogLevel.WARN,
                     $"Duplicate key detected: '{currentKey}' appears {duplicateCount} times in {(isCondition ? "condition" : "action")} parameters");
-
-                // Flash red for a moment then restore
-                _ = ResetBorderAfterDelayAsync(currentKeyTextBox);
+            }
+            else
+            {
+                // No duplicate - clear any warning state on this textbox
+                ClearDuplicateWarning(currentKeyTextBox);
             }
         }
 
         /// <summary>
-        /// Resets TextBox border after a delay (for duplicate key warning visual feedback)
+        /// Clears the duplicate key warning visual state from a TextBox.
         /// </summary>
-        private async Task ResetBorderAfterDelayAsync(TextBox textBox)
+        private void ClearDuplicateWarning(TextBox textBox)
         {
-            await Task.Delay(2000);
-            try
+            // Only clear if currently showing red border (duplicate warning)
+            if (textBox.BorderBrush == Brushes.Red)
             {
-                textBox.BorderBrush = null; // Reset to default
+                textBox.BorderBrush = null; // Reset to default theme
                 textBox.BorderThickness = new Thickness(1);
-            }
-            catch
-            {
-                // Ignore - control may be disposed
             }
         }
 

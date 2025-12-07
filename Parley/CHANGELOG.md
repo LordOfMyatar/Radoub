@@ -40,9 +40,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 **Fix**:
 - Changed `ProcessParameterPanel` to find TextBox children by type using `OfType<TextBox>()`
-- Added duplicate key validation with visual warning (red border flash)
+- Added duplicate key validation with persistent red border (stays until corrected)
+- All duplicate key textboxes are highlighted simultaneously
+- Warning shown in status bar with ⚠️ icon
 - Added logging to track parameter processing for debugging
-- Duplicate keys now show warning in status bar and log file
+
+### UX: Parameter Row Auto-Scroll & Focus
+
+- When adding a new parameter row, ScrollViewer automatically scrolls to show the new row
+- Key textbox automatically receives focus for immediate typing
+- Works for both Conditions and Actions parameter panels
 
 ---
 
