@@ -13,6 +13,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.39-alpha] - 2025-12-06
+**Branch**: `parley/fix/undo-redo-polish` | **PR**: #TBD
+
+### Bug Fixes: Undo/Redo Polish (#253, #252)
+
+**Work Items**:
+- [ ] #253 - Possible blank/no-op undo entries being stored
+- [ ] #252 - Redo (Ctrl+Y) does not auto-expand parent nodes when restoring deleted children
+
+---
+
 ## [0.1.38-alpha] - 2025-12-03
 **Branch**: `parley/feat/epic-40-phase4-export` | **PR**: #277
 
