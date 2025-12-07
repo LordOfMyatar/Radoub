@@ -28,12 +28,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Eliminates spurious "blank" undo entries that required extra Ctrl+Z presses
 
 **Fixed (#252)**:
-- Added `ExpandAncestors()` to TreeNavigationManager for post-redo visibility
-- After undo/redo restores selection, ancestors are automatically expanded
-- Selected node is also expanded if it has children (to show restored children)
+- Tree state (selection, expansion paths) now stored WITH each undo state
+- On undo: restores to tree state BEFORE the action (shows what you were looking at)
+- On redo: restores to tree state AFTER the action (shows what you saw after)
+- Fixed lazy loading issue where `Children.Count` was checked before children were populated
+- All tree traversal methods now use `HasChildren` property and call `PopulateChildren()`
 
-**Tests Added**:
-- 4 new unit tests for ExpandAncestors functionality
+**Technical Changes**:
+- `UndoState` class now stores `SelectedNodePath` and `ExpandedNodePaths`
+- `UndoManager.Undo/Redo` now return `UndoState` (was `Dialog`)
+- Updated unit tests for new return type
+
+**Tests Updated**:
+- Updated UndoRedoTests and UndoStackLimitTests for `UndoState` return type
 - Total test count: 314 passing (16 skipped GUI tests)
 
 ---

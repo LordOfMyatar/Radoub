@@ -127,10 +127,17 @@ namespace DialogEditor.Services
                     expandedPaths.Add(nodePath);
                 }
 
-                // Recurse into children (even for links - they can be expanded)
-                if (node.Children != null && node.Children.Count > 0)
+                // Recurse into children - use HasChildren (checks underlying pointers) instead of Children.Count
+                // This handles lazy loading where Children may not be populated yet
+                if (node.HasChildren)
                 {
-                    CaptureExpandedNodesRecursive(node.Children, nodePath, expandedPaths, visited);
+                    // Populate children before recursing
+                    node.PopulateChildren();
+
+                    if (node.Children != null)
+                    {
+                        CaptureExpandedNodesRecursive(node.Children, nodePath, expandedPaths, visited);
+                    }
                 }
 
                 // Remove from visited after processing this branch (allows same node in different branches)
@@ -175,10 +182,17 @@ namespace DialogEditor.Services
                     node.IsExpanded = true;
                 }
 
-                // Recurse into children (even for links - they can be expanded)
-                if (node.Children != null && node.Children.Count > 0)
+                // Recurse into children - use HasChildren (checks underlying pointers) instead of Children.Count
+                // This handles lazy loading where Children may not be populated yet
+                if (node.HasChildren)
                 {
-                    RestoreExpandedNodesRecursive(node.Children, nodePath, expandedPaths, visited);
+                    // Force populate children before recursing
+                    node.PopulateChildren();
+
+                    if (node.Children != null)
+                    {
+                        RestoreExpandedNodesRecursive(node.Children, nodePath, expandedPaths, visited);
+                    }
                 }
 
                 // Remove from visited after processing this branch (allows same node in different branches)
@@ -248,17 +262,20 @@ namespace DialogEditor.Services
                     return node;
                 }
 
-                // Search children
-                if (node.Children != null && node.Children.Count > 0)
+                // Search children - use HasChildren (checks underlying pointers) instead of Children.Count
+                // This handles lazy loading where Children may not be populated yet
+                if (node.HasChildren)
                 {
-                    // Force populate if needed
-                    var _ = node.Children;
+                    // Force populate children before searching
                     node.PopulateChildren();
 
-                    var found = FindNodeByPathRecursive(node.Children, targetPath, visited);
-                    if (found != null)
+                    if (node.Children != null)
                     {
-                        return found;
+                        var found = FindNodeByPathRecursive(node.Children, targetPath, visited);
+                        if (found != null)
+                        {
+                            return found;
+                        }
                     }
                 }
 
@@ -299,12 +316,14 @@ namespace DialogEditor.Services
                     return true;
                 }
 
-                // Check children
-                if (node.Children != null && node.Children.Count > 0)
+                // Check children - use HasChildren (checks underlying pointers) instead of Children.Count
+                // This handles lazy loading where Children may not be populated yet
+                if (node.HasChildren)
                 {
+                    // Force populate children before searching
                     node.PopulateChildren();
 
-                    if (ExpandAncestorsRecursive(node.Children, targetNode, visited))
+                    if (node.Children != null && ExpandAncestorsRecursive(node.Children, targetNode, visited))
                     {
                         // Target is in this subtree - expand this node
                         node.IsExpanded = true;

@@ -7,13 +7,24 @@ using DialogEditor.Services;
 namespace Parley.Models
 {
     /// <summary>
+    /// Stores dialog state along with tree UI state for undo/redo
+    /// </summary>
+    public class UndoState
+    {
+        public Dialog Dialog { get; set; } = null!;
+        public string? SelectedNodePath { get; set; }
+        public HashSet<string> ExpandedNodePaths { get; set; } = new();
+    }
+
+    /// <summary>
     /// Manages undo/redo operations for dialog editing
     /// Uses memento pattern to store dialog state snapshots
+    /// Issue #252: Now also stores tree UI state (selection, expansion)
     /// </summary>
     public class UndoManager
     {
-        private readonly Stack<Dialog> _undoStack = new();
-        private readonly Stack<Dialog> _redoStack = new();
+        private readonly Stack<UndoState> _undoStack = new();
+        private readonly Stack<UndoState> _redoStack = new();
         private readonly int _maxStackSize;
         private bool _isRestoring = false;
 
@@ -47,8 +58,9 @@ namespace Parley.Models
 
         /// <summary>
         /// Saves the current dialog state for undo
+        /// Issue #252: Now also saves tree UI state (selection, expansion)
         /// </summary>
-        public void SaveState(Dialog dialog, string description = "")
+        public void SaveState(Dialog dialog, string description = "", string? selectedNodePath = null, HashSet<string>? expandedNodePaths = null)
         {
             if (_isRestoring) return; // Don't save while restoring
 
@@ -57,8 +69,16 @@ namespace Parley.Models
                 // Deep clone the dialog
                 var clone = DeepCloneDialog(dialog);
 
+                // Create undo state with dialog and tree state
+                var undoState = new UndoState
+                {
+                    Dialog = clone,
+                    SelectedNodePath = selectedNodePath,
+                    ExpandedNodePaths = expandedNodePaths != null ? new HashSet<string>(expandedNodePaths) : new HashSet<string>()
+                };
+
                 // Add to undo stack
-                _undoStack.Push(clone);
+                _undoStack.Push(undoState);
 
                 // Clear redo stack when new action is performed
                 _redoStack.Clear();
@@ -76,7 +96,7 @@ namespace Parley.Models
                 }
 
                 // Log saved state
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Saved undo state: {description} (Stack size: {_undoStack.Count})");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Saved undo state: {description} (Stack size: {_undoStack.Count}, Selection: {selectedNodePath ?? "none"})");
             }
             catch (Exception ex)
             {
@@ -87,8 +107,9 @@ namespace Parley.Models
 
         /// <summary>
         /// Restores the previous dialog state
+        /// Issue #252: Returns UndoState which includes saved tree state
         /// </summary>
-        public Dialog? Undo(Dialog currentDialog)
+        public UndoState? Undo(Dialog currentDialog, string? currentSelectedPath = null, HashSet<string>? currentExpandedPaths = null)
         {
             if (!CanUndo) return null;
 
@@ -96,15 +117,21 @@ namespace Parley.Models
             {
                 _isRestoring = true;
 
-                // Save current state to redo stack
+                // Save current state to redo stack (with current tree state)
                 var currentClone = DeepCloneDialog(currentDialog);
-                _redoStack.Push(currentClone);
+                var currentState = new UndoState
+                {
+                    Dialog = currentClone,
+                    SelectedNodePath = currentSelectedPath,
+                    ExpandedNodePaths = currentExpandedPaths != null ? new HashSet<string>(currentExpandedPaths) : new HashSet<string>()
+                };
+                _redoStack.Push(currentState);
 
                 // Pop and restore previous state
-                var previousDialog = _undoStack.Pop();
+                var previousState = _undoStack.Pop();
 
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Undo performed (Remaining: {_undoStack.Count})");
-                return previousDialog;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Undo performed (Remaining: {_undoStack.Count}, RestoreSelection: {previousState.SelectedNodePath ?? "none"})");
+                return previousState;
             }
             catch (Exception ex)
             {
@@ -119,8 +146,9 @@ namespace Parley.Models
 
         /// <summary>
         /// Restores the next dialog state
+        /// Issue #252: Returns UndoState which includes saved tree state
         /// </summary>
-        public Dialog? Redo(Dialog currentDialog)
+        public UndoState? Redo(Dialog currentDialog, string? currentSelectedPath = null, HashSet<string>? currentExpandedPaths = null)
         {
             if (!CanRedo) return null;
 
@@ -128,15 +156,21 @@ namespace Parley.Models
             {
                 _isRestoring = true;
 
-                // Save current state to undo stack
+                // Save current state to undo stack (with current tree state)
                 var currentClone = DeepCloneDialog(currentDialog);
-                _undoStack.Push(currentClone);
+                var currentState = new UndoState
+                {
+                    Dialog = currentClone,
+                    SelectedNodePath = currentSelectedPath,
+                    ExpandedNodePaths = currentExpandedPaths != null ? new HashSet<string>(currentExpandedPaths) : new HashSet<string>()
+                };
+                _undoStack.Push(currentState);
 
                 // Pop and restore next state
-                var nextDialog = _redoStack.Pop();
+                var nextState = _redoStack.Pop();
 
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Redo performed (Remaining: {_redoStack.Count})");
-                return nextDialog;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Redo performed (Remaining: {_redoStack.Count}, RestoreSelection: {nextState.SelectedNodePath ?? "none"})");
+                return nextState;
             }
             catch (Exception ex)
             {

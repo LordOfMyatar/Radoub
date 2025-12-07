@@ -85,9 +85,9 @@ namespace Parley.Tests
             Assert.Equal("What do you sell?", dialog.Entries[0].DisplayText);
 
             // Undo the delete
-            var restoredDialog = undoManager.Undo(dialog);
-            Assert.NotNull(restoredDialog);
-            dialog = restoredDialog!;
+            var restoredState = undoManager.Undo(dialog);
+            Assert.NotNull(restoredState);
+            dialog = restoredState!.Dialog;
             dialog.RebuildLinkRegistry();
 
             // Assert: Verify structure restored
@@ -180,18 +180,18 @@ namespace Parley.Tests
             Assert.Single(dialog.Entries);
 
             // Undo delete
-            var undoneDialog = undoManager.Undo(dialog);
-            Assert.NotNull(undoneDialog);
-            dialog = undoneDialog!;
+            var undoneState = undoManager.Undo(dialog);
+            Assert.NotNull(undoneState);
+            dialog = undoneState!.Dialog;
             dialog.RebuildLinkRegistry();
 
             // Verify restored
             Assert.Equal(2, dialog.Entries.Count);
 
             // Act: Redo the delete
-            var redoneDialog = undoManager.Redo(dialog);
-            Assert.NotNull(redoneDialog);
-            dialog = redoneDialog!;
+            var redoneState = undoManager.Redo(dialog);
+            Assert.NotNull(redoneState);
+            dialog = redoneState!.Dialog;
             dialog.RebuildLinkRegistry();
 
             // Assert: After redo, should be back to deleted state
@@ -294,9 +294,9 @@ namespace Parley.Tests
             Assert.Equal(3, dialog.Entries.Count);
 
             // Act: Undo the add
-            var restoredDialog = undoManager.Undo(dialog);
-            Assert.NotNull(restoredDialog);
-            dialog = restoredDialog!;
+            var restoredState = undoManager.Undo(dialog);
+            Assert.NotNull(restoredState);
+            dialog = restoredState!.Dialog;
             dialog.RebuildLinkRegistry();
 
             // Assert: Verify structure restored exactly

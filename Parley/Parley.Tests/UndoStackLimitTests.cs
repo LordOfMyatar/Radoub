@@ -42,9 +42,10 @@ namespace Parley.Tests
 
             while (undoManager.CanUndo && undoCount < 60) // Safety limit
             {
-                currentDialog = undoManager.Undo(currentDialog!);
-                if (currentDialog != null)
+                var undoState = undoManager.Undo(currentDialog!);
+                if (undoState != null)
                 {
+                    currentDialog = undoState.Dialog;
                     undoCount++;
                 }
                 else
@@ -126,8 +127,9 @@ namespace Parley.Tests
             Dialog? restoredDialog = dialog;
             for (int i = 0; i < 10; i++)
             {
-                restoredDialog = undoManager.Undo(restoredDialog!);
-                Assert.NotNull(restoredDialog);
+                var undoState = undoManager.Undo(restoredDialog!);
+                Assert.NotNull(undoState);
+                restoredDialog = undoState!.Dialog;
             }
 
             restoredDialog!.RebuildLinkRegistry();
