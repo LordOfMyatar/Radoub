@@ -13,6 +13,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.40-alpha] - 2025-12-07
+**Branch**: `parley/fix/param-panel-scroll` | **PR**: #286
+
+### Fix: Condition Parameters Panel Scrollbar (#278)
+
+**Issue**: #278 - Condition parameters panel needs scrollbar or auto-sizing
+
+**Problem**: When a script has many parameters, the condition/action parameters panel does not show a scrollbar. Users cannot access parameters that extend beyond the visible area (~4-5 rows max).
+
+**Root Cause**: ScrollViewer had `MaxHeight="120"` constraint that limited scrollable area, preventing access to parameters beyond the visible rows.
+
+**Fix**:
+- Removed `MaxHeight` from both Conditions and Actions parameter ScrollViewers
+- Changed middle row from `Height="Auto"` to `Height="*"` to fill available space
+- Parent Border's `MaxHeight="200"` now controls overall panel height
+- ScrollViewer can now scroll through all parameters within the Border's bounds
+
+### Fix: Parameter Save Reliability (#287)
+
+**Issue**: #287 - Parameters not fully saved when focus leaves node
+
+**Problem**: When adding parameters and switching nodes, not all parameters were being saved correctly.
+
+**Root Cause**: `ProcessParameterPanel` was accessing Grid children by index, which may not match visual column order in all cases.
+
+**Fix**:
+- Changed `ProcessParameterPanel` to find TextBox children by type using `OfType<TextBox>()`
+- Added duplicate key validation with persistent red border (stays until corrected)
+- All duplicate key textboxes are highlighted simultaneously
+- Warning shown in status bar with ⚠️ icon
+- **Critical**: Save is now BLOCKED when duplicate keys exist (prevents data corruption)
+- Status bar shows "⛔ Cannot save: Fix duplicate keys first!" when blocked
+- Added logging to track parameter processing for debugging
+
+### UX: Delete Button Improvements
+
+- Changed delete button from `×` to bold `X` for better legibility
+- Fixed button centering (was off-center/clipped)
+- Added right margin to parameter panel to prevent scrollbar overlap
+
+### UX: Parameter Row Auto-Scroll & Focus
+
+- When adding a new parameter row, ScrollViewer automatically scrolls to show the new row
+- Key textbox automatically receives focus for immediate typing
+- Works for both Conditions and Actions parameter panels
+
+---
+
 ## [0.1.39-alpha] - 2025-12-06
 **Branch**: `parley/fix/undo-redo-polish` | **PR**: #285
 

@@ -74,6 +74,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Adds a parameter row to the UI
+        /// Issue #287: Added duplicate key validation
         /// </summary>
         public void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
         {
@@ -93,7 +94,18 @@ namespace DialogEditor.Services
                 FontFamily = new FontFamily("Consolas,Courier New,monospace"),
                 [Grid.ColumnProperty] = 0
             };
-            keyTextBox.LostFocus += (s, e) => OnParameterChanged(isCondition, _getSelectedNode());
+
+            // Issue #287: Validate for duplicate keys on text change and focus lost
+            keyTextBox.TextChanged += (s, e) =>
+            {
+                // Re-validate on every change to clear red border when duplicate is resolved
+                ValidateDuplicateKeys(parent, keyTextBox, isCondition);
+            };
+            keyTextBox.LostFocus += (s, e) =>
+            {
+                ValidateDuplicateKeys(parent, keyTextBox, isCondition);
+                OnParameterChanged(isCondition, _getSelectedNode());
+            };
             grid.Children.Add(keyTextBox);
 
             // Value textbox
@@ -107,13 +119,17 @@ namespace DialogEditor.Services
             valueTextBox.LostFocus += (s, e) => OnParameterChanged(isCondition, _getSelectedNode());
             grid.Children.Add(valueTextBox);
 
-            // Delete button
+            // Delete button - use "X" for better legibility across fonts
             var deleteButton = new Button
             {
-                Content = "×",
+                Content = "X",
                 Width = 25,
                 Height = 25,
-                FontSize = 16,
+                FontSize = 12,
+                FontWeight = Avalonia.Media.FontWeight.Bold,
+                Padding = new Thickness(0),
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 [Grid.ColumnProperty] = 4
             };
             deleteButton.Click += (s, e) =>
@@ -125,10 +141,134 @@ namespace DialogEditor.Services
             grid.Children.Add(deleteButton);
 
             parent.Children.Add(grid);
+
+            // Issue #287: Auto-scroll to the new row and focus the key textbox
+            // Use dispatcher to ensure the visual tree is updated before scrolling
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                // Find the parent ScrollViewer
+                var scrollViewerName = isCondition ? "ConditionsParamsScrollViewer" : "ActionsParamsScrollViewer";
+                var scrollViewer = _findControl(scrollViewerName) as ScrollViewer;
+                if (scrollViewer != null)
+                {
+                    // Scroll to the bottom where the new row was added
+                    scrollViewer.ScrollToEnd();
+                }
+
+                // Focus the key textbox
+                keyTextBox.Focus();
+            }, Avalonia.Threading.DispatcherPriority.Loaded);
+        }
+
+        /// <summary>
+        /// Validates that a key is not duplicated in the parameter panel.
+        /// Issue #287: Prevents duplicate keys which would cause data loss.
+        /// Red border stays until the duplicate is corrected.
+        /// </summary>
+        private void ValidateDuplicateKeys(StackPanel parent, TextBox currentKeyTextBox, bool isCondition)
+        {
+            string currentKey = currentKeyTextBox.Text?.Trim() ?? "";
+
+            // If key is empty, clear any warning state
+            if (string.IsNullOrWhiteSpace(currentKey))
+            {
+                ClearDuplicateWarning(currentKeyTextBox);
+                return;
+            }
+
+            int duplicateCount = 0;
+            var allKeyTextBoxes = new List<TextBox>();
+
+            foreach (var child in parent.Children)
+            {
+                if (child is Grid paramGrid)
+                {
+                    var textBoxes = paramGrid.Children.OfType<TextBox>().ToList();
+                    if (textBoxes.Count >= 1)
+                    {
+                        var keyTextBox = textBoxes[0];
+                        string key = keyTextBox.Text?.Trim() ?? "";
+
+                        if (key.Equals(currentKey, StringComparison.Ordinal))
+                        {
+                            duplicateCount++;
+                            allKeyTextBoxes.Add(keyTextBox);
+                        }
+                    }
+                }
+            }
+
+            if (duplicateCount > 1)
+            {
+                // Show warning - duplicate key detected (stays red until corrected)
+                currentKeyTextBox.BorderBrush = Brushes.Red;
+                currentKeyTextBox.BorderThickness = new Thickness(2);
+
+                // Also mark all other textboxes with the same key
+                foreach (var tb in allKeyTextBoxes)
+                {
+                    tb.BorderBrush = Brushes.Red;
+                    tb.BorderThickness = new Thickness(2);
+                }
+
+                _setStatusMessage($"⚠️ Duplicate key '{currentKey}' - only one value will be saved!");
+
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Duplicate key detected: '{currentKey}' appears {duplicateCount} times in {(isCondition ? "condition" : "action")} parameters");
+            }
+            else
+            {
+                // No duplicate - clear any warning state on this textbox
+                ClearDuplicateWarning(currentKeyTextBox);
+            }
+        }
+
+        /// <summary>
+        /// Clears the duplicate key warning visual state from a TextBox.
+        /// </summary>
+        private void ClearDuplicateWarning(TextBox textBox)
+        {
+            // Only clear if currently showing red border (duplicate warning)
+            if (textBox.BorderBrush == Brushes.Red)
+            {
+                textBox.BorderBrush = null; // Reset to default theme
+                textBox.BorderThickness = new Thickness(1);
+            }
+        }
+
+        /// <summary>
+        /// Checks if a parameter panel has any duplicate keys.
+        /// Issue #287: Used to block saving when duplicates exist.
+        /// </summary>
+        private bool HasDuplicateKeys(StackPanel panel)
+        {
+            var keys = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (var child in panel.Children)
+            {
+                if (child is Grid paramGrid)
+                {
+                    var textBoxes = paramGrid.Children.OfType<TextBox>().ToList();
+                    if (textBoxes.Count >= 1)
+                    {
+                        string key = textBoxes[0].Text?.Trim() ?? "";
+                        if (!string.IsNullOrWhiteSpace(key))
+                        {
+                            if (!keys.Add(key))
+                            {
+                                // Duplicate found
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         /// <summary>
         /// Called when parameter values change in the UI
+        /// Issue #287: Blocks save when duplicate keys exist to prevent data corruption
         /// </summary>
         public void OnParameterChanged(bool isCondition, TreeViewSafeNode? selectedNode = null)
         {
@@ -140,6 +280,17 @@ namespace DialogEditor.Services
                 UnifiedLogger.LogApplication(LogLevel.WARN,
                     $"OnParameterChanged: Early return - selectedNode={(selectedNode == null ? "null" : "not null")}, isPopulating={_isPopulatingProperties()}");
                 return;
+            }
+
+            // Issue #287: Check for duplicate keys BEFORE saving - block save if duplicates exist
+            var panelName = isCondition ? "ConditionsParametersPanel" : "ActionsParametersPanel";
+            var panel = _findControl(panelName) as StackPanel;
+            if (panel != null && HasDuplicateKeys(panel))
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"OnParameterChanged: BLOCKED - Duplicate keys detected in {panelName}. Parameters NOT saved.");
+                _setStatusMessage("⛔ Cannot save: Fix duplicate keys first!");
+                return; // Don't save, don't trigger autosave
             }
 
             var dialogNode = selectedNode.OriginalNode;
@@ -246,32 +397,36 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Processes a parameter panel and updates the parameter dictionary
+        /// Issue #287: Fixed to properly find TextBox children regardless of Grid column assignment
         /// </summary>
         private void ProcessParameterPanel(StackPanel panel, Dictionary<string, string> paramDict, bool autoTrim, string? scriptName)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Processing {panel.Children.Count} children");
+
             foreach (var child in panel.Children)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Child type={child.GetType().Name}");
-
                 if (child is Grid paramGrid)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Grid has {paramGrid.Children.Count} children");
+                    // Issue #287: Find TextBox children by type, not by index
+                    // Grid children order is not guaranteed to match visual column order
+                    var textBoxes = paramGrid.Children.OfType<TextBox>().ToList();
 
-                    if (paramGrid.Children.Count >= 3)
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"ProcessParameterPanel: Grid has {paramGrid.Children.Count} children, {textBoxes.Count} TextBoxes");
+
+                    if (textBoxes.Count >= 2)
                     {
-                        var keyTextBox = paramGrid.Children[0] as TextBox;
-                        var valueTextBox = paramGrid.Children[1] as TextBox;
+                        // First TextBox is key (column 0), second is value (column 2)
+                        var keyTextBox = textBoxes[0];
+                        var valueTextBox = textBoxes[1];
 
                         UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                            $"ProcessParameterPanel: Examining param row - keyText='{keyTextBox?.Text ?? "null"}', valueText='{valueTextBox?.Text ?? "null"}'");
+                            $"ProcessParameterPanel: keyText='{keyTextBox.Text}', valueText='{valueTextBox.Text}'");
 
-                        if (keyTextBox != null && valueTextBox != null &&
-                            !string.IsNullOrWhiteSpace(keyTextBox.Text))
+                        if (!string.IsNullOrWhiteSpace(keyTextBox.Text))
                         {
                             string key = keyTextBox.Text;
                             string value = valueTextBox.Text ?? "";
-
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Before trim: key='{key}', value='{value}'");
 
                             // Apply trimming if Auto-Trim is enabled
                             if (autoTrim)
@@ -281,8 +436,6 @@ namespace DialogEditor.Services
 
                                 key = key.Trim();
                                 value = value.Trim();
-
-                                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"After trim: key='{key}', value='{value}'");
 
                                 // Update the UI textboxes to show trimmed values
                                 keyTextBox.Text = key;
@@ -299,6 +452,13 @@ namespace DialogEditor.Services
                                 }
                             }
 
+                            // Issue #287: Check for duplicate keys
+                            if (paramDict.ContainsKey(key))
+                            {
+                                UnifiedLogger.LogApplication(LogLevel.WARN,
+                                    $"ProcessParameterPanel: Duplicate key '{key}' - overwriting previous value '{paramDict[key]}' with '{value}'");
+                            }
+
                             paramDict[key] = value;
                             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Added param '{key}' = '{value}'");
 
@@ -308,6 +468,15 @@ namespace DialogEditor.Services
                                 ParameterCacheService.Instance.AddValue(scriptName, key, value);
                             }
                         }
+                        else
+                        {
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "ProcessParameterPanel: Skipping row with empty key");
+                        }
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN,
+                            $"ProcessParameterPanel: Grid has {textBoxes.Count} TextBoxes (expected 2+)");
                     }
                 }
                 else
@@ -315,6 +484,8 @@ namespace DialogEditor.Services
                     UnifiedLogger.LogApplication(LogLevel.WARN, $"ProcessParameterPanel: Child is not Grid, type={child.GetType().Name}");
                 }
             }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Finished with {paramDict.Count} parameters");
         }
 
         /// <summary>
