@@ -13,6 +13,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.41-alpha] - TBD
+**Branch**: `parley/fix/sound-browser-220` | **PR**: #TBD
+
+### Fix: Sound Browser Resource Scanning (#220)
+
+**Issue**: #220 - Sound Browser: Missing BIF scanning and subdata folder traversal
+
+**Problem**: The Sound Browser was not finding many base game sounds because:
+1. BIF archives (containing most base game sounds) were not being scanned
+2. Language-specific data folders (`lang/XX/data/`) were not traversed
+3. HAK files in the game's `data/` folder were not scanned
+
+**Solution**:
+
+#### BIF Archive Scanning
+- Added KEY file parsing to index BIF archive contents
+- Scans `nwn_base.key` (NWN:EE) or `chitin.key` (Classic NWN)
+- Extracts WAV resources from BIF files on demand
+- Caches KEY and BIF data for faster subsequent scans
+- Base game sounds display with 🎮 icon and "BIF:filename" source
+
+#### Subdata Folder Traversal
+- Now scans all `lang/XX/data/` folders for language-specific resources
+- Finds HAK and loose sound files in language folders
+- Supports all NWN:EE language installations (en, de, fr, es, it, pl)
+
+#### Game Data HAK Scanning
+- Scans HAK files in the game's `data/` folder
+- Previously only scanned user's `hak/` folder and dialog directory
+
+**Technical Details**:
+- Uses Radoub.Formats KEY/BIF parsers for archive scanning
+- BIF sounds are extracted to temp files for playback/validation
+- Sound count now shows separate BIF and HAK totals
+- Full mono/stereo validation available for extracted BIF sounds
+
+### Infrastructure: Release Workflow Fix
+
+- Fixed GitVersion action version mismatch in release workflow
+- Updated from `gittools/actions@v4.2.0` with `versionSpec: '5.x'` to `@v3` with `versionSpec: '6.x'`
+- Resolves release build failures on tag push
+
+---
+
 ## [0.1.40-alpha] - 2025-12-07
 **Branch**: `parley/fix/param-panel-scroll` | **PR**: #286
 

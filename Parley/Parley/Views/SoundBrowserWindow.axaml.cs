@@ -8,8 +8,10 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using DialogEditor.Services;
+using Radoub.Formats.Bif;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
+using Radoub.Formats.Key;
 
 namespace DialogEditor.Views
 {
@@ -41,6 +43,16 @@ namespace DialogEditor.Views
         /// True if this sound comes from a HAK file (requires extraction for playback).
         /// </summary>
         public bool IsFromHak => HakPath != null && ErfEntry != null;
+
+        /// <summary>
+        /// If from BIF, the BIF sound info for extraction.
+        /// </summary>
+        public BifSoundInfo? BifInfo { get; set; }
+
+        /// <summary>
+        /// True if this sound comes from a BIF file (requires extraction for playback).
+        /// </summary>
+        public bool IsFromBif => BifInfo != null;
     }
 
     /// <summary>
@@ -51,6 +63,27 @@ namespace DialogEditor.Views
         public string HakPath { get; set; } = "";
         public DateTime LastModified { get; set; }
         public List<SoundFileInfo> Sounds { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Sound info from a BIF file (requires KEY to map ResRef to BIF location).
+    /// </summary>
+    public class BifSoundInfo
+    {
+        public string ResRef { get; set; } = "";
+        public string BifPath { get; set; } = "";
+        public int VariableTableIndex { get; set; }
+        public uint FileSize { get; set; }
+    }
+
+    /// <summary>
+    /// Cached KEY file data to avoid re-parsing on each browser open.
+    /// </summary>
+    internal class KeyCacheEntry
+    {
+        public string KeyPath { get; set; } = "";
+        public DateTime LastModified { get; set; }
+        public KeyFile? KeyFile { get; set; }
     }
 
     public partial class SoundBrowserWindow : Window
@@ -68,6 +101,12 @@ namespace DialogEditor.Views
 
         // Static cache for HAK file contents - persists across window instances
         private static readonly Dictionary<string, HakCacheEntry> _hakCache = new();
+
+        // Static cache for KEY files - persists across window instances
+        private static readonly Dictionary<string, KeyCacheEntry> _keyCache = new();
+
+        // Static cache for loaded BIF files - persists across window instances
+        private static readonly Dictionary<string, BifFile> _bifCache = new();
 
         public string? SelectedSound => _selectedSound;
 
@@ -225,7 +264,7 @@ namespace DialogEditor.Views
                     return;
                 }
 
-                // 1. Game Resources (Override folder + base game folders)
+                // 1. Game Resources (Override folder + base game folders + BIF archives)
                 if (includeGameResources)
                 {
                     var basePath = SettingsService.Instance.BaseGameInstallPath;
@@ -240,16 +279,43 @@ namespace DialogEditor.Views
                             {
                                 ScanPathForSounds(overrideFolder, "Override");
                             }
+                            // Also check NWN:EE "ovr" folder
+                            var ovrFolder = Path.Combine(userPath, "ovr");
+                            if (Directory.Exists(ovrFolder))
+                            {
+                                ScanPathForSounds(ovrFolder, "Override");
+                            }
                             ScanAllSoundFolders(userPath);
                         }
 
-                        // Base game resources
+                        // Base game loose files
                         ScanAllSoundFolders(basePath);
                         var dataPath = Path.Combine(basePath, "data");
                         if (Directory.Exists(dataPath))
                         {
                             ScanAllSoundFolders(dataPath);
+
+                            // Scan HAK files in game data folder (#220)
+                            await ScanPathForHaksAsync(dataPath);
                         }
+
+                        // Scan language-specific data folders (#220)
+                        var langPath = Path.Combine(basePath, "lang");
+                        if (Directory.Exists(langPath))
+                        {
+                            foreach (var langDir in Directory.GetDirectories(langPath))
+                            {
+                                var langDataPath = Path.Combine(langDir, "data");
+                                if (Directory.Exists(langDataPath))
+                                {
+                                    ScanAllSoundFolders(langDataPath);
+                                    await ScanPathForHaksAsync(langDataPath);
+                                }
+                            }
+                        }
+
+                        // Scan BIF archives via KEY file (#220)
+                        await ScanBifArchivesAsync(basePath);
                     }
                 }
 
@@ -455,6 +521,217 @@ namespace DialogEditor.Views
             }
         }
 
+        /// <summary>
+        /// Scan BIF archives for WAV resources using KEY file index.
+        /// Issue #220: BIF files not being scanned
+        /// </summary>
+        private async Task ScanBifArchivesAsync(string basePath)
+        {
+            try
+            {
+                // Find KEY file - NWN:EE uses nwn_base.key in data/ folder
+                var keyPaths = new[]
+                {
+                    Path.Combine(basePath, "data", "nwn_base.key"),
+                    Path.Combine(basePath, "nwn_base.key"),
+                    Path.Combine(basePath, "chitin.key") // Classic NWN
+                };
+
+                string? keyPath = null;
+                foreach (var path in keyPaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        keyPath = path;
+                        break;
+                    }
+                }
+
+                if (keyPath == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Sound Browser: No KEY file found for BIF scanning");
+                    return;
+                }
+
+                FileCountLabel.Text = "Loading base game sounds from BIF archives...";
+
+                // Load or get cached KEY file
+                var keyFile = await Task.Run(() => GetOrLoadKeyFile(keyPath));
+                if (keyFile == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound Browser: Could not load KEY file: {UnifiedLogger.SanitizePath(keyPath)}");
+                    return;
+                }
+
+                // Get all WAV resources from KEY
+                var wavResources = keyFile.GetResourcesByType(ResourceTypes.Wav).ToList();
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Sound Browser: Found {wavResources.Count} WAV resources in KEY file");
+
+                // Group resources by BIF file for efficient loading
+                var resourcesByBif = wavResources.GroupBy(r => r.BifIndex).ToList();
+                var processedCount = 0;
+
+                foreach (var bifGroup in resourcesByBif)
+                {
+                    var bifIndex = bifGroup.Key;
+                    if (bifIndex >= keyFile.BifEntries.Count)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound Browser: Invalid BIF index {bifIndex}");
+                        continue;
+                    }
+
+                    var bifEntry = keyFile.BifEntries[bifIndex];
+                    var bifPath = ResolveBifPath(basePath, bifEntry.Filename);
+
+                    if (bifPath == null || !File.Exists(bifPath))
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Sound Browser: BIF not found: {bifEntry.Filename}");
+                        continue;
+                    }
+
+                    var bifName = Path.GetFileName(bifPath);
+                    FileCountLabel.Text = $"Loading sounds from {bifName}...";
+
+                    // Load BIF file (cached)
+                    var bifFile = await Task.Run(() => GetOrLoadBifFile(bifPath));
+                    if (bifFile == null)
+                        continue;
+
+                    foreach (var resource in bifGroup)
+                    {
+                        var fileName = $"{resource.ResRef}.wav";
+
+                        // Skip if already found from higher priority source
+                        if (_allSounds.Any(s => s.FileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)))
+                            continue;
+
+                        var soundInfo = new SoundFileInfo
+                        {
+                            FileName = fileName,
+                            FullPath = bifPath,
+                            IsMono = true, // Assume mono until verified
+                            Source = $"BIF:{bifName}",
+                            BifInfo = new BifSoundInfo
+                            {
+                                ResRef = resource.ResRef,
+                                BifPath = bifPath,
+                                VariableTableIndex = resource.VariableTableIndex,
+                                FileSize = 0 // Will be determined on extraction
+                            }
+                        };
+
+                        _allSounds.Add(soundInfo);
+                        processedCount++;
+                    }
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Sound Browser: Added {processedCount} WAV resources from BIF archives");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning BIF archives: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Get or load a cached KEY file.
+        /// </summary>
+        private KeyFile? GetOrLoadKeyFile(string keyPath)
+        {
+            try
+            {
+                var lastModified = File.GetLastWriteTimeUtc(keyPath);
+
+                // Check cache
+                if (_keyCache.TryGetValue(keyPath, out var cached) && cached.LastModified == lastModified)
+                {
+                    return cached.KeyFile;
+                }
+
+                // Load KEY file
+                var keyFile = KeyReader.Read(keyPath);
+                _keyCache[keyPath] = new KeyCacheEntry
+                {
+                    KeyPath = keyPath,
+                    LastModified = lastModified,
+                    KeyFile = keyFile
+                };
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Sound Browser: Loaded KEY file with {keyFile.ResourceEntries.Count} resources from {keyFile.BifEntries.Count} BIFs");
+
+                return keyFile;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading KEY file {keyPath}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Get or load a cached BIF file.
+        /// </summary>
+        private BifFile? GetOrLoadBifFile(string bifPath)
+        {
+            try
+            {
+                // Check cache
+                if (_bifCache.TryGetValue(bifPath, out var cached))
+                {
+                    return cached;
+                }
+
+                // Load BIF file
+                var bifFile = BifReader.Read(bifPath, keepBuffer: true);
+                _bifCache[bifPath] = bifFile;
+
+                return bifFile;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading BIF file {bifPath}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Resolve a BIF filename from KEY to an actual file path.
+        /// </summary>
+        private string? ResolveBifPath(string basePath, string bifFilename)
+        {
+            // Normalize path separators
+            var normalized = bifFilename.Replace("\\", "/").Replace("/", Path.DirectorySeparatorChar.ToString());
+
+            // Try relative to base path (for "data\file.bif" paths)
+            var fullPath = Path.Combine(basePath, normalized);
+            if (File.Exists(fullPath))
+                return fullPath;
+
+            // Try just the filename in data folder
+            var dataPath = Path.Combine(basePath, "data", Path.GetFileName(normalized));
+            if (File.Exists(dataPath))
+                return dataPath;
+
+            // Try in lang folders (for language-specific BIFs)
+            var langPath = Path.Combine(basePath, "lang");
+            if (Directory.Exists(langPath))
+            {
+                foreach (var langDir in Directory.GetDirectories(langPath))
+                {
+                    var langBifPath = Path.Combine(langDir, normalized);
+                    if (File.Exists(langBifPath))
+                        return langBifPath;
+
+                    langBifPath = Path.Combine(langDir, "data", Path.GetFileName(normalized));
+                    if (File.Exists(langBifPath))
+                        return langBifPath;
+                }
+            }
+
+            return null;
+        }
+
         private void UpdateSoundList()
         {
             SoundListBox.Items.Clear();
@@ -501,6 +778,11 @@ namespace DialogEditor.Views
                     displayName = $"📦 {baseName}{sourceInfo}";
                     foreground = HakBrush;
                 }
+                else if (sound.IsFromBif)
+                {
+                    displayName = $"🎮 {baseName}{sourceInfo}";
+                    foreground = ForegroundBrush; // BIF sounds are base game, use normal color
+                }
                 else
                 {
                     displayName = $"{baseName}{sourceInfo}";
@@ -515,12 +797,15 @@ namespace DialogEditor.Views
                 });
             }
 
-            // Build count text with HAK count
+            // Build count text with HAK/BIF counts
             var hakCount = _filteredSounds.Count(s => s.IsFromHak);
+            var bifCount = _filteredSounds.Count(s => s.IsFromBif);
             var stereoCount = _filteredSounds.Count(s => !s.IsMono);
             var countText = $"{soundsToDisplay.Count} sound{(soundsToDisplay.Count == 1 ? "" : "s")}";
 
             var details = new List<string>();
+            if (bifCount > 0)
+                details.Add($"{bifCount} from BIF");
             if (hakCount > 0)
                 details.Add($"{hakCount} from HAK");
             if (!monoOnly && stereoCount > 0)
@@ -553,10 +838,12 @@ namespace DialogEditor.Views
             if (soundInfo != null)
             {
                 _selectedSound = soundInfo.FileName;
-                _selectedSoundPath = soundInfo.IsFromHak ? null : soundInfo.FullPath;
+                _selectedSoundPath = (soundInfo.IsFromHak || soundInfo.IsFromBif) ? null : soundInfo.FullPath;
                 SelectedSoundLabel.Text = soundInfo.IsFromHak
                     ? $"{soundInfo.FileName} 📦"
-                    : soundInfo.FileName;
+                    : soundInfo.IsFromBif
+                        ? $"{soundInfo.FileName} 🎮"
+                        : soundInfo.FileName;
                 PlayButton.IsEnabled = true;
 
                 // Validate sound file format against NWN specs
@@ -575,6 +862,20 @@ namespace DialogEditor.Views
                         {
                             // For HAK sounds, extract temporarily to validate format
                             ValidateHakSound(soundInfo);
+                        }
+                    }
+                    else if (soundInfo.IsFromBif)
+                    {
+                        if (skipValidation)
+                        {
+                            // Skip validation - just show source info
+                            FileCountLabel.Text = $"🎮 From: {soundInfo.Source}";
+                            FileCountLabel.Foreground = ForegroundBrush;
+                        }
+                        else
+                        {
+                            // For BIF sounds, extract temporarily to validate format
+                            ValidateBifSound(soundInfo);
                         }
                     }
                     else
@@ -647,6 +948,18 @@ namespace DialogEditor.Views
                     }
                     pathToPlay = extractedPath;
                 }
+                else if (_selectedSoundInfo.IsFromBif)
+                {
+                    // Extract from BIF to temp file for playback
+                    var extractedPath = ExtractBifSoundToTemp(_selectedSoundInfo);
+                    if (extractedPath == null)
+                    {
+                        CurrentSoundLabel.Text = $"❌ Failed to extract from BIF";
+                        CurrentSoundLabel.Foreground = ErrorBrush;
+                        return;
+                    }
+                    pathToPlay = extractedPath;
+                }
                 else
                 {
                     pathToPlay = _selectedSoundInfo.FullPath;
@@ -662,7 +975,9 @@ namespace DialogEditor.Views
                 _audioService.Play(pathToPlay);
                 CurrentSoundLabel.Text = _selectedSoundInfo.IsFromHak
                     ? $"Playing: {_selectedSound} (from HAK)"
-                    : $"Playing: {_selectedSound}";
+                    : _selectedSoundInfo.IsFromBif
+                        ? $"Playing: {_selectedSound} (from BIF)"
+                        : $"Playing: {_selectedSound}";
                 CurrentSoundLabel.Foreground = SuccessBrush;
                 StopButton.IsEnabled = true;
                 PlayButton.IsEnabled = false;
@@ -779,6 +1094,142 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
                     $"Failed to extract HAK sound: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Validate a BIF sound by extracting it temporarily.
+        /// </summary>
+        private void ValidateBifSound(SoundFileInfo soundInfo)
+        {
+            if (soundInfo.BifInfo == null)
+            {
+                FileCountLabel.Text = $"🎮 From: {soundInfo.Source}";
+                FileCountLabel.Foreground = ForegroundBrush;
+                return;
+            }
+
+            try
+            {
+                // Get cached BIF file
+                if (!_bifCache.TryGetValue(soundInfo.BifInfo.BifPath, out var bifFile))
+                {
+                    FileCountLabel.Text = $"🎮 From: {soundInfo.Source}";
+                    FileCountLabel.Foreground = ForegroundBrush;
+                    return;
+                }
+
+                // Extract sound data
+                var soundData = bifFile.ExtractVariableResource(soundInfo.BifInfo.VariableTableIndex);
+                if (soundData == null)
+                {
+                    FileCountLabel.Text = $"🎮 From: {soundInfo.Source} (extraction failed)";
+                    FileCountLabel.Foreground = WarningBrush;
+                    return;
+                }
+
+                // Write to temp file for validation
+                var safeResRef = SanitizeForFileName(soundInfo.BifInfo.ResRef);
+                var tempPath = Path.Combine(Path.GetTempPath(), $"pv_bif_{safeResRef}.wav");
+                File.WriteAllBytes(tempPath, soundData);
+
+                try
+                {
+                    var validation = SoundValidator.Validate(tempPath, isVoiceOrSfx: true, skipFilenameCheck: true);
+
+                    // Update the cached mono status
+                    soundInfo.IsMono = validation.IsMono;
+
+                    var sourceInfo = $" (🎮 {soundInfo.Source})";
+                    if (validation.HasIssues)
+                    {
+                        var issues = string.Join(", ", validation.Errors.Concat(validation.Warnings));
+                        FileCountLabel.Text = validation.IsValid
+                            ? $"⚠ {issues}{sourceInfo}"
+                            : $"❌ {issues}{sourceInfo}";
+                        FileCountLabel.Foreground = validation.IsValid
+                            ? WarningBrush
+                            : ErrorBrush;
+                    }
+                    else if (!string.IsNullOrEmpty(validation.FormatInfo))
+                    {
+                        FileCountLabel.Text = $"✓ {validation.FormatInfo}{sourceInfo}";
+                        FileCountLabel.Foreground = SuccessBrush;
+                    }
+                    else
+                    {
+                        FileCountLabel.Text = $"🎮 From: {soundInfo.Source}";
+                        FileCountLabel.Foreground = ForegroundBrush;
+                    }
+                }
+                finally
+                {
+                    // Clean up temp validation file
+                    try { File.Delete(tempPath); }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.TRACE, $"Could not delete temp file {UnifiedLogger.SanitizePath(tempPath)}: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not validate BIF sound: {ex.Message}");
+                FileCountLabel.Text = $"🎮 From: {soundInfo.Source} (validation unavailable)";
+                FileCountLabel.Foreground = ForegroundBrush;
+            }
+        }
+
+        /// <summary>
+        /// Extract a BIF sound to a temp file for playback.
+        /// </summary>
+        private string? ExtractBifSoundToTemp(SoundFileInfo soundInfo)
+        {
+            if (soundInfo.BifInfo == null)
+                return null;
+
+            try
+            {
+                // Extract to temp directory
+                var tempDir = Path.GetTempPath();
+                var safeResRef = SanitizeForFileName(soundInfo.BifInfo.ResRef);
+                var tempFileName = $"ps_bif_{safeResRef}.wav";
+                var tempPath = Path.Combine(tempDir, tempFileName);
+
+                // If same file already exists, reuse it (allows replaying same sound)
+                if (_tempExtractedPath == tempPath && File.Exists(tempPath))
+                {
+                    return tempPath;
+                }
+
+                // Clean up previous temp file only if different
+                CleanupTempFile();
+
+                // Get cached BIF file
+                if (!_bifCache.TryGetValue(soundInfo.BifInfo.BifPath, out var bifFile))
+                {
+                    bifFile = GetOrLoadBifFile(soundInfo.BifInfo.BifPath);
+                    if (bifFile == null)
+                        return null;
+                }
+
+                var soundData = bifFile.ExtractVariableResource(soundInfo.BifInfo.VariableTableIndex);
+                if (soundData == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to extract BIF sound: resource index {soundInfo.BifInfo.VariableTableIndex}");
+                    return null;
+                }
+
+                File.WriteAllBytes(tempPath, soundData);
+                _tempExtractedPath = tempPath;
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Extracted BIF sound to temp: {tempFileName}");
+                return tempPath;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to extract BIF sound: {ex.Message}");
                 return null;
             }
         }
