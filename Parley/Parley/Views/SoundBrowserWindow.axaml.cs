@@ -296,8 +296,11 @@ namespace DialogEditor.Views
                         {
                             ScanAllSoundFolders(dataPath);
 
-                            // Scan HAK files in game data folder (#220)
-                            await ScanPathForHaksAsync(dataPath);
+                            // Scan HAK files in game data folder (#220) - only if HAK checkbox enabled
+                            if (includeHakFiles)
+                            {
+                                await ScanPathForHaksAsync(dataPath);
+                            }
                         }
 
                         // Scan language-specific data folders (#220)
@@ -310,7 +313,11 @@ namespace DialogEditor.Views
                                 if (Directory.Exists(langDataPath))
                                 {
                                     ScanAllSoundFolders(langDataPath);
-                                    await ScanPathForHaksAsync(langDataPath);
+                                    // Scan HAK files in language data folders - only if HAK checkbox enabled
+                                    if (includeHakFiles)
+                                    {
+                                        await ScanPathForHaksAsync(langDataPath);
+                                    }
                                 }
                             }
                         }
