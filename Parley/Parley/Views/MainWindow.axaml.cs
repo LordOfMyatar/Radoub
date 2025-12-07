@@ -2131,13 +2131,17 @@ namespace DialogEditor.Views
             };
             grid.Children.Add(valueTextBox);
 
-            // Delete button
+            // Delete button - use "X" for better legibility across fonts
             var deleteButton = new Button
             {
-                Content = "×",
+                Content = "X",
                 Width = 25,
                 Height = 25,
-                FontSize = 16,
+                FontSize = 12,
+                FontWeight = global::Avalonia.Media.FontWeight.Bold,
+                Padding = new Thickness(0),
+                HorizontalContentAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalContentAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
                 [Grid.ColumnProperty] = 4
             };
             deleteButton.Click += (s, e) =>
