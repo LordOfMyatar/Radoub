@@ -13,6 +13,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.40-alpha] - 2025-12-07
+**Branch**: `parley/fix/param-panel-scroll` | **PR**: #TBD
+
+### Fix: Condition Parameters Panel Scrollbar (#278)
+
+**Issue**: #278 - Condition parameters panel needs scrollbar or auto-sizing
+
+**Problem**: When a script has many parameters, the condition/action parameters panel does not show a scrollbar. Users cannot access parameters that extend beyond the visible area.
+
+**Fix**: TBD
+
+---
+
 ## [0.1.39-alpha] - 2025-12-06
 **Branch**: `parley/fix/undo-redo-polish` | **PR**: #285
 
