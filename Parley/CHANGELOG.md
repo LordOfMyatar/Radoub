@@ -30,6 +30,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Parent Border's `MaxHeight="200"` now controls overall panel height
 - ScrollViewer can now scroll through all parameters within the Border's bounds
 
+### Fix: Parameter Save Reliability (#287)
+
+**Issue**: #287 - Parameters not fully saved when focus leaves node
+
+**Problem**: When adding parameters and switching nodes, not all parameters were being saved correctly.
+
+**Root Cause**: `ProcessParameterPanel` was accessing Grid children by index, which may not match visual column order in all cases.
+
+**Fix**:
+- Changed `ProcessParameterPanel` to find TextBox children by type using `OfType<TextBox>()`
+- Added duplicate key validation with visual warning (red border flash)
+- Added logging to track parameter processing for debugging
+- Duplicate keys now show warning in status bar and log file
+
 ---
 
 ## [0.1.39-alpha] - 2025-12-06

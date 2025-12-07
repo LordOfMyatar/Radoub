@@ -74,6 +74,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Adds a parameter row to the UI
+        /// Issue #287: Added duplicate key validation
         /// </summary>
         public void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
         {
@@ -93,7 +94,13 @@ namespace DialogEditor.Services
                 FontFamily = new FontFamily("Consolas,Courier New,monospace"),
                 [Grid.ColumnProperty] = 0
             };
-            keyTextBox.LostFocus += (s, e) => OnParameterChanged(isCondition, _getSelectedNode());
+
+            // Issue #287: Validate for duplicate keys on focus lost
+            keyTextBox.LostFocus += (s, e) =>
+            {
+                ValidateDuplicateKeys(parent, keyTextBox, isCondition);
+                OnParameterChanged(isCondition, _getSelectedNode());
+            };
             grid.Children.Add(keyTextBox);
 
             // Value textbox
@@ -125,6 +132,72 @@ namespace DialogEditor.Services
             grid.Children.Add(deleteButton);
 
             parent.Children.Add(grid);
+        }
+
+        /// <summary>
+        /// Validates that a key is not duplicated in the parameter panel.
+        /// Issue #287: Prevents duplicate keys which would cause data loss.
+        /// </summary>
+        private void ValidateDuplicateKeys(StackPanel parent, TextBox currentKeyTextBox, bool isCondition)
+        {
+            string currentKey = currentKeyTextBox.Text?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(currentKey)) return;
+
+            int duplicateCount = 0;
+            TextBox? firstDuplicate = null;
+
+            foreach (var child in parent.Children)
+            {
+                if (child is Grid paramGrid)
+                {
+                    var textBoxes = paramGrid.Children.OfType<TextBox>().ToList();
+                    if (textBoxes.Count >= 1)
+                    {
+                        var keyTextBox = textBoxes[0];
+                        string key = keyTextBox.Text?.Trim() ?? "";
+
+                        if (key.Equals(currentKey, StringComparison.Ordinal))
+                        {
+                            duplicateCount++;
+                            if (keyTextBox != currentKeyTextBox && firstDuplicate == null)
+                            {
+                                firstDuplicate = keyTextBox;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (duplicateCount > 1)
+            {
+                // Show warning - duplicate key detected
+                currentKeyTextBox.BorderBrush = Brushes.Red;
+                currentKeyTextBox.BorderThickness = new Thickness(2);
+                _setStatusMessage($"Warning: Duplicate key '{currentKey}' - only one value will be saved!");
+
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Duplicate key detected: '{currentKey}' appears {duplicateCount} times in {(isCondition ? "condition" : "action")} parameters");
+
+                // Flash red for a moment then restore
+                _ = ResetBorderAfterDelayAsync(currentKeyTextBox);
+            }
+        }
+
+        /// <summary>
+        /// Resets TextBox border after a delay (for duplicate key warning visual feedback)
+        /// </summary>
+        private async Task ResetBorderAfterDelayAsync(TextBox textBox)
+        {
+            await Task.Delay(2000);
+            try
+            {
+                textBox.BorderBrush = null; // Reset to default
+                textBox.BorderThickness = new Thickness(1);
+            }
+            catch
+            {
+                // Ignore - control may be disposed
+            }
         }
 
         /// <summary>
@@ -246,32 +319,36 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Processes a parameter panel and updates the parameter dictionary
+        /// Issue #287: Fixed to properly find TextBox children regardless of Grid column assignment
         /// </summary>
         private void ProcessParameterPanel(StackPanel panel, Dictionary<string, string> paramDict, bool autoTrim, string? scriptName)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Processing {panel.Children.Count} children");
+
             foreach (var child in panel.Children)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Child type={child.GetType().Name}");
-
                 if (child is Grid paramGrid)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Grid has {paramGrid.Children.Count} children");
+                    // Issue #287: Find TextBox children by type, not by index
+                    // Grid children order is not guaranteed to match visual column order
+                    var textBoxes = paramGrid.Children.OfType<TextBox>().ToList();
 
-                    if (paramGrid.Children.Count >= 3)
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"ProcessParameterPanel: Grid has {paramGrid.Children.Count} children, {textBoxes.Count} TextBoxes");
+
+                    if (textBoxes.Count >= 2)
                     {
-                        var keyTextBox = paramGrid.Children[0] as TextBox;
-                        var valueTextBox = paramGrid.Children[1] as TextBox;
+                        // First TextBox is key (column 0), second is value (column 2)
+                        var keyTextBox = textBoxes[0];
+                        var valueTextBox = textBoxes[1];
 
                         UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                            $"ProcessParameterPanel: Examining param row - keyText='{keyTextBox?.Text ?? "null"}', valueText='{valueTextBox?.Text ?? "null"}'");
+                            $"ProcessParameterPanel: keyText='{keyTextBox.Text}', valueText='{valueTextBox.Text}'");
 
-                        if (keyTextBox != null && valueTextBox != null &&
-                            !string.IsNullOrWhiteSpace(keyTextBox.Text))
+                        if (!string.IsNullOrWhiteSpace(keyTextBox.Text))
                         {
                             string key = keyTextBox.Text;
                             string value = valueTextBox.Text ?? "";
-
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Before trim: key='{key}', value='{value}'");
 
                             // Apply trimming if Auto-Trim is enabled
                             if (autoTrim)
@@ -281,8 +358,6 @@ namespace DialogEditor.Services
 
                                 key = key.Trim();
                                 value = value.Trim();
-
-                                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"After trim: key='{key}', value='{value}'");
 
                                 // Update the UI textboxes to show trimmed values
                                 keyTextBox.Text = key;
@@ -299,6 +374,13 @@ namespace DialogEditor.Services
                                 }
                             }
 
+                            // Issue #287: Check for duplicate keys
+                            if (paramDict.ContainsKey(key))
+                            {
+                                UnifiedLogger.LogApplication(LogLevel.WARN,
+                                    $"ProcessParameterPanel: Duplicate key '{key}' - overwriting previous value '{paramDict[key]}' with '{value}'");
+                            }
+
                             paramDict[key] = value;
                             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Added param '{key}' = '{value}'");
 
@@ -308,6 +390,15 @@ namespace DialogEditor.Services
                                 ParameterCacheService.Instance.AddValue(scriptName, key, value);
                             }
                         }
+                        else
+                        {
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG, "ProcessParameterPanel: Skipping row with empty key");
+                        }
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN,
+                            $"ProcessParameterPanel: Grid has {textBoxes.Count} TextBoxes (expected 2+)");
                     }
                 }
                 else
@@ -315,6 +406,8 @@ namespace DialogEditor.Services
                     UnifiedLogger.LogApplication(LogLevel.WARN, $"ProcessParameterPanel: Child is not Grid, type={child.GetType().Name}");
                 }
             }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ProcessParameterPanel: Finished with {paramDict.Count} parameters");
         }
 
         /// <summary>
