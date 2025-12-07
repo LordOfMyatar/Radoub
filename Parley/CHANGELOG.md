@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.40-alpha] - 2025-12-07
-**Branch**: `parley/fix/param-panel-scroll` | **PR**: #TBD
+**Branch**: `parley/fix/param-panel-scroll` | **PR**: #286
 
 ### Fix: Condition Parameters Panel Scrollbar (#278)
 
