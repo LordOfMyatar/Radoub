@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Dependabot configuration for automated dependency updates (NuGet + GitHub Actions)
 
+### Fixed
+- GitVersion.yml updated to v6.x format (replaced deprecated `tag` with `label`, `is-mainline` with `is-main-branch`, updated `prevent-increment` syntax)
+
 ---
 
 ## [0.5.0] - 2025-11-28
