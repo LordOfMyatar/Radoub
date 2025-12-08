@@ -2,40 +2,45 @@ mode: ContinuousDelivery
 branches:
   main:
     regex: ^main$
-    tag: ''
+    label: ''
     increment: Patch
-    prevent-increment-of-merged-branch-version: true
+    prevent-increment:
+      of-merged-branch: true
     track-merge-target: false
-    is-mainline: true
+    is-main-branch: true
   develop:
     regex: ^develop$
-    tag: alpha
+    label: alpha
     increment: Minor
-    prevent-increment-of-merged-branch-version: false
+    prevent-increment:
+      of-merged-branch: false
     track-merge-target: true
-    is-mainline: false
+    is-main-branch: false
   feature:
     regex: ^feature?[/-]
-    tag: feature
+    label: feature
     increment: Minor
-    prevent-increment-of-merged-branch-version: false
+    prevent-increment:
+      of-merged-branch: false
     track-merge-target: false
-    is-mainline: false
+    is-main-branch: false
   fix:
     regex: ^fix[/-]
-    tag: alpha
+    label: alpha
     increment: Patch
     source-branches: ['main', 'develop']
-    prevent-increment-of-merged-branch-version: false
+    prevent-increment:
+      of-merged-branch: false
     track-merge-target: false
-    is-mainline: false
+    is-main-branch: false
   pull-request:
     regex: ^(pull|pull\-requests|pr)[/-]
-    tag: pr
+    label: pr
     increment: Inherit
-    prevent-increment-of-merged-branch-version: false
+    prevent-increment:
+      of-merged-branch: false
     track-merge-target: false
-    is-mainline: false
+    is-main-branch: false
 ignore:
   sha: []
 major-version-bump-message: '\+semver:\s?(breaking|major)'
