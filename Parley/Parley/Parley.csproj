@@ -73,8 +73,15 @@
     <PackageReference Include="Google.Protobuf" Version="3.29.3" />
     <!-- WebView for CEF-based browser embedding (plugin documentation, help) -->
     <!-- Architecture-specific packages: x64 vs ARM64 (CEF natives are platform-specific) -->
-    <PackageReference Include="WebViewControl-Avalonia" Version="3.120.10" Condition="'$(RuntimeIdentifier)' != 'osx-arm64'" />
-    <PackageReference Include="WebViewControl-Avalonia-ARM64" Version="3.120.10" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
+    <!-- Using RuntimeInformation.OSArchitecture for native builds (GitHub Actions macos-latest is ARM64) -->
+  </ItemGroup>
+
+  <!-- WebView packages - architecture-specific due to CEF native libraries -->
+  <ItemGroup Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) != 'Arm64'">
+    <PackageReference Include="WebViewControl-Avalonia" Version="3.120.10" />
+  </ItemGroup>
+  <ItemGroup Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == 'Arm64'">
+    <PackageReference Include="WebViewControl-Avalonia-ARM64" Version="3.120.10" />
   </ItemGroup>
 
   <ItemGroup>
