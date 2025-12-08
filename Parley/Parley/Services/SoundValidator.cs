@@ -49,6 +49,26 @@ namespace DialogEditor.Services
                 {
                     var wavInfo = AnalyzeWavFile(filePath);
 
+                    // Check if it's a valid WAV file
+                    if (!wavInfo.IsValidWav)
+                    {
+                        result.IsValidWav = false;
+                        result.InvalidWavReason = wavInfo.InvalidReason;
+                        result.Errors.Add($"❌ {wavInfo.InvalidReason}");
+                        // Don't mark IsValid = false, just warn - user can still try to play
+                        result.FormatInfo = "Invalid WAV format";
+                        return result;
+                    }
+
+                    if (!wavInfo.HasFmtChunk)
+                    {
+                        result.IsValidWav = false;
+                        result.InvalidWavReason = wavInfo.InvalidReason;
+                        result.Warnings.Add($"⚠️ {wavInfo.InvalidReason}");
+                        result.FormatInfo = "Malformed WAV";
+                        return result;
+                    }
+
                     // Sample rate check
                     if (wavInfo.SampleRate != 44100 && wavInfo.SampleRate != 41000)
                     {
@@ -140,6 +160,32 @@ namespace DialogEditor.Services
             var info = new WavFormatInfo();
             var bytes = File.ReadAllBytes(filePath);
 
+            // Check for RIFF header (bytes 0-3 should be "RIFF")
+            if (bytes.Length < 44) // Minimum WAV header size
+            {
+                info.IsValidWav = false;
+                info.InvalidReason = "File too small to be valid WAV";
+                return info;
+            }
+
+            // Check RIFF signature
+            if (bytes[0] != 'R' || bytes[1] != 'I' || bytes[2] != 'F' || bytes[3] != 'F')
+            {
+                info.IsValidWav = false;
+                info.InvalidReason = "No RIFF header - not a standard WAV file";
+                return info;
+            }
+
+            // Check WAVE format (bytes 8-11 should be "WAVE")
+            if (bytes[8] != 'W' || bytes[9] != 'A' || bytes[10] != 'V' || bytes[11] != 'E')
+            {
+                info.IsValidWav = false;
+                info.InvalidReason = "No WAVE format marker - not a standard WAV file";
+                return info;
+            }
+
+            info.IsValidWav = true;
+
             // Find fmt chunk
             for (int i = 12; i < bytes.Length - 20; i++)
             {
@@ -151,9 +197,15 @@ namespace DialogEditor.Services
                     info.Channels = BitConverter.ToUInt16(bytes, fmtStart + 2);
                     info.SampleRate = BitConverter.ToUInt32(bytes, fmtStart + 4);
                     info.BitsPerSample = BitConverter.ToUInt16(bytes, fmtStart + 14);
+                    info.HasFmtChunk = true;
 
                     break;
                 }
+            }
+
+            if (!info.HasFmtChunk)
+            {
+                info.InvalidReason = "No fmt chunk found - malformed WAV file";
             }
 
             return info;
@@ -165,6 +217,9 @@ namespace DialogEditor.Services
             public ushort Channels { get; set; }
             public uint SampleRate { get; set; }
             public ushort BitsPerSample { get; set; }
+            public bool IsValidWav { get; set; } = true;
+            public bool HasFmtChunk { get; set; }
+            public string InvalidReason { get; set; } = "";
         }
     }
 
@@ -188,6 +243,17 @@ namespace DialogEditor.Services
         /// Number of audio channels (1=mono, 2=stereo).
         /// </summary>
         public int Channels { get; set; } = 1;
+
+        /// <summary>
+        /// True if the file has a valid WAV header (RIFF/WAVE).
+        /// False for non-WAV files masquerading as .wav (e.g., MP3 with .wav extension).
+        /// </summary>
+        public bool IsValidWav { get; set; } = true;
+
+        /// <summary>
+        /// If IsValidWav is false, describes why the file is invalid.
+        /// </summary>
+        public string InvalidWavReason { get; set; } = "";
 
         public bool HasIssues => Errors.Count > 0 || Warnings.Count > 0;
     }
