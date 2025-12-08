@@ -101,6 +101,12 @@ namespace DialogEditor.Services
         private int _maxCachedValuesPerParameter = 10; // Default: 10 MRU values
         private int _maxCachedScripts = 1000; // Default: 1000 scripts
 
+        // Sound Browser settings (#220)
+        // Default to OFF - user must explicitly enable sources to scan
+        private bool _soundBrowserIncludeGameResources = false;
+        private bool _soundBrowserIncludeHakFiles = false;
+        private bool _soundBrowserIncludeBifFiles = false;
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private SettingsService()
@@ -604,6 +610,25 @@ namespace DialogEditor.Services
             }
         }
 
+        // Sound Browser Settings Properties (#220)
+        public bool SoundBrowserIncludeGameResources
+        {
+            get => _soundBrowserIncludeGameResources;
+            set { if (SetProperty(ref _soundBrowserIncludeGameResources, value)) SaveSettings(); }
+        }
+
+        public bool SoundBrowserIncludeHakFiles
+        {
+            get => _soundBrowserIncludeHakFiles;
+            set { if (SetProperty(ref _soundBrowserIncludeHakFiles, value)) SaveSettings(); }
+        }
+
+        public bool SoundBrowserIncludeBifFiles
+        {
+            get => _soundBrowserIncludeBifFiles;
+            set { if (SetProperty(ref _soundBrowserIncludeBifFiles, value)) SaveSettings(); }
+        }
+
         private void LoadSettings()
         {
             try
@@ -705,6 +730,11 @@ namespace DialogEditor.Services
                         ParameterCacheService.Instance.MaxValuesPerParameter = _maxCachedValuesPerParameter;
                         ParameterCacheService.Instance.MaxScriptsInCache = _maxCachedScripts;
 
+                        // Load Sound Browser settings (#220)
+                        _soundBrowserIncludeGameResources = settings.SoundBrowserIncludeGameResources;
+                        _soundBrowserIncludeHakFiles = settings.SoundBrowserIncludeHakFiles;
+                        _soundBrowserIncludeBifFiles = settings.SoundBrowserIncludeBifFiles;
+
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}, theme={(_isDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
                     }
                     else
@@ -762,7 +792,11 @@ namespace DialogEditor.Services
                     AutoSaveIntervalMinutes = AutoSaveIntervalMinutes,
                     EnableParameterCache = EnableParameterCache,
                     MaxCachedValuesPerParameter = MaxCachedValuesPerParameter,
-                    MaxCachedScripts = MaxCachedScripts
+                    MaxCachedScripts = MaxCachedScripts,
+                    // Sound Browser settings (#220)
+                    SoundBrowserIncludeGameResources = SoundBrowserIncludeGameResources,
+                    SoundBrowserIncludeHakFiles = SoundBrowserIncludeHakFiles,
+                    SoundBrowserIncludeBifFiles = SoundBrowserIncludeBifFiles
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -957,6 +991,11 @@ namespace DialogEditor.Services
             public bool EnableParameterCache { get; set; } = true;
             public int MaxCachedValuesPerParameter { get; set; } = 10;
             public int MaxCachedScripts { get; set; } = 1000;
+
+            // Sound Browser settings (#220) - default OFF until user enables
+            public bool SoundBrowserIncludeGameResources { get; set; } = false;
+            public bool SoundBrowserIncludeHakFiles { get; set; } = false;
+            public bool SoundBrowserIncludeBifFiles { get; set; } = false;
         }
     }
 }

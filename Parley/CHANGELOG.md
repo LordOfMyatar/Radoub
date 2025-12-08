@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.41-alpha] - TBD
+## [0.1.41-alpha] - 2025-12-07
 **Branch**: `parley/fix/sound-browser-220` | **PR**: #291
 
 ### Fix: Sound Browser Resource Scanning (#220)
@@ -50,6 +50,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - BIF sounds are extracted to temp files for playback/validation
 - Sound count now shows separate BIF and HAK totals
 - Full mono/stereo validation available for extracted BIF sounds
+
+### UX: Invalid WAV Playback Handling
+
+- Invalid WAV files (non-standard format) now show ❌ icon in sound list
+- Status bar shows warning when selecting invalid WAV files
+- Play button re-enabled after playback error (was stuck disabled)
+- Error message includes format details when playback fails
+
+### UX: Sound Browser Settings Persistence
+
+- Checkbox states (Game resources, HAK files, BIF archives) now persist across sessions
+- Sound Browser opens with previously selected source filters
+- Prevents unnecessary scanning when user only wants specific sources
 
 ### Infrastructure: Release Workflow Fix
 

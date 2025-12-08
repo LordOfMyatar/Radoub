@@ -108,6 +108,7 @@ namespace DialogEditor.Views
         private readonly string? _dialogFilePath;
         private SoundFileInfo? _selectedSoundInfo;
         private string? _tempExtractedPath; // For HAK sounds extracted for playback
+        private bool _isInitializing = true; // Prevent checkbox events during initialization
 
         // Static cache for HAK file contents - persists across window instances
         private static readonly Dictionary<string, HakCacheEntry> _hakCache = new();
@@ -150,6 +151,14 @@ namespace DialogEditor.Views
             _filteredSounds = new List<SoundFileInfo>();
             _dialogFilePath = dialogFilePath;
 
+            // Load checkbox states from settings (#220)
+            // Set _isInitializing to prevent checkbox change events from triggering scans
+            _isInitializing = true;
+            IncludeGameResourcesCheckBox.IsChecked = SettingsService.Instance.SoundBrowserIncludeGameResources;
+            IncludeHakFolderCheckBox.IsChecked = SettingsService.Instance.SoundBrowserIncludeHakFiles;
+            IncludeBifFilesCheckBox.IsChecked = SettingsService.Instance.SoundBrowserIncludeBifFiles;
+            _isInitializing = false;
+
             // Subscribe to playback stopped event to update UI when sound finishes
             _audioService.PlaybackStopped += OnPlaybackStopped;
 
@@ -189,6 +198,15 @@ namespace DialogEditor.Views
 
         private void OnSourceSelectionChanged(object? sender, RoutedEventArgs e)
         {
+            // Skip during initialization to prevent race conditions
+            if (_isInitializing)
+                return;
+
+            // Save checkbox states to settings (#220)
+            SettingsService.Instance.SoundBrowserIncludeGameResources = IncludeGameResourcesCheckBox?.IsChecked == true;
+            SettingsService.Instance.SoundBrowserIncludeHakFiles = IncludeHakFolderCheckBox?.IsChecked == true;
+            SettingsService.Instance.SoundBrowserIncludeBifFiles = IncludeBifFilesCheckBox?.IsChecked == true;
+
             LoadSounds();
         }
 
@@ -1055,6 +1073,9 @@ namespace DialogEditor.Views
                     : "";
                 CurrentSoundLabel.Text = $"❌ Error: {ex.Message}{hint}";
                 CurrentSoundLabel.Foreground = ErrorBrush;
+                // Re-enable Play button so user can try again or select another sound
+                PlayButton.IsEnabled = true;
+                StopButton.IsEnabled = false;
             }
         }
 
