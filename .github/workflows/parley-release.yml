@@ -77,11 +77,11 @@ jobs:
         echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
 
     - name: Restore dependencies
-      run: dotnet restore Parley.sln -r ${{ matrix.runtime }}
+      run: dotnet restore Parley/Parley.csproj -r ${{ matrix.runtime }}
       working-directory: ./Parley
 
-    - name: Build solution
-      run: dotnet build Parley.sln --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -p:FileVersion=${{ steps.gitversion.outputs.assemblySemFileVer }} -p:InformationalVersion=${{ steps.gitversion.outputs.informationalVersion }}
+    - name: Build project
+      run: dotnet build Parley/Parley.csproj --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -p:FileVersion=${{ steps.gitversion.outputs.assemblySemFileVer }} -p:InformationalVersion=${{ steps.gitversion.outputs.informationalVersion }}
       working-directory: ./Parley
 
     - name: Run tests
