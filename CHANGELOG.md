@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - GitVersion.yml updated to v6.x format (replaced deprecated `tag` with `label`, `is-mainline` with `is-main-branch`, updated `prevent-increment` syntax)
-- Release workflow: Pass RuntimeIdentifier to restore/build steps (fixes conditional package references for macOS ARM64)
+- Release workflow: Build project instead of solution to support RuntimeIdentifier for platform-specific packages (macOS ARM64)
 
 ---
 
