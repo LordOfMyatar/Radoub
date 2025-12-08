@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Bump Avalonia packages to 11.3.9 (from 11.3.6)
 
+### Fixed
+- macOS ARM64 build: Use `WebViewControl-Avalonia-ARM64` package for Apple Silicon builds (fixes missing dylib errors)
+
 ---
 
 ## [0.1.41-alpha] - 2025-12-07

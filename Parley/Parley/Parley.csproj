@@ -71,7 +71,10 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Google.Protobuf" Version="3.29.3" />
-    <PackageReference Include="WebViewControl-Avalonia" Version="3.120.10" />
+    <!-- WebView for CEF-based browser embedding (plugin documentation, help) -->
+    <!-- Platform-specific packages for native libraries -->
+    <PackageReference Include="WebViewControl-Avalonia" Version="3.120.10" Condition="'$(RuntimeIdentifier)' != 'osx-arm64'" />
+    <PackageReference Include="WebViewControl-Avalonia-ARM64" Version="3.120.10" Condition="'$(RuntimeIdentifier)' == 'osx-arm64'" />
   </ItemGroup>
 
   <ItemGroup>
