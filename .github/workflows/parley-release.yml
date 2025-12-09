@@ -234,6 +234,11 @@ jobs:
 
           These bundles include everything needed to run Parley - just download and run!
 
+          **Note:** The Flowchart View plugin requires [Python 3.10+](https://www.python.org/downloads/) with `grpcio` and `protobuf` packages installed:
+          ```
+          pip install grpcio protobuf
+          ```
+
           - **Windows**: `Parley-win-x64.zip` (~130MB)
             - Extract and run `Parley.exe`
           - **macOS**: `Parley-osx-arm64.zip` (~148MB)
@@ -249,6 +254,12 @@ jobs:
           - **Windows**: `Parley-win-x64-fd.zip` (~8MB)
           - **macOS**: `Parley-osx-arm64-fd.zip` (~8MB)
           - **Linux**: `Parley-linux-x64-fd.tar.gz` (~8MB)
+
+          ## Included Plugins
+
+          - **Flowchart View** - ChatMapper-style visual dialog graph (requires Python 3.10+)
+
+          Plugins are located in the `Plugins/Official/` folder. Enable them via Settings → Plugins.
 
           ## Changes
 

@@ -40,6 +40,14 @@
     </None>
   </ItemGroup>
 
+  <!-- Copy Python plugin SDK to output directory (required for plugins to run) -->
+  <ItemGroup>
+    <None Include="..\Python\parley_plugin\**\*" Exclude="..\Python\parley_plugin\**\__pycache__\**">
+      <Link>Python\parley_plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <Protobuf Include="Plugins\Protos\plugin.proto" GrpcServices="Both" />
   </ItemGroup>
