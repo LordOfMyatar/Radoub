@@ -16,6 +16,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.43-alpha] - TBD
+**Branch**: `parley/feat/release-quality-plugins` | **PR**: #TBD
+
+### Sprint: Release Quality & Plugin Packaging
+
+**Issues**: #299, #290, #247
+
+- [ ] #299 - Plugin packaging incomplete in release builds
+- [ ] #290 - Include Python plugin SDK in release artifacts
+- [ ] #247 - Plugin development documentation and template
+
+---
+
 ## [0.1.42-alpha] - 2025-12-08
 **Branch**: `parley/fix/311-undo-redo-parent` | **PR**: #312
 
