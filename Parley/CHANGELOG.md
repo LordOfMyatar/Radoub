@@ -16,6 +16,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.44-alpha] - 2025-12-08
+**Branch**: `parley/fix/314-webview-crash` | **PR**: #315
+
+### Hotfix: WebView Crash on Close (#314)
+
+**Problem**: Parley crashes when closing with the flowchart plugin panel open. The WebView control's finalizer throws NullReferenceException during garbage collection.
+
+**Fix**: Explicitly dispose WebView in `PluginPanelWindow.OnWindowClosed()` before it gets garbage collected.
+
+---
+
 ## [0.1.43-alpha] - 2025-12-08
 **Branch**: `parley/feat/release-quality-plugins` | **PR**: #313
 
