@@ -16,6 +16,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.46-alpha] - 2025-12-09
+
+### Fix: CEF Subprocess Missing in Release Builds (#314)
+
+**Problem**: Flowchart plugin crashes on launch in release builds with "Xilium.CefGlue.BrowserProcess.dll not found".
+
+**Root Cause**: `PublishSingleFile=true` bundled CEF subprocess files into the main EXE, but CEF spawns `Xilium.CefGlue.BrowserProcess.exe` as a separate process which couldn't find its DLLs.
+
+**Fix**: Removed `PublishSingleFile` from release workflow. CEF requires its subprocess files to remain as separate files. Trade-off: larger download size but plugins work correctly.
+
+---
+
 ## [0.1.45-alpha] - 2025-12-08
 
 ### Fix: WebView Crash on Close (#314)

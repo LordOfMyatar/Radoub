@@ -96,14 +96,16 @@ jobs:
         fi
       working-directory: ./Parley
 
+    # Note: PublishSingleFile disabled because CEF subprocess (CefGlueBrowserProcess)
+    # requires its .dll files to remain separate - they can't be bundled (#314)
     - name: Publish (Self-Contained)
       if: matrix.self-contained == true
-      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
+      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
       working-directory: ./Parley
 
     - name: Publish (Framework-Dependent)
       if: matrix.self-contained == false
-      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
+      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
       working-directory: ./Parley
 
     # macOS: Create .app bundle for self-contained builds

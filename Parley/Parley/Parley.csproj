@@ -19,6 +19,7 @@
     <Copyright>Copyright © 2025</Copyright>
     <AssemblyName>Parley</AssemblyName>
     <RootNamespace>DialogEditor</RootNamespace>
+
   </PropertyGroup>
 
   <ItemGroup>
