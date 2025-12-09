@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.42-alpha] - TBD
-**Branch**: `parley/fix/311-undo-redo-parent` | **PR**: #TBD
+**Branch**: `parley/fix/311-undo-redo-parent` | **PR**: #312
 
 ### Fix: Redo Not Restoring Dialog State (#311)
 
