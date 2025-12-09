@@ -128,6 +128,17 @@ namespace DialogEditor.Views
             PanelWebView.BeforeNavigate -= OnBeforeNavigate;
             DialogContextService.Instance.NodeSelectionChanged -= OnNodeSelectionChanged;
 
+            // Explicitly dispose WebView to prevent GC finalizer crash (#314)
+            // WebViewControl can crash in Finalize() if not properly disposed on UI thread
+            try
+            {
+                PanelWebView.Dispose();
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogPlugin(LogLevel.DEBUG, $"WebView dispose: {ex.Message}");
+            }
+
             // Mark panel window as closed so plugin can detect (#235)
             // Don't unregister completely - keep panel info for potential reopen
             PluginUIService.MarkPanelWindowClosed(_panelId);
