@@ -85,13 +85,11 @@
     <!-- Using RuntimeInformation.OSArchitecture for native builds (GitHub Actions macos-latest is ARM64) -->
   </ItemGroup>
 
-  <!-- WebView packages - include both x64 and ARM64 packages
-       NuGet/MSBuild will resolve the correct native libs based on RuntimeIdentifier
-       Using RuntimeIdentifier-based condition instead of build machine architecture -->
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == '' OR !$(RuntimeIdentifier.Contains('arm64'))">
+  <!-- WebView packages - include BOTH x64 and ARM64 packages unconditionally
+       The packages contain RID-specific native libs that MSBuild resolves at build time
+       Conditional package refs don't work because RID isn't set during restore -->
+  <ItemGroup>
     <PackageReference Include="WebViewControl-Avalonia" Version="3.120.10" />
-  </ItemGroup>
-  <ItemGroup Condition="$(RuntimeIdentifier.Contains('arm64'))">
     <PackageReference Include="WebViewControl-Avalonia-ARM64" Version="3.120.10" />
   </ItemGroup>
 
