@@ -70,7 +70,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Google.Protobuf" Version="3.29.3" />
+    <PackageReference Include="Google.Protobuf" Version="3.33.2" />
     <!-- WebView for CEF-based browser embedding (plugin documentation, help) -->
     <!-- Architecture-specific packages: x64 vs ARM64 (CEF natives are platform-specific) -->
     <!-- Using RuntimeInformation.OSArchitecture for native builds (GitHub Actions macos-latest is ARM64) -->
