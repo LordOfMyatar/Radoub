@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.49-alpha] - 2025-12-09
+
+### Fix: macOS ARM64 Build - Include Both WebView Packages (#314)
+
+**Problem**: macOS ARM64 builds failing with "libEGL.dylib not found". Conditional package references based on `$(RuntimeIdentifier)` don't work because RID isn't set during NuGet restore.
+
+**Fix**: Include BOTH `WebViewControl-Avalonia` (x64) and `WebViewControl-Avalonia-ARM64` packages unconditionally. MSBuild resolves the correct RID-specific native libraries at build time.
+
+---
+
 ## [0.1.48-alpha] - 2025-12-09
 
 ### Fix: macOS ARM64 Build - WebView Package Resolution (#314)
