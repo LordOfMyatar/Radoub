@@ -30,17 +30,14 @@ Parley supports Python plugins that can extend the dialog editor's functionality
 - Read/write files in sandboxed storage
 - Query theme and speaker color preferences
 
-**What plugins cannot do:**
-- Access arbitrary files outside plugin directory
-- Make network requests (unless granted permission in future)
-- Modify Parley's core functionality
-- Access other plugins' data
-
-**Security Features:**
-- Permission-based manifest system
+**Security Model:**
+- Permission-based manifest system (controls access to Parley APIs)
 - Crash recovery with auto-disable after 3 crashes
 - Rate limiting (1000 calls/minute per operation)
-- Sandboxed file access
+- File API sandboxed to `~/Parley/PluginData/{pluginId}/`
+
+**Important Security Note:**
+Plugins run as full Python processes with user-level permissions. The security model restricts what plugins can do *through Parley's gRPC APIs*, but does not sandbox Python itself. A malicious plugin could use native Python to access files, network, etc. **Only install plugins from trusted sources.**
 
 [Back to TOC](#table-of-contents)
 
