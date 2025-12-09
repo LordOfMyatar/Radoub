@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.44-alpha] - 2025-12-08
-**Branch**: `parley/fix/314-webview-crash` | **PR**: #TBD
+**Branch**: `parley/fix/314-webview-crash` | **PR**: #315
 
 ### Hotfix: WebView Crash on Close (#314)
 
