@@ -8,11 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Changed
-- Bump Avalonia packages to 11.3.9 (from 11.3.6)
+---
 
-### Fixed
-- macOS ARM64 build: Use `WebViewControl-Avalonia-ARM64` package for Apple Silicon (conditional package reference based on RuntimeIdentifier)
+## [0.1.47-alpha] - 2025-12-09
+
+### Fix: macOS Build Failure (#314)
+
+**Problem**: v0.1.46 broke macOS builds with "libEGL.dylib not found" error.
+
+**Root Cause**: Removing `PublishSingleFile` globally to fix CEF subprocess on Windows broke native library bundling on macOS.
+
+**Fix**: Split publish steps by OS:
+- **Windows**: No `PublishSingleFile` - CEF subprocess requires separate DLL files
+- **macOS/Linux**: Keep `PublishSingleFile` with `IncludeNativeLibrariesForSelfExtract` for native library bundling
 
 ---
 
