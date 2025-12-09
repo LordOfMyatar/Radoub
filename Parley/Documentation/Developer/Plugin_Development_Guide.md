@@ -54,12 +54,13 @@ Plugins run as full Python processes with user-level permissions. The security m
 
 ### SDK Location
 
-The Python plugin SDK (`parley_plugin`) is bundled with Parley in two locations:
+The Python plugin SDK (`parley_plugin`) is bundled with Parley in the install directory:
 
-1. **Install directory**: `<Parley>/Python/parley_plugin/` - Used automatically by Parley
-2. **User directory**: `~/Parley/Python/parley_plugin/` - For development/testing
+```
+<Parley Install Folder>/Python/parley_plugin/
+```
 
-Parley automatically adds the SDK to Python's path when launching plugins.
+Parley automatically adds the SDK to Python's path when launching plugins. You don't need to install it separately.
 
 ### Creating Your First Plugin
 
@@ -78,7 +79,11 @@ Parley automatically adds the SDK to Python's path when launching plugins.
    # From Parley/Scripts directory
    .\deploy-plugins.ps1
    ```
-   This copies Official plugins and the Python SDK to `~/Parley/`.
+   This script:
+   - Regenerates Python gRPC stubs from `plugin.proto`
+   - Copies Official plugins to `bin/Debug` and `bin/Release` output directories
+   - Copies Python SDK to build output directories
+   - Creates `~/Parley/Plugins/Community/` folder for your plugins
 
 [Back to TOC](#table-of-contents)
 
