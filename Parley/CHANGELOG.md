@@ -23,8 +23,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 **Issues**: #299, #290, #247
 
-- [ ] #299 - Plugin packaging incomplete in release builds
-- [ ] #290 - Include Python plugin SDK in release artifacts
+#### Completed
+- [x] #299 - Plugin packaging incomplete in release builds
+  - Added `Python/parley_plugin/` SDK to csproj copy rules
+  - SDK now bundled with release builds (required for plugins to import)
+  - PluginHost already looks for `Python/` in app directory
+- [x] #290 - Include Python plugin SDK in release artifacts
+  - SDK automatically included via csproj `CopyToOutputDirectory`
+  - Excludes `__pycache__` folders from distribution
+- [x] Updated release notes to document Python 3.10+ requirement for plugins
+
+#### Pending
 - [ ] #247 - Plugin development documentation and template
 
 ---
