@@ -96,16 +96,27 @@ jobs:
         fi
       working-directory: ./Parley
 
-    # Note: PublishSingleFile disabled because CEF subprocess (CefGlueBrowserProcess)
+    # Windows: PublishSingleFile disabled because CEF subprocess (CefGlueBrowserProcess)
     # requires its .dll files to remain separate - they can't be bundled (#314)
-    - name: Publish (Self-Contained)
-      if: matrix.self-contained == true
+    - name: Publish (Self-Contained, Windows)
+      if: matrix.self-contained == true && matrix.os == 'windows-latest'
       run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
       working-directory: ./Parley
 
-    - name: Publish (Framework-Dependent)
-      if: matrix.self-contained == false
+    - name: Publish (Framework-Dependent, Windows)
+      if: matrix.self-contained == false && matrix.os == 'windows-latest'
       run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
+      working-directory: ./Parley
+
+    # macOS/Linux: Keep PublishSingleFile (no CEF subprocess issues on these platforms)
+    - name: Publish (Self-Contained, macOS/Linux)
+      if: matrix.self-contained == true && matrix.os != 'windows-latest'
+      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
+      working-directory: ./Parley
+
+    - name: Publish (Framework-Dependent, macOS/Linux)
+      if: matrix.self-contained == false && matrix.os != 'windows-latest'
+      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -p:Version=${{ steps.gitversion.outputs.assemblySemVer }} -o ./publish/${{ matrix.artifact-name }}
       working-directory: ./Parley
 
     # macOS: Create .app bundle for self-contained builds
