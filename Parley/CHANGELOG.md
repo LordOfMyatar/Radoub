@@ -16,41 +16,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.44-alpha] - 2025-12-08
-**Branch**: `parley/fix/314-webview-crash` | **PR**: #315
+## [0.1.45-alpha] - 2025-12-08
 
-### Hotfix: WebView Crash on Close (#314)
+### Fix: WebView Crash on Close (#314)
 
-**Problem**: Parley crashes when closing with the flowchart plugin panel open. The WebView control's finalizer throws NullReferenceException during garbage collection.
+> *"I never look back, darling. It distracts from the now."* — Edna Mode
+>
+> Versions 0.1.43 and 0.1.44 were retracted due to this bug. We move forward.
 
-**Fix**: Explicitly dispose WebView in `PluginPanelWindow.OnWindowClosed()` before it gets garbage collected.
+**Problem**: Parley crashes (KERNELBASE.dll access violation) when closing with the flowchart plugin panel open. CEF/Chromium shutdown was racing with app exit.
 
----
+**Root Cause**: `PluginPanelManager.CloseAllPanels()` used async `Dispatcher.UIThread.Post()` which returned immediately while WebView disposal was still in progress. App exited before CEF could clean up.
 
-## [0.1.43-alpha] - 2025-12-08
-**Branch**: `parley/feat/release-quality-plugins` | **PR**: #313
-
-### Sprint: Release Quality & Plugin Packaging
-
-**Issues**: #299, #290, #247
-
-#### Completed
-- [x] #299 - Plugin packaging incomplete in release builds
-  - Added `Python/parley_plugin/` SDK to csproj copy rules
-  - SDK now bundled with release builds (required for plugins to import)
-  - PluginHost already looks for `Python/` in app directory
-- [x] #290 - Include Python plugin SDK in release artifacts
-  - SDK automatically included via csproj `CopyToOutputDirectory`
-  - Excludes `__pycache__` folders from distribution
-- [x] Updated release notes to document Python 3.10+ requirement for plugins
-
-#### Completed
-- [x] #247 - Plugin development documentation and template
-  - Updated `Documentation/Developer/Plugin_Development_Guide.md`
-  - Fixed outdated POC language, now documents full gRPC API
-  - Added panel-based plugin example
-  - Referenced `deploy-plugins.ps1` for development workflow
-  - Fixed GitHub links to correct repository
+**Fix**: Changed to synchronous `Dispatcher.UIThread.Invoke()` to ensure each plugin panel window fully closes before continuing with app shutdown.
 
 ---
 
