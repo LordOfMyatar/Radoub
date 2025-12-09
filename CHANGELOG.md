@@ -11,13 +11,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.5.1] - 2025-12-08
+**Branch**: `radoub/chore/dependabot-updates-309` | **PR**: #TBD
+
+### Dependencies
+
+Updated GitHub Actions and NuGet packages (closes #309):
+- `gittools/actions` 3 → 4 (GitVersion workflow)
+- `actions/checkout` 4 → 6
+- `actions/download-artifact` 4 → 6
+- `Google.Protobuf` 3.29.3 → 3.33.2 (gRPC plugin communication)
+
 ### Added
 - Dependabot configuration for automated dependency updates (NuGet + GitHub Actions)
 
 ### Fixed
 - GitVersion.yml updated to v6.x format (replaced deprecated `tag` with `label`, `is-mainline` with `is-main-branch`, updated `prevent-increment` syntax)
 - Release workflow: Build project instead of solution to support RuntimeIdentifier for platform-specific packages
-- macOS ARM64: Use conditional package references for WebView-Avalonia vs WebView-Avalonia-ARM64
+- macOS ARM64: Use RuntimeInformation for ARM64 WebView package selection
 
 ---
 
