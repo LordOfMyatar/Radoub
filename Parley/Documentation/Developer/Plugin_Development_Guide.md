@@ -18,26 +18,29 @@ Guide for creating plugins that extend Parley's functionality with Python.
 
 ## Overview
 
-Parley supports Python plugins that can extend the dialog editor's functionality. Plugins run in isolated processes for security and stability.
+Parley supports Python plugins that can extend the dialog editor's functionality. Plugins run in isolated processes for security and stability, communicating with Parley via gRPC.
 
-**Current POC Phase:**
-- Plugins run as separate Python processes
-- Output logged to Parley's plugin log
-- Crash recovery with auto-disable after 3 crashes
-- Permission-based manifest system
-
-**Future Phase (gRPC):**
-- Bidirectional communication with Parley
-- Play audio files
+**What plugins can do:**
+- Run as separate Python processes with crash isolation
+- Communicate with Parley via gRPC (bidirectional)
 - Show UI notifications and dialogs
-- Read and analyze dialog data
-- Read files from sandboxed storage
+- Create custom panels with HTML/JavaScript content
+- Read and analyze dialog data in real-time
+- Subscribe to dialog change events
+- Read/write files in sandboxed storage
+- Query theme and speaker color preferences
 
 **What plugins cannot do:**
 - Access arbitrary files outside plugin directory
 - Make network requests (unless granted permission in future)
 - Modify Parley's core functionality
 - Access other plugins' data
+
+**Security Features:**
+- Permission-based manifest system
+- Crash recovery with auto-disable after 3 crashes
+- Rate limiting (1000 calls/minute per operation)
+- Sandboxed file access
 
 [Back to TOC](#table-of-contents)
 
@@ -46,7 +49,20 @@ Parley supports Python plugins that can extend the dialog editor's functionality
 ### Prerequisites
 
 - Python 3.10 or newer (3.12+ recommended)
-- Parley 0.1.5-alpha or newer
+- Parley 0.1.33-alpha or newer
+- Python packages: `grpcio` and `protobuf`
+  ```bash
+  pip install grpcio protobuf
+  ```
+
+### SDK Location
+
+The Python plugin SDK (`parley_plugin`) is bundled with Parley in two locations:
+
+1. **Install directory**: `<Parley>/Python/parley_plugin/` - Used automatically by Parley
+2. **User directory**: `~/Parley/Python/parley_plugin/` - For development/testing
+
+Parley automatically adds the SDK to Python's path when launching plugins.
 
 ### Creating Your First Plugin
 
@@ -60,14 +76,12 @@ Parley supports Python plugins that can extend the dialog editor's functionality
    - `main.py` - Entry point
    - `requirements.txt` - Python dependencies (optional)
 
-3. Install Parley's Python library:
-   ```bash
-   # From Parley installation directory
-   cd Parley/Python
-   pip install -e .
+3. **For development**: Use the deploy script to sync plugins and SDK:
+   ```powershell
+   # From Parley/Scripts directory
+   .\deploy-plugins.ps1
    ```
-
-   Or download the Python library from the Parley repository.
+   This copies Official plugins and the Python SDK to `~/Parley/`.
 
 [Back to TOC](#table-of-contents)
 
@@ -84,7 +98,7 @@ my-plugin/
     └── images/
 ```
 
-### Minimal Example (POC Phase)
+### Minimal Example
 
 **plugin.json:**
 ```json
@@ -96,9 +110,9 @@ my-plugin/
     "version": "1.0.0",
     "author": "Your Name",
     "description": "Does something useful",
-    "parleyVersion": ">=0.1.5"
+    "parleyVersion": ">=0.1.33"
   },
-  "permissions": [],
+  "permissions": ["ui.show_notification"],
   "entry_point": "main.py",
   "trust_level": "unverified"
 }
@@ -107,48 +121,11 @@ my-plugin/
 **main.py:**
 ```python
 """
-Simple POC plugin - output goes to Parley's plugin log
+Simple plugin with gRPC communication
 """
-import time
-
-print("=" * 50)
-print("MY FIRST PLUGIN STARTED")
-print("=" * 50)
-print("Plugin ID: com.example.myplugin")
-print("This output appears in Parley's plugin log")
-print("=" * 50)
-
-# Do some work
-for i in range(5):
-    print(f"Working... ({i+1}/5)")
-    time.sleep(1)
-
-print("=" * 50)
-print("MY FIRST PLUGIN EXITING")
-print("=" * 50)
-```
-
-**What happens:**
-- Parley launches your plugin when it starts
-- All `print()` output goes to `~/Parley/Logs/Session_*/Plugin_*.log`
-- Plugin runs once and exits
-- If plugin crashes 3 times, it auto-disables
-
-### gRPC Communication Example
-
-Plugins can communicate with Parley using gRPC. Here's a working example:
-
-**main.py with gRPC:**
-```python
-"""
-Plugin with gRPC communication
-"""
-import time
 from parley_plugin import ParleyClient
 
-print("=" * 50)
-print("MY PLUGIN STARTED")
-print("=" * 50)
+print("My Plugin starting...")
 
 try:
     # Connect to Parley's gRPC server
@@ -158,13 +135,12 @@ try:
         # Show notification
         success = client.show_notification(
             "My Plugin",
-            "Plugin is running with gRPC!"
+            "Plugin is running!"
         )
-
         if success:
             print("[OK] Notification sent")
 
-        # Query current dialog (returns empty if no dialog loaded)
+        # Query current dialog
         dialog_id, dialog_name = client.get_current_dialog()
         if dialog_id:
             print(f"Current dialog: {dialog_name}")
@@ -176,18 +152,91 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
-print("=" * 50)
-print("MY PLUGIN EXITING")
-print("=" * 50)
+print("My Plugin exiting...")
 ```
 
-**gRPC Features (POC Phase):**
-- `show_notification(title, message)` - Show notification window
-- `get_current_dialog()` - Query current dialog (returns empty in POC)
-- Auto-connection via `PARLEY_GRPC_PORT` environment variable
-- Context manager handles connection cleanup
+**What happens:**
+- Parley launches your plugin when enabled
+- `ParleyClient` connects via gRPC (port from `PARLEY_GRPC_PORT` env var)
+- All `print()` output goes to Parley's Debug tab
+- If plugin crashes 3 times, it auto-disables
 
-**Note:** Full gRPC API (audio playback, file dialogs, etc.) coming in future updates.
+### Panel-Based Plugin Example
+
+For plugins that need a persistent UI (like Flowchart View):
+
+**plugin.json:**
+```json
+{
+  "manifestVersion": "1.0",
+  "plugin": {
+    "id": "com.example.mypanel",
+    "name": "My Panel Plugin",
+    "version": "1.0.0",
+    "author": "Your Name",
+    "description": "Plugin with a custom panel",
+    "parleyVersion": ">=0.1.33"
+  },
+  "permissions": [
+    "ui.create_panel",
+    "ui.show_notification",
+    "dialog.read",
+    "dialog.subscribe_changes"
+  ],
+  "entry_point": "main.py",
+  "trust_level": "unverified"
+}
+```
+
+**main.py:**
+```python
+"""
+Panel plugin - creates a floating window with HTML content
+"""
+from parley_plugin import ParleyClient
+import time
+
+print("Panel Plugin starting...")
+
+try:
+    with ParleyClient() as client:
+        # Register a panel (opens as a separate window)
+        success = client.register_panel(
+            panel_id="my-panel",
+            title="My Custom Panel",
+            width=600,
+            height=400,
+            html_content="<html><body><h1>Hello from my plugin!</h1></body></html>"
+        )
+
+        if success:
+            print("[OK] Panel registered")
+
+            # Keep plugin running to handle events
+            while True:
+                # Check if dialog changed
+                dialog_id, dialog_name = client.get_current_dialog()
+                if dialog_id:
+                    # Update panel content
+                    new_html = f"<html><body><h1>Dialog: {dialog_name}</h1></body></html>"
+                    client.update_panel_content("my-panel", new_html)
+
+                time.sleep(1)
+
+except KeyboardInterrupt:
+    print("Plugin stopped by user")
+except Exception as e:
+    print(f"[ERROR] {e}")
+
+print("Panel Plugin exiting...")
+```
+
+**Key Panel APIs:**
+- `register_panel(panel_id, title, width, height, html_content)` - Create a panel window
+- `update_panel_content(panel_id, html_content)` - Update panel HTML
+- `get_current_dialog()` - Get loaded dialog info
+- `get_dialog_structure()` - Get full dialog tree structure
+- `get_speaker_colors()` - Get configured speaker colors for consistency
 
 [Back to TOC](#table-of-contents)
 
@@ -689,10 +738,10 @@ async def on_activate():
 
 ## Support
 
-- **Issues:** https://github.com/anthropics/parley/issues
-- **Discussions:** https://github.com/anthropics/parley/discussions
-- **Documentation:** https://docs.parley.app
+- **Issues:** https://github.com/LordOfMyatar/Radoub/issues
+- **Discussions:** https://github.com/LordOfMyatar/Radoub/discussions
+- **Reference Implementation:** See `Plugins/Official/flowchart-view/` for a complete example
 
 ---
 
-Generated with Parley v0.1.5-alpha
+Last updated for Parley v0.1.43-alpha

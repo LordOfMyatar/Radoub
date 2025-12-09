@@ -33,8 +33,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Excludes `__pycache__` folders from distribution
 - [x] Updated release notes to document Python 3.10+ requirement for plugins
 
-#### Pending
-- [ ] #247 - Plugin development documentation and template
+#### Completed
+- [x] #247 - Plugin development documentation and template
+  - Updated `Documentation/Developer/Plugin_Development_Guide.md`
+  - Fixed outdated POC language, now documents full gRPC API
+  - Added panel-based plugin example
+  - Referenced `deploy-plugins.ps1` for development workflow
+  - Fixed GitHub links to correct repository
 
 ---
 
