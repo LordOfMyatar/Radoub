@@ -95,8 +95,7 @@ namespace Parley.Models
                     }
                 }
 
-                // Log saved state
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Saved undo state: {description} (Stack size: {_undoStack.Count}, Selection: {selectedNodePath ?? "none"})");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Saved undo state: {description} (Stack size: {_undoStack.Count})");
             }
             catch (Exception ex)
             {
@@ -204,14 +203,14 @@ namespace Parley.Models
             // First pass: Clone all nodes without pointers
             foreach (var entry in original.Entries)
             {
-                var clonedEntry = CloneNodeWithoutPointers(entry);
+                var clonedEntry = CloneNodeWithoutPointers(entry, clone);
                 clone.Entries.Add(clonedEntry);
                 nodeMap[entry] = clonedEntry;
             }
 
             foreach (var reply in original.Replies)
             {
-                var clonedReply = CloneNodeWithoutPointers(reply);
+                var clonedReply = CloneNodeWithoutPointers(reply, clone);
                 clone.Replies.Add(clonedReply);
                 nodeMap[reply] = clonedReply;
             }
@@ -219,12 +218,12 @@ namespace Parley.Models
             // Second pass: Clone pointers with correct references
             for (int i = 0; i < original.Entries.Count; i++)
             {
-                ClonePointers(original.Entries[i], clone.Entries[i], nodeMap);
+                ClonePointers(original.Entries[i], clone.Entries[i], nodeMap, clone);
             }
 
             for (int i = 0; i < original.Replies.Count; i++)
             {
-                ClonePointers(original.Replies[i], clone.Replies[i], nodeMap);
+                ClonePointers(original.Replies[i], clone.Replies[i], nodeMap, clone);
             }
 
             // Clone start pointers
@@ -232,6 +231,7 @@ namespace Parley.Models
             {
                 var clonedStart = new DialogPtr
                 {
+                    Parent = clone,
                     Node = start.Node != null && nodeMap.ContainsKey(start.Node) ? nodeMap[start.Node] : null,
                     Type = start.Type,
                     Index = start.Index,
@@ -248,10 +248,11 @@ namespace Parley.Models
             return clone;
         }
 
-        private DialogNode CloneNodeWithoutPointers(DialogNode original)
+        private DialogNode CloneNodeWithoutPointers(DialogNode original, Dialog parentDialog)
         {
             return new DialogNode
             {
+                Parent = parentDialog,
                 Type = original.Type,
                 Text = CloneLocString(original.Text),
                 Speaker = original.Speaker,
@@ -268,12 +269,13 @@ namespace Parley.Models
             };
         }
 
-        private void ClonePointers(DialogNode original, DialogNode clone, Dictionary<DialogNode, DialogNode> nodeMap)
+        private void ClonePointers(DialogNode original, DialogNode clone, Dictionary<DialogNode, DialogNode> nodeMap, Dialog parentDialog)
         {
             foreach (var ptr in original.Pointers)
             {
                 var clonedPtr = new DialogPtr
                 {
+                    Parent = parentDialog,
                     Node = ptr.Node != null && nodeMap.ContainsKey(ptr.Node) ? nodeMap[ptr.Node] : null,
                     Type = ptr.Type,
                     Index = ptr.Index,

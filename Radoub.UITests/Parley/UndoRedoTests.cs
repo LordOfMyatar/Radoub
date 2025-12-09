@@ -238,16 +238,21 @@ public class UndoRedoTests : ParleyTestBase
             Assert.True(undoDiff <= 10, $"Undo should restore original (original: {originalFileSize}, after: {afterUndoFileSize})");
 
             // Act - Redo multiple times to restore added state
+            // Use Ctrl+Y instead of menu to avoid focus changes that trigger "Edit Text" saves
+            // which would clear the redo stack
             int maxRedoAttempts = 5;
             for (int i = 0; i < maxRedoAttempts && currentFileSize < afterAddFileSize - 10; i++)
             {
-                ClickMenu("Edit", "Redo");
-                Thread.Sleep(500);
                 MainWindow!.Focus();
+                Thread.Sleep(300);
+                FlaUI.Core.Input.Keyboard.TypeSimultaneously(
+                    FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
+                    FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Y);
+                Thread.Sleep(1000); // Give time for redo to process
                 FlaUI.Core.Input.Keyboard.TypeSimultaneously(
                     FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
                     FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
-                Thread.Sleep(1000);
+                Thread.Sleep(1500); // Wait for save to complete
                 currentFileSize = new FileInfo(tempFile).Length;
             }
 
