@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.43-alpha] - TBD
+## [0.1.43-alpha] - 2025-12-08
 **Branch**: `parley/feat/release-quality-plugins` | **PR**: #313
 
 ### Sprint: Release Quality & Plugin Packaging
