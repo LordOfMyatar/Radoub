@@ -251,25 +251,34 @@ namespace DialogEditor.Plugins
 
         /// <summary>
         /// Close all plugin panel windows.
+        /// Must close synchronously to ensure WebView/CEF cleanup completes before app exit (#314).
         /// </summary>
         public void CloseAllPanels()
         {
-            foreach (var kvp in _panelWindows)
+            var windowsToClose = _panelWindows.Values.ToList();
+            _panelWindows.Clear();
+
+            foreach (var window in windowsToClose)
             {
                 try
                 {
-                    Dispatcher.UIThread.Post(() =>
+                    // Close synchronously on UI thread to ensure WebView disposes properly
+                    // Async Post() was causing CEF shutdown race condition (#314)
+                    if (Dispatcher.UIThread.CheckAccess())
                     {
-                        kvp.Value.Close();
-                    });
+                        window.Close();
+                    }
+                    else
+                    {
+                        Dispatcher.UIThread.Invoke(() => window.Close());
+                    }
                 }
                 catch (Exception ex)
                 {
                     UnifiedLogger.LogPlugin(LogLevel.WARN,
-                        $"Error closing panel {kvp.Key}: {ex.Message}");
+                        $"Error closing panel window: {ex.Message}");
                 }
             }
-            _panelWindows.Clear();
         }
 
         public void Dispose()
