@@ -16,12 +16,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.42-alpha] - TBD
+## [0.1.42-alpha] - 2025-12-08
 **Branch**: `parley/fix/311-undo-redo-parent` | **PR**: #312
 
-### Fix: Redo Not Restoring Dialog State (#311)
+### Fix: Redo Not Restoring Dialog State (#292)
 
-**Issue**: #311 - Redo operation fails to fully restore dialog state after undo
+**Issue**: #292 - Redo operation fails to fully restore dialog state after undo
 
 **Problem**: After undo/redo, the dialog was missing nodes (~300 bytes difference in file size). The `DeepCloneDialog()` method was not setting `Parent` references on cloned `DialogNode` and `DialogPtr` objects, causing the `LinkRegistry` to fail when rebuilding relationships.
 
