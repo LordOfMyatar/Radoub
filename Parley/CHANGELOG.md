@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.48-alpha] - 2025-12-09
+
+### Fix: macOS ARM64 Build - WebView Package Resolution (#314)
+
+**Problem**: macOS ARM64 builds failing with "libEGL.dylib not found" during build step.
+
+**Root Cause**: Package reference condition used `RuntimeInformation.OSArchitecture` which detects the build machine, not the target. GitHub's macOS runners are ARM64 (M1), causing wrong package selection.
+
+**Fix**: Changed WebView package conditions to use `$(RuntimeIdentifier)` MSBuild property:
+- When building with `-r osx-arm64`, uses `WebViewControl-Avalonia-ARM64`
+- When building without RID or with x64/win, uses `WebViewControl-Avalonia`
+
+---
+
 ## [0.1.47-alpha] - 2025-12-09
 
 ### Fix: macOS Build Failure (#314)
