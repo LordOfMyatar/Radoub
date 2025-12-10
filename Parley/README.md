@@ -141,7 +141,7 @@ Parley supports Python-based plugins for extended functionality.
 2. Extract to your Parley folder (`~/Parley/`)
 3. Restart Parley, enable in Settings → Plugins, restart again
 
-See [Using Plugins](Documentation/User/Using_Plugins.md) for detailed instructions.
+See [Using Plugins](https://github.com/LordOfMyatar/Radoub/wiki/Using-Plugins) for detailed instructions.
 
 ---
 

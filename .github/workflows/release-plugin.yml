@@ -72,6 +72,6 @@ jobs:
             4. Enable in Settings → Plugins tab
             5. Restart Parley again to start the plugin
 
-            See [Using Plugins](https://github.com/LordOfMyatar/Radoub/blob/main/Parley/Documentation/User/Using_Plugins.md) for detailed instructions.
+            See [Using Plugins](https://github.com/LordOfMyatar/Radoub/wiki/Using-Plugins) for detailed instructions.
           draft: false
           prerelease: true
