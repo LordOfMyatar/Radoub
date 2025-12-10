@@ -108,9 +108,26 @@ Document findings in the checklist output.
 Scan for:
 - New public APIs without XML docs
 - README updates needed for new features
-- User-facing changes that need documentation
+- User-facing changes that need wiki documentation
 - Claude file updates
 - Code_Path_Map updates
+
+**Wiki Updates** (https://github.com/LordOfMyatar/Radoub/wiki):
+
+If changes affect user-facing features, check if wiki pages need updates:
+
+| Change Type | Wiki Pages to Review |
+|-------------|---------------------|
+| UI/Settings | [Settings](Settings), [Themes](Themes) |
+| Dialog editing | [Editing-Dialogs](Editing-Dialogs), [Properties-Panel](Properties-Panel) |
+| Scripts | [Script-Browser](Script-Browser) |
+| Sound | [Sound-Browser](Sound-Browser) |
+| Plugins | [Using-Plugins](Using-Plugins), [Plugin-Development](Plugin-Development) |
+| Keyboard shortcuts | [Keyboard-Shortcuts](Keyboard-Shortcuts) |
+| Installation | [Getting-Started](Getting-Started) |
+| New features | [Home](Home), [Index](Index) |
+
+Wiki repo location: `d:\LOM\workspace\Radoub.wiki\`
 
 ### Step 7: Generate Checklist
 
@@ -157,7 +174,8 @@ Output format:
   - [ ] PR number filled in
   - [ ] Date is today or earlier (not TBD, not future)
 - [x/⚠️] README updates: [Needed/Not needed]
-- [x/⚠️] User docs: [Needed/Not needed]
+- [x/⚠️] Wiki updates: [Needed/Not needed]
+  - [ ] Pages reviewed: [list affected pages]
 
 ---
 
@@ -210,6 +228,7 @@ gh pr edit [number] --body "$(cat <<'EOF'
 - [x] Build passes
 - [x] Tests pass
 - [x] CHANGELOG updated
+- [x] Wiki updated (if user-facing changes)
 - [x] No hardcoded paths
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
