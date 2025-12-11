@@ -1,0 +1,101 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:agc="clr-namespace:AvaloniaGraphControl;assembly=AvaloniaGraphControl"
+        xmlns:vm="using:DialogEditor.ViewModels"
+        xmlns:models="using:DialogEditor.Models"
+        x:Class="DialogEditor.Views.FlowchartWindow"
+        Title="Flowchart View"
+        Width="800" Height="600"
+        MinWidth="400" MinHeight="300"
+        WindowStartupLocation="CenterScreen"
+        Icon="avares://Parley/Assets/parley.ico">
+
+    <Design.DataContext>
+        <vm:FlowchartPanelViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="*,Auto">
+        <!-- Main content area -->
+        <Grid Grid.Row="0">
+            <!-- Flowchart panel when content exists -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          IsVisible="{Binding HasContent}">
+                <agc:GraphPanel x:Name="FlowchartGraphPanel"
+                                Background="White"
+                                Graph="{Binding Graph}"
+                                LayoutMethod="SugiyamaScheme">
+
+                    <!-- DataTemplate for Entry nodes (NPC dialog) -->
+                    <agc:GraphPanel.DataTemplates>
+                        <DataTemplate DataType="{x:Type models:FlowchartNode}">
+                            <Border CornerRadius="4"
+                                    Padding="8,4"
+                                    MinWidth="120"
+                                    MaxWidth="200">
+                                <Border.Background>
+                                    <MultiBinding Converter="{x:Static models:FlowchartNodeBackgroundConverter.Instance}">
+                                        <Binding Path="NodeType"/>
+                                        <Binding Path="IsLink"/>
+                                    </MultiBinding>
+                                </Border.Background>
+                                <Border.BorderBrush>
+                                    <MultiBinding Converter="{x:Static models:FlowchartNodeBorderConverter.Instance}">
+                                        <Binding Path="NodeType"/>
+                                        <Binding Path="IsLink"/>
+                                    </MultiBinding>
+                                </Border.BorderBrush>
+                                <Border.BorderThickness>
+                                    <Binding Path="IsLink" Converter="{x:Static models:FlowchartLinkBorderThicknessConverter.Instance}"/>
+                                </Border.BorderThickness>
+                                <StackPanel Spacing="2">
+                                    <!-- Speaker label -->
+                                    <TextBlock Text="{Binding Speaker}"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="#666666"/>
+                                    <!-- Node text -->
+                                    <TextBlock Text="{Binding ShortText}"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               MaxWidth="180"/>
+                                    <!-- Indicators for conditions/actions -->
+                                    <StackPanel Orientation="Horizontal" Spacing="4"
+                                                IsVisible="{Binding HasCondition}">
+                                        <TextBlock Text="?" FontSize="9" Foreground="#0066CC" ToolTip.Tip="Has conditional script"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </agc:GraphPanel.DataTemplates>
+                </agc:GraphPanel>
+            </ScrollViewer>
+
+            <!-- Placeholder when no content -->
+            <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                    IsVisible="{Binding !HasContent}">
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="10">
+                    <TextBlock Text="Flowchart View"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Open a dialog file to view the flowchart"
+                               FontSize="14"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Status bar -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                Padding="8,4">
+            <TextBlock Text="{Binding StatusText}"
+                       FontSize="11"
+                       VerticalAlignment="Center"/>
+        </Border>
+    </Grid>
+</Window>

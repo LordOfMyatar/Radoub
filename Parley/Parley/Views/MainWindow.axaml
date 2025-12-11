@@ -93,6 +93,8 @@
                     <MenuItem Header="Maximum (24pt)" Click="OnFontSizeClick" Tag="24"/>
                 </MenuItem>
                 <Separator/>
+                <MenuItem Header="_Flowchart" Click="OnFlowchartClick" InputGesture="F5"/>
+                <Separator/>
                 <MenuItem Header="_Plugin Panels" Name="PluginPanelsMenuItem" Click="OnPluginPanelsClick"/>
             </MenuItem>
             <MenuItem Header="_Settings">

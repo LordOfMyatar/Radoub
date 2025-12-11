@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.51-alpha] - 2025-12-10
+**Branch**: `parley/sprint/native-flowchart-s2-rendering` | **PR**: #331
+
+### Sprint 2: Native Flowchart Basic Rendering (#327)
+
+Epic #325 - Native Flowchart View (Cross-Platform)
+
+#### Added
+- `FlowchartWindow.axaml` - Dedicated window for flowchart visualization
+- `FlowchartPanelViewModel` - MVVM ViewModel with graph binding
+- `FlowchartGraphAdapter` - Converts FlowchartGraph to AvaloniaGraphControl.Graph
+- `FlowchartConverters` - IMultiValueConverters for node styling (background/border colors)
+- View → Flowchart menu item (F5 shortcut)
+- Node DataTemplates: Entry (orange), Reply (blue), Link (gray)
+- Sugiyama hierarchical layout via AvaloniaGraphControl
+
+---
+
 ## [0.1.50-alpha] - 2025-12-10
 **Branch**: `parley/sprint/native-flowchart-s1-foundation` | **PR**: #330
 
