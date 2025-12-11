@@ -47,9 +47,9 @@ namespace DialogEditor.Services
                 }
             }
 
-            // Handle orphan nodes (nodes with no edges) - add self-referencing edge workaround
-            // or just ensure they're included. AvaloniaGraphControl should handle disconnected nodes
-            // but we'll add them explicitly if needed
+            // Handle orphan nodes (nodes with no edges) - one-liners and disconnected entries
+            // AvaloniaGraphControl discovers nodes through edges, so isolated nodes need
+            // a dummy self-edge to appear in the graph
             foreach (var node in flowchartGraph.Nodes.Values)
             {
                 bool hasEdge = false;
@@ -62,15 +62,10 @@ namespace DialogEditor.Services
                     }
                 }
 
-                // If node has no edges, we need to add it somehow
-                // AvaloniaGraphControl uses edges to discover nodes, so isolated nodes
-                // need special handling - for now we'll skip them as dialog graphs
-                // should always have connected nodes
-                if (!hasEdge && flowchartGraph.Nodes.Count == 1)
+                // If node has no edges, add a self-referencing edge so it appears in the graph
+                // This handles one-liners and other disconnected nodes
+                if (!hasEdge)
                 {
-                    // Single node graph - create a dummy self-edge that won't render
-                    // Actually, let's just add it as an edge target from itself
-                    // This is a workaround - may need improvement
                     graph.Edges.Add(new Edge(node, node, headSymbol: Edge.Symbol.None));
                 }
             }

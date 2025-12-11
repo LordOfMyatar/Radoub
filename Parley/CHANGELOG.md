@@ -10,6 +10,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.52-alpha] - 2025-12-10
+**Branch**: `parley/sprint/native-flowchart-s3-polish` | **PR**: #332
+
+### Sprint 3: Native Flowchart Visual Polish & Interaction (#328)
+
+Epic #325 - Native Flowchart View (Cross-Platform)
+
+#### Added
+- Speaker-based node colors using SpeakerVisualHelper (matches TreeView colors)
+- Theme-aware node backgrounds (light/dark mode support via ActualThemeVariant binding)
+- Script indicators: ❓ for conditions (ScriptAppears), ⚡ for actions (ScriptAction)
+- Link node visual distinction (opacity 70%, gray background)
+- Bidirectional selection sync:
+  - Flowchart → TreeView: Click node to select in tree
+  - TreeView → Flowchart: Tree selection highlights flowchart node
+- Zoom controls toolbar (+, -, Reset, Fit buttons)
+- Mouse wheel zoom with Ctrl key
+- Keyboard shortcuts: Ctrl+Plus/Minus for zoom, Ctrl+0 for reset
+
+#### Fixed
+- Nodes only reachable via links now appear in flowchart (previously missing)
+- Link nodes no longer create layout edges to targets (fixes inverted parent/child positioning)
+- Clicking link nodes in flowchart now selects the correct link instance in tree (not the target)
+- Orphan nodes (one-liners with no children) now appear in flowchart
+- Clicking link node in flowchart now highlights the link itself (not parent)
+
+---
+
 ## [0.1.51-alpha] - 2025-12-10
 **Branch**: `parley/sprint/native-flowchart-s2-rendering` | **PR**: #331
 

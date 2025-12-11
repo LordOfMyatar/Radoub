@@ -14,17 +14,39 @@
         <vm:FlowchartPanelViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="*,Auto">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Toolbar with zoom controls -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                Padding="4"
+                IsVisible="{Binding HasContent}">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button x:Name="ZoomInButton" Content="+" Width="28" Height="28"
+                        ToolTip.Tip="Zoom In (Ctrl +)" Click="OnZoomInClick"/>
+                <Button x:Name="ZoomOutButton" Content="-" Width="28" Height="28"
+                        ToolTip.Tip="Zoom Out (Ctrl -)" Click="OnZoomOutClick"/>
+                <TextBlock x:Name="ZoomLevelText" Text="100%"
+                           VerticalAlignment="Center" Margin="8,0"
+                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                <Button x:Name="ZoomResetButton" Content="Reset" Height="28"
+                        ToolTip.Tip="Reset Zoom (Ctrl 0)" Click="OnZoomResetClick"/>
+                <Button x:Name="ZoomFitButton" Content="Fit" Height="28"
+                        ToolTip.Tip="Fit to Window" Click="OnZoomFitClick"/>
+            </StackPanel>
+        </Border>
+
         <!-- Main content area -->
-        <Grid Grid.Row="0">
+        <Grid Grid.Row="1">
             <!-- Flowchart panel when content exists -->
-            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+            <ScrollViewer x:Name="FlowchartScrollViewer"
+                          HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           IsVisible="{Binding HasContent}">
                 <agc:GraphPanel x:Name="FlowchartGraphPanel"
-                                Background="White"
+                                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                                 Graph="{Binding Graph}"
-                                LayoutMethod="SugiyamaScheme">
+                                LayoutMethod="SugiyamaScheme"
+                                RenderTransformOrigin="0.5,0.5">
 
                     <!-- DataTemplate for Entry nodes (NPC dialog) -->
                     <agc:GraphPanel.DataTemplates>
@@ -32,37 +54,51 @@
                             <Border CornerRadius="4"
                                     Padding="8,4"
                                     MinWidth="120"
-                                    MaxWidth="200">
+                                    MaxWidth="200"
+                                    Opacity="{Binding IsLink, Converter={x:Static models:FlowchartLinkOpacityConverter.Instance}}">
                                 <Border.Background>
                                     <MultiBinding Converter="{x:Static models:FlowchartNodeBackgroundConverter.Instance}">
                                         <Binding Path="NodeType"/>
                                         <Binding Path="IsLink"/>
+                                        <Binding Path="Speaker"/>
+                                        <Binding Path="ActualThemeVariant" RelativeSource="{RelativeSource AncestorType=Window}"/>
                                     </MultiBinding>
                                 </Border.Background>
                                 <Border.BorderBrush>
                                     <MultiBinding Converter="{x:Static models:FlowchartNodeBorderConverter.Instance}">
                                         <Binding Path="NodeType"/>
                                         <Binding Path="IsLink"/>
+                                        <Binding Path="Speaker"/>
+                                        <Binding Path="ActualThemeVariant" RelativeSource="{RelativeSource AncestorType=Window}"/>
                                     </MultiBinding>
                                 </Border.BorderBrush>
                                 <Border.BorderThickness>
-                                    <Binding Path="IsLink" Converter="{x:Static models:FlowchartLinkBorderThicknessConverter.Instance}"/>
+                                    <MultiBinding Converter="{x:Static models:FlowchartNodeSelectionBorderConverter.Instance}">
+                                        <Binding Path="Id"/>
+                                        <Binding Path="IsLink"/>
+                                        <Binding Path="DataContext.SelectedNodeId" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                    </MultiBinding>
                                 </Border.BorderThickness>
                                 <StackPanel Spacing="2">
                                     <!-- Speaker label -->
                                     <TextBlock Text="{Binding Speaker}"
                                                FontSize="10"
                                                FontWeight="Bold"
-                                               Foreground="#666666"/>
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <!-- Node text -->
                                     <TextBlock Text="{Binding ShortText}"
                                                FontSize="11"
                                                TextWrapping="Wrap"
-                                               MaxWidth="180"/>
+                                               MaxWidth="180"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                     <!-- Indicators for conditions/actions -->
-                                    <StackPanel Orientation="Horizontal" Spacing="4"
-                                                IsVisible="{Binding HasCondition}">
-                                        <TextBlock Text="?" FontSize="9" Foreground="#0066CC" ToolTip.Tip="Has conditional script"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="❓" FontSize="9" Foreground="#0066CC"
+                                                   IsVisible="{Binding HasCondition}"
+                                                   ToolTip.Tip="Has conditional script (ScriptAppears)"/>
+                                        <TextBlock Text="⚡" FontSize="9" Foreground="#FF6600"
+                                                   IsVisible="{Binding HasAction}"
+                                                   ToolTip.Tip="Has action script (ScriptAction)"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
@@ -90,7 +126,7 @@
         </Grid>
 
         <!-- Status bar -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 Padding="8,4">
             <TextBlock Text="{Binding StatusText}"
