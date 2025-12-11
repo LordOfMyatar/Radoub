@@ -258,10 +258,12 @@ namespace Parley.Tests
             Assert.Equal(FlowchartNodeType.Link, linkNode.NodeType);
             Assert.NotNull(linkNode.LinkTargetId);
 
-            // Verify edges: start->reply, reply->link, link->start
-            Assert.Equal(3, graph.Edges.Count);
+            // Verify edges: start->reply, reply->link
+            // Note: We no longer create link->target edges (it was causing Sugiyama layout issues)
+            // The linkTargetId property on the link node provides the reference instead
+            Assert.Equal(2, graph.Edges.Count);
             var linkEdges = graph.Edges.Where(e => e.IsLinkEdge).ToList();
-            Assert.Equal(2, linkEdges.Count);
+            Assert.Single(linkEdges); // Only reply->link edge is marked as link edge
         }
 
         #endregion
