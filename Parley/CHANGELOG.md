@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.50-alpha] - 2025-12-10
-**Branch**: `parley/sprint/native-flowchart-s1-foundation` | **PR**: #TBD
+**Branch**: `parley/sprint/native-flowchart-s1-foundation` | **PR**: #330
 
 ### Sprint 1: Native Flowchart Foundation (#326)
 
