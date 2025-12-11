@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.50-alpha] - 2025-12-10
+**Branch**: `parley/sprint/native-flowchart-s1-foundation` | **PR**: #TBD
+
+### Sprint 1: Native Flowchart Foundation (#326)
+
+Epic #325 - Native Flowchart View (Cross-Platform)
+
+- Add AvaloniaGraphControl NuGet package
+- Create FlowchartNode, FlowchartEdge, FlowchartGraph data models
+- Implement DialogToFlowchartConverter service
+- Unit tests for data transformation
+
+---
+
 ## [0.1.49-alpha] - 2025-12-09
 
 ### Fix: macOS ARM64 Build - Include Both WebView Packages (#314)
