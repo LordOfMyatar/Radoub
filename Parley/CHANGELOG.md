@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.52-alpha] - 2025-12-10
+**Branch**: `parley/sprint/native-flowchart-s3-polish` | **PR**: #TBD
+
+### Sprint 3: Native Flowchart Visual Polish & Interaction (#328)
+
+Epic #325 - Native Flowchart View (Cross-Platform)
+
+#### Added
+- (Sprint in progress)
+
+---
+
 ## [0.1.51-alpha] - 2025-12-10
 **Branch**: `parley/sprint/native-flowchart-s2-rendering` | **PR**: #331
 
