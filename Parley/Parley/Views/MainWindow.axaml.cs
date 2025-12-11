@@ -1185,9 +1185,17 @@ namespace DialogEditor.Views
         private void UpdateFlowchartLayoutMenuChecks()
         {
             var currentLayout = SettingsService.Instance.FlowchartLayout;
-            FlowchartLayoutFloating.Icon = currentLayout == "Floating" ? new TextBlock { Text = "✓" } : null;
-            FlowchartLayoutSideBySide.Icon = currentLayout == "SideBySide" ? new TextBlock { Text = "✓" } : null;
-            FlowchartLayoutTabbed.Icon = currentLayout == "Tabbed" ? new TextBlock { Text = "✓" } : null;
+
+            var floatingItem = this.FindControl<MenuItem>("FlowchartLayoutFloating");
+            var sideBySideItem = this.FindControl<MenuItem>("FlowchartLayoutSideBySide");
+            var tabbedItem = this.FindControl<MenuItem>("FlowchartLayoutTabbed");
+
+            if (floatingItem != null)
+                floatingItem.Icon = currentLayout == "Floating" ? new TextBlock { Text = "✓" } : null;
+            if (sideBySideItem != null)
+                sideBySideItem.Icon = currentLayout == "SideBySide" ? new TextBlock { Text = "✓" } : null;
+            if (tabbedItem != null)
+                tabbedItem.Icon = currentLayout == "Tabbed" ? new TextBlock { Text = "✓" } : null;
         }
 
         private void ApplyFlowchartLayout()
