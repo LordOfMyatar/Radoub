@@ -1,7 +1,7 @@
 # Code Path Map - Parley Architecture
 
 **Purpose**: Track active code paths for file operations and UI workflows
-**Last Updated**: 2025-11-29 (Epic 40 Phase 1: Plugin System Foundation)
+**Last Updated**: 2025-12-10 (Epic #325 Sprint 1: Native Flowchart Foundation)
 **Note**: This information was discovered and written by Claude AI.
 
 ---
@@ -456,6 +456,63 @@ DebugLogger callback (DebugLogger.cs:20-60)
 1. Run `TestingTools/Scripts/QuickRegressionCheck.ps1`
 2. Verify struct count, field count, StartingList count
 3. Test in Aurora Editor (tree structure, script names)
+
+---
+
+## NATIVE FLOWCHART PATH (Epic #325)
+
+**Entry Point**: UI loads/updates dialog → DialogToFlowchartConverter → GraphPanel
+
+### Data Model (Sprint 1 - Foundation)
+
+**FlowchartGraph** (~240 lines): Container for flowchart visualization data (2025-12-10)
+- `FlowchartNode` - Node view model (id, type, text, speaker, conditions, actions)
+- `FlowchartEdge` - Edge between nodes (source, target, conditional, link)
+- `FlowchartGraph` - Graph container (nodes dictionary, edges list, root node IDs)
+
+**DialogToFlowchartConverter** (~195 lines): Dialog → FlowchartGraph transformation (2025-12-10)
+- Handles circular references gracefully (visited node tracking)
+- Creates link nodes for IsLink=true pointers (visual representation)
+- Preserves OriginalNode/OriginalPointer references for selection sync
+
+### Conversion Flow (Sprint 1)
+
+```
+Dialog (DialogStructures.cs)
+  ↓
+DialogToFlowchartConverter.Convert() (DialogToFlowchartConverter.cs)
+  ↓ AssignNodeIds - creates E0, E1, R0, R1 IDs
+  ↓ ProcessNode - recursive traversal from Starts
+  ↓ CreateFlowchartNode - maps DialogNode → FlowchartNode
+  ↓ Handle links - creates L0, L1 link nodes
+  ↓
+FlowchartGraph (FlowchartGraph.cs)
+  ↓ [Sprint 2: Convert to AvaloniaGraphControl.Graph]
+  ↓
+GraphPanel (AvaloniaGraphControl - NuGet package)
+```
+
+### Key Components
+
+**Node Types**:
+- `FlowchartNodeType.Entry` - NPC dialog (orange in UI)
+- `FlowchartNodeType.Reply` - PC response (blue in UI)
+- `FlowchartNodeType.Link` - Visual link to existing node (dashed)
+
+**Circular Reference Handling**:
+- `_visitedNodes` HashSet prevents infinite recursion
+- Link nodes created for back-references (pointer.IsLink=true)
+- Target node ID preserved in LinkTargetId property
+
+**Original Data Preservation**:
+- FlowchartNode.OriginalNode → DialogNode (for selection sync)
+- FlowchartNode.OriginalPointer → DialogPtr (for condition display)
+
+### Planned Sprints
+
+- **Sprint 2** (#327): Basic rendering with AvaloniaGraphControl.GraphPanel
+- **Sprint 3** (#328): Visual polish, node click → tree selection
+- **Sprint 4** (#329): Layout options, export to image
 
 ---
 
