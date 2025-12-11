@@ -54,6 +54,9 @@ namespace DialogEditor.Views
         private ScriptBrowserWindow? _activeScriptBrowserWindow;
         private SoundBrowserWindow? _activeSoundBrowserWindow;
 
+        // Track native flowchart window (Epic #325)
+        private FlowchartWindow? _activeFlowchartWindow;
+
         // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
         // Parameter autocomplete: Cache of script parameter declarations
@@ -429,6 +432,13 @@ namespace DialogEditor.Views
             {
                 _activeSettingsWindow.Close();
                 _activeSettingsWindow = null;
+            }
+
+            // Close Flowchart window if open (#327)
+            if (_activeFlowchartWindow != null)
+            {
+                _activeFlowchartWindow.Close();
+                _activeFlowchartWindow = null;
             }
 
             // Close browser windows if open (Issue #20)
@@ -1115,6 +1125,33 @@ namespace DialogEditor.Views
             }
 
             _viewModel.StatusMessage = $"Reopened {closedPanels.Count} plugin panel(s)";
+        }
+
+        private void OnFlowchartClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Create or activate flowchart window
+                if (_activeFlowchartWindow == null || !_activeFlowchartWindow.IsVisible)
+                {
+                    _activeFlowchartWindow = new FlowchartWindow();
+                    _activeFlowchartWindow.Closed += (s, args) => _activeFlowchartWindow = null;
+                }
+
+                // Update with current dialog
+                _activeFlowchartWindow.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+
+                // Show and activate
+                _activeFlowchartWindow.Show();
+                _activeFlowchartWindow.Activate();
+
+                _viewModel.StatusMessage = "Flowchart view opened";
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening flowchart: {ex.Message}");
+                _viewModel.StatusMessage = "Error opening flowchart view";
+            }
         }
 
         // Theme methods

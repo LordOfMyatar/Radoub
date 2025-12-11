@@ -17,10 +17,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Epic #325 - Native Flowchart View (Cross-Platform)
 
-- Create FlowchartPanel UserControl with GraphPanel
-- Node templates for Entry, Reply, and Link nodes
-- View menu integration (View → Flowchart)
-- Basic Sugiyama layout configuration
+#### Added
+- `FlowchartWindow.axaml` - Dedicated window for flowchart visualization
+- `FlowchartPanelViewModel` - MVVM ViewModel with graph binding
+- `FlowchartGraphAdapter` - Converts FlowchartGraph to AvaloniaGraphControl.Graph
+- `FlowchartConverters` - IMultiValueConverters for node styling (background/border colors)
+- View → Flowchart menu item (F5 shortcut)
+- Node DataTemplates: Entry (orange), Reply (blue), Link (gray)
+- Sugiyama hierarchical layout via AvaloniaGraphControl
 
 ---
 
