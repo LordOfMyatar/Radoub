@@ -33,6 +33,8 @@ Epic #325 - Native Flowchart View (Cross-Platform)
 - Nodes only reachable via links now appear in flowchart (previously missing)
 - Link nodes no longer create layout edges to targets (fixes inverted parent/child positioning)
 - Clicking link nodes in flowchart now selects the correct link instance in tree (not the target)
+- Orphan nodes (one-liners with no children) now appear in flowchart
+- Clicking link node in flowchart now highlights the link itself (not parent)
 
 ---
 
