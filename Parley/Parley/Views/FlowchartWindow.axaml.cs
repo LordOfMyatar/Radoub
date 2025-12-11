@@ -25,9 +25,9 @@ namespace DialogEditor.Views
 
         /// <summary>
         /// Raised when a flowchart node is clicked.
-        /// The DialogNode parameter is the original node from the dialog.
+        /// The FlowchartNode parameter contains the clicked node with context (IsLink, OriginalPointer, etc.)
         /// </summary>
-        public event EventHandler<DialogNode?>? NodeClicked;
+        public event EventHandler<FlowchartNode?>? NodeClicked;
 
         public FlowchartWindow()
         {
@@ -160,10 +160,10 @@ namespace DialogEditor.Views
 
             if (clickedNode != null)
             {
-                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node clicked: {clickedNode.Id} - {clickedNode.ShortText}");
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node clicked: {clickedNode.Id} - {clickedNode.ShortText} (IsLink: {clickedNode.IsLink})");
 
-                // Raise the event with the original DialogNode
-                NodeClicked?.Invoke(this, clickedNode.OriginalNode);
+                // Raise the event with the FlowchartNode (includes IsLink, OriginalPointer context)
+                NodeClicked?.Invoke(this, clickedNode);
             }
         }
 

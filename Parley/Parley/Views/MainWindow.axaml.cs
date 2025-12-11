@@ -1160,17 +1160,30 @@ namespace DialogEditor.Views
         /// <summary>
         /// Handles node clicks from the flowchart window.
         /// Selects the corresponding node in the TreeView.
+        /// For link nodes, finds the specific link instance rather than the target node.
         /// </summary>
-        private void OnFlowchartNodeClicked(object? sender, DialogNode? dialogNode)
+        private void OnFlowchartNodeClicked(object? sender, FlowchartNode? flowchartNode)
         {
-            if (dialogNode == null || _viewModel.DialogNodes == null)
+            if (flowchartNode?.OriginalNode == null || _viewModel.DialogNodes == null)
                 return;
 
             try
             {
-                // Use TreeNavigationManager to find the corresponding TreeViewSafeNode
                 var treeNavManager = new TreeNavigationManager();
-                var treeNode = treeNavManager.FindTreeNodeForDialogNode(_viewModel.DialogNodes, dialogNode);
+                TreeViewSafeNode? treeNode = null;
+
+                if (flowchartNode.IsLink)
+                {
+                    // For link nodes, we need to find the specific link instance in the tree
+                    // The link has a pointer (OriginalPointer) that identifies which specific
+                    // link child to select, not just any occurrence of the target node
+                    treeNode = FindLinkNodeInTree(_viewModel.DialogNodes, flowchartNode);
+                }
+                else
+                {
+                    // Regular node - find by DialogNode reference
+                    treeNode = treeNavManager.FindTreeNodeForDialogNode(_viewModel.DialogNodes, flowchartNode.OriginalNode);
+                }
 
                 if (treeNode != null)
                 {
@@ -1183,18 +1196,59 @@ namespace DialogEditor.Views
                     // Bring main window to front briefly to show selection, then return focus to flowchart
                     Activate();
 
-                    UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart → TreeView: Selected '{treeNode.DisplayText}'");
+                    UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart → TreeView: Selected '{treeNode.DisplayText}' (IsLink: {flowchartNode.IsLink})");
                     _viewModel.StatusMessage = $"Selected: {treeNode.DisplayText}";
                 }
                 else
                 {
-                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Could not find tree node for dialog node");
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Could not find tree node for flowchart node {flowchartNode.Id}");
                 }
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error syncing flowchart selection: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Finds a link node in the tree that matches the flowchart link node.
+        /// Link nodes in the tree have IsChild=true and point to the same OriginalNode.
+        /// </summary>
+        private TreeViewSafeNode? FindLinkNodeInTree(System.Collections.ObjectModel.ObservableCollection<TreeViewSafeNode> nodes, FlowchartNode flowchartNode)
+        {
+            return FindLinkNodeRecursive(nodes, flowchartNode, new HashSet<TreeViewSafeNode>());
+        }
+
+        private TreeViewSafeNode? FindLinkNodeRecursive(System.Collections.ObjectModel.ObservableCollection<TreeViewSafeNode> nodes, FlowchartNode flowchartNode, HashSet<TreeViewSafeNode> visited)
+        {
+            foreach (var node in nodes)
+            {
+                if (!visited.Add(node)) continue;
+
+                // For a link, we're looking for:
+                // 1. A TreeViewSafeNode with IsChild=true (it's a link/child appearance)
+                // 2. Whose OriginalNode matches the flowchart node's OriginalNode (target)
+                if (node.IsChild && node.OriginalNode == flowchartNode.OriginalNode)
+                {
+                    return node;
+                }
+
+                // Check children
+                if (node.HasChildren)
+                {
+                    node.PopulateChildren();
+                    if (node.Children != null)
+                    {
+                        var found = FindLinkNodeRecursive(node.Children, flowchartNode, visited);
+                        if (found != null)
+                            return found;
+                    }
+                }
+
+                visited.Remove(node);
+            }
+
+            return null;
         }
 
         // Theme methods
