@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.53-alpha] - TBD
-**Branch**: `parley/sprint/native-flowchart-s4-layout-export` | **PR**: #TBD
+**Branch**: `parley/sprint/native-flowchart-s4-layout-export` | **PR**: #333
 
 ### Sprint 4: Layout Options & Export (#329)
 
