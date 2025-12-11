@@ -19,7 +19,7 @@ Epic #325 - Native Flowchart View (Cross-Platform)
 
 #### Added
 - Speaker-based node colors using SpeakerVisualHelper (matches TreeView colors)
-- Theme-aware node backgrounds (light/dark mode support)
+- Theme-aware node backgrounds (light/dark mode support via ActualThemeVariant binding)
 - Script indicators: ❓ for conditions (ScriptAppears), ⚡ for actions (ScriptAction)
 - Link node visual distinction (opacity 70%, gray background)
 - Bidirectional selection sync:
@@ -28,6 +28,10 @@ Epic #325 - Native Flowchart View (Cross-Platform)
 - Zoom controls toolbar (+, -, Reset, Fit buttons)
 - Mouse wheel zoom with Ctrl key
 - Keyboard shortcuts: Ctrl+Plus/Minus for zoom, Ctrl+0 for reset
+
+#### Fixed
+- Nodes only reachable via links now appear in flowchart (previously missing)
+- Link nodes no longer create layout edges to targets (fixes inverted parent/child positioning)
 
 ---
 

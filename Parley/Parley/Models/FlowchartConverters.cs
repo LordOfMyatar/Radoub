@@ -24,14 +24,15 @@ namespace DialogEditor.Models
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
+            // Values: NodeType, IsLink, Speaker, ActualThemeVariant
+            bool isDark = values.Count >= 4 && values[3] is ThemeVariant tv && tv == ThemeVariant.Dark;
+
             if (values.Count < 3)
-                return CreateDefaultBrush(FlowchartNodeType.Entry, IsDarkTheme());
+                return CreateDefaultBrush(FlowchartNodeType.Entry, isDark);
 
             var nodeType = values[0] as FlowchartNodeType? ?? FlowchartNodeType.Entry;
             var isLink = values[1] as bool? ?? false;
             var speaker = values[2] as string ?? string.Empty;
-
-            bool isDark = IsDarkTheme();
 
             if (isLink)
                 return isDark ? LinkBrushDark : LinkBrushLight;
@@ -42,16 +43,6 @@ namespace DialogEditor.Models
 
             // Create lightened/darkened background from speaker color based on theme
             return isDark ? CreateDarkenedBrush(hexColor) : CreateLightenedBrush(hexColor);
-        }
-
-        /// <summary>
-        /// Checks if the current theme is dark
-        /// </summary>
-        private static bool IsDarkTheme()
-        {
-            var app = Application.Current;
-            if (app == null) return false;
-            return app.ActualThemeVariant == ThemeVariant.Dark;
         }
 
         /// <summary>
@@ -128,6 +119,7 @@ namespace DialogEditor.Models
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
+            // Values: NodeType, IsLink, Speaker, ActualThemeVariant (4th param for theme reactivity, not used for border color)
             if (values.Count < 3)
                 return CreateDefaultBrush(FlowchartNodeType.Entry);
 

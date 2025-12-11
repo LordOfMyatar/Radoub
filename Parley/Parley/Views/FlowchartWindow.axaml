@@ -61,6 +61,7 @@
                                         <Binding Path="NodeType"/>
                                         <Binding Path="IsLink"/>
                                         <Binding Path="Speaker"/>
+                                        <Binding Path="ActualThemeVariant" RelativeSource="{RelativeSource AncestorType=Window}"/>
                                     </MultiBinding>
                                 </Border.Background>
                                 <Border.BorderBrush>
@@ -68,6 +69,7 @@
                                         <Binding Path="NodeType"/>
                                         <Binding Path="IsLink"/>
                                         <Binding Path="Speaker"/>
+                                        <Binding Path="ActualThemeVariant" RelativeSource="{RelativeSource AncestorType=Window}"/>
                                     </MultiBinding>
                                 </Border.BorderBrush>
                                 <Border.BorderThickness>

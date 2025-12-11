@@ -148,13 +148,19 @@ namespace DialogEditor.Services
                         label: isConditional ? childPtr.ScriptAppears : null
                     ));
 
-                    // Edge from link node to actual target
-                    graph.AddEdge(new FlowchartEdge(
-                        sourceId: linkId,
-                        targetId: childNodeId,
-                        isConditional: false,
-                        isLinkEdge: true
-                    ));
+                    // Ensure the target node exists (it may only be reachable via links)
+                    // Process it if not already visited - this creates the node in the graph
+                    if (!_visitedNodes.Contains(childPtr.Node))
+                    {
+                        ProcessNode(childPtr.Node, childPtr, graph);
+                    }
+
+                    // Note: We don't create an edge from link node to actual target
+                    // The link node is just a visual indicator that this path leads to
+                    // an already-existing node elsewhere in the graph. Adding an edge
+                    // would incorrectly affect the Sugiyama layout by creating a
+                    // parent-child relationship where the target should remain in its
+                    // original position. The linkTargetId on the node provides the reference.
                 }
                 else
                 {
