@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using AvaloniaGraphControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DialogEditor.Models;
@@ -12,6 +14,7 @@ namespace DialogEditor.ViewModels
     public partial class FlowchartPanelViewModel : ViewModelBase
     {
         private readonly DialogToFlowchartConverter _converter = new();
+        private FlowchartGraph? _flowchartGraph;
 
         [ObservableProperty]
         private Graph? _graph;
@@ -24,6 +27,9 @@ namespace DialogEditor.ViewModels
 
         [ObservableProperty]
         private string? _fileName;
+
+        [ObservableProperty]
+        private string? _selectedNodeId;
 
         /// <summary>
         /// Update the flowchart to display the given dialog
@@ -55,6 +61,9 @@ namespace DialogEditor.ViewModels
                     return;
                 }
 
+                // Store for later lookup
+                _flowchartGraph = flowchartGraph;
+
                 // Convert to AvaloniaGraphControl format
                 Graph = FlowchartGraphAdapter.ToAvaloniaGraph(flowchartGraph);
                 StatusText = $"{flowchartGraph.Nodes.Count} nodes, {flowchartGraph.Edges.Count} edges";
@@ -80,6 +89,34 @@ namespace DialogEditor.ViewModels
             StatusText = "No dialog loaded";
             HasContent = false;
             FileName = null;
+            _flowchartGraph = null;
+            SelectedNodeId = null;
+        }
+
+        /// <summary>
+        /// Finds the FlowchartNode ID for a given DialogNode
+        /// </summary>
+        public string? FindNodeIdForDialogNode(DialogNode? dialogNode)
+        {
+            if (dialogNode == null || _flowchartGraph == null)
+                return null;
+
+            var flowchartNode = _flowchartGraph.Nodes.Values
+                .FirstOrDefault(n => n.OriginalNode == dialogNode);
+
+            return flowchartNode?.Id;
+        }
+
+        /// <summary>
+        /// Selects a node in the flowchart by DialogNode
+        /// </summary>
+        public void SelectNode(DialogNode? dialogNode)
+        {
+            SelectedNodeId = FindNodeIdForDialogNode(dialogNode);
+            if (SelectedNodeId != null)
+            {
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node selected: {SelectedNodeId}");
+            }
         }
     }
 }

@@ -224,4 +224,69 @@ namespace DialogEditor.Models
             throw new NotImplementedException();
         }
     }
+
+    /// <summary>
+    /// Converts node selection state to border thickness for highlighting.
+    /// Compares node ID with selected ID from ViewModel.
+    /// </summary>
+    public class FlowchartNodeSelectionBorderConverter : IMultiValueConverter
+    {
+        public static readonly FlowchartNodeSelectionBorderConverter Instance = new();
+
+        public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (values.Count < 3)
+                return new Thickness(2);
+
+            var nodeId = values[0] as string;
+            var isLink = values[1] as bool? ?? false;
+            var selectedNodeId = values[2] as string;
+
+            // Check if this node is selected
+            bool isSelected = !string.IsNullOrEmpty(nodeId) &&
+                              !string.IsNullOrEmpty(selectedNodeId) &&
+                              nodeId == selectedNodeId;
+
+            // Selected nodes get thicker border
+            if (isSelected)
+                return new Thickness(4);
+
+            // Links get thinner border, regular nodes get standard
+            return isLink ? new Thickness(1) : new Thickness(2);
+        }
+    }
+
+    /// <summary>
+    /// Converts node selection state to highlight brush.
+    /// Selected nodes get a bright highlight color.
+    /// </summary>
+    public class FlowchartNodeSelectionBrushConverter : IMultiValueConverter
+    {
+        public static readonly FlowchartNodeSelectionBrushConverter Instance = new();
+
+        private static readonly IBrush SelectionHighlight = new SolidColorBrush(Color.Parse("#FFC107")); // Amber highlight
+
+        public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (values.Count < 4)
+                return null;
+
+            var nodeId = values[0] as string;
+            var isLink = values[1] as bool? ?? false;
+            var speaker = values[2] as string ?? string.Empty;
+            var selectedNodeId = values[3] as string;
+
+            // Check if this node is selected
+            bool isSelected = !string.IsNullOrEmpty(nodeId) &&
+                              !string.IsNullOrEmpty(selectedNodeId) &&
+                              nodeId == selectedNodeId;
+
+            // Selected nodes get amber highlight border
+            if (isSelected)
+                return SelectionHighlight;
+
+            // Non-selected nodes use normal border coloring (handled by FlowchartNodeBorderConverter)
+            return null;
+        }
+    }
 }

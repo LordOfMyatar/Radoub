@@ -1473,6 +1473,12 @@ namespace DialogEditor.Views
             // Update DialogContextService.SelectedNodeId for plugin sync (Epic 40 Phase 3 / #234)
             _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode();
 
+            // Sync selection to flowchart window if open (Epic #325 Sprint 3 - bidirectional sync)
+            if (_activeFlowchartWindow != null && _activeFlowchartWindow.IsVisible)
+            {
+                _activeFlowchartWindow.SelectNode(_selectedNode?.OriginalNode);
+            }
+
             // Show/hide panels based on node type
             var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");
             var nodePropertiesPanel = this.FindControl<StackPanel>("NodePropertiesPanel");

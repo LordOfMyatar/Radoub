@@ -71,7 +71,11 @@
                                     </MultiBinding>
                                 </Border.BorderBrush>
                                 <Border.BorderThickness>
-                                    <Binding Path="IsLink" Converter="{x:Static models:FlowchartLinkBorderThicknessConverter.Instance}"/>
+                                    <MultiBinding Converter="{x:Static models:FlowchartNodeSelectionBorderConverter.Instance}">
+                                        <Binding Path="Id"/>
+                                        <Binding Path="IsLink"/>
+                                        <Binding Path="DataContext.SelectedNodeId" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                    </MultiBinding>
                                 </Border.BorderThickness>
                                 <StackPanel Spacing="2">
                                     <!-- Speaker label -->

@@ -195,5 +195,14 @@ namespace DialogEditor.Views
             _viewModel.Clear();
             Title = "Flowchart View";
         }
+
+        /// <summary>
+        /// Select a node in the flowchart by DialogNode.
+        /// Used for TreeView → Flowchart sync.
+        /// </summary>
+        public void SelectNode(DialogNode? dialogNode)
+        {
+            _viewModel.SelectNode(dialogNode);
+        }
     }
 }
