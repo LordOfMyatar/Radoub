@@ -18,7 +18,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Epic #325 - Native Flowchart View (Cross-Platform)
 
 #### Added
-- TBD
+- **Flexible layout modes** for flowchart visualization:
+  - Floating Window (default): Opens flowchart in separate window (F5)
+  - Side-by-Side: Embeds flowchart panel in resizable column beside tree
+  - Tabbed: Adds flowchart as tab in properties panel area
+- FlowchartLayout setting in SettingsService (persisted to settings.json)
+- View → Flowchart → Layout submenu with checkmark indicators
+- **Flowchart export**:
+  - Export as PNG (renders current graph panel at 96 DPI)
+  - Export as SVG (generates structured vector diagram)
+- View → Flowchart → Export submenu
+
+#### Changed
+- Extracted FlowchartPanel as reusable UserControl
+- FlowchartWindow now thin wrapper around FlowchartPanel
+- Refactored node click handling to support embedded panels
+
+#### Technical
+- FlowchartPanel.axaml: Reusable graph visualization component
+- FlowchartExportService: PNG/SVG export with sanitized paths
+- MainWindow: Dynamic column visibility for side-by-side mode
+- FlowchartPanelViewModel: Exposed FlowchartGraph for SVG export
 
 ---
 

@@ -32,6 +32,11 @@ namespace DialogEditor.ViewModels
         private string? _selectedNodeId;
 
         /// <summary>
+        /// Gets the underlying FlowchartGraph for export purposes
+        /// </summary>
+        public FlowchartGraph? FlowchartGraph => _flowchartGraph;
+
+        /// <summary>
         /// Update the flowchart to display the given dialog
         /// </summary>
         /// <param name="dialog">The dialog to display</param>

@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:DialogEditor.ViewModels"
+        xmlns:views="using:DialogEditor.Views"
         xmlns:models="using:DialogEditor.Models"
         xmlns:services="using:DialogEditor.Services"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -93,7 +94,20 @@
                     <MenuItem Header="Maximum (24pt)" Click="OnFontSizeClick" Tag="24"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Flowchart" Click="OnFlowchartClick" InputGesture="F5"/>
+                <MenuItem Header="_Flowchart">
+                    <MenuItem Header="_Open Flowchart" Click="OnFlowchartClick" InputGesture="F5"/>
+                    <Separator/>
+                    <MenuItem Header="Layout">
+                        <MenuItem x:Name="FlowchartLayoutFloating" Header="_Floating Window" Click="OnFlowchartLayoutClick" Tag="Floating"/>
+                        <MenuItem x:Name="FlowchartLayoutSideBySide" Header="_Side by Side" Click="OnFlowchartLayoutClick" Tag="SideBySide"/>
+                        <MenuItem x:Name="FlowchartLayoutTabbed" Header="_Tabbed" Click="OnFlowchartLayoutClick" Tag="Tabbed"/>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Export">
+                        <MenuItem Header="Export as _PNG..." Click="OnExportFlowchartPngClick"/>
+                        <MenuItem Header="Export as _SVG..." Click="OnExportFlowchartSvgClick"/>
+                    </MenuItem>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="_Plugin Panels" Name="PluginPanelsMenuItem" Click="OnPluginPanelsClick"/>
             </MenuItem>
@@ -137,6 +151,8 @@
                 <ColumnDefinition Width="800" MinWidth="500"/>  <!-- Tree+Text area -->
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*" MinWidth="350"/>  <!-- Properties area -->
+                <ColumnDefinition Width="0"/>  <!-- Flowchart splitter (hidden by default, index 3) -->
+                <ColumnDefinition Width="0"/>  <!-- Embedded flowchart (hidden by default, index 4) -->
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
@@ -748,7 +764,27 @@
                         </Border>
                     </DockPanel>
                 </TabItem>
+
+                <!-- Flowchart Tab (Tabbed mode) -->
+                <TabItem x:Name="FlowchartTab" Header="Flowchart" IsVisible="False">
+                    <views:FlowchartPanel x:Name="TabbedFlowchartPanel"/>
+                </TabItem>
             </TabControl>
+
+            <!-- Flowchart Splitter (Side-by-Side mode) -->
+            <GridSplitter x:Name="FlowchartSplitter"
+                          Grid.Row="0" Grid.RowSpan="3" Grid.Column="3"
+                          Width="5" HorizontalAlignment="Stretch"
+                          ResizeDirection="Columns" Background="Gray"
+                          IsVisible="False"/>
+
+            <!-- Embedded Flowchart Panel (Side-by-Side mode) -->
+            <Border x:Name="EmbeddedFlowchartBorder"
+                    Grid.Row="0" Grid.RowSpan="3" Grid.Column="4"
+                    BorderBrush="Gray" BorderThickness="1" Margin="0,5,5,5"
+                    IsVisible="False">
+                <views:FlowchartPanel x:Name="EmbeddedFlowchartPanel"/>
+            </Border>
         </Grid>
 
         <!-- Status Bar -->

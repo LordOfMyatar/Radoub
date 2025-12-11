@@ -56,6 +56,8 @@ namespace DialogEditor.Views
 
         // Track native flowchart window (Epic #325)
         private FlowchartWindow? _activeFlowchartWindow;
+        private bool _embeddedFlowchartWired = false;
+        private bool _tabbedFlowchartWired = false;
 
         // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
@@ -206,6 +208,9 @@ namespace DialogEditor.Views
             // Controls are now available, restore settings
             _windowPersistenceManager.RestoreDebugSettings();
             _windowPersistenceManager.RestorePanelSizes();
+
+            // Initialize flowchart layout menu state
+            UpdateFlowchartLayoutMenuChecks();
 
             // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
             InitializeSpeakerVisualComboBoxes();
@@ -597,6 +602,9 @@ namespace DialogEditor.Views
 
                     // Update module info bar
                     UpdateModuleInfo(filePath);
+
+                    // Update embedded flowchart if in side-by-side mode
+                    UpdateEmbeddedFlowchartAfterLoad();
                 }
             }
             catch (Exception ex)
@@ -836,6 +844,9 @@ namespace DialogEditor.Views
 
                     // Update module info bar
                     UpdateModuleInfo(filePath);
+
+                    // Update embedded flowchart if in side-by-side mode
+                    UpdateEmbeddedFlowchartAfterLoad();
                 }
             }
             catch (Exception ex)
@@ -1154,6 +1165,291 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening flowchart: {ex.Message}");
                 _viewModel.StatusMessage = "Error opening flowchart view";
+            }
+        }
+
+        private void OnFlowchartLayoutClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is string layoutValue)
+            {
+                SettingsService.Instance.FlowchartLayout = layoutValue;
+                UpdateFlowchartLayoutMenuChecks();
+
+                // Apply the layout change
+                ApplyFlowchartLayout();
+
+                _viewModel.StatusMessage = $"Flowchart layout set to {layoutValue}";
+            }
+        }
+
+        private void UpdateFlowchartLayoutMenuChecks()
+        {
+            var currentLayout = SettingsService.Instance.FlowchartLayout;
+            FlowchartLayoutFloating.Icon = currentLayout == "Floating" ? new TextBlock { Text = "✓" } : null;
+            FlowchartLayoutSideBySide.Icon = currentLayout == "SideBySide" ? new TextBlock { Text = "✓" } : null;
+            FlowchartLayoutTabbed.Icon = currentLayout == "Tabbed" ? new TextBlock { Text = "✓" } : null;
+        }
+
+        private void ApplyFlowchartLayout()
+        {
+            var layout = SettingsService.Instance.FlowchartLayout;
+
+            // Close existing floating window if switching to embedded mode
+            if (layout != "Floating" && _activeFlowchartWindow != null)
+            {
+                _activeFlowchartWindow.Close();
+                _activeFlowchartWindow = null;
+            }
+
+            // Apply layout based on setting
+            switch (layout)
+            {
+                case "SideBySide":
+                    ShowSideBySideFlowchart();
+                    break;
+                case "Tabbed":
+                    ShowTabbedFlowchart();
+                    break;
+                default: // "Floating"
+                    HideEmbeddedFlowchart();
+                    break;
+            }
+        }
+
+        private void ShowSideBySideFlowchart()
+        {
+            // Hide tabbed panel if it was showing
+            HideTabbedFlowchart();
+
+            // Show the embedded flowchart panel and splitter
+            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
+            var splitter = this.FindControl<GridSplitter>("FlowchartSplitter");
+            var border = this.FindControl<Border>("EmbeddedFlowchartBorder");
+
+            if (mainContentGrid != null && splitter != null && border != null && mainContentGrid.ColumnDefinitions.Count >= 5)
+            {
+                // Show columns (indices 3 and 4 are the splitter and panel columns)
+                mainContentGrid.ColumnDefinitions[3].Width = new GridLength(5);
+                mainContentGrid.ColumnDefinitions[4].Width = new GridLength(400, GridUnitType.Pixel);
+                mainContentGrid.ColumnDefinitions[4].MinWidth = 300;
+
+                // Show controls
+                splitter.IsVisible = true;
+                border.IsVisible = true;
+
+                // Wire up node click handler if not already done
+                if (!_embeddedFlowchartWired)
+                {
+                    EmbeddedFlowchartPanel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
+                    _embeddedFlowchartWired = true;
+                }
+
+                // Update with current dialog
+                EmbeddedFlowchartPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+
+                UnifiedLogger.LogUI(LogLevel.INFO, "Side-by-side flowchart panel shown");
+            }
+        }
+
+        private void ShowTabbedFlowchart()
+        {
+            // Hide side-by-side panel if it was showing
+            HideSideBySideFlowchart();
+
+            // Show the Flowchart tab
+            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
+            if (flowchartTab != null)
+            {
+                flowchartTab.IsVisible = true;
+
+                // Wire up node click handler if not already done
+                if (!_tabbedFlowchartWired)
+                {
+                    TabbedFlowchartPanel.NodeClicked += OnTabbedFlowchartNodeClicked;
+                    _tabbedFlowchartWired = true;
+                }
+
+                // Update with current dialog
+                TabbedFlowchartPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+
+                UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel shown");
+            }
+        }
+
+        private void HideTabbedFlowchart()
+        {
+            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
+            if (flowchartTab != null)
+            {
+                flowchartTab.IsVisible = false;
+                UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel hidden");
+            }
+        }
+
+        private void OnTabbedFlowchartNodeClicked(object? sender, FlowchartNode? flowchartNode)
+        {
+            // Reuse the same logic as the floating window
+            OnFlowchartNodeClicked(sender, flowchartNode);
+        }
+
+        private async void OnExportFlowchartPngClick(object? sender, RoutedEventArgs e)
+        {
+            await ExportFlowchartAsync("png");
+        }
+
+        private async void OnExportFlowchartSvgClick(object? sender, RoutedEventArgs e)
+        {
+            await ExportFlowchartAsync("svg");
+        }
+
+        private async Task ExportFlowchartAsync(string format)
+        {
+            try
+            {
+                // Get the active flowchart panel
+                FlowchartPanel? activePanel = GetActiveFlowchartPanel();
+                if (activePanel == null)
+                {
+                    _viewModel.StatusMessage = "No flowchart to export. Open a dialog first.";
+                    return;
+                }
+
+                // Set up file picker
+                var storageProvider = this.StorageProvider;
+                var extension = format.ToLower();
+                var filterName = extension.ToUpper();
+
+                var options = new FilePickerSaveOptions
+                {
+                    Title = $"Export Flowchart as {filterName}",
+                    SuggestedFileName = string.IsNullOrEmpty(_viewModel.CurrentFileName)
+                        ? $"flowchart.{extension}"
+                        : System.IO.Path.GetFileNameWithoutExtension(_viewModel.CurrentFileName) + $"_flowchart.{extension}",
+                    FileTypeChoices = new[]
+                    {
+                        new FilePickerFileType(filterName) { Patterns = new[] { $"*.{extension}" } }
+                    }
+                };
+
+                var file = await storageProvider.SaveFilePickerAsync(options);
+                if (file == null) return;
+
+                var filePath = file.Path.LocalPath;
+
+                bool success;
+                if (format == "png")
+                {
+                    success = await activePanel.ExportToPngAsync(filePath);
+                }
+                else
+                {
+                    success = await activePanel.ExportToSvgAsync(filePath);
+                }
+
+                if (success)
+                {
+                    _viewModel.StatusMessage = $"Flowchart exported to {System.IO.Path.GetFileName(filePath)}";
+                }
+                else
+                {
+                    _viewModel.StatusMessage = "Export failed. Check logs for details.";
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Export flowchart failed: {ex.Message}");
+                _viewModel.StatusMessage = $"Export failed: {ex.Message}";
+            }
+        }
+
+        private FlowchartPanel? GetActiveFlowchartPanel()
+        {
+            var layout = SettingsService.Instance.FlowchartLayout;
+
+            switch (layout)
+            {
+                case "SideBySide":
+                    if (EmbeddedFlowchartBorder?.IsVisible == true && EmbeddedFlowchartPanel?.ViewModel?.HasContent == true)
+                        return EmbeddedFlowchartPanel;
+                    break;
+                case "Tabbed":
+                    if (FlowchartTab?.IsVisible == true && TabbedFlowchartPanel?.ViewModel?.HasContent == true)
+                        return TabbedFlowchartPanel;
+                    break;
+            }
+
+            // For Floating mode or if embedded panels don't have content,
+            // check if we can use the floating window
+            if (_activeFlowchartWindow?.IsVisible == true)
+            {
+                // FlowchartWindow doesn't expose FlowchartPanel directly, so we need to update it
+                // For now, just return the embedded panel if it has content
+                if (EmbeddedFlowchartBorder?.IsVisible == true && EmbeddedFlowchartPanel?.ViewModel?.HasContent == true)
+                    return EmbeddedFlowchartPanel;
+                if (FlowchartTab?.IsVisible == true && TabbedFlowchartPanel?.ViewModel?.HasContent == true)
+                    return TabbedFlowchartPanel;
+            }
+
+            // If no embedded panel is visible but we have a dialog loaded, use the side-by-side panel
+            // (it's always in the XAML, just hidden)
+            if (_viewModel.CurrentDialog != null && EmbeddedFlowchartPanel != null)
+            {
+                // Temporarily update the embedded panel for export
+                EmbeddedFlowchartPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                return EmbeddedFlowchartPanel;
+            }
+
+            return null;
+        }
+
+        private void HideSideBySideFlowchart()
+        {
+            // Hide the side-by-side embedded flowchart panel and splitter
+            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
+            var splitter = this.FindControl<GridSplitter>("FlowchartSplitter");
+            var border = this.FindControl<Border>("EmbeddedFlowchartBorder");
+
+            if (mainContentGrid != null && splitter != null && border != null && mainContentGrid.ColumnDefinitions.Count >= 5)
+            {
+                // Hide columns (indices 3 and 4 are the splitter and panel columns)
+                mainContentGrid.ColumnDefinitions[3].Width = new GridLength(0);
+                mainContentGrid.ColumnDefinitions[4].Width = new GridLength(0);
+                mainContentGrid.ColumnDefinitions[4].MinWidth = 0;
+
+                // Hide controls
+                splitter.IsVisible = false;
+                border.IsVisible = false;
+            }
+        }
+
+        private void HideEmbeddedFlowchart()
+        {
+            // Hide all embedded flowchart panels (side-by-side and tabbed)
+            HideSideBySideFlowchart();
+            HideTabbedFlowchart();
+            UnifiedLogger.LogUI(LogLevel.INFO, "All embedded flowchart panels hidden");
+        }
+
+        private void OnEmbeddedFlowchartNodeClicked(object? sender, FlowchartNode? flowchartNode)
+        {
+            // Reuse the same logic as the floating window
+            OnFlowchartNodeClicked(sender, flowchartNode);
+        }
+
+        /// <summary>
+        /// Updates the embedded flowchart after a dialog is loaded (if in embedded mode)
+        /// </summary>
+        private void UpdateEmbeddedFlowchartAfterLoad()
+        {
+            var layout = SettingsService.Instance.FlowchartLayout;
+
+            if (layout == "SideBySide" && EmbeddedFlowchartBorder?.IsVisible == true)
+            {
+                EmbeddedFlowchartPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+            }
+            else if (layout == "Tabbed" && FlowchartTab?.IsVisible == true)
+            {
+                TabbedFlowchartPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
             }
         }
 
@@ -1527,10 +1823,21 @@ namespace DialogEditor.Views
             // Update DialogContextService.SelectedNodeId for plugin sync (Epic 40 Phase 3 / #234)
             _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode();
 
-            // Sync selection to flowchart window if open (Epic #325 Sprint 3 - bidirectional sync)
+            // Sync selection to flowchart (Epic #325 Sprint 3 - bidirectional sync)
+            // Floating window
             if (_activeFlowchartWindow != null && _activeFlowchartWindow.IsVisible)
             {
                 _activeFlowchartWindow.SelectNode(_selectedNode?.OriginalNode);
+            }
+            // Embedded panel (side-by-side mode)
+            if (EmbeddedFlowchartPanel != null && EmbeddedFlowchartBorder?.IsVisible == true)
+            {
+                EmbeddedFlowchartPanel.SelectNode(_selectedNode?.OriginalNode);
+            }
+            // Tabbed panel (tabbed mode)
+            if (TabbedFlowchartPanel != null && FlowchartTab?.IsVisible == true)
+            {
+                TabbedFlowchartPanel.SelectNode(_selectedNode?.OriginalNode);
             }
 
             // Show/hide panels based on node type
