@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.52-alpha] - 2025-12-10
-**Branch**: `parley/sprint/native-flowchart-s3-polish` | **PR**: #TBD
+**Branch**: `parley/sprint/native-flowchart-s3-polish` | **PR**: #332
 
 ### Sprint 3: Native Flowchart Visual Polish & Interaction (#328)
 
