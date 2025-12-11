@@ -18,7 +18,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Epic #325 - Native Flowchart View (Cross-Platform)
 
 #### Added
-- (Sprint in progress)
+- Speaker-based node colors using SpeakerVisualHelper (matches TreeView colors)
+- Theme-aware node backgrounds (light/dark mode support)
+- Script indicators: ❓ for conditions (ScriptAppears), ⚡ for actions (ScriptAction)
+- Link node visual distinction (opacity 70%, gray background)
+- Flowchart → TreeView selection sync (click node to select in tree)
+- Zoom controls toolbar (+, -, Reset, Fit buttons)
+- Mouse wheel zoom with Ctrl key
+- Keyboard shortcuts: Ctrl+Plus/Minus for zoom, Ctrl+0 for reset
 
 ---
 

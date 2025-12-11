@@ -1136,6 +1136,9 @@ namespace DialogEditor.Views
                 {
                     _activeFlowchartWindow = new FlowchartWindow();
                     _activeFlowchartWindow.Closed += (s, args) => _activeFlowchartWindow = null;
+
+                    // Subscribe to node click events for tree selection sync
+                    _activeFlowchartWindow.NodeClicked += OnFlowchartNodeClicked;
                 }
 
                 // Update with current dialog
@@ -1151,6 +1154,46 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening flowchart: {ex.Message}");
                 _viewModel.StatusMessage = "Error opening flowchart view";
+            }
+        }
+
+        /// <summary>
+        /// Handles node clicks from the flowchart window.
+        /// Selects the corresponding node in the TreeView.
+        /// </summary>
+        private void OnFlowchartNodeClicked(object? sender, DialogNode? dialogNode)
+        {
+            if (dialogNode == null || _viewModel.DialogNodes == null)
+                return;
+
+            try
+            {
+                // Use TreeNavigationManager to find the corresponding TreeViewSafeNode
+                var treeNavManager = new TreeNavigationManager();
+                var treeNode = treeNavManager.FindTreeNodeForDialogNode(_viewModel.DialogNodes, dialogNode);
+
+                if (treeNode != null)
+                {
+                    // Expand ancestors to make the node visible
+                    treeNavManager.ExpandAncestors(_viewModel.DialogNodes, treeNode);
+
+                    // Select the node in the tree
+                    _viewModel.SelectedTreeNode = treeNode;
+
+                    // Bring main window to front briefly to show selection, then return focus to flowchart
+                    Activate();
+
+                    UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart → TreeView: Selected '{treeNode.DisplayText}'");
+                    _viewModel.StatusMessage = $"Selected: {treeNode.DisplayText}";
+                }
+                else
+                {
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Could not find tree node for dialog node");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error syncing flowchart selection: {ex.Message}");
             }
         }
 
