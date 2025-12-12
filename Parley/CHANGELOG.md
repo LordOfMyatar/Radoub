@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.54-alpha] - 2025-12-12
+**Branch**: `parley/sprint/flowchart-polish` | **PR**: #TBD
+
+### Sprint: Flowchart Polish
+
+Addresses post-release issues from Epic #325 (Native Flowchart View).
+
+#### Fixed
+- Scrollbars don't update when zooming (#336)
+- SVG export layout doesn't reflect conversation flow (#338)
+- Flowchart node colors don't follow theme or NPC overrides (#340)
+
+#### Added
+- Mouse drag panning support (#337)
+
+---
+
 ## [0.1.53-alpha] - 2025-12-12
 **Branch**: `parley/sprint/native-flowchart-s4-layout-export` | **PR**: #333
 
