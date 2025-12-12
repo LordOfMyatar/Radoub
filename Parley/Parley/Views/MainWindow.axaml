@@ -161,86 +161,93 @@
                 <RowDefinition Height="*" MinHeight="150"/>
             </Grid.RowDefinitions>
 
-            <!-- Dialog Tree View (top left) -->
-            <Border Grid.Row="0" Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Margin="5" Padding="5">
-                <DockPanel>
-                    <!-- Header -->
-                    <TextBlock DockPanel.Dock="Top" Text="Dialog Tree" FontWeight="Bold" Margin="0,0,0,5"/>
+            <!-- Dialog Tree / Flowchart TabControl (top left) -->
+            <TabControl x:Name="LeftPaneTabControl" Grid.Row="0" Grid.Column="0" Margin="5">
+                <!-- Dialog Tree Tab -->
+                <TabItem Header="Dialog Tree">
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="5">
+                        <DockPanel>
+                            <!-- Tree Control Buttons -->
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
+                                <Button Name="ExpandAllButton" Content="Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                                <Button Name="CollapseAllButton" Content="Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                                <Separator Width="1" Margin="5,0"/>
+                                <Button Name="AddNodeButton" Content="+ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
+                                <Button Name="DeleteNodeButton" Content="Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
+                            </StackPanel>
 
-                    <!-- Tree Control Buttons -->
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
-                        <Button Name="ExpandAllButton" Content="Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
-                        <Button Name="CollapseAllButton" Content="Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
-                        <Separator Width="1" Margin="5,0"/>
-                        <Button Name="AddNodeButton" Content="+ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
-                        <Button Name="DeleteNodeButton" Content="Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
-                    </StackPanel>
+                            <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
+                            <!-- DRAGON: Do not modify ItemsSource binding, SelectionChanged, or context menu Click handlers -->
+                            <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
+                                      SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
+                                      SelectionChanged="OnDialogTreeViewSelectionChanged"
+                                      DoubleTapped="OnTreeViewItemDoubleTapped"
+                                      Padding="0,0,0,20">
+                                <TreeView.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Add Node" Click="OnAddSmartNodeClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Move Up" InputGesture="Alt+Up" Click="OnMoveNodeUpClick"/>
+                                        <MenuItem Header="Move Down" InputGesture="Alt+Down" Click="OnMoveNodeDownClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Delete Node" Click="OnDeleteNodeClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Cut Node" Click="OnCutNodeClick"/>
+                                        <MenuItem Header="Copy Node" Click="OnCopyNodeClick"/>
+                                        <MenuItem Header="Paste" Click="OnPasteAsDuplicateClick"/>
+                                        <MenuItem Header="Paste as Link" Click="OnPasteAsLinkClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Expand This Node and Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
+                                        <MenuItem Header="Collapse This Node and Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Copy Node Text" Click="OnCopyNodeTextClick"/>
+                                        <MenuItem Header="Copy Node Properties" Click="OnCopyNodePropertiesClick"/>
+                                    </ContextMenu>
+                                </TreeView.ContextMenu>
+                                <TreeView.Styles>
+                                    <Style Selector="TreeViewItem">
+                                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                                    </Style>
+                                    <!-- Show focus indicator when TreeView has keyboard focus -->
+                                    <Style Selector="TreeViewItem:focus /template/ Border#PART_LayoutRoot">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </Style>
+                                    <!-- Alternative: Use background color for focus indication -->
+                                    <Style Selector="TreeViewItem:selected:focus /template/ Border#PART_LayoutRoot">
+                                        <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+                                        <Setter Property="BorderThickness" Value="2"/>
+                                    </Style>
+                                </TreeView.Styles>
+                                <TreeView.DataTemplates>
+                                    <TreeDataTemplate DataType="models:TreeViewSafeNode" ItemsSource="{Binding Children}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <!-- Speaker icon shape -->
+                                            <Path Data="{Binding NodeShapeGeometry}"
+                                                  Fill="{Binding NodeColor}"
+                                                  Width="16" Height="16"
+                                                  Stretch="Uniform"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,2,0,0"/>
+                                            <!-- Node text -->
+                                            <TextBlock Text="{Binding DisplayText}"
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{Binding NodeColor}"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </TreeDataTemplate>
+                                </TreeView.DataTemplates>
+                            </TreeView>
+                        </DockPanel>
+                    </Border>
+                </TabItem>
 
-                    <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
-                    <!-- DRAGON: Do not modify ItemsSource binding, SelectionChanged, or context menu Click handlers -->
-                    <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
-                              SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
-                              SelectionChanged="OnDialogTreeViewSelectionChanged"
-                              DoubleTapped="OnTreeViewItemDoubleTapped"
-                              Padding="0,0,0,20">
-                        <TreeView.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Add Node" Click="OnAddSmartNodeClick"/>
-                                <Separator/>
-                                <MenuItem Header="Move Up" InputGesture="Alt+Up" Click="OnMoveNodeUpClick"/>
-                                <MenuItem Header="Move Down" InputGesture="Alt+Down" Click="OnMoveNodeDownClick"/>
-                                <Separator/>
-                                <MenuItem Header="Delete Node" Click="OnDeleteNodeClick"/>
-                                <Separator/>
-                                <MenuItem Header="Cut Node" Click="OnCutNodeClick"/>
-                                <MenuItem Header="Copy Node" Click="OnCopyNodeClick"/>
-                                <MenuItem Header="Paste" Click="OnPasteAsDuplicateClick"/>
-                                <MenuItem Header="Paste as Link" Click="OnPasteAsLinkClick"/>
-                                <Separator/>
-                                <MenuItem Header="Expand This Node and Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
-                                <MenuItem Header="Collapse This Node and Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
-                                <Separator/>
-                                <MenuItem Header="Copy Node Text" Click="OnCopyNodeTextClick"/>
-                                <MenuItem Header="Copy Node Properties" Click="OnCopyNodePropertiesClick"/>
-                            </ContextMenu>
-                        </TreeView.ContextMenu>
-                        <TreeView.Styles>
-                            <Style Selector="TreeViewItem">
-                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
-                            </Style>
-                            <!-- Show focus indicator when TreeView has keyboard focus -->
-                            <Style Selector="TreeViewItem:focus /template/ Border#PART_LayoutRoot">
-                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
-                                <Setter Property="BorderThickness" Value="1"/>
-                            </Style>
-                            <!-- Alternative: Use background color for focus indication -->
-                            <Style Selector="TreeViewItem:selected:focus /template/ Border#PART_LayoutRoot">
-                                <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
-                                <Setter Property="BorderThickness" Value="2"/>
-                            </Style>
-                        </TreeView.Styles>
-                        <TreeView.DataTemplates>
-                            <TreeDataTemplate DataType="models:TreeViewSafeNode" ItemsSource="{Binding Children}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <!-- Speaker icon shape -->
-                                    <Path Data="{Binding NodeShapeGeometry}"
-                                          Fill="{Binding NodeColor}"
-                                          Width="16" Height="16"
-                                          Stretch="Uniform"
-                                          VerticalAlignment="Center"
-                                          Margin="0,2,0,0"/>
-                                    <!-- Node text -->
-                                    <TextBlock Text="{Binding DisplayText}"
-                                               TextWrapping="Wrap"
-                                               Foreground="{Binding NodeColor}"
-                                               VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </TreeDataTemplate>
-                        </TreeView.DataTemplates>
-                    </TreeView>
-                </DockPanel>
-            </Border>
+                <!-- Flowchart Tab (Tabbed mode) -->
+                <TabItem x:Name="FlowchartTab" Header="Flowchart" IsVisible="False">
+                    <views:FlowchartPanel x:Name="TabbedFlowchartPanel"/>
+                </TabItem>
+            </TabControl>
 
             <!-- Horizontal splitter between Dialog Tree and Text Entry -->
             <GridSplitter Grid.Row="1" Grid.Column="0" Height="5" HorizontalAlignment="Stretch"
@@ -763,11 +770,6 @@
                             </ListBox>
                         </Border>
                     </DockPanel>
-                </TabItem>
-
-                <!-- Flowchart Tab (Tabbed mode) -->
-                <TabItem x:Name="FlowchartTab" Header="Flowchart" IsVisible="False">
-                    <views:FlowchartPanel x:Name="TabbedFlowchartPanel"/>
                 </TabItem>
             </TabControl>
 

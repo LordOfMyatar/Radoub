@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.53-alpha] - TBD
+## [0.1.53-alpha] - 2025-12-12
 **Branch**: `parley/sprint/native-flowchart-s4-layout-export` | **PR**: #333
 
 ### Sprint 4: Layout Options & Export (#329)
@@ -23,6 +23,11 @@ Epic #325 - Native Flowchart View (Cross-Platform)
   - Side-by-Side: Embeds flowchart panel in resizable column beside tree
   - Tabbed: Adds flowchart as tab in properties panel area
 - FlowchartLayout setting in SettingsService (persisted to settings.json)
+- ROOT node in flowchart (shows dialog filename, all starting entries branch from ROOT)
+
+#### Fixed
+- Selection feedback loop causing NPC nodes to not update property panel
+- Flowchart sibling node ordering (first-evaluated nodes now leftmost, matching reading order)
 - View → Flowchart → Layout submenu with checkmark indicators
 - **Flowchart export**:
   - Export as PNG (renders current graph panel at 96 DPI)

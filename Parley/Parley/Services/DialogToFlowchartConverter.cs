@@ -40,13 +40,39 @@ namespace DialogEditor.Services
             // First pass: assign IDs to all nodes
             AssignNodeIds(dialog);
 
-            // Process starting points (roots)
+            // Create ROOT node - all starting entries connect from ROOT
+            const string rootId = "ROOT";
+            var rootNode = new FlowchartNode(
+                id: rootId,
+                nodeType: FlowchartNodeType.Root,
+                text: System.IO.Path.GetFileNameWithoutExtension(fileName) ?? "ROOT",
+                speaker: string.Empty,
+                hasCondition: false,
+                hasAction: false,
+                isLink: false,
+                linkTargetId: null,
+                originalNode: null,
+                originalPointer: null
+            );
+            graph.AddNode(rootNode);
+            graph.RootNodeIds.Add(rootId);
+
+            // Process starting points (entries that branch from ROOT)
             foreach (var startPtr in dialog.Starts)
             {
                 if (startPtr?.Node == null) continue;
 
                 var nodeId = GetNodeId(startPtr.Node);
-                graph.RootNodeIds.Add(nodeId);
+                var isConditional = !string.IsNullOrEmpty(startPtr.ScriptAppears);
+
+                // Edge from ROOT to starting entry
+                graph.AddEdge(new FlowchartEdge(
+                    sourceId: rootId,
+                    targetId: nodeId,
+                    isConditional: isConditional,
+                    isLinkEdge: false,
+                    label: isConditional ? startPtr.ScriptAppears : null
+                ));
 
                 // Process this starting node and its children
                 ProcessNode(startPtr.Node, startPtr, graph);

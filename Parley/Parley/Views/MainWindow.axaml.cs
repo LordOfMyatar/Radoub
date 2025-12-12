@@ -1486,8 +1486,28 @@ namespace DialogEditor.Views
         /// </summary>
         private void OnFlowchartNodeClicked(object? sender, FlowchartNode? flowchartNode)
         {
-            if (flowchartNode?.OriginalNode == null || _viewModel.DialogNodes == null)
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"OnFlowchartNodeClicked: flowchartNode={flowchartNode?.Id}, OriginalNode={flowchartNode?.OriginalNode?.DisplayText ?? "null"}, IsLink={flowchartNode?.IsLink}");
+
+            // ROOT node has no OriginalNode - just select the ROOT in tree
+            if (flowchartNode?.NodeType == FlowchartNodeType.Root)
+            {
+                var rootNode = _viewModel.DialogNodes?.FirstOrDefault() as TreeViewRootNode;
+                if (rootNode != null)
+                {
+                    _selectedNode = rootNode;
+                    _viewModel.SelectedTreeNode = rootNode;
+                    PopulatePropertiesPanel(rootNode);
+                    UnifiedLogger.LogUI(LogLevel.INFO, "Flowchart → TreeView: Selected ROOT");
+                    _viewModel.StatusMessage = "Selected: ROOT";
+                }
                 return;
+            }
+
+            if (flowchartNode?.OriginalNode == null || _viewModel.DialogNodes == null)
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, $"OnFlowchartNodeClicked: Early return - OriginalNode null or DialogNodes null");
+                return;
+            }
 
             try
             {
@@ -1500,20 +1520,63 @@ namespace DialogEditor.Views
                     // The link has a pointer (OriginalPointer) that identifies which specific
                     // link child to select, not just any occurrence of the target node
                     treeNode = FindLinkNodeInTree(_viewModel.DialogNodes, flowchartNode);
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"FindLinkNodeInTree returned: {treeNode?.DisplayText ?? "null"}");
                 }
                 else
                 {
                     // Regular node - find by DialogNode reference
                     treeNode = treeNavManager.FindTreeNodeForDialogNode(_viewModel.DialogNodes, flowchartNode.OriginalNode);
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"FindTreeNodeForDialogNode returned: {treeNode?.DisplayText ?? "null"}, IsChild={treeNode?.IsChild}");
                 }
 
                 if (treeNode != null)
                 {
+                    // Save previous node properties before switching
+                    if (_selectedNode != null && !(_selectedNode is TreeViewRootNode))
+                    {
+                        SaveCurrentNodeProperties();
+                    }
+
                     // Expand ancestors to make the node visible
                     treeNavManager.ExpandAncestors(_viewModel.DialogNodes, treeNode);
 
-                    // Select the node in the tree
-                    _viewModel.SelectedTreeNode = treeNode;
+                    // Update selection state with flag to prevent feedback loops
+                    // Setting SelectedTreeNode triggers PropertyChanged → View handler → TreeView.SelectedItem
+                    // which would trigger OnDialogTreeViewSelectionChanged causing double population
+                    _isSettingSelectionProgrammatically = true;
+                    try
+                    {
+                        _selectedNode = treeNode;
+                        _viewModel.SelectedTreeNode = treeNode;
+
+                        // Also update the TreeView's selected item directly
+                        var treeView = this.FindControl<TreeView>("DialogTreeView");
+                        if (treeView != null)
+                        {
+                            treeView.SelectedItem = treeNode;
+                        }
+                    }
+                    finally
+                    {
+                        _isSettingSelectionProgrammatically = false;
+                    }
+
+                    // Directly populate properties panel (needed for tabbed mode where TreeView isn't visible)
+                    var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");
+                    var nodePropertiesPanel = this.FindControl<StackPanel>("NodePropertiesPanel");
+
+                    if (treeNode is TreeViewRootNode)
+                    {
+                        if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = true;
+                        if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = false;
+                    }
+                    else
+                    {
+                        if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = false;
+                        if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = true;
+                    }
+
+                    PopulatePropertiesPanel(treeNode);
 
                     // Bring main window to front briefly to show selection, then return focus to flowchart
                     Activate();
@@ -1829,6 +1892,23 @@ namespace DialogEditor.Views
 
         private void OnDialogTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
+            // Skip if this is a programmatic selection (prevents feedback loops from flowchart sync)
+            if (_isSettingSelectionProgrammatically)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnDialogTreeViewSelectionChanged: Skipping - programmatic selection");
+                return;
+            }
+
+            var treeView = sender as TreeView;
+            var newSelectedNode = treeView?.SelectedItem as TreeViewSafeNode;
+
+            // Skip if selection hasn't actually changed (prevents duplicate processing)
+            if (newSelectedNode == _selectedNode)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnDialogTreeViewSelectionChanged: Skipping - same node already selected: {newSelectedNode?.DisplayText ?? "null"}");
+                return;
+            }
+
             // CRITICAL FIX: Save the PREVIOUS node's properties before switching
             if (_selectedNode != null && !(_selectedNode is TreeViewRootNode))
             {
@@ -1836,8 +1916,7 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "Saved previous node properties before tree selection change");
             }
 
-            var treeView = sender as TreeView;
-            _selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
+            _selectedNode = newSelectedNode;
 
             // Update ViewModel's selected tree node for Restore button enabling and bindings
             // Always update - the flags prevent View→ViewModel→View feedback loops elsewhere

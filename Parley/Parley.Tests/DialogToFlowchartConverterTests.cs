@@ -35,7 +35,7 @@ namespace Parley.Tests
         }
 
         [Fact]
-        public void Convert_EmptyDialog_ReturnsEmptyGraph()
+        public void Convert_EmptyDialog_ReturnsGraphWithOnlyRoot()
         {
             // Arrange
             var dialog = new Dialog();
@@ -45,10 +45,11 @@ namespace Parley.Tests
 
             // Assert
             Assert.NotNull(graph);
-            Assert.True(graph.IsEmpty);
-            Assert.Empty(graph.Nodes);
-            Assert.Empty(graph.Edges);
-            Assert.Empty(graph.RootNodeIds);
+            // Even empty dialogs get a ROOT node for consistency
+            Assert.Single(graph.Nodes);
+            Assert.Equal(FlowchartNodeType.Root, graph.Nodes.Values.First().NodeType);
+            Assert.Empty(graph.Edges); // No edges since no starting entries
+            Assert.Single(graph.RootNodeIds);
         }
 
         [Fact]
@@ -82,11 +83,13 @@ namespace Parley.Tests
             var graph = _converter.Convert(dialog);
 
             // Assert
-            Assert.Single(graph.Nodes);
-            Assert.Empty(graph.Edges); // Single node has no outgoing edges
+            // Graph includes ROOT node + the entry node
+            Assert.Equal(2, graph.Nodes.Count);
+            Assert.Single(graph.Edges); // ROOT -> entry edge
             Assert.Single(graph.RootNodeIds);
 
-            var node = graph.Nodes.Values.First();
+            // Get the entry node (not ROOT)
+            var node = graph.Nodes.Values.First(n => n.NodeType == FlowchartNodeType.Entry);
             Assert.Equal(FlowchartNodeType.Entry, node.NodeType);
             Assert.Equal("Hello, adventurer!", node.Text);
             Assert.False(node.IsLink);
@@ -106,7 +109,9 @@ namespace Parley.Tests
             var graph = _converter.Convert(dialog);
 
             // Assert
-            var node = graph.Nodes.Values.First();
+            // Get the entry node (not ROOT)
+            var node = graph.Nodes.Values.First(n => n.NodeType == FlowchartNodeType.Entry);
+            // FlowchartNode uses SpeakerDisplay which returns "Merchant" for Entry nodes with Speaker set
             Assert.Equal("Merchant", node.Speaker);
         }
 
@@ -124,7 +129,8 @@ namespace Parley.Tests
             var graph = _converter.Convert(dialog);
 
             // Assert
-            var node = graph.Nodes.Values.First();
+            // Get the entry node (not ROOT)
+            var node = graph.Nodes.Values.First(n => n.NodeType == FlowchartNodeType.Entry);
             Assert.True(node.HasAction);
         }
 
@@ -167,8 +173,10 @@ namespace Parley.Tests
             var graph = _converter.Convert(dialog);
 
             // Assert
-            Assert.Equal(3, graph.Nodes.Count); // 1 entry + 2 replies
-            Assert.Equal(2, graph.Edges.Count); // 2 edges from entry to replies
+            // ROOT + 1 entry + 2 replies = 4 nodes
+            Assert.Equal(4, graph.Nodes.Count);
+            // ROOT->entry + entry->reply1 + entry->reply2 = 3 edges
+            Assert.Equal(3, graph.Edges.Count);
             Assert.Single(graph.RootNodeIds);
 
             // Verify node types
@@ -207,7 +215,9 @@ namespace Parley.Tests
             var graph = _converter.Convert(dialog);
 
             // Assert
-            var edge = graph.Edges.First();
+            // Get the edge from entry to reply (not ROOT->entry)
+            var entryNode = graph.Nodes.Values.First(n => n.NodeType == FlowchartNodeType.Entry);
+            var edge = graph.Edges.First(e => e.SourceId == entryNode.Id);
             Assert.True(edge.IsConditional);
             Assert.Equal("check_secret_knowledge", edge.Label);
         }
@@ -248,8 +258,8 @@ namespace Parley.Tests
             var graph = _converter.Convert(dialog);
 
             // Assert
-            // Should have: start entry, reply, and a link node (for the back-link)
-            Assert.Equal(3, graph.Nodes.Count);
+            // Should have: ROOT, start entry, reply, and a link node (for the back-link)
+            Assert.Equal(4, graph.Nodes.Count);
 
             var linkNodes = graph.Nodes.Values.Where(n => n.IsLink).ToList();
             Assert.Single(linkNodes);
@@ -258,10 +268,10 @@ namespace Parley.Tests
             Assert.Equal(FlowchartNodeType.Link, linkNode.NodeType);
             Assert.NotNull(linkNode.LinkTargetId);
 
-            // Verify edges: start->reply, reply->link
+            // Verify edges: ROOT->entry, entry->reply, reply->link
             // Note: We no longer create link->target edges (it was causing Sugiyama layout issues)
             // The linkTargetId property on the link node provides the reference instead
-            Assert.Equal(2, graph.Edges.Count);
+            Assert.Equal(3, graph.Edges.Count);
             var linkEdges = graph.Edges.Where(e => e.IsLinkEdge).ToList();
             Assert.Single(linkEdges); // Only reply->link edge is marked as link edge
         }
@@ -426,7 +436,8 @@ namespace Parley.Tests
             var graph = _converter.Convert(dialog);
 
             // Assert
-            var flowchartNode = graph.Nodes.Values.First();
+            // Get the entry node (not ROOT which has OriginalNode=null)
+            var flowchartNode = graph.Nodes.Values.First(n => n.NodeType == FlowchartNodeType.Entry);
             Assert.NotNull(flowchartNode.OriginalNode);
             Assert.Same(startPtr.Node, flowchartNode.OriginalNode);
         }

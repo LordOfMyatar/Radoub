@@ -43,19 +43,7 @@ namespace DialogEditor.Models
         public DialogPtr? SourcePointer => _sourcePointer;
 
         // Check if this node is a child/link (IsChild=1)
-        public bool IsChild
-        {
-            get
-            {
-                bool result = _sourcePointer?.IsLink ?? false;
-                if (_sourcePointer != null)
-                {
-                    DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG,
-                        $"🔍 IsChild check for '{_originalNode.DisplayText}': SourcePointer.Index={_sourcePointer.Index}, SourcePointer.IsLink={_sourcePointer.IsLink}, Result={result}");
-                }
-                return result;
-            }
-        }
+        public bool IsChild => _sourcePointer?.IsLink ?? false;
 
         // IsExpanded for TreeView expand/collapse functionality
         public bool IsExpanded
