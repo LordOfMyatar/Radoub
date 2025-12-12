@@ -21,6 +21,8 @@ namespace DialogEditor.Models
 
         private static readonly IBrush LinkBrushLight = new SolidColorBrush(Color.Parse("#F5F5F5")); // Light gray
         private static readonly IBrush LinkBrushDark = new SolidColorBrush(Color.Parse("#424242")); // Dark gray
+        private static readonly IBrush RootBrushLight = new SolidColorBrush(Color.Parse("#E8F5E9")); // Light green
+        private static readonly IBrush RootBrushDark = new SolidColorBrush(Color.Parse("#1B5E20")); // Dark green
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
@@ -36,6 +38,10 @@ namespace DialogEditor.Models
 
             if (isLink)
                 return isDark ? LinkBrushDark : LinkBrushLight;
+
+            // Root node gets distinct styling
+            if (nodeType == FlowchartNodeType.Root)
+                return isDark ? RootBrushDark : RootBrushLight;
 
             // Use SpeakerVisualHelper for consistent coloring with TreeView
             bool isPC = nodeType == FlowchartNodeType.Reply;
@@ -116,6 +122,7 @@ namespace DialogEditor.Models
         public static readonly FlowchartNodeBorderConverter Instance = new();
 
         private static readonly IBrush LinkBorder = new SolidColorBrush(Color.Parse("#9E9E9E")); // Gray
+        private static readonly IBrush RootBorder = new SolidColorBrush(Color.Parse("#4CAF50")); // Green
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
@@ -129,6 +136,9 @@ namespace DialogEditor.Models
 
             if (isLink)
                 return LinkBorder;
+
+            if (nodeType == FlowchartNodeType.Root)
+                return RootBorder;
 
             // Use SpeakerVisualHelper for consistent coloring with TreeView
             bool isPC = nodeType == FlowchartNodeType.Reply;

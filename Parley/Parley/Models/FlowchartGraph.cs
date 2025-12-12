@@ -8,6 +8,8 @@ namespace DialogEditor.Models
     /// </summary>
     public enum FlowchartNodeType
     {
+        /// <summary>Root node - starting point of dialog</summary>
+        Root,
         /// <summary>NPC/Owner dialog entry</summary>
         Entry,
         /// <summary>PC response option</summary>

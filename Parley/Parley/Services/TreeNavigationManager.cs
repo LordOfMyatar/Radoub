@@ -20,27 +20,49 @@ namespace DialogEditor.Services
     {
         /// <summary>
         /// Finds a TreeViewSafeNode for a given DialogNode by recursively searching the tree.
+        /// Prefers original (non-link) occurrences over child/link occurrences.
         /// </summary>
         public TreeViewSafeNode? FindTreeNodeForDialogNode(ObservableCollection<TreeViewSafeNode> dialogNodes, DialogNode nodeToFind)
         {
-            TreeViewSafeNode? FindNodeRecursive(ObservableCollection<TreeViewSafeNode> nodes)
+            TreeViewSafeNode? bestMatch = null;
+
+            void FindNodeRecursive(ObservableCollection<TreeViewSafeNode> nodes)
             {
                 foreach (var node in nodes)
                 {
                     if (node.OriginalNode == nodeToFind)
-                        return node;
-
-                    if (node.Children != null && node.Children.Count > 0)
                     {
-                        var found = FindNodeRecursive(node.Children);
-                        if (found != null)
-                            return found;
+                        // Prefer non-child (original) nodes over child (link) nodes
+                        if (!node.IsChild)
+                        {
+                            bestMatch = node;
+                            return; // Found the original, no need to search further
+                        }
+                        else if (bestMatch == null)
+                        {
+                            // Keep child as fallback if no original found yet
+                            bestMatch = node;
+                        }
+                    }
+
+                    // Use HasChildren to check for potential children (handles lazy loading)
+                    // PopulateChildren ensures Children collection is populated before searching
+                    if (node.HasChildren)
+                    {
+                        node.PopulateChildren();
+                        if (node.Children != null)
+                        {
+                            FindNodeRecursive(node.Children);
+                            // If we found an original node, stop searching
+                            if (bestMatch != null && !bestMatch.IsChild)
+                                return;
+                        }
                     }
                 }
-                return null;
             }
 
-            return FindNodeRecursive(dialogNodes);
+            FindNodeRecursive(dialogNodes);
+            return bestMatch;
         }
 
         /// <summary>

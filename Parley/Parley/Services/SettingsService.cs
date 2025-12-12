@@ -61,6 +61,7 @@ namespace DialogEditor.Services
         private bool _isDarkTheme = false; // DEPRECATED: Use CurrentThemeId instead
         private string _currentThemeId = "org.parley.theme.light"; // Default theme
         private bool _useNewLayout = false; // Feature flag for new layout (#108)
+        private string _flowchartLayout = "Floating"; // Flowchart layout: "Floating", "SideBySide", "Tabbed"
         
         // Game settings
         private string _neverwinterNightsPath = "";
@@ -261,6 +262,25 @@ namespace DialogEditor.Services
         {
             get => _useNewLayout;
             set { if (SetProperty(ref _useNewLayout, value)) SaveSettings(); }
+        }
+
+        /// <summary>
+        /// Flowchart layout mode: "Floating" (separate window), "SideBySide" (split view), "Tabbed" (tab in main area)
+        /// </summary>
+        public string FlowchartLayout
+        {
+            get => _flowchartLayout;
+            set
+            {
+                // Validate value
+                var validValues = new[] { "Floating", "SideBySide", "Tabbed" };
+                var safeValue = validValues.Contains(value) ? value : "Floating";
+                if (SetProperty(ref _flowchartLayout, safeValue))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart layout set to {safeValue}");
+                }
+            }
         }
 
         // Game Settings Properties
@@ -683,6 +703,7 @@ namespace DialogEditor.Services
                         }
 
                         _useNewLayout = settings.UseNewLayout;
+                        _flowchartLayout = settings.FlowchartLayout ?? "Floating"; // #329: Flowchart layout
                         _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
                         _npcSpeakerPreferences = settings.NpcSpeakerPreferences ?? new Dictionary<string, SpeakerPreferences>(); // Issue #16, #36
                         _enableNpcTagColoring = settings.EnableNpcTagColoring; // Issue #16, #36
@@ -773,6 +794,7 @@ namespace DialogEditor.Services
                     IsDarkTheme = IsDarkTheme, // Keep for backwards compatibility
                     CurrentThemeId = CurrentThemeId,
                     UseNewLayout = UseNewLayout,
+                    FlowchartLayout = FlowchartLayout, // #329: Flowchart layout
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
                     NpcSpeakerPreferences = NpcSpeakerPreferences, // Issue #16, #36
                     EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
@@ -963,6 +985,7 @@ namespace DialogEditor.Services
             public bool IsDarkTheme { get; set; } = false; // DEPRECATED: For backwards compatibility
             public string? CurrentThemeId { get; set; } = "org.parley.theme.light";
             public bool UseNewLayout { get; set; } = false;
+            public string FlowchartLayout { get; set; } = "Floating"; // #329: Flowchart layout
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
             public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON

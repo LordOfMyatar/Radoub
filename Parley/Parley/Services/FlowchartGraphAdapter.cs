@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using AvaloniaGraphControl;
 using DialogEditor.Models;
 
@@ -31,9 +32,13 @@ namespace DialogEditor.Services
                 nodeMap[node.Id] = node;
             }
 
-            // Add edges - AvaloniaGraphControl creates nodes implicitly from edges
-            foreach (var edge in flowchartGraph.Edges)
+            // Add edges in REVERSE order - MSAGL Sugiyama places later-added sibling edges
+            // to the left, so by reversing we get first-evaluated nodes on the left
+            // (matching reading order: first evaluated = leftmost, last = rightmost)
+            var edgesList = flowchartGraph.Edges.ToList();
+            for (int i = edgesList.Count - 1; i >= 0; i--)
             {
+                var edge = edgesList[i];
                 if (nodeMap.TryGetValue(edge.SourceId, out var sourceNode) &&
                     nodeMap.TryGetValue(edge.TargetId, out var targetNode))
                 {
