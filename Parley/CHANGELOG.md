@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.54-alpha] - 2025-12-12
-**Branch**: `parley/sprint/flowchart-polish` | **PR**: #TBD
+**Branch**: `parley/sprint/flowchart-polish` | **PR**: #341
 
 ### Sprint: Flowchart Polish
 
