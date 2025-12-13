@@ -279,6 +279,62 @@ Apply recommendations? [y/n/manual]
 - `theme` - Visual styling
 - `aurora-compatibility` - Aurora Toolset compat
 
+## GitHub Project Integration
+
+After grooming an issue, add it to the appropriate project board.
+
+### Project Selection
+
+| Label/Title | Project | Number |
+|-------------|---------|--------|
+| `parley` or `[Parley]` | Parley | 2 |
+| `radoub` or `[Radoub]` | Radoub | 3 |
+
+### Add Issue to Project
+
+```bash
+# Determine project from labels
+LABELS=$(gh issue view [number] --json labels -q '.labels[].name' | tr '\n' ' ')
+
+# Add to Parley project (if parley label)
+gh project item-add 2 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
+
+# Add to Radoub project (if radoub label)
+gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
+```
+
+### After Adding to Project
+
+Report to user:
+```
+✅ Added #[number] to [Project Name] project
+   URL: https://github.com/users/LordOfMyatar/projects/[N]
+```
+
+### Batch Grooming Project Updates
+
+When grooming multiple issues, track which were added to projects:
+
+```markdown
+## Project Board Updates
+
+| Issue | Project | Status |
+|-------|---------|--------|
+| #123 | Parley | ✅ Added |
+| #456 | Radoub | ✅ Added |
+| #789 | (none) | ⚠️ No tool label |
+```
+
+### Prerequisites
+
+Ensure `project` scope is available:
+```bash
+gh auth status  # Check for 'project' scope
+gh auth refresh -s project  # Add if missing
+```
+
+See `.claude/github-projects-reference.md` for project IDs and field details.
+
 ## Notes
 
 - Always ask before making changes in batch mode

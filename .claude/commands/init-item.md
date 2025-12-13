@@ -269,6 +269,79 @@ Common label patterns:
 - `parley`, `Parley`, `tool:parley` → Tool detection
 - `radoub`, `Radoub`, `tool:radoub` → Tool detection
 
+## GitHub Project Integration
+
+After creating the branch and PR, add the issue to the appropriate project and mark it "In Progress".
+
+### Project Selection
+
+| Label/Title | Project | Number |
+|-------------|---------|--------|
+| `parley` or `[Parley]` | Parley | 2 |
+| `radoub` or `[Radoub]` | Radoub | 3 |
+
+### Add Issue to Project and Set In Progress
+
+After Step 9 (Create Draft PR), add to project:
+
+```bash
+# Determine project from labels
+LABELS=$(gh issue view [number] --json labels -q '.labels[].name' | tr '\n' ' ')
+
+# Add to appropriate project (returns item ID)
+# For Parley issues:
+ITEM_JSON=$(gh project item-add 2 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
+ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
+
+# For Radoub issues:
+ITEM_JSON=$(gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
+ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
+
+# Set status to "In Progress"
+# For Parley project (2):
+gh project item-edit \
+  --id "$ITEM_ID" \
+  --project-id PVT_kwHOAotjYs4BHFCR \
+  --field-id PVTSSF_lAHOAotjYs4BHFCRzg37-KA \
+  --single-select-option-id 47fc9ee4
+
+# For Radoub project (3):
+gh project item-edit \
+  --id "$ITEM_ID" \
+  --project-id PVT_kwHOAotjYs4BHbMq \
+  --field-id PVTSSF_lAHOAotjYs4BHbMqzg4Lxyk \
+  --single-select-option-id 47fc9ee4
+```
+
+### Updated Summary Output
+
+Add project status to the summary:
+
+```markdown
+## [Type] Branch Initialized
+
+**Branch**: [branch-name]
+**PR**: #[pr-number] (draft)
+**Issue**: #[issue-number]
+**Project**: [Project Name] - Status: In Progress
+
+### Next Steps
+1. Implement the [type]
+2. Add tests
+3. Run `/pre-merge` to verify all checks pass
+4. Mark PR ready for review
+```
+
+### Prerequisites
+
+Ensure `project` scope is available:
+```bash
+gh auth status  # Check for 'project' scope
+gh auth refresh -s project  # Add if missing
+```
+
+See `.claude/github-projects-reference.md` for project IDs and field details.
+
 ## Notes
 
 - Always use draft PRs initially
