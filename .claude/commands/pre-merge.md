@@ -205,12 +205,9 @@ Output format:
 [✅ All checks pass - ready for review / ⚠️ [N] items need attention]
 ```
 
-### Step 8: Update PR Description
+### Step 8: Update PR and Epic Content
 
-After generating the checklist, update the PR on GitHub with:
-- Summary of changes from CHANGELOG
-- Test results summary
-- Any action items or known issues
+After generating the checklist, update the PR description on GitHub:
 
 ```bash
 gh pr edit [number] --body "$(cat <<'EOF'
@@ -234,6 +231,31 @@ gh pr edit [number] --body "$(cat <<'EOF'
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )"
+```
+
+**Also check if the related Epic issue needs updating**:
+- If this PR closes sprint work, update the Epic with completion status
+- If new issues were discovered/created during the sprint, link them to the Epic
+- Update Epic checklist items if applicable
+
+```bash
+# View Epic to check current state
+gh issue view [epic-number]
+
+# Update Epic with sprint completion notes if needed
+gh issue comment [epic-number] --body "Sprint [name] completed via PR #[number]. [any notes]"
+```
+
+### Step 9: Commit and Push
+
+After updating PR/Epic content, commit and push any local changes:
+
+```bash
+git status
+# If there are uncommitted changes (e.g., CHANGELOG date fixes, documentation updates)
+git add -A
+git commit -m "chore: Pre-merge updates"
+git push
 ```
 
 ## Flags

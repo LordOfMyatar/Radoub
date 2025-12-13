@@ -62,7 +62,7 @@ Check recent commits and GitHub issues for active priorities.
 
 ## UI & Logging Rules
 - always scrub user info from logs and UI  use ~ even for windows for user path.
-- Always be theme aware.  We do not want to overwrite user color preferences
+- Always be theme and preferences aware.  We do not want to overwrite user color preferences
 
 ### Path Handling (Privacy & Cross-Platform)
 **NEVER use hardcoded user paths** - Use `Environment.GetFolderPath()` with `Environment.SpecialFolder` constants:

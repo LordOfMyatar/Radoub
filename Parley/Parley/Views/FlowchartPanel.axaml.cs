@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -24,6 +25,11 @@ namespace DialogEditor.Views
         private const double MinZoom = 0.25;
         private const double MaxZoom = 3.0;
 
+        // Mouse panning state
+        private bool _isPanning;
+        private Point _panStartPoint;
+        private Vector _panStartOffset;
+
         /// <summary>
         /// Raised when a flowchart node is clicked.
         /// The FlowchartNode parameter contains the clicked node with context (IsLink, OriginalPointer, etc.)
@@ -47,8 +53,33 @@ namespace DialogEditor.Views
             // Hook up mouse wheel for zoom
             FlowchartScrollViewer.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
 
+            // Hook up mouse panning (middle button or Shift+left button)
+            FlowchartScrollViewer.AddHandler(PointerPressedEvent, OnScrollViewerPointerPressed, RoutingStrategies.Tunnel);
+            FlowchartScrollViewer.AddHandler(PointerMovedEvent, OnScrollViewerPointerMoved, RoutingStrategies.Tunnel);
+            FlowchartScrollViewer.AddHandler(PointerReleasedEvent, OnScrollViewerPointerReleased, RoutingStrategies.Tunnel);
+
             // Keyboard shortcuts when panel has focus
             KeyDown += OnKeyDown;
+
+            // Listen for settings changes to refresh colors (#340)
+            SettingsService.Instance.PropertyChanged += OnSettingsChanged;
+        }
+
+        private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // Refresh visual when NPC speaker preferences change
+            if (e.PropertyName == nameof(SettingsService.NpcSpeakerPreferences) ||
+                e.PropertyName == nameof(SettingsService.EnableNpcTagColoring))
+            {
+                // Ensure we're on the UI thread
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    // Force re-render by refreshing the Graph binding
+                    // This triggers DataTemplate re-evaluation with updated colors
+                    _viewModel.RefreshGraph();
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart colors refreshed due to {e.PropertyName} change");
+                });
+            }
         }
 
         #region Zoom Controls
@@ -71,6 +102,21 @@ namespace DialogEditor.Views
         private void OnZoomFitClick(object? sender, RoutedEventArgs e)
         {
             FitToWindow();
+        }
+
+        private void OnRefreshClick(object? sender, RoutedEventArgs e)
+        {
+            // Force complete visual refresh by toggling visibility
+            // This forces Avalonia to recreate the visual tree and re-evaluate all converters
+            FlowchartScrollViewer.IsVisible = false;
+            _viewModel.RefreshGraph();
+
+            // Re-show after a short delay to ensure the graph is rebuilt
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                FlowchartScrollViewer.IsVisible = true;
+                UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart manually refreshed with visual tree rebuild");
+            }, Avalonia.Threading.DispatcherPriority.Background);
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
@@ -113,8 +159,8 @@ namespace DialogEditor.Views
         {
             _currentZoom = Math.Clamp(zoom, MinZoom, MaxZoom);
 
-            // Apply scale transform to the graph panel
-            FlowchartGraphPanel.RenderTransform = new ScaleTransform(_currentZoom, _currentZoom);
+            // Apply scale transform via LayoutTransformControl (updates scrollbar extents)
+            ZoomContainer.LayoutTransform = new ScaleTransform(_currentZoom, _currentZoom);
 
             // Update zoom level display
             ZoomLevelText.Text = $"{(int)(_currentZoom * 100)}%";
@@ -124,7 +170,13 @@ namespace DialogEditor.Views
 
         private void FitToWindow()
         {
-            // Get the actual size of the graph panel content
+            // Reset to 1.0 first to get accurate unscaled bounds
+            ZoomContainer.LayoutTransform = new ScaleTransform(1.0, 1.0);
+
+            // Force layout update to get accurate measurements
+            ZoomContainer.UpdateLayout();
+
+            // Get the actual size of the graph panel content (unscaled)
             var graphBounds = FlowchartGraphPanel.Bounds;
             var scrollViewerBounds = FlowchartScrollViewer.Bounds;
 
@@ -141,6 +193,61 @@ namespace DialogEditor.Views
             var fitZoom = Math.Min(scaleX, scaleY) * 0.9; // 90% to leave some margin
 
             SetZoom(fitZoom);
+        }
+
+        #endregion
+
+        #region Mouse Panning
+
+        private void OnScrollViewerPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            var point = e.GetCurrentPoint(FlowchartScrollViewer);
+
+            // Start panning with middle button, or Shift+left button
+            bool shouldPan = point.Properties.IsMiddleButtonPressed ||
+                            (point.Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+
+            if (shouldPan)
+            {
+                _isPanning = true;
+                _panStartPoint = point.Position;
+                _panStartOffset = new Vector(FlowchartScrollViewer.Offset.X, FlowchartScrollViewer.Offset.Y);
+
+                // Capture the pointer for reliable tracking
+                e.Pointer.Capture(FlowchartScrollViewer);
+                e.Handled = true;
+
+                // Change cursor to indicate panning
+                FlowchartScrollViewer.Cursor = new Avalonia.Input.Cursor(StandardCursorType.SizeAll);
+            }
+        }
+
+        private void OnScrollViewerPointerMoved(object? sender, PointerEventArgs e)
+        {
+            if (!_isPanning) return;
+
+            var currentPoint = e.GetPosition(FlowchartScrollViewer);
+            var delta = _panStartPoint - currentPoint;
+
+            // Update scroll offset (inverted for natural panning feel)
+            FlowchartScrollViewer.Offset = new Vector(
+                _panStartOffset.X + delta.X,
+                _panStartOffset.Y + delta.Y
+            );
+
+            e.Handled = true;
+        }
+
+        private void OnScrollViewerPointerReleased(object? sender, PointerReleasedEventArgs e)
+        {
+            if (_isPanning)
+            {
+                _isPanning = false;
+                e.Pointer.Capture(null);
+                FlowchartScrollViewer.Cursor = null; // Reset cursor
+
+                e.Handled = true;
+            }
         }
 
         #endregion

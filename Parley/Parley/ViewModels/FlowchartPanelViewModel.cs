@@ -15,6 +15,7 @@ namespace DialogEditor.ViewModels
     {
         private readonly DialogToFlowchartConverter _converter = new();
         private FlowchartGraph? _flowchartGraph;
+        private Dialog? _sourceDialog; // Keep source for refresh (#340)
 
         [ObservableProperty]
         private Graph? _graph;
@@ -50,8 +51,12 @@ namespace DialogEditor.ViewModels
                 Graph = null;
                 StatusText = "No dialog loaded";
                 HasContent = false;
+                _sourceDialog = null;
                 return;
             }
+
+            // Store source for refresh (#340)
+            _sourceDialog = dialog;
 
             try
             {
@@ -86,6 +91,33 @@ namespace DialogEditor.ViewModels
         }
 
         /// <summary>
+        /// Forces a refresh of the graph to update visual styling (e.g., after settings change)
+        /// </summary>
+        public void RefreshGraph()
+        {
+            if (_sourceDialog == null)
+                return;
+
+            // Re-convert from source Dialog to get fresh FlowchartNode objects (#340)
+            // This forces Avalonia DataTemplates to re-evaluate converters with new colors
+            try
+            {
+                var flowchartGraph = _converter.Convert(_sourceDialog, FileName);
+                if (!flowchartGraph.IsEmpty)
+                {
+                    _flowchartGraph = flowchartGraph;
+                    Graph = null;
+                    Graph = FlowchartGraphAdapter.ToAvaloniaGraph(flowchartGraph);
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart fully rebuilt for color refresh");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogUI(LogLevel.ERROR, $"Flowchart refresh failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Clear the flowchart display
         /// </summary>
         public void Clear()
@@ -95,6 +127,7 @@ namespace DialogEditor.ViewModels
             HasContent = false;
             FileName = null;
             _flowchartGraph = null;
+            _sourceDialog = null;
             SelectedNodeId = null;
         }
 

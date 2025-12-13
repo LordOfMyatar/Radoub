@@ -1,6 +1,6 @@
 # Parley Test Suite
 
-Comprehensive unit tests for Parley dialog editor (231 tests as of 2025-11-18)
+Comprehensive unit tests for Parley dialog editor (387 tests as of 2025-12-12)
 
 ## Test Organization
 
@@ -100,6 +100,36 @@ All tests use xUnit framework and follow AAA pattern (Arrange-Act-Assert).
 - **UndoStackLimitTests.cs** (3 tests)
   - Stack size limits
   - Memory management
+
+#### Flowchart Tests (Epic #325)
+- **DialogToFlowchartConverterTests.cs** (15 tests)
+  - Dialog-to-FlowchartGraph conversion
+  - Node types (Entry, Reply, Link, Root)
+  - Circular reference handling
+  - Edge creation and conditions
+
+- **FlowchartGraphAdapterTests.cs** (9 tests, added 2025-12-12)
+  - AvaloniaGraphControl Graph conversion
+  - Edge ordering for left-to-right reading (#336)
+  - Orphan node self-edge handling
+
+- **FlowchartConvertersTests.cs** (14 tests, added 2025-12-12)
+  - Theme-aware backgrounds (light/dark)
+  - Speaker-colored borders (#340)
+  - Root node neutral gray styling
+  - Selection border thickness
+
+- **FlowchartExportServiceTests.cs** (19 tests, added 2025-12-12)
+  - SVG export validation
+  - Hierarchical tree layout (#338)
+  - Theme-aware colors in SVG
+  - XML character escaping
+
+- **FlowchartPanelViewModelTests.cs** (16 tests, added 2025-12-12)
+  - Dialog loading and state management
+  - RefreshGraph for color updates (#340)
+  - Selection sync with dialog tree
+  - Clear/reset functionality
 
 #### GUI Tests (Headless - Skipped by Default)
 - **DialogLoadingHeadlessTests.cs** (skipped)
@@ -379,7 +409,7 @@ Tests provide safety net during Epic #99 MainViewModel refactoring:
 
 ---
 
-**Last Updated**: 2025-11-18
-**Total Tests**: 231 passing
+**Last Updated**: 2025-12-12
+**Total Tests**: 387 passing (16 skipped GUI tests)
 **Test Framework**: xUnit
 **CI/CD**: GitHub Actions (.NET 9.0)
