@@ -269,6 +269,84 @@ Common label patterns:
 - `parley`, `Parley`, `tool:parley` → Tool detection
 - `radoub`, `Radoub`, `tool:radoub` → Tool detection
 
+## GitHub Project Integration
+
+**Only add Sprints and Epics to projects** - individual features/fixes don't go on project boards unless explicitly requested.
+
+### When to Add to Project
+
+| Item Type | Add to Project? |
+|-----------|-----------------|
+| Epic | ✅ Yes |
+| Sprint | ✅ Yes |
+| Feature | ❌ No (unless solo work requested) |
+| Fix | ❌ No (unless solo work requested) |
+
+### Project Selection (for Sprints/Epics only)
+
+| Label/Title | Project | Number |
+|-------------|---------|--------|
+| `parley` or `[Parley]` | Parley | 2 |
+| `radoub` or `[Radoub]` | Radoub | 3 |
+
+### Add Sprint/Epic to Project and Set In Progress
+
+After Step 9 (Create Draft PR), **only for sprints and epics**:
+
+```bash
+# Add to appropriate project (returns item ID)
+# For Parley sprints/epics:
+ITEM_JSON=$(gh project item-add 2 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
+ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
+
+# For Radoub sprints/epics:
+ITEM_JSON=$(gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
+ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
+
+# Set status to "In Progress"
+# For Parley project (2):
+gh project item-edit \
+  --id "$ITEM_ID" \
+  --project-id PVT_kwHOAotjYs4BHFCR \
+  --field-id PVTSSF_lAHOAotjYs4BHFCRzg37-KA \
+  --single-select-option-id 47fc9ee4
+
+# For Radoub project (3):
+gh project item-edit \
+  --id "$ITEM_ID" \
+  --project-id PVT_kwHOAotjYs4BHbMq \
+  --field-id PVTSSF_lAHOAotjYs4BHbMqzg4Lxyk \
+  --single-select-option-id 47fc9ee4
+```
+
+### Updated Summary Output
+
+For **Sprints/Epics**, include project status:
+
+```markdown
+## [Type] Branch Initialized
+
+**Branch**: [branch-name]
+**PR**: #[pr-number] (draft)
+**Issue**: #[issue-number]
+**Project**: [Project Name] - Status: In Progress
+
+### Next Steps
+...
+```
+
+For **Features/Fixes**, omit project line (not added to board).
+
+### Prerequisites
+
+Ensure `project` scope is available:
+```bash
+gh auth status  # Check for 'project' scope
+gh auth refresh -s project  # Add if missing
+```
+
+See `.claude/github-projects-reference.md` for project IDs and field details.
+
 ## Notes
 
 - Always use draft PRs initially

@@ -13,6 +13,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.4] - 2025-12-13
+**Branch**: `radoub/feat/github-projects-sync` | **PR**: #366
+
+### Enhancement: GitHub Projects CLI Integration (#360)
+
+Integrate GitHub Projects with Claude Code slash commands for automatic project board updates.
+
+#### Added
+- `/grooming` - Add groomed issues to appropriate project board
+- `/sprint-planning` - Add sprint issues to project and mark in-progress
+- `/init-item` - Add issue to project when branch initialized, mark in-progress
+- `.claude/github-projects-reference.md` - Quick reference for project IDs and field details
+- Documentation for GitHub CLI project scope (`gh auth refresh -s project`)
+
+---
+
 ## [0.5.3] - 2025-12-13
 **Branch**: `radoub/feat/sprint-issue-creation` | **PR**: #361
 

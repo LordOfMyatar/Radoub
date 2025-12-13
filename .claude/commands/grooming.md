@@ -279,6 +279,67 @@ Apply recommendations? [y/n/manual]
 - `theme` - Visual styling
 - `aurora-compatibility` - Aurora Toolset compat
 
+## GitHub Project Integration
+
+**Only add Sprints and Epics to projects** - individual features/fixes don't go on project boards.
+
+### When to Add to Project
+
+| Issue Type | Add to Project? |
+|------------|-----------------|
+| Epic (`epic` label) | ✅ Yes |
+| Sprint (`sprint` label) | ✅ Yes |
+| Bug/Enhancement/Feature | ❌ No |
+
+### Project Selection (for Sprints/Epics only)
+
+| Label/Title | Project | Number |
+|-------------|---------|--------|
+| `parley` or `[Parley]` | Parley | 2 |
+| `radoub` or `[Radoub]` | Radoub | 3 |
+
+### Add Sprint/Epic to Project
+
+```bash
+# Add to Parley project (if parley label)
+gh project item-add 2 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
+
+# Add to Radoub project (if radoub label)
+gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
+```
+
+### After Adding to Project
+
+Report to user:
+```
+✅ Added #[number] to [Project Name] project
+   URL: https://github.com/users/LordOfMyatar/projects/[N]
+```
+
+### Batch Grooming Project Updates
+
+When grooming multiple issues, only track sprints/epics added:
+
+```markdown
+## Project Board Updates
+
+| Issue | Type | Project | Status |
+|-------|------|---------|--------|
+| #123 | Sprint | Parley | ✅ Added |
+| #456 | Epic | Radoub | ✅ Added |
+| #789 | Bug | - | (not added - individual issue) |
+```
+
+### Prerequisites
+
+Ensure `project` scope is available:
+```bash
+gh auth status  # Check for 'project' scope
+gh auth refresh -s project  # Add if missing
+```
+
+See `.claude/github-projects-reference.md` for project IDs and field details.
+
 ## Notes
 
 - Always ask before making changes in batch mode
