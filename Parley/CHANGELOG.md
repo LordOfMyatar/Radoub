@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.62-alpha] - 2025-12-13
+**Branch**: `parley/sprint/theme-polish-menu` | **PR**: #TBD
+
+### Sprint: Theme Polish & Menu Cleanup (#363)
+
+Theme system polish, menu organization, and UI improvements.
+
+#### Work Items
+- [ ] #176 - Theme colors: Warm NPC / Cool PC consistency
+- [ ] #177 - Theme backgrounds: Darker gray for light text visibility
+- [ ] #334 - Revisit menu options - checkboxes and content optimization
+- [ ] #197 - Convert 'Copy Tree Text' to use screenplay format
+
+---
+
 ## [0.1.61-alpha] - 2025-12-13
 **Branch**: `parley/sprint/bug-squash-scrap-save` | **PR**: #365
 
