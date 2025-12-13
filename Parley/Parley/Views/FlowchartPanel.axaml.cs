@@ -71,10 +71,14 @@ namespace DialogEditor.Views
             if (e.PropertyName == nameof(SettingsService.NpcSpeakerPreferences) ||
                 e.PropertyName == nameof(SettingsService.EnableNpcTagColoring))
             {
-                // Force re-render by refreshing the Graph binding
-                // This triggers DataTemplate re-evaluation with updated colors
-                _viewModel.RefreshGraph();
-                UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart colors refreshed due to settings change");
+                // Ensure we're on the UI thread
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    // Force re-render by refreshing the Graph binding
+                    // This triggers DataTemplate re-evaluation with updated colors
+                    _viewModel.RefreshGraph();
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart colors refreshed due to {e.PropertyName} change");
+                });
             }
         }
 
