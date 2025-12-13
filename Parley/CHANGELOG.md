@@ -13,27 +13,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.55-alpha] - 2025-12-12
 **Branch**: `parley/refactor/safe-control-finder` | **PR**: #348
 
-### Refactor: Extract SafeControlFinder utility class (#342)
+### Refactor: MainWindow Tech Debt Sprint (#342, #343)
 
-Part of MainWindow refactoring initiative (Option A sprint).
+Option A sprint: MainWindow cleanup initiative.
 
-#### Added
+#### Added - SafeControlFinder (#342)
 - `SafeControlFinder` utility class for null-safe control access patterns
 - Fluent API: `WithControl<T>()`, `WithControls<T1,T2>()` (up to 4 controls)
 - Shorthand helpers: `SetText()`, `GetText()`, `SetChecked()`, `SetEnabled()`, `SetVisible()`
 - Optional control caching for frequently-accessed controls
 - 22 new unit tests for SafeControlFinder
 
+#### Added - WindowLifecycleManager (#343)
+- `WindowLifecycleManager` class for centralized window tracking
+- Fluent API: `GetOrCreate<T>()`, `ShowOrActivate<T>()`, `WithWindow<T>()`
+- Automatic Closed event handling and reference cleanup
+- `WindowKeys` constants for well-known windows
+- 15 new unit tests for WindowLifecycleManager
+
 #### Changed
 - MainWindow now uses `_controls` SafeControlFinder instance
+- MainWindow now uses `_windows` WindowLifecycleManager for Settings and Flowchart windows
 - Refactored `SaveCurrentNodeProperties()` to use fluent API (12 controls → cleaner lambdas)
-- Refactored flowchart layout methods (`ShowSideBySideFlowchart`, `ShowTabbedFlowchart`, `HideSideBySideFlowchart`, `HideTabbedFlowchart`)
-- Reduced FindControl calls from 109 → 87 (22 fewer null-check patterns)
+- Refactored flowchart layout methods to use SafeControlFinder
+- Refactored Settings window handlers to use WindowLifecycleManager
+- Reduced window field declarations from 5 to 2 (browser windows retained due to complex result handling)
+- Reduced FindControl calls from 109 → 87
 
 #### Technical
 - SafeControlFinder handles Avalonia's type mismatch exceptions gracefully
+- WindowLifecycleManager supports custom onClosed callbacks for theme reloading
 - Pattern enables coordinated multi-control updates with single null check
-- Foundation for future MainWindow refactoring (remaining 87 calls can be migrated incrementally)
+- 37 new tests total (22 + 15)
 
 ---
 

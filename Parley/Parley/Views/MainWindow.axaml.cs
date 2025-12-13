@@ -40,6 +40,7 @@ namespace DialogEditor.Views
         private readonly WindowPersistenceManager _windowPersistenceManager; // Manages window and panel persistence
         private readonly PluginSelectionSyncHelper _pluginSelectionSyncHelper; // Handles plugin ↔ tree selection sync (#234)
         private readonly SafeControlFinder _controls; // Issue #342: Safe control access with null-check elimination
+        private readonly WindowLifecycleManager _windows; // Issue #343: Centralized window lifecycle management
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -47,16 +48,10 @@ namespace DialogEditor.Views
         // Flag to prevent auto-save during programmatic updates
         private bool _isPopulatingProperties = false;
 
-        // Track active Settings window to close it when MainWindow closes (Issue #134)
-        private SettingsWindow? _activeSettingsWindow;
-
-        // Track active browser windows to close them when MainWindow closes (Issue #20)
+        // Track active browser windows - kept separate from WindowLifecycleManager due to complex result handling
+        // These windows have specific callback patterns that require local state tracking
         private ParameterBrowserWindow? _activeParameterBrowserWindow;
         private ScriptBrowserWindow? _activeScriptBrowserWindow;
-        private SoundBrowserWindow? _activeSoundBrowserWindow;
-
-        // Track native flowchart window (Epic #325)
-        private FlowchartWindow? _activeFlowchartWindow;
         private bool _embeddedFlowchartWired = false;
         private bool _tabbedFlowchartWired = false;
 
@@ -75,6 +70,9 @@ namespace DialogEditor.Views
 
             // Issue #342: Initialize SafeControlFinder for cleaner control access
             _controls = new SafeControlFinder(this);
+
+            // Issue #343: Initialize WindowLifecycleManager for centralized window tracking
+            _windows = new WindowLifecycleManager();
 
             // Initialize selected tree node to null (no selection on startup)
             _viewModel.SelectedTreeNode = null;
@@ -434,38 +432,12 @@ namespace DialogEditor.Views
             _autoSaveTimer?.Dispose();
             _audioService.Dispose();
 
-            // Close Settings window if open (Issue #134)
-            if (_activeSettingsWindow != null)
-            {
-                _activeSettingsWindow.Close();
-                _activeSettingsWindow = null;
-            }
+            // Issue #343: Close all managed windows (Settings, Flowchart)
+            _windows.CloseAll();
 
-            // Close Flowchart window if open (#327)
-            if (_activeFlowchartWindow != null)
-            {
-                _activeFlowchartWindow.Close();
-                _activeFlowchartWindow = null;
-            }
-
-            // Close browser windows if open (Issue #20)
-            if (_activeParameterBrowserWindow != null)
-            {
-                _activeParameterBrowserWindow.Close();
-                _activeParameterBrowserWindow = null;
-            }
-
-            if (_activeScriptBrowserWindow != null)
-            {
-                _activeScriptBrowserWindow.Close();
-                _activeScriptBrowserWindow = null;
-            }
-
-            if (_activeSoundBrowserWindow != null)
-            {
-                _activeSoundBrowserWindow.Close();
-                _activeSoundBrowserWindow = null;
-            }
+            // Close browser windows (kept separate due to complex result handling)
+            _activeParameterBrowserWindow?.Close();
+            _activeScriptBrowserWindow?.Close();
 
             // Close plugin panel windows (Epic 3 / #225)
             _pluginPanelManager.Dispose();
@@ -1118,22 +1090,18 @@ namespace DialogEditor.Views
         {
             try
             {
-                // Create or activate flowchart window
-                if (_activeFlowchartWindow == null || !_activeFlowchartWindow.IsVisible)
-                {
-                    _activeFlowchartWindow = new FlowchartWindow();
-                    _activeFlowchartWindow.Closed += (s, args) => _activeFlowchartWindow = null;
-
-                    // Subscribe to node click events for tree selection sync
-                    _activeFlowchartWindow.NodeClicked += OnFlowchartNodeClicked;
-                }
+                // Issue #343: Use WindowLifecycleManager for flowchart window
+                var flowchart = _windows.ShowOrActivate(
+                    WindowKeys.Flowchart,
+                    () =>
+                    {
+                        var w = new FlowchartWindow();
+                        w.NodeClicked += OnFlowchartNodeClicked;
+                        return w;
+                    });
 
                 // Update with current dialog
-                _activeFlowchartWindow.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-
-                // Show and activate
-                _activeFlowchartWindow.Show();
-                _activeFlowchartWindow.Activate();
+                flowchart.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
 
                 _viewModel.StatusMessage = "Flowchart view opened";
             }
@@ -1178,11 +1146,10 @@ namespace DialogEditor.Views
         {
             var layout = SettingsService.Instance.FlowchartLayout;
 
-            // Close existing floating window if switching to embedded mode
-            if (layout != "Floating" && _activeFlowchartWindow != null)
+            // Issue #343: Close existing floating window if switching to embedded mode
+            if (layout != "Floating")
             {
-                _activeFlowchartWindow.Close();
-                _activeFlowchartWindow = null;
+                _windows.Close(WindowKeys.Flowchart);
             }
 
             // Apply layout based on setting
@@ -1382,7 +1349,8 @@ namespace DialogEditor.Views
 
             // For Floating mode or if embedded panels don't have content,
             // check if we can use the floating window
-            if (_activeFlowchartWindow?.IsVisible == true)
+            // Issue #343: Use WindowLifecycleManager
+            if (_windows.IsOpen(WindowKeys.Flowchart))
             {
                 // FlowchartWindow doesn't expose FlowchartPanel directly, so we need to update it
                 // For now, just return the embedded panel if it has content
@@ -1686,26 +1654,22 @@ namespace DialogEditor.Views
         }
 
         // Settings handlers
+        // Issue #343: Common callback for Settings window close
+        private void OnSettingsWindowClosed(SettingsWindow _)
+        {
+            ApplySavedTheme();
+            _viewModel.StatusMessage = "Settings updated";
+        }
+
         private void OnPreferencesClick(object? sender, RoutedEventArgs e)
         {
             try
             {
-                // If Settings window already open, just bring it to front (Issue #134)
-                if (_activeSettingsWindow != null)
-                {
-                    _activeSettingsWindow.Activate();
-                    return;
-                }
-
-                _activeSettingsWindow = new SettingsWindow(pluginManager: _pluginManager);
-                _activeSettingsWindow.Closed += (s, args) =>
-                {
-                    // Reload theme when settings window closes
-                    ApplySavedTheme();
-                    _viewModel.StatusMessage = "Settings updated";
-                    _activeSettingsWindow = null; // Clear reference (Issue #134)
-                };
-                _activeSettingsWindow.Show();
+                // Issue #343: Use WindowLifecycleManager for Settings window
+                _windows.ShowOrActivate(
+                    WindowKeys.Settings,
+                    () => new SettingsWindow(pluginManager: _pluginManager),
+                    OnSettingsWindowClosed);
             }
             catch (Exception ex)
             {
@@ -1718,24 +1682,18 @@ namespace DialogEditor.Views
         {
             try
             {
-                // If Settings window already open, switch to Resource Paths tab and bring to front (Issue #134)
-                if (_activeSettingsWindow != null)
+                // Issue #343: Use WindowLifecycleManager - if open, just activate
+                if (_windows.IsOpen(WindowKeys.Settings))
                 {
-                    _activeSettingsWindow.Activate();
-                    // Switch to Resource Paths tab (tab 0) - requires public method in SettingsWindow
-                    // For now just activate - user can navigate manually
+                    _windows.WithWindow<SettingsWindow>(WindowKeys.Settings, w => w.Activate());
                     return;
                 }
 
                 // Open preferences with Resource Paths tab selected (tab 0)
-                _activeSettingsWindow = new SettingsWindow(initialTab: 0, pluginManager: _pluginManager);
-                _activeSettingsWindow.Closed += (s, args) =>
-                {
-                    ApplySavedTheme();
-                    _viewModel.StatusMessage = "Settings updated";
-                    _activeSettingsWindow = null; // Clear reference (Issue #134)
-                };
-                _activeSettingsWindow.Show();
+                _windows.ShowOrActivate(
+                    WindowKeys.Settings,
+                    () => new SettingsWindow(initialTab: 0, pluginManager: _pluginManager),
+                    OnSettingsWindowClosed);
             }
             catch (Exception ex)
             {
@@ -1748,24 +1706,18 @@ namespace DialogEditor.Views
         {
             try
             {
-                // If Settings window already open, switch to Logging tab and bring to front (Issue #134)
-                if (_activeSettingsWindow != null)
+                // Issue #343: Use WindowLifecycleManager - if open, just activate
+                if (_windows.IsOpen(WindowKeys.Settings))
                 {
-                    _activeSettingsWindow.Activate();
-                    // Switch to Logging tab (tab 2) - requires public method in SettingsWindow
-                    // For now just activate - user can navigate manually
+                    _windows.WithWindow<SettingsWindow>(WindowKeys.Settings, w => w.Activate());
                     return;
                 }
 
                 // Open preferences with Logging tab selected (tab 2)
-                _activeSettingsWindow = new SettingsWindow(initialTab: 2, pluginManager: _pluginManager);
-                _activeSettingsWindow.Closed += (s, args) =>
-                {
-                    ApplySavedTheme();
-                    _viewModel.StatusMessage = "Settings updated";
-                    _activeSettingsWindow = null; // Clear reference (Issue #134)
-                };
-                _activeSettingsWindow.Show();
+                _windows.ShowOrActivate(
+                    WindowKeys.Settings,
+                    () => new SettingsWindow(initialTab: 2, pluginManager: _pluginManager),
+                    OnSettingsWindowClosed);
             }
             catch (Exception ex)
             {
@@ -1909,11 +1861,8 @@ namespace DialogEditor.Views
             _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode();
 
             // Sync selection to flowchart (Epic #325 Sprint 3 - bidirectional sync)
-            // Floating window
-            if (_activeFlowchartWindow != null && _activeFlowchartWindow.IsVisible)
-            {
-                _activeFlowchartWindow.SelectNode(_selectedNode?.OriginalNode);
-            }
+            // Issue #343: Use WindowLifecycleManager for floating window
+            _windows.WithWindow<FlowchartWindow>(WindowKeys.Flowchart, w => w.SelectNode(_selectedNode?.OriginalNode));
             // Embedded panel (side-by-side mode)
             var embeddedBorder = this.FindControl<Border>("EmbeddedFlowchartBorder");
             var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
