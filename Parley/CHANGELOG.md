@@ -10,6 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.59-alpha] - 2025-12-13
+**Branch**: `parley/feat/custom-title-bar` | **PR**: #TBD
+
+### Feat: Theme-aware Custom Title Bar (#139)
+
+---
+
 ## [0.1.58-alpha] - 2025-12-13
 **Branch**: `parley/fix/dialog-nodes-refresh` | **PR**: #351
 
