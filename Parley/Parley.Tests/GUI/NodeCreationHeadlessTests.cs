@@ -1,5 +1,6 @@
 using Avalonia.Headless.XUnit;
 using DialogEditor.Models;
+using DialogEditor.Utils;
 using DialogEditor.ViewModels;
 using Xunit;
 
@@ -8,9 +9,24 @@ namespace Parley.Tests.GUI
     /// <summary>
     /// Avalonia.Headless tests for node creation workflows (Issue #81 Phase 1)
     /// Tests AddSmartNode, AddEntryNode, AddPCReplyNode operations
+    /// Note: DialogNodes[0] is ROOT node; actual entries are in DialogNodes[0].Children
     /// </summary>
     public class NodeCreationHeadlessTests
     {
+        // Helper to get first entry node (ROOT's first child)
+        private static TreeViewSafeNode? GetFirstEntryNode(MainViewModel viewModel)
+        {
+            var rootNode = viewModel.DialogNodes[0] as TreeViewRootNode;
+            return rootNode?.Children?.Count > 0 ? rootNode.Children[0] : null;
+        }
+
+        // Helper to get entry node at index (from ROOT's children)
+        private static TreeViewSafeNode? GetEntryNodeAt(MainViewModel viewModel, int index)
+        {
+            var rootNode = viewModel.DialogNodes[0] as TreeViewRootNode;
+            return rootNode?.Children?.Count > index ? rootNode.Children[index] : null;
+        }
+
         [AvaloniaFact]
         public void AddEntryNode_ToRoot_CreatesEntryInDialog()
         {
@@ -27,7 +43,7 @@ namespace Parley.Tests.GUI
             Assert.Single(viewModel.CurrentDialog.Starts);
         }
 
-        [AvaloniaFact(Skip = "Requires DialogNodes tree rebuild trigger - see Issue #130")]
+        [AvaloniaFact]
         public void AddEntryNode_UpdatesDialogNodesCollection()
         {
             // Arrange
@@ -43,7 +59,7 @@ namespace Parley.Tests.GUI
             Assert.True(viewModel.DialogNodes.Count > initialCount);
         }
 
-        [AvaloniaFact(Skip = "Requires DialogNodes tree rebuild trigger - see Issue #130")]
+        [AvaloniaFact]
         public void AddPCReplyNode_ToEntry_CreatesReplyInDialog()
         {
             // Arrange
@@ -51,7 +67,8 @@ namespace Parley.Tests.GUI
             viewModel.NewDialog();
             viewModel.AddEntryNode(null);
 
-            var entryNode = viewModel.DialogNodes[0]; // First node should be entry
+            var entryNode = GetFirstEntryNode(viewModel);
+            Assert.NotNull(entryNode);
 
             // Act: Add PC Reply under entry
             viewModel.AddPCReplyNode(entryNode);
@@ -81,7 +98,7 @@ namespace Parley.Tests.GUI
             Assert.NotEmpty(viewModel.CurrentDialog.Entries);
         }
 
-        [AvaloniaFact(Skip = "Requires DialogNodes tree rebuild trigger - see Issue #130")]
+        [AvaloniaFact]
         public void AddSmartNode_UnderEntry_CreatesReply()
         {
             // Arrange
@@ -89,7 +106,8 @@ namespace Parley.Tests.GUI
             viewModel.NewDialog();
             viewModel.AddEntryNode(null);
 
-            var entryNode = viewModel.DialogNodes[0];
+            var entryNode = GetFirstEntryNode(viewModel);
+            Assert.NotNull(entryNode);
 
             // Act: AddSmartNode under entry
             viewModel.AddSmartNode(entryNode);
@@ -99,7 +117,7 @@ namespace Parley.Tests.GUI
             Assert.NotEmpty(viewModel.CurrentDialog.Replies);
         }
 
-        [AvaloniaFact(Skip = "Requires DialogNodes tree rebuild trigger - see Issue #130")]
+        [AvaloniaFact]
         public void AddSmartNode_UnderReply_CreatesEntry()
         {
             // Arrange
@@ -107,13 +125,19 @@ namespace Parley.Tests.GUI
             viewModel.NewDialog();
             viewModel.AddEntryNode(null);
 
-            var entryNode = viewModel.DialogNodes[0];
+            var entryNode = GetFirstEntryNode(viewModel);
+            Assert.NotNull(entryNode);
             viewModel.AddPCReplyNode(entryNode);
 
-            // Find reply node in tree
+            // Find reply node in tree (need to re-get entryNode after tree refresh)
+            entryNode = GetFirstEntryNode(viewModel);
+            Assert.NotNull(entryNode);
+            // LAZY LOADING: Must expand node to populate children
+            entryNode.IsExpanded = true;
             Assert.NotNull(entryNode.Children);
             Assert.NotEmpty(entryNode.Children);
             var replyNode = entryNode.Children[0];
+            Assert.IsNotType<TreeViewPlaceholderNode>(replyNode); // Verify not a placeholder
 
             // Act: AddSmartNode under reply
             viewModel.AddSmartNode(replyNode);
