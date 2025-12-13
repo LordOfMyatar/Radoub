@@ -210,8 +210,9 @@ namespace DialogEditor.Views
             _windowPersistenceManager.RestoreDebugSettings();
             _windowPersistenceManager.RestorePanelSizes();
 
-            // Initialize flowchart layout menu state
+            // Initialize menu checkmark states
             UpdateFlowchartLayoutMenuChecks();
+            UpdateFontSizeMenuChecks();
 
             // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
             InitializeSpeakerVisualComboBoxes();
@@ -1161,9 +1162,23 @@ namespace DialogEditor.Views
                 if (double.TryParse(sizeStr, out double fontSize))
                 {
                     SettingsService.Instance.FontSize = fontSize;
+                    UpdateFontSizeMenuChecks();
                     _viewModel.StatusMessage = $"Font size changed to {fontSize}pt";
                     // Global application now handled via App.xaml styles and App.ApplyFontSize()
                 }
+            }
+        }
+
+        private void UpdateFontSizeMenuChecks()
+        {
+            var currentSize = (int)SettingsService.Instance.FontSize;
+            var sizes = new[] { 10, 12, 14, 16, 18, 20, 24 };
+
+            foreach (var size in sizes)
+            {
+                var menuItem = this.FindControl<MenuItem>($"FontSize{size}");
+                if (menuItem != null)
+                    menuItem.Icon = size == currentSize ? new TextBlock { Text = "✓" } : null;
             }
         }
 

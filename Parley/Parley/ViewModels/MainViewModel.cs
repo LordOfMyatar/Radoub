@@ -1556,7 +1556,8 @@ namespace DialogEditor.ViewModels
             if (CurrentDialog == null)
                 return null;
 
-            return CaptureTreeStructure();
+            // Issue #197: Use screenplay format for cleaner, more readable output
+            return CommandLineService.GenerateScreenplay(CurrentDialog, CurrentFileName);
         }
 
         /// <summary>

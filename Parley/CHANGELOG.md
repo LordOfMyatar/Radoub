@@ -17,11 +17,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Theme system polish, menu organization, and UI improvements.
 
-#### Work Items
-- [ ] #176 - Theme colors: Warm NPC / Cool PC consistency
-- [ ] #177 - Theme backgrounds: Darker gray for light text visibility
-- [ ] #334 - Revisit menu options - checkboxes and content optimization
-- [ ] #197 - Convert 'Copy Tree Text' to use screenplay format
+#### Fixed
+- **#176 - Theme colors consistency**: Swapped NPC/PC colors in Deuteranopia and Protanopia themes
+  - All colorblind themes now use warm colors (orange) for NPC, cool colors (blue) for PC
+  - Tritanopia already correct, no changes needed
+- **#177 - Theme contrast improvements**: Darkened colors in colorblind themes for WCAG AA compliance
+  - Orange tones: `#FF8800`/`#FF9944` → `#B35900` (4.6:1 contrast vs background)
+  - Cyan tones: `#0099CC`/`#0088CC` → `#007799`/`#006699` (4.7:1+ contrast)
+  - Warning/success colors updated for readability
+  - All tree and speaker colors now meet WCAG AA 4.5:1 minimum
+- **#334 - Menu checkmark consistency**: Added checkmarks to Font Size menu
+  - Font Size menu now shows ✓ next to current selection (consistent with Flowchart Layout menu)
+  - Both menus initialize checkmarks correctly on window load
+- **#197 - Copy Tree Structure uses screenplay format**: Refactored to reuse CLI screenplay generator
+  - `SPEAKER: text` format with indentation for conversation flow
+  - Shows NPC speaker tags when available, defaults to "NPC" or "PC"
+  - Shared logic via `CommandLineService.GenerateScreenplay()`
 
 ---
 
