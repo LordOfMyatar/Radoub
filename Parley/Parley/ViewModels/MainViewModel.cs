@@ -726,14 +726,52 @@ namespace DialogEditor.ViewModels
         }
 
         // Node creation methods - Phase 1 Step 4
+        // Refactored in #344 to use AddNodeWithUndoAndRefresh template method
 
         /// <summary>
-        /// Smart Add Node - Context-aware node creation (Phase 2)
-        /// Parent determines child type:
-        /// - Root → Entry (NPC speech)
-        /// - Entry → Reply (PC response)
-        /// - Reply → Entry (NPC response)
+        /// Template method for node creation operations.
+        /// Handles undo state, node creation, tree refresh, and status update.
+        /// Reduces duplication across AddSmartNode, AddEntryNode, AddPCReplyNode (#344).
         /// </summary>
+        private DialogNode AddNodeWithUndoAndRefresh(
+            string undoDescription,
+            TreeViewSafeNode? selectedNode,
+            Func<DialogNode?, DialogPtr?, DialogNode> createNode,
+            string successMessage)
+        {
+            if (CurrentDialog == null)
+                throw new InvalidOperationException("No dialog loaded");
+
+            // Save undo state
+            SaveUndoState(undoDescription);
+
+            // Extract parent node and pointer from TreeViewSafeNode
+            DialogNode? parentNode = null;
+            DialogPtr? parentPtr = null;
+
+            if (selectedNode != null && !(selectedNode is TreeViewRootNode))
+            {
+                parentNode = selectedNode.OriginalNode;
+                // Expand parent in tree view
+                selectedNode.IsExpanded = true;
+            }
+
+            // Create node via delegate
+            var newNode = createNode(parentNode, parentPtr);
+
+            // Focus on the newly created node after tree refresh
+            NodeToSelectAfterRefresh = newNode;
+
+            // Refresh the tree
+            RefreshTreeView();
+
+            // Update UI state
+            HasUnsavedChanges = true;
+            StatusMessage = successMessage;
+
+            return newNode;
+        }
+
         /// <summary>
         /// Saves current state to undo stack before making changes.
         /// Issue #74: Made public to allow view to save state before property edits.
@@ -852,71 +890,32 @@ namespace DialogEditor.ViewModels
         {
             if (CurrentDialog == null) return;
 
-            // Save state for undo
-            SaveUndoState("Add Smart Node");
+            // Use template method to reduce duplication (#344)
+            var newNode = AddNodeWithUndoAndRefresh(
+                "Add Smart Node",
+                selectedNode,
+                (parent, ptr) => _nodeOpsManager.AddSmartNode(CurrentDialog!, parent, ptr),
+                ""); // Status message set below based on node type
 
-            // Get the parent node and pointer
-            DialogNode? parentNode = null;
-            DialogPtr? parentPtr = null;
-
-            if (selectedNode != null && !(selectedNode is TreeViewRootNode))
-            {
-                parentNode = selectedNode.OriginalNode;
-                // Note: parentPtr would be needed if we're adding under a link, but for now passing null
-            }
-
-            // Delegate to NodeOperationsManager
-            var newNode = _nodeOpsManager.AddSmartNode(CurrentDialog, parentNode, parentPtr);
-
-            // Focus on the newly created node after tree refresh
-            NodeToSelectAfterRefresh = newNode;
-
-            // Refresh the tree
-            RefreshTreeView();
-
-            // Update status message
             StatusMessage = $"Added new {newNode.Type} node";
-            HasUnsavedChanges = true;
         }
 
         public void AddEntryNode(TreeViewSafeNode? parentNode = null)
         {
             if (CurrentDialog == null) return;
 
-            // Save state for undo
-            SaveUndoState("Add Entry Node");
+            // Determine status message based on parent
+            bool isRoot = parentNode == null || parentNode is TreeViewRootNode;
+            string statusMsg = isRoot
+                ? "Added new Entry node at root level"
+                : "Added new Entry node after Reply";
 
-            // Get the parent dialog node
-            DialogNode? parentDialogNode = null;
-            DialogPtr? parentPtr = null;
-
-            if (parentNode != null && !(parentNode is TreeViewRootNode))
-            {
-                parentDialogNode = parentNode.OriginalNode;
-                // Expand parent in tree view
-                parentNode.IsExpanded = true;
-            }
-
-            // Delegate to NodeOperationsManager
-            var newEntry = _nodeOpsManager.AddEntryNode(CurrentDialog, parentDialogNode, parentPtr);
-
-            // Focus on the newly created node after tree refresh
-            NodeToSelectAfterRefresh = newEntry;
-
-            // Refresh tree display
-            RefreshTreeView();
-
-            // Update status message
-            if (parentDialogNode == null)
-            {
-                StatusMessage = "Added new Entry node at root level";
-            }
-            else
-            {
-                StatusMessage = "Added new Entry node after Reply";
-            }
-
-            HasUnsavedChanges = true;
+            // Use template method to reduce duplication (#344)
+            AddNodeWithUndoAndRefresh(
+                "Add Entry Node",
+                parentNode,
+                (parent, ptr) => _nodeOpsManager.AddEntryNode(CurrentDialog!, parent, ptr),
+                statusMsg);
         }
 
         // Phase 1 Bug Fix: Removed AddNPCReplyNode - "NPC Reply" is actually Entry node after PC Reply
@@ -924,28 +923,14 @@ namespace DialogEditor.ViewModels
         public void AddPCReplyNode(TreeViewSafeNode parent)
         {
             if (CurrentDialog == null || parent == null) return;
+            if (parent.OriginalNode == null) return;
 
-            // Save state for undo
-            SaveUndoState("Add PC Reply");
-
-            // Get the parent dialog node
-            var parentDialogNode = parent.OriginalNode;
-            if (parentDialogNode == null) return;
-
-            // Delegate to NodeOperationsManager
-            var newReply = _nodeOpsManager.AddPCReplyNode(CurrentDialog, parentDialogNode, null);
-
-            // Focus on the newly created node after tree refresh
-            NodeToSelectAfterRefresh = newReply;
-
-            // Auto-expand parent node before refresh
-            parent.IsExpanded = true;
-
-            // Refresh tree display
-            RefreshTreeView();
-
-            HasUnsavedChanges = true;
-            StatusMessage = "Added new PC Reply node";
+            // Use template method to reduce duplication (#344)
+            AddNodeWithUndoAndRefresh(
+                "Add PC Reply",
+                parent,
+                (parentNode, ptr) => _nodeOpsManager.AddPCReplyNode(CurrentDialog!, parentNode!, ptr),
+                "Added new PC Reply node");
         }
 
         public void DeleteNode(TreeViewSafeNode nodeToDelete)

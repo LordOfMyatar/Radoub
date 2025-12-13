@@ -668,86 +668,10 @@ namespace DialogEditor.Views
 
         private void OnAutoDetectBaseGamePathClick(object? sender, RoutedEventArgs e)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-detect Base Game Installation clicked");
-
-            // Try to detect Steam/GOG installation
-            var possiblePaths = new List<string>();
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                // Try common Steam locations
-                var steamPaths = new[]
-                {
-                    @"C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights",
-                    @"C:\Program Files\Steam\steamapps\common\Neverwinter Nights",
-                    @"D:\SteamLibrary\steamapps\common\Neverwinter Nights",
-                    @"E:\SteamLibrary\steamapps\common\Neverwinter Nights"
-                };
-                possiblePaths.AddRange(steamPaths);
-
-                // Try to detect Steam library folders from registry
-                try
-                {
-                    using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Valve\Steam"))
-                    {
-                        var steamPath = key?.GetValue("SteamPath") as string;
-                        if (!string.IsNullOrEmpty(steamPath))
-                        {
-                            var nwnPath = System.IO.Path.Combine(steamPath, "steamapps", "common", "Neverwinter Nights");
-                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found Steam path from registry: {steamPath}");
-                            possiblePaths.Insert(0, nwnPath); // Check registry path first
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not read Steam registry: {ex.Message}");
-                }
-
-                // Try GOG paths
-                var gogPaths = new[]
-                {
-                    @"C:\Program Files (x86)\GOG Galaxy\Games\Neverwinter Nights Enhanced Edition",
-                    @"C:\GOG Games\Neverwinter Nights Enhanced Edition"
-                };
-                possiblePaths.AddRange(gogPaths);
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                possiblePaths.Add("/Applications/Neverwinter Nights.app/Contents/Resources");
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                possiblePaths.Add(System.IO.Path.Combine(home, ".steam", "steam", "steamapps", "common", "Neverwinter Nights"));
-            }
-
-            string? detectedPath = null;
-            foreach (var path in possiblePaths)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Checking: {path}");
-                if (System.IO.Directory.Exists(path))
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Directory exists, checking for data\\ folder...");
-                    var dataPath = System.IO.Path.Combine(path, "data");
-                    if (System.IO.Directory.Exists(dataPath))
-                    {
-                        detectedPath = path;
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-detected base game path: {UnifiedLogger.SanitizePath(detectedPath)}");
-                        break;
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Missing data\\ folder");
-                    }
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Directory does not exist");
-                }
-            }
-
+            // Use ResourcePathHelper for auto-detection (#345)
+            var detectedPath = ResourcePathHelper.AutoDetectBaseGamePath();
             var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox");
+
             if (!string.IsNullOrEmpty(detectedPath) && baseGamePathTextBox != null)
             {
                 baseGamePathTextBox.Text = detectedPath;
@@ -755,7 +679,6 @@ namespace DialogEditor.Views
             }
             else
             {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "Could not auto-detect base game installation");
                 var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
                 if (validation != null)
                 {
@@ -770,22 +693,10 @@ namespace DialogEditor.Views
             var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
             if (validation == null) return;
 
-            // Base game installation should have data\ folder
-            var dataPath = System.IO.Path.Combine(path, "data");
-            if (System.IO.Directory.Exists(dataPath))
-            {
-                validation.Text = "✅ Valid base game installation (contains data\\ folder)";
-                validation.Foreground = Brushes.Green;
-            }
-            else if (!string.IsNullOrEmpty(path))
-            {
-                validation.Text = "❌ Invalid path - missing data\\ folder";
-                validation.Foreground = Brushes.Red;
-            }
-            else
-            {
-                validation.Text = "";
-            }
+            // Use ResourcePathHelper for validation (#345)
+            var result = ResourcePathHelper.ValidateBaseGamePathWithMessage(path);
+            validation.Text = result.Message;
+            validation.Foreground = result.IsValid ? Brushes.Green : Brushes.Red;
         }
 
         private async void OnBrowseModulePathClick(object? sender, RoutedEventArgs e)
@@ -848,20 +759,10 @@ namespace DialogEditor.Views
             var validation = this.FindControl<TextBlock>("GamePathValidation");
             if (validation == null) return;
 
-            if (ResourcePathHelper.ValidateGamePath(path))
-            {
-                validation.Text = "✅ Valid game installation path";
-                validation.Foreground = Brushes.Green;
-            }
-            else if (!string.IsNullOrEmpty(path))
-            {
-                validation.Text = "❌ Invalid path - missing required directories (ambient, music)";
-                validation.Foreground = Brushes.Red;
-            }
-            else
-            {
-                validation.Text = "";
-            }
+            // Use ResourcePathHelper for validation (#345)
+            var result = ResourcePathHelper.ValidateGamePathWithMessage(path);
+            validation.Text = result.Message;
+            validation.Foreground = result.IsValid ? Brushes.Green : Brushes.Red;
         }
 
         private void ValidateModulePath(string path)
@@ -869,20 +770,10 @@ namespace DialogEditor.Views
             var validation = this.FindControl<TextBlock>("ModulePathValidation");
             if (validation == null) return;
 
-            if (ResourcePathHelper.ValidateModulePath(path))
-            {
-                validation.Text = "✅ Valid module directory";
-                validation.Foreground = Brushes.Green;
-            }
-            else if (!string.IsNullOrEmpty(path))
-            {
-                validation.Text = "❌ Invalid path - no .mod files or module directories found";
-                validation.Foreground = Brushes.Red;
-            }
-            else
-            {
-                validation.Text = "";
-            }
+            // Use ResourcePathHelper for validation (#345)
+            var result = ResourcePathHelper.ValidateModulePathWithMessage(path);
+            validation.Text = result.Message;
+            validation.Foreground = result.IsValid ? Brushes.Green : Brushes.Red;
         }
 
         private void OnRecentModuleSelected(object? sender, SelectionChangedEventArgs e)
