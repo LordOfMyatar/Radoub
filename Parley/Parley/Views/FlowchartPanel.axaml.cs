@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -59,6 +60,22 @@ namespace DialogEditor.Views
 
             // Keyboard shortcuts when panel has focus
             KeyDown += OnKeyDown;
+
+            // Listen for settings changes to refresh colors (#340)
+            SettingsService.Instance.PropertyChanged += OnSettingsChanged;
+        }
+
+        private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // Refresh visual when NPC speaker preferences change
+            if (e.PropertyName == nameof(SettingsService.NpcSpeakerPreferences) ||
+                e.PropertyName == nameof(SettingsService.EnableNpcTagColoring))
+            {
+                // Force re-render by refreshing the Graph binding
+                // This triggers DataTemplate re-evaluation with updated colors
+                _viewModel.RefreshGraph();
+                UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart colors refreshed due to settings change");
+            }
         }
 
         #region Zoom Controls

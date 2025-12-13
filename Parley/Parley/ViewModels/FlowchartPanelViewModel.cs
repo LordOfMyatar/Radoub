@@ -86,6 +86,23 @@ namespace DialogEditor.ViewModels
         }
 
         /// <summary>
+        /// Forces a refresh of the graph to update visual styling (e.g., after settings change)
+        /// </summary>
+        public void RefreshGraph()
+        {
+            if (_flowchartGraph == null || Graph == null)
+                return;
+
+            // Re-create the Avalonia graph to force DataTemplate re-evaluation
+            // This triggers the converters to re-run with updated settings
+            var currentGraph = Graph;
+            Graph = null;
+            Graph = currentGraph;
+
+            OnPropertyChanged(nameof(Graph));
+        }
+
+        /// <summary>
         /// Clear the flowchart display
         /// </summary>
         public void Clear()
