@@ -30,16 +30,19 @@ Creature (UTC) files are now loaded lazily instead of during dialog open, improv
 
 ### Fix: Saving to Read-Only File Fails Silently (#8)
 
-Save operations now detect read-only files before attempting to write.
+Save operations now detect read-only files before attempting to write, and auto-save no longer shows false success messages.
 
 #### Changed
 - Added read-only file check in `DialogSaveService.SaveDialogAsync`
 - Clear error message: "Cannot save: File is read-only. Use 'Save As' to save to a different location."
+- `MainViewModel.SaveDialogAsync` now returns `bool` to indicate success/failure
+- `AutoSaveToFileAsync` checks save result before showing success message
 - Added unit test for read-only file handling
 
 #### User Impact
 - Users now receive actionable error message when trying to save read-only files
-- No more silent failures or generic error messages
+- Auto-save no longer shows "Auto-saved" when save actually failed
+- Status bar accurately reflects save state
 
 ---
 

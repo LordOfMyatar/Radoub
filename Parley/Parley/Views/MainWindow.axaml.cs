@@ -2218,15 +2218,25 @@ namespace DialogEditor.Views
                     _viewModel.StatusMessage = "💾 Auto-saving...";
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-save starting...");
 
-                    await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
+                    // Issue #8: Check save result before showing success message
+                    var success = await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
 
-                    var timestamp = DateTime.Now.ToString("h:mm tt");
-                    var fileName = System.IO.Path.GetFileName(_viewModel.CurrentFileName);
-                    _viewModel.StatusMessage = $"✓ Auto-saved '{fileName}' at {timestamp}";
+                    if (success)
+                    {
+                        var timestamp = DateTime.Now.ToString("h:mm tt");
+                        var fileName = System.IO.Path.GetFileName(_viewModel.CurrentFileName);
+                        _viewModel.StatusMessage = $"✓ Auto-saved '{fileName}' at {timestamp}";
 
-                    // Verify HasUnsavedChanges was cleared (Issue #18)
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        $"Auto-save completed. HasUnsavedChanges = {_viewModel.HasUnsavedChanges}, WindowTitle = '{_viewModel.WindowTitle}'");
+                        // Verify HasUnsavedChanges was cleared (Issue #18)
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"Auto-save completed. HasUnsavedChanges = {_viewModel.HasUnsavedChanges}, WindowTitle = '{_viewModel.WindowTitle}'");
+                    }
+                    else
+                    {
+                        // Save failed - StatusMessage already set by SaveDialogAsync
+                        // Don't overwrite the error message
+                        UnifiedLogger.LogApplication(LogLevel.WARN, "Auto-save failed - check status message for details");
+                    }
                 }
                 catch (Exception ex)
                 {
