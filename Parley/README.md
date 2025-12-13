@@ -20,7 +20,7 @@ Parley is under active development. While the core dialog editing functionality 
 
 ### Current (Alpha)
 
-- **Native Flowchart View** - Visual dialog tree (View → Flowchart or F5)
+- **Native Flowchart View** - Visual dialog tree (View → Flowchart or F5), handles deep trees (100+ depth)
 - Color coded NPCs for multi-npc conversations
 - Themes, Fonts, and Font Sizes
 - Improved interface for script parameters including auto-trim
