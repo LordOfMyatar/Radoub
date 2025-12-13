@@ -27,6 +27,12 @@
                         ToolTip.Tip="Reset Zoom (Ctrl 0)" Click="OnZoomResetClick"/>
                 <Button x:Name="ZoomFitButton" Content="Fit" Height="28"
                         ToolTip.Tip="Fit to Window" Click="OnZoomFitClick"/>
+                <Rectangle Width="1" Height="20" Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="4,0"/>
+                <Button x:Name="RefreshButton" Width="28" Height="28"
+                        ToolTip.Tip="Refresh flowchart colors" Click="OnRefreshClick"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+                    <TextBlock Text="↻" FontSize="14" TextAlignment="Center"/>
+                </Button>
             </StackPanel>
         </Border>
 

@@ -15,6 +15,7 @@ namespace DialogEditor.ViewModels
     {
         private readonly DialogToFlowchartConverter _converter = new();
         private FlowchartGraph? _flowchartGraph;
+        private Dialog? _sourceDialog; // Keep source for refresh (#340)
 
         [ObservableProperty]
         private Graph? _graph;
@@ -50,8 +51,12 @@ namespace DialogEditor.ViewModels
                 Graph = null;
                 StatusText = "No dialog loaded";
                 HasContent = false;
+                _sourceDialog = null;
                 return;
             }
+
+            // Store source for refresh (#340)
+            _sourceDialog = dialog;
 
             try
             {
@@ -90,15 +95,26 @@ namespace DialogEditor.ViewModels
         /// </summary>
         public void RefreshGraph()
         {
-            if (_flowchartGraph == null)
+            if (_sourceDialog == null)
                 return;
 
-            // Rebuild the Avalonia graph from scratch to force DataTemplate re-evaluation
-            // Simply toggling Graph doesn't work because the object reference is the same
-            Graph = null;
-            Graph = FlowchartGraphAdapter.ToAvaloniaGraph(_flowchartGraph);
-
-            UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart graph rebuilt for color refresh");
+            // Re-convert from source Dialog to get fresh FlowchartNode objects (#340)
+            // This forces Avalonia DataTemplates to re-evaluate converters with new colors
+            try
+            {
+                var flowchartGraph = _converter.Convert(_sourceDialog, FileName);
+                if (!flowchartGraph.IsEmpty)
+                {
+                    _flowchartGraph = flowchartGraph;
+                    Graph = null;
+                    Graph = FlowchartGraphAdapter.ToAvaloniaGraph(flowchartGraph);
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart fully rebuilt for color refresh");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogUI(LogLevel.ERROR, $"Flowchart refresh failed: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -111,6 +127,7 @@ namespace DialogEditor.ViewModels
             HasContent = false;
             FileName = null;
             _flowchartGraph = null;
+            _sourceDialog = null;
             SelectedNodeId = null;
         }
 

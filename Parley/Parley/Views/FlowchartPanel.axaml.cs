@@ -104,6 +104,21 @@ namespace DialogEditor.Views
             FitToWindow();
         }
 
+        private void OnRefreshClick(object? sender, RoutedEventArgs e)
+        {
+            // Force complete visual refresh by toggling visibility
+            // This forces Avalonia to recreate the visual tree and re-evaluate all converters
+            FlowchartScrollViewer.IsVisible = false;
+            _viewModel.RefreshGraph();
+
+            // Re-show after a short delay to ensure the graph is rebuilt
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                FlowchartScrollViewer.IsVisible = true;
+                UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart manually refreshed with visual tree rebuild");
+            }, Avalonia.Threading.DispatcherPriority.Background);
+        }
+
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
         {
             // Only zoom if Ctrl is held
