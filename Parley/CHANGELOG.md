@@ -15,10 +15,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fix: DialogNodes ObservableCollection Refresh (#130)
 
-Enable 16 skipped headless tests that verify DialogNodes auto-updates after node operations.
+Enabled 16 previously-skipped headless tests that verify DialogNodes tree updates correctly after node operations.
 
 #### Changed
-- TBD
+- **NodeCreationHeadlessTests.cs**: Fixed 7 tests with correct tree traversal
+  - Added `GetFirstEntryNode()` and `GetEntryNodeAt()` helpers to access entry nodes via ROOT.Children
+  - Added `IsExpanded = true` to trigger lazy loading before accessing children
+  - Added `TreeViewPlaceholderNode` check to verify actual nodes vs placeholders
+- **NodeDeletionHeadlessTests.cs**: Fixed 6 tests with correct tree traversal
+  - Added same helper methods plus `GetRootChildrenCount()` for ROOT child counting
+  - Fixed scrap tests to use relative count assertions (scrap file persists across runs)
+- **CopyPasteHeadlessTests.cs**: Fixed 8 tests with correct tree traversal
+  - Added `GetRootNode()` helper for paste operations (PasteAsDuplicate requires ROOT node, not null)
+  - Added `IsExpanded = true` for PasteAsLink tests to populate reply children
+
+#### Technical Notes
+- Tree structure: `DialogNodes[0]` = ROOT node, entries are in `ROOT.Children[]`
+- Lazy loading: Children are populated only when `IsExpanded = true` is set
+- The DialogNodes refresh mechanism was already working correctly; tests were accessing tree nodes incorrectly
 
 ---
 
