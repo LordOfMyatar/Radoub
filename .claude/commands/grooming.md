@@ -281,21 +281,26 @@ Apply recommendations? [y/n/manual]
 
 ## GitHub Project Integration
 
-After grooming an issue, add it to the appropriate project board.
+**Only add Sprints and Epics to projects** - individual features/fixes don't go on project boards.
 
-### Project Selection
+### When to Add to Project
+
+| Issue Type | Add to Project? |
+|------------|-----------------|
+| Epic (`epic` label) | ✅ Yes |
+| Sprint (`sprint` label) | ✅ Yes |
+| Bug/Enhancement/Feature | ❌ No |
+
+### Project Selection (for Sprints/Epics only)
 
 | Label/Title | Project | Number |
 |-------------|---------|--------|
 | `parley` or `[Parley]` | Parley | 2 |
 | `radoub` or `[Radoub]` | Radoub | 3 |
 
-### Add Issue to Project
+### Add Sprint/Epic to Project
 
 ```bash
-# Determine project from labels
-LABELS=$(gh issue view [number] --json labels -q '.labels[].name' | tr '\n' ' ')
-
 # Add to Parley project (if parley label)
 gh project item-add 2 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
 
@@ -313,16 +318,16 @@ Report to user:
 
 ### Batch Grooming Project Updates
 
-When grooming multiple issues, track which were added to projects:
+When grooming multiple issues, only track sprints/epics added:
 
 ```markdown
 ## Project Board Updates
 
-| Issue | Project | Status |
-|-------|---------|--------|
-| #123 | Parley | ✅ Added |
-| #456 | Radoub | ✅ Added |
-| #789 | (none) | ⚠️ No tool label |
+| Issue | Type | Project | Status |
+|-------|------|---------|--------|
+| #123 | Sprint | Parley | ✅ Added |
+| #456 | Epic | Radoub | ✅ Added |
+| #789 | Bug | - | (not added - individual issue) |
 ```
 
 ### Prerequisites

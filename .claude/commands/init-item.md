@@ -271,29 +271,35 @@ Common label patterns:
 
 ## GitHub Project Integration
 
-After creating the branch and PR, add the issue to the appropriate project and mark it "In Progress".
+**Only add Sprints and Epics to projects** - individual features/fixes don't go on project boards unless explicitly requested.
 
-### Project Selection
+### When to Add to Project
+
+| Item Type | Add to Project? |
+|-----------|-----------------|
+| Epic | ✅ Yes |
+| Sprint | ✅ Yes |
+| Feature | ❌ No (unless solo work requested) |
+| Fix | ❌ No (unless solo work requested) |
+
+### Project Selection (for Sprints/Epics only)
 
 | Label/Title | Project | Number |
 |-------------|---------|--------|
 | `parley` or `[Parley]` | Parley | 2 |
 | `radoub` or `[Radoub]` | Radoub | 3 |
 
-### Add Issue to Project and Set In Progress
+### Add Sprint/Epic to Project and Set In Progress
 
-After Step 9 (Create Draft PR), add to project:
+After Step 9 (Create Draft PR), **only for sprints and epics**:
 
 ```bash
-# Determine project from labels
-LABELS=$(gh issue view [number] --json labels -q '.labels[].name' | tr '\n' ' ')
-
 # Add to appropriate project (returns item ID)
-# For Parley issues:
+# For Parley sprints/epics:
 ITEM_JSON=$(gh project item-add 2 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
 ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
 
-# For Radoub issues:
+# For Radoub sprints/epics:
 ITEM_JSON=$(gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
 ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
 
@@ -315,7 +321,7 @@ gh project item-edit \
 
 ### Updated Summary Output
 
-Add project status to the summary:
+For **Sprints/Epics**, include project status:
 
 ```markdown
 ## [Type] Branch Initialized
@@ -326,11 +332,10 @@ Add project status to the summary:
 **Project**: [Project Name] - Status: In Progress
 
 ### Next Steps
-1. Implement the [type]
-2. Add tests
-3. Run `/pre-merge` to verify all checks pass
-4. Mark PR ready for review
+...
 ```
+
+For **Features/Fixes**, omit project line (not added to board).
 
 ### Prerequisites
 

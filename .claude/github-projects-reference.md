@@ -2,6 +2,18 @@
 
 Quick reference for using `gh project` commands with Radoub repositories.
 
+## What Goes on Project Boards
+
+**Only Sprints and Epics** - individual issues (bugs, features, enhancements) stay off project boards unless explicitly working solo on them.
+
+| Issue Type | Add to Project? |
+|------------|-----------------|
+| Epic | ✅ Yes |
+| Sprint | ✅ Yes |
+| Bug | ❌ No |
+| Enhancement | ❌ No |
+| Feature | ❌ No |
+
 ## Prerequisites
 
 ### Required Scope
