@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
@@ -98,7 +100,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Generates SVG content from a flowchart graph.
-        /// Creates a simple node/edge diagram representation.
+        /// Uses hierarchical layout matching the visual flowchart display.
         /// </summary>
         private static string GenerateSvg(FlowchartGraph graph, string? fileName)
         {
@@ -107,36 +109,112 @@ namespace DialogEditor.Services
             // Basic layout parameters
             const int nodeWidth = 180;
             const int nodeHeight = 60;
-            const int horizontalSpacing = 220;
+            const int horizontalSpacing = 200;
             const int verticalSpacing = 100;
             const int padding = 50;
 
-            // Simple layout: arrange nodes in a grid (will be improved in future sprints)
-            var nodePositions = new System.Collections.Generic.Dictionary<string, (int x, int y)>();
-            int maxX = 0, maxY = 0;
+            // Build child lookup for hierarchical layout
+            var childrenOf = new Dictionary<string, List<string>>();
+            var hasParent = new HashSet<string>();
 
-            // Simple depth-first layout
-            int currentY = padding;
-            int currentX = padding;
-            int nodesPerRow = 4;
-            int col = 0;
+            foreach (var edge in graph.Edges)
+            {
+                if (!childrenOf.ContainsKey(edge.SourceId))
+                    childrenOf[edge.SourceId] = new List<string>();
+                childrenOf[edge.SourceId].Add(edge.TargetId);
+                hasParent.Add(edge.TargetId);
+            }
 
+            // Find root nodes (nodes with no incoming edges)
+            var rootNodes = new List<string>();
             foreach (var node in graph.Nodes.Values)
             {
-                nodePositions[node.Id] = (currentX, currentY);
-                maxX = Math.Max(maxX, currentX + nodeWidth);
-                maxY = Math.Max(maxY, currentY + nodeHeight);
+                if (!hasParent.Contains(node.Id))
+                    rootNodes.Add(node.Id);
+            }
 
-                col++;
-                if (col >= nodesPerRow)
+            // Calculate subtree widths for balanced layout
+            var subtreeWidths = new Dictionary<string, int>();
+            var visited = new HashSet<string>();
+
+            int CalculateSubtreeWidth(string nodeId)
+            {
+                if (visited.Contains(nodeId) || !graph.Nodes.ContainsKey(nodeId))
+                    return 1;
+                visited.Add(nodeId);
+
+                if (!childrenOf.TryGetValue(nodeId, out var children) || children.Count == 0)
                 {
-                    col = 0;
-                    currentX = padding;
-                    currentY += verticalSpacing;
+                    subtreeWidths[nodeId] = 1;
+                    return 1;
                 }
-                else
+
+                int totalWidth = 0;
+                foreach (var childId in children)
                 {
-                    currentX += horizontalSpacing;
+                    totalWidth += CalculateSubtreeWidth(childId);
+                }
+                subtreeWidths[nodeId] = Math.Max(1, totalWidth);
+                return subtreeWidths[nodeId];
+            }
+
+            foreach (var rootId in rootNodes)
+            {
+                CalculateSubtreeWidth(rootId);
+            }
+
+            // Position nodes using hierarchical layout
+            var nodePositions = new Dictionary<string, (int x, int y)>();
+            var positioned = new HashSet<string>();
+            int maxX = 0, maxY = 0;
+
+            void PositionNode(string nodeId, int x, int y, int availableWidth)
+            {
+                if (positioned.Contains(nodeId) || !graph.Nodes.ContainsKey(nodeId))
+                    return;
+                positioned.Add(nodeId);
+
+                // Center node in available space
+                int nodeX = x + (availableWidth * horizontalSpacing - nodeWidth) / 2;
+                nodePositions[nodeId] = (nodeX, y);
+                maxX = Math.Max(maxX, nodeX + nodeWidth);
+                maxY = Math.Max(maxY, y + nodeHeight);
+
+                if (!childrenOf.TryGetValue(nodeId, out var children) || children.Count == 0)
+                    return;
+
+                // Position children below
+                int childY = y + verticalSpacing;
+                int childX = x;
+
+                foreach (var childId in children)
+                {
+                    int childWidth = subtreeWidths.TryGetValue(childId, out var w) ? w : 1;
+                    PositionNode(childId, childX, childY, childWidth);
+                    childX += childWidth;
+                }
+            }
+
+            // Position all root nodes side by side
+            int rootX = 0;
+            foreach (var rootId in rootNodes)
+            {
+                int rootWidth = subtreeWidths.TryGetValue(rootId, out var rw) ? rw : 1;
+                PositionNode(rootId, rootX, padding, rootWidth);
+                rootX += rootWidth;
+            }
+
+            // Position any orphan nodes (shouldn't happen but safety check)
+            int orphanY = maxY + verticalSpacing;
+            int orphanX = padding;
+            foreach (var node in graph.Nodes.Values)
+            {
+                if (!nodePositions.ContainsKey(node.Id))
+                {
+                    nodePositions[node.Id] = (orphanX, orphanY);
+                    maxX = Math.Max(maxX, orphanX + nodeWidth);
+                    maxY = Math.Max(maxY, orphanY + nodeHeight);
+                    orphanX += horizontalSpacing;
                 }
             }
 

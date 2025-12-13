@@ -12,17 +12,20 @@ namespace DialogEditor.Models
 {
     /// <summary>
     /// Converts FlowchartNode properties to background brush color.
-    /// Uses SpeakerVisualHelper for dynamic speaker-based colors.
-    /// Creates lightened/darkened versions of speaker colors based on theme.
+    /// Uses theme-aware backgrounds with speaker colors shown via thick borders.
+    /// This preserves text readability while showing speaker identity.
     /// </summary>
     public class FlowchartNodeBackgroundConverter : IMultiValueConverter
     {
         public static readonly FlowchartNodeBackgroundConverter Instance = new();
 
-        private static readonly IBrush LinkBrushLight = new SolidColorBrush(Color.Parse("#F5F5F5")); // Light gray
-        private static readonly IBrush LinkBrushDark = new SolidColorBrush(Color.Parse("#424242")); // Dark gray
-        private static readonly IBrush RootBrushLight = new SolidColorBrush(Color.Parse("#E8F5E9")); // Light green
-        private static readonly IBrush RootBrushDark = new SolidColorBrush(Color.Parse("#1B5E20")); // Dark green
+        // Theme-aware backgrounds that ensure text readability
+        private static readonly IBrush LightThemeBg = new SolidColorBrush(Color.Parse("#FAFAFA")); // Off-white
+        private static readonly IBrush DarkThemeBg = new SolidColorBrush(Color.Parse("#2D2D2D")); // Dark gray
+        private static readonly IBrush LinkBrushLight = new SolidColorBrush(Color.Parse("#F0F0F0")); // Lighter gray for links
+        private static readonly IBrush LinkBrushDark = new SolidColorBrush(Color.Parse("#383838")); // Slightly different for links
+        private static readonly IBrush RootBrushLight = new SolidColorBrush(Color.Parse("#F1F8E9")); // Very light green tint
+        private static readonly IBrush RootBrushDark = new SolidColorBrush(Color.Parse("#263238")); // Dark with green tint
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
@@ -30,86 +33,22 @@ namespace DialogEditor.Models
             bool isDark = values.Count >= 4 && values[3] is ThemeVariant tv && tv == ThemeVariant.Dark;
 
             if (values.Count < 3)
-                return CreateDefaultBrush(FlowchartNodeType.Entry, isDark);
+                return isDark ? DarkThemeBg : LightThemeBg;
 
             var nodeType = values[0] as FlowchartNodeType? ?? FlowchartNodeType.Entry;
             var isLink = values[1] as bool? ?? false;
-            var speaker = values[2] as string ?? string.Empty;
 
+            // Link nodes get distinct muted background
             if (isLink)
                 return isDark ? LinkBrushDark : LinkBrushLight;
 
-            // Root node gets distinct styling
+            // Root node gets subtle green tint
             if (nodeType == FlowchartNodeType.Root)
                 return isDark ? RootBrushDark : RootBrushLight;
 
-            // Use SpeakerVisualHelper for consistent coloring with TreeView
-            bool isPC = nodeType == FlowchartNodeType.Reply;
-            string hexColor = SpeakerVisualHelper.GetSpeakerColor(speaker, isPC);
-
-            // Create lightened/darkened background from speaker color based on theme
-            return isDark ? CreateDarkenedBrush(hexColor) : CreateLightenedBrush(hexColor);
-        }
-
-        /// <summary>
-        /// Creates a lightened (pastel) version of a color for light theme backgrounds
-        /// </summary>
-        private static IBrush CreateLightenedBrush(string hexColor)
-        {
-            try
-            {
-                var color = Color.Parse(hexColor);
-                // Mix with white to create pastel/lightened version (85% white, 15% original)
-                var lightened = Color.FromRgb(
-                    (byte)(color.R + (255 - color.R) * 0.85),
-                    (byte)(color.G + (255 - color.G) * 0.85),
-                    (byte)(color.B + (255 - color.B) * 0.85)
-                );
-                return new SolidColorBrush(lightened);
-            }
-            catch
-            {
-                return CreateDefaultBrush(FlowchartNodeType.Entry, false);
-            }
-        }
-
-        /// <summary>
-        /// Creates a darkened version of a color for dark theme backgrounds
-        /// </summary>
-        private static IBrush CreateDarkenedBrush(string hexColor)
-        {
-            try
-            {
-                var color = Color.Parse(hexColor);
-                // Mix with dark gray to create muted dark version (70% dark, 30% original)
-                var darkened = Color.FromRgb(
-                    (byte)(color.R * 0.3 + 40),
-                    (byte)(color.G * 0.3 + 40),
-                    (byte)(color.B * 0.3 + 40)
-                );
-                return new SolidColorBrush(darkened);
-            }
-            catch
-            {
-                return CreateDefaultBrush(FlowchartNodeType.Entry, true);
-            }
-        }
-
-        private static IBrush CreateDefaultBrush(FlowchartNodeType nodeType, bool isDark)
-        {
-            if (isDark)
-            {
-                return nodeType switch
-                {
-                    FlowchartNodeType.Reply => new SolidColorBrush(Color.Parse("#1A3A5C")), // Dark blue
-                    _ => new SolidColorBrush(Color.Parse("#5C3A1A")) // Dark orange
-                };
-            }
-            return nodeType switch
-            {
-                FlowchartNodeType.Reply => new SolidColorBrush(Color.Parse("#E3F2FD")), // Light blue
-                _ => new SolidColorBrush(Color.Parse("#FFF3E0")) // Light orange
-            };
+            // All other nodes use theme background
+            // Speaker identity is shown via the thick border (see FlowchartNodeBorderConverter)
+            return isDark ? DarkThemeBg : LightThemeBg;
         }
     }
 
@@ -229,6 +168,7 @@ namespace DialogEditor.Models
 
     /// <summary>
     /// Converts node selection state to border thickness for highlighting.
+    /// Uses thick borders (3px) to show speaker colors prominently.
     /// Compares node ID with selected ID from ViewModel.
     /// </summary>
     public class FlowchartNodeSelectionBorderConverter : IMultiValueConverter
@@ -238,7 +178,7 @@ namespace DialogEditor.Models
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
             if (values.Count < 3)
-                return new Thickness(2);
+                return new Thickness(3);
 
             var nodeId = values[0] as string;
             var isLink = values[1] as bool? ?? false;
@@ -249,12 +189,12 @@ namespace DialogEditor.Models
                               !string.IsNullOrEmpty(selectedNodeId) &&
                               nodeId == selectedNodeId;
 
-            // Selected nodes get thicker border
+            // Selected nodes get extra thick border for emphasis
             if (isSelected)
-                return new Thickness(4);
+                return new Thickness(5);
 
-            // Links get thinner border, regular nodes get standard
-            return isLink ? new Thickness(1) : new Thickness(2);
+            // Links get thinner border, regular nodes get thick border for speaker color visibility
+            return isLink ? new Thickness(2) : new Thickness(3);
         }
     }
 

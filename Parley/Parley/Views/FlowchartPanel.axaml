@@ -36,12 +36,14 @@
             <ScrollViewer x:Name="FlowchartScrollViewer"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
+                          AllowAutoHide="False"
                           IsVisible="{Binding HasContent}">
-                <agc:GraphPanel x:Name="FlowchartGraphPanel"
-                                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                                Graph="{Binding Graph}"
-                                LayoutMethod="SugiyamaScheme"
-                                RenderTransformOrigin="0.5,0.5">
+                <!-- LayoutTransformControl updates scrollbar extents when zooming (unlike RenderTransform) -->
+                <LayoutTransformControl x:Name="ZoomContainer">
+                    <agc:GraphPanel x:Name="FlowchartGraphPanel"
+                                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                    Graph="{Binding Graph}"
+                                    LayoutMethod="SugiyamaScheme">
 
                     <!-- DataTemplate for FlowchartNode -->
                     <agc:GraphPanel.DataTemplates>
@@ -99,7 +101,8 @@
                             </Border>
                         </DataTemplate>
                     </agc:GraphPanel.DataTemplates>
-                </agc:GraphPanel>
+                    </agc:GraphPanel>
+                </LayoutTransformControl>
             </ScrollViewer>
 
             <!-- Placeholder when no content -->
