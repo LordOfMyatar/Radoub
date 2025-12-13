@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.60-alpha] - 2025-12-13
-**Branch**: `parley/feat/cascade-delete-depth` | **PR**: #TBD
+**Branch**: `parley/feat/cascade-delete-depth` | **PR**: #355
 
 ### Enhancement: Improve Cascade Delete Depth for Shared Nodes (#32)
 
