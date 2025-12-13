@@ -237,6 +237,24 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Issue #289: Checks if either parameter panel (conditions or actions) has duplicate keys.
+        /// Called by MainWindow before saving to prevent data corruption.
+        /// </summary>
+        public bool HasAnyDuplicateKeys()
+        {
+            var conditionsPanel = _findControl("ConditionsParametersPanel") as StackPanel;
+            var actionsPanel = _findControl("ActionsParametersPanel") as StackPanel;
+
+            if (conditionsPanel != null && HasDuplicateKeys(conditionsPanel))
+                return true;
+
+            if (actionsPanel != null && HasDuplicateKeys(actionsPanel))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
         /// Checks if a parameter panel has any duplicate keys.
         /// Issue #287: Used to block saving when duplicates exist.
         /// </summary>

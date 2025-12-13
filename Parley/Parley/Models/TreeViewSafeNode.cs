@@ -100,7 +100,19 @@ namespace DialogEditor.Models
             {
                 if (_originalNode == null) return "[CONTINUE]";
 
-                var text = string.IsNullOrEmpty(_originalNode.DisplayText) ? "[CONTINUE]" : _originalNode.DisplayText;
+                // Issue #353: Empty terminal nodes show [END DIALOG] instead of [CONTINUE]
+                string text;
+                if (string.IsNullOrEmpty(_originalNode.DisplayText))
+                {
+                    // Check if this is a terminal node (no children)
+                    bool isTerminal = _originalNode.Pointers == null ||
+                                      !_originalNode.Pointers.Any(p => p.Node != null);
+                    text = isTerminal ? "[END DIALOG]" : "[CONTINUE]";
+                }
+                else
+                {
+                    text = _originalNode.DisplayText;
+                }
 
                 // Add speaker tag prefix for clarity
                 if (_originalNode.Type == DialogNodeType.Entry)
@@ -185,7 +197,19 @@ namespace DialogEditor.Models
                     }
                 }
 
-                var text = string.IsNullOrEmpty(_originalNode.DisplayText) ? "[CONTINUE]" : _originalNode.DisplayText;
+                // Issue #353: Empty terminal nodes show [END DIALOG] instead of [CONTINUE]
+                string text;
+                if (string.IsNullOrEmpty(_originalNode.DisplayText))
+                {
+                    bool isTerminal = _originalNode.Pointers == null ||
+                                      !_originalNode.Pointers.Any(p => p.Node != null);
+                    text = isTerminal ? "[END DIALOG]" : "[CONTINUE]";
+                }
+                else
+                {
+                    text = _originalNode.DisplayText;
+                }
+
                 return $"{speaker} \"{text}\"";
             }
         }

@@ -97,7 +97,7 @@ namespace DialogEditor.Services
             }
 
             SaveScrapData();
-            UpdateScrapEntries();
+            UpdateScrapEntriesForFile(filePath);
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Added {nodes.Count} nodes to scrap from {sanitizedPath} ({operation})");
         }
@@ -135,9 +135,10 @@ namespace DialogEditor.Services
             var entry = _scrapData.Entries.FirstOrDefault(e => e.Id == entryId);
             if (entry != null)
             {
+                var filePath = entry.FilePath;
                 _scrapData.Entries.Remove(entry);
                 SaveScrapData();
-                UpdateScrapEntries();
+                UpdateScrapEntriesForFile(filePath);
 
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Removed restored node from scrap: {entry.NodeText}");
@@ -155,7 +156,7 @@ namespace DialogEditor.Services
             if (removed > 0)
             {
                 SaveScrapData();
-                UpdateScrapEntries();
+                UpdateScrapEntriesForFile(filePath);
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Cleared {removed} scrap entries for {sanitizedPath}");
             }
@@ -192,6 +193,48 @@ namespace DialogEditor.Services
         {
             var sanitizedPath = SanitizePath(filePath);
             return _scrapData.Entries.Count(e => e.FilePath == sanitizedPath);
+        }
+
+        /// <summary>
+        /// Remove scrap entries that match nodes now present in the dialog.
+        /// Called after undo to clean up entries for restored nodes.
+        /// </summary>
+        public void RemoveRestoredNodes(string filePath, Dialog dialog)
+        {
+            if (dialog == null || string.IsNullOrEmpty(filePath)) return;
+
+            var sanitizedPath = SanitizePath(filePath);
+            var entriesToRemove = new List<ScrapEntry>();
+
+            // Get all dialog node texts for matching
+            var entryTexts = new HashSet<string>(
+                dialog.Entries.Select(e => GetNodePreviewText(e))
+            );
+            var replyTexts = new HashSet<string>(
+                dialog.Replies.Select(r => GetNodePreviewText(r))
+            );
+
+            foreach (var entry in _scrapData.Entries.Where(e => e.FilePath == sanitizedPath))
+            {
+                // Check if a node with matching text and type exists in the dialog
+                var matchingSet = entry.NodeType == "Entry" ? entryTexts : replyTexts;
+                if (matchingSet.Contains(entry.NodeText))
+                {
+                    entriesToRemove.Add(entry);
+                }
+            }
+
+            if (entriesToRemove.Count > 0)
+            {
+                foreach (var entry in entriesToRemove)
+                {
+                    _scrapData.Entries.Remove(entry);
+                }
+                SaveScrapData();
+                UpdateScrapEntriesForFile(filePath);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Removed {entriesToRemove.Count} restored nodes from scrap after undo");
+            }
         }
 
         /// <summary>
@@ -372,8 +415,10 @@ namespace DialogEditor.Services
 
         private void UpdateScrapEntries()
         {
-            // This is now just for internal use when loading data
-            // The UI should call UpdateScrapEntriesForFile instead
+            // INTERNAL USE ONLY - Called during initialization before any file is loaded.
+            // After initialization, always use UpdateScrapEntriesForFile() to filter by current file.
+            // This method loads ALL entries which is needed at startup to populate _scrapData,
+            // but should never be called after a file is loaded.
             ScrapEntries.Clear();
             foreach (var entry in _scrapData.Entries.OrderByDescending(e => e.Timestamp))
             {

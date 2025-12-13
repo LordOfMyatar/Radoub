@@ -15,11 +15,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Squash - Scrap & Save Fixes (#362)
 
+Quick wins fixing scrap panel bugs, UX improvements, and save validation.
+
 #### Fixed
-- #352 - Scrap shows entries from all files instead of current file
-- #356 - Remove node from scrap on undo delete
-- #353 - Empty terminal nodes display [END DIALOG] instead of [CONTINUE]
-- #289 - Block manual save when duplicate parameter keys exist
+- **#352 - Scrap filtering**: Scrap panel now only shows entries for the current file
+  - `AddToScrap`, `RemoveFromScrap`, and `ClearScrapForFile` now correctly filter entries
+  - Previously showed all entries from all files
+- **#356 - Undo removes from scrap**: When undoing a delete, restored nodes are removed from scrap
+  - Added `RemoveRestoredNodes()` method to ScrapManager
+  - Compares scrap entries against current dialog and removes matches
+- **#353 - Terminal node display**: Empty nodes without children show `[END DIALOG]` instead of `[CONTINUE]`
+  - Matches NWN Toolset behavior for identifying conversation endpoints
+  - Updated TreeView DisplayText and FormattedDisplayText properties
+  - Added test coverage for terminal vs non-terminal empty nodes
+- **#289 - Block save with duplicate keys**: Manual save (Ctrl+S) now blocked when duplicate parameter keys exist
+  - Added `HasAnyDuplicateKeys()` public method to ScriptParameterUIManager
+  - Shows warning dialog explaining the issue
+  - Prevents data corruption from duplicate key overwrites
 
 ---
 
