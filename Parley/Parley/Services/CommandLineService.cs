@@ -211,15 +211,19 @@ Examples:
         }
 
         /// <summary>
-        /// Generate screenplay format from dialog
+        /// Generate screenplay format from dialog.
+        /// Public for reuse from GUI (Copy Tree Structure command).
         /// </summary>
-        private static string GenerateScreenplay(Dialog dialog, string filePath)
+        public static string GenerateScreenplay(Dialog dialog, string? filePath = null)
         {
             var sb = new System.Text.StringBuilder();
             var visited = new System.Collections.Generic.HashSet<DialogNode>();
 
-            sb.AppendLine($"# {Path.GetFileNameWithoutExtension(filePath)}");
-            sb.AppendLine();
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                sb.AppendLine($"# {Path.GetFileNameWithoutExtension(filePath)}");
+                sb.AppendLine();
+            }
 
             // Process each starting entry
             foreach (var start in dialog.Starts)

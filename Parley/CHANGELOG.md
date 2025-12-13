@@ -10,6 +10,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.62-alpha] - 2025-12-13
+**Branch**: `parley/sprint/theme-polish-menu` | **PR**: #367
+
+### Sprint: Theme Polish & Menu Cleanup (#363)
+
+Theme system polish, menu organization, and UI improvements.
+
+#### Fixed
+- **#176 - Theme colors consistency**: Swapped NPC/PC colors in Deuteranopia and Protanopia themes
+  - All colorblind themes now use warm colors for NPC, cool colors for PC
+- **#177 - Theme contrast improvements**: Fixed colors for each colorblind condition
+  - Deuteranopia/Protanopia: Orange `#B35900` (NPC), blue/teal `#007799` (PC)
+  - Tritanopia: Replaced problematic blues with dark teals (`#2D6659`) - blue is indistinguishable for tritanopes
+  - All tree and speaker colors now meet WCAG AA 4.5:1 minimum
+- **#334 - Menu checkmark consistency**: Added checkmarks to Font Size menu
+  - Font Size menu now shows ✓ next to current selection (consistent with Flowchart Layout menu)
+  - Both menus initialize checkmarks correctly on window load
+- **#197 - Copy Tree Structure uses screenplay format**: Refactored to reuse CLI screenplay generator
+  - `SPEAKER: text` format with indentation for conversation flow
+  - Shows NPC speaker tags when available, defaults to "NPC" or "PC"
+  - Shared logic via `CommandLineService.GenerateScreenplay()`
+
+---
+
 ## [0.1.61-alpha] - 2025-12-13
 **Branch**: `parley/sprint/bug-squash-scrap-save` | **PR**: #365
 
