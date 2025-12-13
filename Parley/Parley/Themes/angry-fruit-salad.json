@@ -29,6 +29,8 @@
     "tree_entry": "#FFFF00",
     "tree_reply": "#00FFFF",
     "tree_link": "#FF00FF",
+    "title_bar": "#FF6600",
+    "title_bar_foreground": "#00FF00",
     "button_primary": "#FF6600",
     "button_secondary": "#00FF00",
     "button_hover": "#FF0099",

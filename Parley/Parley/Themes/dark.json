@@ -28,6 +28,8 @@
     "tree_entry": "#FF8A65",
     "tree_reply": "#4FC3F7",
     "tree_link": "#808080",
+    "title_bar": "#3A3A3A",
+    "title_bar_foreground": "#D4D4D4",
     "button_primary": "#007ACC",
     "button_secondary": "#5A5A5A",
     "button_hover": "#1F9CF0",

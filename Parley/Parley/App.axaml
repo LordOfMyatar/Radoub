@@ -99,6 +99,10 @@
         <!-- Default theme background - will be overridden by theme manager -->
         <SolidColorBrush x:Key="ThemeBackground">#FFFFFF</SolidColorBrush>
 
+        <!-- Title bar colors - will be overridden by theme manager -->
+        <SolidColorBrush x:Key="ThemeTitleBar">#3C3C3C</SolidColorBrush>
+        <SolidColorBrush x:Key="ThemeTitleBarForeground">#FFFFFF</SolidColorBrush>
+
         <!-- Scrollbar auto-hide preference (Issue #63) - will be updated from settings -->
         <x:Boolean x:Key="AllowScrollbarAutoHide">False</x:Boolean>
 

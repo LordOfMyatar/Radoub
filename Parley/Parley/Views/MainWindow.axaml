@@ -12,7 +12,10 @@
         Icon="avares://Parley/Assets/parley.ico"
         Width="{Binding Source={x:Static services:SettingsService.Instance}, Path=WindowWidth, Mode=TwoWay}"
         Height="{Binding Source={x:Static services:SettingsService.Instance}, Path=WindowHeight, Mode=TwoWay}"
-        MinWidth="800" MinHeight="600">
+        MinWidth="800" MinHeight="600"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
 
     <Design.DataContext>
         <vm:MainViewModel/>
@@ -25,6 +28,7 @@
 
     <Grid x:Name="MainGrid">
         <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="1*" MinHeight="200"/>
@@ -39,8 +43,36 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeTitleBar}"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- App Icon and Title -->
+                <StackPanel Grid.Column="0" Grid.ColumnSpan="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="8,0,0,0"
+                            IsHitTestVisible="False">
+                    <Image Source="avares://Parley/Assets/parley.ico"
+                           Width="{DynamicResource GlobalFontSize}"
+                           Height="{DynamicResource GlobalFontSize}"
+                           Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding WindowTitle}"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <!-- Menu Bar -->
-        <Menu Grid.Row="0">
+        <Menu Grid.Row="1">
             <MenuItem Header="_File">
                 <MenuItem Header="_New" InputGesture="Ctrl+N" Click="OnNewClick"/>
                 <Separator/>
@@ -128,7 +160,7 @@
         </Menu>
 
         <!-- Module Info Bar -->
-        <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="8,4">
+        <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="8,4">
             <StackPanel Orientation="Horizontal" Spacing="15">
                 <TextBlock x:Name="ModuleNameTextBlock"
                            Text="No module loaded"
@@ -144,9 +176,9 @@
             </StackPanel>
         </Border>
 
-<!-- Main Content Area (spans rows 2-4 for left/right layout) -->
+<!-- Main Content Area (spans rows 3-5 for left/right layout) -->
         <!-- DRAGON: Grid layout only - tree data binding in TreeView below -->
-        <Grid Grid.Row="2" Grid.RowSpan="3" x:Name="MainContentGrid">
+        <Grid Grid.Row="3" Grid.RowSpan="3" x:Name="MainContentGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="800" MinWidth="500"/>  <!-- Tree+Text area -->
                 <ColumnDefinition Width="5"/>
@@ -790,7 +822,7 @@
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="7" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="5,2">
+        <Border Grid.Row="8" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="5,2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

@@ -128,6 +128,13 @@ namespace DialogEditor.Models
         [JsonPropertyName("tree_link")]
         public string? TreeLink { get; set; }
 
+        // Title bar colors (Issue #139)
+        [JsonPropertyName("title_bar")]
+        public string? TitleBar { get; set; }
+
+        [JsonPropertyName("title_bar_foreground")]
+        public string? TitleBarForeground { get; set; }
+
         // Button colors
         [JsonPropertyName("button_primary")]
         public string? ButtonPrimary { get; set; }

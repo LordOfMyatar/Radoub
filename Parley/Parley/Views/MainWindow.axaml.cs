@@ -819,6 +819,27 @@ namespace DialogEditor.Views
             Close();
         }
 
+        #region Title Bar Handlers (Issue #139)
+
+        private void OnTitleBarPointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+        {
+            // Only drag on left mouse button
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            {
+                BeginMoveDrag(e);
+            }
+        }
+
+        private void OnTitleBarDoubleTapped(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            // Toggle maximize/restore on double-click
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+        }
+
+        #endregion
+
         private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
         {
             try

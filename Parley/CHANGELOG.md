@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.59-alpha] - 2025-12-13
+**Branch**: `parley/feat/custom-title-bar` | **PR**: #354
+
+### Feat: Theme-aware Custom Title Bar (#139)
+
+Custom title bar that matches the active theme instead of native Windows title bar.
+
+#### Added
+- Custom title bar with app icon and window title
+- `ThemeTitleBar` and `ThemeTitleBarForeground` theme color properties
+- Window drag support via title bar
+- Double-click title bar to toggle maximize/restore
+- Icon and title text scale with global font size setting
+
+#### Changed
+- All 8 theme JSON files updated with title bar colors
+- Window uses `ExtendClientAreaToDecorationsHint` for custom chrome
+
+---
+
 ## [0.1.58-alpha] - 2025-12-13
 **Branch**: `parley/fix/dialog-nodes-refresh` | **PR**: #351
 
