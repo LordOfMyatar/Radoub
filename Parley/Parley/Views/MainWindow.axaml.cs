@@ -605,9 +605,22 @@ namespace DialogEditor.Views
             // Visual feedback - show saving status
             _viewModel.StatusMessage = "Saving file...";
 
-            await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
+            // Issue #8: Check save result and show dialog on failure
+            var success = await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
 
-            _viewModel.StatusMessage = "File saved successfully";
+            if (success)
+            {
+                _viewModel.StatusMessage = "File saved successfully";
+            }
+            else
+            {
+                // Show error dialog with Save As option
+                var saveAs = await ShowSaveErrorDialog(_viewModel.StatusMessage);
+                if (saveAs)
+                {
+                    OnSaveAsClick(sender, e);
+                }
+            }
         }
 
         private void SaveCurrentNodeProperties()
@@ -2233,8 +2246,10 @@ namespace DialogEditor.Views
                     }
                     else
                     {
-                        // Save failed - StatusMessage already set by SaveDialogAsync
-                        // Don't overwrite the error message
+                        // Issue #8: Save failed - show visible warning
+                        // StatusMessage already set by SaveDialogAsync with specific error
+                        // Prepend warning emoji so user notices
+                        _viewModel.StatusMessage = $"⚠ {_viewModel.StatusMessage}";
                         UnifiedLogger.LogApplication(LogLevel.WARN, "Auto-save failed - check status message for details");
                     }
                 }
@@ -3904,6 +3919,57 @@ namespace DialogEditor.Views
 
             buttonPanel.Children.Add(yesButton);
             buttonPanel.Children.Add(noButton);
+
+            panel.Children.Add(buttonPanel);
+            dialog.Content = panel;
+
+            await dialog.ShowDialog(this);
+            return result;
+        }
+
+        /// <summary>
+        /// Issue #8: Shows error dialog with option to Save As when save fails.
+        /// Returns true if user wants to Save As, false to dismiss.
+        /// </summary>
+        private async Task<bool> ShowSaveErrorDialog(string errorMessage)
+        {
+            var dialog = new Window
+            {
+                Title = "Save Failed",
+                MinWidth = 400,
+                MaxWidth = 500,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false
+            };
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = errorMessage,
+                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
+                MaxWidth = 460,
+                Margin = new Thickness(0, 0, 0, 20)
+            });
+
+            var buttonPanel = new StackPanel
+            {
+                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                Spacing = 10
+            };
+
+            var result = false;
+
+            var saveAsButton = new Button { Content = "Save As...", Width = 100 };
+            saveAsButton.Click += (s, e) => { result = true; dialog.Close(); };
+
+            var cancelButton = new Button { Content = "Cancel", Width = 80 };
+            cancelButton.Click += (s, e) => { result = false; dialog.Close(); };
+
+            buttonPanel.Children.Add(saveAsButton);
+            buttonPanel.Children.Add(cancelButton);
 
             panel.Children.Add(buttonPanel);
             dialog.Content = panel;
