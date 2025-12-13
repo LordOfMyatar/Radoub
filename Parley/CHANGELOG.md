@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.55-alpha] - 2025-12-12
-**Branch**: `parley/refactor/safe-control-finder` | **PR**: #TBD
+**Branch**: `parley/refactor/safe-control-finder` | **PR**: #348
 
 ### Refactor: Extract SafeControlFinder utility class (#342)
 
