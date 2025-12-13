@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.58-alpha] - 2025-12-13
+**Branch**: `parley/fix/dialog-nodes-refresh` | **PR**: #TBD
+
+### Fix: DialogNodes ObservableCollection Refresh (#130)
+
+Enable 16 skipped headless tests that verify DialogNodes auto-updates after node operations.
+
+#### Changed
+- TBD
+
+---
+
 ## [0.1.57-alpha] - 2025-12-13
 **Branch**: `parley/fix/utc-slow-startup` | **PR**: #350
 
