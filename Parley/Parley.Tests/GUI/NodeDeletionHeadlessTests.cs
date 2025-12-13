@@ -51,10 +51,8 @@ namespace Parley.Tests.GUI
             // Act
             viewModel.DeleteNode(nodeToDelete);
 
-            // Assert: At least one more node added to scrap
-            // Note: ScrapEntries shows ALL entries (bug), so just check it increased
-            Assert.True(viewModel.ScrapEntries.Count > initialScrapCount,
-                $"Scrap should increase after delete. Initial: {initialScrapCount}, Final: {viewModel.ScrapEntries.Count}");
+            // Assert: Exactly one more node added to scrap for this file (#352 fix)
+            Assert.Equal(initialScrapCount + 1, viewModel.ScrapEntries.Count);
         }
 
         [AvaloniaFact]
@@ -120,10 +118,8 @@ namespace Parley.Tests.GUI
             // Act: Delete parent (should scrap parent + children)
             viewModel.DeleteNode(entryNode);
 
-            // Assert: At least 2 more nodes added to scrap (parent + child)
-            // Note: ScrapEntries shows ALL entries (bug), so just check it increased by at least 2
-            Assert.True(viewModel.ScrapEntries.Count >= initialScrapCount + 2,
-                $"Scrap should increase by at least 2 after delete. Initial: {initialScrapCount}, Final: {viewModel.ScrapEntries.Count}");
+            // Assert: Exactly 2 more nodes added to scrap (parent + child) - #352 fix
+            Assert.Equal(initialScrapCount + 2, viewModel.ScrapEntries.Count);
         }
 
         [AvaloniaFact]
@@ -167,6 +163,76 @@ namespace Parley.Tests.GUI
             Assert.NotNull(viewModel.CurrentDialog);
             Assert.Equal(2, viewModel.CurrentDialog.Entries.Count);
             Assert.Equal(2, viewModel.CurrentDialog.Starts.Count);
+        }
+
+        [AvaloniaFact]
+        public void UndoDelete_RemovesNodeFromScrap()
+        {
+            // Arrange - Issue #356: Undo should remove restored nodes from scrap
+            var viewModel = new MainViewModel();
+            viewModel.NewDialog();
+            viewModel.CurrentFileName = "test_undo_scrap.dlg";
+            viewModel.AddEntryNode(null);
+
+            var nodeToDelete = GetFirstEntryNode(viewModel);
+            Assert.NotNull(nodeToDelete);
+
+            // Save undo state before delete
+            viewModel.SaveUndoState("Before delete");
+
+            // Delete node - adds to scrap
+            viewModel.DeleteNode(nodeToDelete);
+            var scrapCountAfterDelete = viewModel.ScrapEntries.Count;
+            Assert.True(scrapCountAfterDelete > 0, "Node should be in scrap after delete");
+
+            // Act: Undo the delete
+            viewModel.Undo();
+
+            // Assert: Node should be removed from scrap after undo
+            Assert.Equal(scrapCountAfterDelete - 1, viewModel.ScrapEntries.Count);
+        }
+
+        [AvaloniaFact]
+        public void ScrapEntries_OnlyShowsCurrentFileEntries()
+        {
+            // Arrange - Issue #352: Scrap should filter by current file
+            // Use unique filenames with timestamp to avoid interference from other tests
+            var testId = DateTime.UtcNow.Ticks;
+            var fileA = $"test_scrap_filter_A_{testId}.dlg";
+            var fileB = $"test_scrap_filter_B_{testId}.dlg";
+            var viewModel = new MainViewModel();
+
+            // Create and delete nodes in file A
+            viewModel.NewDialog();
+            viewModel.CurrentFileName = fileA;
+            var initialScrapForFileA = viewModel.ScrapEntries.Count; // Should be 0 for new unique file
+            viewModel.AddEntryNode(null);
+            var nodeA = GetFirstEntryNode(viewModel);
+            Assert.NotNull(nodeA);
+            viewModel.DeleteNode(nodeA);
+            Assert.Equal(initialScrapForFileA + 1, viewModel.ScrapEntries.Count);
+
+            // Switch to file B (new dialog)
+            viewModel.NewDialog();
+            viewModel.CurrentFileName = fileB;
+
+            // Assert: Scrap should be empty for new file
+            Assert.Empty(viewModel.ScrapEntries);
+
+            // Delete a node in file B
+            viewModel.AddEntryNode(null);
+            var nodeB = GetFirstEntryNode(viewModel);
+            Assert.NotNull(nodeB);
+            viewModel.DeleteNode(nodeB);
+
+            // Assert: Should show only file B's scrap entry
+            Assert.Single(viewModel.ScrapEntries);
+
+            // Switch back to file A
+            viewModel.CurrentFileName = fileA;
+
+            // Assert: Should show file A's scrap entry
+            Assert.Single(viewModel.ScrapEntries);
         }
     }
 }
