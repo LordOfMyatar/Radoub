@@ -252,9 +252,11 @@ namespace DialogEditor.Models
                 return; // Already populated or not initialized
 
             // Add basic depth protection to prevent infinite recursion (same as copy tree)
-            if (_depth >= 50)
+            // Issue #32: Increased from 50 to 250 to support dialogs up to depth 100+
+            // (Each Entry→Reply pair counts as 2 depth levels in TreeView)
+            if (_depth >= 250)
             {
-                DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Hit max depth {_depth} for node '{_originalNode.DisplayText}'");
+                DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.WARN, $"🌳 TreeView: Hit max depth {_depth} for node '{_originalNode.DisplayText}' - dialog may be extremely deep");
                 return;
             }
 
