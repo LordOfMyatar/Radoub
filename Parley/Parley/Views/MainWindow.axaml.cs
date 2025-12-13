@@ -105,7 +105,8 @@ namespace DialogEditor.Views
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 autoSaveProperty: AutoSaveProperty,
-                getSelectedNode: () => _selectedNode);
+                getSelectedNode: () => _selectedNode,
+                getCurrentFilePath: () => _viewModel.CurrentFilePath); // Issue #5: For lazy creature loading
             _keyboardShortcutManager = new KeyboardShortcutManager();
             _keyboardShortcutManager.RegisterShortcuts(this);
             _debugAndLoggingHandler = new DebugAndLoggingHandler(
@@ -574,8 +575,7 @@ namespace DialogEditor.Views
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Opening file: {UnifiedLogger.SanitizePath(filePath)}");
                     await _viewModel.LoadDialogAsync(filePath);
 
-                    // Load creatures from the same directory as the dialog file
-                    await LoadCreaturesFromModuleDirectory(filePath);
+                    // Issue #5: Removed synchronous creature loading - now loaded lazily when creature picker opens
 
                     // Update module info bar
                     UpdateModuleInfo(filePath);
@@ -790,8 +790,7 @@ namespace DialogEditor.Views
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading recent file: {UnifiedLogger.SanitizePath(filePath)}");
                     await _viewModel.LoadDialogAsync(filePath);
 
-                    // Load creatures from the same directory as the dialog file
-                    await LoadCreaturesFromModuleDirectory(filePath);
+                    // Issue #5: Removed synchronous creature loading - now loaded lazily when creature picker opens
 
                     // Update module info bar
                     UpdateModuleInfo(filePath);
@@ -2971,39 +2970,8 @@ namespace DialogEditor.Views
             }
         }
 
-        private async Task LoadCreaturesFromModuleDirectory(string dialogFilePath)
-        {
-            try
-            {
-                // Get directory containing the dialog file (module directory)
-                var moduleDirectory = Path.GetDirectoryName(dialogFilePath);
-                if (string.IsNullOrEmpty(moduleDirectory))
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot determine module directory from dialog path");
-                    return;
-                }
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading creatures from module: {UnifiedLogger.SanitizePath(moduleDirectory)}");
-
-                // Scan for UTC files in module directory
-                var creatures = await _creatureService.ScanCreaturesAsync(moduleDirectory);
-
-                if (creatures.Count > 0)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {creatures.Count} creatures from module");
-                    _viewModel.StatusMessage = $"Loaded {creatures.Count} creature{(creatures.Count == 1 ? "" : "s")}";
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "No UTC files found in module directory");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load creatures: {ex.Message}");
-                // Don't block dialog loading if creature loading fails
-            }
-        }
+        // Issue #5: LoadCreaturesFromModuleDirectory removed - creature loading now done lazily
+        // in ResourceBrowserManager.BrowseCreatureAsync when user opens the creature picker
 
         private void UpdateModuleInfo(string dialogFilePath)
         {

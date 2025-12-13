@@ -15,6 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fix: UTC Reading Causes Slow Startup (#5)
 
+Creature (UTC) files are now loaded lazily instead of during dialog open, improving startup performance.
+
+#### Changed
+- Removed synchronous UTC scanning from dialog load flow
+- Creature loading now deferred until user opens the creature picker
+- `ResourceBrowserManager` now accepts `getCurrentFilePath` callback for lazy loading
+- `LoadCreaturesFromModuleDirectory` method removed from MainWindow
+
+#### User Impact
+- Faster dialog file opening, especially with large modules
+- First creature picker open may show brief "Loading creatures..." message
+- Subsequent creature picker opens use cached data (no delay)
+
 ---
 
 ## [0.1.56-alpha] - 2025-12-12
