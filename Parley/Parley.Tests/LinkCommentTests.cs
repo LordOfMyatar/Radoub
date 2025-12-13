@@ -325,13 +325,14 @@ namespace Parley.Tests
         #region TreeView Display Tests
 
         [Fact]
-        public void TreeViewSafeLinkNode_EmptyText_UsesContinuePrefix()
+        public void TreeViewSafeLinkNode_EmptyText_TerminalNode_ShowsEndDialog()
         {
-            // Arrange
+            // Arrange - Node with no children (terminal node)
             var node = new DialogNode
             {
                 Type = DialogNodeType.Entry,
-                Text = new LocString()
+                Text = new LocString(),
+                Pointers = new List<DialogPtr>() // No children
             };
             node.Text.Add(0, ""); // Empty text
 
@@ -344,9 +345,45 @@ namespace Parley.Tests
 
             var linkNode = new TreeViewSafeLinkNode(node, 0, "Link", pointer);
 
-            // Assert - Empty text should show as [CONTINUE] with speaker prefix
-            Assert.Contains("[CONTINUE]", linkNode.DisplayText);
+            // Assert - Issue #353: Empty terminal nodes show [END DIALOG]
+            Assert.Contains("[END DIALOG]", linkNode.DisplayText);
             Assert.Contains("[Owner]", linkNode.DisplayText); // Entry without speaker = Owner
+        }
+
+        [Fact]
+        public void TreeViewSafeLinkNode_EmptyText_WithChildren_ShowsContinue()
+        {
+            // Arrange - Node with children (non-terminal)
+            var childNode = new DialogNode
+            {
+                Type = DialogNodeType.Reply,
+                Text = new LocString()
+            };
+            childNode.Text.Add(0, "Child response");
+
+            var node = new DialogNode
+            {
+                Type = DialogNodeType.Entry,
+                Text = new LocString(),
+                Pointers = new List<DialogPtr>
+                {
+                    new DialogPtr { Node = childNode, Type = DialogNodeType.Reply }
+                }
+            };
+            node.Text.Add(0, ""); // Empty text
+
+            var pointer = new DialogPtr
+            {
+                Node = node,
+                Type = DialogNodeType.Entry,
+                IsLink = true
+            };
+
+            var linkNode = new TreeViewSafeLinkNode(node, 0, "Link", pointer);
+
+            // Assert - Issue #353: Empty nodes WITH children show [CONTINUE]
+            Assert.Contains("[CONTINUE]", linkNode.DisplayText);
+            Assert.Contains("[Owner]", linkNode.DisplayText);
         }
 
         [Fact]

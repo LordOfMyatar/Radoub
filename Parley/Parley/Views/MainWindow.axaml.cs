@@ -626,6 +626,46 @@ namespace DialogEditor.Views
                 return;
             }
 
+            // Issue #289: Block save if duplicate parameter keys exist
+            if (_parameterUIManager.HasAnyDuplicateKeys())
+            {
+                _viewModel.StatusMessage = "⛔ Cannot save: Fix duplicate parameter keys first!";
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    "Save blocked: Duplicate parameter keys detected. User must fix before saving.");
+
+                // Show warning dialog
+                var msgBox = new Window
+                {
+                    Title = "Cannot Save",
+                    Width = 400,
+                    Height = 150,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Content = new StackPanel
+                    {
+                        Margin = new Thickness(20),
+                        Spacing = 15,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = "Duplicate parameter keys detected.\n\nFix the duplicate keys (shown with red borders) before saving.",
+                                TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                            },
+                            new Button
+                            {
+                                Content = "OK",
+                                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+                            }
+                        }
+                    }
+                };
+
+                var okButton = ((StackPanel)msgBox.Content).Children.OfType<Button>().First();
+                okButton.Click += (s, args) => msgBox.Close();
+                msgBox.Show(this);
+                return;
+            }
+
             // First, save any pending node changes
             SaveCurrentNodeProperties();
 

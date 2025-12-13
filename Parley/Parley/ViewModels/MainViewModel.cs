@@ -812,6 +812,14 @@ namespace DialogEditor.ViewModels
                 // CRITICAL: Rebuild LinkRegistry after undo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
 
+                // Issue #356: Remove scrap entries for nodes that were restored by undo
+                if (!string.IsNullOrEmpty(CurrentFileName))
+                {
+                    _scrapManager.RemoveRestoredNodes(CurrentFileName, CurrentDialog);
+                    OnPropertyChanged(nameof(ScrapCount));
+                    OnPropertyChanged(nameof(ScrapTabHeader));
+                }
+
                 // CRITICAL FIX: Extend IsRestoring to cover async tree rebuild.
                 // Without this, tree restoration triggers SaveUndoState causing infinite loop.
                 _undoRedoService.SetRestoring(true);

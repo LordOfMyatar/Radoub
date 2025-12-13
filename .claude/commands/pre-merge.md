@@ -110,7 +110,26 @@ Scan for:
 - README updates needed for new features
 - User-facing changes that need wiki documentation
 - Claude file updates
-- Code_Path_Map updates
+- **CODE_PATH_MAP updates** (see below)
+
+**CODE_PATH_MAP Check** (`Parley/Documentation/Developer/CODE_PATH_MAP.md`):
+
+Check the CHANGELOG for this PR and determine if updates are needed:
+
+| Change Type | CODE_PATH_MAP Update Needed |
+|-------------|----------------------------|
+| New service/manager class | ✅ Add to Services & Managers section |
+| New code path (save, load, delete, paste, etc.) | ✅ Add/update relevant PATH section |
+| Modified existing service (new methods) | ✅ Add dated note to service entry |
+| Depth/limit changes | ✅ Update affected component entry |
+| Bug fixes (internal only) | ❌ Not usually needed |
+| Test-only changes | ❌ Not needed |
+| UI-only changes (no new code paths) | ❌ Not needed |
+
+If updates needed, verify:
+- Last Updated date matches today
+- New services documented with line counts
+- New methods noted with dates and issue numbers
 
 **Wiki Updates** (https://github.com/LordOfMyatar/Radoub/wiki):
 
@@ -173,6 +192,10 @@ Output format:
   - [ ] Version section exists
   - [ ] PR number filled in
   - [ ] Date is today or earlier (not TBD, not future)
+- [x/⚠️] CODE_PATH_MAP updated: [Needed/Not needed/N/A]
+  - [ ] New services documented
+  - [ ] New code paths added
+  - [ ] Last Updated date current
 - [x/⚠️] README updates: [Needed/Not needed]
 - [x/⚠️] Wiki updates: [Needed/Not needed]
   - [ ] Pages reviewed: [list affected pages]
