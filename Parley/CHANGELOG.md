@@ -19,12 +19,10 @@ Theme system polish, menu organization, and UI improvements.
 
 #### Fixed
 - **#176 - Theme colors consistency**: Swapped NPC/PC colors in Deuteranopia and Protanopia themes
-  - All colorblind themes now use warm colors (orange) for NPC, cool colors (blue) for PC
-  - Tritanopia already correct, no changes needed
-- **#177 - Theme contrast improvements**: Darkened colors in colorblind themes for WCAG AA compliance
-  - Orange tones: `#FF8800`/`#FF9944` → `#B35900` (4.6:1 contrast vs background)
-  - Cyan tones: `#0099CC`/`#0088CC` → `#007799`/`#006699` (4.7:1+ contrast)
-  - Warning/success colors updated for readability
+  - All colorblind themes now use warm colors for NPC, cool colors for PC
+- **#177 - Theme contrast improvements**: Fixed colors for each colorblind condition
+  - Deuteranopia/Protanopia: Orange `#B35900` (NPC), blue/teal `#007799` (PC)
+  - Tritanopia: Replaced problematic blues with dark teals (`#2D6659`) - blue is indistinguishable for tritanopes
   - All tree and speaker colors now meet WCAG AA 4.5:1 minimum
 - **#334 - Menu checkmark consistency**: Added checkmarks to Font Size menu
   - Font Size menu now shows ✓ next to current selection (consistent with Flowchart Layout menu)
