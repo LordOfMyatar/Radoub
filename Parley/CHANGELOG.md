@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.62-alpha] - 2025-12-13
-**Branch**: `parley/sprint/theme-polish-menu` | **PR**: #TBD
+**Branch**: `parley/sprint/theme-polish-menu` | **PR**: #367
 
 ### Sprint: Theme Polish & Menu Cleanup (#363)
 
