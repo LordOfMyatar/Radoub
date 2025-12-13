@@ -14,14 +14,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.5.4] - TBD
-**Branch**: `radoub/feat/github-projects-sync` | **PR**: #TBD
+**Branch**: `radoub/feat/github-projects-sync` | **PR**: #366
 
-### Enhancement: Update GitHub Projects with Sprints and Epics (#360)
+### Enhancement: GitHub Projects CLI Integration (#360)
 
-Document GitHub CLI project permissions and update project boards with sprint/epic tracking.
+Integrate GitHub Projects with Claude Code slash commands for automatic project board updates.
 
 #### Added
-- TBD
+- `/grooming` - Add groomed issues to appropriate project board
+- `/sprint-planning` - Add sprint issues to project and mark in-progress
+- `/init-item` - Add issue to project when branch initialized, mark in-progress
+- Documentation for GitHub CLI project scope (`gh auth refresh -s project`)
 
 ---
 
