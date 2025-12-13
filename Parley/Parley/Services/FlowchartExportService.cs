@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DialogEditor.Models;
+using DialogEditor.Utils;
 
 namespace DialogEditor.Services
 {
@@ -168,14 +169,15 @@ namespace DialogEditor.Services
             var positioned = new HashSet<string>();
             int maxX = 0, maxY = 0;
 
-            void PositionNode(string nodeId, int x, int y, int availableWidth)
+            void PositionNode(string nodeId, int xSlot, int y, int availableSlots)
             {
                 if (positioned.Contains(nodeId) || !graph.Nodes.ContainsKey(nodeId))
                     return;
                 positioned.Add(nodeId);
 
-                // Center node in available space
-                int nodeX = x + (availableWidth * horizontalSpacing - nodeWidth) / 2;
+                // Center node in available slot space
+                // Each slot is horizontalSpacing wide, node is centered within its slots
+                int nodeX = padding + xSlot * horizontalSpacing + (availableSlots * horizontalSpacing - nodeWidth) / 2;
                 nodePositions[nodeId] = (nodeX, y);
                 maxX = Math.Max(maxX, nodeX + nodeWidth);
                 maxY = Math.Max(maxY, y + nodeHeight);
@@ -183,25 +185,25 @@ namespace DialogEditor.Services
                 if (!childrenOf.TryGetValue(nodeId, out var children) || children.Count == 0)
                     return;
 
-                // Position children below
+                // Position children below, each child gets slots proportional to its subtree width
                 int childY = y + verticalSpacing;
-                int childX = x;
+                int childSlot = xSlot;
 
                 foreach (var childId in children)
                 {
-                    int childWidth = subtreeWidths.TryGetValue(childId, out var w) ? w : 1;
-                    PositionNode(childId, childX, childY, childWidth);
-                    childX += childWidth;
+                    int childSlots = subtreeWidths.TryGetValue(childId, out var w) ? w : 1;
+                    PositionNode(childId, childSlot, childY, childSlots);
+                    childSlot += childSlots;
                 }
             }
 
             // Position all root nodes side by side
-            int rootX = 0;
+            int rootSlot = 0;
             foreach (var rootId in rootNodes)
             {
-                int rootWidth = subtreeWidths.TryGetValue(rootId, out var rw) ? rw : 1;
-                PositionNode(rootId, rootX, padding, rootWidth);
-                rootX += rootWidth;
+                int rootSlots = subtreeWidths.TryGetValue(rootId, out var rw) ? rw : 1;
+                PositionNode(rootId, rootSlot, padding, rootSlots);
+                rootSlot += rootSlots;
             }
 
             // Position any orphan nodes (shouldn't happen but safety check)
@@ -260,13 +262,28 @@ namespace DialogEditor.Services
             {
                 if (!nodePositions.TryGetValue(node.Id, out var pos)) continue;
 
-                // Node colors
-                var fillColor = node.NodeType == FlowchartNodeType.Entry ? "#E8F4FD" : "#FDF4E8";
-                var strokeColor = node.NodeType == FlowchartNodeType.Entry ? "#0066CC" : "#CC6600";
+                // Node colors - use SpeakerVisualHelper for theme/customization awareness
+                string fillColor;
+                string strokeColor;
+
                 if (node.IsLink)
                 {
                     fillColor = "#F0F0F0";
-                    strokeColor = "#999";
+                    strokeColor = "#9E9E9E";
+                }
+                else if (node.NodeType == FlowchartNodeType.Root)
+                {
+                    fillColor = "#E8E8E8";
+                    strokeColor = "#757575";
+                }
+                else
+                {
+                    // Use theme-aware background based on node type
+                    fillColor = "#FAFAFA"; // Light theme background
+
+                    // Get speaker color from SpeakerVisualHelper (respects theme and NPC customization)
+                    bool isPC = node.NodeType == FlowchartNodeType.Reply;
+                    strokeColor = SpeakerVisualHelper.GetSpeakerColor(node.Speaker ?? "", isPC);
                 }
 
                 // Node rectangle
