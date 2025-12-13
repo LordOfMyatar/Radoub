@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.61-alpha] - 2025-12-13
-**Branch**: `parley/sprint/bug-squash-scrap-save` | **PR**: #TBD
+**Branch**: `parley/sprint/bug-squash-scrap-save` | **PR**: #365
 
 ### Sprint: Bug Squash - Scrap & Save Fixes (#362)
 
