@@ -40,6 +40,14 @@ Option A sprint: MainWindow cleanup initiative.
 - Reduced window field declarations from 5 to 2 (browser windows retained due to complex result handling)
 - Reduced FindControl calls from 109 → 87
 
+#### Fixed
+- F5 shortcut now properly opens flowchart (#339)
+
+#### Documentation
+- Updated README: Flowchart is now a native feature, not a plugin (#346)
+- Removed flowchart-view plugin from Available Plugins table
+- Added native flowchart to New Features list
+
 #### Technical
 - SafeControlFinder handles Avalonia's type mismatch exceptions gracefully
 - WindowLifecycleManager supports custom onClosed callbacks for theme reloading

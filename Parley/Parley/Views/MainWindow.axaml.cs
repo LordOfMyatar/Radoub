@@ -337,6 +337,9 @@ namespace DialogEditor.Views
         void IKeyboardShortcutHandler.OnMoveNodeUp() => OnMoveNodeUpClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeDown() => OnMoveNodeDownClick(null, null!);
 
+        // View operations - Issue #339: F5 to open flowchart
+        void IKeyboardShortcutHandler.OnOpenFlowchart() => OnFlowchartClick(null, null!);
+
         #endregion
 
         private void OnAddContextAwareReply(object? sender, RoutedEventArgs e)
