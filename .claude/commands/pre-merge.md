@@ -258,6 +258,20 @@ git commit -m "chore: Pre-merge updates"
 git push
 ```
 
+### Step 10: Mark PR Ready for Review
+
+If the PR is still in draft state, mark it ready for review:
+
+```bash
+# Check if PR is draft
+gh pr view --json isDraft -q '.isDraft'
+
+# If draft, mark as ready
+gh pr ready [number]
+```
+
+This removes the draft status and signals the PR is ready for final review and merge.
+
 ## Flags
 
 - `--run-tests`: Actually execute tests (default: just check if needed)
