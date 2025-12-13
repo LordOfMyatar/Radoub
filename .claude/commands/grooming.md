@@ -37,6 +37,10 @@ git log --oneline --all --grep="#[number]" | head -10
 
 # Search for related keywords in recent commits
 git log --oneline -20 --all | head -20
+
+# Check CHANGELOG for related fixes
+# Parley: Parley/CHANGELOG.md
+# Radoub: CHANGELOG.md
 ```
 
 **Actions:**
@@ -84,10 +88,6 @@ gh issue edit [number] --title "[Tool] Type: Description"
 | Priority | `priority-high`, `priority-medium`, `priority-low` | Recommended |
 | Area | `ui`, `ux`, `performance`, `plugin`, `testing`, etc. | Optional |
 
-**Epic Labels:**
-- Epics need both `epic` AND specific epic label (e.g., `epic-0-plugins`)
-- Create new epic label if needed: `gh label create "epic-N-name" -c "0e8a16"`
-
 **Check Current Labels:**
 ```bash
 gh issue view [number] --json labels -q '.labels[].name'
@@ -112,17 +112,10 @@ gh issue list --state open --label epic --json number,title
 gh issue list --state open --label sprint --json number,title
 ```
 
-**Common Epic Associations:**
-- Plugin work → Epic #101 (Core Plugin APIs)
-- UI/UX improvements → Check if fits Theme Sprint #184
-- Validation/testing → Epic #41 (Dialog Validation)
-- Voice/audio → Epic #44 (Voice Acting Tools)
-- Search features → Sprint #42 (Advanced Search)
-
-**Link to Epic:**
-- Add epic-specific label (e.g., `epic-0-plugins`)
+**Link to Epic/Sprint:**
 - Reference in issue body: "Part of #[epic-number]"
-- Or use GitHub's "Development" section to link
+- Use GitHub's "Development" section to link
+- Add `epic` or `sprint` label to the parent tracking issue
 
 ### 5. Body Content Check
 
@@ -134,8 +127,8 @@ gh issue list --state open --label sprint --json number,title
 - Screenshots if UI-related
 
 **If body is sparse:**
-- Ask user for clarification, OR
-- Add context based on title/discussion
+- If issue author is `LordOfMyatar`: Ask during session for clarification
+- If issue author is someone else: Propose adding a comment starting with "Lord and Claude ask..." or "Lord and Claude comment..."
 
 ## Batch Grooming Workflow
 
@@ -286,23 +279,13 @@ Apply recommendations? [y/n/manual]
 - `theme` - Visual styling
 - `aurora-compatibility` - Aurora Toolset compat
 
-### Epic Labels
-- `epic-0-plugins` - Plugin foundation
-- `epic-1-parameters` - Script parameters
-- `epic-2-ui-ux` - UI/UX and fonts
-- `epic-3-flowchart` - Flowchart plugin
-- `epic-4-validation` - Validation and testing
-- `epic-5-search` - Search and replace
-- `epic-6-dictionary` - Custom dictionary
-- `epic-7-voice` - Voice acting plugin
-- `epic-99-refactoring` - MainViewModel refactoring
-- `epic-undo-redo` - Undo/Redo improvements
-- `epic-logging` - Logging & diagnostics
-
 ## Notes
 
 - Always ask before making changes in batch mode
 - Preserve user's original intent when editing titles
 - Don't over-label - 3-5 labels is usually sufficient
 - Check PR history before closing as "resolved"
+- Check CHANGELOG entries - issues may have been fixed and documented there
 - Link related issues when discovered during grooming
+- For `LordOfMyatar` issues: Ask questions directly in session
+- For external contributor issues: Propose comments prefixed with "Lord and Claude ask/comment..."
