@@ -90,16 +90,15 @@ namespace DialogEditor.ViewModels
         /// </summary>
         public void RefreshGraph()
         {
-            if (_flowchartGraph == null || Graph == null)
+            if (_flowchartGraph == null)
                 return;
 
-            // Re-create the Avalonia graph to force DataTemplate re-evaluation
-            // This triggers the converters to re-run with updated settings
-            var currentGraph = Graph;
+            // Rebuild the Avalonia graph from scratch to force DataTemplate re-evaluation
+            // Simply toggling Graph doesn't work because the object reference is the same
             Graph = null;
-            Graph = currentGraph;
+            Graph = FlowchartGraphAdapter.ToAvaloniaGraph(_flowchartGraph);
 
-            OnPropertyChanged(nameof(Graph));
+            UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart graph rebuilt for color refresh");
         }
 
         /// <summary>
