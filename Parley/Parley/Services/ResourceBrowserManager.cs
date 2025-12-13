@@ -7,6 +7,7 @@ using DialogEditor.ViewModels;
 using DialogEditor.Views;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -25,6 +26,7 @@ namespace DialogEditor.Services
         private readonly Action<string> _setStatusMessage;
         private readonly Action<string> _autoSaveProperty;
         private readonly Func<TreeViewSafeNode?> _getSelectedNode;
+        private readonly Func<string?> _getCurrentFilePath;
 
         // Session cache for recently used creature tags
         private readonly List<string> _recentCreatureTags = new();
@@ -35,7 +37,8 @@ namespace DialogEditor.Services
             Func<string, Control?> findControl,
             Action<string> setStatusMessage,
             Action<string> autoSaveProperty,
-            Func<TreeViewSafeNode?> getSelectedNode)
+            Func<TreeViewSafeNode?> getSelectedNode,
+            Func<string?>? getCurrentFilePath = null)
         {
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _creatureService = creatureService ?? throw new ArgumentNullException(nameof(creatureService));
@@ -43,6 +46,7 @@ namespace DialogEditor.Services
             _setStatusMessage = setStatusMessage ?? throw new ArgumentNullException(nameof(setStatusMessage));
             _autoSaveProperty = autoSaveProperty ?? throw new ArgumentNullException(nameof(autoSaveProperty));
             _getSelectedNode = getSelectedNode ?? throw new ArgumentNullException(nameof(getSelectedNode));
+            _getCurrentFilePath = getCurrentFilePath ?? (() => null);
         }
 
         /// <summary>
@@ -90,7 +94,8 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Opens creature browser dialog and updates speaker field
+        /// Opens creature browser dialog and updates speaker field.
+        /// Issue #5: Loads creatures lazily on first access to avoid slow startup.
         /// </summary>
         public async Task BrowseCreatureAsync(Window owner)
         {
@@ -110,13 +115,35 @@ namespace DialogEditor.Services
 
             try
             {
-                // Get creatures from CreatureService
+                // Issue #5: Lazy load creatures on first access
                 var creatures = _creatureService.GetAllCreatures();
 
                 if (creatures.Count == 0)
                 {
+                    // Try to load creatures from current dialog's module directory
+                    var currentFilePath = _getCurrentFilePath();
+                    if (!string.IsNullOrEmpty(currentFilePath))
+                    {
+                        var moduleDirectory = Path.GetDirectoryName(currentFilePath);
+                        if (!string.IsNullOrEmpty(moduleDirectory) && Directory.Exists(moduleDirectory))
+                        {
+                            _setStatusMessage("Loading creatures...");
+                            UnifiedLogger.LogApplication(LogLevel.INFO, $"Lazy loading creatures from: {UnifiedLogger.SanitizePath(moduleDirectory)}");
+
+                            creatures = await _creatureService.ScanCreaturesAsync(moduleDirectory);
+
+                            if (creatures.Count > 0)
+                            {
+                                _setStatusMessage($"Loaded {creatures.Count} creature{(creatures.Count == 1 ? "" : "s")}");
+                            }
+                        }
+                    }
+                }
+
+                if (creatures.Count == 0)
+                {
                     // Show helpful message with instructions
-                    var message = "No creatures loaded.\n\n" +
+                    var message = "No creatures found.\n\n" +
                                 "To use creature browser:\n" +
                                 "• Place .utc files in the same folder as your .dlg file, OR\n" +
                                 "• Specify module directory in Settings\n\n" +
@@ -137,7 +164,7 @@ namespace DialogEditor.Services
 
                     await msgBox.ShowDialog(owner);
 
-                    _setStatusMessage("No creatures loaded - see message for details");
+                    _setStatusMessage("No creatures found - see message for details");
                     UnifiedLogger.LogApplication(LogLevel.WARN, "No creatures available for picker");
                     return;
                 }
