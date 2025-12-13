@@ -20,6 +20,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Update `/sprint-planning` command to optionally create GitHub issues for planned sprints.
 
+#### Added
+- Sprint issue creation workflow after planning completes
+- User confirmation before creating issues
+- Automatic `sprint` and tool labels on created issues
+- Parent epic linking in sprint issue body
+- Work items checklist in sprint body
+- Support for creating multiple sprint issues at once
+
 ---
 
 ## [0.5.2] - 2025-12-13
