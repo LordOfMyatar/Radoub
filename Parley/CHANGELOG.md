@@ -10,6 +10,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.57-alpha] - 2025-12-13
+**Branch**: `parley/fix/utc-slow-startup` | **PR**: #350
+
+### Fix: UTC Reading Causes Slow Startup (#5)
+
+Creature (UTC) files are now loaded lazily instead of during dialog open, improving startup performance.
+
+#### Changed
+- Removed synchronous UTC scanning from dialog load flow
+- Creature loading now deferred until user opens the creature picker
+- `ResourceBrowserManager` now accepts `getCurrentFilePath` callback for lazy loading
+- `LoadCreaturesFromModuleDirectory` method removed from MainWindow
+
+#### User Impact
+- Faster dialog file opening, especially with large modules
+- First creature picker open may show brief "Loading creatures..." message
+- Subsequent creature picker opens use cached data (no delay)
+
+### Fix: Saving to Read-Only File Fails Silently (#8)
+
+Save operations now detect read-only files before attempting to write, with proper error dialogs.
+
+#### Changed
+- Added read-only file check in `DialogSaveService.SaveDialogAsync`
+- `MainViewModel.SaveDialogAsync` now returns `bool` to indicate success/failure
+- `OnSaveClick` shows error dialog with "Save As..." option when save fails
+- `OnWindowClosing` now checks save result and offers Save As or Discard options
+- `AutoSaveToFileAsync` shows ⚠ warning prefix in status bar on failure
+- Added `ShowSaveErrorDialog` helper for consistent error presentation
+- Extracted `ShowSaveAsDialogAsync` for reuse in close handler
+- Added unit test for read-only file handling
+
+#### User Impact
+- File > Save now shows popup dialog with "Save As..." option when save fails
+- Window close with unsaved changes offers Save As if normal save fails
+- Auto-save shows visible ⚠ warning in status bar when it can't save
+- No more silent failures or pretend saves - errors are always visible
+
+---
+
 ## [0.1.56-alpha] - 2025-12-12
 **Branch**: `parley/sprint/techdebt` | **PR**: #349
 

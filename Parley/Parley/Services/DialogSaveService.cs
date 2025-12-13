@@ -65,6 +65,19 @@ namespace DialogEditor.Services
                 return SaveResult.Failed("No file path specified", "File path is null or empty");
             }
 
+            // Issue #8: Check for read-only file before attempting save
+            if (File.Exists(filePath))
+            {
+                var fileInfo = new FileInfo(filePath);
+                if (fileInfo.IsReadOnly)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Cannot save to read-only file: {UnifiedLogger.SanitizePath(filePath)}");
+                    return SaveResult.Failed(
+                        "Cannot save: File is read-only. Use 'Save As' to save to a different location.",
+                        "File is marked as read-only");
+                }
+            }
+
             try
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving dialog to: {UnifiedLogger.SanitizePath(filePath)}");

@@ -351,6 +351,34 @@ namespace Parley.Tests
             Assert.NotNull(result.ErrorMessage);
         }
 
+        [Fact]
+        public async Task SaveDialogAsync_ReadOnlyFile_ReturnsFailed()
+        {
+            // Arrange - Issue #8: Test read-only file detection
+            var dialog = new Dialog();
+            var filePath = Path.Combine(_testDirectory, "readonly_test.dlg");
+
+            // Create file and set read-only
+            await File.WriteAllTextAsync(filePath, "test");
+            File.SetAttributes(filePath, FileAttributes.ReadOnly);
+
+            try
+            {
+                // Act
+                var result = await _saveService.SaveDialogAsync(dialog, filePath);
+
+                // Assert
+                Assert.False(result.Success);
+                Assert.Contains("read-only", result.StatusMessage, StringComparison.OrdinalIgnoreCase);
+            }
+            finally
+            {
+                // Cleanup - remove read-only attribute so file can be deleted
+                File.SetAttributes(filePath, FileAttributes.Normal);
+                File.Delete(filePath);
+            }
+        }
+
         #endregion
 
         #region Helper Methods

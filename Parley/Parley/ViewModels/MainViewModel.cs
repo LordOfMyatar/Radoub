@@ -360,12 +360,16 @@ namespace DialogEditor.ViewModels
             }
         }
 
-        public async Task SaveDialogAsync(string filePath)
+        /// <summary>
+        /// Saves dialog to file. Returns true if successful, false otherwise.
+        /// Issue #8: Now returns bool so callers can check result.
+        /// </summary>
+        public async Task<bool> SaveDialogAsync(string filePath)
         {
             if (CurrentDialog == null)
             {
                 StatusMessage = "No dialog to save";
-                return;
+                return false;
             }
 
             try
@@ -385,16 +389,19 @@ namespace DialogEditor.ViewModels
                     LastSavedTime = $"Last saved: {DateTime.Now:h:mm:ss tt}";
 
                     StatusMessage = result.StatusMessage;
+                    return true;
                 }
                 else
                 {
                     StatusMessage = result.StatusMessage;
+                    return false;
                 }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error saving dialog: {ex.Message}";
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save dialog in MainViewModel: {ex.Message}");
+                return false;
             }
             finally
             {

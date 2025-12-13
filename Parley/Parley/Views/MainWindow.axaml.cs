@@ -105,7 +105,8 @@ namespace DialogEditor.Views
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 autoSaveProperty: AutoSaveProperty,
-                getSelectedNode: () => _selectedNode);
+                getSelectedNode: () => _selectedNode,
+                getCurrentFilePath: () => _viewModel.CurrentFilePath); // Issue #5: For lazy creature loading
             _keyboardShortcutManager = new KeyboardShortcutManager();
             _keyboardShortcutManager.RegisterShortcuts(this);
             _debugAndLoggingHandler = new DebugAndLoggingHandler(
@@ -406,12 +407,39 @@ namespace DialogEditor.Views
                     if (string.IsNullOrEmpty(_viewModel.CurrentFileName))
                     {
                         // No filename - need Save As dialog
-                        // For now, just save what we can
                         _viewModel.StatusMessage = "Cannot auto-save without filename. Use File → Save As first.";
                         return; // Don't close
                     }
 
-                    await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
+                    // Issue #8: Check save result - offer Save As if save fails
+                    var saveSuccess = await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
+                    if (!saveSuccess)
+                    {
+                        // Save failed (e.g., read-only file) - offer Save As
+                        var saveAs = await ShowSaveErrorDialog(_viewModel.StatusMessage);
+                        if (saveAs)
+                        {
+                            // Show Save As dialog
+                            await ShowSaveAsDialogAsync();
+                            // Check if save succeeded after Save As
+                            if (_viewModel.HasUnsavedChanges)
+                            {
+                                // User cancelled Save As or it failed - don't close
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            // User chose Cancel - ask if they want to discard
+                            var discardChanges = await ShowConfirmDialog(
+                                "Discard Changes?",
+                                "Save failed. Do you want to discard changes and close anyway?");
+                            if (!discardChanges)
+                            {
+                                return; // Don't close
+                            }
+                        }
+                    }
                 }
 
                 // Now close (unhook event to prevent recursion, cleanup runs in second close)
@@ -574,8 +602,7 @@ namespace DialogEditor.Views
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Opening file: {UnifiedLogger.SanitizePath(filePath)}");
                     await _viewModel.LoadDialogAsync(filePath);
 
-                    // Load creatures from the same directory as the dialog file
-                    await LoadCreaturesFromModuleDirectory(filePath);
+                    // Issue #5: Removed synchronous creature loading - now loaded lazily when creature picker opens
 
                     // Update module info bar
                     UpdateModuleInfo(filePath);
@@ -605,9 +632,22 @@ namespace DialogEditor.Views
             // Visual feedback - show saving status
             _viewModel.StatusMessage = "Saving file...";
 
-            await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
+            // Issue #8: Check save result and show dialog on failure
+            var success = await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
 
-            _viewModel.StatusMessage = "File saved successfully";
+            if (success)
+            {
+                _viewModel.StatusMessage = "File saved successfully";
+            }
+            else
+            {
+                // Show error dialog with Save As option
+                var saveAs = await ShowSaveErrorDialog(_viewModel.StatusMessage);
+                if (saveAs)
+                {
+                    OnSaveAsClick(sender, e);
+                }
+            }
         }
 
         private void SaveCurrentNodeProperties()
@@ -704,13 +744,22 @@ namespace DialogEditor.Views
 
         private async void OnSaveAsClick(object? sender, RoutedEventArgs e)
         {
+            await ShowSaveAsDialogAsync();
+        }
+
+        /// <summary>
+        /// Issue #8: Extracted Save As logic so it can be called from close handler.
+        /// Returns true if save succeeded, false if cancelled or failed.
+        /// </summary>
+        private async Task<bool> ShowSaveAsDialogAsync()
+        {
             try
             {
                 var storageProvider = StorageProvider;
                 if (storageProvider == null)
                 {
                     _viewModel.StatusMessage = "Storage provider not available";
-                    return;
+                    return false;
                 }
 
                 // 🔧 WORKAROUND (2025-10-23): Simplified options to avoid hang
@@ -735,16 +784,21 @@ namespace DialogEditor.Views
 
                     var filePath = file.Path.LocalPath;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving file as: {UnifiedLogger.SanitizePath(filePath)}");
-                    await _viewModel.SaveDialogAsync(filePath);
+                    var success = await _viewModel.SaveDialogAsync(filePath);
 
                     // Refresh recent files menu
                     PopulateRecentFilesMenu();
+
+                    return success;
                 }
+
+                return false; // User cancelled
             }
             catch (Exception ex)
             {
                 _viewModel.StatusMessage = $"Error saving file: {ex.Message}";
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save file: {ex.Message}");
+                return false;
             }
         }
 
@@ -790,8 +844,7 @@ namespace DialogEditor.Views
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading recent file: {UnifiedLogger.SanitizePath(filePath)}");
                     await _viewModel.LoadDialogAsync(filePath);
 
-                    // Load creatures from the same directory as the dialog file
-                    await LoadCreaturesFromModuleDirectory(filePath);
+                    // Issue #5: Removed synchronous creature loading - now loaded lazily when creature picker opens
 
                     // Update module info bar
                     UpdateModuleInfo(filePath);
@@ -2219,15 +2272,27 @@ namespace DialogEditor.Views
                     _viewModel.StatusMessage = "💾 Auto-saving...";
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-save starting...");
 
-                    await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
+                    // Issue #8: Check save result before showing success message
+                    var success = await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
 
-                    var timestamp = DateTime.Now.ToString("h:mm tt");
-                    var fileName = System.IO.Path.GetFileName(_viewModel.CurrentFileName);
-                    _viewModel.StatusMessage = $"✓ Auto-saved '{fileName}' at {timestamp}";
+                    if (success)
+                    {
+                        var timestamp = DateTime.Now.ToString("h:mm tt");
+                        var fileName = System.IO.Path.GetFileName(_viewModel.CurrentFileName);
+                        _viewModel.StatusMessage = $"✓ Auto-saved '{fileName}' at {timestamp}";
 
-                    // Verify HasUnsavedChanges was cleared (Issue #18)
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        $"Auto-save completed. HasUnsavedChanges = {_viewModel.HasUnsavedChanges}, WindowTitle = '{_viewModel.WindowTitle}'");
+                        // Verify HasUnsavedChanges was cleared (Issue #18)
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"Auto-save completed. HasUnsavedChanges = {_viewModel.HasUnsavedChanges}, WindowTitle = '{_viewModel.WindowTitle}'");
+                    }
+                    else
+                    {
+                        // Issue #8: Save failed - show visible warning
+                        // StatusMessage already set by SaveDialogAsync with specific error
+                        // Prepend warning emoji so user notices
+                        _viewModel.StatusMessage = $"⚠ {_viewModel.StatusMessage}";
+                        UnifiedLogger.LogApplication(LogLevel.WARN, "Auto-save failed - check status message for details");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -2971,39 +3036,8 @@ namespace DialogEditor.Views
             }
         }
 
-        private async Task LoadCreaturesFromModuleDirectory(string dialogFilePath)
-        {
-            try
-            {
-                // Get directory containing the dialog file (module directory)
-                var moduleDirectory = Path.GetDirectoryName(dialogFilePath);
-                if (string.IsNullOrEmpty(moduleDirectory))
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot determine module directory from dialog path");
-                    return;
-                }
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading creatures from module: {UnifiedLogger.SanitizePath(moduleDirectory)}");
-
-                // Scan for UTC files in module directory
-                var creatures = await _creatureService.ScanCreaturesAsync(moduleDirectory);
-
-                if (creatures.Count > 0)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {creatures.Count} creatures from module");
-                    _viewModel.StatusMessage = $"Loaded {creatures.Count} creature{(creatures.Count == 1 ? "" : "s")}";
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "No UTC files found in module directory");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load creatures: {ex.Message}");
-                // Don't block dialog loading if creature loading fails
-            }
-        }
+        // Issue #5: LoadCreaturesFromModuleDirectory removed - creature loading now done lazily
+        // in ResourceBrowserManager.BrowseCreatureAsync when user opens the creature picker
 
         private void UpdateModuleInfo(string dialogFilePath)
         {
@@ -3926,6 +3960,57 @@ namespace DialogEditor.Views
 
             buttonPanel.Children.Add(yesButton);
             buttonPanel.Children.Add(noButton);
+
+            panel.Children.Add(buttonPanel);
+            dialog.Content = panel;
+
+            await dialog.ShowDialog(this);
+            return result;
+        }
+
+        /// <summary>
+        /// Issue #8: Shows error dialog with option to Save As when save fails.
+        /// Returns true if user wants to Save As, false to dismiss.
+        /// </summary>
+        private async Task<bool> ShowSaveErrorDialog(string errorMessage)
+        {
+            var dialog = new Window
+            {
+                Title = "Save Failed",
+                MinWidth = 400,
+                MaxWidth = 500,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false
+            };
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = errorMessage,
+                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
+                MaxWidth = 460,
+                Margin = new Thickness(0, 0, 0, 20)
+            });
+
+            var buttonPanel = new StackPanel
+            {
+                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                Spacing = 10
+            };
+
+            var result = false;
+
+            var saveAsButton = new Button { Content = "Save As...", Width = 100 };
+            saveAsButton.Click += (s, e) => { result = true; dialog.Close(); };
+
+            var cancelButton = new Button { Content = "Cancel", Width = 80 };
+            cancelButton.Click += (s, e) => { result = false; dialog.Close(); };
+
+            buttonPanel.Children.Add(saveAsButton);
+            buttonPanel.Children.Add(cancelButton);
 
             panel.Children.Add(buttonPanel);
             dialog.Content = panel;
