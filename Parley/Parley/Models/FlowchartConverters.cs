@@ -24,8 +24,8 @@ namespace DialogEditor.Models
         private static readonly IBrush DarkThemeBg = new SolidColorBrush(Color.Parse("#2D2D2D")); // Dark gray
         private static readonly IBrush LinkBrushLight = new SolidColorBrush(Color.Parse("#F0F0F0")); // Lighter gray for links
         private static readonly IBrush LinkBrushDark = new SolidColorBrush(Color.Parse("#383838")); // Slightly different for links
-        private static readonly IBrush RootBrushLight = new SolidColorBrush(Color.Parse("#F1F8E9")); // Very light green tint
-        private static readonly IBrush RootBrushDark = new SolidColorBrush(Color.Parse("#263238")); // Dark with green tint
+        private static readonly IBrush RootBrushLight = new SolidColorBrush(Color.Parse("#E8E8E8")); // Light gray (neutral)
+        private static readonly IBrush RootBrushDark = new SolidColorBrush(Color.Parse("#3A3A3A")); // Dark gray (neutral)
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
@@ -61,7 +61,7 @@ namespace DialogEditor.Models
         public static readonly FlowchartNodeBorderConverter Instance = new();
 
         private static readonly IBrush LinkBorder = new SolidColorBrush(Color.Parse("#9E9E9E")); // Gray
-        private static readonly IBrush RootBorder = new SolidColorBrush(Color.Parse("#4CAF50")); // Green
+        private static readonly IBrush RootBorder = new SolidColorBrush(Color.Parse("#757575")); // Medium gray (structural, not a speaker)
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
