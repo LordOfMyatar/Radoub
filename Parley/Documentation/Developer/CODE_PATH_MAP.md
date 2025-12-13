@@ -1,7 +1,7 @@
 # Code Path Map - Parley Architecture
 
 **Purpose**: Track active code paths for file operations and UI workflows
-**Last Updated**: 2025-12-10 (Epic #325 Sprint 1: Native Flowchart Foundation)
+**Last Updated**: 2025-12-13 (Sprint #362: Bug Squash - Scrap & Save Fixes)
 **Note**: This information was discovered and written by Claude AI.
 
 ---
@@ -21,7 +21,10 @@
 **DialogFileService** (~200 lines): Facade for file operations (load/save)
 **UndoManager** (~150 lines): Manages undo/redo state history
 **DialogClipboardService** (~300 lines): Copy/paste operations
-**ScrapManager** (~395 lines): Manages deleted/scrapped nodes + scrap restoration (2025-11-19: Added RestoreFromScrap)
+**ScrapManager** (~420 lines): Manages deleted/scrapped nodes + scrap restoration
+  - 2025-11-19: Added RestoreFromScrap
+  - 2025-12-13: Added `RemoveRestoredNodes()` for undo scrap cleanup (#356)
+  - 2025-12-13: Fixed file-based filtering in `AddToScrap`, `RemoveFromScrap`, `ClearScrapForFile` (#352)
 **OrphanNodeManager** (~250 lines): Orphan detection and cleanup (2025-11-18: Fixed to skip child links)
 **NodeOperationsManager** (~530 lines): Node add/delete/move operations (Phase 6, PR #137)
 **TreeNavigationManager** (~280 lines): Tree traversal, expansion state, node finding (Phase 7, PR #133)
@@ -38,9 +41,13 @@
 ### MainWindow Services (Epic #163 - PR #164)
 
 **PropertyAutoSaveService** (245 lines): Auto-save property changes with strategy pattern (2025-11-22)
-**ScriptParameterUIManager** (352 lines): Parameter UI management for conditions/actions (2025-11-22)
+**ScriptParameterUIManager** (~380 lines): Parameter UI management for conditions/actions
+  - 2025-11-22: Initial extraction from MainWindow
+  - 2025-12-13: Added `HasAnyDuplicateKeys()` for save validation (#289)
 **NodeCreationHelper** (229 lines): Smart node creation with debouncing and tree navigation (2025-11-22)
-**ResourceBrowserManager** (214 lines): Sound/Creature browser dialogs and recent tags (2025-11-22)
+**ResourceBrowserManager** (~230 lines): Sound/Creature browser dialogs and recent tags
+  - 2025-11-22: Initial extraction from MainWindow
+  - 2025-12-13: Added lazy loading callback for creatures (#5 startup performance)
 **KeyboardShortcutManager** (215 lines): Data-driven keyboard shortcuts with 20+ mappings (2025-11-22)
 **DebugAndLoggingHandler** (311 lines): Log export, scrap operations, debug console (2025-11-22)
 **WindowPersistenceManager** (252 lines): Window/panel persistence and screen validation (2025-11-22)
@@ -51,6 +58,17 @@
 **PluginGrpcServer** (~386 lines): gRPC server hosting plugin services (2025-11-29)
 **PluginPanelManager** (~200 lines): Panel registration and lifecycle management (2025-11-29)
 **PluginUIService** (~150 lines): UI operations for plugins (notifications, dialogs) (2025-11-29)
+
+### TreeView Models (Models/TreeViewSafeNode.cs)
+
+**TreeViewSafeNode** (~470 lines): Wrapper for DialogNode providing circular reference protection
+  - Lazy loading via `IsExpanded` setter and `PopulateChildren()`
+  - Terminal node detection: Empty nodes show `[END DIALOG]` vs `[CONTINUE]` (#353, 2025-12-13)
+  - Depth limit: 250 levels max (increased from 50, #32 2025-12-13)
+
+**TreeViewSafeLinkNode**: Link node for IsLink=true pointers (terminal, no children)
+**TreeViewRootNode**: ROOT node representing the dialog file
+**TreeViewPlaceholderNode**: Placeholder for lazy loading ("Loading...")
 
 ### ViewModels & UI
 
@@ -73,6 +91,16 @@
 ## WRITE PATH (Save DLG File)
 
 **Entry Point**: User clicks Save → MainWindow → FileOperationsHandler
+
+### Pre-Save Validation (2025-12-13)
+
+```
+MainWindow.OnSaveClick (MainWindow.axaml.cs)
+  ↓ Check for duplicate parameter keys (#289)
+ScriptParameterUIManager.HasAnyDuplicateKeys()
+  ↓ If duplicates found → show warning dialog, abort save
+  ↓ If clean → proceed with save
+```
 
 ### Call Chain (Current Architecture)
 
@@ -363,6 +391,41 @@ MainViewModel updates StatusMessage and refreshes tree
 
 - Uses `IndexManager.RecalculatePointerIndices` after restoration
 - Ensures all pointers stay synchronized with list positions
+
+---
+
+## UNDO/REDO PATH
+
+**Entry Point**: User presses Ctrl+Z → MainViewModel.Undo
+
+### Call Chain (2025-12-13: Added scrap cleanup #356)
+
+```
+MainViewModel.Undo (MainViewModel.cs)
+  ↓ Pop previous state from UndoManager
+UndoManager.PopUndo
+  ↓ Restore dialog JSON
+  ↓
+MainViewModel.RebuildDialogFromJson
+  ↓ Reconstruct Dialog object from stored JSON
+  ↓
+  ↓ NEW (2025-12-13): Clean up scrap for restored nodes
+ScrapManager.RemoveRestoredNodes (ScrapManager.cs)
+  ↓ Compare scrap entries against current dialog
+  ↓ Remove entries matching restored Entry/Reply nodes
+  ↓ Save updated scrap data
+  ↓ Update filtered ScrapEntries for current file
+  ↓
+MainViewModel refreshes tree and UI
+```
+
+### Key Components
+
+**Scrap Cleanup Logic**:
+
+- After undo restores deleted nodes, those nodes should no longer appear in scrap
+- `RemoveRestoredNodes()` matches by node text and type (Entry/Reply)
+- Only removes entries for the current file (file-based filtering)
 
 ---
 
