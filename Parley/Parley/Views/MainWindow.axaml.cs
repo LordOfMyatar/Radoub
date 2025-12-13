@@ -39,6 +39,8 @@ namespace DialogEditor.Views
         private readonly DebugAndLoggingHandler _debugAndLoggingHandler; // Handles debug and logging operations
         private readonly WindowPersistenceManager _windowPersistenceManager; // Manages window and panel persistence
         private readonly PluginSelectionSyncHelper _pluginSelectionSyncHelper; // Handles plugin ↔ tree selection sync (#234)
+        private readonly SafeControlFinder _controls; // Issue #342: Safe control access with null-check elimination
+        private readonly WindowLifecycleManager _windows; // Issue #343: Centralized window lifecycle management
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -46,16 +48,10 @@ namespace DialogEditor.Views
         // Flag to prevent auto-save during programmatic updates
         private bool _isPopulatingProperties = false;
 
-        // Track active Settings window to close it when MainWindow closes (Issue #134)
-        private SettingsWindow? _activeSettingsWindow;
-
-        // Track active browser windows to close them when MainWindow closes (Issue #20)
+        // Track active browser windows - kept separate from WindowLifecycleManager due to complex result handling
+        // These windows have specific callback patterns that require local state tracking
         private ParameterBrowserWindow? _activeParameterBrowserWindow;
         private ScriptBrowserWindow? _activeScriptBrowserWindow;
-        private SoundBrowserWindow? _activeSoundBrowserWindow;
-
-        // Track native flowchart window (Epic #325)
-        private FlowchartWindow? _activeFlowchartWindow;
         private bool _embeddedFlowchartWired = false;
         private bool _tabbedFlowchartWired = false;
 
@@ -71,6 +67,12 @@ namespace DialogEditor.Views
 
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
+
+            // Issue #342: Initialize SafeControlFinder for cleaner control access
+            _controls = new SafeControlFinder(this);
+
+            // Issue #343: Initialize WindowLifecycleManager for centralized window tracking
+            _windows = new WindowLifecycleManager();
 
             // Initialize selected tree node to null (no selection on startup)
             _viewModel.SelectedTreeNode = null;
@@ -120,9 +122,7 @@ namespace DialogEditor.Views
                 getSelectedNode: () => _selectedNode,
                 setSelectedTreeItem: node =>
                 {
-                    var treeView = this.FindControl<TreeView>("DialogTreeView");
-                    if (treeView != null)
-                        treeView.SelectedItem = node;
+                    _controls.WithControl<TreeView>("DialogTreeView", tv => tv.SelectedItem = node);
                 });
 
             DebugLogger.Initialize(this);
@@ -337,6 +337,9 @@ namespace DialogEditor.Views
         void IKeyboardShortcutHandler.OnMoveNodeUp() => OnMoveNodeUpClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeDown() => OnMoveNodeDownClick(null, null!);
 
+        // View operations - Issue #339: F5 to open flowchart
+        void IKeyboardShortcutHandler.OnOpenFlowchart() => OnFlowchartClick(null, null!);
+
         #endregion
 
         private void OnAddContextAwareReply(object? sender, RoutedEventArgs e)
@@ -432,38 +435,12 @@ namespace DialogEditor.Views
             _autoSaveTimer?.Dispose();
             _audioService.Dispose();
 
-            // Close Settings window if open (Issue #134)
-            if (_activeSettingsWindow != null)
-            {
-                _activeSettingsWindow.Close();
-                _activeSettingsWindow = null;
-            }
+            // Issue #343: Close all managed windows (Settings, Flowchart)
+            _windows.CloseAll();
 
-            // Close Flowchart window if open (#327)
-            if (_activeFlowchartWindow != null)
-            {
-                _activeFlowchartWindow.Close();
-                _activeFlowchartWindow = null;
-            }
-
-            // Close browser windows if open (Issue #20)
-            if (_activeParameterBrowserWindow != null)
-            {
-                _activeParameterBrowserWindow.Close();
-                _activeParameterBrowserWindow = null;
-            }
-
-            if (_activeScriptBrowserWindow != null)
-            {
-                _activeScriptBrowserWindow.Close();
-                _activeScriptBrowserWindow = null;
-            }
-
-            if (_activeSoundBrowserWindow != null)
-            {
-                _activeSoundBrowserWindow.Close();
-                _activeSoundBrowserWindow = null;
-            }
+            // Close browser windows (kept separate due to complex result handling)
+            _activeParameterBrowserWindow?.Close();
+            _activeScriptBrowserWindow?.Close();
 
             // Close plugin panel windows (Epic 3 / #225)
             _pluginPanelManager.Dispose();
@@ -642,103 +619,77 @@ namespace DialogEditor.Views
 
             var dialogNode = _selectedNode.OriginalNode;
 
-            // Update Speaker
-            var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-            if (speakerTextBox != null && !speakerTextBox.IsReadOnly)
+            // Issue #342: Use SafeControlFinder for cleaner null-safe control access
+            // Update Speaker (only if editable)
+            _controls.WithControl<TextBox>("SpeakerTextBox", tb =>
             {
-                dialogNode.Speaker = speakerTextBox.Text ?? "";
-            }
+                if (!tb.IsReadOnly)
+                    dialogNode.Speaker = tb.Text ?? "";
+            });
 
             // Update Text
-            var textTextBox = this.FindControl<TextBox>("TextTextBox");
-            if (textTextBox != null && dialogNode.Text != null)
+            _controls.WithControl<TextBox>("TextTextBox", tb =>
             {
-                dialogNode.Text.Strings[0] = textTextBox.Text ?? "";
-            }
+                if (dialogNode.Text != null)
+                    dialogNode.Text.Strings[0] = tb.Text ?? "";
+            });
 
             // Update Comment - Issue #12: Save to LinkComment for link nodes
-            var commentTextBox = this.FindControl<TextBox>("CommentTextBox");
-            if (commentTextBox != null)
+            _controls.WithControl<TextBox>("CommentTextBox", tb =>
             {
                 if (_selectedNode.IsChild && _selectedNode.SourcePointer != null)
-                {
-                    _selectedNode.SourcePointer.LinkComment = commentTextBox.Text ?? "";
-                }
+                    _selectedNode.SourcePointer.LinkComment = tb.Text ?? "";
                 else
-                {
-                    dialogNode.Comment = commentTextBox.Text ?? "";
-                }
-            }
+                    dialogNode.Comment = tb.Text ?? "";
+            });
 
             // Update Sound
-            var soundTextBox = this.FindControl<TextBox>("SoundTextBox");
-            if (soundTextBox != null)
-            {
-                dialogNode.Sound = soundTextBox.Text ?? "";
-            }
+            _controls.WithControl<TextBox>("SoundTextBox", tb => dialogNode.Sound = tb.Text ?? "");
 
             // Update Script
-            var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-            if (scriptTextBox != null)
-            {
-                dialogNode.ScriptAction = scriptTextBox.Text ?? "";
-            }
+            _controls.WithControl<TextBox>("ScriptActionTextBox", tb => dialogNode.ScriptAction = tb.Text ?? "");
 
             // Update Conditional Script (on DialogPtr)
-            var scriptAppearsTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
-            if (scriptAppearsTextBox != null && _selectedNode.SourcePointer != null)
+            if (_selectedNode.SourcePointer != null)
             {
-                _selectedNode.SourcePointer.ScriptAppears = scriptAppearsTextBox.Text ?? "";
+                _controls.WithControl<TextBox>("ScriptAppearsTextBox", tb =>
+                    _selectedNode.SourcePointer.ScriptAppears = tb.Text ?? "");
             }
 
             // Update Quest
-            var questTextBox = this.FindControl<TextBox>("QuestTextBox");
-            if (questTextBox != null)
-            {
-                dialogNode.Quest = questTextBox.Text ?? "";
-            }
+            _controls.WithControl<TextBox>("QuestTextBox", tb => dialogNode.Quest = tb.Text ?? "");
 
             // Update Animation
-            var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
-            if (animationComboBox != null && animationComboBox.SelectedItem is DialogAnimation selectedAnimation)
+            _controls.WithControl<ComboBox>("AnimationComboBox", cb =>
             {
-                dialogNode.Animation = selectedAnimation;
-            }
+                if (cb.SelectedItem is DialogAnimation selectedAnimation)
+                    dialogNode.Animation = selectedAnimation;
+            });
 
             // Update AnimationLoop
-            var animationLoopCheckBox = this.FindControl<CheckBox>("AnimationLoopCheckBox");
-            if (animationLoopCheckBox != null && animationLoopCheckBox.IsChecked.HasValue)
+            _controls.WithControl<CheckBox>("AnimationLoopCheckBox", cb =>
             {
-                dialogNode.AnimationLoop = animationLoopCheckBox.IsChecked.Value;
-            }
+                if (cb.IsChecked.HasValue)
+                    dialogNode.AnimationLoop = cb.IsChecked.Value;
+            });
 
             // Update Quest Entry
-            var questEntryTextBox2 = this.FindControl<TextBox>("QuestEntryTextBox");
-            if (questEntryTextBox2 != null)
+            _controls.WithControl<TextBox>("QuestEntryTextBox", tb =>
             {
-                if (string.IsNullOrWhiteSpace(questEntryTextBox2.Text))
-                {
+                if (string.IsNullOrWhiteSpace(tb.Text))
                     dialogNode.QuestEntry = uint.MaxValue;
-                }
-                else if (uint.TryParse(questEntryTextBox2.Text, out uint entryId))
-                {
+                else if (uint.TryParse(tb.Text, out uint entryId))
                     dialogNode.QuestEntry = entryId;
-                }
-            }
+            });
 
             // Update Delay
-            var delayTextBox = this.FindControl<TextBox>("DelayTextBox");
-            if (delayTextBox != null)
+            _controls.WithControl<TextBox>("DelayTextBox", tb =>
             {
-                if (string.IsNullOrWhiteSpace(delayTextBox.Text))
-                {
+                if (string.IsNullOrWhiteSpace(tb.Text))
                     dialogNode.Delay = uint.MaxValue;
-                }
-                else if (uint.TryParse(delayTextBox.Text, out uint delayMs))
-                {
+                else if (uint.TryParse(tb.Text, out uint delayMs))
                     dialogNode.Delay = delayMs;
-                }
-            }
+            });
 
             // CRITICAL FIX: Save script parameters from UI before saving file
             // Update action parameters (on DialogNode)
@@ -1142,22 +1093,18 @@ namespace DialogEditor.Views
         {
             try
             {
-                // Create or activate flowchart window
-                if (_activeFlowchartWindow == null || !_activeFlowchartWindow.IsVisible)
-                {
-                    _activeFlowchartWindow = new FlowchartWindow();
-                    _activeFlowchartWindow.Closed += (s, args) => _activeFlowchartWindow = null;
-
-                    // Subscribe to node click events for tree selection sync
-                    _activeFlowchartWindow.NodeClicked += OnFlowchartNodeClicked;
-                }
+                // Issue #343: Use WindowLifecycleManager for flowchart window
+                var flowchart = _windows.ShowOrActivate(
+                    WindowKeys.Flowchart,
+                    () =>
+                    {
+                        var w = new FlowchartWindow();
+                        w.NodeClicked += OnFlowchartNodeClicked;
+                        return w;
+                    });
 
                 // Update with current dialog
-                _activeFlowchartWindow.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-
-                // Show and activate
-                _activeFlowchartWindow.Show();
-                _activeFlowchartWindow.Activate();
+                flowchart.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
 
                 _viewModel.StatusMessage = "Flowchart view opened";
             }
@@ -1202,11 +1149,10 @@ namespace DialogEditor.Views
         {
             var layout = SettingsService.Instance.FlowchartLayout;
 
-            // Close existing floating window if switching to embedded mode
-            if (layout != "Floating" && _activeFlowchartWindow != null)
+            // Issue #343: Close existing floating window if switching to embedded mode
+            if (layout != "Floating")
             {
-                _activeFlowchartWindow.Close();
-                _activeFlowchartWindow = null;
+                _windows.Close(WindowKeys.Flowchart);
             }
 
             // Apply layout based on setting
@@ -1229,38 +1175,40 @@ namespace DialogEditor.Views
             // Hide tabbed panel if it was showing
             HideTabbedFlowchart();
 
-            // Show the embedded flowchart panel and splitter
-            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
-            var splitter = this.FindControl<GridSplitter>("FlowchartSplitter");
-            var border = this.FindControl<Border>("EmbeddedFlowchartBorder");
-            var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
-
-            if (mainContentGrid != null && splitter != null && border != null && embeddedPanel != null && mainContentGrid.ColumnDefinitions.Count >= 5)
-            {
-                // Show columns (indices 3 and 4 are the splitter and panel columns)
-                mainContentGrid.ColumnDefinitions[3].Width = new GridLength(5);
-                mainContentGrid.ColumnDefinitions[4].Width = new GridLength(400, GridUnitType.Pixel);
-                mainContentGrid.ColumnDefinitions[4].MinWidth = 300;
-
-                // Show controls
-                splitter.IsVisible = true;
-                border.IsVisible = true;
-
-                // Wire up node click handler if not already done
-                if (!_embeddedFlowchartWired)
+            // Issue #342: Use WithControls for coordinated multi-control updates
+            var success = _controls.WithControls<Grid, GridSplitter, Border, FlowchartPanel>(
+                "MainContentGrid", "FlowchartSplitter", "EmbeddedFlowchartBorder", "EmbeddedFlowchartPanel",
+                (grid, splitter, border, panel) =>
                 {
-                    embeddedPanel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
-                    _embeddedFlowchartWired = true;
-                }
+                    if (grid.ColumnDefinitions.Count < 5) return;
 
-                // Update with current dialog
-                embeddedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                    // Show columns (indices 3 and 4 are the splitter and panel columns)
+                    grid.ColumnDefinitions[3].Width = new GridLength(5);
+                    grid.ColumnDefinitions[4].Width = new GridLength(400, GridUnitType.Pixel);
+                    grid.ColumnDefinitions[4].MinWidth = 300;
 
+                    // Show controls
+                    splitter.IsVisible = true;
+                    border.IsVisible = true;
+
+                    // Wire up node click handler if not already done
+                    if (!_embeddedFlowchartWired)
+                    {
+                        panel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
+                        _embeddedFlowchartWired = true;
+                    }
+
+                    // Update with current dialog
+                    panel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                });
+
+            if (success)
+            {
                 UnifiedLogger.LogUI(LogLevel.INFO, "Side-by-side flowchart panel shown");
             }
             else
             {
-                UnifiedLogger.LogUI(LogLevel.WARN, $"Failed to show Side-by-Side flowchart: grid={mainContentGrid != null}, splitter={splitter != null}, border={border != null}, panel={embeddedPanel != null}");
+                UnifiedLogger.LogUI(LogLevel.WARN, "Failed to show Side-by-Side flowchart: one or more controls not found");
             }
         }
 
@@ -1269,37 +1217,39 @@ namespace DialogEditor.Views
             // Hide side-by-side panel if it was showing
             HideSideBySideFlowchart();
 
-            // Show the Flowchart tab
-            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
-            var tabbedPanel = this.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
-            if (flowchartTab != null && tabbedPanel != null)
-            {
-                flowchartTab.IsVisible = true;
-
-                // Wire up node click handler if not already done
-                if (!_tabbedFlowchartWired)
+            // Issue #342: Use WithControls for coordinated multi-control updates
+            var success = _controls.WithControls<TabItem, FlowchartPanel>(
+                "FlowchartTab", "TabbedFlowchartPanel",
+                (tab, panel) =>
                 {
-                    tabbedPanel.NodeClicked += OnTabbedFlowchartNodeClicked;
-                    _tabbedFlowchartWired = true;
-                }
+                    tab.IsVisible = true;
 
-                // Update with current dialog
-                tabbedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                    // Wire up node click handler if not already done
+                    if (!_tabbedFlowchartWired)
+                    {
+                        panel.NodeClicked += OnTabbedFlowchartNodeClicked;
+                        _tabbedFlowchartWired = true;
+                    }
 
+                    // Update with current dialog
+                    panel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                });
+
+            if (success)
+            {
                 UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel shown");
             }
             else
             {
-                UnifiedLogger.LogUI(LogLevel.WARN, $"Failed to show Tabbed flowchart: tab={flowchartTab != null}, panel={tabbedPanel != null}");
+                UnifiedLogger.LogUI(LogLevel.WARN, "Failed to show Tabbed flowchart: tab or panel not found");
             }
         }
 
         private void HideTabbedFlowchart()
         {
-            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
-            if (flowchartTab != null)
+            // Issue #342: Use SetVisible shorthand
+            if (_controls.SetVisible("FlowchartTab", false))
             {
-                flowchartTab.IsVisible = false;
                 UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel hidden");
             }
         }
@@ -1402,7 +1352,8 @@ namespace DialogEditor.Views
 
             // For Floating mode or if embedded panels don't have content,
             // check if we can use the floating window
-            if (_activeFlowchartWindow?.IsVisible == true)
+            // Issue #343: Use WindowLifecycleManager
+            if (_windows.IsOpen(WindowKeys.Flowchart))
             {
                 // FlowchartWindow doesn't expose FlowchartPanel directly, so we need to update it
                 // For now, just return the embedded panel if it has content
@@ -1426,22 +1377,22 @@ namespace DialogEditor.Views
 
         private void HideSideBySideFlowchart()
         {
-            // Hide the side-by-side embedded flowchart panel and splitter
-            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
-            var splitter = this.FindControl<GridSplitter>("FlowchartSplitter");
-            var border = this.FindControl<Border>("EmbeddedFlowchartBorder");
+            // Issue #342: Use WithControls for coordinated multi-control updates
+            _controls.WithControls<Grid, GridSplitter, Border>(
+                "MainContentGrid", "FlowchartSplitter", "EmbeddedFlowchartBorder",
+                (grid, splitter, border) =>
+                {
+                    if (grid.ColumnDefinitions.Count < 5) return;
 
-            if (mainContentGrid != null && splitter != null && border != null && mainContentGrid.ColumnDefinitions.Count >= 5)
-            {
-                // Hide columns (indices 3 and 4 are the splitter and panel columns)
-                mainContentGrid.ColumnDefinitions[3].Width = new GridLength(0);
-                mainContentGrid.ColumnDefinitions[4].Width = new GridLength(0);
-                mainContentGrid.ColumnDefinitions[4].MinWidth = 0;
+                    // Hide columns (indices 3 and 4 are the splitter and panel columns)
+                    grid.ColumnDefinitions[3].Width = new GridLength(0);
+                    grid.ColumnDefinitions[4].Width = new GridLength(0);
+                    grid.ColumnDefinitions[4].MinWidth = 0;
 
-                // Hide controls
-                splitter.IsVisible = false;
-                border.IsVisible = false;
-            }
+                    // Hide controls
+                    splitter.IsVisible = false;
+                    border.IsVisible = false;
+                });
         }
 
         private void HideEmbeddedFlowchart()
@@ -1706,26 +1657,22 @@ namespace DialogEditor.Views
         }
 
         // Settings handlers
+        // Issue #343: Common callback for Settings window close
+        private void OnSettingsWindowClosed(SettingsWindow _)
+        {
+            ApplySavedTheme();
+            _viewModel.StatusMessage = "Settings updated";
+        }
+
         private void OnPreferencesClick(object? sender, RoutedEventArgs e)
         {
             try
             {
-                // If Settings window already open, just bring it to front (Issue #134)
-                if (_activeSettingsWindow != null)
-                {
-                    _activeSettingsWindow.Activate();
-                    return;
-                }
-
-                _activeSettingsWindow = new SettingsWindow(pluginManager: _pluginManager);
-                _activeSettingsWindow.Closed += (s, args) =>
-                {
-                    // Reload theme when settings window closes
-                    ApplySavedTheme();
-                    _viewModel.StatusMessage = "Settings updated";
-                    _activeSettingsWindow = null; // Clear reference (Issue #134)
-                };
-                _activeSettingsWindow.Show();
+                // Issue #343: Use WindowLifecycleManager for Settings window
+                _windows.ShowOrActivate(
+                    WindowKeys.Settings,
+                    () => new SettingsWindow(pluginManager: _pluginManager),
+                    OnSettingsWindowClosed);
             }
             catch (Exception ex)
             {
@@ -1738,24 +1685,18 @@ namespace DialogEditor.Views
         {
             try
             {
-                // If Settings window already open, switch to Resource Paths tab and bring to front (Issue #134)
-                if (_activeSettingsWindow != null)
+                // Issue #343: Use WindowLifecycleManager - if open, just activate
+                if (_windows.IsOpen(WindowKeys.Settings))
                 {
-                    _activeSettingsWindow.Activate();
-                    // Switch to Resource Paths tab (tab 0) - requires public method in SettingsWindow
-                    // For now just activate - user can navigate manually
+                    _windows.WithWindow<SettingsWindow>(WindowKeys.Settings, w => w.Activate());
                     return;
                 }
 
                 // Open preferences with Resource Paths tab selected (tab 0)
-                _activeSettingsWindow = new SettingsWindow(initialTab: 0, pluginManager: _pluginManager);
-                _activeSettingsWindow.Closed += (s, args) =>
-                {
-                    ApplySavedTheme();
-                    _viewModel.StatusMessage = "Settings updated";
-                    _activeSettingsWindow = null; // Clear reference (Issue #134)
-                };
-                _activeSettingsWindow.Show();
+                _windows.ShowOrActivate(
+                    WindowKeys.Settings,
+                    () => new SettingsWindow(initialTab: 0, pluginManager: _pluginManager),
+                    OnSettingsWindowClosed);
             }
             catch (Exception ex)
             {
@@ -1768,24 +1709,18 @@ namespace DialogEditor.Views
         {
             try
             {
-                // If Settings window already open, switch to Logging tab and bring to front (Issue #134)
-                if (_activeSettingsWindow != null)
+                // Issue #343: Use WindowLifecycleManager - if open, just activate
+                if (_windows.IsOpen(WindowKeys.Settings))
                 {
-                    _activeSettingsWindow.Activate();
-                    // Switch to Logging tab (tab 2) - requires public method in SettingsWindow
-                    // For now just activate - user can navigate manually
+                    _windows.WithWindow<SettingsWindow>(WindowKeys.Settings, w => w.Activate());
                     return;
                 }
 
                 // Open preferences with Logging tab selected (tab 2)
-                _activeSettingsWindow = new SettingsWindow(initialTab: 2, pluginManager: _pluginManager);
-                _activeSettingsWindow.Closed += (s, args) =>
-                {
-                    ApplySavedTheme();
-                    _viewModel.StatusMessage = "Settings updated";
-                    _activeSettingsWindow = null; // Clear reference (Issue #134)
-                };
-                _activeSettingsWindow.Show();
+                _windows.ShowOrActivate(
+                    WindowKeys.Settings,
+                    () => new SettingsWindow(initialTab: 2, pluginManager: _pluginManager),
+                    OnSettingsWindowClosed);
             }
             catch (Exception ex)
             {
@@ -1929,11 +1864,8 @@ namespace DialogEditor.Views
             _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode();
 
             // Sync selection to flowchart (Epic #325 Sprint 3 - bidirectional sync)
-            // Floating window
-            if (_activeFlowchartWindow != null && _activeFlowchartWindow.IsVisible)
-            {
-                _activeFlowchartWindow.SelectNode(_selectedNode?.OriginalNode);
-            }
+            // Issue #343: Use WindowLifecycleManager for floating window
+            _windows.WithWindow<FlowchartWindow>(WindowKeys.Flowchart, w => w.SelectNode(_selectedNode?.OriginalNode));
             // Embedded panel (side-by-side mode)
             var embeddedBorder = this.FindControl<Border>("EmbeddedFlowchartBorder");
             var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");

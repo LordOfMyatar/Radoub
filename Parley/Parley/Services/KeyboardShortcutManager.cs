@@ -61,6 +61,7 @@ namespace DialogEditor.Services
 
             // No modifier shortcuts
             _noModifierShortcuts[Key.Delete] = handler.OnDeleteNode;
+            _noModifierShortcuts[Key.F5] = handler.OnOpenFlowchart; // Issue #339: F5 to open flowchart
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "KeyboardShortcutManager: Registered all shortcuts");
         }
@@ -185,6 +186,9 @@ namespace DialogEditor.Services
             shortcuts.Add("Ctrl+Shift+Up - Move Node Up");
             shortcuts.Add("Ctrl+Shift+Down - Move Node Down");
 
+            // View
+            shortcuts.Add("F5 - Open Flowchart");
+
             return shortcuts;
         }
     }
@@ -225,5 +229,8 @@ namespace DialogEditor.Services
         void OnCollapseSubnodes();
         void OnMoveNodeUp();
         void OnMoveNodeDown();
+
+        // View operations
+        void OnOpenFlowchart(); // Issue #339: F5 to open flowchart
     }
 }

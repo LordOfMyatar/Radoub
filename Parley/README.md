@@ -20,6 +20,7 @@ Parley is under active development. While the core dialog editing functionality 
 
 ### Current (Alpha)
 
+- **Native Flowchart View** - Visual dialog tree (View → Flowchart or F5)
 - Color coded NPCs for multi-npc conversations
 - Themes, Fonts, and Font Sizes
 - Improved interface for script parameters including auto-trim
@@ -129,19 +130,15 @@ The neverwinter.nim toolset is the recommended tool for working with NWN file fo
 
 Parley supports Python-based plugins for extended functionality.
 
-### Available Plugins
-
-| Plugin | Description | Download |
-|--------|-------------|----------|
-| Flowchart View | ChatMapper-style flowchart visualization | [Releases](https://github.com/LordOfMyatar/Radoub/releases?q=flowchart-view) |
-
 ### Installing Plugins
 
-1. Download the plugin ZIP from the link above
+1. Download the plugin ZIP from Releases
 2. Extract to your Parley folder (`~/Parley/`)
 3. Restart Parley, enable in Settings → Plugins, restart again
 
 See [Using Plugins](https://github.com/LordOfMyatar/Radoub/wiki/Using-Plugins) for detailed instructions.
+
+> **Note**: The Flowchart View is now a native feature (View → Flowchart or F5). No plugin required.
 
 ---
 
