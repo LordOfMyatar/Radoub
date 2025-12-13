@@ -13,6 +13,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.4] - TBD
+**Branch**: `radoub/feat/github-projects-sync` | **PR**: #TBD
+
+### Enhancement: Update GitHub Projects with Sprints and Epics (#360)
+
+Document GitHub CLI project permissions and update project boards with sprint/epic tracking.
+
+#### Added
+- TBD
+
+---
+
 ## [0.5.3] - 2025-12-13
 **Branch**: `radoub/feat/sprint-issue-creation` | **PR**: #361
 
