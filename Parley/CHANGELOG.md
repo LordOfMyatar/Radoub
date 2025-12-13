@@ -28,6 +28,19 @@ Creature (UTC) files are now loaded lazily instead of during dialog open, improv
 - First creature picker open may show brief "Loading creatures..." message
 - Subsequent creature picker opens use cached data (no delay)
 
+### Fix: Saving to Read-Only File Fails Silently (#8)
+
+Save operations now detect read-only files before attempting to write.
+
+#### Changed
+- Added read-only file check in `DialogSaveService.SaveDialogAsync`
+- Clear error message: "Cannot save: File is read-only. Use 'Save As' to save to a different location."
+- Added unit test for read-only file handling
+
+#### User Impact
+- Users now receive actionable error message when trying to save read-only files
+- No more silent failures or generic error messages
+
 ---
 
 ## [0.1.56-alpha] - 2025-12-12
