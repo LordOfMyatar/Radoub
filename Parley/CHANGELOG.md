@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.59-alpha] - 2025-12-13
-**Branch**: `parley/feat/custom-title-bar` | **PR**: #TBD
+**Branch**: `parley/feat/custom-title-bar` | **PR**: #354
 
 ### Feat: Theme-aware Custom Title Bar (#139)
 
