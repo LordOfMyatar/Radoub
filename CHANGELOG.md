@@ -13,6 +13,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.3] - 2025-12-13
+**Branch**: `radoub/feat/sprint-issue-creation` | **PR**: #TBD
+
+### Enhancement: Sprint Planning Issue Creation (#359)
+
+Update `/sprint-planning` command to optionally create GitHub issues for planned sprints.
+
+---
+
 ## [0.5.2] - 2025-12-13
 **Branch**: `radoub/feat/grooming-command` | **PR**: #358
 
