@@ -25,6 +25,14 @@ Added comprehensive stress tests validating cascade delete at depths up to 500.
   - External reference preservation tests (shared nodes with outside refs survive)
   - Stress tests at depth 500 (stack overflow protection)
   - Timing metrics for performance monitoring
+- **DeepDialogGenerator.cs**: Test utility for creating deep dialog files
+- **deep100_xref.dlg**: Test file with 100-depth chain and cross-references
+- **deep20_xref.dlg**: Smaller test file for quick testing
+
+#### Fixed
+- **TreeView depth limit**: Increased from 50 to 250 to support dialogs up to depth ~125
+  - Previously stopped rendering at depth 25 (Entry→Reply pairs count as 2 levels)
+  - Now renders full depth-100 dialogs correctly
 
 #### Changed
 - **DeleteDeepTreeTests.cs**: Updated test documentation to clarify the difference between raw `DeleteNodeRecursive` (tested here) and full `DeleteNode` flow (tested in CascadeDeleteStressTests)
@@ -34,6 +42,7 @@ Added comprehensive stress tests validating cascade delete at depths up to 500.
 - Performance: depth 100 completes in ~30ms, depth 500 in ~35ms
 - No stack overflow at extreme depths
 - Shared nodes with external references correctly preserved
+- Flowchart view works correctly with large/deep dialog files
 
 ---
 
