@@ -36,14 +36,17 @@ Save operations now detect read-only files before attempting to write, with prop
 - Added read-only file check in `DialogSaveService.SaveDialogAsync`
 - `MainViewModel.SaveDialogAsync` now returns `bool` to indicate success/failure
 - `OnSaveClick` shows error dialog with "Save As..." option when save fails
+- `OnWindowClosing` now checks save result and offers Save As or Discard options
 - `AutoSaveToFileAsync` shows ⚠ warning prefix in status bar on failure
 - Added `ShowSaveErrorDialog` helper for consistent error presentation
+- Extracted `ShowSaveAsDialogAsync` for reuse in close handler
 - Added unit test for read-only file handling
 
 #### User Impact
 - File > Save now shows popup dialog with "Save As..." option when save fails
+- Window close with unsaved changes offers Save As if normal save fails
 - Auto-save shows visible ⚠ warning in status bar when it can't save
-- No more silent failures - errors are always visible
+- No more silent failures or pretend saves - errors are always visible
 
 ---
 

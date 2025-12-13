@@ -407,12 +407,39 @@ namespace DialogEditor.Views
                     if (string.IsNullOrEmpty(_viewModel.CurrentFileName))
                     {
                         // No filename - need Save As dialog
-                        // For now, just save what we can
                         _viewModel.StatusMessage = "Cannot auto-save without filename. Use File → Save As first.";
                         return; // Don't close
                     }
 
-                    await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
+                    // Issue #8: Check save result - offer Save As if save fails
+                    var saveSuccess = await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
+                    if (!saveSuccess)
+                    {
+                        // Save failed (e.g., read-only file) - offer Save As
+                        var saveAs = await ShowSaveErrorDialog(_viewModel.StatusMessage);
+                        if (saveAs)
+                        {
+                            // Show Save As dialog
+                            await ShowSaveAsDialogAsync();
+                            // Check if save succeeded after Save As
+                            if (_viewModel.HasUnsavedChanges)
+                            {
+                                // User cancelled Save As or it failed - don't close
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            // User chose Cancel - ask if they want to discard
+                            var discardChanges = await ShowConfirmDialog(
+                                "Discard Changes?",
+                                "Save failed. Do you want to discard changes and close anyway?");
+                            if (!discardChanges)
+                            {
+                                return; // Don't close
+                            }
+                        }
+                    }
                 }
 
                 // Now close (unhook event to prevent recursion, cleanup runs in second close)
@@ -717,13 +744,22 @@ namespace DialogEditor.Views
 
         private async void OnSaveAsClick(object? sender, RoutedEventArgs e)
         {
+            await ShowSaveAsDialogAsync();
+        }
+
+        /// <summary>
+        /// Issue #8: Extracted Save As logic so it can be called from close handler.
+        /// Returns true if save succeeded, false if cancelled or failed.
+        /// </summary>
+        private async Task<bool> ShowSaveAsDialogAsync()
+        {
             try
             {
                 var storageProvider = StorageProvider;
                 if (storageProvider == null)
                 {
                     _viewModel.StatusMessage = "Storage provider not available";
-                    return;
+                    return false;
                 }
 
                 // 🔧 WORKAROUND (2025-10-23): Simplified options to avoid hang
@@ -748,16 +784,21 @@ namespace DialogEditor.Views
 
                     var filePath = file.Path.LocalPath;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving file as: {UnifiedLogger.SanitizePath(filePath)}");
-                    await _viewModel.SaveDialogAsync(filePath);
+                    var success = await _viewModel.SaveDialogAsync(filePath);
 
                     // Refresh recent files menu
                     PopulateRecentFilesMenu();
+
+                    return success;
                 }
+
+                return false; // User cancelled
             }
             catch (Exception ex)
             {
                 _viewModel.StatusMessage = $"Error saving file: {ex.Message}";
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save file: {ex.Message}");
+                return false;
             }
         }
 
