@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.57-alpha] - 2025-12-13
-**Branch**: `parley/fix/utc-slow-startup` | **PR**: #TBD
+**Branch**: `parley/fix/utc-slow-startup` | **PR**: #350
 
 ### Fix: UTC Reading Causes Slow Startup (#5)
 
