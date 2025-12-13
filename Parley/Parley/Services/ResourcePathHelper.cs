@@ -193,5 +193,159 @@ namespace DialogEditor.Services
 
             return soundDirs;
         }
+
+        #region Base Game Installation Path (#345)
+
+        /// <summary>
+        /// Validates that a path is a valid NWN base game installation (Steam/GOG/etc).
+        /// Base game installation should have data\ folder.
+        /// </summary>
+        public static bool ValidateBaseGamePath(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
+                return false;
+
+            var dataPath = Path.Combine(path, "data");
+            bool valid = Directory.Exists(dataPath);
+
+            if (valid)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Base game path validated: found data\\ folder");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Base game path validation failed: missing data\\ folder");
+            }
+
+            return valid;
+        }
+
+        /// <summary>
+        /// Returns validation result with message for UI display.
+        /// </summary>
+        public static PathValidationResult ValidateBaseGamePathWithMessage(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return new PathValidationResult(false, "");
+
+            if (ValidateBaseGamePath(path))
+                return new PathValidationResult(true, "✅ Valid base game installation (contains data\\ folder)");
+
+            return new PathValidationResult(false, "❌ Invalid path - missing data\\ folder");
+        }
+
+        /// <summary>
+        /// Returns validation result with message for UI display.
+        /// </summary>
+        public static PathValidationResult ValidateGamePathWithMessage(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return new PathValidationResult(false, "");
+
+            if (ValidateGamePath(path))
+                return new PathValidationResult(true, "✅ Valid game installation path");
+
+            return new PathValidationResult(false, "❌ Invalid path - missing required directories (ambient, music)");
+        }
+
+        /// <summary>
+        /// Returns validation result with message for UI display.
+        /// </summary>
+        public static PathValidationResult ValidateModulePathWithMessage(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return new PathValidationResult(false, "");
+
+            if (ValidateModulePath(path))
+                return new PathValidationResult(true, "✅ Valid module directory");
+
+            return new PathValidationResult(false, "❌ Invalid path - no .mod files or module directories found");
+        }
+
+        /// <summary>
+        /// Attempts to auto-detect the base game installation path (Steam/GOG).
+        /// </summary>
+        public static string? AutoDetectBaseGamePath()
+        {
+            var possiblePaths = GetPlatformBaseGamePaths();
+
+            foreach (var path in possiblePaths)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Checking base game path: {path}");
+                if (ValidateBaseGamePath(path))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Auto-detected base game path: {UnifiedLogger.SanitizePath(path)}");
+                    return path;
+                }
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Could not auto-detect base game installation");
+            return null;
+        }
+
+        /// <summary>
+        /// Gets platform-specific base game installation paths (Steam, GOG, etc.)
+        /// </summary>
+        private static List<string> GetPlatformBaseGamePaths()
+        {
+            var paths = new List<string>();
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // Try Steam registry first
+                try
+                {
+                    using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Valve\Steam"))
+                    {
+                        var steamPath = key?.GetValue("SteamPath") as string;
+                        if (!string.IsNullOrEmpty(steamPath))
+                        {
+                            var nwnPath = Path.Combine(steamPath, "steamapps", "common", "Neverwinter Nights");
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found Steam path from registry: {steamPath}");
+                            paths.Add(nwnPath);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not read Steam registry: {ex.Message}");
+                }
+
+                // Common Steam locations
+                paths.AddRange(new[]
+                {
+                    @"C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights",
+                    @"C:\Program Files\Steam\steamapps\common\Neverwinter Nights",
+                    @"D:\SteamLibrary\steamapps\common\Neverwinter Nights",
+                    @"E:\SteamLibrary\steamapps\common\Neverwinter Nights"
+                });
+
+                // GOG paths
+                paths.AddRange(new[]
+                {
+                    @"C:\Program Files (x86)\GOG Galaxy\Games\Neverwinter Nights Enhanced Edition",
+                    @"C:\GOG Games\Neverwinter Nights Enhanced Edition"
+                });
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                paths.Add("/Applications/Neverwinter Nights.app/Contents/Resources");
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                paths.Add(Path.Combine(home, ".steam", "steam", "steamapps", "common", "Neverwinter Nights"));
+            }
+
+            return paths;
+        }
+
+        #endregion
     }
+
+    /// <summary>
+    /// Result of a path validation with message for UI display (#345)
+    /// </summary>
+    public record PathValidationResult(bool IsValid, string Message);
 }

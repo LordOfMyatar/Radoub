@@ -15,7 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Parley Techdebt (#347)
 
-- TBD
+#### Refactored - Node Creation Template (#344)
+- Added `AddNodeWithUndoAndRefresh()` template method in MainViewModel
+- Refactored `AddSmartNode()`, `AddEntryNode()`, `AddPCReplyNode()` to use template
+- Reduced code duplication across node creation methods (~30 lines)
+
+#### Refactored - Path Validation Helpers (#345)
+- Added `ValidateBaseGamePath()` to ResourcePathHelper
+- Added `AutoDetectBaseGamePath()` with Steam registry and common paths
+- Added `PathValidationResult` record for UI feedback
+- Added `ValidateGamePathWithMessage()`, `ValidateBaseGamePathWithMessage()`, `ValidateModulePathWithMessage()`
+- Refactored SettingsWindow to use ResourcePathHelper methods (~70 lines removed)
 
 ---
 
