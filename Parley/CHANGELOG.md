@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.55-alpha] - 2025-12-12
+**Branch**: `parley/refactor/safe-control-finder` | **PR**: #TBD
+
+### Refactor: Extract SafeControlFinder utility class (#342)
+
+Part of MainWindow refactoring initiative (Option A sprint).
+
+#### Changed
+- TBD
+
+---
+
 ## [0.1.54-alpha] - 2025-12-12
 **Branch**: `parley/sprint/flowchart-polish` | **PR**: #341
 
