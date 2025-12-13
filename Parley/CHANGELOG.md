@@ -17,8 +17,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Part of MainWindow refactoring initiative (Option A sprint).
 
+#### Added
+- `SafeControlFinder` utility class for null-safe control access patterns
+- Fluent API: `WithControl<T>()`, `WithControls<T1,T2>()` (up to 4 controls)
+- Shorthand helpers: `SetText()`, `GetText()`, `SetChecked()`, `SetEnabled()`, `SetVisible()`
+- Optional control caching for frequently-accessed controls
+- 22 new unit tests for SafeControlFinder
+
 #### Changed
-- TBD
+- MainWindow now uses `_controls` SafeControlFinder instance
+- Refactored `SaveCurrentNodeProperties()` to use fluent API (12 controls → cleaner lambdas)
+- Refactored flowchart layout methods (`ShowSideBySideFlowchart`, `ShowTabbedFlowchart`, `HideSideBySideFlowchart`, `HideTabbedFlowchart`)
+- Reduced FindControl calls from 109 → 87 (22 fewer null-check patterns)
+
+#### Technical
+- SafeControlFinder handles Avalonia's type mismatch exceptions gracefully
+- Pattern enables coordinated multi-control updates with single null check
+- Foundation for future MainWindow refactoring (remaining 87 calls can be migrated incrementally)
 
 ---
 

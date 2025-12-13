@@ -39,6 +39,7 @@ namespace DialogEditor.Views
         private readonly DebugAndLoggingHandler _debugAndLoggingHandler; // Handles debug and logging operations
         private readonly WindowPersistenceManager _windowPersistenceManager; // Manages window and panel persistence
         private readonly PluginSelectionSyncHelper _pluginSelectionSyncHelper; // Handles plugin ↔ tree selection sync (#234)
+        private readonly SafeControlFinder _controls; // Issue #342: Safe control access with null-check elimination
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -71,6 +72,9 @@ namespace DialogEditor.Views
 
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
+
+            // Issue #342: Initialize SafeControlFinder for cleaner control access
+            _controls = new SafeControlFinder(this);
 
             // Initialize selected tree node to null (no selection on startup)
             _viewModel.SelectedTreeNode = null;
@@ -120,9 +124,7 @@ namespace DialogEditor.Views
                 getSelectedNode: () => _selectedNode,
                 setSelectedTreeItem: node =>
                 {
-                    var treeView = this.FindControl<TreeView>("DialogTreeView");
-                    if (treeView != null)
-                        treeView.SelectedItem = node;
+                    _controls.WithControl<TreeView>("DialogTreeView", tv => tv.SelectedItem = node);
                 });
 
             DebugLogger.Initialize(this);
@@ -642,103 +644,77 @@ namespace DialogEditor.Views
 
             var dialogNode = _selectedNode.OriginalNode;
 
-            // Update Speaker
-            var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
-            if (speakerTextBox != null && !speakerTextBox.IsReadOnly)
+            // Issue #342: Use SafeControlFinder for cleaner null-safe control access
+            // Update Speaker (only if editable)
+            _controls.WithControl<TextBox>("SpeakerTextBox", tb =>
             {
-                dialogNode.Speaker = speakerTextBox.Text ?? "";
-            }
+                if (!tb.IsReadOnly)
+                    dialogNode.Speaker = tb.Text ?? "";
+            });
 
             // Update Text
-            var textTextBox = this.FindControl<TextBox>("TextTextBox");
-            if (textTextBox != null && dialogNode.Text != null)
+            _controls.WithControl<TextBox>("TextTextBox", tb =>
             {
-                dialogNode.Text.Strings[0] = textTextBox.Text ?? "";
-            }
+                if (dialogNode.Text != null)
+                    dialogNode.Text.Strings[0] = tb.Text ?? "";
+            });
 
             // Update Comment - Issue #12: Save to LinkComment for link nodes
-            var commentTextBox = this.FindControl<TextBox>("CommentTextBox");
-            if (commentTextBox != null)
+            _controls.WithControl<TextBox>("CommentTextBox", tb =>
             {
                 if (_selectedNode.IsChild && _selectedNode.SourcePointer != null)
-                {
-                    _selectedNode.SourcePointer.LinkComment = commentTextBox.Text ?? "";
-                }
+                    _selectedNode.SourcePointer.LinkComment = tb.Text ?? "";
                 else
-                {
-                    dialogNode.Comment = commentTextBox.Text ?? "";
-                }
-            }
+                    dialogNode.Comment = tb.Text ?? "";
+            });
 
             // Update Sound
-            var soundTextBox = this.FindControl<TextBox>("SoundTextBox");
-            if (soundTextBox != null)
-            {
-                dialogNode.Sound = soundTextBox.Text ?? "";
-            }
+            _controls.WithControl<TextBox>("SoundTextBox", tb => dialogNode.Sound = tb.Text ?? "");
 
             // Update Script
-            var scriptTextBox = this.FindControl<TextBox>("ScriptActionTextBox");
-            if (scriptTextBox != null)
-            {
-                dialogNode.ScriptAction = scriptTextBox.Text ?? "";
-            }
+            _controls.WithControl<TextBox>("ScriptActionTextBox", tb => dialogNode.ScriptAction = tb.Text ?? "");
 
             // Update Conditional Script (on DialogPtr)
-            var scriptAppearsTextBox = this.FindControl<TextBox>("ScriptAppearsTextBox");
-            if (scriptAppearsTextBox != null && _selectedNode.SourcePointer != null)
+            if (_selectedNode.SourcePointer != null)
             {
-                _selectedNode.SourcePointer.ScriptAppears = scriptAppearsTextBox.Text ?? "";
+                _controls.WithControl<TextBox>("ScriptAppearsTextBox", tb =>
+                    _selectedNode.SourcePointer.ScriptAppears = tb.Text ?? "");
             }
 
             // Update Quest
-            var questTextBox = this.FindControl<TextBox>("QuestTextBox");
-            if (questTextBox != null)
-            {
-                dialogNode.Quest = questTextBox.Text ?? "";
-            }
+            _controls.WithControl<TextBox>("QuestTextBox", tb => dialogNode.Quest = tb.Text ?? "");
 
             // Update Animation
-            var animationComboBox = this.FindControl<ComboBox>("AnimationComboBox");
-            if (animationComboBox != null && animationComboBox.SelectedItem is DialogAnimation selectedAnimation)
+            _controls.WithControl<ComboBox>("AnimationComboBox", cb =>
             {
-                dialogNode.Animation = selectedAnimation;
-            }
+                if (cb.SelectedItem is DialogAnimation selectedAnimation)
+                    dialogNode.Animation = selectedAnimation;
+            });
 
             // Update AnimationLoop
-            var animationLoopCheckBox = this.FindControl<CheckBox>("AnimationLoopCheckBox");
-            if (animationLoopCheckBox != null && animationLoopCheckBox.IsChecked.HasValue)
+            _controls.WithControl<CheckBox>("AnimationLoopCheckBox", cb =>
             {
-                dialogNode.AnimationLoop = animationLoopCheckBox.IsChecked.Value;
-            }
+                if (cb.IsChecked.HasValue)
+                    dialogNode.AnimationLoop = cb.IsChecked.Value;
+            });
 
             // Update Quest Entry
-            var questEntryTextBox2 = this.FindControl<TextBox>("QuestEntryTextBox");
-            if (questEntryTextBox2 != null)
+            _controls.WithControl<TextBox>("QuestEntryTextBox", tb =>
             {
-                if (string.IsNullOrWhiteSpace(questEntryTextBox2.Text))
-                {
+                if (string.IsNullOrWhiteSpace(tb.Text))
                     dialogNode.QuestEntry = uint.MaxValue;
-                }
-                else if (uint.TryParse(questEntryTextBox2.Text, out uint entryId))
-                {
+                else if (uint.TryParse(tb.Text, out uint entryId))
                     dialogNode.QuestEntry = entryId;
-                }
-            }
+            });
 
             // Update Delay
-            var delayTextBox = this.FindControl<TextBox>("DelayTextBox");
-            if (delayTextBox != null)
+            _controls.WithControl<TextBox>("DelayTextBox", tb =>
             {
-                if (string.IsNullOrWhiteSpace(delayTextBox.Text))
-                {
+                if (string.IsNullOrWhiteSpace(tb.Text))
                     dialogNode.Delay = uint.MaxValue;
-                }
-                else if (uint.TryParse(delayTextBox.Text, out uint delayMs))
-                {
+                else if (uint.TryParse(tb.Text, out uint delayMs))
                     dialogNode.Delay = delayMs;
-                }
-            }
+            });
 
             // CRITICAL FIX: Save script parameters from UI before saving file
             // Update action parameters (on DialogNode)
@@ -1229,38 +1205,40 @@ namespace DialogEditor.Views
             // Hide tabbed panel if it was showing
             HideTabbedFlowchart();
 
-            // Show the embedded flowchart panel and splitter
-            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
-            var splitter = this.FindControl<GridSplitter>("FlowchartSplitter");
-            var border = this.FindControl<Border>("EmbeddedFlowchartBorder");
-            var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
-
-            if (mainContentGrid != null && splitter != null && border != null && embeddedPanel != null && mainContentGrid.ColumnDefinitions.Count >= 5)
-            {
-                // Show columns (indices 3 and 4 are the splitter and panel columns)
-                mainContentGrid.ColumnDefinitions[3].Width = new GridLength(5);
-                mainContentGrid.ColumnDefinitions[4].Width = new GridLength(400, GridUnitType.Pixel);
-                mainContentGrid.ColumnDefinitions[4].MinWidth = 300;
-
-                // Show controls
-                splitter.IsVisible = true;
-                border.IsVisible = true;
-
-                // Wire up node click handler if not already done
-                if (!_embeddedFlowchartWired)
+            // Issue #342: Use WithControls for coordinated multi-control updates
+            var success = _controls.WithControls<Grid, GridSplitter, Border, FlowchartPanel>(
+                "MainContentGrid", "FlowchartSplitter", "EmbeddedFlowchartBorder", "EmbeddedFlowchartPanel",
+                (grid, splitter, border, panel) =>
                 {
-                    embeddedPanel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
-                    _embeddedFlowchartWired = true;
-                }
+                    if (grid.ColumnDefinitions.Count < 5) return;
 
-                // Update with current dialog
-                embeddedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                    // Show columns (indices 3 and 4 are the splitter and panel columns)
+                    grid.ColumnDefinitions[3].Width = new GridLength(5);
+                    grid.ColumnDefinitions[4].Width = new GridLength(400, GridUnitType.Pixel);
+                    grid.ColumnDefinitions[4].MinWidth = 300;
 
+                    // Show controls
+                    splitter.IsVisible = true;
+                    border.IsVisible = true;
+
+                    // Wire up node click handler if not already done
+                    if (!_embeddedFlowchartWired)
+                    {
+                        panel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
+                        _embeddedFlowchartWired = true;
+                    }
+
+                    // Update with current dialog
+                    panel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                });
+
+            if (success)
+            {
                 UnifiedLogger.LogUI(LogLevel.INFO, "Side-by-side flowchart panel shown");
             }
             else
             {
-                UnifiedLogger.LogUI(LogLevel.WARN, $"Failed to show Side-by-Side flowchart: grid={mainContentGrid != null}, splitter={splitter != null}, border={border != null}, panel={embeddedPanel != null}");
+                UnifiedLogger.LogUI(LogLevel.WARN, "Failed to show Side-by-Side flowchart: one or more controls not found");
             }
         }
 
@@ -1269,37 +1247,39 @@ namespace DialogEditor.Views
             // Hide side-by-side panel if it was showing
             HideSideBySideFlowchart();
 
-            // Show the Flowchart tab
-            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
-            var tabbedPanel = this.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
-            if (flowchartTab != null && tabbedPanel != null)
-            {
-                flowchartTab.IsVisible = true;
-
-                // Wire up node click handler if not already done
-                if (!_tabbedFlowchartWired)
+            // Issue #342: Use WithControls for coordinated multi-control updates
+            var success = _controls.WithControls<TabItem, FlowchartPanel>(
+                "FlowchartTab", "TabbedFlowchartPanel",
+                (tab, panel) =>
                 {
-                    tabbedPanel.NodeClicked += OnTabbedFlowchartNodeClicked;
-                    _tabbedFlowchartWired = true;
-                }
+                    tab.IsVisible = true;
 
-                // Update with current dialog
-                tabbedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                    // Wire up node click handler if not already done
+                    if (!_tabbedFlowchartWired)
+                    {
+                        panel.NodeClicked += OnTabbedFlowchartNodeClicked;
+                        _tabbedFlowchartWired = true;
+                    }
 
+                    // Update with current dialog
+                    panel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                });
+
+            if (success)
+            {
                 UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel shown");
             }
             else
             {
-                UnifiedLogger.LogUI(LogLevel.WARN, $"Failed to show Tabbed flowchart: tab={flowchartTab != null}, panel={tabbedPanel != null}");
+                UnifiedLogger.LogUI(LogLevel.WARN, "Failed to show Tabbed flowchart: tab or panel not found");
             }
         }
 
         private void HideTabbedFlowchart()
         {
-            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
-            if (flowchartTab != null)
+            // Issue #342: Use SetVisible shorthand
+            if (_controls.SetVisible("FlowchartTab", false))
             {
-                flowchartTab.IsVisible = false;
                 UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel hidden");
             }
         }
@@ -1426,22 +1406,22 @@ namespace DialogEditor.Views
 
         private void HideSideBySideFlowchart()
         {
-            // Hide the side-by-side embedded flowchart panel and splitter
-            var mainContentGrid = this.FindControl<Grid>("MainContentGrid");
-            var splitter = this.FindControl<GridSplitter>("FlowchartSplitter");
-            var border = this.FindControl<Border>("EmbeddedFlowchartBorder");
+            // Issue #342: Use WithControls for coordinated multi-control updates
+            _controls.WithControls<Grid, GridSplitter, Border>(
+                "MainContentGrid", "FlowchartSplitter", "EmbeddedFlowchartBorder",
+                (grid, splitter, border) =>
+                {
+                    if (grid.ColumnDefinitions.Count < 5) return;
 
-            if (mainContentGrid != null && splitter != null && border != null && mainContentGrid.ColumnDefinitions.Count >= 5)
-            {
-                // Hide columns (indices 3 and 4 are the splitter and panel columns)
-                mainContentGrid.ColumnDefinitions[3].Width = new GridLength(0);
-                mainContentGrid.ColumnDefinitions[4].Width = new GridLength(0);
-                mainContentGrid.ColumnDefinitions[4].MinWidth = 0;
+                    // Hide columns (indices 3 and 4 are the splitter and panel columns)
+                    grid.ColumnDefinitions[3].Width = new GridLength(0);
+                    grid.ColumnDefinitions[4].Width = new GridLength(0);
+                    grid.ColumnDefinitions[4].MinWidth = 0;
 
-                // Hide controls
-                splitter.IsVisible = false;
-                border.IsVisible = false;
-            }
+                    // Hide controls
+                    splitter.IsVisible = false;
+                    border.IsVisible = false;
+                });
         }
 
         private void HideEmbeddedFlowchart()
