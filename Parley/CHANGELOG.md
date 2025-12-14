@@ -26,8 +26,12 @@ Menu cleanup and deduplication for better discoverability.
 - **Context menu updated**: Shortcuts now match Edit menu (Ctrl+Shift+Up/Down for move, not Alt+Up/Down)
 - **Settings menu removed**: Consolidated into View > Settings... entry point
 
+#### Fixed
+- **Delete crash on complex dialogs**: `CheckNodeForLinks` was traversing link children (bookmarks), causing stack overflow on dialogs with many cross-references
+
 #### Verified
 - FlaUI keyboard shortcut tests pass (Ctrl+D, Ctrl+Z, Ctrl+Y all work in automation)
+- Delete node works on xp2_valen.dlg (previously crashed)
 
 ---
 
