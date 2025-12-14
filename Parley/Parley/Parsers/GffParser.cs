@@ -7,9 +7,13 @@ using DialogEditor.Services;
 namespace DialogEditor.Parsers
 {
     /// <summary>
-    /// Base class for parsing GFF GFF (Generic File Format) files.
+    /// Base class for parsing GFF (Generic File Format) files.
     /// Provides common functionality for reading and writing GFF binary format.
     /// Specific file types (DLG, UTC, JRL, etc.) should inherit from this class.
+    ///
+    /// Note: This parser uses DialogEditor's own GFF types (GffStructures.cs) for
+    /// DialogEditor-specific features. JournalService uses Radoub.Formats.Jrl
+    /// for JRL parsing (Sprint #398).
     /// </summary>
     public abstract class GffParser
     {
@@ -18,7 +22,7 @@ namespace DialogEditor.Parsers
         #region GFF Binary Reading
 
         /// <summary>
-        /// Parse GFF file from binary buffer.
+        /// Parse GFF file from binary buffer using GffBinaryReader.
         /// Subclasses should call this to get the root struct, then build their specific data model.
         /// </summary>
         protected GffStruct? ParseGffFromBuffer(byte[] buffer)
@@ -30,14 +34,12 @@ namespace DialogEditor.Parsers
                 var fields = GffBinaryReader.ParseFields(buffer, header);
                 var labels = GffBinaryReader.ParseLabels(buffer, header);
 
-                UnifiedLogger.LogParser(LogLevel.DEBUG, $"📖 READ GFF: {structs.Length} structs, {fields.Length} fields, {labels.Length} labels");
-
-                // Resolve field labels and values
                 GffBinaryReader.ResolveFieldLabels(fields, labels, buffer, header);
                 GffBinaryReader.ResolveFieldValues(fields, structs, buffer, header);
-
-                // Assign fields to their parent structs
                 AssignFieldsToStructs(structs, fields, header, buffer);
+
+                UnifiedLogger.LogParser(LogLevel.DEBUG,
+                    $"📖 READ GFF: {structs.Length} structs, {fields.Length} fields, {labels.Length} labels");
 
                 return structs.Length > 0 ? structs[0] : null;
             }
@@ -49,7 +51,7 @@ namespace DialogEditor.Parsers
         }
 
         /// <summary>
-        /// Assign parsed fields to their parent structs based on field indices.
+        /// Assign fields to their parent structs based on GFF spec.
         /// </summary>
         private void AssignFieldsToStructs(GffStruct[] structs, GffField[] fields, GffHeader header, byte[] buffer)
         {
@@ -57,35 +59,21 @@ namespace DialogEditor.Parsers
             {
                 var gffStruct = structs[structIdx];
                 if (gffStruct.FieldCount == 0)
-                {
-                    // No fields
                     continue;
-                }
-                else if (gffStruct.FieldCount == 1)
+
+                if (gffStruct.FieldCount == 1)
                 {
                     // Single field - DataOrDataOffset is the field index
                     var fieldIndex = gffStruct.DataOrDataOffset;
                     if (fieldIndex < fields.Length)
-                    {
                         gffStruct.Fields.Add(fields[fieldIndex]);
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogParser(LogLevel.WARN,
-                            $"Invalid field index {fieldIndex} for single-field struct, max: {fields.Length - 1}");
-                    }
                 }
                 else
                 {
                     // Multiple fields - DataOrDataOffset is a byte offset from FieldIndicesOffset
                     var indicesOffset = (int)(header.FieldIndicesOffset + gffStruct.DataOrDataOffset);
-
                     if (indicesOffset >= buffer.Length)
-                    {
-                        UnifiedLogger.LogParser(LogLevel.DEBUG,
-                            $"Struct with {gffStruct.FieldCount} fields has invalid indices offset {indicesOffset}, skipping");
                         continue;
-                    }
 
                     for (uint fieldIdx = 0; fieldIdx < gffStruct.FieldCount; fieldIdx++)
                     {
@@ -94,20 +82,7 @@ namespace DialogEditor.Parsers
                         {
                             var fieldIndex = BitConverter.ToUInt32(buffer, indexPos);
                             if (fieldIndex < fields.Length)
-                            {
                                 gffStruct.Fields.Add(fields[fieldIndex]);
-                            }
-                            else
-                            {
-                                UnifiedLogger.LogParser(LogLevel.DEBUG,
-                                    $"Invalid field index {fieldIndex} for multi-field struct field {fieldIdx}, max: {fields.Length - 1}");
-                            }
-                        }
-                        else
-                        {
-                            UnifiedLogger.LogParser(LogLevel.DEBUG,
-                                $"Buffer boundary reached at offset {indexPos}, stopping field assignment for this struct");
-                            break;
                         }
                     }
                 }
