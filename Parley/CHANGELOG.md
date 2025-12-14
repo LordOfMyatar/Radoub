@@ -29,6 +29,18 @@ Audit and fix PC/Owner color assignments across all themes for warm/cool consist
 #### Previously Fixed (PR #367)
 - Deuteranopia, Protanopia, Tritanopia
 
+### Feature: Edit Mode Border Colors (#151)
+
+Added theme-aware border colors for edit mode and auto-trim functionality.
+
+#### Added
+- `edit_mode_border`: Default editing state (cool tones)
+- `edit_mode_unsaved`: Unsaved changes indicator (warm tones)
+- `edit_mode_saved`: Saved state indicator (cool/green tones)
+- `auto_trim_border`: Auto-trim active indicator
+
+All 8 themes updated with appropriate colors following warm/cool conventions.
+
 ---
 
 ## [0.1.64-alpha] - 2025-12-14
