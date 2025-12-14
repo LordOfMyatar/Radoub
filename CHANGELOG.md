@@ -4,12 +4,21 @@ All notable changes to Radoub (repository-level) will be documented in this file
 
 For tool-specific changes, see the individual tool changelogs:
 - [Parley CHANGELOG](Parley/CHANGELOG.md)
+- [Manifest CHANGELOG](Manifest/CHANGELOG.md)
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
 ## [Unreleased]
+
+---
+
+## [0.8.0] - 2025-12-14
+
+### Added
+- **Manifest** tool - JRL (journal) editor for Neverwinter Nights
+  - See [Manifest CHANGELOG](Manifest/CHANGELOG.md) for tool-specific changes
 
 ---
 

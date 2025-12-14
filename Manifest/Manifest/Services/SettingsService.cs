@@ -1,0 +1,231 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
+using System.Text.Json;
+using System.Runtime.CompilerServices;
+
+namespace Manifest.Services
+{
+    /// <summary>
+    /// Settings service for Manifest.
+    /// Stores settings in ~/Radoub/Manifest/ManifestSettings.json
+    /// Adapted from Parley's SettingsService pattern.
+    /// </summary>
+    public class SettingsService : INotifyPropertyChanged
+    {
+        public static SettingsService Instance { get; } = new SettingsService();
+
+        // Lazy initialization to avoid static field initialization timing issues
+        private static string? _settingsDirectory;
+        private static string SettingsDirectory
+        {
+            get
+            {
+                if (_settingsDirectory == null)
+                {
+                    var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                    _settingsDirectory = Path.Combine(userProfile, "Radoub", "Manifest");
+                }
+                return _settingsDirectory;
+            }
+        }
+
+        private static string SettingsFilePath => Path.Combine(SettingsDirectory, "ManifestSettings.json");
+
+        // Window settings
+        private double _windowLeft = 100;
+        private double _windowTop = 100;
+        private double _windowWidth = 1000;
+        private double _windowHeight = 700;
+        private bool _windowMaximized = false;
+
+        // UI settings
+        private double _fontSize = 14;
+
+        // Logging settings
+        private int _logRetentionSessions = 3;
+        private LogLevel _logLevel = LogLevel.INFO;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private SettingsService()
+        {
+            LoadSettings();
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Manifest SettingsService initialized");
+        }
+
+        // Window properties
+        public double WindowLeft
+        {
+            get => _windowLeft;
+            set { if (SetProperty(ref _windowLeft, value)) SaveSettings(); }
+        }
+
+        public double WindowTop
+        {
+            get => _windowTop;
+            set { if (SetProperty(ref _windowTop, value)) SaveSettings(); }
+        }
+
+        public double WindowWidth
+        {
+            get => _windowWidth;
+            set { if (SetProperty(ref _windowWidth, Math.Max(400, value))) SaveSettings(); }
+        }
+
+        public double WindowHeight
+        {
+            get => _windowHeight;
+            set { if (SetProperty(ref _windowHeight, Math.Max(300, value))) SaveSettings(); }
+        }
+
+        public bool WindowMaximized
+        {
+            get => _windowMaximized;
+            set { if (SetProperty(ref _windowMaximized, value)) SaveSettings(); }
+        }
+
+        // UI properties
+        public double FontSize
+        {
+            get => _fontSize;
+            set { if (SetProperty(ref _fontSize, Math.Max(8, Math.Min(24, value)))) SaveSettings(); }
+        }
+
+        // Logging Settings Properties
+        public int LogRetentionSessions
+        {
+            get => _logRetentionSessions;
+            set
+            {
+                if (SetProperty(ref _logRetentionSessions, Math.Max(1, Math.Min(10, value))))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogSettings(LogLevel.INFO, $"Log retention set to {value} sessions");
+                }
+            }
+        }
+
+        public LogLevel CurrentLogLevel
+        {
+            get => _logLevel;
+            set
+            {
+                if (SetProperty(ref _logLevel, value))
+                {
+                    UnifiedLogger.SetLogLevel(value);
+                    SaveSettings();
+                }
+            }
+        }
+
+        private void LoadSettings()
+        {
+            try
+            {
+                // Ensure settings directory exists
+                if (!Directory.Exists(SettingsDirectory))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Creating settings directory: {UnifiedLogger.SanitizePath(SettingsDirectory)}");
+                    Directory.CreateDirectory(SettingsDirectory);
+                }
+
+                if (File.Exists(SettingsFilePath))
+                {
+                    var json = File.ReadAllText(SettingsFilePath);
+                    var settings = JsonSerializer.Deserialize<SettingsData>(json);
+
+                    if (settings != null)
+                    {
+                        // Load window settings
+                        _windowLeft = settings.WindowLeft;
+                        _windowTop = settings.WindowTop;
+                        _windowWidth = Math.Max(400, settings.WindowWidth);
+                        _windowHeight = Math.Max(300, settings.WindowHeight);
+                        _windowMaximized = settings.WindowMaximized;
+
+                        // Load UI settings
+                        _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
+
+                        // Load logging settings
+                        _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
+                        _logLevel = settings.LogLevel;
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, "Loaded settings from file");
+                    }
+                }
+                else
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Settings file does not exist, using defaults");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading settings: {ex.Message}");
+            }
+        }
+
+        private void SaveSettings()
+        {
+            try
+            {
+                var settings = new SettingsData
+                {
+                    WindowLeft = WindowLeft,
+                    WindowTop = WindowTop,
+                    WindowWidth = WindowWidth,
+                    WindowHeight = WindowHeight,
+                    WindowMaximized = WindowMaximized,
+                    FontSize = FontSize,
+                    LogRetentionSessions = LogRetentionSessions,
+                    LogLevel = CurrentLogLevel
+                };
+
+                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+                File.WriteAllText(SettingsFilePath, json);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Settings saved to {UnifiedLogger.SanitizePath(SettingsFilePath)}");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error saving settings: {ex.Message}");
+            }
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+                return false;
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        private class SettingsData
+        {
+            // Window settings
+            public double WindowLeft { get; set; } = 100;
+            public double WindowTop { get; set; } = 100;
+            public double WindowWidth { get; set; } = 1000;
+            public double WindowHeight { get; set; } = 700;
+            public bool WindowMaximized { get; set; } = false;
+
+            // UI settings
+            public double FontSize { get; set; } = 14;
+
+            // Logging settings
+            public int LogRetentionSessions { get; set; } = 3;
+            public LogLevel LogLevel { get; set; } = LogLevel.INFO;
+        }
+    }
+}

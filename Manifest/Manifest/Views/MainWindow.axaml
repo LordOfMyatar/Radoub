@@ -1,0 +1,132 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+        x:Class="Manifest.Views.MainWindow"
+        Title="Manifest - Journal Editor"
+        Width="1000" Height="700"
+        MinWidth="600" MinHeight="400">
+
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
+                <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile}"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False"/>
+                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Add _Category" Click="OnAddCategoryClick" IsEnabled="{Binding HasFile}"/>
+                <MenuItem Header="Add _Entry" Click="OnAddEntryClick" IsEnabled="{Binding CanAddEntry}"/>
+                <Separator/>
+                <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection}"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About Manifest" Click="OnAboutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Toolbar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5" Spacing="5">
+            <Button Content="Open" Click="OnOpenClick" ToolTip.Tip="Open Journal (Ctrl+O)"/>
+            <Button Content="Save" Click="OnSaveClick" ToolTip.Tip="Save Journal (Ctrl+S)" IsEnabled="{Binding HasFile}"/>
+            <Separator Width="10"/>
+            <Button Content="+ Category" Click="OnAddCategoryClick" ToolTip.Tip="Add Category" IsEnabled="{Binding HasFile}"/>
+            <Button Content="+ Entry" Click="OnAddEntryClick" ToolTip.Tip="Add Entry" IsEnabled="{Binding CanAddEntry}"/>
+            <Button Content="Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Del)" IsEnabled="{Binding HasSelection}"/>
+        </StackPanel>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" Background="#F0F0F0" Padding="5,2">
+            <TextBlock x:Name="StatusText" Text="Ready"/>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" MinWidth="200"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*" MinWidth="200"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: Tree View -->
+            <Border Grid.Column="0" BorderBrush="#CCCCCC" BorderThickness="1" Margin="5">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Journal Structure" FontWeight="Bold" Margin="5"/>
+                    <TreeView x:Name="JournalTree" SelectionChanged="OnTreeSelectionChanged">
+                        <!-- Tree items will be populated from code -->
+                    </TreeView>
+                </DockPanel>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#E0E0E0"/>
+
+            <!-- Right Panel: Property Editor -->
+            <Border Grid.Column="2" BorderBrush="#CCCCCC" BorderThickness="1" Margin="5">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Properties" FontWeight="Bold" Margin="5"/>
+                    <ScrollViewer>
+                        <StackPanel x:Name="PropertyPanel" Margin="10" IsVisible="{Binding HasSelection}">
+                            <!-- Category Properties -->
+                            <StackPanel x:Name="CategoryProperties" IsVisible="False" Spacing="8">
+                                <TextBlock Text="Category Properties" FontWeight="SemiBold"/>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Name:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="CategoryNameBox" Width="200"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Tag:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="CategoryTagBox" Width="200"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Priority:" Width="80" VerticalAlignment="Center"/>
+                                    <NumericUpDown x:Name="CategoryPriorityBox" Width="100" Minimum="0" Maximum="100"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="XP:" Width="80" VerticalAlignment="Center"/>
+                                    <NumericUpDown x:Name="CategoryXPBox" Width="100" Minimum="0"/>
+                                </StackPanel>
+
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Comment:"/>
+                                    <TextBox x:Name="CategoryCommentBox" Height="60" AcceptsReturn="True" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Entry Properties -->
+                            <StackPanel x:Name="EntryProperties" IsVisible="False" Spacing="8">
+                                <TextBlock Text="Entry Properties" FontWeight="SemiBold"/>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="ID:" Width="80" VerticalAlignment="Center"/>
+                                    <NumericUpDown x:Name="EntryIdBox" Width="100" Minimum="0"/>
+                                </StackPanel>
+
+                                <CheckBox x:Name="EntryEndBox" Content="End (completes category)"/>
+
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Text:"/>
+                                    <TextBox x:Name="EntryTextBox" Height="150" AcceptsReturn="True" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- No Selection -->
+                            <TextBlock x:Name="NoSelectionText" Text="Select a category or entry to edit its properties."
+                                       IsVisible="True" Foreground="Gray" FontStyle="Italic"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
