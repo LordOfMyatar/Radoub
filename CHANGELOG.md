@@ -13,6 +13,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.0] - 2025-12-14
+**Branch**: `radoub/sprint/gff-parser` | **PR**: #TBD
+
+### Sprint: Move GFF Parser to Radoub.Formats (#396)
+
+Extract static GFF parsing code from Parley to shared library.
+
+#### Added
+- `Radoub.Formats.Gff` namespace
+- `GffReader` - Static GFF binary parser (3 overloads: path, stream, buffer)
+- `GffWriter` - Static GFF binary writer
+- `GffFile` - GFF data models (GffStruct, GffField, GffLabel, GffList, CExoLocString)
+- GFF round-trip tests
+
+#### Research
+- [Epic379_SharedInfrastructure_Research.md](Documentation/Research/Epic379_SharedInfrastructure_Research.md)
+
+---
+
+
 ## [0.5.4] - 2025-12-13
 **Branch**: `radoub/feat/github-projects-sync` | **PR**: #366
 
