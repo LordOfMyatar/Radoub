@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.0-alpha] - 2025-12-14
+**Branch**: `manifest/sprint/tlk-integration` | **PR**: #TBD
+
+### Sprint: TLK Integration (#389)
+
+Integrate TLK (Talk Table) support for resolving localized strings in journal files.
+
+#### Added
+- TLK loading (module custom TLK and game dialog.tlk fallback)
+- StringRef resolution to display text
+- Embedded string display
+- Source indicator (TLK ref vs embedded) in UI
+- Graceful handling of missing StringRef
+
+#### Changed
+- TBD
+
+---
+
 ## [0.2.0-alpha] - 2025-12-14
 **Branch**: `manifest/sprint/file-io` | **PR**: #410
 
