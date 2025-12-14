@@ -257,23 +257,26 @@ namespace DialogEditor.Models
         }
 
         
-        // Populate children on demand (called when user expands the node)
+        // Populate children on demand (called when user expands the node or tree search)
         public void PopulateChildren()
         {
-            if (_children != null)
+            // Ensure _children collection exists (may be null if Children getter never accessed)
+            if (_children == null)
             {
-                // Remove placeholder if present
-                var placeholder = _children.OfType<TreeViewPlaceholderNode>().FirstOrDefault();
-                if (placeholder != null)
-                {
-                    _children.Remove(placeholder);
-                }
+                _children = new ObservableCollection<TreeViewSafeNode>();
+            }
 
-                // Only populate if empty (after removing placeholder)
-                if (_children.Count == 0)
-                {
-                    PopulateChildrenInternal();
-                }
+            // Remove placeholder if present
+            var placeholder = _children.OfType<TreeViewPlaceholderNode>().FirstOrDefault();
+            if (placeholder != null)
+            {
+                _children.Remove(placeholder);
+            }
+
+            // Only populate if empty (after removing placeholder)
+            if (_children.Count == 0)
+            {
+                PopulateChildrenInternal();
             }
         }
         

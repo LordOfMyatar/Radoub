@@ -22,6 +22,7 @@ Fixed crashes in tree navigation by properly treating child/link nodes as termin
 - **Null safety**: Added null checks and try-catch protection to `IsExpanded` setter and `PopulateChildrenInternal()`
 - **Double-click crash**: Added error handling to `OnTreeViewItemDoubleTapped` (#374)
 - **Flowchart-to-tree sync**: Fixed `FindTreeNodeForDialogNode`, `ExpandAncestors`, and other tree traversal methods to not traverse link nodes (#373)
+- **Lazy load search**: Fixed `PopulateChildren()` to create children collection if null - tree search now works even on unexpanded nodes
 
 #### Technical Details
 - `IsChild` check added to 6 tree traversal methods in `TreeNavigationManager.cs`
