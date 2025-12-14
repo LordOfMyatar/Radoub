@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.64-alpha] - TBD
+**Branch**: `parley/sprint/stability-375` | **PR**: #TBD
+
+### Sprint: Stability - Crash Investigation & Fixes (#375)
+
+Investigating and fixing crashes reported after v0.1.63-alpha.
+
+#### Fixed
+- (investigating)
+
+#### Related Issues
+- #373 - Flowchart bubble click doesn't expand tree
+- #374 - Crash on double-click of tree node
+
+---
+
 ## [0.1.63-alpha] - 2025-12-13
 **Branch**: `parley/feat/epic-368-menu-reorganization` | **PR**: #369
 
