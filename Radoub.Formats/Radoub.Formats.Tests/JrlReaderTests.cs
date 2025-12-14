@@ -219,6 +219,124 @@ public class JrlReaderTests
         Assert.Throws<InvalidDataException>(() => JrlReader.Read(buffer));
     }
 
+    [Fact(Skip = "Manual test - requires specific NWN module file")]
+    public void Read_XP2Chapter2ModuleJrl_DumpsContents()
+    {
+        // Manual test to analyze real JRL file structure
+        var filePath = @"C:\Users\Sheri\Documents\Neverwinter Nights\modules\XP2_Chapter2\module.jrl";
+
+        if (!File.Exists(filePath))
+        {
+            Assert.Fail($"File not found: {filePath}");
+            return;
+        }
+
+        var jrl = JrlReader.Read(filePath);
+
+        // Dump basic info
+        Console.WriteLine($"File Type: {jrl.FileType}");
+        Console.WriteLine($"File Version: {jrl.FileVersion}");
+        Console.WriteLine($"Categories: {jrl.Categories.Count}");
+        Console.WriteLine();
+
+        // Analyze StrRef usage and structure
+        var strRefUsage = new Dictionary<uint, List<string>>();
+
+        foreach (var category in jrl.Categories)
+        {
+            Console.WriteLine($"=== Category: {category.Tag} ===");
+            Console.WriteLine($"  Priority: {category.Priority}");
+            Console.WriteLine($"  XP: {category.XP}");
+            Console.WriteLine($"  Comment: {category.Comment}");
+            Console.WriteLine($"  Picture: {category.Picture}");
+
+            // Name
+            Console.WriteLine($"  Name StrRef: {category.Name.StrRef:X8}");
+            if (category.Name.StrRef != 0xFFFFFFFF)
+            {
+                if (!strRefUsage.ContainsKey(category.Name.StrRef))
+                    strRefUsage[category.Name.StrRef] = new List<string>();
+                strRefUsage[category.Name.StrRef].Add($"Category:{category.Tag}:Name");
+            }
+
+            if (category.Name.Strings.Any())
+            {
+                Console.WriteLine($"  Name Strings: {category.Name.Strings.Count}");
+                foreach (var kvp in category.Name.Strings)
+                {
+                    Console.WriteLine($"    Lang {kvp.Key}: {kvp.Value.Substring(0, Math.Min(50, kvp.Value.Length))}...");
+                }
+            }
+
+            Console.WriteLine($"  Entries: {category.Entries.Count}");
+
+            // Entries
+            foreach (var entry in category.Entries.Take(3)) // Show first 3 entries
+            {
+                Console.WriteLine($"    Entry ID: {entry.ID}");
+                Console.WriteLine($"      End: {entry.End}");
+                Console.WriteLine($"      Text StrRef: {entry.Text.StrRef:X8}");
+
+                if (entry.Text.StrRef != 0xFFFFFFFF)
+                {
+                    if (!strRefUsage.ContainsKey(entry.Text.StrRef))
+                        strRefUsage[entry.Text.StrRef] = new List<string>();
+                    strRefUsage[entry.Text.StrRef].Add($"Category:{category.Tag}:Entry:{entry.ID}");
+                }
+
+                if (entry.Text.Strings.Any())
+                {
+                    Console.WriteLine($"      Text Strings: {entry.Text.Strings.Count}");
+                    foreach (var kvp in entry.Text.Strings)
+                    {
+                        var preview = kvp.Value.Substring(0, Math.Min(60, kvp.Value.Length));
+                        Console.WriteLine($"        Lang {kvp.Key}: {preview}...");
+                    }
+                }
+            }
+
+            if (category.Entries.Count > 3)
+            {
+                Console.WriteLine($"    ... and {category.Entries.Count - 3} more entries");
+            }
+
+            Console.WriteLine();
+        }
+
+        // Summary of StrRef usage
+        Console.WriteLine("=== StrRef Summary ===");
+        Console.WriteLine($"Unique StrRefs used: {strRefUsage.Count}");
+        foreach (var kvp in strRefUsage.Take(10))
+        {
+            Console.WriteLine($"  StrRef {kvp.Key:X8}: used {kvp.Value.Count} times");
+            foreach (var usage in kvp.Value)
+            {
+                Console.WriteLine($"    - {usage}");
+            }
+        }
+
+        // Sample data structure
+        if (jrl.Categories.Any())
+        {
+            var sampleCat = jrl.Categories[0];
+            Console.WriteLine();
+            Console.WriteLine("=== Sample Data Structure ===");
+            Console.WriteLine($"Category Tag: {sampleCat.Tag}");
+            Console.WriteLine($"  Name.StrRef: {sampleCat.Name.StrRef}");
+            Console.WriteLine($"  Name.Strings.Count: {sampleCat.Name.Strings.Count}");
+            Console.WriteLine($"  Entries.Count: {sampleCat.Entries.Count}");
+
+            if (sampleCat.Entries.Any())
+            {
+                var sampleEntry = sampleCat.Entries[0];
+                Console.WriteLine($"  Entry[0].ID: {sampleEntry.ID}");
+                Console.WriteLine($"  Entry[0].Text.StrRef: {sampleEntry.Text.StrRef}");
+                Console.WriteLine($"  Entry[0].Text.Strings.Count: {sampleEntry.Text.Strings.Count}");
+                Console.WriteLine($"  Entry[0].End: {sampleEntry.End}");
+            }
+        }
+    }
+
     #region Test Helpers
 
     private static byte[] CreateMinimalJrl()

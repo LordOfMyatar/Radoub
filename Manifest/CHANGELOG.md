@@ -10,6 +10,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.0-alpha] - 2025-12-14
+**Branch**: `manifest/sprint/file-io` | **PR**: #410
+
+### Sprint: File I/O (#406)
+
+Implement JRL file reading and writing with proper state management.
+
+#### Added
+- Open JRL from file system using JrlReader
+- Open JRL from module folder (File > Open from Module, Ctrl+M)
+- Display categories/entries in TreeView
+- Save JRL to file using JrlWriter
+- Dirty state tracking with title indicator (*)
+- Unsaved changes warning on close
+- Property editing for categories (tag, name, priority, XP, comment)
+- Property editing for entries (ID, end flag, text)
+- Live tree view updates when properties change
+- StrRef display for TLK references (category names and entry text)
+- Priority dropdown (Highest/High/Medium/Low/Lowest)
+- Full file path in title bar with ~ for home directory
+- Auto-focus on name/text field when adding new categories/entries
+- Entry IDs increment by 100 (allows inserting between existing entries)
+
+---
+
 ## [0.1.0-alpha] - 2025-12-14
 **Branch**: `manifest/sprint/app-shell` | **PR**: #409
 

@@ -4,13 +4,15 @@ using Avalonia.Platform.Storage;
 using Manifest.Services;
 using Radoub.Formats.Jrl;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Manifest.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private JrlFile? _currentJrl;
     private string? _currentFilePath;
@@ -21,6 +23,8 @@ public partial class MainWindow : Window
     public bool HasFile => _currentJrl != null;
     public bool HasSelection => _selectedItem != null;
     public bool CanAddEntry => HasFile && (_selectedItem is CategoryTreeItem || _selectedItem is EntryTreeItem);
+
+    public new event PropertyChangedEventHandler? PropertyChanged;
 
     public MainWindow()
     {
@@ -132,6 +136,11 @@ public partial class MainWindow : Window
         await OpenFile();
     }
 
+    private async void OnOpenFromModuleClick(object? sender, RoutedEventArgs e)
+    {
+        await OpenFromModule();
+    }
+
     private async void OnSaveClick(object? sender, RoutedEventArgs e)
     {
         await SaveFile();
@@ -159,6 +168,33 @@ public partial class MainWindow : Window
         {
             var file = files[0];
             await LoadFile(file.Path.LocalPath);
+        }
+    }
+
+    private async Task OpenFromModule()
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Select Module Folder",
+            AllowMultiple = false
+        });
+
+        if (folders.Count > 0)
+        {
+            var folder = folders[0];
+            var modulePath = folder.Path.LocalPath;
+            var jrlPath = Path.Combine(modulePath, "module.jrl");
+
+            if (File.Exists(jrlPath))
+            {
+                await LoadFile(jrlPath);
+                UnifiedLogger.LogJournal(LogLevel.INFO, $"Opened module.jrl from: {UnifiedLogger.SanitizePath(modulePath)}");
+            }
+            else
+            {
+                UpdateStatus("No module.jrl found in selected folder");
+                await ShowErrorDialog("File Not Found", $"No module.jrl file found in:\n{UnifiedLogger.SanitizePath(modulePath)}");
+            }
         }
     }
 
@@ -230,6 +266,9 @@ public partial class MainWindow : Window
         MarkDirty();
         UpdateTree();
 
+        // Select the new category and focus the name field
+        SelectNewCategory(newCategory);
+
         UnifiedLogger.LogJournal(LogLevel.INFO, "Added new category");
     }
 
@@ -250,13 +289,13 @@ public partial class MainWindow : Window
 
         if (category == null) return;
 
-        // Auto-increment ID
+        // Auto-increment ID by 100 (allows inserting entries between)
         uint nextId = category.Entries.Count > 0
-            ? category.Entries.Max(e => e.ID) + 1
-            : 1;
+            ? ((category.Entries.Max(e => e.ID) / 100) + 1) * 100
+            : 100;
 
         var entryText = new JrlLocString();
-        entryText.SetString(0, "New entry");
+        entryText.SetString(0, "");
 
         var newEntry = new JournalEntry
         {
@@ -268,6 +307,9 @@ public partial class MainWindow : Window
         category.Entries.Add(newEntry);
         MarkDirty();
         UpdateTree();
+
+        // Select the new entry and focus the text field
+        SelectNewEntry(newEntry, category);
 
         UnifiedLogger.LogJournal(LogLevel.INFO, $"Added new entry with ID {nextId}");
     }
@@ -291,6 +333,44 @@ public partial class MainWindow : Window
         MarkDirty();
         UpdateTree();
         UpdatePropertyPanel();
+    }
+
+    private void SelectNewCategory(JournalCategory category)
+    {
+        // Find and select the tree item for this category
+        foreach (var treeItem in JournalTree.Items.OfType<TreeViewItem>())
+        {
+            if (treeItem.Tag is CategoryTreeItem catItem && catItem.Category == category)
+            {
+                JournalTree.SelectedItem = treeItem;
+                treeItem.Focus();
+                // Focus the name box after a brief delay to let UI update
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => CategoryNameBox.Focus());
+                return;
+            }
+        }
+    }
+
+    private void SelectNewEntry(JournalEntry entry, JournalCategory category)
+    {
+        // Find and select the tree item for this entry
+        foreach (var catTreeItem in JournalTree.Items.OfType<TreeViewItem>())
+        {
+            if (catTreeItem.Tag is CategoryTreeItem catItem && catItem.Category == category)
+            {
+                foreach (var entTreeItem in catTreeItem.Items.OfType<TreeViewItem>())
+                {
+                    if (entTreeItem.Tag is EntryTreeItem entItem && entItem.Entry == entry)
+                    {
+                        JournalTree.SelectedItem = entTreeItem;
+                        entTreeItem.Focus();
+                        // Focus the text box after a brief delay to let UI update
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() => EntryTextBox.Focus());
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     #endregion
@@ -349,31 +429,238 @@ public partial class MainWindow : Window
 
     #region Property Panel
 
+    private bool _isUpdatingPanel = false;
+
     private void UpdatePropertyPanel()
     {
-        CategoryProperties.IsVisible = false;
-        EntryProperties.IsVisible = false;
-        NoSelectionText.IsVisible = true;
-
-        if (_selectedItem is CategoryTreeItem catItem)
+        _isUpdatingPanel = true;
+        try
         {
-            CategoryProperties.IsVisible = true;
-            NoSelectionText.IsVisible = false;
+            CategoryProperties.IsVisible = false;
+            EntryProperties.IsVisible = false;
+            NoSelectionText.IsVisible = true;
 
-            CategoryNameBox.Text = catItem.Category.Name.GetDefault();
-            CategoryTagBox.Text = catItem.Category.Tag;
-            CategoryPriorityBox.Value = catItem.Category.Priority;
-            CategoryXPBox.Value = catItem.Category.XP;
-            CategoryCommentBox.Text = catItem.Category.Comment;
+            if (_selectedItem is CategoryTreeItem catItem)
+            {
+                CategoryProperties.IsVisible = true;
+                NoSelectionText.IsVisible = false;
+
+                CategoryTagBox.Text = catItem.Category.Tag;
+                CategoryStrRefBox.Text = FormatStrRef(catItem.Category.Name.StrRef);
+                CategoryNameBox.Text = catItem.Category.Name.GetDefault();
+                SelectPriorityItem(catItem.Category.Priority);
+                CategoryXPBox.Value = catItem.Category.XP;
+                CategoryCommentBox.Text = catItem.Category.Comment;
+
+                // Wire up change handlers
+                WireCategoryHandlers();
+            }
+            else if (_selectedItem is EntryTreeItem entItem)
+            {
+                EntryProperties.IsVisible = true;
+                NoSelectionText.IsVisible = false;
+
+                EntryIdBox.Value = entItem.Entry.ID;
+                EntryEndBox.IsChecked = entItem.Entry.End;
+                EntryStrRefBox.Text = FormatStrRef(entItem.Entry.Text.StrRef);
+                EntryTextBox.Text = entItem.Entry.Text.GetDefault();
+
+                // Wire up change handlers
+                WireEntryHandlers();
+            }
         }
-        else if (_selectedItem is EntryTreeItem entItem)
+        finally
         {
-            EntryProperties.IsVisible = true;
-            NoSelectionText.IsVisible = false;
+            _isUpdatingPanel = false;
+        }
+    }
 
-            EntryIdBox.Value = entItem.Entry.ID;
-            EntryEndBox.IsChecked = entItem.Entry.End;
-            EntryTextBox.Text = entItem.Entry.Text.GetDefault();
+    private static string FormatStrRef(uint strRef)
+    {
+        if (strRef == 0xFFFFFFFF)
+            return "(none)";
+        return $"{strRef} (0x{strRef:X8})";
+    }
+
+    private void SelectPriorityItem(uint priority)
+    {
+        foreach (var obj in CategoryPriorityBox.Items)
+        {
+            if (obj is ComboBoxItem item && item.Tag is string tagStr &&
+                uint.TryParse(tagStr, out var tagVal) && tagVal == priority)
+            {
+                CategoryPriorityBox.SelectedItem = item;
+                return;
+            }
+        }
+        // Default to Medium (2) if not found
+        CategoryPriorityBox.SelectedIndex = 2;
+    }
+
+    private void WireCategoryHandlers()
+    {
+        // Remove old handlers to prevent duplicates
+        CategoryNameBox.LostFocus -= OnCategoryNameChanged;
+        CategoryTagBox.LostFocus -= OnCategoryTagChanged;
+        CategoryPriorityBox.SelectionChanged -= OnCategoryPriorityChanged;
+        CategoryXPBox.ValueChanged -= OnCategoryXPChanged;
+        CategoryCommentBox.LostFocus -= OnCategoryCommentChanged;
+
+        // Add handlers
+        CategoryNameBox.LostFocus += OnCategoryNameChanged;
+        CategoryTagBox.LostFocus += OnCategoryTagChanged;
+        CategoryPriorityBox.SelectionChanged += OnCategoryPriorityChanged;
+        CategoryXPBox.ValueChanged += OnCategoryXPChanged;
+        CategoryCommentBox.LostFocus += OnCategoryCommentChanged;
+    }
+
+    private void WireEntryHandlers()
+    {
+        // Remove old handlers to prevent duplicates
+        EntryIdBox.ValueChanged -= OnEntryIdChanged;
+        EntryEndBox.IsCheckedChanged -= OnEntryEndChanged;
+        EntryTextBox.LostFocus -= OnEntryTextChanged;
+
+        // Add handlers
+        EntryIdBox.ValueChanged += OnEntryIdChanged;
+        EntryEndBox.IsCheckedChanged += OnEntryEndChanged;
+        EntryTextBox.LostFocus += OnEntryTextChanged;
+    }
+
+    private void OnCategoryNameChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
+
+        var newName = CategoryNameBox.Text ?? "";
+        if (catItem.Category.Name.GetDefault() != newName)
+        {
+            catItem.Category.Name.SetString(0, newName);
+            MarkDirty();
+            UpdateTreeItemHeader(catItem);
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category name changed to: {newName}");
+        }
+    }
+
+    private void OnCategoryTagChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
+
+        var newTag = CategoryTagBox.Text ?? "";
+        if (catItem.Category.Tag != newTag)
+        {
+            catItem.Category.Tag = newTag;
+            MarkDirty();
+            UpdateTreeItemHeader(catItem);
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category tag changed to: {newTag}");
+        }
+    }
+
+    private void OnCategoryPriorityChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
+
+        if (CategoryPriorityBox.SelectedItem is ComboBoxItem item &&
+            item.Tag is string tagStr && uint.TryParse(tagStr, out var newPriority))
+        {
+            if (catItem.Category.Priority != newPriority)
+            {
+                catItem.Category.Priority = newPriority;
+                MarkDirty();
+                UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category priority changed to: {newPriority}");
+            }
+        }
+    }
+
+    private void OnCategoryXPChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
+
+        var newXP = (uint)(CategoryXPBox.Value ?? 0);
+        if (catItem.Category.XP != newXP)
+        {
+            catItem.Category.XP = newXP;
+            MarkDirty();
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Category XP changed to: {newXP}");
+        }
+    }
+
+    private void OnCategoryCommentChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingPanel || _selectedItem is not CategoryTreeItem catItem) return;
+
+        var newComment = CategoryCommentBox.Text ?? "";
+        if (catItem.Category.Comment != newComment)
+        {
+            catItem.Category.Comment = newComment;
+            MarkDirty();
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Category comment changed");
+        }
+    }
+
+    private void OnEntryIdChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
+
+        var newId = (uint)(EntryIdBox.Value ?? 0);
+        if (entItem.Entry.ID != newId)
+        {
+            entItem.Entry.ID = newId;
+            MarkDirty();
+            UpdateTreeItemHeader(entItem);
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry ID changed to: {newId}");
+        }
+    }
+
+    private void OnEntryEndChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
+
+        var newEnd = EntryEndBox.IsChecked ?? false;
+        if (entItem.Entry.End != newEnd)
+        {
+            entItem.Entry.End = newEnd;
+            MarkDirty();
+            UpdateTreeItemHeader(entItem);
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, $"Entry End changed to: {newEnd}");
+        }
+    }
+
+    private void OnEntryTextChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingPanel || _selectedItem is not EntryTreeItem entItem) return;
+
+        var newText = EntryTextBox.Text ?? "";
+        var oldText = entItem.Entry.Text.GetDefault();
+        if (oldText != newText)
+        {
+            entItem.Entry.Text.SetString(0, newText);
+            MarkDirty();
+            UpdateTreeItemHeader(entItem);
+            UnifiedLogger.LogJournal(LogLevel.DEBUG, "Entry text changed");
+        }
+    }
+
+    private void UpdateTreeItemHeader(object item)
+    {
+        // Find and update the tree item header
+        foreach (var treeItem in JournalTree.Items.OfType<TreeViewItem>())
+        {
+            if (treeItem.Tag == item)
+            {
+                if (item is CategoryTreeItem catItem)
+                    treeItem.Header = catItem.DisplayName;
+                return;
+            }
+
+            // Check children for entry items
+            foreach (var childItem in treeItem.Items.OfType<TreeViewItem>())
+            {
+                if (childItem.Tag == item && item is EntryTreeItem entItem)
+                {
+                    childItem.Header = entItem.DisplayName;
+                    return;
+                }
+            }
         }
     }
 
@@ -383,9 +670,9 @@ public partial class MainWindow : Window
 
     private void UpdateTitle()
     {
-        var fileName = _currentFilePath != null ? Path.GetFileName(_currentFilePath) : "Untitled";
+        var displayPath = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "Untitled";
         var dirty = _isDirty ? "*" : "";
-        Title = $"Manifest - {fileName}{dirty}";
+        Title = $"Manifest - {displayPath}{dirty}";
     }
 
     private void UpdateStatus(string message)
@@ -449,10 +736,9 @@ public partial class MainWindow : Window
         dialog.Show(this);
     }
 
-    private void OnPropertyChanged(string propertyName)
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
-        // Notify binding system of property changes
-        // Using simple invalidation approach for now
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
     #endregion
