@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.66-alpha] - 2025-12-14
+**Branch**: `parley/sprint/shared-gff` | **PR**: #402
+
+### Sprint: Use Shared GFF Parser (#398)
+
+Update DialogEditor to use the shared JRL parser from Radoub.Formats.
+
+#### Changed
+- `JournalService` now uses `Radoub.Formats.Jrl.JrlReader` for JRL parsing
+- Removed ~150 lines of manual GFF parsing from JournalService
+- DialogEditor references Radoub.Formats shared library
+
+#### Technical Notes
+- DialogEditor keeps its own GFF types (GffStructures.cs, GffBinaryReader.cs) for DialogEditor-specific features
+- JrlReader types converted to DialogEditor types via ConvertLocString()
+- Future: Issue #403 tracks adding StrRef/TLK support for full internationalization
+
+---
+
 ## [0.1.65-alpha] - 2025-12-14
 **Branch**: `parley/feat/theme-color-audit-141` | **PR**: #393
 
