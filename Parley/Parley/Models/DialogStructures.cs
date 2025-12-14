@@ -37,10 +37,23 @@ namespace DialogEditor.Models
     {
         [JsonProperty("Strings")]
         public Dictionary<int, string> Strings { get; set; } = new();
-        
+
+        /// <summary>
+        /// String reference into TLK file (0xFFFFFFFF = no reference).
+        /// 2025-12-14: Added for internationalization support (Issue #403)
+        /// </summary>
+        [JsonProperty("StrRef")]
+        public uint StrRef { get; set; } = 0xFFFFFFFF;
+
         [JsonIgnore]
         public string DefaultText { get; set; } = string.Empty;
-        
+
+        /// <summary>
+        /// True if this string references a TLK entry
+        /// </summary>
+        [JsonIgnore]
+        public bool HasStrRef => StrRef != 0xFFFFFFFF;
+
         public void Add(int languageId, string text, bool feminine = false)
         {
             var key = feminine ? languageId + 1000 : languageId;
@@ -48,19 +61,19 @@ namespace DialogEditor.Models
             if (languageId == 0 && !feminine)
                 DefaultText = text;
         }
-        
+
         public string? Get(int languageId = 0, bool feminine = false)
         {
             var key = feminine ? languageId + 1000 : languageId;
             return Strings.TryGetValue(key, out var text) ? text : null;
         }
-        
+
         public string GetDefault() => Get(0) ?? string.Empty;
-        
+
         public Dictionary<int, string> GetAllStrings() => new(Strings);
-        
+
         [JsonIgnore]
-        public bool IsEmpty => Strings.Count == 0;
+        public bool IsEmpty => Strings.Count == 0 && !HasStrRef;
     }
 
     public class DialogPtr
