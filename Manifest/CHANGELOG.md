@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.3.0-alpha] - 2025-12-14
-**Branch**: `manifest/sprint/tlk-integration` | **PR**: #TBD
+**Branch**: `manifest/sprint/tlk-integration` | **PR**: #411
 
 ### Sprint: TLK Integration (#389)
 
