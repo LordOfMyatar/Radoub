@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.65-alpha] - 2025-12-14
-**Branch**: `parley/feat/theme-color-audit-141` | **PR**: #TBD
+**Branch**: `parley/feat/theme-color-audit-141` | **PR**: #393
 
 ### Feature: Theme Color Consistency Audit (#141)
 
