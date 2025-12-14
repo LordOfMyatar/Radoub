@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.2.0-alpha] - 2025-12-14
-**Branch**: `manifest/sprint/file-io` | **PR**: #TBD
+**Branch**: `manifest/sprint/file-io` | **PR**: #410
 
 ### Sprint: File I/O (#406)
 
