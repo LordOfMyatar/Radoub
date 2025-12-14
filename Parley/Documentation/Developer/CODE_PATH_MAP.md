@@ -1,7 +1,7 @@
 # Code Path Map - Parley Architecture
 
 **Purpose**: Track active code paths for file operations and UI workflows
-**Last Updated**: 2025-12-13 (Epic #368: Menu Reorganization)
+**Last Updated**: 2025-12-14 (Issue #141: Theme Color Audit)
 **Note**: This information was discovered and written by Claude AI.
 
 ---
@@ -45,6 +45,7 @@
 **ScriptParameterUIManager** (~380 lines): Parameter UI management for conditions/actions
   - 2025-11-22: Initial extraction from MainWindow
   - 2025-12-13: Added `HasAnyDuplicateKeys()` for save validation (#289)
+  - 2025-12-14: Added theme-aware error/success colors for validation (#141)
 **NodeCreationHelper** (229 lines): Smart node creation with debouncing and tree navigation (2025-11-22)
 **ResourceBrowserManager** (~230 lines): Sound/Creature browser dialogs and recent tags
   - 2025-11-22: Initial extraction from MainWindow
@@ -538,6 +539,7 @@ DebugLogger callback (DebugLogger.cs:20-60)
 - Handles circular references gracefully (visited node tracking)
 - Creates link nodes for IsLink=true pointers (visual representation)
 - Preserves OriginalNode/OriginalPointer references for selection sync
+- 2025-12-14: Fixed to pass raw `Speaker` tag (not `SpeakerDisplay`) for theme color lookup (#141)
 
 ### Conversion Flow (Sprint 1)
 
