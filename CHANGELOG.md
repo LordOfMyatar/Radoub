@@ -13,6 +13,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.0] - 2025-12-14
+**Branch**: `manifest/sprint/app-shell` | **PR**: #TBD
+
+### Sprint: [Manifest] Application Shell (#405)
+
+Create foundational Manifest application structure and services.
+
+#### Added
+- Manifest project structure (mirroring Parley layout)
+- Basic Avalonia MainWindow with tree view and property panel
+- Menu bar (File, Edit, Help)
+- Settings service: `~/Radoub/Manifest/ManifestSettings.json`
+- Logging service: `~/Radoub/Manifest/Logs/`
+- File open/save dialogs for JRL files
+- Recent files list
+
+---
+
 ## [0.7.0] - 2025-12-14
 **Branch**: `radoub/sprint/jrl-reader` | **PR**: #401
 
