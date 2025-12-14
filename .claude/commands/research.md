@@ -48,6 +48,14 @@ If needed, research:
 - API documentation
 - Best practices for the approach
 
+**When evaluating external libraries**, check maintainability factors:
+- **Last activity**: When was the last commit/release? (Stale > 2 years is a red flag)
+- **Issue responsiveness**: Are maintainers active? Open issue count vs. closed?
+- **Compatibility**: .NET version support, Avalonia/platform compatibility
+- **License**: MIT/Apache preferred, check for restrictions
+- **Adoption**: Download counts, stars, community usage
+- **Alternatives**: Are there better-maintained alternatives?
+
 Document sources and key findings.
 
 ### Step 4: Ask Clarifying Questions
