@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.7.0] - 2025-12-14
-**Branch**: `radoub/sprint/jrl-reader` | **PR**: #TBD
+**Branch**: `radoub/sprint/jrl-reader` | **PR**: #401
 
 ### Sprint: Create JRL Reader/Writer (#397)
 
