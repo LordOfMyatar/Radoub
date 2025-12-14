@@ -10,6 +10,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.65-alpha] - 2025-12-14
+**Branch**: `parley/feat/theme-color-audit-141` | **PR**: #393
+
+### Feature: Theme Color Consistency Audit (#141)
+
+Audit and fix PC/Owner color assignments across all themes for warm/cool consistency.
+
+#### Audited (All Pass ✅)
+- **Light**: `#FF8A65` (coral/warm) / `#4FC3F7` (cyan/cool) ✅
+- **Dark**: `#FF8A65` (coral/warm) / `#4FC3F7` (cyan/cool) ✅
+- **Fluent Light**: `#D83B01` (orange/warm) / `#0078D4` (blue/cool) ✅
+- **Angry Fruit Salad**: `#FFFF00` (yellow) / `#00FFFF` (cyan) ✅
+
+#### Fixed
+- **VSCode Dark**: Changed `tree_entry` from `#4EC9B0` (teal) to `#CE9178` (tan/warm) - was both cool colors
+- **Flowchart panel**: Now refreshes colors when theme changes (was not responding to theme switches)
+- **Flowchart PC/Owner colors**: Fixed theme `tree_reply`/`tree_entry` colors not being applied:
+  - Changed theme variant lookup from `Default` to `ActualThemeVariant` with brush fallback
+  - Fixed DialogToFlowchartConverter passing `SpeakerDisplay` instead of raw `Speaker` tag (SpeakerVisualHelper expects empty string for Owner nodes)
+- **Duplicate parameter validation**: Red border now clears properly when duplicate key is resolved
+- **Validation colors**: Use theme error/success colors instead of hardcoded red/green for colorblind accessibility
+- **Hardcoded colors audit**: Replaced hardcoded `Brushes.Red`/`Brushes.Green` in SettingsWindow and MainWindow with theme-aware error/success brushes
+
+#### Previously Fixed (PR #367)
+- Deuteranopia, Protanopia, Tritanopia
+
+### Feature: Edit Mode Border Colors (#151)
+
+Added theme-aware border colors for edit mode and auto-trim functionality.
+
+#### Added
+- `edit_mode_border`: Default editing state (cool tones)
+- `edit_mode_unsaved`: Unsaved changes indicator (warm tones)
+- `edit_mode_saved`: Saved state indicator (cool/green tones)
+- `auto_trim_border`: Auto-trim active indicator
+
+All 8 themes updated with appropriate colors following warm/cool conventions.
+
+---
+
 ## [0.1.64-alpha] - 2025-12-14
 **Branch**: `parley/sprint/stability-375` | **PR**: #376
 

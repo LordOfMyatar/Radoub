@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Styling;
 using DialogEditor.Models;
 using DialogEditor.Utils;
 using System;
@@ -164,15 +165,17 @@ namespace DialogEditor.Services
         /// Validates that a key is not duplicated in the parameter panel.
         /// Issue #287: Prevents duplicate keys which would cause data loss.
         /// Red border stays until the duplicate is corrected.
+        /// Issue #141: Fixed to clear ALL red borders when duplicate is resolved.
         /// </summary>
         private void ValidateDuplicateKeys(StackPanel parent, TextBox currentKeyTextBox, bool isCondition)
         {
             string currentKey = currentKeyTextBox.Text?.Trim() ?? "";
 
-            // If key is empty, clear any warning state
+            // If key is empty, clear any warning state and revalidate all to clear orphaned red borders
             if (string.IsNullOrWhiteSpace(currentKey))
             {
                 ClearDuplicateWarning(currentKeyTextBox);
+                RevalidateAllKeys(parent, isCondition);
                 return;
             }
 
@@ -200,14 +203,15 @@ namespace DialogEditor.Services
 
             if (duplicateCount > 1)
             {
-                // Show warning - duplicate key detected (stays red until corrected)
-                currentKeyTextBox.BorderBrush = Brushes.Red;
+                // Show warning - duplicate key detected (use theme error color for accessibility)
+                var errorBrush = GetErrorBrush();
+                currentKeyTextBox.BorderBrush = errorBrush;
                 currentKeyTextBox.BorderThickness = new Thickness(2);
 
                 // Also mark all other textboxes with the same key
                 foreach (var tb in allKeyTextBoxes)
                 {
-                    tb.BorderBrush = Brushes.Red;
+                    tb.BorderBrush = errorBrush;
                     tb.BorderThickness = new Thickness(2);
                 }
 
@@ -218,9 +222,116 @@ namespace DialogEditor.Services
             }
             else
             {
-                // No duplicate - clear any warning state on this textbox
+                // No duplicate for current key - clear warning on this textbox
                 ClearDuplicateWarning(currentKeyTextBox);
+
+                // Issue #141: Revalidate ALL keys to clear orphaned red borders
+                // When a duplicate is resolved by editing one key, the other key's
+                // textbox still has a red border that needs to be cleared
+                RevalidateAllKeys(parent, isCondition);
             }
+        }
+
+        /// <summary>
+        /// Revalidates all key textboxes in the panel to clear orphaned red borders.
+        /// Issue #141: Called when a key changes to ensure previously-duplicate keys get cleared.
+        /// </summary>
+        private void RevalidateAllKeys(StackPanel parent, bool isCondition)
+        {
+            // Build a count of each key to find actual duplicates
+            var keyCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+            var keyTextBoxes = new Dictionary<string, List<TextBox>>(StringComparer.Ordinal);
+
+            foreach (var child in parent.Children)
+            {
+                if (child is Grid paramGrid)
+                {
+                    var textBoxes = paramGrid.Children.OfType<TextBox>().ToList();
+                    if (textBoxes.Count >= 1)
+                    {
+                        var keyTextBox = textBoxes[0];
+                        string key = keyTextBox.Text?.Trim() ?? "";
+
+                        if (!string.IsNullOrWhiteSpace(key))
+                        {
+                            if (!keyCounts.ContainsKey(key))
+                            {
+                                keyCounts[key] = 0;
+                                keyTextBoxes[key] = new List<TextBox>();
+                            }
+                            keyCounts[key]++;
+                            keyTextBoxes[key].Add(keyTextBox);
+                        }
+                        else
+                        {
+                            // Empty key - clear any red border
+                            ClearDuplicateWarning(keyTextBox);
+                        }
+                    }
+                }
+            }
+
+            // Now update visual state for each key
+            // Get theme error brush once for efficiency
+            var errorBrush = GetErrorBrush();
+
+            foreach (var kvp in keyCounts)
+            {
+                string key = kvp.Key;
+                int count = kvp.Value;
+
+                if (count > 1)
+                {
+                    // Still a duplicate - use theme error color
+                    foreach (var tb in keyTextBoxes[key])
+                    {
+                        tb.BorderBrush = errorBrush;
+                        tb.BorderThickness = new Thickness(2);
+                    }
+                }
+                else
+                {
+                    // Not a duplicate (anymore) - clear error border
+                    foreach (var tb in keyTextBoxes[key])
+                    {
+                        ClearDuplicateWarning(tb);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the theme-aware error brush for validation errors.
+        /// Falls back to red if theme error color is not available.
+        /// Issue #141: Uses theme colors for colorblind accessibility.
+        /// </summary>
+        private IBrush GetErrorBrush()
+        {
+            var app = Application.Current;
+            if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var errorBrush) == true
+                && errorBrush is IBrush brush)
+            {
+                return brush;
+            }
+            // Fallback to standard red
+            return Brushes.Red;
+        }
+
+        /// <summary>
+        /// Gets the theme-aware success brush for validation success feedback.
+        /// Falls back to green if theme success color is not available.
+        /// Issue #141: Uses theme colors for colorblind accessibility.
+        /// </summary>
+        private IBrush GetSuccessBrush()
+        {
+            var app = Application.Current;
+            if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var successBrush) == true
+                && successBrush is IBrush brush)
+            {
+                return brush;
+            }
+            // Fallback to standard green
+            return Brushes.LightGreen;
         }
 
         /// <summary>
@@ -228,8 +339,9 @@ namespace DialogEditor.Services
         /// </summary>
         private void ClearDuplicateWarning(TextBox textBox)
         {
-            // Only clear if currently showing red border (duplicate warning)
-            if (textBox.BorderBrush == Brushes.Red)
+            // Only clear if currently showing error border (duplicate warning)
+            // Check for both theme error brush and fallback red
+            if (textBox.BorderThickness.Top >= 2)
             {
                 textBox.BorderBrush = null; // Reset to default theme
                 textBox.BorderThickness = new Thickness(1);
@@ -509,6 +621,7 @@ namespace DialogEditor.Services
         /// <summary>
         /// Shows visual feedback when parameter text is trimmed.
         /// Briefly flashes the TextBox border to indicate successful trim operation.
+        /// Issue #141: Uses theme success color for colorblind accessibility.
         /// </summary>
         private async Task ShowTrimFeedbackAsync(TextBox textBox)
         {
@@ -518,8 +631,8 @@ namespace DialogEditor.Services
 
             try
             {
-                // Flash green border to indicate trim occurred
-                textBox.BorderBrush = Brushes.LightGreen;
+                // Flash success border to indicate trim occurred (theme-aware for accessibility)
+                textBox.BorderBrush = GetSuccessBrush();
                 textBox.BorderThickness = new Thickness(2);
 
                 // Wait briefly for visual feedback

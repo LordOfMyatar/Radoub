@@ -145,6 +145,19 @@ namespace DialogEditor.Models
         [JsonPropertyName("button_hover")]
         public string? ButtonHover { get; set; }
 
+        // Edit mode border colors (Issue #151)
+        [JsonPropertyName("edit_mode_border")]
+        public string? EditModeBorder { get; set; }
+
+        [JsonPropertyName("edit_mode_unsaved")]
+        public string? EditModeUnsaved { get; set; }
+
+        [JsonPropertyName("edit_mode_saved")]
+        public string? EditModeSaved { get; set; }
+
+        [JsonPropertyName("auto_trim_border")]
+        public string? AutoTrimBorder { get; set; }
+
         // Multi-NPC speaker colors (Issue #16 integration)
         [JsonPropertyName("speaker_1")]
         public string? Speaker1 { get; set; }

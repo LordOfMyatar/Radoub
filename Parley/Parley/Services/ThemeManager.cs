@@ -370,6 +370,29 @@ namespace DialogEditor.Services
             {
                 resources["ThemeOwnerColor"] = colors.TreeEntry;
             }
+
+            // Edit mode border colors (Issue #151)
+            // These colors indicate editing state for inline text editing and auto-trim
+            if (!string.IsNullOrEmpty(colors.EditModeBorder))
+            {
+                var editBorderBrush = new SolidColorBrush(Color.Parse(colors.EditModeBorder));
+                resources["ThemeEditModeBorder"] = editBorderBrush;
+            }
+            if (!string.IsNullOrEmpty(colors.EditModeUnsaved))
+            {
+                var unsavedBrush = new SolidColorBrush(Color.Parse(colors.EditModeUnsaved));
+                resources["ThemeEditModeUnsaved"] = unsavedBrush;
+            }
+            if (!string.IsNullOrEmpty(colors.EditModeSaved))
+            {
+                var savedBrush = new SolidColorBrush(Color.Parse(colors.EditModeSaved));
+                resources["ThemeEditModeSaved"] = savedBrush;
+            }
+            if (!string.IsNullOrEmpty(colors.AutoTrimBorder))
+            {
+                var autoTrimBrush = new SolidColorBrush(Color.Parse(colors.AutoTrimBorder));
+                resources["ThemeAutoTrimBorder"] = autoTrimBrush;
+            }
         }
 
         /// <summary>
