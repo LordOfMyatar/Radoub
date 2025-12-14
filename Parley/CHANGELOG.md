@@ -25,6 +25,7 @@ Audit and fix PC/Owner color assignments across all themes for warm/cool consist
 
 #### Fixed
 - **VSCode Dark**: Changed `tree_entry` from `#4EC9B0` (teal) to `#CE9178` (tan/warm) - was both cool colors
+- **Flowchart panel**: Now refreshes colors when theme changes (was not responding to theme switches)
 
 #### Previously Fixed (PR #367)
 - Deuteranopia, Protanopia, Tritanopia

@@ -63,6 +63,27 @@ namespace DialogEditor.Views
 
             // Listen for settings changes to refresh colors (#340)
             SettingsService.Instance.PropertyChanged += OnSettingsChanged;
+
+            // Listen for theme changes to refresh colors (#141)
+            ThemeManager.Instance.ThemeApplied += OnThemeApplied;
+        }
+
+        private void OnThemeApplied(object? sender, EventArgs e)
+        {
+            // Refresh flowchart colors when theme changes
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                // Force complete visual refresh by toggling visibility
+                // This forces Avalonia to recreate the visual tree with new theme colors
+                FlowchartScrollViewer.IsVisible = false;
+                _viewModel.RefreshGraph();
+
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    FlowchartScrollViewer.IsVisible = true;
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart colors refreshed after theme change");
+                }, Avalonia.Threading.DispatcherPriority.Background);
+            });
         }
 
         private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
