@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.63-alpha] - 2025-12-13
-**Branch**: `parley/feat/epic-368-menu-reorganization` | **PR**: #TBD
+**Branch**: `parley/feat/epic-368-menu-reorganization` | **PR**: #369
 
 ### Epic: Menu Reorganization & Keyboard Shortcut Consistency (#368)
 
