@@ -2916,8 +2916,8 @@ namespace DialogEditor.Views
 
             try
             {
-                // Flash green border to indicate trim occurred
-                textBox.BorderBrush = Avalonia.Media.Brushes.LightGreen;
+                // Flash green border to indicate trim occurred (theme-aware #141)
+                textBox.BorderBrush = GetSuccessBrush();
                 textBox.BorderThickness = new Thickness(2);
 
                 // Wait briefly for visual feedback
@@ -4309,6 +4309,21 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error collapsing node '{node?.DisplayText}': {ex.Message}");
                 _viewModel.StatusMessage = $"Error collapsing node: {ex.Message}";
             }
+        }
+
+        /// <summary>
+        /// Gets the theme-aware success brush for validation feedback.
+        /// Uses ThemeSuccess resource if available, falls back to LightGreen.
+        /// </summary>
+        private Avalonia.Media.IBrush GetSuccessBrush()
+        {
+            var app = Application.Current;
+            if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var successBrush) == true
+                && successBrush is Avalonia.Media.IBrush brush)
+            {
+                return brush;
+            }
+            return Avalonia.Media.Brushes.LightGreen;
         }
     }
 }

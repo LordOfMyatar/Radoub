@@ -14,6 +14,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using DialogEditor.Models;
 using DialogEditor.Plugins;
 using DialogEditor.Services;
@@ -582,7 +583,7 @@ namespace DialogEditor.Views
                 if (validation != null)
                 {
                     validation.Text = "❌ Could not auto-detect game path. Please browse manually.";
-                    validation.Foreground = Brushes.Red;
+                    validation.Foreground = GetErrorBrush();
                 }
             }
         }
@@ -683,7 +684,7 @@ namespace DialogEditor.Views
                 if (validation != null)
                 {
                     validation.Text = "❌ Could not auto-detect base game installation. Please browse manually.";
-                    validation.Foreground = Brushes.Red;
+                    validation.Foreground = GetErrorBrush();
                 }
             }
         }
@@ -696,7 +697,7 @@ namespace DialogEditor.Views
             // Use ResourcePathHelper for validation (#345)
             var result = ResourcePathHelper.ValidateBaseGamePathWithMessage(path);
             validation.Text = result.Message;
-            validation.Foreground = result.IsValid ? Brushes.Green : Brushes.Red;
+            validation.Foreground = result.IsValid ? GetSuccessBrush() : GetErrorBrush();
         }
 
         private async void OnBrowseModulePathClick(object? sender, RoutedEventArgs e)
@@ -749,7 +750,7 @@ namespace DialogEditor.Views
                 if (validation != null)
                 {
                     validation.Text = "❌ Could not auto-detect module path. Please browse manually.";
-                    validation.Foreground = Brushes.Red;
+                    validation.Foreground = GetErrorBrush();
                 }
             }
         }
@@ -762,7 +763,7 @@ namespace DialogEditor.Views
             // Use ResourcePathHelper for validation (#345)
             var result = ResourcePathHelper.ValidateGamePathWithMessage(path);
             validation.Text = result.Message;
-            validation.Foreground = result.IsValid ? Brushes.Green : Brushes.Red;
+            validation.Foreground = result.IsValid ? GetSuccessBrush() : GetErrorBrush();
         }
 
         private void ValidateModulePath(string path)
@@ -773,7 +774,7 @@ namespace DialogEditor.Views
             // Use ResourcePathHelper for validation (#345)
             var result = ResourcePathHelper.ValidateModulePathWithMessage(path);
             validation.Text = result.Message;
-            validation.Foreground = result.IsValid ? Brushes.Green : Brushes.Red;
+            validation.Foreground = result.IsValid ? GetSuccessBrush() : GetErrorBrush();
         }
 
         private void OnRecentModuleSelected(object? sender, SelectionChangedEventArgs e)
@@ -853,7 +854,7 @@ namespace DialogEditor.Views
                 else if (theme.Accessibility.Type == "nightmare")
                 {
                     accessText.Text = theme.Accessibility.Warning ?? "⚠️ Warning: This theme may cause eye strain";
-                    accessText.Foreground = Avalonia.Media.Brushes.Red;
+                    accessText.Foreground = GetErrorBrush();
                     accessText.IsVisible = true;
                 }
                 else
@@ -1592,5 +1593,41 @@ namespace DialogEditor.Views
 
             return result;
         }
+
+        #region Theme-Aware Colors
+
+        /// <summary>
+        /// Gets the theme-aware error brush for validation errors.
+        /// Falls back to red if theme error color is not available.
+        /// Issue #141: Uses theme colors for colorblind accessibility.
+        /// </summary>
+        private IBrush GetErrorBrush()
+        {
+            var app = Application.Current;
+            if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var errorBrush) == true
+                && errorBrush is IBrush brush)
+            {
+                return brush;
+            }
+            return Brushes.Red;
+        }
+
+        /// <summary>
+        /// Gets the theme-aware success brush for validation success feedback.
+        /// Falls back to green if theme success color is not available.
+        /// Issue #141: Uses theme colors for colorblind accessibility.
+        /// </summary>
+        private IBrush GetSuccessBrush()
+        {
+            var app = Application.Current;
+            if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var successBrush) == true
+                && successBrush is IBrush brush)
+            {
+                return brush;
+            }
+            return Brushes.Green;
+        }
+
+        #endregion
     }
 }

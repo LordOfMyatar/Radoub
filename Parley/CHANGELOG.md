@@ -28,6 +28,7 @@ Audit and fix PC/Owner color assignments across all themes for warm/cool consist
 - **Flowchart panel**: Now refreshes colors when theme changes (was not responding to theme switches)
 - **Duplicate parameter validation**: Red border now clears properly when duplicate key is resolved
 - **Validation colors**: Use theme error/success colors instead of hardcoded red/green for colorblind accessibility
+- **Hardcoded colors audit**: Replaced hardcoded `Brushes.Red`/`Brushes.Green` in SettingsWindow and MainWindow with theme-aware error/success brushes
 
 #### Previously Fixed (PR #367)
 - Deuteranopia, Protanopia, Tritanopia
