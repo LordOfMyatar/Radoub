@@ -960,39 +960,57 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
-            var node = nodeToDelete.OriginalNode;
-
-            // Save state for undo before deleting
-            SaveUndoState("Delete Node");
-
-            // Delegate to NodeOperationsManager
-            var linkedNodes = _nodeOpsManager.DeleteNode(CurrentDialog, node, CurrentFileName);
-
-            // Display warnings if there were linked nodes
-            if (linkedNodes.Count > 0)
+            try
             {
-                // Check for duplicates in the linked nodes list (indicates copy/paste created duplicates)
-                var grouped = linkedNodes.GroupBy(n => n.DisplayText);
-                var hasDuplicates = grouped.Any(g => g.Count() > 1);
+                var node = nodeToDelete.OriginalNode;
 
-                if (hasDuplicates)
+                // Save state for undo before deleting
+                SaveUndoState("Delete Node");
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"DeleteNode: Starting delete of '{node.DisplayText}'");
+
+                // Delegate to NodeOperationsManager
+                var linkedNodes = _nodeOpsManager.DeleteNode(CurrentDialog, node, CurrentFileName);
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"DeleteNode: NodeOperationsManager.DeleteNode completed");
+
+                // Display warnings if there were linked nodes
+                if (linkedNodes.Count > 0)
                 {
-                    StatusMessage = $"ERROR: Duplicate nodes detected! This may cause orphaning. See logs.";
+                    // Check for duplicates in the linked nodes list (indicates copy/paste created duplicates)
+                    var grouped = linkedNodes.GroupBy(n => n.DisplayText);
+                    var hasDuplicates = grouped.Any(g => g.Count() > 1);
+
+                    if (hasDuplicates)
+                    {
+                        StatusMessage = $"ERROR: Duplicate nodes detected! This may cause orphaning. See logs.";
+                    }
+                    else
+                    {
+                        StatusMessage = $"Warning: Deleted node broke {linkedNodes.Count} link(s). Check logs for details.";
+                    }
                 }
                 else
                 {
-                    StatusMessage = $"Warning: Deleted node broke {linkedNodes.Count} link(s). Check logs for details.";
+                    StatusMessage = $"Node and children deleted successfully";
                 }
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "DeleteNode: About to refresh tree");
+
+                // Refresh tree
+                RefreshTreeView();
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "DeleteNode: Tree refresh completed");
+
+                HasUnsavedChanges = true;
             }
-            else
+            catch (Exception ex)
             {
-                StatusMessage = $"Node and children deleted successfully";
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"DeleteNode EXCEPTION: {ex.GetType().Name}: {ex.Message}");
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"DeleteNode stack trace: {ex.StackTrace}");
+                StatusMessage = $"Error deleting node: {ex.Message}";
+                throw; // Re-throw so we can see it in debug
             }
-
-            // Refresh tree
-            RefreshTreeView();
-
-            HasUnsavedChanges = true;
         }
 
         // COMPATIBILITY: Kept for existing tests that use reflection to access this method

@@ -66,7 +66,10 @@ namespace DialogEditor.Services
         /// </summary>
         public List<DialogNode> DeleteNode(Dialog dialog, DialogNode node, string? currentFileName)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"[DeleteNode] ENTER: '{node.DisplayText}'");
+
             // Check if node or its children have incoming links
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 1: CheckForIncomingLinks");
             var linkedNodes = CheckForIncomingLinks(dialog, node);
             if (linkedNodes.Count > 0)
             {
@@ -88,13 +91,16 @@ namespace DialogEditor.Services
             }
 
             // Collect all nodes that will be deleted (including the node and its children)
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 2: CollectNodeAndChildren");
             var nodesToDelete = new List<DialogNode>();
             var hierarchyInfo = new Dictionary<DialogNode, (int level, DialogNode? parent)>();
             CollectNodeAndChildren(node, nodesToDelete, hierarchyInfo);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"[DeleteNode] Collected {nodesToDelete.Count} nodes to delete");
 
             // Add deleted nodes to scrap BEFORE deleting them
             if (nodesToDelete.Count > 0 && currentFileName != null)
             {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 3: AddToScrap");
                 _scrapManager.AddToScrap(currentFileName, nodesToDelete, "deleted", hierarchyInfo);
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Added {nodesToDelete.Count} deleted nodes to scrap");
@@ -104,6 +110,7 @@ namespace DialogEditor.Services
             // These are nodes that have ONLY child link references and would become orphaned
             // when their parent is deleted. They must be removed from Entries/Replies lists
             // to prevent child link corruption in Aurora.
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 4: IdentifyOrphanedLinkChildren");
             var orphanedLinkChildren = _orphanManager.IdentifyOrphanedLinkChildren(dialog, node, nodesToDelete.ToHashSet());
             if (orphanedLinkChildren.Count > 0 && currentFileName != null)
             {
@@ -124,14 +131,18 @@ namespace DialogEditor.Services
 
             // CRITICAL: Recursively delete all children - even if linked elsewhere
             // This matches Aurora behavior - deleting parent removes entire subtree
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 5: DeleteNodeRecursive");
             DeleteNodeRecursive(dialog, node);
 
             // CRITICAL: After deletion, recalculate indices AND check for orphaned links
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 6: RecalculatePointerIndices");
             RecalculatePointerIndices(dialog);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 7: RemoveOrphanedPointers (first)");
             _orphanManager.RemoveOrphanedPointers(dialog);
 
             // CRITICAL: Remove any remaining orphaned nodes (nodes with no incoming pointers)
             // This catches nodes that were orphaned by the deletion (e.g., nodes with only child links)
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 8: RemoveOrphanedNodes");
             var additionalOrphans = _orphanManager.RemoveOrphanedNodes(dialog);
             if (additionalOrphans.Count > 0 && currentFileName != null)
             {
@@ -149,9 +160,10 @@ namespace DialogEditor.Services
 
             // CRITICAL: Clean up pointers to nodes that were removed by RemoveOrphanedNodes
             // This ensures TreeView lazy loading doesn't show orphaned nodes
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 9: RemoveOrphanedPointers (second)");
             _orphanManager.RemoveOrphanedPointers(dialog);
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted node tree: {node.DisplayText}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"[DeleteNode] EXIT: Deleted node tree: {node.DisplayText}");
 
             return linkedNodes;
         }
@@ -343,6 +355,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Recursively checks a node for incoming links using LinkRegistry.
+        /// Only traverses non-link children (links are bookmarks, not owned children).
         /// </summary>
         private void CheckNodeForLinks(Dialog dialog, DialogNode node, List<DialogNode> linkedNodes)
         {
@@ -355,12 +368,13 @@ namespace DialogEditor.Services
                 linkedNodes.Add(node);
             }
 
-            // Recursively check all children
+            // Recursively check only non-link children (links are bookmarks, don't traverse them)
             if (node.Pointers != null)
             {
                 foreach (var ptr in node.Pointers)
                 {
-                    if (ptr.Node != null)
+                    // CRITICAL: Only follow non-link children - links point to nodes owned elsewhere
+                    if (ptr.Node != null && !ptr.IsLink)
                     {
                         CheckNodeForLinks(dialog, ptr.Node, linkedNodes);
                     }

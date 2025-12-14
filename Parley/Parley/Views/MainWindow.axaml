@@ -90,42 +90,28 @@
                 <MenuItem Header="_Undo" InputGesture="Ctrl+Z" Click="OnUndoClick"/>
                 <MenuItem Header="_Redo" InputGesture="Ctrl+Y" Click="OnRedoClick"/>
                 <Separator/>
-                <MenuItem Header="Add _Node" InputGesture="Ctrl+D" Click="OnAddSmartNodeClick"/>
-                <Separator/>
-                <MenuItem Header="Move _Up" InputGesture="Ctrl+Shift+Up" Click="OnMoveNodeUpClick"/>
-                <MenuItem Header="Move _Down" InputGesture="Ctrl+Shift+Down" Click="OnMoveNodeDownClick"/>
-                <Separator/>
-                <MenuItem Header="_Expand This and Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
-                <MenuItem Header="_Collapse This and Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
-                <Separator/>
-                <MenuItem Header="_Delete Node" InputGesture="Delete" Click="OnDeleteNodeClick"/>
-                <Separator/>
                 <MenuItem Header="Cu_t Node" InputGesture="Ctrl+X" Click="OnCutNodeClick"/>
                 <MenuItem Header="_Copy Node" InputGesture="Ctrl+C" Click="OnCopyNodeClick"/>
                 <MenuItem Header="_Paste" InputGesture="Ctrl+V" Click="OnPasteAsDuplicateClick"/>
                 <MenuItem Header="Paste as _Link" InputGesture="Ctrl+L" Click="OnPasteAsLinkClick"/>
                 <Separator/>
-                <MenuItem Header="Copy Node _Text" InputGesture="Ctrl+Shift+T" Click="OnCopyNodeTextClick"/>
-                <MenuItem Header="Copy Node _Properties" InputGesture="Ctrl+Shift+P" Click="OnCopyNodePropertiesClick"/>
-                <MenuItem Header="Copy Tree _Structure" InputGesture="Ctrl+Shift+S" Click="OnCopyTreeStructureClick"/>
+                <MenuItem Header="Add _Node" InputGesture="Ctrl+D" Click="OnAddSmartNodeClick"/>
+                <MenuItem Header="_Delete Node" InputGesture="Delete" Click="OnDeleteNodeClick"/>
+                <Separator/>
+                <MenuItem Header="_Tree">
+                    <MenuItem Header="Move _Up" InputGesture="Ctrl+Shift+Up" Click="OnMoveNodeUpClick"/>
+                    <MenuItem Header="Move _Down" InputGesture="Ctrl+Shift+Down" Click="OnMoveNodeDownClick"/>
+                    <Separator/>
+                    <MenuItem Header="_Expand This and Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
+                    <MenuItem Header="_Collapse This and Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
+                </MenuItem>
+                <MenuItem Header="Copy _Special">
+                    <MenuItem Header="Copy Node _Text" InputGesture="Ctrl+Shift+T" Click="OnCopyNodeTextClick"/>
+                    <MenuItem Header="Copy Node _Properties" InputGesture="Ctrl+Shift+P" Click="OnCopyNodePropertiesClick"/>
+                    <MenuItem Header="Copy Tree _Structure" InputGesture="Ctrl+Shift+S" Click="OnCopyTreeStructureClick"/>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="_Logging">
-                    <MenuItem Header="_Clear Debug Output" Click="OnClearDebugClick"/>
-                    <MenuItem Header="Open Log _Folder" Click="OnOpenLogFolderClick"/>
-                    <MenuItem Header="_Export Logs for Support..." Click="OnExportLogsClick"/>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="Font Size" x:Name="FontSizeMenu">
-                    <MenuItem x:Name="FontSize10" Header="Small (10pt)" Click="OnFontSizeClick" Tag="10"/>
-                    <MenuItem x:Name="FontSize12" Header="Normal (12pt)" Click="OnFontSizeClick" Tag="12"/>
-                    <MenuItem x:Name="FontSize14" Header="Large (14pt)" Click="OnFontSizeClick" Tag="14"/>
-                    <MenuItem x:Name="FontSize16" Header="Extra Large (16pt)" Click="OnFontSizeClick" Tag="16"/>
-                    <MenuItem x:Name="FontSize18" Header="Reader Friendly (18pt)" Click="OnFontSizeClick" Tag="18"/>
-                    <MenuItem x:Name="FontSize20" Header="Super Reader (20pt)" Click="OnFontSizeClick" Tag="20"/>
-                    <MenuItem x:Name="FontSize24" Header="Maximum (24pt)" Click="OnFontSizeClick" Tag="24"/>
-                </MenuItem>
-                <Separator/>
                 <MenuItem Header="_Flowchart">
                     <MenuItem Header="_Open Flowchart" Click="OnFlowchartClick" InputGesture="F5"/>
                     <Separator/>
@@ -140,16 +126,15 @@
                         <MenuItem Header="Export as _SVG..." Click="OnExportFlowchartSvgClick"/>
                     </MenuItem>
                 </MenuItem>
-                <Separator/>
                 <MenuItem Header="_Plugin Panels" Name="PluginPanelsMenuItem" Click="OnPluginPanelsClick"/>
-            </MenuItem>
-            <MenuItem Header="_Settings">
-                <MenuItem Header="_Preferences..." Click="OnPreferencesClick"/>
                 <Separator/>
-                <MenuItem Header="_Game Directories..." Click="OnGameDirectoriesClick"/>
-                <MenuItem Header="_Logging Settings..." Click="OnLogSettingsClick"/>
+                <MenuItem Header="_Logging">
+                    <MenuItem Header="_Clear Debug Output" Click="OnClearDebugClick"/>
+                    <MenuItem Header="Open Log _Folder" Click="OnOpenLogFolderClick"/>
+                    <MenuItem Header="_Export Logs for Support..." Click="OnExportLogsClick"/>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Refresh Script Cache" Click="OnRefreshScriptCacheClick"/>
+                <MenuItem Header="_Settings..." Click="OnPreferencesClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_Documentation" Click="OnDocumentationClick"/>
@@ -217,23 +202,19 @@
                                       Padding="0,0,0,20">
                                 <TreeView.ContextMenu>
                                     <ContextMenu>
-                                        <MenuItem Header="Add Node" Click="OnAddSmartNodeClick"/>
+                                        <MenuItem Header="Add Node" InputGesture="Ctrl+D" Click="OnAddSmartNodeClick"/>
+                                        <MenuItem Header="Delete Node" InputGesture="Delete" Click="OnDeleteNodeClick"/>
                                         <Separator/>
-                                        <MenuItem Header="Move Up" InputGesture="Alt+Up" Click="OnMoveNodeUpClick"/>
-                                        <MenuItem Header="Move Down" InputGesture="Alt+Down" Click="OnMoveNodeDownClick"/>
+                                        <MenuItem Header="Cut Node" InputGesture="Ctrl+X" Click="OnCutNodeClick"/>
+                                        <MenuItem Header="Copy Node" InputGesture="Ctrl+C" Click="OnCopyNodeClick"/>
+                                        <MenuItem Header="Paste" InputGesture="Ctrl+V" Click="OnPasteAsDuplicateClick"/>
+                                        <MenuItem Header="Paste as Link" InputGesture="Ctrl+L" Click="OnPasteAsLinkClick"/>
                                         <Separator/>
-                                        <MenuItem Header="Delete Node" Click="OnDeleteNodeClick"/>
+                                        <MenuItem Header="Move Up" InputGesture="Ctrl+Shift+Up" Click="OnMoveNodeUpClick"/>
+                                        <MenuItem Header="Move Down" InputGesture="Ctrl+Shift+Down" Click="OnMoveNodeDownClick"/>
                                         <Separator/>
-                                        <MenuItem Header="Cut Node" Click="OnCutNodeClick"/>
-                                        <MenuItem Header="Copy Node" Click="OnCopyNodeClick"/>
-                                        <MenuItem Header="Paste" Click="OnPasteAsDuplicateClick"/>
-                                        <MenuItem Header="Paste as Link" Click="OnPasteAsLinkClick"/>
-                                        <Separator/>
-                                        <MenuItem Header="Expand This Node and Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
-                                        <MenuItem Header="Collapse This Node and Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
-                                        <Separator/>
-                                        <MenuItem Header="Copy Node Text" Click="OnCopyNodeTextClick"/>
-                                        <MenuItem Header="Copy Node Properties" Click="OnCopyNodePropertiesClick"/>
+                                        <MenuItem Header="Expand Subnodes" InputGesture="Ctrl+E" Click="OnExpandSubnodesClick"/>
+                                        <MenuItem Header="Collapse Subnodes" InputGesture="Ctrl+W" Click="OnCollapseSubnodesClick"/>
                                     </ContextMenu>
                                 </TreeView.ContextMenu>
                                 <TreeView.Styles>
