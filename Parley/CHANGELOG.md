@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.64-alpha] - 2025-12-13
+## [0.1.64-alpha] - 2025-12-14
 **Branch**: `parley/sprint/stability-375` | **PR**: #376
 
 ### Sprint: Stability - Crash Investigation & Fixes (#375)
