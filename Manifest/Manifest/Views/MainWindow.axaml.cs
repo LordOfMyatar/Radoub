@@ -4,7 +4,6 @@ using Avalonia.Platform.Storage;
 using Manifest.Services;
 using Radoub.Formats.Jrl;
 using System;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,18 +29,6 @@ public partial class MainWindow : Window
 
         // Restore window position
         RestoreWindowPosition();
-
-        // Set up recent files menu
-        UpdateRecentFilesMenu();
-
-        // Subscribe to settings changes
-        SettingsService.Instance.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(SettingsService.RecentFiles))
-            {
-                UpdateRecentFilesMenu();
-            }
-        };
 
         // Handle window closing
         Closing += OnWindowClosing;
@@ -140,11 +127,6 @@ public partial class MainWindow : Window
 
     #region File Operations
 
-    private void OnNewClick(object? sender, RoutedEventArgs e)
-    {
-        CreateNewJournal();
-    }
-
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
     {
         await OpenFile();
@@ -155,28 +137,9 @@ public partial class MainWindow : Window
         await SaveFile();
     }
 
-    private async void OnSaveAsClick(object? sender, RoutedEventArgs e)
-    {
-        await SaveFileAs();
-    }
-
     private void OnExitClick(object? sender, RoutedEventArgs e)
     {
         Close();
-    }
-
-    private void CreateNewJournal()
-    {
-        _currentJrl = new JrlFile();
-        _currentFilePath = null;
-        _isDirty = false;
-
-        UpdateTree();
-        UpdateTitle();
-        UpdateStatus("New journal created");
-        OnPropertyChanged(nameof(HasFile));
-
-        UnifiedLogger.LogJournal(LogLevel.INFO, "Created new journal");
     }
 
     private async Task OpenFile()
@@ -212,9 +175,6 @@ public partial class MainWindow : Window
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
             OnPropertyChanged(nameof(HasFile));
 
-            // Add to recent files
-            SettingsService.Instance.AddRecentFile(filePath);
-
             UnifiedLogger.LogJournal(LogLevel.INFO, $"Loaded journal: {UnifiedLogger.SanitizePath(filePath)} ({_currentJrl.Categories.Count} categories)");
         }
         catch (Exception ex)
@@ -227,13 +187,7 @@ public partial class MainWindow : Window
 
     private async Task SaveFile()
     {
-        if (_currentJrl == null) return;
-
-        if (string.IsNullOrEmpty(_currentFilePath))
-        {
-            await SaveFileAs();
-            return;
-        }
+        if (_currentJrl == null || string.IsNullOrEmpty(_currentFilePath)) return;
 
         try
         {
@@ -250,87 +204,6 @@ public partial class MainWindow : Window
             UpdateStatus($"Error saving file: {ex.Message}");
             await ShowErrorDialog("Save Error", $"Failed to save journal file:\n{ex.Message}");
         }
-    }
-
-    private async Task SaveFileAs()
-    {
-        if (_currentJrl == null) return;
-
-        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-        {
-            Title = "Save Journal File",
-            DefaultExtension = "jrl",
-            FileTypeChoices = new[]
-            {
-                new FilePickerFileType("Journal Files") { Patterns = new[] { "*.jrl" } }
-            },
-            SuggestedFileName = _currentFilePath != null ? Path.GetFileName(_currentFilePath) : "journal.jrl"
-        });
-
-        if (file != null)
-        {
-            _currentFilePath = file.Path.LocalPath;
-            await SaveFile();
-            SettingsService.Instance.AddRecentFile(_currentFilePath);
-        }
-    }
-
-    #endregion
-
-    #region Recent Files
-
-    private void UpdateRecentFilesMenu()
-    {
-        var recentFiles = SettingsService.Instance.RecentFiles;
-
-        // Clear existing items except the "No recent files" item
-        while (RecentFilesMenu.Items.Count > 1)
-        {
-            RecentFilesMenu.Items.RemoveAt(0);
-        }
-
-        if (recentFiles.Count == 0)
-        {
-            NoRecentFilesItem.IsVisible = true;
-        }
-        else
-        {
-            NoRecentFilesItem.IsVisible = false;
-
-            // Insert before the "No recent files" item
-            for (int i = recentFiles.Count - 1; i >= 0; i--)
-            {
-                var filePath = recentFiles[i];
-                var menuItem = new MenuItem
-                {
-                    Header = $"_{i + 1}. {Path.GetFileName(filePath)}",
-                    Tag = filePath
-                };
-                menuItem.Click += OnRecentFileClick;
-                RecentFilesMenu.Items.Insert(0, menuItem);
-            }
-        }
-    }
-
-    private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is MenuItem menuItem && menuItem.Tag is string filePath)
-        {
-            if (File.Exists(filePath))
-            {
-                await LoadFile(filePath);
-            }
-            else
-            {
-                await ShowErrorDialog("File Not Found", $"The file no longer exists:\n{filePath}");
-                SettingsService.Instance.RemoveRecentFile(filePath);
-            }
-        }
-    }
-
-    private void OnClearRecentFilesClick(object? sender, RoutedEventArgs e)
-    {
-        SettingsService.Instance.ClearRecentFiles();
     }
 
     #endregion

@@ -12,16 +12,8 @@
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="_New" Click="OnNewClick" InputGesture="Ctrl+N"/>
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
-                <Separator/>
                 <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile}"/>
-                <MenuItem Header="Save _As..." Click="OnSaveAsClick" InputGesture="Ctrl+Shift+S"/>
-                <Separator/>
-                <MenuItem Header="_Recent Files" x:Name="RecentFilesMenu">
-                    <MenuItem Header="(No recent files)" IsEnabled="False" x:Name="NoRecentFilesItem"/>
-                </MenuItem>
-                <MenuItem Header="Clear Recent Files" Click="OnClearRecentFilesClick"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
             </MenuItem>
@@ -41,7 +33,6 @@
 
         <!-- Toolbar -->
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5" Spacing="5">
-            <Button Content="New" Click="OnNewClick" ToolTip.Tip="New Journal (Ctrl+N)"/>
             <Button Content="Open" Click="OnOpenClick" ToolTip.Tip="Open Journal (Ctrl+O)"/>
             <Button Content="Save" Click="OnSaveClick" ToolTip.Tip="Save Journal (Ctrl+S)" IsEnabled="{Binding HasFile}"/>
             <Separator Width="10"/>

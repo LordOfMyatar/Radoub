@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
 
@@ -33,11 +32,6 @@ namespace Manifest.Services
         }
 
         private static string SettingsFilePath => Path.Combine(SettingsDirectory, "ManifestSettings.json");
-        private const int DefaultMaxRecentFiles = 10;
-
-        // Recent files
-        private List<string> _recentFiles = new List<string>();
-        private int _maxRecentFiles = DefaultMaxRecentFiles;
 
         // Window settings
         private double _windowLeft = 100;
@@ -59,24 +53,6 @@ namespace Manifest.Services
         {
             LoadSettings();
             UnifiedLogger.LogApplication(LogLevel.INFO, "Manifest SettingsService initialized");
-        }
-
-        public List<string> RecentFiles
-        {
-            get => _recentFiles.ToList(); // Return a copy to prevent external modification
-        }
-
-        public int MaxRecentFiles
-        {
-            get => _maxRecentFiles;
-            set
-            {
-                if (SetProperty(ref _maxRecentFiles, Math.Max(1, Math.Min(20, value))))
-                {
-                    TrimRecentFiles();
-                    SaveSettings();
-                }
-            }
         }
 
         // Window properties
@@ -162,9 +138,6 @@ namespace Manifest.Services
 
                     if (settings != null)
                     {
-                        _recentFiles = ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>());
-                        _maxRecentFiles = Math.Max(1, Math.Min(20, settings.MaxRecentFiles));
-
                         // Load window settings
                         _windowLeft = settings.WindowLeft;
                         _windowTop = settings.WindowTop;
@@ -179,7 +152,7 @@ namespace Manifest.Services
                         _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
                         _logLevel = settings.LogLevel;
 
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}");
+                        UnifiedLogger.LogApplication(LogLevel.INFO, "Loaded settings from file");
                     }
                 }
                 else
@@ -199,8 +172,6 @@ namespace Manifest.Services
             {
                 var settings = new SettingsData
                 {
-                    RecentFiles = ContractPaths(_recentFiles),
-                    MaxRecentFiles = MaxRecentFiles,
                     WindowLeft = WindowLeft,
                     WindowTop = WindowTop,
                     WindowWidth = WindowWidth,
@@ -225,112 +196,6 @@ namespace Manifest.Services
             }
         }
 
-        public void AddRecentFile(string filePath)
-        {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                return;
-
-            // Remove if already exists (to move to top)
-            _recentFiles.Remove(filePath);
-
-            // Add to beginning
-            _recentFiles.Insert(0, filePath);
-
-            // Trim to max allowed
-            TrimRecentFiles();
-
-            OnPropertyChanged(nameof(RecentFiles));
-            SaveSettings();
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added recent file: {Path.GetFileName(filePath)}");
-        }
-
-        public void RemoveRecentFile(string filePath)
-        {
-            if (_recentFiles.Remove(filePath))
-            {
-                OnPropertyChanged(nameof(RecentFiles));
-                SaveSettings();
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed recent file: {Path.GetFileName(filePath)}");
-            }
-        }
-
-        public void ClearRecentFiles()
-        {
-            if (_recentFiles.Count > 0)
-            {
-                _recentFiles.Clear();
-                OnPropertyChanged(nameof(RecentFiles));
-                SaveSettings();
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared all recent files");
-            }
-        }
-
-        public void CleanupRecentFiles()
-        {
-            var originalCount = _recentFiles.Count;
-            _recentFiles.RemoveAll(file => !File.Exists(file));
-
-            if (_recentFiles.Count != originalCount)
-            {
-                OnPropertyChanged(nameof(RecentFiles));
-                SaveSettings();
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Cleaned up {originalCount - _recentFiles.Count} non-existent recent files");
-            }
-        }
-
-        private void TrimRecentFiles()
-        {
-            while (_recentFiles.Count > MaxRecentFiles)
-            {
-                _recentFiles.RemoveAt(_recentFiles.Count - 1);
-            }
-        }
-
-        /// <summary>
-        /// Contracts a path for storage - replaces user home directory with ~
-        /// </summary>
-        private static string ContractPath(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-                return path;
-
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            if (!string.IsNullOrEmpty(userProfile) && path.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase))
-            {
-                return "~" + path.Substring(userProfile.Length);
-            }
-
-            return path;
-        }
-
-        /// <summary>
-        /// Expands a path from storage - replaces ~ with user home directory
-        /// </summary>
-        private static string ExpandPath(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-                return path;
-
-            if (path.StartsWith("~"))
-            {
-                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                return userProfile + path.Substring(1);
-            }
-
-            return path;
-        }
-
-        private static List<string> ContractPaths(List<string> paths)
-        {
-            return paths.Select(ContractPath).ToList();
-        }
-
-        private static List<string> ExpandPaths(List<string> paths)
-        {
-            return paths.Select(ExpandPath).ToList();
-        }
-
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -348,9 +213,6 @@ namespace Manifest.Services
 
         private class SettingsData
         {
-            public List<string> RecentFiles { get; set; } = new List<string>();
-            public int MaxRecentFiles { get; set; } = DefaultMaxRecentFiles;
-
             // Window settings
             public double WindowLeft { get; set; } = 100;
             public double WindowTop { get; set; } = 100;

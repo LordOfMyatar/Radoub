@@ -20,10 +20,12 @@ Create foundational Manifest application structure and services.
 #### Added
 - Manifest project structure (mirroring Parley layout)
 - Basic Avalonia MainWindow with tree view and property panel
-- Menu bar (File, Edit, Help)
+- Simplified menu bar (File: Open/Save/Exit, Edit: Add Category/Entry/Delete, Help)
 - Settings service: `~/Radoub/Manifest/ManifestSettings.json`
 - Logging service: `~/Radoub/Manifest/Logs/`
 - File open/save dialogs for JRL files
-- Recent files list
+
+#### Notes
+- No "New" or "Recent Files" - modules have exactly one JRL file
 
 ---
