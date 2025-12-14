@@ -24,12 +24,16 @@ namespace DialogEditor.Services
         /// </summary>
         public TreeViewSafeNode? FindTreeNodeForDialogNode(ObservableCollection<TreeViewSafeNode> dialogNodes, DialogNode nodeToFind)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔍 FindTreeNodeForDialogNode: Looking for '{nodeToFind?.DisplayText}', DialogNodes.Count={dialogNodes?.Count ?? 0}");
+
             TreeViewSafeNode? bestMatch = null;
+            int nodesSearched = 0;
 
             void FindNodeRecursive(ObservableCollection<TreeViewSafeNode> nodes)
             {
                 foreach (var node in nodes)
                 {
+                    nodesSearched++;
                     if (node.OriginalNode == nodeToFind)
                     {
                         // Prefer non-child (original) nodes over child (link) nodes
@@ -61,7 +65,11 @@ namespace DialogEditor.Services
                 }
             }
 
-            FindNodeRecursive(dialogNodes);
+            if (dialogNodes != null)
+            {
+                FindNodeRecursive(dialogNodes);
+            }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔍 FindTreeNodeForDialogNode: Searched {nodesSearched} nodes, result={bestMatch?.DisplayText ?? "null"}");
             return bestMatch;
         }
 
