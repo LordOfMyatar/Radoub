@@ -114,10 +114,17 @@ namespace DialogEditor.Utils
             // PC gets blue (or theme PC color override)
             if (isPC)
             {
-                if (app?.Resources.TryGetResource("ThemePCColor", Avalonia.Styling.ThemeVariant.Default, out var pcColorObj) == true
+                // Try to get theme color - check both with theme variant and without
+                if (app?.Resources.TryGetResource("ThemePCColor", app.ActualThemeVariant, out var pcColorObj) == true
                     && pcColorObj is string pcColor)
                 {
                     return pcColor;
+                }
+                // Fallback: try ThemeTreeReply brush and extract color
+                if (app?.Resources.TryGetResource("ThemeTreeReply", app.ActualThemeVariant, out var treePcObj) == true
+                    && treePcObj is Avalonia.Media.ISolidColorBrush pcBrush)
+                {
+                    return pcBrush.Color.ToString();
                 }
                 return ColorPalette.Blue;
             }
@@ -125,10 +132,16 @@ namespace DialogEditor.Utils
             // Owner (empty speaker on Entry) gets orange (or theme Owner color override)
             if (string.IsNullOrEmpty(speaker))
             {
-                if (app?.Resources.TryGetResource("ThemeOwnerColor", Avalonia.Styling.ThemeVariant.Default, out var ownerColorObj) == true
+                if (app?.Resources.TryGetResource("ThemeOwnerColor", app.ActualThemeVariant, out var ownerColorObj) == true
                     && ownerColorObj is string ownerColor)
                 {
                     return ownerColor;
+                }
+                // Fallback: try ThemeTreeEntry brush and extract color
+                if (app?.Resources.TryGetResource("ThemeTreeEntry", app.ActualThemeVariant, out var treeOwnerObj) == true
+                    && treeOwnerObj is Avalonia.Media.ISolidColorBrush ownerBrush)
+                {
+                    return ownerBrush.Color.ToString();
                 }
                 return ColorPalette.Orange;
             }
@@ -141,10 +154,16 @@ namespace DialogEditor.Utils
             // If NPC tag coloring disabled, use default Owner color from theme (Issue #134)
             if (!SettingsService.Instance.EnableNpcTagColoring)
             {
-                if (app?.Resources.TryGetResource("ThemeOwnerColor", Avalonia.Styling.ThemeVariant.Default, out var ownerColorObj2) == true
+                if (app?.Resources.TryGetResource("ThemeOwnerColor", app.ActualThemeVariant, out var ownerColorObj2) == true
                     && ownerColorObj2 is string ownerColor2)
                 {
                     return ownerColor2;
+                }
+                // Fallback: try ThemeTreeEntry brush
+                if (app?.Resources.TryGetResource("ThemeTreeEntry", app.ActualThemeVariant, out var treeOwnerObj2) == true
+                    && treeOwnerObj2 is Avalonia.Media.ISolidColorBrush ownerBrush2)
+                {
+                    return ownerBrush2.Color.ToString();
                 }
                 return ColorPalette.Orange;
             }

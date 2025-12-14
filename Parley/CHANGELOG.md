@@ -26,6 +26,7 @@ Audit and fix PC/Owner color assignments across all themes for warm/cool consist
 #### Fixed
 - **VSCode Dark**: Changed `tree_entry` from `#4EC9B0` (teal) to `#CE9178` (tan/warm) - was both cool colors
 - **Flowchart panel**: Now refreshes colors when theme changes (was not responding to theme switches)
+- **Flowchart PC/Owner colors**: Fixed theme `tree_reply`/`tree_entry` colors not being applied - now uses correct theme variant lookup with brush fallback
 - **Duplicate parameter validation**: Red border now clears properly when duplicate key is resolved
 - **Validation colors**: Use theme error/success colors instead of hardcoded red/green for colorblind accessibility
 - **Hardcoded colors audit**: Replaced hardcoded `Brushes.Red`/`Brushes.Green` in SettingsWindow and MainWindow with theme-aware error/success brushes
