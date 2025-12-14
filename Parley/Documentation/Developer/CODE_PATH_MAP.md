@@ -1,7 +1,7 @@
 # Code Path Map - Parley Architecture
 
 **Purpose**: Track active code paths for file operations and UI workflows
-**Last Updated**: 2025-12-13 (Sprint #362: Bug Squash - Scrap & Save Fixes)
+**Last Updated**: 2025-12-13 (Epic #368: Menu Reorganization)
 **Note**: This information was discovered and written by Claude AI.
 
 ---
@@ -27,6 +27,7 @@
   - 2025-12-13: Fixed file-based filtering in `AddToScrap`, `RemoveFromScrap`, `ClearScrapForFile` (#352)
 **OrphanNodeManager** (~250 lines): Orphan detection and cleanup (2025-11-18: Fixed to skip child links)
 **NodeOperationsManager** (~530 lines): Node add/delete/move operations (Phase 6, PR #137)
+  - 2025-12-13: Fixed `CheckNodeForLinks` to skip link children (bookmarks) - prevents stack overflow on complex dialogs (#368)
 **TreeNavigationManager** (~280 lines): Tree traversal, expansion state, node finding (Phase 7, PR #133)
 **DialogEditorService** (~200 lines): Node editing operations
 **PropertyPanelPopulator** (~460 lines): Properties panel population (Phase 5, PR #135)
