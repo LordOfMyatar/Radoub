@@ -18,14 +18,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Integrate TLK (Talk Table) support for resolving localized strings in journal files.
 
 #### Added
-- TLK loading (module custom TLK and game dialog.tlk fallback)
-- StringRef resolution to display text
-- Embedded string display
-- Source indicator (TLK ref vs embedded) in UI
-- Graceful handling of missing StringRef
+- `TlkService` for loading and resolving TLK strings across multiple languages
+- Language dropdown in property panel to view text in different languages
+- "View All..." button to see all available translations for a string
+- Source indicator showing string origin (Embedded, TLK:N, or both)
+- Graceful handling of missing StrRef ("not found" / "no game path" indicators)
+
+#### Radoub.Formats (Shared Library)
+- `Language` enum with BioWare language IDs and helper utilities
+- `RadoubSettings` service for shared game path and TLK settings (`~/Radoub/RadoubSettings.json`)
+- `ResourcePathDetector` for cross-platform game installation detection
+- Auto-detect Steam/GOG game installation paths
 
 #### Changed
-- TBD
+- Property panel now uses TlkService to resolve and display localized strings
+- SettingsService now references shared RadoubSettings for game paths
+
+#### Notes
+- Created #412 for Parley migration to shared settings
 
 ---
 

@@ -86,6 +86,13 @@
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center"/>
                                     <TextBox x:Name="CategoryStrRefBox" Width="150" IsReadOnly="True" Foreground="Gray"/>
+                                    <TextBlock x:Name="CategorySourceLabel" Text="" Foreground="Gray" FontStyle="Italic" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Language:" Width="80" VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="CategoryLanguageBox" Width="120" SelectionChanged="OnCategoryLanguageChanged"/>
+                                    <Button x:Name="CategoryViewAllLangsBtn" Content="View All..." Click="OnViewCategoryLanguages" ToolTip.Tip="View all available translations"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -129,6 +136,13 @@
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center"/>
                                     <TextBox x:Name="EntryStrRefBox" Width="150" IsReadOnly="True" Foreground="Gray"/>
+                                    <TextBlock x:Name="EntrySourceLabel" Text="" Foreground="Gray" FontStyle="Italic" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Language:" Width="80" VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="EntryLanguageBox" Width="120" SelectionChanged="OnEntryLanguageChanged"/>
+                                    <Button x:Name="EntryViewAllLangsBtn" Content="View All..." Click="OnViewEntryLanguages" ToolTip.Tip="View all available translations"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="5">
