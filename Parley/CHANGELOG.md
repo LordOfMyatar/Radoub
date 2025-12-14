@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.66-alpha] - 2025-12-14
+**Branch**: `parley/sprint/shared-gff` | **PR**: #TBD
+
+### Sprint: Use Shared GFF Parser (#398)
+
+Update Parley to use the shared GFF parser from Radoub.Formats.
+
+#### Changed
+- Parley now references Radoub.Formats shared library
+- All GFF parsing uses `Radoub.Formats.Gff` instead of internal code
+- `JournalService` uses `Radoub.Formats.Jrl.JrlReader`
+
+#### Removed
+- `GffStructures.cs` - now in Radoub.Formats
+- `GffBinaryReader.cs` - now in Radoub.Formats
+
+---
+
 ## [0.1.65-alpha] - 2025-12-14
 **Branch**: `parley/feat/theme-color-audit-141` | **PR**: #393
 
