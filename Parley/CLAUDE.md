@@ -2,8 +2,9 @@
 
 Project guidance for Claude Code sessions working with Parley, the dialog editor for Neverwinter Nights.
 
-## Get-Date
-- Be sure to check what date it is. Get-Date on windows. It is not January 2025
+## Date Check
+- Claude's knowledge cutoff is January 2025. Current date is December 2024
+- If you need the date, use `Get-Date` in PowerShell or `date` in bash
 
 ## Logging
 - Make sure logs are scrubbed for privacy
@@ -61,8 +62,13 @@ Check recent commits and GitHub issues for active priorities.
 - See `MainViewModel.cs:CollectReachableNodesForOrphanDetection()` and `IsNodeInSubtree()` for implementation
 
 ## UI & Logging Rules
-- always scrub user info from logs and UI  use ~ even for windows for user path.
-- Always be theme and preferences aware.  We do not want to overwrite user color preferences
+- Always scrub user info from logs and UI. Use `~` even for Windows user paths
+- Always be theme and preferences aware. Never overwrite user color preferences
+- **Theme System**: Uses JSON theme files in `Themes/` folder. ThemeManager applies colors dynamically
+  - PC colors: Cool tones (blue, cyan) - mapped to `tree_reply`
+  - Owner/NPC colors: Warm tones (orange, coral) - mapped to `tree_entry`
+  - Accessibility themes: Deuteranopia, Protanopia, Tritanopia (colorblind-friendly)
+  - Use `GetErrorBrush()`/`GetSuccessBrush()` helpers for validation colors (not hardcoded red/green)
 
 ### Path Handling (Privacy & Cross-Platform)
 **NEVER use hardcoded user paths** - Use `Environment.GetFolderPath()` with `Environment.SpecialFolder` constants:
@@ -127,8 +133,10 @@ dotnet run --project TestingTools/BoundaryProject/BoundaryProject.csproj
 - **MVVM Pattern**: ViewModels inherit from `BaseViewModel`
 - **Circular Reference Protection**: TreeViewSafeNode prevents infinite loops
 - **Session-based Logging**: Organized by date/time for debugging
-- **Handler Pattern**: UI concerns separated into specialized handler classes (October 2024 refactor)
+- **Handler Pattern**: UI concerns separated into specialized handler classes
 - **Cross-platform Paths**: Platform-agnostic file/directory handling
+- **Plugin System**: Extensible via JSON manifest files in `Plugins/` folder
+- **Theme System**: JSON-based themes in `Themes/` with dynamic resource application
 - **Quality First**: It uses fewer tokens to do it right the first time than to do it quick and fix it later
 
 ## Aurora Compatibility Requirements
@@ -313,12 +321,12 @@ git push origin parley/feat/my-feature
 
 ## Architecture Notes
 
-### MainViewModel Refactoring (Issue #99 - IN PROGRESS)
-**CRITICAL: MainViewModel is being actively refactored - DO NOT add new logic here**
+### MainViewModel Refactoring (Issue #99 - MOSTLY COMPLETE)
+**MainViewModel has been significantly refactored - prefer adding logic to services/managers**
 
 **Current Status**:
-- MainViewModel.cs is ~3,500+ lines and needs to be broken down
-- Goal: Extract services and managers into separate classes
+- MainViewModel.cs is ~1,744 lines (down from ~3,500+)
+- Goal: Extract services and managers into separate classes - largely achieved
 - Pattern: Services handle business logic, ViewModel coordinates UI state
 
 **Refactoring Progress** (Epic #99):
@@ -327,18 +335,9 @@ git push origin parley/feat/my-feature
 - ✅ Phase 3: Clipboard → DialogClipboardService (PR #129)
 - ✅ Phase 4: Scrap/orphan → ScrapManager + OrphanNodeManager (PR #130, #132)
 - ✅ Phase 5: Properties panel → PropertyPanelPopulator (PR #135)
-- 🔄 Phase 6: Node operations → NodeOperationsManager (PR #137, in review)
-- ✅ Phase 7: Tree navigation → TreeNavigationManager (PR #133, completed, pending merge after #137)
+- ✅ Phase 6: Node operations → NodeOperationsManager (PR #137)
+- ✅ Phase 7: Tree navigation → TreeNavigationManager (PR #133)
 - ⏳ Phase 8-9: Search, validation (pending)
-
-**Phase 6 Status (NodeOperationsManager)**: ~530 lines extracted, MainViewModel reduced to ~2,933 lines (-332)
-- Node add operations: AddSmartNode, AddEntryNode, AddPCReplyNode
-- Node delete operations: DeleteNode with orphan handling, scrap integration
-- Node move operations: MoveNodeUp, MoveNodeDown with START list handling
-- **Critical fixes (2025-11-18)**:
-  - Fixed orphaned link children handling (PR #132 "evil twin" fix restored)
-  - Fixed CollectReachableNodes to skip child links (IsLink=true)
-  - Added immediate orphan removal during deletion (not deferred to save)
 
 **RULES FOR NEW FEATURES**:
 1. **DO NOT add new methods/logic to MainViewModel**
@@ -357,19 +356,20 @@ private readonly ComplexThingService _complexService = new();
 public void DoComplexThing() => _complexService.Execute(CurrentDialog);
 ```
 
-### MainWindow Refactoring (October 2024 - COMPLETE)
-**MainWindow.xaml.cs refactored to ~370 lines (down from 1736 lines)**
+### MainWindow Architecture
+**MainWindow.axaml.cs is currently ~4,329 lines** - handles UI events and coordination
 
-Handler classes in `Parley/Handlers/`:
-- **FileOperationsHandler** - Open, save, recent files operations
-- **ThemeAndSettingsHandler** - Theme switching, font size, game directories, script cache
-- **TreeViewHandler** - Tree expand/collapse, selection, copy operations
-- **PropertiesPanelHandler** - Properties panel population, parameters, script preview
-- **NodePropertiesHelper** - Static helpers for node property string building
+**Key Components**:
+- **Handler classes** in `Parley/Handlers/` for complex operations:
+  - FileOperationsHandler, ThemeAndSettingsHandler, TreeViewHandler
+  - PropertiesPanelHandler, NodePropertiesHelper
+- **FlowchartPanel** - Separate UserControl for visual flowchart view
+- **ScriptParameterUIManager** - Dynamic script parameter UI generation
 
-MainWindow.xaml.cs now acts as a thin coordinator between XAML events and handler classes.
-
-**DO NOT move logic back into MainWindow.xaml.cs - keep it delegating to handlers.**
+**UI Architecture Notes**:
+- MainWindow coordinates UI events and delegates to handlers/services
+- FlowchartPanel handles zoom, pan, node click events for visual flowchart
+- Theme changes propagate through ThemeManager.ThemeApplied event
 
 ## Important Reminders
 
@@ -380,14 +380,23 @@ MainWindow.xaml.cs now acts as a thin coordinator between XAML events and handle
 
 ## Project Status
 
-**Released**: v0.1.0-alpha (November 2, 2024)
-- Core dialog editing - ✅ **COMPLETE**
-- DLG import/export (Aurora-compatible) - ✅ **COMPLETE**
-- Resource browsers (sounds, scripts, characters, journals) - ✅ **COMPLETE**
-- Copy/paste/delete operations - ✅ **COMPLETE**
-- Undo/redo system - ✅ **COMPLETE**
+**Current Version**: v0.1.65-alpha (December 2024)
 
-**Current Focus**: Epic #2 - UI/UX improvements (resizable panels, layout enhancements)
+**Completed Features**:
+- ✅ Core dialog editing with full Aurora compatibility
+- ✅ DLG import/export (Aurora-compatible binary format)
+- ✅ Resource browsers (sounds, scripts, characters, journals)
+- ✅ Copy/paste/delete operations with orphan handling
+- ✅ Undo/redo system
+- ✅ Plugin system (custom themes, extensions)
+- ✅ Theme system with colorblind accessibility themes
+- ✅ Visual flowchart view with zoom/pan
+- ✅ Script parameter editing with validation
+- ✅ NPC speaker color preferences
+
+**In Progress**:
+- Shared GFF library (Radoub.Formats) integration
+- JRL (Journal) reader/writer for Manifest tool
 
 ---
 
