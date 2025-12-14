@@ -19,10 +19,19 @@ Implement JRL file reading and writing with proper state management.
 
 #### Added
 - Open JRL from file system using JrlReader
+- Open JRL from module folder (File > Open from Module, Ctrl+M)
 - Display categories/entries in TreeView
 - Save JRL to file using JrlWriter
 - Dirty state tracking with title indicator (*)
 - Unsaved changes warning on close
+- Property editing for categories (tag, name, priority, XP, comment)
+- Property editing for entries (ID, end flag, text)
+- Live tree view updates when properties change
+- StrRef display for TLK references (category names and entry text)
+- Priority dropdown (Highest/High/Medium/Low/Lowest)
+- Full file path in title bar with ~ for home directory
+- Auto-focus on name/text field when adding new categories/entries
+- Entry IDs increment by 100 (allows inserting between existing entries)
 
 ---
 

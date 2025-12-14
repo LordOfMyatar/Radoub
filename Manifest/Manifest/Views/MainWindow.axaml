@@ -13,6 +13,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
+                <MenuItem Header="Open from _Module..." Click="OnOpenFromModuleClick" InputGesture="Ctrl+M"/>
                 <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile}"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
@@ -78,23 +79,34 @@
                                 <TextBlock Text="Category Properties" FontWeight="SemiBold"/>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="Name:" Width="80" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="CategoryNameBox" Width="200"/>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="Tag:" Width="80" VerticalAlignment="Center"/>
                                     <TextBox x:Name="CategoryTagBox" Width="200"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="CategoryStrRefBox" Width="150" IsReadOnly="True" Foreground="Gray"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Name:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="CategoryNameBox" Width="200"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="Priority:" Width="80" VerticalAlignment="Center"/>
-                                    <NumericUpDown x:Name="CategoryPriorityBox" Width="100" Minimum="0" Maximum="100"/>
+                                    <ComboBox x:Name="CategoryPriorityBox" Width="120">
+                                        <ComboBoxItem Content="Highest" Tag="0"/>
+                                        <ComboBoxItem Content="High" Tag="1"/>
+                                        <ComboBoxItem Content="Medium" Tag="2"/>
+                                        <ComboBoxItem Content="Low" Tag="3"/>
+                                        <ComboBoxItem Content="Lowest" Tag="4"/>
+                                    </ComboBox>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="XP:" Width="80" VerticalAlignment="Center"/>
-                                    <NumericUpDown x:Name="CategoryXPBox" Width="100" Minimum="0"/>
+                                    <NumericUpDown x:Name="CategoryXPBox" Width="100" Minimum="0" ShowButtonSpinner="False"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="5">
@@ -109,10 +121,15 @@
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="ID:" Width="80" VerticalAlignment="Center"/>
-                                    <NumericUpDown x:Name="EntryIdBox" Width="100" Minimum="0"/>
+                                    <NumericUpDown x:Name="EntryIdBox" Width="150" Minimum="0" ShowButtonSpinner="False"/>
                                 </StackPanel>
 
                                 <CheckBox x:Name="EntryEndBox" Content="End (completes category)"/>
+
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="EntryStrRefBox" Width="150" IsReadOnly="True" Foreground="Gray"/>
+                                </StackPanel>
 
                                 <StackPanel Spacing="5">
                                     <TextBlock Text="Text:"/>
