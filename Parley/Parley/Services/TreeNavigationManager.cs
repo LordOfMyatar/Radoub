@@ -24,12 +24,16 @@ namespace DialogEditor.Services
         /// </summary>
         public TreeViewSafeNode? FindTreeNodeForDialogNode(ObservableCollection<TreeViewSafeNode> dialogNodes, DialogNode nodeToFind)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔍 FindTreeNodeForDialogNode: Looking for '{nodeToFind?.DisplayText}', DialogNodes.Count={dialogNodes?.Count ?? 0}");
+
             TreeViewSafeNode? bestMatch = null;
+            int nodesSearched = 0;
 
             void FindNodeRecursive(ObservableCollection<TreeViewSafeNode> nodes)
             {
                 foreach (var node in nodes)
                 {
+                    nodesSearched++;
                     if (node.OriginalNode == nodeToFind)
                     {
                         // Prefer non-child (original) nodes over child (link) nodes
@@ -45,9 +49,9 @@ namespace DialogEditor.Services
                         }
                     }
 
-                    // Use HasChildren to check for potential children (handles lazy loading)
-                    // PopulateChildren ensures Children collection is populated before searching
-                    if (node.HasChildren)
+                    // CRITICAL: Child/link nodes are terminal (bookmarks) - do NOT traverse them (#375)
+                    // Only traverse non-link nodes that have children
+                    if (!node.IsChild && node.HasChildren)
                     {
                         node.PopulateChildren();
                         if (node.Children != null)
@@ -61,7 +65,11 @@ namespace DialogEditor.Services
                 }
             }
 
-            FindNodeRecursive(dialogNodes);
+            if (dialogNodes != null)
+            {
+                FindNodeRecursive(dialogNodes);
+            }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔍 FindTreeNodeForDialogNode: Searched {nodesSearched} nodes, result={bestMatch?.DisplayText ?? "null"}");
             return bestMatch;
         }
 
@@ -149,9 +157,9 @@ namespace DialogEditor.Services
                     expandedPaths.Add(nodePath);
                 }
 
-                // Recurse into children - use HasChildren (checks underlying pointers) instead of Children.Count
-                // This handles lazy loading where Children may not be populated yet
-                if (node.HasChildren)
+                // CRITICAL: Child/link nodes are terminal (bookmarks) - do NOT traverse them (#375)
+                // Only traverse non-link nodes that have children
+                if (!node.IsChild && node.HasChildren)
                 {
                     // Populate children before recursing
                     node.PopulateChildren();
@@ -204,9 +212,9 @@ namespace DialogEditor.Services
                     node.IsExpanded = true;
                 }
 
-                // Recurse into children - use HasChildren (checks underlying pointers) instead of Children.Count
-                // This handles lazy loading where Children may not be populated yet
-                if (node.HasChildren)
+                // CRITICAL: Child/link nodes are terminal (bookmarks) - do NOT traverse them (#375)
+                // Only traverse non-link nodes that have children
+                if (!node.IsChild && node.HasChildren)
                 {
                     // Force populate children before recursing
                     node.PopulateChildren();
@@ -284,9 +292,9 @@ namespace DialogEditor.Services
                     return node;
                 }
 
-                // Search children - use HasChildren (checks underlying pointers) instead of Children.Count
-                // This handles lazy loading where Children may not be populated yet
-                if (node.HasChildren)
+                // CRITICAL: Child/link nodes are terminal (bookmarks) - do NOT traverse them (#375)
+                // Only traverse non-link nodes that have children
+                if (!node.IsChild && node.HasChildren)
                 {
                     // Force populate children before searching
                     node.PopulateChildren();
@@ -338,9 +346,9 @@ namespace DialogEditor.Services
                     return true;
                 }
 
-                // Check children - use HasChildren (checks underlying pointers) instead of Children.Count
-                // This handles lazy loading where Children may not be populated yet
-                if (node.HasChildren)
+                // CRITICAL: Child/link nodes are terminal (bookmarks) - do NOT traverse them (#375)
+                // Only traverse non-link nodes that have children
+                if (!node.IsChild && node.HasChildren)
                 {
                     // Force populate children before searching
                     node.PopulateChildren();

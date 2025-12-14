@@ -61,3 +61,17 @@ Getting a DnD oriented spell check might by handy and I do want to do the Journa
 ## The Future
 
 I would like community input on what the future state of this project should look like. I expect some brutal comments on the code and even some good old fashioned AI hate. I welcome the former, as for the latter: Those over 40 eyes of mine remember the days when PhotoShop "wasn't art" and would only be used for plagiarism. But otherwise, I'm happy to get working on making Copy, Paste, & Delete work with links.
+
+## The Saga Continues 2025-12-25
+
+My how things have progressed. It's now mid December of '25 and Claude has changed its model and billing model. I still have to remind Claude of things from time to time. But I've gotten a pretty good flow to things. Good agent prompts are quite the time and work saver. I can focus more on 'waving the magic wand' to get what I want.
+
+AI and I do miscommunication quite a bit. Most of this stems from not having a programming background. Especially in UX and UI topics. Sometimes I let AI run with it a bit before taking the helm and corse correcting.
+
+Copy, Paste, and Links are fine. I did create the flowview, first as a python plugin and then native. Even when you tell Claude to make sure things are cross platform claude still makes mistakes. Or maybe the mistake was mine choosing the LTS version of Ubuntu. The python flowview was built on windows a much never version python modules than Ubuntu could support without using override flags. I'm not in to overriding the OS. Claude still built quite a bit of infra for plugin support, so it's not a total waste.
+
+As someone who works in the tech industry and is mindful of security I am extremely wary of older library versions. I think one of my more awful fears is having to adopt a fork of a library to keep it up to date. I turned on Dependabot and saw how Claude is not aware of time and space. Claude will grab an older version if you're not on guard for it. As I wrote this, I realized my /research didn't take that into account and have added it.
+
+Today we hit a pretty cool milestone in that Parley can support 100 nodes deep and handle deletions when child links were present. Early on we had some problems getting past 20 nodes down. I still need to add more stress tests. Which makes me laugh a bit. More tests? We're already at 461. As I said earlier, I'm not a developer so I don't know what the norm is here. Claude assures me it's just fine.
+
+

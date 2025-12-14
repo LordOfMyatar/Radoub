@@ -10,6 +10,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.64-alpha] - 2025-12-14
+**Branch**: `parley/sprint/stability-375` | **PR**: #376
+
+### Sprint: Stability - Crash Investigation & Fixes (#375)
+
+Fixed crashes in tree navigation by properly treating child/link nodes as terminal (bookmarks).
+
+#### Fixed
+- **Tree traversal crash**: All tree navigation methods now skip traversing child/link nodes - they are bookmarks pointing to nodes owned elsewhere
+- **Null safety**: Added null checks and try-catch protection to `IsExpanded` setter and `PopulateChildrenInternal()`
+- **Double-click crash**: Added error handling to `OnTreeViewItemDoubleTapped` (#374)
+- **Flowchart-to-tree sync**: Fixed `FindTreeNodeForDialogNode`, `ExpandAncestors`, and other tree traversal methods to not traverse link nodes (#373)
+- **Lazy load search**: Fixed `PopulateChildren()` to create children collection if null - tree search now works even on unexpanded nodes
+
+#### Technical Details
+- `IsChild` check added to 6 tree traversal methods in `TreeNavigationManager.cs`
+- Same pattern as delete crash fix from #369 - links are terminal, don't traverse
+
+#### Related Issues
+- Fixes #373 - Flowchart bubble click doesn't expand tree
+- Fixes #374 - Crash on double-click of tree node
+
+---
+
 ## [0.1.63-alpha] - 2025-12-13
 **Branch**: `parley/feat/epic-368-menu-reorganization` | **PR**: #369
 
