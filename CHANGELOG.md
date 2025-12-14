@@ -13,6 +13,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.7.0] - 2025-12-14
+**Branch**: `radoub/sprint/jrl-reader` | **PR**: #401
+
+### Sprint: Create JRL Reader/Writer (#397)
+
+Create JRL (journal) reader and writer in Radoub.Formats using the shared GFF parser.
+
+#### Added
+- `Radoub.Formats.Jrl` namespace
+- `JrlReader` - Static JRL parser wrapping GffReader
+- `JrlWriter` - Static JRL writer for round-trip
+- `JrlFile` - JRL data models (JournalCategory, JournalEntry)
+- JRL round-trip tests
+
+---
+
 ## [0.6.0] - 2025-12-14
 **Branch**: `radoub/sprint/gff-parser` | **PR**: #399
 
