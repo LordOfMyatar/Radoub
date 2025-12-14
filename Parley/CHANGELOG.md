@@ -15,16 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Use Shared GFF Parser (#398)
 
-Update Parley to use the shared GFF parser from Radoub.Formats.
+Update DialogEditor to use the shared JRL parser from Radoub.Formats.
 
 #### Changed
-- Parley now references Radoub.Formats shared library
-- All GFF parsing uses `Radoub.Formats.Gff` instead of internal code
-- `JournalService` uses `Radoub.Formats.Jrl.JrlReader`
+- `JournalService` now uses `Radoub.Formats.Jrl.JrlReader` for JRL parsing
+- Removed ~150 lines of manual GFF parsing from JournalService
+- DialogEditor references Radoub.Formats shared library
 
-#### Removed
-- `GffStructures.cs` - now in Radoub.Formats
-- `GffBinaryReader.cs` - now in Radoub.Formats
+#### Technical Notes
+- DialogEditor keeps its own GFF types (GffStructures.cs, GffBinaryReader.cs) for DialogEditor-specific features
+- JrlReader types converted to DialogEditor types via ConvertLocString()
+- Future: Issue #403 tracks adding StrRef/TLK support for full internationalization
 
 ---
 
