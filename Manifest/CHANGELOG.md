@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.2.0-alpha] - 2025-12-14
+**Branch**: `manifest/sprint/file-io` | **PR**: #TBD
+
+### Sprint: File I/O (#406)
+
+Implement JRL file reading and writing with proper state management.
+
+#### Added
+- Open JRL from file system using JrlReader
+- Display categories/entries in TreeView
+- Save JRL to file using JrlWriter
+- Dirty state tracking with title indicator (*)
+- Unsaved changes warning on close
+
+---
+
 ## [0.1.0-alpha] - 2025-12-14
 **Branch**: `manifest/sprint/app-shell` | **PR**: #409
 
