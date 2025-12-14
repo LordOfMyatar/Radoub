@@ -3,7 +3,7 @@
 Project guidance for Claude Code sessions working with Parley, the dialog editor for Neverwinter Nights.
 
 ## Date Check
-- Claude's knowledge cutoff is January 2025. Current date is December 2024
+- Claude's knowledge cutoff is January 2025. Current date is December 2025
 - If you need the date, use `Get-Date` in PowerShell or `date` in bash
 
 ## Logging
@@ -380,7 +380,7 @@ public void DoComplexThing() => _complexService.Execute(CurrentDialog);
 
 ## Project Status
 
-**Current Version**: v0.1.65-alpha (December 2024)
+**Current Version**: v0.1.65-alpha (December 2025)
 
 **Completed Features**:
 - ✅ Core dialog editing with full Aurora compatibility
