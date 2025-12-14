@@ -155,7 +155,7 @@ namespace DialogEditor.Services
                         id: linkId,
                         nodeType: FlowchartNodeType.Link,
                         text: childPtr.Node.DisplayText,
-                        speaker: childPtr.Node.SpeakerDisplay,
+                        speaker: childPtr.Node.Speaker,  // Use raw Speaker tag (SpeakerVisualHelper expects empty for Owner)
                         hasCondition: isConditional,
                         hasAction: false,
                         isLink: true,
@@ -222,7 +222,7 @@ namespace DialogEditor.Services
                 id: nodeId,
                 nodeType: nodeType,
                 text: node.DisplayText,
-                speaker: node.SpeakerDisplay,
+                speaker: node.Speaker,  // Use raw Speaker tag (SpeakerVisualHelper expects empty for Owner)
                 hasCondition: hasCondition,
                 hasAction: hasAction,
                 isLink: false,
