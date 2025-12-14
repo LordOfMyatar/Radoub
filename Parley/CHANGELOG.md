@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.63-alpha] - 2025-12-13
+**Branch**: `parley/feat/epic-368-menu-reorganization` | **PR**: #TBD
+
+### Epic: Menu Reorganization & Keyboard Shortcut Consistency (#368)
+
+Menu cleanup, deduplication, and UI test keyboard shortcut fixes.
+
+#### Changed
+- Remove View > Font Size submenu (use Settings > UI Settings only)
+- Add View > Settings... menu item as entry point
+- Slim Edit menu: keep core operations, move advanced copy to submenu
+- Fix context menu shortcut display (match Edit menu shortcuts)
+
+#### Fixed
+- Keyboard shortcuts in FlaUI tests (investigate and fix)
+
+---
+
 ## [0.1.62-alpha] - 2025-12-13
 **Branch**: `parley/sprint/theme-polish-menu` | **PR**: #367
 
