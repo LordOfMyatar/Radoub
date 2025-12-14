@@ -111,14 +111,18 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Convert JrlLocString to DialogEditor LocString
+        /// Convert JrlLocString to DialogEditor LocString.
+        /// 2025-12-14: Now preserves StrRef for TLK internationalization (Issue #403)
         /// </summary>
         private LocString? ConvertLocString(JrlLocString jrlLocString)
         {
             if (jrlLocString.IsEmpty)
                 return null;
 
-            var locString = new LocString();
+            var locString = new LocString
+            {
+                StrRef = jrlLocString.StrRef
+            };
 
             foreach (var kvp in jrlLocString.Strings)
             {
