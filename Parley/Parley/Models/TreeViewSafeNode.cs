@@ -59,23 +59,32 @@ namespace DialogEditor.Models
                     // LAZY LOADING FIX (Issue #82): Populate children when node is expanded
                     if (_isExpanded)
                     {
-                        // Ensure _children collection exists
-                        if (_children == null)
+                        try
                         {
-                            _children = new ObservableCollection<TreeViewSafeNode>();
-                        }
+                            // Ensure _children collection exists
+                            if (_children == null)
+                            {
+                                _children = new ObservableCollection<TreeViewSafeNode>();
+                            }
 
-                        // Remove placeholder if present
-                        var placeholder = _children.OfType<TreeViewPlaceholderNode>().FirstOrDefault();
-                        if (placeholder != null)
-                        {
-                            _children.Remove(placeholder);
-                        }
+                            // Remove placeholder if present
+                            var placeholder = _children.OfType<TreeViewPlaceholderNode>().FirstOrDefault();
+                            if (placeholder != null)
+                            {
+                                _children.Remove(placeholder);
+                            }
 
-                        // Populate if empty (after removing placeholder)
-                        if (_children.Count == 0)
+                            // Populate if empty (after removing placeholder)
+                            if (_children.Count == 0)
+                            {
+                                PopulateChildrenInternal();
+                            }
+                        }
+                        catch (Exception ex)
                         {
-                            PopulateChildrenInternal();
+                            DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.ERROR,
+                                $"🌳 TreeView: Exception during lazy load of '{_originalNode?.DisplayText ?? "null"}': {ex.Message}");
+                            // Don't re-throw - allow UI to continue functioning
                         }
                     }
                 }
@@ -275,12 +284,26 @@ namespace DialogEditor.Models
             if (_children == null || _children.Count > 0)
                 return; // Already populated or not initialized
 
+            // Null safety check for _originalNode (#375 stability)
+            if (_originalNode == null)
+            {
+                DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.WARN, "🌳 TreeView: _originalNode is null in PopulateChildrenInternal");
+                return;
+            }
+
             // Add basic depth protection to prevent infinite recursion (same as copy tree)
             // Issue #32: Increased from 50 to 250 to support dialogs up to depth 100+
             // (Each Entry→Reply pair counts as 2 depth levels in TreeView)
             if (_depth >= 250)
             {
                 DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.WARN, $"🌳 TreeView: Hit max depth {_depth} for node '{_originalNode.DisplayText}' - dialog may be extremely deep");
+                return;
+            }
+
+            // Null safety check for Pointers (#375 stability)
+            if (_originalNode.Pointers == null)
+            {
+                DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Node '{_originalNode.DisplayText}' has null Pointers");
                 return;
             }
 

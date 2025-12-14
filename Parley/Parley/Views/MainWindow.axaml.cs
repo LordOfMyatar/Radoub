@@ -2015,8 +2015,16 @@ namespace DialogEditor.Views
             // Toggle expansion of the selected node when double-tapped
             if (_selectedNode != null)
             {
-                _selectedNode.IsExpanded = !_selectedNode.IsExpanded;
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Double-tap toggled node expansion: {_selectedNode.IsExpanded}");
+                try
+                {
+                    _selectedNode.IsExpanded = !_selectedNode.IsExpanded;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Double-tap toggled node expansion: {_selectedNode.IsExpanded}");
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.ERROR, $"Double-tap expand failed: {ex.Message}");
+                    _viewModel.StatusMessage = "Error expanding node - see logs";
+                }
             }
         }
 

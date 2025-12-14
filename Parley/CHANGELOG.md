@@ -11,18 +11,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.64-alpha] - TBD
-**Branch**: `parley/sprint/stability-375` | **PR**: #TBD
+**Branch**: `parley/sprint/stability-375` | **PR**: #376
 
 ### Sprint: Stability - Crash Investigation & Fixes (#375)
 
-Investigating and fixing crashes reported after v0.1.63-alpha.
+Fixed crashes in tree navigation by properly treating child/link nodes as terminal (bookmarks).
 
 #### Fixed
-- (investigating)
+- **Tree traversal crash**: All tree navigation methods now skip traversing child/link nodes - they are bookmarks pointing to nodes owned elsewhere
+- **Null safety**: Added null checks and try-catch protection to `IsExpanded` setter and `PopulateChildrenInternal()`
+- **Double-click crash**: Added error handling to `OnTreeViewItemDoubleTapped` (#374)
+- **Flowchart-to-tree sync**: Fixed `FindTreeNodeForDialogNode`, `ExpandAncestors`, and other tree traversal methods to not traverse link nodes (#373)
+
+#### Technical Details
+- `IsChild` check added to 6 tree traversal methods in `TreeNavigationManager.cs`
+- Same pattern as delete crash fix from #369 - links are terminal, don't traverse
 
 #### Related Issues
-- #373 - Flowchart bubble click doesn't expand tree
-- #374 - Crash on double-click of tree node
+- Fixes #373 - Flowchart bubble click doesn't expand tree
+- Fixes #374 - Crash on double-click of tree node
 
 ---
 
