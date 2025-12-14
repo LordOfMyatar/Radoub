@@ -212,7 +212,6 @@ namespace DialogEditor.Views
 
             // Initialize menu checkmark states
             UpdateFlowchartLayoutMenuChecks();
-            UpdateFontSizeMenuChecks();
 
             // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
             InitializeSpeakerVisualComboBoxes();
@@ -1154,33 +1153,7 @@ namespace DialogEditor.Views
             }
         }
 
-        // Font size handlers - Fixed in #58 (font sizing) and #59 (font selection)
-        private void OnFontSizeClick(object? sender, RoutedEventArgs e)
-        {
-            if (sender is MenuItem menuItem && menuItem.Tag is string sizeStr)
-            {
-                if (double.TryParse(sizeStr, out double fontSize))
-                {
-                    SettingsService.Instance.FontSize = fontSize;
-                    UpdateFontSizeMenuChecks();
-                    _viewModel.StatusMessage = $"Font size changed to {fontSize}pt";
-                    // Global application now handled via App.xaml styles and App.ApplyFontSize()
-                }
-            }
-        }
-
-        private void UpdateFontSizeMenuChecks()
-        {
-            var currentSize = (int)SettingsService.Instance.FontSize;
-            var sizes = new[] { 10, 12, 14, 16, 18, 20, 24 };
-
-            foreach (var size in sizes)
-            {
-                var menuItem = this.FindControl<MenuItem>($"FontSize{size}");
-                if (menuItem != null)
-                    menuItem.Icon = size == currentSize ? new TextBlock { Text = "✓" } : null;
-            }
-        }
+        // Font size is now managed via Settings window only (removed from View menu in #368)
 
         private void OnPluginPanelsClick(object? sender, RoutedEventArgs e)
         {

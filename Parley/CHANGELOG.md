@@ -15,16 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Epic: Menu Reorganization & Keyboard Shortcut Consistency (#368)
 
-Menu cleanup, deduplication, and UI test keyboard shortcut fixes.
+Menu cleanup and deduplication for better discoverability.
 
 #### Changed
-- Remove View > Font Size submenu (use Settings > UI Settings only)
-- Add View > Settings... menu item as entry point
-- Slim Edit menu: keep core operations, move advanced copy to submenu
-- Fix context menu shortcut display (match Edit menu shortcuts)
+- **View menu reorganized**: Removed Font Size submenu (now in Settings only), added Settings... entry point
+- **Edit menu slimmed**: Reorganized from 15 items to 10 top-level items
+  - Tree operations (Move Up/Down, Expand/Collapse) moved to Edit > Tree submenu
+  - Advanced copy operations moved to Edit > Copy Special submenu
+  - Core operations (Undo/Redo, Cut/Copy/Paste, Add/Delete) remain at top level
+- **Context menu updated**: Shortcuts now match Edit menu (Ctrl+Shift+Up/Down for move, not Alt+Up/Down)
+- **Settings menu removed**: Consolidated into View > Settings... entry point
 
-#### Fixed
-- Keyboard shortcuts in FlaUI tests (investigate and fix)
+#### Verified
+- FlaUI keyboard shortcut tests pass (Ctrl+D, Ctrl+Z, Ctrl+Y all work in automation)
 
 ---
 
