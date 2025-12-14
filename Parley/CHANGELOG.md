@@ -17,17 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Audit and fix PC/Owner color assignments across all themes for warm/cool consistency.
 
-#### Audited
-- [ ] Light
-- [ ] Dark
-- [ ] VSCode Dark
-- [ ] Fluent Light
-- [ ] Angry Fruit Salad
+#### Audited (All Pass ✅)
+- **Light**: `#FF8A65` (coral/warm) / `#4FC3F7` (cyan/cool) ✅
+- **Dark**: `#FF8A65` (coral/warm) / `#4FC3F7` (cyan/cool) ✅
+- **Fluent Light**: `#D83B01` (orange/warm) / `#0078D4` (blue/cool) ✅
+- **Angry Fruit Salad**: `#FFFF00` (yellow) / `#00FFFF` (cyan) ✅
+
+#### Fixed
+- **VSCode Dark**: Changed `tree_entry` from `#4EC9B0` (teal) to `#CE9178` (tan/warm) - was both cool colors
 
 #### Previously Fixed (PR #367)
-- ✅ Deuteranopia
-- ✅ Protanopia
-- ✅ Tritanopia
+- Deuteranopia, Protanopia, Tritanopia
 
 ---
 
