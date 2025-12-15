@@ -48,6 +48,8 @@ namespace Manifest.Services
 
         // UI settings
         private double _fontSize = 14;
+        private string _fontFamily = "";  // Empty = use theme default
+        private string _currentThemeId = "org.manifest.theme.light";
 
         // Logging settings
         private int _logRetentionSessions = 3;
@@ -97,6 +99,18 @@ namespace Manifest.Services
         {
             get => _fontSize;
             set { if (SetProperty(ref _fontSize, Math.Max(8, Math.Min(24, value)))) SaveSettings(); }
+        }
+
+        public string FontFamily
+        {
+            get => _fontFamily;
+            set { if (SetProperty(ref _fontFamily, value ?? "")) SaveSettings(); }
+        }
+
+        public string CurrentThemeId
+        {
+            get => _currentThemeId;
+            set { if (SetProperty(ref _currentThemeId, value ?? "org.manifest.theme.light")) SaveSettings(); }
         }
 
         // Logging Settings Properties
@@ -153,6 +167,10 @@ namespace Manifest.Services
 
                         // Load UI settings
                         _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
+                        _fontFamily = settings.FontFamily ?? "";
+                        _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
+                            ? settings.CurrentThemeId
+                            : "org.manifest.theme.light";
 
                         // Load logging settings
                         _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
@@ -184,6 +202,8 @@ namespace Manifest.Services
                     WindowHeight = WindowHeight,
                     WindowMaximized = WindowMaximized,
                     FontSize = FontSize,
+                    FontFamily = FontFamily,
+                    CurrentThemeId = CurrentThemeId,
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel
                 };
@@ -228,6 +248,8 @@ namespace Manifest.Services
 
             // UI settings
             public double FontSize { get; set; } = 14;
+            public string FontFamily { get; set; } = "";
+            public string CurrentThemeId { get; set; } = "org.manifest.theme.light";
 
             // Logging settings
             public int LogRetentionSessions { get; set; } = 3;

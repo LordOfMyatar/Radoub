@@ -1,0 +1,51 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.manifest.theme.tritanopia",
+    "name": "Tritanopia",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Blue-yellow colorblind friendly theme (tritanopia)",
+    "type": "theme",
+    "tags": ["official", "accessibility", "colorblind"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "colorblind",
+    "condition": "tritanopia",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#FFFFFF",
+    "sidebar": "#F5F5F5",
+    "text": "#1A1A1A",
+    "selection": "#E63946",
+    "border": "#D0D0D0",
+    "accent": "#E63946",
+    "error": "#E63946",
+    "warning": "#F4A261",
+    "success": "#1D3557",
+    "info": "#457B9D",
+    "tree_entry": "#E63946",
+    "tree_reply": "#1D3557",
+    "tree_link": "#757575",
+    "title_bar": "#E0E0E0",
+    "title_bar_foreground": "#1A1A1A",
+    "button_primary": "#E63946",
+    "button_secondary": "#757575",
+    "button_hover": "#A4161A"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28,
+    "tree_indent": 16
+  }
+}

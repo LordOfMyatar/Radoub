@@ -25,6 +25,8 @@
                 <MenuItem Header="Add _Entry" Click="OnAddEntryClick" IsEnabled="{Binding CanAddEntry}"/>
                 <Separator/>
                 <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection}"/>
+                <Separator/>
+                <MenuItem Header="_Preferences..." Click="OnPreferencesClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About Manifest" Click="OnAboutClick"/>
