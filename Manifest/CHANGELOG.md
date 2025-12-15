@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.7.0-alpha] - 2025-12-14
+**Branch**: `manifest/feat/settings-ui` | **PR**: #TBD
+
+### Feature: Settings UI (#421)
+
+Add game path configuration to Settings UI for TLK resolution.
+
+#### Added
+- Settings window with game path configuration
+- Folder browser dialog for manual path selection
+- Auto-detect button for Steam/GOG installations
+- Edit > Preferences menu entry
+
+---
+
 ## [0.6.0-alpha] - 2025-12-14
 **Branch**: `manifest/sprint/testing-suite` | **PR**: #420
 
