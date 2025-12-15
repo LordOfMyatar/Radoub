@@ -13,7 +13,6 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
-                <MenuItem Header="Open from _Module..." Click="OnOpenFromModuleClick" InputGesture="Ctrl+M"/>
                 <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile}"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
@@ -44,7 +43,14 @@
 
         <!-- Status Bar -->
         <Border DockPanel.Dock="Bottom" Background="#F0F0F0" Padding="5,2">
-            <TextBlock x:Name="StatusText" Text="Ready"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText" Grid.Column="0" Text="Ready"/>
+                <TextBlock x:Name="TlkStatusText" Grid.Column="1" Text="" Foreground="Gray" Margin="20,0,0,0"/>
+            </Grid>
         </Border>
 
         <!-- Main Content -->

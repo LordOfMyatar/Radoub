@@ -87,7 +87,7 @@ public class TlkService : IDisposable
     /// </summary>
     public string? ResolveStrRef(uint strRef)
     {
-        return ResolveStrRef(strRef, RadoubSettings.Instance.PreferredLanguage ?? Language.English);
+        return ResolveStrRef(strRef, RadoubSettings.Instance.EffectiveLanguage);
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public class TlkService : IDisposable
     /// </summary>
     public string ResolveLocString(Radoub.Formats.Jrl.JrlLocString locString, Language? preferredLanguage = null)
     {
-        var language = preferredLanguage ?? RadoubSettings.Instance.PreferredLanguage ?? Language.English;
+        var language = preferredLanguage ?? RadoubSettings.Instance.EffectiveLanguage;
         var gender = RadoubSettings.Instance.PreferredGender;
         var combinedId = LanguageHelper.ToCombinedId(language, gender);
 
@@ -307,6 +307,36 @@ public class TlkService : IDisposable
         // Custom TLK loading would go here
         // For now, return null - custom TLK support can be added when needed
         return _customTlk;
+    }
+
+    /// <summary>
+    /// Get the TLK file path for the effective language.
+    /// Returns null if no TLK is available.
+    /// </summary>
+    public string? GetCurrentTlkPath()
+    {
+        return RadoubSettings.Instance.GetTlkPath(
+            RadoubSettings.Instance.EffectiveLanguage,
+            RadoubSettings.Instance.PreferredGender);
+    }
+
+    /// <summary>
+    /// Get a summary of TLK status for display.
+    /// </summary>
+    public string GetTlkStatusSummary()
+    {
+        if (!IsAvailable)
+            return "TLK: No game path configured";
+
+        var path = GetCurrentTlkPath();
+        if (string.IsNullOrEmpty(path))
+            return $"TLK: Not found for {LanguageHelper.GetDisplayName(RadoubSettings.Instance.EffectiveLanguage)}";
+
+        // Shorten path for display
+        var displayPath = UnifiedLogger.SanitizePath(path);
+        var langName = LanguageHelper.GetDisplayName(RadoubSettings.Instance.EffectiveLanguage);
+
+        return $"TLK: {langName} - {displayPath}";
     }
 
     public void Dispose()

@@ -50,8 +50,9 @@ public class RadoubSettings : INotifyPropertyChanged
     private string _currentModulePath = "";
 
     // TLK settings
-    private string _tlkLanguage = "";  // Empty = auto-detect
+    private string _tlkLanguage = "";  // Empty = auto-detect from OS or default to English
     private bool _tlkUseFemale = false;
+    private Language _defaultLanguage = Language.English;  // Default display language
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -115,12 +116,28 @@ public class RadoubSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Get the preferred language as enum, or null if auto-detect.
+    /// Default display language for localized strings.
+    /// This is used when viewing/editing strings and as fallback for TLK resolution.
+    /// Default: English. Can be changed to match user's OS locale or preference.
+    /// </summary>
+    public Language DefaultLanguage
+    {
+        get => _defaultLanguage;
+        set { if (SetProperty(ref _defaultLanguage, value)) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Get the preferred language as enum, or DefaultLanguage if auto-detect.
     /// </summary>
     public Language? PreferredLanguage
     {
         get => string.IsNullOrEmpty(_tlkLanguage) ? null : LanguageHelper.FromLanguageCode(_tlkLanguage);
     }
+
+    /// <summary>
+    /// Get the effective language for display (PreferredLanguage or DefaultLanguage).
+    /// </summary>
+    public Language EffectiveLanguage => PreferredLanguage ?? _defaultLanguage;
 
     /// <summary>
     /// Get the preferred gender for TLK strings.
@@ -266,6 +283,7 @@ public class RadoubSettings : INotifyPropertyChanged
                     _currentModulePath = ExpandPath(data.CurrentModulePath ?? "");
                     _tlkLanguage = data.TlkLanguage ?? "";
                     _tlkUseFemale = data.TlkUseFemale;
+                    _defaultLanguage = data.DefaultLanguage;
                 }
             }
         }
@@ -290,7 +308,8 @@ public class RadoubSettings : INotifyPropertyChanged
                 NeverwinterNightsPath = ContractPath(_neverwinterNightsPath),
                 CurrentModulePath = ContractPath(_currentModulePath),
                 TlkLanguage = _tlkLanguage,
-                TlkUseFemale = _tlkUseFemale
+                TlkUseFemale = _tlkUseFemale,
+                DefaultLanguage = _defaultLanguage
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -358,5 +377,6 @@ public class RadoubSettings : INotifyPropertyChanged
         public string? CurrentModulePath { get; set; }
         public string? TlkLanguage { get; set; }
         public bool TlkUseFemale { get; set; }
+        public Language DefaultLanguage { get; set; } = Language.English;
     }
 }

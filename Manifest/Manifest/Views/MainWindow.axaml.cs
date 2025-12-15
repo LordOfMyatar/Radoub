@@ -212,6 +212,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UpdateTree();
             UpdateTitle();
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
+            UpdateTlkStatus();
             OnPropertyChanged(nameof(HasFile));
 
             UnifiedLogger.LogJournal(LogLevel.INFO, $"Loaded journal: {UnifiedLogger.SanitizePath(filePath)} ({_currentJrl.Categories.Count} categories)");
@@ -222,6 +223,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UpdateStatus($"Error loading file: {ex.Message}");
             await ShowErrorDialog("Load Error", $"Failed to load journal file:\n{ex.Message}");
         }
+    }
+
+    private void UpdateTlkStatus()
+    {
+        TlkStatusText.Text = TlkService.Instance.GetTlkStatusSummary();
     }
 
     private async Task SaveFile()
@@ -955,7 +961,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 internal class CategoryTreeItem
 {
     public JournalCategory Category { get; }
-    public string DisplayName => $"[{Category.Tag}] {Category.Name.GetDefault()}";
+
+    public string DisplayName
+    {
+        get
+        {
+            var name = TlkService.Instance.ResolveLocString(Category.Name);
+            if (string.IsNullOrEmpty(name))
+                name = "(no name)";
+            return $"[{Category.Tag}] {name}";
+        }
+    }
 
     public CategoryTreeItem(JournalCategory category)
     {
@@ -967,7 +983,16 @@ internal class EntryTreeItem
 {
     public JournalEntry Entry { get; }
     public JournalCategory ParentCategory { get; }
-    public string DisplayName => $"[{Entry.ID}] {(Entry.End ? "(END) " : "")}{TruncateText(Entry.Text.GetDefault(), 40)}";
+
+    public string DisplayName
+    {
+        get
+        {
+            var text = TlkService.Instance.ResolveLocString(Entry.Text);
+            var truncated = TruncateText(text, 40);
+            return $"[{Entry.ID}] {(Entry.End ? "(END) " : "")}{truncated}";
+        }
+    }
 
     public EntryTreeItem(JournalEntry entry, JournalCategory parent)
     {
