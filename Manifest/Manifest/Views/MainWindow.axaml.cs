@@ -403,7 +403,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 IsExpanded = true
             };
 
-            foreach (var entry in category.Entries)
+            // Sort entries numerically by ID
+            foreach (var entry in category.Entries.OrderBy(e => e.ID))
             {
                 var entItem = new EntryTreeItem(entry, category);
                 var entNode = new TreeViewItem
