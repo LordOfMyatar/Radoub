@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.6.0-alpha] - 2025-12-14
+**Branch**: `manifest/sprint/testing-suite` | **PR**: #TBD
+
+### Sprint: Testing Suite (#392)
+
+Comprehensive testing for Manifest: unit tests, integration tests, and regression validation.
+
+---
+
 ## [0.5.0-alpha] - 2025-12-15
 **Branch**: `manifest/sprint/ui-polish` | **PR**: #417
 
