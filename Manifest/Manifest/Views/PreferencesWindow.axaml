@@ -23,7 +23,7 @@
 
         <!-- Settings Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="15">
+            <StackPanel Spacing="15" Margin="0,0,15,0">
                 <!-- Game Paths Settings -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
                     <StackPanel Spacing="8">
