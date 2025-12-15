@@ -45,6 +45,7 @@ namespace Manifest.Services
         private double _windowWidth = 1000;
         private double _windowHeight = 700;
         private bool _windowMaximized = false;
+        private double _treePanelWidth = 300;
 
         // UI settings
         private double _fontSize = 14;
@@ -92,6 +93,12 @@ namespace Manifest.Services
         {
             get => _windowMaximized;
             set { if (SetProperty(ref _windowMaximized, value)) SaveSettings(); }
+        }
+
+        public double TreePanelWidth
+        {
+            get => _treePanelWidth;
+            set { if (SetProperty(ref _treePanelWidth, Math.Max(150, Math.Min(600, value)))) SaveSettings(); }
         }
 
         // UI properties
@@ -164,6 +171,7 @@ namespace Manifest.Services
                         _windowWidth = Math.Max(400, settings.WindowWidth);
                         _windowHeight = Math.Max(300, settings.WindowHeight);
                         _windowMaximized = settings.WindowMaximized;
+                        _treePanelWidth = Math.Max(150, Math.Min(600, settings.TreePanelWidth));
 
                         // Load UI settings
                         _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
@@ -201,6 +209,7 @@ namespace Manifest.Services
                     WindowWidth = WindowWidth,
                     WindowHeight = WindowHeight,
                     WindowMaximized = WindowMaximized,
+                    TreePanelWidth = TreePanelWidth,
                     FontSize = FontSize,
                     FontFamily = FontFamily,
                     CurrentThemeId = CurrentThemeId,
@@ -245,6 +254,7 @@ namespace Manifest.Services
             public double WindowWidth { get; set; } = 1000;
             public double WindowHeight { get; set; } = 700;
             public bool WindowMaximized { get; set; } = false;
+            public double TreePanelWidth { get; set; } = 300;
 
             // UI settings
             public double FontSize { get; set; } = 14;

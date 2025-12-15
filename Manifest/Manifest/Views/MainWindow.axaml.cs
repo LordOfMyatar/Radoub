@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Manifest.Services;
@@ -54,6 +55,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             WindowState = WindowState.Maximized;
         }
+
+        // Restore tree panel width
+        if (MainGrid.ColumnDefinitions.Count > 0)
+        {
+            MainGrid.ColumnDefinitions[0].Width = new Avalonia.Controls.GridLength(settings.TreePanelWidth);
+        }
     }
 
     private void SaveWindowPosition()
@@ -68,6 +75,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             settings.WindowHeight = Height;
         }
         settings.WindowMaximized = WindowState == WindowState.Maximized;
+
+        // Save tree panel width
+        if (MainGrid.ColumnDefinitions.Count > 0)
+        {
+            settings.TreePanelWidth = MainGrid.ColumnDefinitions[0].Width.Value;
+        }
     }
 
     private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
@@ -216,6 +229,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UpdateTitle();
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
             UpdateTlkStatus();
+            UpdateStatusBarCounts();
             OnPropertyChanged(nameof(HasFile));
             OnPropertyChanged(nameof(HasSelection));
             OnPropertyChanged(nameof(CanAddEntry));
@@ -233,6 +247,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void UpdateTlkStatus()
     {
         TlkStatusText.Text = TlkService.Instance.GetTlkStatusSummary();
+    }
+
+    private void UpdateStatusBarCounts()
+    {
+        if (_currentJrl == null)
+        {
+            CountsText.Text = "";
+            FilePathText.Text = "";
+            return;
+        }
+
+        var categoryCount = _currentJrl.Categories.Count;
+        var entryCount = _currentJrl.Categories.Sum(c => c.Entries.Count);
+        CountsText.Text = $"{categoryCount} categories, {entryCount} entries";
+        FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
 
     private async Task SaveFile()
@@ -260,6 +289,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #region Edit Operations
 
+
     private void OnAddCategoryClick(object? sender, RoutedEventArgs e)
     {
         if (_currentJrl == null) return;
@@ -267,10 +297,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var name = new JrlLocString();
         name.SetString(0, "New Category");
 
+        // Generate unique tag - find next available suffix
+        var existingTags = _currentJrl.Categories.Select(c => c.Tag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var uniqueTag = GenerateUniqueTag("new_category", existingTags);
+
         var newCategory = new JournalCategory
         {
             Name = name,
-            Tag = "new_category",
+            Tag = uniqueTag,
             Priority = 1,
             XP = 0,
             Comment = ""
@@ -279,11 +313,30 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _currentJrl.Categories.Add(newCategory);
         MarkDirty();
         UpdateTree();
+        UpdateStatusBarCounts();
 
         // Select the new category and focus the name field
         SelectNewCategory(newCategory);
 
-        UnifiedLogger.LogJournal(LogLevel.INFO, "Added new category");
+        UnifiedLogger.LogJournal(LogLevel.INFO, $"Added new category with tag: {uniqueTag}");
+    }
+
+    private static string GenerateUniqueTag(string baseTag, HashSet<string> existingTags)
+    {
+        // Try base tag first (for empty journal)
+        if (!existingTags.Contains(baseTag))
+            return baseTag;
+
+        // Find next available suffix starting from 001
+        for (int i = 1; i < 1000; i++)
+        {
+            var candidate = $"{baseTag}_{i:D3}";
+            if (!existingTags.Contains(candidate))
+                return candidate;
+        }
+
+        // Fallback with timestamp if somehow all 999 are taken
+        return $"{baseTag}_{DateTime.Now.Ticks}";
     }
 
     private void OnAddEntryClick(object? sender, RoutedEventArgs e)
@@ -321,6 +374,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         category.Entries.Add(newEntry);
         MarkDirty();
         UpdateTree();
+        UpdateStatusBarCounts();
 
         // Select the new entry and focus the text field
         SelectNewEntry(newEntry, category);
@@ -347,6 +401,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         MarkDirty();
         UpdateTree();
         UpdatePropertyPanel();
+        UpdateStatusBarCounts();
     }
 
     private void SelectNewCategory(JournalCategory category)
@@ -880,6 +935,72 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         dialog.Content = mainPanel;
         dialog.Show(this);  // Non-modal per guidelines
+    }
+
+    #endregion
+
+    #region Keyboard Shortcuts
+
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        // Handle keyboard shortcuts
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            switch (e.Key)
+            {
+                case Key.O:
+                    _ = OpenFile();
+                    e.Handled = true;
+                    break;
+                case Key.S:
+                    if (HasFile)
+                    {
+                        _ = SaveFile();
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.E:
+                    if (CanAddEntry)
+                    {
+                        OnAddEntryClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
+            }
+        }
+        else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
+        {
+            switch (e.Key)
+            {
+                case Key.N:
+                    if (HasFile)
+                    {
+                        OnAddCategoryClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.S:
+                    // Save As - future feature
+                    break;
+            }
+        }
+        else if (e.KeyModifiers == KeyModifiers.None)
+        {
+            switch (e.Key)
+            {
+                case Key.Delete:
+                    if (HasSelection)
+                    {
+                        OnDeleteClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.F1:
+                    OnAboutClick(sender, new RoutedEventArgs());
+                    e.Handled = true;
+                    break;
+            }
+        }
     }
 
     #endregion
