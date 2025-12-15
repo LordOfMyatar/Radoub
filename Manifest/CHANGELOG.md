@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.7.0-alpha] - 2025-12-14
-**Branch**: `manifest/feat/settings-ui` | **PR**: #TBD
+**Branch**: `manifest/feat/settings-ui` | **PR**: #422
 
 ### Feature: Settings UI (#421)
 
