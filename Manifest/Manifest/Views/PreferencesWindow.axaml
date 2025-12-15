@@ -6,8 +6,9 @@
         x:Class="Manifest.Views.PreferencesWindow"
         Title="Preferences - Manifest"
         Width="500" Height="450"
+        MinWidth="400" MinHeight="350"
         WindowStartupLocation="CenterOwner"
-        CanResize="False">
+        CanResize="True">
 
     <Grid Margin="15">
         <Grid.RowDefinitions>
