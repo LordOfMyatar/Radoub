@@ -18,10 +18,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Add game path configuration to Settings UI for TLK resolution.
 
 #### Added
-- Settings window with game path configuration
-- Folder browser dialog for manual path selection
-- Auto-detect button for Steam/GOG installations
-- Edit > Preferences menu entry
+- Game Paths section in Preferences window:
+  - Base Game Installation (Steam/GOG) - for TLK files in data\ folder
+  - User Documents path - for modules, override, custom TLKs
+- Folder browser dialogs for manual path selection
+- Auto-detect buttons for both paths
+- Path validation with status messages
+- Edit > Preferences menu entry (Ctrl+,)
 
 ---
 
