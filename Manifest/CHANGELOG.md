@@ -17,6 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Comprehensive testing for Manifest: unit tests, integration tests, and regression validation.
 
+#### Added
+- `Manifest.Tests` project with xUnit and Avalonia.Headless.XUnit
+- JRL round-trip tests (empty, single category, multiple categories, edge cases)
+- Headless UI tests for create/delete operations
+- Test data generator for creating test JRL files
+- Real module JRL file as test fixture
+
+#### Test Coverage
+- 24 Manifest.Tests tests (all pass)
+- 461 Parley.Tests tests (all pass - regression check)
+- 165 Radoub.Formats.Tests (all pass - shared library)
+
 ---
 
 ## [0.5.0-alpha] - 2025-12-15
