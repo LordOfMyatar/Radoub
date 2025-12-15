@@ -250,6 +250,9 @@ public partial class PreferencesWindow : Window
         var radoubSettings = RadoubSettings.Instance;
         GamePathTextBox.Text = radoubSettings.BaseGameInstallPath;
         UpdateGamePathValidation();
+
+        UserPathTextBox.Text = radoubSettings.NeverwinterNightsPath;
+        UpdateUserPathValidation();
     }
 
     private void OnGamePathTextChanged(object? sender, TextChangedEventArgs e)
@@ -332,6 +335,80 @@ public partial class PreferencesWindow : Window
             return "~" + path.Substring(userProfile.Length);
         }
         return path;
+    }
+
+    #endregion
+
+    #region User Path
+
+    private void OnUserPathTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isLoading) return;
+
+        var path = UserPathTextBox.Text ?? "";
+        RadoubSettings.Instance.NeverwinterNightsPath = path;
+        UpdateUserPathValidation();
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"User path changed to: {SanitizePath(path)}");
+    }
+
+    private async void OnBrowseUserPath(object? sender, RoutedEventArgs e)
+    {
+        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storageProvider == null) return;
+
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Select Neverwinter Nights User Folder",
+            AllowMultiple = false
+        };
+
+        var result = await storageProvider.OpenFolderPickerAsync(options);
+        if (result.Count > 0)
+        {
+            var path = result[0].Path.LocalPath;
+            UserPathTextBox.Text = path;
+            RadoubSettings.Instance.NeverwinterNightsPath = path;
+            UpdateUserPathValidation();
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"User path set via browse: {SanitizePath(path)}");
+        }
+    }
+
+    private void OnAutoDetectUserPath(object? sender, RoutedEventArgs e)
+    {
+        var detectedPath = ResourcePathDetector.AutoDetectGamePath();
+
+        if (!string.IsNullOrEmpty(detectedPath))
+        {
+            UserPathTextBox.Text = detectedPath;
+            RadoubSettings.Instance.NeverwinterNightsPath = detectedPath;
+            UpdateUserPathValidation();
+            UserPathValidationText.Text = "Auto-detected user documents";
+            UserPathValidationText.Foreground = Avalonia.Media.Brushes.Green;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"User path auto-detected: {SanitizePath(detectedPath)}");
+        }
+        else
+        {
+            UserPathValidationText.Text = "Could not auto-detect user path. Please browse manually.";
+            UserPathValidationText.Foreground = Avalonia.Media.Brushes.Orange;
+            UnifiedLogger.LogApplication(LogLevel.WARN, "User path auto-detection failed");
+        }
+    }
+
+    private void UpdateUserPathValidation()
+    {
+        var path = UserPathTextBox.Text ?? "";
+
+        if (string.IsNullOrEmpty(path))
+        {
+            UserPathValidationText.Text = "";
+            return;
+        }
+
+        var result = ResourcePathDetector.ValidateGamePathWithMessage(path);
+        UserPathValidationText.Text = result.Message;
+        UserPathValidationText.Foreground = result.IsValid
+            ? Avalonia.Media.Brushes.Green
+            : Avalonia.Media.Brushes.Red;
     }
 
     #endregion
