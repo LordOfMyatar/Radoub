@@ -45,14 +45,14 @@
         </StackPanel>
 
         <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom" Background="#F0F0F0" Padding="5,2">
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0" Padding="5,2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="StatusText" Grid.Column="0" Text="Ready"/>
-                <TextBlock x:Name="TlkStatusText" Grid.Column="1" Text="" Foreground="Gray" Margin="20,0,0,0"/>
+                <TextBlock x:Name="TlkStatusText" Grid.Column="1" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
             </Grid>
         </Border>
 
@@ -65,7 +65,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Left Panel: Tree View -->
-            <Border Grid.Column="0" BorderBrush="#CCCCCC" BorderThickness="1" Margin="5">
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Journal Structure" FontWeight="Bold" Margin="5"/>
                     <TreeView x:Name="JournalTree" SelectionChanged="OnTreeSelectionChanged">
@@ -75,10 +75,10 @@
             </Border>
 
             <!-- Splitter -->
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#E0E0E0"/>
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource SystemBaseMediumLowColor}"/>
 
             <!-- Right Panel: Property Editor -->
-            <Border Grid.Column="2" BorderBrush="#CCCCCC" BorderThickness="1" Margin="5">
+            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Properties" FontWeight="Bold" Margin="5"/>
                     <ScrollViewer>
@@ -94,8 +94,8 @@
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="CategoryStrRefBox" Width="150" IsReadOnly="True" Foreground="Gray"/>
-                                    <TextBlock x:Name="CategorySourceLabel" Text="" Foreground="Gray" FontStyle="Italic" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="CategoryStrRefBox" Width="150" IsReadOnly="True" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock x:Name="CategorySourceLabel" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontStyle="Italic" VerticalAlignment="Center"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -144,8 +144,8 @@
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="EntryStrRefBox" Width="150" IsReadOnly="True" Foreground="Gray"/>
-                                    <TextBlock x:Name="EntrySourceLabel" Text="" Foreground="Gray" FontStyle="Italic" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="EntryStrRefBox" Width="150" IsReadOnly="True" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock x:Name="EntrySourceLabel" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontStyle="Italic" VerticalAlignment="Center"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -162,7 +162,7 @@
 
                             <!-- No Selection -->
                             <TextBlock x:Name="NoSelectionText" Text="Select a category or entry to edit its properties."
-                                       IsVisible="True" Foreground="Gray" FontStyle="Italic"/>
+                                       IsVisible="True" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontStyle="Italic"/>
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>

@@ -24,16 +24,16 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="15">
                 <!-- Theme Selection -->
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Theme" FontWeight="Bold"/>
                         <TextBlock Text="Choose a color theme for Manifest. Accessibility themes are optimized for color blindness."
-                                  TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                         <ComboBox x:Name="ThemeComboBox" SelectionChanged="OnThemeChanged" HorizontalAlignment="Stretch"/>
 
                         <!-- Theme Description -->
-                        <Border BorderBrush="LightGray" BorderThickness="1" Padding="8" Margin="0,5,0,0" CornerRadius="3">
+                        <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="8" Margin="0,5,0,0" CornerRadius="3">
                             <StackPanel Spacing="3">
                                 <TextBlock x:Name="ThemeDescriptionText" TextWrapping="Wrap" FontSize="11"/>
                             </StackPanel>
@@ -42,7 +42,7 @@
                 </Border>
 
                 <!-- Font Settings -->
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Font Settings" FontWeight="Bold"/>
 
@@ -70,7 +70,7 @@
                         </ComboBox>
 
                         <!-- Font Preview -->
-                        <Border BorderBrush="LightGray" BorderThickness="1" Padding="10" Margin="0,10,0,0" CornerRadius="3">
+                        <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" Margin="0,10,0,0" CornerRadius="3">
                             <TextBlock x:Name="FontPreviewText"
                                       Text="The quick brown fox jumps over the lazy dog. 1234567890"
                                       TextWrapping="Wrap"
@@ -80,7 +80,7 @@
                 </Border>
 
                 <!-- Logging Settings -->
-                <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Logging" FontWeight="Bold"/>
 
