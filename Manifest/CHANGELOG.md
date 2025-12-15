@@ -18,12 +18,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Polish Manifest UI to match BioWare's original journal editor and provide professional UX.
 
 #### Added
-- Toolbar with icons (New Category, New Entry, Delete)
-- Keyboard shortcuts (Ctrl+O, Ctrl+S, Ctrl+Shift+N, Ctrl+E, Delete)
-- Window state persistence (position, size, maximized, panel widths)
-- Status bar with file path and entry count
+- Toolbar with emoji icons (Open, Save, Category, Entry, Delete)
+- Keyboard shortcuts (Ctrl+O, Ctrl+S, Ctrl+Shift+N, Ctrl+E, Delete, F1)
+- Window state persistence (position, size, maximized, splitter width)
+- Status bar with category/entry counts and file path
 - Tree view context menu
-- Tab navigation and accessibility improvements
 
 ---
 
