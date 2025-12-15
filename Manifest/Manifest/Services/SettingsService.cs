@@ -4,17 +4,23 @@ using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
+using Radoub.Formats.Settings;
 
 namespace Manifest.Services
 {
     /// <summary>
     /// Settings service for Manifest.
-    /// Stores settings in ~/Radoub/Manifest/ManifestSettings.json
-    /// Adapted from Parley's SettingsService pattern.
+    /// Stores tool-specific settings in ~/Radoub/Manifest/ManifestSettings.json
+    /// Game paths and TLK settings are in shared RadoubSettings.
     /// </summary>
     public class SettingsService : INotifyPropertyChanged
     {
         public static SettingsService Instance { get; } = new SettingsService();
+
+        /// <summary>
+        /// Shared settings for game paths and TLK configuration.
+        /// </summary>
+        public static RadoubSettings SharedSettings => RadoubSettings.Instance;
 
         // Lazy initialization to avoid static field initialization timing issues
         private static string? _settingsDirectory;

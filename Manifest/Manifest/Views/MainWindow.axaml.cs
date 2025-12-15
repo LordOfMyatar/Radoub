@@ -2,8 +2,10 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Manifest.Services;
+using Radoub.Formats.Common;
 using Radoub.Formats.Jrl;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -18,6 +20,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string? _currentFilePath;
     private bool _isDirty;
     private object? _selectedItem;
+    private Language _currentViewLanguage = Language.English;
 
     // Bindable properties for UI state
     public bool HasFile => _currentJrl != null;
@@ -206,10 +209,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _currentFilePath = filePath;
             _isDirty = false;
 
+            // Clear selection and update UI
+            _selectedItem = null;
             UpdateTree();
+            UpdatePropertyPanel();
             UpdateTitle();
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
+            UpdateTlkStatus();
             OnPropertyChanged(nameof(HasFile));
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(CanAddEntry));
 
             UnifiedLogger.LogJournal(LogLevel.INFO, $"Loaded journal: {UnifiedLogger.SanitizePath(filePath)} ({_currentJrl.Categories.Count} categories)");
         }
@@ -219,6 +228,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UpdateStatus($"Error loading file: {ex.Message}");
             await ShowErrorDialog("Load Error", $"Failed to load journal file:\n{ex.Message}");
         }
+    }
+
+    private void UpdateTlkStatus()
+    {
+        TlkStatusText.Text = TlkService.Instance.GetTlkStatusSummary();
     }
 
     private async Task SaveFile()
@@ -394,7 +408,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 IsExpanded = true
             };
 
-            foreach (var entry in category.Entries)
+            // Sort entries numerically by ID
+            foreach (var entry in category.Entries.OrderBy(e => e.ID))
             {
                 var entItem = new EntryTreeItem(entry, category);
                 var entNode = new TreeViewItem
@@ -447,7 +462,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
                 CategoryTagBox.Text = catItem.Category.Tag;
                 CategoryStrRefBox.Text = FormatStrRef(catItem.Category.Name.StrRef);
-                CategoryNameBox.Text = catItem.Category.Name.GetDefault();
+
+                // Update source label and language info
+                var nameInfo = TlkService.Instance.GetLocStringInfo(catItem.Category.Name);
+                CategorySourceLabel.Text = nameInfo.SourceDescription;
+                PopulateLanguageComboBox(CategoryLanguageBox, catItem.Category.Name);
+
+                // Display text for current language
+                CategoryNameBox.Text = TlkService.Instance.ResolveLocString(catItem.Category.Name, _currentViewLanguage);
+
                 SelectPriorityItem(catItem.Category.Priority);
                 CategoryXPBox.Value = catItem.Category.XP;
                 CategoryCommentBox.Text = catItem.Category.Comment;
@@ -463,7 +486,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 EntryIdBox.Value = entItem.Entry.ID;
                 EntryEndBox.IsChecked = entItem.Entry.End;
                 EntryStrRefBox.Text = FormatStrRef(entItem.Entry.Text.StrRef);
-                EntryTextBox.Text = entItem.Entry.Text.GetDefault();
+
+                // Update source label and language info
+                var textInfo = TlkService.Instance.GetLocStringInfo(entItem.Entry.Text);
+                EntrySourceLabel.Text = textInfo.SourceDescription;
+                PopulateLanguageComboBox(EntryLanguageBox, entItem.Entry.Text);
+
+                // Display text for current language
+                EntryTextBox.Text = TlkService.Instance.ResolveLocString(entItem.Entry.Text, _currentViewLanguage);
 
                 // Wire up change handlers
                 WireEntryHandlers();
@@ -472,6 +502,60 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         finally
         {
             _isUpdatingPanel = false;
+        }
+    }
+
+    private void PopulateLanguageComboBox(ComboBox comboBox, JrlLocString locString)
+    {
+        comboBox.Items.Clear();
+
+        // Get all available languages for this string
+        var translations = TlkService.Instance.GetAllTranslations(locString);
+        var availableTlkLanguages = TlkService.Instance.GetAvailableLanguages();
+
+        // Determine which languages to show
+        var languagesToShow = new HashSet<Language>();
+
+        // Add embedded languages
+        foreach (var (combinedId, _) in locString.Strings)
+        {
+            languagesToShow.Add(LanguageHelper.GetLanguage(combinedId));
+        }
+
+        // Add TLK languages if there's a valid StrRef
+        if (LanguageHelper.IsValidStrRef(locString.StrRef))
+        {
+            foreach (var lang in availableTlkLanguages)
+            {
+                languagesToShow.Add(lang);
+            }
+        }
+
+        // Always show English
+        languagesToShow.Add(Language.English);
+
+        // Sort and add to combo box
+        foreach (var lang in languagesToShow.OrderBy(l => (int)l))
+        {
+            var displayName = LanguageHelper.GetDisplayName(lang);
+            var hasTranslation = translations.ContainsKey(lang);
+            var item = new ComboBoxItem
+            {
+                Content = hasTranslation ? displayName : $"{displayName} (no text)",
+                Tag = lang
+            };
+            comboBox.Items.Add(item);
+
+            if (lang == _currentViewLanguage)
+            {
+                comboBox.SelectedItem = item;
+            }
+        }
+
+        // If current language not in list, select first
+        if (comboBox.SelectedItem == null && comboBox.Items.Count > 0)
+        {
+            comboBox.SelectedIndex = 0;
         }
     }
 
@@ -666,6 +750,140 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #endregion
 
+    #region Language Selection
+
+    private void OnCategoryLanguageChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isUpdatingPanel) return;
+
+        if (CategoryLanguageBox.SelectedItem is ComboBoxItem item && item.Tag is Language lang)
+        {
+            _currentViewLanguage = lang;
+            if (_selectedItem is CategoryTreeItem catItem)
+            {
+                CategoryNameBox.Text = TlkService.Instance.ResolveLocString(catItem.Category.Name, lang);
+            }
+        }
+    }
+
+    private void OnEntryLanguageChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isUpdatingPanel) return;
+
+        if (EntryLanguageBox.SelectedItem is ComboBoxItem item && item.Tag is Language lang)
+        {
+            _currentViewLanguage = lang;
+            if (_selectedItem is EntryTreeItem entItem)
+            {
+                EntryTextBox.Text = TlkService.Instance.ResolveLocString(entItem.Entry.Text, lang);
+            }
+        }
+    }
+
+    private void OnViewCategoryLanguages(object? sender, RoutedEventArgs e)
+    {
+        if (_selectedItem is CategoryTreeItem catItem)
+        {
+            ShowAllLanguagesDialog("Category Name Translations", catItem.Category.Name);
+        }
+    }
+
+    private void OnViewEntryLanguages(object? sender, RoutedEventArgs e)
+    {
+        if (_selectedItem is EntryTreeItem entItem)
+        {
+            ShowAllLanguagesDialog("Entry Text Translations", entItem.Entry.Text);
+        }
+    }
+
+    private void ShowAllLanguagesDialog(string title, JrlLocString locString)
+    {
+        var translations = TlkService.Instance.GetAllTranslations(locString);
+        var info = TlkService.Instance.GetLocStringInfo(locString);
+
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 500,
+            Height = 400,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = true
+        };
+
+        var mainPanel = new DockPanel { Margin = new Avalonia.Thickness(15) };
+
+        // Header with source info
+        var headerPanel = new StackPanel { Margin = new Avalonia.Thickness(0, 0, 0, 10) };
+        headerPanel.Children.Add(new TextBlock
+        {
+            Text = $"Source: {info.SourceDescription}",
+            FontWeight = Avalonia.Media.FontWeight.SemiBold
+        });
+        if (info.HasStrRef)
+        {
+            headerPanel.Children.Add(new TextBlock
+            {
+                Text = $"StrRef: {info.StrRef}",
+                Foreground = Avalonia.Media.Brushes.Gray
+            });
+        }
+        DockPanel.SetDock(headerPanel, Avalonia.Controls.Dock.Top);
+        mainPanel.Children.Add(headerPanel);
+
+        // Language list
+        var scrollViewer = new ScrollViewer();
+        var listPanel = new StackPanel { Spacing = 10 };
+
+        if (translations.Count == 0)
+        {
+            listPanel.Children.Add(new TextBlock
+            {
+                Text = "(No translations available)",
+                FontStyle = Avalonia.Media.FontStyle.Italic,
+                Foreground = Avalonia.Media.Brushes.Gray
+            });
+        }
+        else
+        {
+            foreach (var (lang, text) in translations.OrderBy(t => (int)t.Key))
+            {
+                var langPanel = new StackPanel { Spacing = 3 };
+                langPanel.Children.Add(new TextBlock
+                {
+                    Text = LanguageHelper.GetDisplayName(lang),
+                    FontWeight = Avalonia.Media.FontWeight.SemiBold
+                });
+                langPanel.Children.Add(new TextBox
+                {
+                    Text = text,
+                    IsReadOnly = true,
+                    TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                    MaxHeight = 100
+                });
+                listPanel.Children.Add(langPanel);
+            }
+        }
+
+        scrollViewer.Content = listPanel;
+        mainPanel.Children.Add(scrollViewer);
+
+        // Close button
+        var closeButton = new Button
+        {
+            Content = "Close",
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Margin = new Avalonia.Thickness(0, 10, 0, 0)
+        };
+        closeButton.Click += (s, e) => dialog.Close();
+        DockPanel.SetDock(closeButton, Avalonia.Controls.Dock.Bottom);
+        mainPanel.Children.Add(closeButton);
+
+        dialog.Content = mainPanel;
+        dialog.Show(this);  // Non-modal per guidelines
+    }
+
+    #endregion
+
     #region UI Helpers
 
     private void UpdateTitle()
@@ -749,7 +967,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 internal class CategoryTreeItem
 {
     public JournalCategory Category { get; }
-    public string DisplayName => $"[{Category.Tag}] {Category.Name.GetDefault()}";
+
+    public string DisplayName
+    {
+        get
+        {
+            var name = TlkService.Instance.ResolveLocString(Category.Name);
+            if (string.IsNullOrEmpty(name))
+                name = "(no name)";
+            return $"[{Category.Tag}] {name}";
+        }
+    }
 
     public CategoryTreeItem(JournalCategory category)
     {
@@ -761,7 +989,16 @@ internal class EntryTreeItem
 {
     public JournalEntry Entry { get; }
     public JournalCategory ParentCategory { get; }
-    public string DisplayName => $"[{Entry.ID}] {(Entry.End ? "(END) " : "")}{TruncateText(Entry.Text.GetDefault(), 40)}";
+
+    public string DisplayName
+    {
+        get
+        {
+            var text = TlkService.Instance.ResolveLocString(Entry.Text);
+            var truncated = TruncateText(text, 40);
+            return $"[{Entry.ID}] {(Entry.End ? "(END) " : "")}{truncated}";
+        }
+    }
 
     public EntryTreeItem(JournalEntry entry, JournalCategory parent)
     {

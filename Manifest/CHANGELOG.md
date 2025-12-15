@@ -10,6 +10,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.3.0-alpha] - 2025-12-14
+**Branch**: `manifest/sprint/tlk-integration` | **PR**: #411
+
+### Sprint: TLK Integration (#389)
+
+Integrate TLK (Talk Table) support for resolving localized strings in journal files.
+
+#### Added
+- `TlkService` for loading and resolving TLK strings across multiple languages
+- Language dropdown in property panel to view text in different languages
+- "View All..." button to see all available translations for a string
+- Source indicator showing string origin (Embedded, TLK:N, or both)
+- Graceful handling of missing StrRef ("not found" / "no game path" indicators)
+
+#### Radoub.Formats (Shared Library)
+- `Language` enum with BioWare language IDs and helper utilities
+- `RadoubSettings` service for shared game path and TLK settings (`~/Radoub/RadoubSettings.json`)
+- `ResourcePathDetector` for cross-platform game installation detection
+- Auto-detect Steam/GOG game installation paths
+
+#### Changed
+- Property panel now uses TlkService to resolve and display localized strings
+- SettingsService now references shared RadoubSettings for game paths
+
+#### Notes
+- Created #412 for Parley migration to shared settings
+
+---
+
 ## [0.2.0-alpha] - 2025-12-14
 **Branch**: `manifest/sprint/file-io` | **PR**: #410
 

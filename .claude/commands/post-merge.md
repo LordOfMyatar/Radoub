@@ -89,41 +89,70 @@ The `/release` command handles:
 
 If user declines, note in summary that release was skipped.
 
-### Step 6: Update Related Issues
+### Step 6: Verify Related Issues
 
-Check for issues that should be closed:
+**Extract issues referenced in PR body:**
 ```bash
-# Find "closes #X" or "fixes #X" in PR
-gh pr view [number] --json body | grep -oE "(closes|fixes|resolves) #[0-9]+"
-
-# Check individual issues from CHANGELOG work items
-gh issue view [number] --json state
+# Find "closes #X", "fixes #X", or "resolves #X" in PR body
+gh pr view [number] --json body -q '.body' | grep -oEi "(closes|fixes|resolves) #[0-9]+" | grep -oE "[0-9]+"
 ```
 
-Verify those issues were auto-closed. If not, close them with reference to the PR:
+**For each issue number found, check its state:**
 ```bash
-gh issue close [number] --comment "Completed in PR #[pr-number]"
+gh issue view [issue-number] --json state,title -q '{state: .state, title: .title}'
 ```
+
+**Report status to user:**
+- If CLOSED: ✅ Issue was auto-closed by merge
+- If OPEN: ⚠️ Issue is still open
+
+**If issues are still OPEN, ask user:**
+> "Issue #[number] '[title]' is still open. Would you like me to close it with a comment referencing PR #[pr-number]?"
+
+Only close if user confirms:
+```bash
+gh issue close [issue-number] --comment "Completed in PR #[pr-number]"
+```
+
+**Note**: Don't auto-close issues. They may be intentionally left open for deferred work or have multiple parts.
 
 ### Step 7: Update Parent Epic (if applicable)
 
-If the merged PR was part of an epic:
-1. Identify the parent epic from PR title or CHANGELOG
-2. View current epic state:
+**Extract parent epic number from PR body:**
+```bash
+# Look for "Parent Epic": #XXX or "Epic": #XXX patterns
+gh pr view [number] --json body -q '.body' | grep -oEi "(parent )?epic[^#]*#[0-9]+" | grep -oE "[0-9]+" | head -1
+```
+
+If an epic number is found:
+
+1. **View current epic state:**
    ```bash
-   gh issue view [epic-number] --json body
+   gh issue view [epic-number] --json body,title,state -q '{title: .title, state: .state}'
    ```
-3. Update epic body to:
-   - Mark completed phase/work items as checked `[x]`
-   - Update status (e.g., "Phase 1 Complete ✅")
-   - Add implementation notes documenting what was delivered
-   - Update any technical stack details based on actual implementation
+
+2. **Ask user about epic update:**
+   > "Found parent epic #[number]: '[title]'. Would you like me to:
+   > - Add a completion comment for this sprint?
+   > - Update the epic checklist (if applicable)?"
+
+3. **If user confirms comment**, add completion note:
+   ```bash
+   gh issue comment [epic-number] --body "Sprint completed via PR #[pr-number]: [PR title]"
+   ```
+
+4. **If user wants checklist updates**, read the epic body and:
+   - Mark completed sprint/phase as `[x]`
+   - Update status sections
+   - Add implementation notes for what was delivered
    ```bash
    gh issue edit [epic-number] --body "$(cat <<'EOF'
    [Updated epic body with checked items and notes]
    EOF
    )"
    ```
+
+**Note**: Always ask before modifying the epic. Some sprints may be partial completions or the user may prefer to batch updates.
 
 ### Step 8: Notify About Follow-ups
 
