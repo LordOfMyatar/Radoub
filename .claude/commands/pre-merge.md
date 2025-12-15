@@ -179,8 +179,20 @@ If changes affect user-facing features, check if wiki pages need updates:
 | Keyboard shortcuts | [Keyboard-Shortcuts](Keyboard-Shortcuts) |
 | Installation | [Getting-Started](Getting-Started) |
 | New features | [Home](Home), [Index](Index) |
+| Parley architecture | [Parley-Developer-Architecture](Parley-Developer-Architecture) |
+| Manifest architecture | [Manifest-Developer-Architecture](Manifest-Developer-Architecture) |
+| Testing changes | [Parley-Developer-Testing](Parley-Developer-Testing) |
+| Delete behavior | [Parley-Developer-Delete-Behavior](Parley-Developer-Delete-Behavior) |
+| Copy/Paste | [Parley-Developer-CopyPaste](Parley-Developer-CopyPaste) |
+| Scrap/Orphan system | [Parley-Developer-Scrap-System](Parley-Developer-Scrap-System) |
 
 Wiki repo location: `d:\LOM\workspace\Radoub.wiki\`
+
+**Wiki Freshness Dates**:
+
+Developer wiki pages have a freshness date at the bottom. When updating a wiki page:
+1. Update the `*Page freshness: YYYY-MM-DD*` line at the bottom
+2. Commit and push the wiki changes
 
 ### Step 7: Generate Checklist
 
