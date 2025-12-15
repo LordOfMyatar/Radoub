@@ -1,8 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Manifest.Models;
 using Manifest.Services;
+using Radoub.Formats.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +25,9 @@ public partial class PreferencesWindow : Window
     private void LoadSettings()
     {
         var settings = SettingsService.Instance;
+
+        // Load game path from shared settings
+        LoadGamePath();
 
         // Load themes
         LoadThemeList();
@@ -237,4 +242,97 @@ public partial class PreferencesWindow : Window
     {
         Close();
     }
+
+    #region Game Path
+
+    private void LoadGamePath()
+    {
+        var radoubSettings = RadoubSettings.Instance;
+        GamePathTextBox.Text = radoubSettings.BaseGameInstallPath;
+        UpdateGamePathValidation();
+    }
+
+    private void OnGamePathTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isLoading) return;
+
+        var path = GamePathTextBox.Text ?? "";
+        RadoubSettings.Instance.BaseGameInstallPath = path;
+        UpdateGamePathValidation();
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Game path changed to: {SanitizePath(path)}");
+    }
+
+    private async void OnBrowseGamePath(object? sender, RoutedEventArgs e)
+    {
+        var storageProvider = TopLevel.GetTopLevel(this)?.StorageProvider;
+        if (storageProvider == null) return;
+
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Select Neverwinter Nights Installation Folder",
+            AllowMultiple = false
+        };
+
+        var result = await storageProvider.OpenFolderPickerAsync(options);
+        if (result.Count > 0)
+        {
+            var path = result[0].Path.LocalPath;
+            GamePathTextBox.Text = path;
+            RadoubSettings.Instance.BaseGameInstallPath = path;
+            UpdateGamePathValidation();
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Game path set via browse: {SanitizePath(path)}");
+        }
+    }
+
+    private void OnAutoDetectGamePath(object? sender, RoutedEventArgs e)
+    {
+        var detectedPath = ResourcePathDetector.AutoDetectBaseGamePath();
+
+        if (!string.IsNullOrEmpty(detectedPath))
+        {
+            GamePathTextBox.Text = detectedPath;
+            RadoubSettings.Instance.BaseGameInstallPath = detectedPath;
+            UpdateGamePathValidation();
+            GamePathValidationText.Text = "Auto-detected game installation";
+            GamePathValidationText.Foreground = Avalonia.Media.Brushes.Green;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Game path auto-detected: {SanitizePath(detectedPath)}");
+        }
+        else
+        {
+            GamePathValidationText.Text = "Could not auto-detect game path. Please browse manually.";
+            GamePathValidationText.Foreground = Avalonia.Media.Brushes.Orange;
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Game path auto-detection failed");
+        }
+    }
+
+    private void UpdateGamePathValidation()
+    {
+        var path = GamePathTextBox.Text ?? "";
+
+        if (string.IsNullOrEmpty(path))
+        {
+            GamePathValidationText.Text = "";
+            return;
+        }
+
+        var result = ResourcePathDetector.ValidateBaseGamePathWithMessage(path);
+        GamePathValidationText.Text = result.Message;
+        GamePathValidationText.Foreground = result.IsValid
+            ? Avalonia.Media.Brushes.Green
+            : Avalonia.Media.Brushes.Red;
+    }
+
+    private static string SanitizePath(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrEmpty(userProfile) && path.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase))
+        {
+            return "~" + path.Substring(userProfile.Length);
+        }
+        return path;
+    }
+
+    #endregion
 }

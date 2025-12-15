@@ -6,8 +6,8 @@
         x:Class="Manifest.Views.PreferencesWindow"
         Title="Preferences - Manifest"
         Icon="avares://Manifest/Assets/manifest.ico"
-        Width="500" Height="450"
-        MinWidth="400" MinHeight="350"
+        Width="500" Height="550"
+        MinWidth="400" MinHeight="450"
         WindowStartupLocation="CenterOwner"
         CanResize="True">
 
@@ -24,6 +24,32 @@
         <!-- Settings Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="15">
+                <!-- Game Path Settings -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Game Path" FontWeight="Bold"/>
+                        <TextBlock Text="Set the Neverwinter Nights installation path to enable TLK string resolution."
+                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                        <!-- Game Path Input -->
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox x:Name="GamePathTextBox"
+                                    Grid.Column="0"
+                                    Watermark="C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights"
+                                    TextChanged="OnGamePathTextChanged"/>
+                            <Button Grid.Column="1" Content="📁" ToolTip.Tip="Browse for game folder"
+                                   Click="OnBrowseGamePath" Margin="5,0,0,0" Width="32"/>
+                            <Button Grid.Column="2" Content="🔍" ToolTip.Tip="Auto-detect game path"
+                                   Click="OnAutoDetectGamePath" Margin="5,0,0,0" Width="32"/>
+                        </Grid>
+
+                        <!-- Validation Message -->
+                        <TextBlock x:Name="GamePathValidationText"
+                                  FontSize="11"
+                                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Theme Selection -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
                     <StackPanel Spacing="8">
