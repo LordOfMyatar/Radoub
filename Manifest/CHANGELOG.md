@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.4.0-alpha] - 2025-12-14
-**Branch**: `manifest/sprint/theme-support` | **PR**: #TBD
+**Branch**: `manifest/sprint/theme-support` | **PR**: #415
 
 ### Sprint: Theme Support (#390)
 
