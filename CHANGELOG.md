@@ -19,7 +19,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Docs: Move Developer Documentation to Wiki (#372)
 
-Migrate developer documentation from `Parley/Documentation/Developer/` to GitHub Wiki.
+Migrate developer documentation from repo to GitHub Wiki.
+
+#### Changed
+- Developer docs moved to wiki (verified against current code):
+  - [Parley-Developer-Architecture](https://github.com/LordOfMyatar/Radoub/wiki/Parley-Developer-Architecture)
+  - [Parley-Developer-Testing](https://github.com/LordOfMyatar/Radoub/wiki/Parley-Developer-Testing)
+  - [Parley-Developer-Delete-Behavior](https://github.com/LordOfMyatar/Radoub/wiki/Parley-Developer-Delete-Behavior)
+  - [Parley-Developer-CopyPaste](https://github.com/LordOfMyatar/Radoub/wiki/Parley-Developer-CopyPaste)
+  - [Parley-Developer-Scrap-System](https://github.com/LordOfMyatar/Radoub/wiki/Parley-Developer-Scrap-System)
+  - [Manifest-Developer-Architecture](https://github.com/LordOfMyatar/Radoub/wiki/Manifest-Developer-Architecture)
+- NonPublic folder moved to Radoub root with tool hierarchy
+- Research folder moved to NonPublic/Research
+- Parley README simplified (full docs in wiki)
+- Pre-merge command updated with wiki pages and freshness dates
+
+#### Removed
+- `Parley/Documentation/Developer/` - Migrated to wiki
+- `Documentation/Research/` - Moved to NonPublic
 
 ---
 
@@ -62,7 +79,7 @@ Extract static GFF parsing code from Parley to shared library.
 - GFF round-trip tests
 
 #### Research
-- [Epic379_SharedInfrastructure_Research.md](Documentation/Research/Epic379_SharedInfrastructure_Research.md)
+- Epic379_SharedInfrastructure_Research.md (moved to NonPublic/Research/)
 
 ---
 
