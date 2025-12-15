@@ -154,7 +154,38 @@ If an epic number is found:
 
 **Note**: Always ask before modifying the epic. Some sprints may be partial completions or the user may prefer to batch updates.
 
-### Step 8: Notify About Follow-ups
+### Step 8: Sync Wiki (if applicable)
+
+If wiki updates were made during the PR but not yet pushed:
+
+1. **Check wiki repo status:**
+   ```bash
+   cd d:\LOM\workspace\Radoub.wiki
+   git status
+   ```
+
+2. **If uncommitted changes exist, ask user:**
+   > "The wiki has uncommitted changes. Would you like me to commit and push them?"
+
+3. **If user confirms:**
+   ```bash
+   cd d:\LOM\workspace\Radoub.wiki
+   git add .
+   git commit -m "Update wiki for PR #[number]
+
+   🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+   Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+   git push
+   ```
+
+4. **Verify wiki pages are accessible:**
+   - Check https://github.com/LordOfMyatar/Radoub/wiki for updated pages
+   - Report any sync issues to user
+
+**Wiki Repo Location**: `d:\LOM\workspace\Radoub.wiki\`
+
+### Step 9: Notify About Follow-ups
 
 Check for:
 - TODO comments added in this PR
@@ -163,7 +194,7 @@ Check for:
 
 Report any follow-up items to user.
 
-### Step 9: Generate Summary
+### Step 10: Generate Summary
 
 Output format:
 
@@ -183,6 +214,7 @@ Output format:
 - [x] CHANGELOG verified
 - [x] Related issues closed
 - [x] Parent epic updated (if applicable)
+- [x/⏭️] Wiki synced: [✅ Pushed / ⏭️ No changes / ⏭️ User declined]
 
 ### Release Status
 
