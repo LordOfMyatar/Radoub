@@ -69,7 +69,7 @@
             <Border Grid.Column="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Journal Structure" FontWeight="Bold" Margin="5"/>
-                    <TreeView x:Name="JournalTree" SelectionChanged="OnTreeSelectionChanged">
+                    <TreeView x:Name="JournalTree" SelectionChanged="OnTreeSelectionChanged" Padding="0,0,0,20">
                         <!-- Tree items will be populated from code -->
                     </TreeView>
                 </DockPanel>

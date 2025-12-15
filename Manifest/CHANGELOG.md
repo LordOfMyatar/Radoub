@@ -23,7 +23,7 @@ Implement theme support matching Parley's theme system.
 - Accessibility themes (deuteranopia, protanopia, tritanopia)
 - ThemeManager service
 - Theme color/font application
-- Scrollbar auto-hide preference
+- Scrollbars always visible (no auto-hide)
 - Theme selection persisted in ManifestSettings.json
 - Runtime theme switching
 
