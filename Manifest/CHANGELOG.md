@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.5.0-alpha] - 2025-12-15
-**Branch**: `manifest/sprint/ui-polish` | **PR**: #TBD
+**Branch**: `manifest/sprint/ui-polish` | **PR**: #417
 
 ### Sprint: UI Polish (#391)
 
