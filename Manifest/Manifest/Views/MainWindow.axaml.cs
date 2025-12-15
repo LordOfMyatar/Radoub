@@ -209,11 +209,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _currentFilePath = filePath;
             _isDirty = false;
 
+            // Clear selection and update UI
+            _selectedItem = null;
             UpdateTree();
+            UpdatePropertyPanel();
             UpdateTitle();
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
             UpdateTlkStatus();
             OnPropertyChanged(nameof(HasFile));
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(CanAddEntry));
 
             UnifiedLogger.LogJournal(LogLevel.INFO, $"Loaded journal: {UnifiedLogger.SanitizePath(filePath)} ({_currentJrl.Categories.Count} categories)");
         }
