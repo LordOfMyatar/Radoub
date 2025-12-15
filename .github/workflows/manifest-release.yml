@@ -70,28 +70,23 @@ jobs:
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
     - name: Restore dependencies
-      run: dotnet restore Manifest/Manifest.csproj -r ${{ matrix.runtime }}
-      working-directory: ./Manifest
+      run: dotnet restore Manifest/Manifest/Manifest.csproj -r ${{ matrix.runtime }}
 
     - name: Build project
-      run: dotnet build Manifest/Manifest.csproj --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.version.outputs.version }}
-      working-directory: ./Manifest
+      run: dotnet build Manifest/Manifest/Manifest.csproj --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.version.outputs.version }}
 
     - name: Run tests
-      run: dotnet test Manifest.Tests/Manifest.Tests.csproj --configuration Release --verbosity normal
-      working-directory: ./Manifest
+      run: dotnet test Manifest/Manifest.Tests/Manifest.Tests.csproj --configuration Release --verbosity normal
 
     # Self-contained builds
     - name: Publish (Self-Contained)
       if: matrix.self-contained == true
-      run: dotnet publish Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/${{ matrix.artifact-name }}
-      working-directory: ./Manifest
+      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.version.outputs.version }} -o ./Manifest/publish/${{ matrix.artifact-name }}
 
     # Framework-dependent builds
     - name: Publish (Framework-Dependent)
       if: matrix.self-contained == false
-      run: dotnet publish Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/${{ matrix.artifact-name }}
-      working-directory: ./Manifest
+      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -p:Version=${{ steps.version.outputs.version }} -o ./Manifest/publish/${{ matrix.artifact-name }}
 
     # macOS: Create .app bundle for self-contained builds
     - name: Create macOS App Bundle
@@ -99,14 +94,14 @@ jobs:
       shell: bash
       run: |
         APP_NAME="Manifest.app"
-        BUNDLE_DIR="./publish/${{ matrix.artifact-name }}/$APP_NAME"
+        BUNDLE_DIR="./Manifest/publish/${{ matrix.artifact-name }}/$APP_NAME"
 
         mkdir -p "$BUNDLE_DIR/Contents/MacOS"
         mkdir -p "$BUNDLE_DIR/Contents/Resources"
 
         # Move all published files into app bundle
-        mv ./publish/${{ matrix.artifact-name }}/Manifest "$BUNDLE_DIR/Contents/MacOS/"
-        mv ./publish/${{ matrix.artifact-name }}/*.dylib "$BUNDLE_DIR/Contents/MacOS/" 2>/dev/null || true
+        mv ./Manifest/publish/${{ matrix.artifact-name }}/Manifest "$BUNDLE_DIR/Contents/MacOS/"
+        mv ./Manifest/publish/${{ matrix.artifact-name }}/*.dylib "$BUNDLE_DIR/Contents/MacOS/" 2>/dev/null || true
 
         # Create Info.plist
         cat > "$BUNDLE_DIR/Contents/Info.plist" << EOF
@@ -134,36 +129,32 @@ jobs:
 
         # Make executable
         chmod +x "$BUNDLE_DIR/Contents/MacOS/Manifest"
-      working-directory: ./Manifest
 
     # Package artifacts
     - name: Package Windows Build
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        cd "./publish/${{ matrix.artifact-name }}"
+        cd "./Manifest/publish/${{ matrix.artifact-name }}"
         $archiveName = "../../${{ matrix.artifact-name }}.zip"
         Compress-Archive -Path "*" -DestinationPath $archiveName
         Write-Host "Created: ${{ matrix.artifact-name }}.zip"
-      working-directory: ./Manifest
 
     - name: Package macOS Build
       if: matrix.os == 'macos-latest'
       shell: bash
       run: |
-        cd ./publish/${{ matrix.artifact-name }}
+        cd ./Manifest/publish/${{ matrix.artifact-name }}
         zip -r ../../${{ matrix.artifact-name }}.zip .
         echo "Created: ${{ matrix.artifact-name }}.zip"
-      working-directory: ./Manifest
 
     - name: Package Linux Build
       if: matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
-        cd ./publish/${{ matrix.artifact-name }}
+        cd ./Manifest/publish/${{ matrix.artifact-name }}
         tar -czf ../../${{ matrix.artifact-name }}.tar.gz .
         echo "Created: ${{ matrix.artifact-name }}.tar.gz"
-      working-directory: ./Manifest
 
     # Upload artifacts for release
     - name: Upload artifact

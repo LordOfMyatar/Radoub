@@ -21,24 +21,20 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
-    - name: Restore dependencies
-      run: dotnet restore
-      working-directory: ./Manifest
+    - name: Restore Manifest.Tests
+      run: dotnet restore Manifest/Manifest.Tests/Manifest.Tests.csproj
 
-    - name: Build solution
-      run: dotnet build --configuration Release --no-restore
-      working-directory: ./Manifest
+    - name: Build Manifest.Tests
+      run: dotnet build Manifest/Manifest.Tests/Manifest.Tests.csproj --configuration Release --no-restore
 
     - name: Run Manifest.Tests
       id: manifest-tests
-      run: dotnet test Manifest.Tests/Manifest.Tests.csproj --configuration Release --no-build --verbosity normal
-      working-directory: ./Manifest
+      run: dotnet test Manifest/Manifest.Tests/Manifest.Tests.csproj --configuration Release --no-build --verbosity normal
       continue-on-error: true
 
     - name: Run Radoub.Formats.Tests
       id: formats-tests
-      run: dotnet test Radoub.Formats.Tests/Radoub.Formats.Tests.csproj --configuration Release --verbosity normal
-      working-directory: ./Radoub.Formats
+      run: dotnet test Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj --configuration Release --verbosity normal
       continue-on-error: true
 
     - name: Report test results
