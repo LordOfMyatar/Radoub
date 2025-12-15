@@ -24,6 +24,9 @@ Polish Manifest UI to match BioWare's original journal editor and provide profes
 - Status bar with category/entry counts and file path
 - Tree view context menu
 
+#### Fixed
+- New categories now get unique tags (new_category, new_category_001, etc.)
+
 ---
 
 ## [0.4.0-alpha] - 2025-12-14

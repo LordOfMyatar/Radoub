@@ -289,6 +289,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #region Edit Operations
 
+
     private void OnAddCategoryClick(object? sender, RoutedEventArgs e)
     {
         if (_currentJrl == null) return;
@@ -296,10 +297,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var name = new JrlLocString();
         name.SetString(0, "New Category");
 
+        // Generate unique tag - find next available suffix
+        var existingTags = _currentJrl.Categories.Select(c => c.Tag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var uniqueTag = GenerateUniqueTag("new_category", existingTags);
+
         var newCategory = new JournalCategory
         {
             Name = name,
-            Tag = "new_category",
+            Tag = uniqueTag,
             Priority = 1,
             XP = 0,
             Comment = ""
@@ -313,7 +318,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Select the new category and focus the name field
         SelectNewCategory(newCategory);
 
-        UnifiedLogger.LogJournal(LogLevel.INFO, "Added new category");
+        UnifiedLogger.LogJournal(LogLevel.INFO, $"Added new category with tag: {uniqueTag}");
+    }
+
+    private static string GenerateUniqueTag(string baseTag, HashSet<string> existingTags)
+    {
+        // Try base tag first (for empty journal)
+        if (!existingTags.Contains(baseTag))
+            return baseTag;
+
+        // Find next available suffix starting from 001
+        for (int i = 1; i < 1000; i++)
+        {
+            var candidate = $"{baseTag}_{i:D3}";
+            if (!existingTags.Contains(candidate))
+                return candidate;
+        }
+
+        // Fallback with timestamp if somehow all 999 are taken
+        return $"{baseTag}_{DateTime.Now.Ticks}";
     }
 
     private void OnAddEntryClick(object? sender, RoutedEventArgs e)
