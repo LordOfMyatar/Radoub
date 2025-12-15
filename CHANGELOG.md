@@ -14,6 +14,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.1] - 2025-12-15
+**Branch**: `radoub/docs/dev-docs-to-wiki` | **PR**: #TBD
+
+### Docs: Move Developer Documentation to Wiki (#372)
+
+Migrate developer documentation from `Parley/Documentation/Developer/` to GitHub Wiki.
+
+---
+
 ## [0.8.0] - 2025-12-14
 
 ### Added
