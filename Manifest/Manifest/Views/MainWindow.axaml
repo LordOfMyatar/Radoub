@@ -5,6 +5,7 @@
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Manifest.Views.MainWindow"
         Title="Manifest - Journal Editor"
+        Icon="avares://Manifest/Assets/manifest.ico"
         Width="1000" Height="700"
         MinWidth="600" MinHeight="400">
 
