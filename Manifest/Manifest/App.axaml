@@ -2,37 +2,103 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Manifest.App"
              RequestedThemeVariant="Light">
-    <!-- Light theme by default -->
+    <!-- Light theme by default. Users can switch via View > Settings. -->
 
     <Application.Styles>
         <FluentTheme />
 
-        <!-- Global font styles -->
+        <!-- Theme-aware window background -->
+        <Style Selector="Window">
+            <Setter Property="Background" Value="{DynamicResource ThemeBackground}"/>
+        </Style>
+
+        <!-- Global font styles that respond to settings changes -->
         <Style Selector="TextBlock">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
 
         <Style Selector="TextBox">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
 
         <Style Selector="Button">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="MinHeight" Value="28"/>
         </Style>
 
         <Style Selector="MenuItem">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="CheckBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="RadioButton">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="ListBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
 
         <Style Selector="TreeView">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="TabControl">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="Label">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="NumericUpDown">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <Style Selector="Slider">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+        </Style>
+
+        <!-- Scrollbar visibility - always visible (no auto-hide) -->
+        <Style Selector="ScrollBar">
+            <Setter Property="AllowAutoHide" Value="False"/>
+        </Style>
+
+        <Style Selector="ScrollBar:vertical">
+            <Setter Property="Width" Value="18"/>
+        </Style>
+
+        <Style Selector="ScrollBar:horizontal">
+            <Setter Property="Height" Value="18"/>
         </Style>
     </Application.Styles>
 
     <Application.Resources>
-        <!-- Default font size - will be updated from settings -->
+        <!-- Default font size and family - will be updated from settings -->
         <x:Double x:Key="GlobalFontSize">14</x:Double>
+        <FontFamily x:Key="GlobalFontFamily">$Default</FontFamily>
+
+        <!-- Default theme background - will be overridden by theme manager -->
+        <SolidColorBrush x:Key="ThemeBackground">#FFFFFF</SolidColorBrush>
     </Application.Resources>
 </Application>

@@ -929,6 +929,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         await dialog.ShowDialog(this);
     }
 
+    private void OnPreferencesClick(object? sender, RoutedEventArgs e)
+    {
+        var prefsWindow = new PreferencesWindow();
+        prefsWindow.Show(this);
+    }
+
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
         var dialog = new Window

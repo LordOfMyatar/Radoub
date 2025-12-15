@@ -1,0 +1,50 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.manifest.theme.fluent-light",
+    "name": "Fluent Light",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Microsoft Fluent Design inspired light theme",
+    "type": "theme",
+    "tags": ["official", "light", "fluent"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "standard",
+    "contrast_level": "AA"
+  },
+  "colors": {
+    "background": "#FAFAFA",
+    "sidebar": "#F3F3F3",
+    "text": "#242424",
+    "selection": "#0078D4",
+    "border": "#E1E1E1",
+    "accent": "#0078D4",
+    "error": "#C42B1C",
+    "warning": "#9D5D00",
+    "success": "#0F7B0F",
+    "info": "#0078D4",
+    "tree_entry": "#D13438",
+    "tree_reply": "#0078D4",
+    "tree_link": "#5C5C5C",
+    "title_bar": "#F3F3F3",
+    "title_bar_foreground": "#242424",
+    "button_primary": "#0078D4",
+    "button_secondary": "#F3F3F3",
+    "button_hover": "#106EBE"
+  },
+  "fonts": {
+    "primary": "Segoe UI Variable",
+    "monospace": "Cascadia Code",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 10,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 32,
+    "tree_indent": 16
+  }
+}

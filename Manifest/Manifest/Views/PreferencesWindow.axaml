@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="450"
+        x:Class="Manifest.Views.PreferencesWindow"
+        Title="Preferences - Manifest"
+        Icon="avares://Manifest/Assets/manifest.ico"
+        Width="500" Height="450"
+        MinWidth="400" MinHeight="350"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Preferences" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+
+        <!-- Settings Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="15">
+                <!-- Theme Selection -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Theme" FontWeight="Bold"/>
+                        <TextBlock Text="Choose a color theme for Manifest. Accessibility themes are optimized for color blindness."
+                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                        <ComboBox x:Name="ThemeComboBox" SelectionChanged="OnThemeChanged" HorizontalAlignment="Stretch"/>
+
+                        <!-- Theme Description -->
+                        <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="8" Margin="0,5,0,0" CornerRadius="3">
+                            <StackPanel Spacing="3">
+                                <TextBlock x:Name="ThemeDescriptionText" TextWrapping="Wrap" FontSize="11"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Font Settings -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Font Settings" FontWeight="Bold"/>
+
+                        <!-- Font Size -->
+                        <TextBlock Text="Font Size" FontWeight="Normal"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Slider x:Name="FontSizeSlider" Grid.Column="0"
+                                   Minimum="8" Maximum="24" Value="14"
+                                   TickFrequency="1" IsSnapToTickEnabled="True"
+                                   ValueChanged="OnFontSizeChanged"/>
+                            <TextBlock x:Name="FontSizeLabel" Grid.Column="1"
+                                      Text="14pt" Margin="10,0,0,0" VerticalAlignment="Center" MinWidth="40"/>
+                        </Grid>
+
+                        <!-- Font Family -->
+                        <TextBlock Text="Font Family" FontWeight="Normal" Margin="0,10,0,0"/>
+                        <ComboBox x:Name="FontFamilyComboBox"
+                                 SelectionChanged="OnFontFamilyChanged"
+                                 HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontFamily="{Binding}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- Font Preview -->
+                        <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" Margin="0,10,0,0" CornerRadius="3">
+                            <TextBlock x:Name="FontPreviewText"
+                                      Text="The quick brown fox jumps over the lazy dog. 1234567890"
+                                      TextWrapping="Wrap"
+                                      HorizontalAlignment="Center"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Logging Settings -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Logging" FontWeight="Bold"/>
+
+                        <!-- Log Level -->
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Log Level:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="LogLevelComboBox" SelectionChanged="OnLogLevelChanged" MinWidth="100"/>
+                        </StackPanel>
+
+                        <!-- Log Retention -->
+                        <TextBlock Text="Log Retention (sessions to keep)" Margin="0,10,0,0"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Slider x:Name="LogRetentionSlider" Grid.Column="0"
+                                   Minimum="1" Maximum="10" Value="3"
+                                   TickFrequency="1" IsSnapToTickEnabled="True"
+                                   ValueChanged="OnLogRetentionChanged"/>
+                            <TextBlock x:Name="LogRetentionLabel" Grid.Column="1"
+                                      Text="3" Margin="10,0,0,0" VerticalAlignment="Center" MinWidth="30"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Close Button -->
+        <Button Grid.Row="2" Content="Close" Click="OnCloseClick"
+                HorizontalAlignment="Right" Width="80" Margin="0,15,0,0"/>
+    </Grid>
+</Window>

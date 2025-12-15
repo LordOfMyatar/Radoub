@@ -1,0 +1,51 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.manifest.theme.deuteranopia",
+    "name": "Deuteranopia",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Red-green colorblind friendly theme (deuteranopia)",
+    "type": "theme",
+    "tags": ["official", "accessibility", "colorblind"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "colorblind",
+    "condition": "deuteranopia",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#FFFFFF",
+    "sidebar": "#F5F5F5",
+    "text": "#1A1A1A",
+    "selection": "#0077B6",
+    "border": "#D0D0D0",
+    "accent": "#0077B6",
+    "error": "#E76F51",
+    "warning": "#E9C46A",
+    "success": "#2A9D8F",
+    "info": "#0077B6",
+    "tree_entry": "#E76F51",
+    "tree_reply": "#0077B6",
+    "tree_link": "#757575",
+    "title_bar": "#E0E0E0",
+    "title_bar_foreground": "#1A1A1A",
+    "button_primary": "#0077B6",
+    "button_secondary": "#757575",
+    "button_hover": "#023E8A"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28,
+    "tree_indent": 16
+  }
+}

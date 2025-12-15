@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
+using Avalonia.Media;
+using System.ComponentModel;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using Manifest.Services;
@@ -14,8 +16,20 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
-        // Apply font size from settings
-        ApplyFontSize(SettingsService.Instance.FontSize);
+        // Discover and apply theme
+        ThemeManager.Instance.DiscoverThemes();
+        var themeId = SettingsService.Instance.CurrentThemeId;
+        if (!ThemeManager.Instance.ApplyTheme(themeId))
+        {
+            // Fallback to light theme
+            ThemeManager.Instance.ApplyTheme("org.manifest.theme.light");
+        }
+
+        // Apply font overrides from settings (after theme)
+        ApplyFontSettings();
+
+        // Subscribe to settings changes for dynamic theme/font updates
+        SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
 
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
@@ -34,15 +48,44 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    /// <summary>
-    /// Apply font size globally to all UI elements
-    /// </summary>
-    public static void ApplyFontSize(double fontSize)
+    private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (Application.Current?.Resources != null)
+        switch (e.PropertyName)
         {
-            Application.Current.Resources["GlobalFontSize"] = fontSize;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied global font size: {fontSize}pt");
+            case nameof(SettingsService.CurrentThemeId):
+                ThemeManager.Instance.ApplyTheme(SettingsService.Instance.CurrentThemeId);
+                ApplyFontSettings(); // Re-apply font overrides after theme change
+                break;
+            case nameof(SettingsService.FontSize):
+            case nameof(SettingsService.FontFamily):
+                ApplyFontSettings();
+                break;
+        }
+    }
+
+    private void ApplyFontSettings()
+    {
+        var settings = SettingsService.Instance;
+
+        // Apply font size
+        if (Resources != null)
+        {
+            Resources["GlobalFontSize"] = settings.FontSize;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {settings.FontSize}pt");
+        }
+
+        // Apply font family if set (overrides theme default)
+        if (!string.IsNullOrEmpty(settings.FontFamily) && Resources != null)
+        {
+            try
+            {
+                Resources["GlobalFontFamily"] = new FontFamily(settings.FontFamily);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {settings.FontFamily}");
+            }
+            catch
+            {
+                // Invalid font family - ignore
+            }
         }
     }
 

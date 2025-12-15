@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.4.0-alpha] - 2025-12-14
+**Branch**: `manifest/sprint/theme-support` | **PR**: #415
+
+### Sprint: Theme Support (#390)
+
+Implement theme support matching Parley's theme system.
+
+#### Added
+- Theme loading from `~/Radoub/Manifest/Themes/`
+- Default themes (light, dark, fluent-light, vscode-dark)
+- Accessibility themes (deuteranopia, protanopia, tritanopia)
+- ThemeManager service
+- Theme color/font application
+- Scrollbars always visible (no auto-hide)
+- Theme selection persisted in ManifestSettings.json
+- Runtime theme switching
+
+---
+
 ## [0.3.0-alpha] - 2025-12-14
 **Branch**: `manifest/sprint/tlk-integration` | **PR**: #411
 

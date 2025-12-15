@@ -1,0 +1,51 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.manifest.theme.protanopia",
+    "name": "Protanopia",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Red colorblind friendly theme (protanopia)",
+    "type": "theme",
+    "tags": ["official", "accessibility", "colorblind"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "colorblind",
+    "condition": "protanopia",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#FFFFFF",
+    "sidebar": "#F5F5F5",
+    "text": "#1A1A1A",
+    "selection": "#0466C8",
+    "border": "#D0D0D0",
+    "accent": "#0466C8",
+    "error": "#F4A261",
+    "warning": "#E9C46A",
+    "success": "#2A9D8F",
+    "info": "#0466C8",
+    "tree_entry": "#F4A261",
+    "tree_reply": "#0466C8",
+    "tree_link": "#757575",
+    "title_bar": "#E0E0E0",
+    "title_bar_foreground": "#1A1A1A",
+    "button_primary": "#0466C8",
+    "button_secondary": "#757575",
+    "button_hover": "#033270"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28,
+    "tree_indent": 16
+  }
+}
