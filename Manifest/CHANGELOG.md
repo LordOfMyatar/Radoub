@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.5.0-alpha] - 2025-12-15
+**Branch**: `manifest/sprint/ui-polish` | **PR**: #TBD
+
+### Sprint: UI Polish (#391)
+
+Polish Manifest UI to match BioWare's original journal editor and provide professional UX.
+
+#### Added
+- Toolbar with icons (New Category, New Entry, Delete)
+- Keyboard shortcuts (Ctrl+O, Ctrl+S, Ctrl+Shift+N, Ctrl+E, Delete)
+- Window state persistence (position, size, maximized, panel widths)
+- Status bar with file path and entry count
+- Tree view context menu
+- Tab navigation and accessibility improvements
+
+---
+
 ## [0.4.0-alpha] - 2025-12-14
 **Branch**: `manifest/sprint/theme-support` | **PR**: #415
 
