@@ -6,8 +6,8 @@
         x:Class="Manifest.Views.PreferencesWindow"
         Title="Preferences - Manifest"
         Icon="avares://Manifest/Assets/manifest.ico"
-        Width="500" Height="450"
-        MinWidth="400" MinHeight="350"
+        Width="500" Height="620"
+        MinWidth="400" MinHeight="520"
         WindowStartupLocation="CenterOwner"
         CanResize="True">
 
@@ -23,7 +23,48 @@
 
         <!-- Settings Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="15">
+            <StackPanel Spacing="15" Margin="0,0,15,0">
+                <!-- Game Paths Settings -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Game Paths" FontWeight="Bold"/>
+                        <TextBlock Text="Configure Neverwinter Nights paths for TLK string resolution and resource loading."
+                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                        <!-- Base Game Installation -->
+                        <TextBlock Text="Base Game Installation (Steam/GOG)" FontWeight="Normal" Margin="0,5,0,0"/>
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox x:Name="GamePathTextBox"
+                                    Grid.Column="0"
+                                    Watermark="C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights"
+                                    TextChanged="OnGamePathTextChanged"/>
+                            <Button Grid.Column="1" Content="📁" ToolTip.Tip="Browse for game folder"
+                                   Click="OnBrowseGamePath" Margin="5,0,0,0" Width="32"/>
+                            <Button Grid.Column="2" Content="🔍" ToolTip.Tip="Auto-detect game path"
+                                   Click="OnAutoDetectGamePath" Margin="5,0,0,0" Width="32"/>
+                        </Grid>
+                        <TextBlock x:Name="GamePathValidationText"
+                                  FontSize="11"
+                                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                        <!-- User Documents Path -->
+                        <TextBlock Text="User Documents (modules, override, TLKs)" FontWeight="Normal" Margin="0,10,0,0"/>
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox x:Name="UserPathTextBox"
+                                    Grid.Column="0"
+                                    Watermark="~/Documents/Neverwinter Nights"
+                                    TextChanged="OnUserPathTextChanged"/>
+                            <Button Grid.Column="1" Content="📁" ToolTip.Tip="Browse for user folder"
+                                   Click="OnBrowseUserPath" Margin="5,0,0,0" Width="32"/>
+                            <Button Grid.Column="2" Content="🔍" ToolTip.Tip="Auto-detect user path"
+                                   Click="OnAutoDetectUserPath" Margin="5,0,0,0" Width="32"/>
+                        </Grid>
+                        <TextBlock x:Name="UserPathValidationText"
+                                  FontSize="11"
+                                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Theme Selection -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
                     <StackPanel Spacing="8">

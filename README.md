@@ -16,16 +16,37 @@ A collection of cross-platform tools for creating and editing Neverwinter Nights
 
 Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI, plugin system, and Aurora Engine compatibility.
 
-**Status**: Alpha (v0.1.5)
+**Status**: Alpha (v0.1.66)
 **Platforms**: Windows, Linux, macOS
 **Key Features**:
 - Dialog tree editing with undo/redo
+- Native flowchart view (handles 100+ depth trees)
 - Sound and script browsers
 - Python plugin system with gRPC
-- Color-blind accessible UI
+- Color-blind accessible themes
 - Dark mode and font scaling
 
-**Learn more**: [Parley/README.md](Parley/README.md)
+**Learn more**: [Parley/README.md](Parley/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki)
+
+### Manifest - Journal Editor
+
+Cross-platform journal editor for Neverwinter Nights JRL files.
+
+**Status**: Alpha (v0.7.0)
+**Platforms**: Windows, Linux, macOS
+**Key Features**:
+- Quest category and entry editing
+- TLK string resolution with multi-language support
+- Theme support (dark/light, accessibility themes)
+- Auto-detect game installation paths
+
+**Learn more**: [Manifest Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Manifest)
+
+### Radoub.Formats - Shared Library
+
+Aurora Engine file format parsers used by Parley and Manifest.
+
+**Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF
 
 ---
 

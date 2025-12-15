@@ -18,17 +18,18 @@ Parley is under active development. While the core dialog editing functionality 
 
 ## New Features
 
-### Current (Alpha)
+### Current (v0.1.66-alpha)
 
 - **Native Flowchart View** - Visual dialog tree (View → Flowchart or F5), handles deep trees (100+ depth)
-- Color coded NPCs for multi-npc conversations
-- Themes, Fonts, and Font Sizes
+- Color coded NPCs for multi-NPC conversations
+- Themes, fonts, and font sizes (including accessibility themes)
 - Improved interface for script parameters including auto-trim
 - Script parameter system to avoid typos
 - Modeless dialogs (Settings, Script/Parameter browsers)
-- Cross-platform (Win/Linux. Limited support for Mac)
-- Sound browser (In Progress)
-- Plugin system (In Progress: Python-based, process-isolated, gRPC communication)
+- Cross-platform (Windows, Linux, macOS)
+- Sound browser with BIF archive search
+- Plugin system (Python-based, process-isolated, gRPC communication)
+- Shared GFF parser with Manifest journal editor
 
 ### Roadmap
 

@@ -112,6 +112,40 @@ Scan for:
 - Claude file updates
 - **CODE_PATH_MAP updates** (see below)
 
+**README Currency Check**:
+
+Verify that README files reflect the current state:
+
+| Check | How to Verify |
+|-------|---------------|
+| Version matches CHANGELOG | Compare version in README to latest CHANGELOG entry |
+| Feature list current | New features in CHANGELOG should appear in README |
+| No outdated information | Screenshots, examples, and paths should be current |
+
+Files to check:
+- `README.md` (main repository) - Check Parley/Manifest versions
+- `Parley/README.md` - Check version and feature list
+- `Manifest/README.md` (if exists) - Check version and feature list
+
+**CLAUDE.md Currency Check**:
+
+If the PR includes architectural changes, verify CLAUDE.md files are updated:
+
+| Change Type | CLAUDE.md Update Needed |
+|-------------|------------------------|
+| New tool/subdirectory | ✅ Update Radoub CLAUDE.md structure |
+| New code patterns | ✅ Document in tool-specific CLAUDE.md |
+| New slash commands | ✅ Document in relevant CLAUDE.md |
+| Shared library changes | ✅ Update Radoub CLAUDE.md |
+| New development workflow | ✅ Add to appropriate CLAUDE.md |
+| Bug fixes only | ❌ Not usually needed |
+| Test changes only | ❌ Not usually needed |
+
+Files to check:
+- `CLAUDE.md` (main repository)
+- `Parley/CLAUDE.md`
+- Tool-specific CLAUDE.md files if applicable
+
 **CODE_PATH_MAP Check** (`Parley/Documentation/Developer/CODE_PATH_MAP.md`):
 
 Check the CHANGELOG for this PR and determine if updates are needed:
@@ -192,11 +226,16 @@ Output format:
   - [ ] Version section exists
   - [ ] PR number filled in
   - [ ] Date is today or earlier (not TBD, not future)
+- [x/⚠️] README current: [✅ Up to date / ⚠️ Needs update]
+  - [ ] Version matches CHANGELOG
+  - [ ] Feature list reflects current state
+- [x/⚠️] CLAUDE.md current: [✅ Up to date / ⚠️ Needs update / N/A]
+  - [ ] Architectural changes documented
+  - [ ] New workflows documented
 - [x/⚠️] CODE_PATH_MAP updated: [Needed/Not needed/N/A]
   - [ ] New services documented
   - [ ] New code paths added
   - [ ] Last Updated date current
-- [x/⚠️] README updates: [Needed/Not needed]
 - [x/⚠️] Wiki updates: [Needed/Not needed]
   - [ ] Pages reviewed: [list affected pages]
 
