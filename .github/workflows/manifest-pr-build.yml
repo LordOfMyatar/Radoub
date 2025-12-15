@@ -1,0 +1,42 @@
+name: Manifest PR Build Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Manifest/**'
+      - 'Radoub.Formats/**'
+      - '.github/workflows/manifest-pr-build.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Manifest/Manifest.csproj
+      working-directory: .
+
+    - name: Build Manifest
+      id: build
+      run: dotnet build Manifest/Manifest.csproj --configuration Release --no-restore
+      working-directory: .
+      continue-on-error: true
+
+    - name: Report status
+      if: always()
+      run: |
+        if ("${{ steps.build.outcome }}" -eq "success") {
+          Write-Host "✅ Manifest build successful"
+        } else {
+          Write-Host "❌ Manifest build failed"
+          exit 1
+        }

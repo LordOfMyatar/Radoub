@@ -1,0 +1,260 @@
+name: Manifest Release Build
+
+on:
+  push:
+    tags:
+      - 'manifest-v*'
+
+permissions:
+  contents: write  # Required to create releases
+
+jobs:
+  build-and-release:
+    strategy:
+      matrix:
+        include:
+          # Self-contained builds (recommended for users)
+          - os: windows-latest
+            runtime: win-x64
+            artifact-name: Manifest-win-x64
+            output-ext: .exe
+            self-contained: true
+          - os: macos-latest
+            runtime: osx-arm64
+            artifact-name: Manifest-osx-arm64
+            output-ext: ''
+            self-contained: true
+          - os: ubuntu-latest
+            runtime: linux-x64
+            artifact-name: Manifest-linux-x64
+            output-ext: ''
+            self-contained: true
+          # Framework-dependent builds (smaller, requires .NET 9)
+          - os: windows-latest
+            runtime: win-x64
+            artifact-name: Manifest-win-x64-fd
+            output-ext: .exe
+            self-contained: false
+          - os: macos-latest
+            runtime: osx-arm64
+            artifact-name: Manifest-osx-arm64-fd
+            output-ext: ''
+            self-contained: false
+          - os: ubuntu-latest
+            runtime: linux-x64
+            artifact-name: Manifest-linux-x64-fd
+            output-ext: ''
+            self-contained: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Extract Version from Tag
+      id: version
+      shell: bash
+      run: |
+        # Tag format: manifest-v0.6.0-alpha
+        TAG="${GITHUB_REF#refs/tags/}"
+        VERSION="${TAG#manifest-v}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+    - name: Restore dependencies
+      run: dotnet restore Manifest/Manifest.csproj -r ${{ matrix.runtime }}
+      working-directory: ./Manifest
+
+    - name: Build project
+      run: dotnet build Manifest/Manifest.csproj --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.version.outputs.version }}
+      working-directory: ./Manifest
+
+    - name: Run tests
+      run: dotnet test Manifest.Tests/Manifest.Tests.csproj --configuration Release --verbosity normal
+      working-directory: ./Manifest
+
+    # Self-contained builds
+    - name: Publish (Self-Contained)
+      if: matrix.self-contained == true
+      run: dotnet publish Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/${{ matrix.artifact-name }}
+      working-directory: ./Manifest
+
+    # Framework-dependent builds
+    - name: Publish (Framework-Dependent)
+      if: matrix.self-contained == false
+      run: dotnet publish Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained false -p:PublishSingleFile=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/${{ matrix.artifact-name }}
+      working-directory: ./Manifest
+
+    # macOS: Create .app bundle for self-contained builds
+    - name: Create macOS App Bundle
+      if: matrix.os == 'macos-latest' && matrix.self-contained == true
+      shell: bash
+      run: |
+        APP_NAME="Manifest.app"
+        BUNDLE_DIR="./publish/${{ matrix.artifact-name }}/$APP_NAME"
+
+        mkdir -p "$BUNDLE_DIR/Contents/MacOS"
+        mkdir -p "$BUNDLE_DIR/Contents/Resources"
+
+        # Move all published files into app bundle
+        mv ./publish/${{ matrix.artifact-name }}/Manifest "$BUNDLE_DIR/Contents/MacOS/"
+        mv ./publish/${{ matrix.artifact-name }}/*.dylib "$BUNDLE_DIR/Contents/MacOS/" 2>/dev/null || true
+
+        # Create Info.plist
+        cat > "$BUNDLE_DIR/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>Manifest</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.lnsdevelopment.manifest</string>
+            <key>CFBundleName</key>
+            <string>Manifest</string>
+            <key>CFBundleVersion</key>
+            <string>${{ steps.version.outputs.version }}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ steps.version.outputs.version }}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+
+        # Make executable
+        chmod +x "$BUNDLE_DIR/Contents/MacOS/Manifest"
+      working-directory: ./Manifest
+
+    # Package artifacts
+    - name: Package Windows Build
+      if: matrix.os == 'windows-latest'
+      shell: pwsh
+      run: |
+        cd "./publish/${{ matrix.artifact-name }}"
+        $archiveName = "../../${{ matrix.artifact-name }}.zip"
+        Compress-Archive -Path "*" -DestinationPath $archiveName
+        Write-Host "Created: ${{ matrix.artifact-name }}.zip"
+      working-directory: ./Manifest
+
+    - name: Package macOS Build
+      if: matrix.os == 'macos-latest'
+      shell: bash
+      run: |
+        cd ./publish/${{ matrix.artifact-name }}
+        zip -r ../../${{ matrix.artifact-name }}.zip .
+        echo "Created: ${{ matrix.artifact-name }}.zip"
+      working-directory: ./Manifest
+
+    - name: Package Linux Build
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        cd ./publish/${{ matrix.artifact-name }}
+        tar -czf ../../${{ matrix.artifact-name }}.tar.gz .
+        echo "Created: ${{ matrix.artifact-name }}.tar.gz"
+      working-directory: ./Manifest
+
+    # Upload artifacts for release
+    - name: Upload artifact
+      uses: actions/upload-artifact@v5
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: |
+          Manifest/${{ matrix.artifact-name }}.zip
+          Manifest/${{ matrix.artifact-name }}.tar.gz
+        if-no-files-found: ignore
+
+  create-release:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Extract Version from Tag
+      id: version
+      shell: bash
+      run: |
+        TAG="${GITHUB_REF#refs/tags/}"
+        VERSION="${TAG#manifest-v}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v6
+      with:
+        path: ./artifacts
+
+    - name: Display artifact structure
+      run: |
+        echo "Artifacts downloaded:"
+        find ./artifacts -type f
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ./artifacts/**/*.zip
+          ./artifacts/**/*.tar.gz
+        body: |
+          # Manifest ${{ steps.version.outputs.version }}
+
+          Journal editor for Neverwinter Nights `.jrl` files.
+
+          ## Downloads
+
+          ### Recommended (No .NET Required)
+
+          These bundles include everything needed to run Manifest - just download and run!
+
+          - **Windows**: `Manifest-win-x64.zip` (~50MB)
+            - Extract and run `Manifest.exe`
+          - **macOS**: `Manifest-osx-arm64.zip` (~55MB)
+            - Extract and open `Manifest.app`
+            - Apple Silicon (M1/M2/M3) Macs
+          - **Linux**: `Manifest-linux-x64.tar.gz` (~50MB)
+            - Extract and run `./Manifest`
+
+          ### Advanced (Requires .NET 9 Runtime)
+
+          Smaller downloads for users who already have [.NET 9 Runtime](https://dotnet.microsoft.com/download/dotnet/9.0) installed:
+
+          - **Windows**: `Manifest-win-x64-fd.zip` (~5MB)
+          - **macOS**: `Manifest-osx-arm64-fd.zip` (~5MB)
+          - **Linux**: `Manifest-linux-x64-fd.tar.gz` (~5MB)
+
+          ## Features
+
+          - Open and edit module journal files (`.jrl`)
+          - Create/delete quest categories and entries
+          - TLK string resolution with multi-language support
+          - Theme support (dark/light mode)
+
+          ## Changes
+
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/Manifest/CHANGELOG.md) for detailed changes.
+
+          ## Installation Notes
+
+          **macOS**: You may need to allow the app in System Preferences → Security & Privacy after first launch.
+
+          **Linux**: Make the binary executable: `chmod +x Manifest`
+
+          ---
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

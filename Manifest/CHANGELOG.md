@@ -29,6 +29,13 @@ Comprehensive testing for Manifest: unit tests, integration tests, and regressio
 - 461 Parley.Tests tests (all pass - regression check)
 - 165 Radoub.Formats.Tests (all pass - shared library)
 
+#### CI/CD (#413)
+- GitHub release workflow (`manifest-release.yml`) - triggers on `manifest-v*` tags
+- PR build check workflow (`manifest-pr-build.yml`)
+- PR test workflow (`manifest-pr-tests.yml`)
+- Cross-platform builds (Windows, macOS, Linux)
+- Self-contained and framework-dependent variants
+
 ---
 
 ## [0.5.0-alpha] - 2025-12-15
