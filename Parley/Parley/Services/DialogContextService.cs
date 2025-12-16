@@ -16,6 +16,7 @@ namespace DialogEditor.Services
 
         private Dialog? _currentDialog;
         private string? _currentFileName;
+        private string? _currentFilePath;
         private string? _selectedNodeId;
 
         /// <summary>
@@ -38,6 +39,15 @@ namespace DialogEditor.Services
         {
             get => _currentFileName;
             set => _currentFileName = value;
+        }
+
+        /// <summary>
+        /// Current dialog file full path (for script search, etc.)
+        /// </summary>
+        public string? CurrentFilePath
+        {
+            get => _currentFilePath;
+            set => _currentFilePath = value;
         }
 
         /// <summary>

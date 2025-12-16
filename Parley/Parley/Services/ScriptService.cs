@@ -179,6 +179,17 @@ namespace DialogEditor.Services
         {
             var paths = new List<string>();
 
+            // Add current dialog file's directory first (highest priority - matches Script Browser behavior)
+            var currentFilePath = DialogContextService.Instance.CurrentFilePath;
+            if (!string.IsNullOrEmpty(currentFilePath))
+            {
+                var dialogDir = Path.GetDirectoryName(currentFilePath);
+                if (!string.IsNullOrEmpty(dialogDir) && Directory.Exists(dialogDir))
+                {
+                    paths.Add(dialogDir);
+                }
+            }
+
             // Add Neverwinter Nights installation path
             var nwnPath = SettingsService.Instance.NeverwinterNightsPath;
             if (!string.IsNullOrEmpty(nwnPath) && Directory.Exists(nwnPath))
@@ -194,7 +205,7 @@ namespace DialogEditor.Services
             if (!string.IsNullOrEmpty(currentModulePath) && Directory.Exists(currentModulePath))
             {
                 paths.Add(currentModulePath);
-                
+
                 // Add common module subdirectories
                 var scriptsDir = Path.Combine(currentModulePath, "scripts");
                 if (Directory.Exists(scriptsDir))
@@ -207,7 +218,7 @@ namespace DialogEditor.Services
                 if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
                 {
                     paths.Add(modulePath);
-                    
+
                     var scriptsDir = Path.Combine(modulePath, "scripts");
                     if (Directory.Exists(scriptsDir))
                         paths.Add(scriptsDir);
