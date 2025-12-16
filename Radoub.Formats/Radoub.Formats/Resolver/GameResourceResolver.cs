@@ -145,13 +145,17 @@ public class GameResourceResolver : IDisposable
         var fileName = resRef + extension;
         var filePath = Path.Combine(overridePath, fileName);
 
-        // Case-insensitive search
+        // Case-insensitive search (required for cross-platform support)
         if (!File.Exists(filePath))
         {
-            var files = Directory.GetFiles(overridePath, fileName, SearchOption.TopDirectoryOnly);
-            if (files.Length == 0)
+            // Directory.GetFiles pattern matching is case-sensitive on Linux
+            // Need to enumerate all files and compare case-insensitively
+            var matchingFile = Directory.EnumerateFiles(overridePath, "*" + extension, SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(f => Path.GetFileName(f).Equals(fileName, StringComparison.OrdinalIgnoreCase));
+
+            if (matchingFile == null)
                 return null;
-            filePath = files[0];
+            filePath = matchingFile;
         }
 
         var data = File.ReadAllBytes(filePath);

@@ -32,8 +32,8 @@ namespace Parley.Tests
         public async Task AnalyzeRealWorldDialogDepths()
         {
             var testFiles = Directory.GetFiles(_testFilesPath, "*.dlg")
-                .Where(f => !f.Contains("_exported") && !f.Contains("_fixed") && !f.Contains("test"))
-                .Take(10); // Analyze first 10 non-test files
+                .Where(f => !f.Contains("_exported") && !f.Contains("_fixed") && !f.Contains("test") && !f.Contains("deep"))
+                .Take(10); // Analyze first 10 non-test files (excluding stress test files)
 
             var depthStats = new List<(string filename, int maxDepth, int nodeCount, int entryCount, int replyCount)>();
 
