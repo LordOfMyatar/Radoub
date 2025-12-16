@@ -25,7 +25,22 @@ namespace DialogEditor.Plugins
         private bool _isDisposed;
 
         public string PluginId => _pluginId;
-        public bool IsRunning => _process != null && !_process.HasExited;
+        public bool IsRunning
+        {
+            get
+            {
+                if (_process == null) return false;
+                try
+                {
+                    return !_process.HasExited;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process was created but never started, or already disposed
+                    return false;
+                }
+            }
+        }
         public PluginStatus Status { get; private set; } = PluginStatus.Stopped;
 
         public event EventHandler<PluginCrashedEventArgs>? Crashed;

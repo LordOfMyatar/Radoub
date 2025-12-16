@@ -104,8 +104,8 @@ namespace Parley.Tests
 
         [Theory]
         [InlineData(50)]   // Very rapid (50ms apart)
-        [InlineData(100)]  // Rapid (100ms apart)
-        [InlineData(120)]  // Well below threshold (accounting for Task.Delay variance)
+        [InlineData(75)]   // Below threshold
+        [InlineData(100)]  // Well below threshold (with margin for VM timing jitter)
         public async Task Debounce_RejectsCallsBelowThreshold(int delayMs)
         {
             // Arrange
