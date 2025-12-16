@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.69-alpha] - 2025-12-16
+**Branch**: `parley/feat/browser-tests` | **PR**: #TBD
+
+### Feature: Add Tests for Browser Windows (#441)
+
+Add test coverage for Sound Browser, Script Browser, and NPC Tag Browser windows.
+
+#### Added
+- Unit tests for browser ViewModels
+- FlaUI tests for browser window operations
+
+---
+
 ## [0.1.68-alpha] - 2025-12-16
 **Branch**: `radoub/fix/linux-hak-and-script-preview` | **PR**: #440
 
