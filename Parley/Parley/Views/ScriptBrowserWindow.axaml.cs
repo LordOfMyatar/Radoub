@@ -436,10 +436,13 @@ namespace DialogEditor.Views
 
                 if (Directory.Exists(basePath))
                 {
-                    var scriptFiles = Directory.GetFiles(basePath, scriptFileName, SearchOption.AllDirectories);
-                    if (scriptFiles.Length > 0)
+                    // Use case-insensitive file matching (required for Linux compatibility)
+                    var matchingFile = Directory.EnumerateFiles(basePath, "*.nss", SearchOption.AllDirectories)
+                        .FirstOrDefault(f => Path.GetFileName(f).Equals(scriptFileName, StringComparison.OrdinalIgnoreCase));
+
+                    if (matchingFile != null)
                     {
-                        return await File.ReadAllTextAsync(scriptFiles[0]);
+                        return await File.ReadAllTextAsync(matchingFile);
                     }
                 }
             }

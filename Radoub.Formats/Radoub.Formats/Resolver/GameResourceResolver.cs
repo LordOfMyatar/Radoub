@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Radoub.Formats.Bif;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
@@ -257,8 +258,9 @@ public class GameResourceResolver : IDisposable
                 _hakCache[hakPath] = hak;
             return hak;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[GameResourceResolver] Failed to load HAK '{hakPath}': {ex.GetType().Name}: {ex.Message}");
             return null;
         }
     }
@@ -333,9 +335,9 @@ public class GameResourceResolver : IDisposable
         {
             _keyFile = KeyReader.Read(keyPath);
         }
-        catch
+        catch (Exception ex)
         {
-            // Key file couldn't be loaded
+            Debug.WriteLine($"[GameResourceResolver] Failed to load KEY '{keyPath}': {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -351,8 +353,9 @@ public class GameResourceResolver : IDisposable
                 _bifCache[bifPath] = bif;
             return bif;
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[GameResourceResolver] Failed to load BIF '{bifPath}': {ex.GetType().Name}: {ex.Message}");
             return null;
         }
     }
@@ -402,9 +405,9 @@ public class GameResourceResolver : IDisposable
         {
             _baseTlk = TlkReader.Read(tlkPath);
         }
-        catch
+        catch (Exception ex)
         {
-            // TLK couldn't be loaded
+            Debug.WriteLine($"[GameResourceResolver] Failed to load TLK '{tlkPath}': {ex.GetType().Name}: {ex.Message}");
         }
     }
 
@@ -420,9 +423,9 @@ public class GameResourceResolver : IDisposable
         {
             _customTlk = TlkReader.Read(_config.CustomTlkPath);
         }
-        catch
+        catch (Exception ex)
         {
-            // Custom TLK couldn't be loaded
+            Debug.WriteLine($"[GameResourceResolver] Failed to load custom TLK '{_config.CustomTlkPath}': {ex.GetType().Name}: {ex.Message}");
         }
     }
 

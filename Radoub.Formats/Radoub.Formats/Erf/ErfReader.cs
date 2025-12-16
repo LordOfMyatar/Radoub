@@ -75,8 +75,16 @@ public static class ErfReader
 
     private static void ReadLocalizedStrings(byte[] buffer, ErfFile erf, uint count, uint offset, uint totalSize)
     {
+        // Validate offsets before casting to avoid integer overflow
+        if (offset > int.MaxValue)
+            throw new InvalidDataException($"Localized string offset {offset} exceeds maximum supported value");
+
+        long endOffsetLong = (long)offset + totalSize;
+        if (endOffsetLong > buffer.Length)
+            throw new InvalidDataException($"Localized strings extend beyond file boundary");
+
         var currentOffset = (int)offset;
-        var endOffset = (int)(offset + totalSize);
+        var endOffset = (int)Math.Min(endOffsetLong, int.MaxValue);
 
         for (uint i = 0; i < count; i++)
         {
@@ -88,7 +96,7 @@ public static class ErfReader
             currentOffset += 8;
 
             var text = string.Empty;
-            if (stringSize > 0 && currentOffset + stringSize <= buffer.Length)
+            if (stringSize > 0 && stringSize <= int.MaxValue && currentOffset + (int)stringSize <= buffer.Length)
             {
                 text = Encoding.UTF8.GetString(buffer, currentOffset, (int)stringSize).TrimEnd('\0');
                 currentOffset += (int)stringSize;
@@ -104,10 +112,25 @@ public static class ErfReader
 
     private static void ReadResources(byte[] buffer, ErfFile erf, uint count, uint keyListOffset, uint resourceListOffset)
     {
+        // Validate base offsets before loop to detect overflow early
+        if (keyListOffset > int.MaxValue)
+            throw new InvalidDataException($"Key list offset {keyListOffset} exceeds maximum supported value");
+        if (resourceListOffset > int.MaxValue)
+            throw new InvalidDataException($"Resource list offset {resourceListOffset} exceeds maximum supported value");
+
         for (uint i = 0; i < count; i++)
         {
-            var keyOffset = (int)(keyListOffset + (i * KeyEntrySize));
-            var resOffset = (int)(resourceListOffset + (i * ResourceEntrySize));
+            // Use long arithmetic to detect overflow before casting to int
+            long keyOffsetLong = (long)keyListOffset + ((long)i * KeyEntrySize);
+            long resOffsetLong = (long)resourceListOffset + ((long)i * ResourceEntrySize);
+
+            if (keyOffsetLong > int.MaxValue)
+                throw new InvalidDataException($"Key entry {i} offset {keyOffsetLong} exceeds maximum supported value");
+            if (resOffsetLong > int.MaxValue)
+                throw new InvalidDataException($"Resource entry {i} offset {resOffsetLong} exceeds maximum supported value");
+
+            var keyOffset = (int)keyOffsetLong;
+            var resOffset = (int)resOffsetLong;
 
             if (keyOffset + KeyEntrySize > buffer.Length)
                 throw new InvalidDataException($"Key entry {i} extends beyond file boundary");
@@ -161,6 +184,10 @@ public static class ErfReader
     /// </summary>
     public static byte[] ExtractResource(string erfPath, ErfResourceEntry entry)
     {
+        // Validate size before allocation to prevent overflow
+        if (entry.Size > int.MaxValue)
+            throw new InvalidDataException($"Resource '{entry.ResRef}' size {entry.Size} exceeds maximum supported value");
+
         using var fs = File.OpenRead(erfPath);
         fs.Seek(entry.Offset, SeekOrigin.Begin);
         var data = new byte[entry.Size];
