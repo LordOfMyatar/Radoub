@@ -19,6 +19,10 @@ Final item to complete the Theme System sprint.
 
 #### Changed
 - #179 Separate NPC speaker preferences into dedicated config file
+  - New file: `~/Parley/SpeakerPreferences.json` stores speaker visual preferences
+  - Keeps main `ParleySettings.json` cleaner and focused
+  - Automatic migration from existing settings on first load
+  - Easier to share/backup speaker customizations between users
 
 ---
 

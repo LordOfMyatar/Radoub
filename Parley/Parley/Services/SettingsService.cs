@@ -86,7 +86,9 @@ namespace DialogEditor.Services
         private bool _allowScrollbarAutoHide = false; // Default: always visible
 
         // NPC speaker visual preferences (Issue #16, #36)
-        private Dictionary<string, SpeakerPreferences> _npcSpeakerPreferences = new Dictionary<string, SpeakerPreferences>();
+        // NOTE: Speaker preferences are now stored in SpeakerPreferencesService (Issue #179)
+        // This field is only used for migration from old settings files
+        private Dictionary<string, SpeakerPreferences>? _legacyNpcSpeakerPreferences = null;
         private bool _enableNpcTagColoring = true; // Default: ON (use shape/color per tag)
 
         // Confirmation dialog settings (Issue #14)
@@ -492,29 +494,16 @@ namespace DialogEditor.Services
             }
         }
 
-        // NPC Speaker Visual Preferences (Issue #16, #36)
+        // NPC Speaker Visual Preferences (Issue #16, #36, #179)
+        // Now delegates to SpeakerPreferencesService for storage in separate file
         public Dictionary<string, SpeakerPreferences> NpcSpeakerPreferences
         {
-            get => _npcSpeakerPreferences;
+            get => SpeakerPreferencesService.Instance.Preferences;
         }
 
         public void SetSpeakerPreference(string speakerTag, string? color, SpeakerVisualHelper.SpeakerShape? shape)
         {
-            if (string.IsNullOrEmpty(speakerTag))
-                return;
-
-            if (!_npcSpeakerPreferences.ContainsKey(speakerTag))
-            {
-                _npcSpeakerPreferences[speakerTag] = new SpeakerPreferences();
-            }
-
-            if (color != null)
-                _npcSpeakerPreferences[speakerTag].Color = color;
-
-            if (shape != null)
-                _npcSpeakerPreferences[speakerTag].Shape = shape.ToString();
-
-            SaveSettings();
+            SpeakerPreferencesService.Instance.SetPreference(speakerTag, color, shape);
             OnPropertyChanged(nameof(NpcSpeakerPreferences));
         }
 
@@ -524,16 +513,7 @@ namespace DialogEditor.Services
             if (!_enableNpcTagColoring)
                 return (null, null);
 
-            if (string.IsNullOrEmpty(speakerTag) || !_npcSpeakerPreferences.ContainsKey(speakerTag))
-                return (null, null);
-
-            var prefs = _npcSpeakerPreferences[speakerTag];
-            SpeakerVisualHelper.SpeakerShape? shape = null;
-            if (Enum.TryParse<SpeakerVisualHelper.SpeakerShape>(prefs.Shape, out var parsedShape))
-            {
-                shape = parsedShape;
-            }
-            return (prefs.Color, shape);
+            return SpeakerPreferencesService.Instance.GetPreference(speakerTag);
         }
 
         public bool EnableNpcTagColoring
@@ -705,7 +685,16 @@ namespace DialogEditor.Services
                         _useNewLayout = settings.UseNewLayout;
                         _flowchartLayout = settings.FlowchartLayout ?? "Floating"; // #329: Flowchart layout
                         _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
-                        _npcSpeakerPreferences = settings.NpcSpeakerPreferences ?? new Dictionary<string, SpeakerPreferences>(); // Issue #16, #36
+
+                        // Issue #179: Migrate speaker preferences to separate file
+                        // Store temporarily for migration, then clear from main settings
+                        _legacyNpcSpeakerPreferences = settings.NpcSpeakerPreferences;
+                        if (_legacyNpcSpeakerPreferences != null && _legacyNpcSpeakerPreferences.Count > 0)
+                        {
+                            SpeakerPreferencesService.Instance.MigrateFromSettingsData(_legacyNpcSpeakerPreferences);
+                            _legacyNpcSpeakerPreferences = null; // Clear after migration
+                        }
+
                         _enableNpcTagColoring = settings.EnableNpcTagColoring; // Issue #16, #36
                         _showDeleteConfirmation = settings.ShowDeleteConfirmation; // Issue #14
 
@@ -796,7 +785,8 @@ namespace DialogEditor.Services
                     UseNewLayout = UseNewLayout,
                     FlowchartLayout = FlowchartLayout, // #329: Flowchart layout
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
-                    NpcSpeakerPreferences = NpcSpeakerPreferences, // Issue #16, #36
+                    // Issue #179: NpcSpeakerPreferences moved to SpeakerPreferences.json
+                    // Keep NpcSpeakerPreferences = null to avoid saving back to main settings
                     EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
                     ShowDeleteConfirmation = ShowDeleteConfirmation, // Issue #14
                     NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
