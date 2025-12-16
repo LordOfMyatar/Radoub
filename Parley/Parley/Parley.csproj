@@ -81,7 +81,7 @@
     </PackageReference>
     <PackageReference Include="Google.Protobuf" Version="3.33.2" />
     <!-- Graph layout for native flowchart view (cross-platform) -->
-    <PackageReference Include="AvaloniaGraphControl" Version="0.6.1" />
+    <PackageReference Include="AvaloniaGraphControl" Version="0.7.0" />
     <!-- WebView for CEF-based browser embedding (plugin documentation, help) -->
     <!-- Architecture-specific packages: x64 vs ARM64 (CEF natives are platform-specific) -->
     <!-- Using RuntimeInformation.OSArchitecture for native builds (GitHub Actions macos-latest is ARM64) -->
