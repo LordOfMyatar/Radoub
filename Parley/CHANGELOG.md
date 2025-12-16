@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.69-alpha] - 2025-12-16
+**Branch**: `parley/sprint/ui-polish` | **PR**: #TBD
+
+### Sprint: UI Polish (#443)
+
+Small UI improvements for better UX.
+
+#### Added
+- #419 - Toolbar icons
+- #371 - Documentation menu link opens User Wiki
+- #377 - Flowchart window position persisted
+
+---
+
 ## [0.1.68-alpha] - 2025-12-16
 **Branch**: `radoub/fix/linux-hak-and-script-preview` | **PR**: #440
 
