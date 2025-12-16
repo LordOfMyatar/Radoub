@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.67-alpha] - 2025-12-15
-**Branch**: `parley/sprint/theme-system-184` | **PR**: #TBD
+**Branch**: `parley/sprint/theme-system-184` | **PR**: #439
 
 ### Sprint: Theme System (#184)
 
