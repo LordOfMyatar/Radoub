@@ -16,11 +16,151 @@ public static class ErfReader
 
     /// <summary>
     /// Read an ERF file from a file path.
+    /// WARNING: This loads the entire file into memory. For large files (HAKs),
+    /// use ReadMetadataOnly() instead, then ExtractResource() for specific resources.
     /// </summary>
     public static ErfFile Read(string filePath)
     {
         var buffer = File.ReadAllBytes(filePath);
         return Read(buffer);
+    }
+
+    /// <summary>
+    /// Read only the metadata (header, localized strings, resource list) from an ERF file.
+    /// Does NOT load resource data into memory - suitable for large HAK files.
+    /// Use ExtractResource(string erfPath, ErfResourceEntry entry) to get resource data on demand.
+    /// </summary>
+    public static ErfFile ReadMetadataOnly(string filePath)
+    {
+        using var fs = File.OpenRead(filePath);
+        return ReadMetadataOnly(fs);
+    }
+
+    /// <summary>
+    /// Read only the metadata from an ERF stream.
+    /// </summary>
+    public static ErfFile ReadMetadataOnly(Stream stream)
+    {
+        var erf = new ErfFile();
+
+        // Read header (160 bytes)
+        var header = new byte[HeaderSize];
+        var bytesRead = stream.Read(header, 0, HeaderSize);
+        if (bytesRead < HeaderSize)
+            throw new InvalidDataException($"ERF file too small: {bytesRead} bytes, minimum {HeaderSize}");
+
+        erf.FileType = Encoding.ASCII.GetString(header, 0, 4);
+        erf.FileVersion = Encoding.ASCII.GetString(header, 4, 4);
+
+        if (!ValidFileTypes.Contains(erf.FileType))
+            throw new InvalidDataException($"Invalid ERF file type: '{erf.FileType}', expected one of: {string.Join(", ", ValidFileTypes)}");
+
+        if (erf.FileVersion != "V1.0")
+            throw new InvalidDataException($"Unsupported ERF version: '{erf.FileVersion}', expected 'V1.0'");
+
+        var languageCount = BitConverter.ToUInt32(header, 8);
+        var localizedStringSize = BitConverter.ToUInt32(header, 12);
+        var entryCount = BitConverter.ToUInt32(header, 16);
+        var offsetToLocalizedString = BitConverter.ToUInt32(header, 20);
+        var offsetToKeyList = BitConverter.ToUInt32(header, 24);
+        var offsetToResourceList = BitConverter.ToUInt32(header, 28);
+        erf.BuildYear = BitConverter.ToUInt32(header, 32);
+        erf.BuildDay = BitConverter.ToUInt32(header, 36);
+        erf.DescriptionStrRef = BitConverter.ToUInt32(header, 40);
+
+        // Read localized strings (if any)
+        if (languageCount > 0 && localizedStringSize > 0)
+        {
+            stream.Seek(offsetToLocalizedString, SeekOrigin.Begin);
+            var localizedBuffer = new byte[localizedStringSize];
+            stream.ReadExactly(localizedBuffer, 0, (int)Math.Min(localizedStringSize, int.MaxValue));
+            ReadLocalizedStringsFromBuffer(localizedBuffer, erf, languageCount);
+        }
+
+        // Calculate size needed for key list and resource list
+        var keyListSize = entryCount * KeyEntrySize;
+        var resourceListSize = entryCount * ResourceEntrySize;
+
+        // Read key list
+        stream.Seek(offsetToKeyList, SeekOrigin.Begin);
+        var keyListBuffer = new byte[keyListSize];
+        stream.ReadExactly(keyListBuffer, 0, (int)keyListSize);
+
+        // Read resource list
+        stream.Seek(offsetToResourceList, SeekOrigin.Begin);
+        var resourceListBuffer = new byte[resourceListSize];
+        stream.ReadExactly(resourceListBuffer, 0, (int)resourceListSize);
+
+        // Parse resources from the buffers
+        ReadResourcesFromBuffers(keyListBuffer, resourceListBuffer, erf, entryCount);
+
+        return erf;
+    }
+
+    private static void ReadLocalizedStringsFromBuffer(byte[] buffer, ErfFile erf, uint count)
+    {
+        var currentOffset = 0;
+
+        for (uint i = 0; i < count; i++)
+        {
+            if (currentOffset + 8 > buffer.Length)
+                break;
+
+            var languageId = BitConverter.ToUInt32(buffer, currentOffset);
+            var stringSize = BitConverter.ToUInt32(buffer, currentOffset + 4);
+            currentOffset += 8;
+
+            var text = string.Empty;
+            if (stringSize > 0 && currentOffset + (int)stringSize <= buffer.Length)
+            {
+                text = Encoding.UTF8.GetString(buffer, currentOffset, (int)stringSize).TrimEnd('\0');
+                currentOffset += (int)stringSize;
+            }
+
+            erf.LocalizedStrings.Add(new ErfLocalizedString
+            {
+                LanguageId = languageId,
+                Text = text
+            });
+        }
+    }
+
+    private static void ReadResourcesFromBuffers(byte[] keyListBuffer, byte[] resourceListBuffer, ErfFile erf, uint count)
+    {
+        for (uint i = 0; i < count; i++)
+        {
+            var keyOffset = (int)(i * KeyEntrySize);
+            var resOffset = (int)(i * ResourceEntrySize);
+
+            if (keyOffset + KeyEntrySize > keyListBuffer.Length)
+                break;
+            if (resOffset + ResourceEntrySize > resourceListBuffer.Length)
+                break;
+
+            // Read key entry
+            var rawResRef = Encoding.ASCII.GetString(keyListBuffer, keyOffset, 16);
+            var nullIndex = rawResRef.IndexOf('\0');
+            var resRef = nullIndex >= 0 ? rawResRef.Substring(0, nullIndex) : rawResRef;
+            var resId = BitConverter.ToUInt32(keyListBuffer, keyOffset + 16);
+            var resourceType = BitConverter.ToUInt16(keyListBuffer, keyOffset + 20);
+
+            // Read resource list entry
+            var dataOffset = BitConverter.ToUInt32(resourceListBuffer, resOffset);
+            var dataSize = BitConverter.ToUInt32(resourceListBuffer, resOffset + 4);
+
+            // Skip invalid resource types
+            if (resourceType == 0xFFFF)
+                continue;
+
+            erf.Resources.Add(new ErfResourceEntry
+            {
+                ResRef = resRef,
+                ResId = resId,
+                ResourceType = resourceType,
+                Offset = dataOffset,
+                Size = dataSize
+            });
+        }
     }
 
     /// <summary>

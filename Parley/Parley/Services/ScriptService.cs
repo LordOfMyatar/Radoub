@@ -145,6 +145,12 @@ namespace DialogEditor.Services
 
             var searchPaths = GetScriptSearchPaths();
 
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ScriptService: Searching for '{scriptFileName}' in {searchPaths.Count} paths:");
+            foreach (var path in searchPaths)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Search path: {UnifiedLogger.SanitizePath(path)} (exists: {Directory.Exists(path)})");
+            }
+
             foreach (var searchPath in searchPaths)
             {
                 if (!Directory.Exists(searchPath))

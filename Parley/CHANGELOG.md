@@ -23,6 +23,13 @@ Fixes script preview not working on Linux due to case-sensitive filesystem.
   - Now uses `Directory.EnumerateFiles("*.nss")` with case-insensitive LINQ comparison
 - **Script browser on Linux**: Same fix applied to `ScriptBrowserWindow`
 - **PluginProcess.IsRunning**: Handle `InvalidOperationException` when checking `HasExited` on unstarted processes
+- **BIF sound playback on Linux**: Sound files using IMA ADPCM format (0x0011) now play correctly
+  - Changed Linux audio player preference order: `ffplay` → `paplay` → `aplay`
+  - `aplay` only supports PCM/FLOAT formats, not ADPCM used by many NWN sounds
+  - `ffplay` (FFmpeg) handles all formats including IMA ADPCM
+- **Large BIF file handling**: Added streaming `BifReader.ReadMetadataOnly()` method
+  - Avoids loading entire BIF files into memory when scanning for sounds
+  - Uses on-demand extraction via `SourcePath` for resource data
 
 #### Changed
 - Test timing margins adjusted for VM environments (debounce tests)

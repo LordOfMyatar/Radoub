@@ -538,7 +538,8 @@ namespace DialogEditor.Views
                 }
 
                 // Not cached or outdated - scan HAK
-                var erf = ErfReader.Read(hakPath);
+                // Use ReadMetadataOnly to avoid loading entire file into memory (large HAKs can be 800MB+)
+                var erf = ErfReader.ReadMetadataOnly(hakPath);
                 var wavResources = erf.GetResourcesByType(ResourceTypes.Wav).ToList();
                 var newCacheEntry = new HakCacheEntry
                 {
@@ -743,8 +744,9 @@ namespace DialogEditor.Views
                     return cached;
                 }
 
-                // Load BIF file
-                var bifFile = BifReader.Read(bifPath, keepBuffer: true);
+                // Load BIF file - use ReadMetadataOnly to avoid loading entire file into memory
+                // Resource extraction will use on-demand file access via SourcePath
+                var bifFile = BifReader.ReadMetadataOnly(bifPath);
                 _bifCache[bifPath] = bifFile;
 
                 return bifFile;
@@ -1307,6 +1309,7 @@ namespace DialogEditor.Views
                 // If same file already exists, reuse it (allows replaying same sound)
                 if (_tempExtractedPath == tempPath && File.Exists(tempPath))
                 {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"BIF sound reusing existing temp file: {tempFileName}");
                     return tempPath;
                 }
 
@@ -1318,20 +1321,26 @@ namespace DialogEditor.Views
                 {
                     bifFile = GetOrLoadBifFile(soundInfo.BifInfo.BifPath);
                     if (bifFile == null)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.ERROR, $"BIF file not loaded: {soundInfo.BifInfo.BifPath}");
                         return null;
+                    }
                 }
 
                 var soundData = bifFile.ExtractVariableResource(soundInfo.BifInfo.VariableTableIndex);
                 if (soundData == null)
                 {
-                    UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to extract BIF sound: resource index {soundInfo.BifInfo.VariableTableIndex}");
+                    UnifiedLogger.LogApplication(LogLevel.ERROR,
+                        $"Failed to extract BIF sound: resource index {soundInfo.BifInfo.VariableTableIndex} from {Path.GetFileName(soundInfo.BifInfo.BifPath)}");
                     return null;
                 }
 
                 File.WriteAllBytes(tempPath, soundData);
                 _tempExtractedPath = tempPath;
 
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Extracted BIF sound to temp: {tempFileName}");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Extracted BIF sound to temp: {tempFileName} ({soundData.Length} bytes)");
+
                 return tempPath;
             }
             catch (Exception ex)
