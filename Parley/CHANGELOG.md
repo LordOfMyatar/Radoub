@@ -17,10 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Small UI improvements for better UX.
 
+#### Changed
+- **#419 - Toolbar icons**: Added emoji icons to tree control buttons (📂 Expand All, 📁 Collapse All, ➕ Node, 🗑 Delete)
+- **#371 - Documentation menu**: Help > Documentation now opens the User Wiki instead of the old documentation folder
+
 #### Added
-- #419 - Toolbar icons
-- #371 - Documentation menu link opens User Wiki
-- #377 - Flowchart window position persisted
+- **#377 - Flowchart window persistence**: Flowchart window position and size now saved to settings
+  - Window reopens at last position when opened
+  - Auto-reopens on app launch if it was open when app closed (Floating layout only)
+  - Settings: `FlowchartWindowLeft`, `FlowchartWindowTop`, `FlowchartWindowWidth`, `FlowchartWindowHeight`, `FlowchartWindowOpen`
 
 ---
 

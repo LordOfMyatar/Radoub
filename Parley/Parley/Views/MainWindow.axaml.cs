@@ -167,6 +167,12 @@ namespace DialogEditor.Views
                     _viewModel.StatusMessage = $"Plugins active: {string.Join(", ", startedPlugins)}";
                     UnifiedLogger.LogPlugin(LogLevel.INFO, $"Started plugins: {string.Join(", ", startedPlugins)}");
                 }
+
+                // Auto-open flowchart if it was open when app closed (#377)
+                if (SettingsService.Instance.FlowchartWindowOpen && SettingsService.Instance.FlowchartLayout == "Floating")
+                {
+                    OnFlowchartClick(null, null!);
+                }
             };
             this.Closing += OnWindowClosing;
             this.PositionChanged += (s, e) => _windowPersistenceManager.SaveWindowPosition();
@@ -1121,7 +1127,7 @@ namespace DialogEditor.Views
         {
             try
             {
-                var url = "https://github.com/LordOfMyatar/Radoub/tree/main/Parley/Documentation";
+                var url = "https://github.com/LordOfMyatar/Radoub/wiki";
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = url,
@@ -1207,6 +1213,9 @@ namespace DialogEditor.Views
 
                 // Update with current dialog
                 flowchart.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+
+                // Mark flowchart as open (#377)
+                SettingsService.Instance.FlowchartWindowOpen = true;
 
                 _viewModel.StatusMessage = "Flowchart view opened";
             }
