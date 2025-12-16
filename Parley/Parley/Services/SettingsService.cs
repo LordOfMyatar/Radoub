@@ -69,6 +69,8 @@ namespace DialogEditor.Services
         private double _flowchartWindowWidth = 800;
         private double _flowchartWindowHeight = 600;
         private bool _flowchartWindowOpen = false; // Was flowchart open when app closed?
+        private double _flowchartPanelWidth = 400; // Width of embedded flowchart panel (SideBySide mode)
+        private bool _flowchartVisible = false; // Is flowchart visible (any mode)?
         
         // Game settings
         private string _neverwinterNightsPath = "";
@@ -321,6 +323,18 @@ namespace DialogEditor.Services
         {
             get => _flowchartWindowOpen;
             set { if (SetProperty(ref _flowchartWindowOpen, value)) SaveSettings(); }
+        }
+
+        public double FlowchartPanelWidth
+        {
+            get => _flowchartPanelWidth;
+            set { if (SetProperty(ref _flowchartPanelWidth, Math.Max(200, value))) SaveSettings(); }
+        }
+
+        public bool FlowchartVisible
+        {
+            get => _flowchartVisible;
+            set { if (SetProperty(ref _flowchartVisible, value)) SaveSettings(); }
         }
 
         // Game Settings Properties
@@ -728,6 +742,8 @@ namespace DialogEditor.Services
                         _flowchartWindowWidth = Math.Max(200, settings.FlowchartWindowWidth);
                         _flowchartWindowHeight = Math.Max(150, settings.FlowchartWindowHeight);
                         _flowchartWindowOpen = settings.FlowchartWindowOpen;
+                        _flowchartPanelWidth = Math.Max(200, settings.FlowchartPanelWidth);
+                        _flowchartVisible = settings.FlowchartVisible;
                         _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
 
                         // Issue #179: Migrate speaker preferences to separate file
@@ -834,6 +850,8 @@ namespace DialogEditor.Services
                     FlowchartWindowWidth = FlowchartWindowWidth,
                     FlowchartWindowHeight = FlowchartWindowHeight,
                     FlowchartWindowOpen = FlowchartWindowOpen,
+                    FlowchartPanelWidth = FlowchartPanelWidth,
+                    FlowchartVisible = FlowchartVisible,
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
                     // Issue #179: NpcSpeakerPreferences moved to SpeakerPreferences.json
                     // Keep NpcSpeakerPreferences = null to avoid saving back to main settings
@@ -1032,6 +1050,8 @@ namespace DialogEditor.Services
             public double FlowchartWindowWidth { get; set; } = 800;
             public double FlowchartWindowHeight { get; set; } = 600;
             public bool FlowchartWindowOpen { get; set; } = false;
+            public double FlowchartPanelWidth { get; set; } = 400;
+            public bool FlowchartVisible { get; set; } = false;
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
             public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON

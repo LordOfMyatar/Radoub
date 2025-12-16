@@ -168,10 +168,10 @@ namespace DialogEditor.Views
                     UnifiedLogger.LogPlugin(LogLevel.INFO, $"Started plugins: {string.Join(", ", startedPlugins)}");
                 }
 
-                // Auto-open flowchart if it was open when app closed (#377)
-                if (SettingsService.Instance.FlowchartWindowOpen && SettingsService.Instance.FlowchartLayout == "Floating")
+                // Restore flowchart state on startup (#377)
+                if (SettingsService.Instance.FlowchartVisible)
                 {
-                    OnFlowchartClick(null, null!);
+                    RestoreFlowchartOnStartup();
                 }
             };
             this.Closing += OnWindowClosing;
@@ -1216,6 +1216,7 @@ namespace DialogEditor.Views
 
                 // Mark flowchart as open (#377)
                 SettingsService.Instance.FlowchartWindowOpen = true;
+                SettingsService.Instance.FlowchartVisible = true;
 
                 _viewModel.StatusMessage = "Flowchart view opened";
             }
@@ -1294,9 +1295,11 @@ namespace DialogEditor.Views
                     if (grid.ColumnDefinitions.Count < 5) return;
 
                     // Show columns (indices 3 and 4 are the splitter and panel columns)
+                    // Use saved width or default (#377)
+                    var savedWidth = SettingsService.Instance.FlowchartPanelWidth;
                     grid.ColumnDefinitions[3].Width = new GridLength(5);
-                    grid.ColumnDefinitions[4].Width = new GridLength(400, GridUnitType.Pixel);
-                    grid.ColumnDefinitions[4].MinWidth = 300;
+                    grid.ColumnDefinitions[4].Width = new GridLength(savedWidth, GridUnitType.Pixel);
+                    grid.ColumnDefinitions[4].MinWidth = 200;
 
                     // Show controls
                     splitter.IsVisible = true;
@@ -1309,17 +1312,30 @@ namespace DialogEditor.Views
                         _embeddedFlowchartWired = true;
                     }
 
+                    // Watch for column width changes to save (#377)
+                    grid.ColumnDefinitions[4].PropertyChanged += OnFlowchartColumnWidthChanged;
+
                     // Update with current dialog
                     panel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
                 });
 
             if (success)
             {
+                // Mark flowchart as visible (#377)
+                SettingsService.Instance.FlowchartVisible = true;
                 UnifiedLogger.LogUI(LogLevel.INFO, "Side-by-side flowchart panel shown");
             }
             else
             {
                 UnifiedLogger.LogUI(LogLevel.WARN, "Failed to show Side-by-Side flowchart: one or more controls not found");
+            }
+        }
+
+        private void OnFlowchartColumnWidthChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property.Name == "Width" && sender is ColumnDefinition colDef && colDef.Width.IsAbsolute)
+            {
+                SettingsService.Instance.FlowchartPanelWidth = colDef.Width.Value;
             }
         }
 
@@ -1348,6 +1364,8 @@ namespace DialogEditor.Views
 
             if (success)
             {
+                // Mark flowchart as visible (#377)
+                SettingsService.Instance.FlowchartVisible = true;
                 UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel shown");
             }
             else
@@ -1511,7 +1529,31 @@ namespace DialogEditor.Views
             // Hide all embedded flowchart panels (side-by-side and tabbed)
             HideSideBySideFlowchart();
             HideTabbedFlowchart();
+            // Mark flowchart as not visible (#377)
+            SettingsService.Instance.FlowchartVisible = false;
             UnifiedLogger.LogUI(LogLevel.INFO, "All embedded flowchart panels hidden");
+        }
+
+        /// <summary>
+        /// Restore flowchart visibility on startup based on saved settings (#377)
+        /// </summary>
+        private void RestoreFlowchartOnStartup()
+        {
+            var layout = SettingsService.Instance.FlowchartLayout;
+            UnifiedLogger.LogUI(LogLevel.INFO, $"Restoring flowchart on startup: layout={layout}");
+
+            switch (layout)
+            {
+                case "Floating":
+                    OnFlowchartClick(null, null!);
+                    break;
+                case "SideBySide":
+                    ShowSideBySideFlowchart();
+                    break;
+                case "Tabbed":
+                    ShowTabbedFlowchart();
+                    break;
+            }
         }
 
         private void OnEmbeddedFlowchartNodeClicked(object? sender, FlowchartNode? flowchartNode)
