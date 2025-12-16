@@ -186,11 +186,11 @@
                         <DockPanel>
                             <!-- Tree Control Buttons -->
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
-                                <Button Name="ExpandAllButton" Content="Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
-                                <Button Name="CollapseAllButton" Content="Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                                <Button Name="ExpandAllButton" Content="📂 Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                                <Button Name="CollapseAllButton" Content="📁 Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
                                 <Separator Width="1" Margin="5,0"/>
-                                <Button Name="AddNodeButton" Content="+ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
-                                <Button Name="DeleteNodeButton" Content="Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
+                                <Button Name="AddNodeButton" Content="➕ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
+                                <Button Name="DeleteNodeButton" Content="🗑 Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
                             </StackPanel>
 
                             <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->

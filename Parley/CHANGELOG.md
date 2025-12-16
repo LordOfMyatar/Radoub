@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.69-alpha] - 2025-12-16
+**Branch**: `parley/sprint/ui-polish` | **PR**: #444
+
+### Sprint: UI Polish (#443)
+
+Small UI improvements for better UX.
+
+#### Changed
+- **#419 - Toolbar icons**: Added emoji icons to tree control buttons (📂 Expand All, 📁 Collapse All, ➕ Node, 🗑 Delete)
+- **#371 - Documentation menu**: Help > Documentation now opens the User Wiki instead of the old documentation folder
+
+#### Added
+- **#377 - Flowchart persistence**: Flowchart state now saved across sessions
+  - Floating window: Position and size remembered
+  - SideBySide: Panel width (splitter position) remembered
+  - All modes: Auto-reopens on app launch if was visible when closed
+  - Settings: `FlowchartWindowLeft/Top/Width/Height`, `FlowchartPanelWidth`, `FlowchartVisible`
+
+---
+
 ## [0.1.68-alpha] - 2025-12-16
 **Branch**: `radoub/fix/linux-hak-and-script-preview` | **PR**: #440
 

@@ -62,6 +62,15 @@ namespace DialogEditor.Services
         private string _currentThemeId = "org.parley.theme.light"; // Default theme
         private bool _useNewLayout = false; // Feature flag for new layout (#108)
         private string _flowchartLayout = "Floating"; // Flowchart layout: "Floating", "SideBySide", "Tabbed"
+
+        // Flowchart window settings (#377)
+        private double _flowchartWindowLeft = 100;
+        private double _flowchartWindowTop = 100;
+        private double _flowchartWindowWidth = 800;
+        private double _flowchartWindowHeight = 600;
+        private bool _flowchartWindowOpen = false; // Was flowchart open when app closed?
+        private double _flowchartPanelWidth = 400; // Width of embedded flowchart panel (SideBySide mode)
+        private bool _flowchartVisible = false; // Is flowchart visible (any mode)?
         
         // Game settings
         private string _neverwinterNightsPath = "";
@@ -283,6 +292,49 @@ namespace DialogEditor.Services
                     UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart layout set to {safeValue}");
                 }
             }
+        }
+
+        // Flowchart Window Properties (#377)
+        public double FlowchartWindowLeft
+        {
+            get => _flowchartWindowLeft;
+            set { if (SetProperty(ref _flowchartWindowLeft, value)) SaveSettings(); }
+        }
+
+        public double FlowchartWindowTop
+        {
+            get => _flowchartWindowTop;
+            set { if (SetProperty(ref _flowchartWindowTop, value)) SaveSettings(); }
+        }
+
+        public double FlowchartWindowWidth
+        {
+            get => _flowchartWindowWidth;
+            set { if (SetProperty(ref _flowchartWindowWidth, Math.Max(200, value))) SaveSettings(); }
+        }
+
+        public double FlowchartWindowHeight
+        {
+            get => _flowchartWindowHeight;
+            set { if (SetProperty(ref _flowchartWindowHeight, Math.Max(150, value))) SaveSettings(); }
+        }
+
+        public bool FlowchartWindowOpen
+        {
+            get => _flowchartWindowOpen;
+            set { if (SetProperty(ref _flowchartWindowOpen, value)) SaveSettings(); }
+        }
+
+        public double FlowchartPanelWidth
+        {
+            get => _flowchartPanelWidth;
+            set { if (SetProperty(ref _flowchartPanelWidth, Math.Max(200, value))) SaveSettings(); }
+        }
+
+        public bool FlowchartVisible
+        {
+            get => _flowchartVisible;
+            set { if (SetProperty(ref _flowchartVisible, value)) SaveSettings(); }
         }
 
         // Game Settings Properties
@@ -684,6 +736,14 @@ namespace DialogEditor.Services
 
                         _useNewLayout = settings.UseNewLayout;
                         _flowchartLayout = settings.FlowchartLayout ?? "Floating"; // #329: Flowchart layout
+                        // Flowchart window settings (#377)
+                        _flowchartWindowLeft = settings.FlowchartWindowLeft;
+                        _flowchartWindowTop = settings.FlowchartWindowTop;
+                        _flowchartWindowWidth = Math.Max(200, settings.FlowchartWindowWidth);
+                        _flowchartWindowHeight = Math.Max(150, settings.FlowchartWindowHeight);
+                        _flowchartWindowOpen = settings.FlowchartWindowOpen;
+                        _flowchartPanelWidth = Math.Max(200, settings.FlowchartPanelWidth);
+                        _flowchartVisible = settings.FlowchartVisible;
                         _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
 
                         // Issue #179: Migrate speaker preferences to separate file
@@ -784,6 +844,14 @@ namespace DialogEditor.Services
                     CurrentThemeId = CurrentThemeId,
                     UseNewLayout = UseNewLayout,
                     FlowchartLayout = FlowchartLayout, // #329: Flowchart layout
+                    // Flowchart window settings (#377)
+                    FlowchartWindowLeft = FlowchartWindowLeft,
+                    FlowchartWindowTop = FlowchartWindowTop,
+                    FlowchartWindowWidth = FlowchartWindowWidth,
+                    FlowchartWindowHeight = FlowchartWindowHeight,
+                    FlowchartWindowOpen = FlowchartWindowOpen,
+                    FlowchartPanelWidth = FlowchartPanelWidth,
+                    FlowchartVisible = FlowchartVisible,
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
                     // Issue #179: NpcSpeakerPreferences moved to SpeakerPreferences.json
                     // Keep NpcSpeakerPreferences = null to avoid saving back to main settings
@@ -976,6 +1044,14 @@ namespace DialogEditor.Services
             public string? CurrentThemeId { get; set; } = "org.parley.theme.light";
             public bool UseNewLayout { get; set; } = false;
             public string FlowchartLayout { get; set; } = "Floating"; // #329: Flowchart layout
+            // Flowchart window settings (#377)
+            public double FlowchartWindowLeft { get; set; } = 100;
+            public double FlowchartWindowTop { get; set; } = 100;
+            public double FlowchartWindowWidth { get; set; } = 800;
+            public double FlowchartWindowHeight { get; set; } = 600;
+            public bool FlowchartWindowOpen { get; set; } = false;
+            public double FlowchartPanelWidth { get; set; } = 400;
+            public bool FlowchartVisible { get; set; } = false;
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
             public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON
