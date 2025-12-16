@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.67-alpha] - 2025-12-15
+**Branch**: `parley/sprint/theme-system-184` | **PR**: #TBD
+
+### Sprint: Theme System (#184)
+
+Final item to complete the Theme System sprint.
+
+#### Changed
+- #179 Separate NPC speaker preferences into dedicated config file
+
+---
+
 ## [0.1.66-alpha] - 2025-12-14
 **Branch**: `parley/sprint/shared-gff` | **PR**: #402
 
