@@ -159,10 +159,15 @@ public class BrowserTests : ParleyTestBase
 
     #region Script Browser Tests
 
-    [Fact]
+    [Fact(Skip = "FlaUI cannot navigate Avalonia TabControl - tab clicks don't switch tabs")]
     [Trait("Category", "Browser")]
     public void ScriptBrowser_OpensFromBrowseButton()
     {
+        // Note: This test is skipped because FlaUI cannot reliably navigate Avalonia TabControls.
+        // TabItem.Click() does not switch tabs in Avalonia apps via FlaUI automation.
+        // Script Browser functionality should be verified manually.
+        // See Issue #441 for tracking.
+
         // Arrange
         var testFile = TestPaths.GetTestFile(TestFileName);
         StartApplication($"\"{testFile}\"");
@@ -174,13 +179,10 @@ public class BrowserTests : ParleyTestBase
         // Act - Find Browse... button for Action/Condition script field
         var browseButton = FindScriptBrowseButton();
 
-        if (browseButton == null)
-        {
-            // Script field might not be visible - skip
-            return;
-        }
+        // Fail if button not found - we need to verify this works
+        Assert.True(browseButton != null, "Script Browse button not found - verify Scripts tab is accessible");
 
-        browseButton.AsButton().Click();
+        browseButton!.AsButton().Click();
 
         // Wait for window to open - Script Browser loads scripts asynchronously
         var scriptBrowser = WaitForWindowByTitle("Script Browser", TimeSpan.FromSeconds(5));
@@ -190,10 +192,12 @@ public class BrowserTests : ParleyTestBase
         CloseBrowserWindow(scriptBrowser);
     }
 
-    [Fact]
+    [Fact(Skip = "FlaUI cannot navigate Avalonia TabControl - tab clicks don't switch tabs")]
     [Trait("Category", "Browser")]
     public void ScriptBrowser_HasExpectedControls()
     {
+        // Note: Skipped due to FlaUI/Avalonia TabControl limitations. See ScriptBrowser_OpensFromBrowseButton.
+
         // Arrange
         var testFile = TestPaths.GetTestFile(TestFileName);
         StartApplication($"\"{testFile}\"");
@@ -244,10 +248,12 @@ public class BrowserTests : ParleyTestBase
             $"Missing controls: {string.Join(", ", missingControls)}");
     }
 
-    [Fact]
+    [Fact(Skip = "FlaUI cannot navigate Avalonia TabControl - tab clicks don't switch tabs")]
     [Trait("Category", "Browser")]
     public void ScriptBrowser_CancelClosesWindow()
     {
+        // Note: Skipped due to FlaUI/Avalonia TabControl limitations. See ScriptBrowser_OpensFromBrowseButton.
+
         // Arrange
         var testFile = TestPaths.GetTestFile(TestFileName);
         StartApplication($"\"{testFile}\"");
