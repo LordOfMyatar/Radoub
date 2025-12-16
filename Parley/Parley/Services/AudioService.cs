@@ -193,10 +193,13 @@ namespace DialogEditor.Services
 
     /// <summary>
     /// Linux audio player using aplay command.
+    /// Falls back to paplay (PulseAudio) or ffplay if aplay is unavailable.
     /// </summary>
     internal class LinuxAudioPlayer : IAudioPlayer
     {
         private System.Diagnostics.Process? _process;
+        // Note: Clear this cache (set to null) if you change the player preference order
+        private static string? _cachedPlayer = null;
 
         public event EventHandler? PlaybackStopped;
 
@@ -204,13 +207,43 @@ namespace DialogEditor.Services
         {
             Stop();
 
+            // Find available player (cache the result)
+            var player = GetAvailablePlayer();
+            if (player == null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    "No audio player found. Install aplay (alsa-utils), paplay (pulseaudio-utils), or ffplay (ffmpeg).");
+                throw new InvalidOperationException("No audio player available");
+            }
+
             var startInfo = new System.Diagnostics.ProcessStartInfo
             {
-                FileName = "aplay",
+                FileName = player,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                RedirectStandardError = true
             };
-            startInfo.ArgumentList.Add(filePath); // Safe argument passing
+
+            // Configure arguments based on player
+            if (player == "paplay")
+            {
+                // PulseAudio player
+                startInfo.ArgumentList.Add(filePath);
+            }
+            else if (player == "ffplay")
+            {
+                // FFmpeg player - quiet mode, no video
+                startInfo.ArgumentList.Add("-nodisp");
+                startInfo.ArgumentList.Add("-autoexit");
+                startInfo.ArgumentList.Add("-loglevel");
+                startInfo.ArgumentList.Add("error");
+                startInfo.ArgumentList.Add(filePath);
+            }
+            else
+            {
+                // aplay (default)
+                startInfo.ArgumentList.Add(filePath);
+            }
 
             _process = new System.Diagnostics.Process
             {
@@ -218,17 +251,112 @@ namespace DialogEditor.Services
                 EnableRaisingEvents = true
             };
 
-            _process.Exited += (s, e) => PlaybackStopped?.Invoke(this, EventArgs.Empty);
-            _process.Start();
+            _process.Exited += OnProcessExited;
+            _process.ErrorDataReceived += OnErrorDataReceived;
+
+            try
+            {
+                _process.Start();
+                _process.BeginErrorReadLine();
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"LinuxAudioPlayer: Started {player} for {Path.GetFileName(filePath)} (PID: {_process.Id})");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"LinuxAudioPlayer: Failed to start {player}: {ex.Message}");
+                throw;
+            }
+        }
+
+        private void OnProcessExited(object? sender, EventArgs e)
+        {
+            var exitCode = _process?.ExitCode ?? -1;
+            var processId = _process?.Id ?? 0;
+            if (exitCode != 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"LinuxAudioPlayer: Process (PID: {processId}) exited with code {exitCode}");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LinuxAudioPlayer: Process (PID: {processId}) finished successfully");
+            }
+            PlaybackStopped?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnErrorDataReceived(object sender, System.Diagnostics.DataReceivedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"LinuxAudioPlayer stderr: {e.Data}");
+            }
+        }
+
+        private static string? GetAvailablePlayer()
+        {
+            if (_cachedPlayer != null)
+                return _cachedPlayer;
+
+            // Try players in order of preference
+            // ffplay first because it handles more formats (including IMA ADPCM used in NWN)
+            // paplay second (PulseAudio, good format support)
+            // aplay last (ALSA, PCM only typically)
+            string[] players = { "ffplay", "paplay", "aplay" };
+
+            foreach (var player in players)
+            {
+                if (IsCommandAvailable(player))
+                {
+                    _cachedPlayer = player;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"LinuxAudioPlayer: Using {player}");
+                    return player;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsCommandAvailable(string command)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "which",
+                    Arguments = command,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
+
+                using var process = System.Diagnostics.Process.Start(psi);
+                process?.WaitForExit(1000);
+                return process?.ExitCode == 0;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public void Stop()
         {
-            if (_process != null && !_process.HasExited)
+            if (_process != null)
             {
-                _process.Kill();
-                _process.Dispose();
-                _process = null;
+                try
+                {
+                    if (!_process.HasExited)
+                    {
+                        _process.Kill();
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process already exited
+                }
+                finally
+                {
+                    _process.Dispose();
+                    _process = null;
+                }
             }
         }
 

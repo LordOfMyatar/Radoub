@@ -27,9 +27,14 @@ public class BifFile
     public List<BifFixedResource> FixedResources { get; set; } = new();
 
     /// <summary>
-    /// The raw file buffer (kept for resource extraction).
+    /// The raw file buffer (kept for resource extraction when loaded fully).
     /// </summary>
     internal byte[]? RawBuffer { get; set; }
+
+    /// <summary>
+    /// Path to the source BIF file (for on-demand extraction when not keeping buffer).
+    /// </summary>
+    public string? SourcePath { get; set; }
 
     /// <summary>
     /// Get a variable resource by its index.
@@ -41,38 +46,41 @@ public class BifFile
 
     /// <summary>
     /// Extract a variable resource's raw data.
+    /// Supports both in-memory buffer and on-demand file access.
     /// </summary>
     public byte[]? ExtractVariableResource(int index)
     {
-        if (RawBuffer == null)
-            return null;
-
         var resource = GetVariableResource(index);
         if (resource == null)
             return null;
 
-        if (resource.Offset + resource.FileSize > RawBuffer.Length)
-            return null;
-
-        var data = new byte[resource.FileSize];
-        Array.Copy(RawBuffer, resource.Offset, data, 0, resource.FileSize);
-        return data;
+        return ExtractVariableResource(resource);
     }
 
     /// <summary>
     /// Extract a variable resource's raw data.
+    /// Supports both in-memory buffer and on-demand file access.
     /// </summary>
     public byte[]? ExtractVariableResource(BifVariableResource resource)
     {
-        if (RawBuffer == null)
-            return null;
+        // Try in-memory buffer first
+        if (RawBuffer != null)
+        {
+            if (resource.Offset + resource.FileSize > RawBuffer.Length)
+                return null;
 
-        if (resource.Offset + resource.FileSize > RawBuffer.Length)
-            return null;
+            var data = new byte[resource.FileSize];
+            Array.Copy(RawBuffer, resource.Offset, data, 0, resource.FileSize);
+            return data;
+        }
 
-        var data = new byte[resource.FileSize];
-        Array.Copy(RawBuffer, resource.Offset, data, 0, resource.FileSize);
-        return data;
+        // Fall back to on-demand file access
+        if (!string.IsNullOrEmpty(SourcePath) && File.Exists(SourcePath))
+        {
+            return BifReader.ExtractResource(SourcePath, resource);
+        }
+
+        return null;
     }
 }
 

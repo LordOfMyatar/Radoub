@@ -57,11 +57,11 @@ namespace DialogEditor.Services
                     if (!Directory.Exists(searchPath))
                         continue;
 
-                    var scriptFiles = Directory.GetFiles(searchPath, scriptFileName, SearchOption.AllDirectories);
-
-                    if (scriptFiles.Length > 0)
+                    // Use case-insensitive file matching (required for Linux compatibility)
+                    var matchingFile = FindFileCaseInsensitive(searchPath, scriptFileName);
+                    if (matchingFile != null)
                     {
-                        return scriptFiles[0]; // Return the first match
+                        return matchingFile;
                     }
                 }
 
@@ -70,6 +70,26 @@ namespace DialogEditor.Services
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error finding script file path for '{scriptName}': {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Finds a file by name using case-insensitive matching.
+        /// Required for cross-platform compatibility (Linux filesystems are case-sensitive).
+        /// </summary>
+        private string? FindFileCaseInsensitive(string searchPath, string fileName)
+        {
+            try
+            {
+                // Get all .nss files and compare case-insensitively
+                var allFiles = Directory.EnumerateFiles(searchPath, "*.nss", SearchOption.AllDirectories);
+                return allFiles.FirstOrDefault(f =>
+                    Path.GetFileName(f).Equals(fileName, StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Error searching for file '{fileName}' in '{searchPath}': {ex.Message}");
                 return null;
             }
         }
@@ -119,24 +139,30 @@ namespace DialogEditor.Services
         /// </summary>
         private async Task<string?> SearchForScriptAsync(string scriptName)
         {
-            var scriptFileName = scriptName.EndsWith(".nss", StringComparison.OrdinalIgnoreCase) 
-                ? scriptName 
+            var scriptFileName = scriptName.EndsWith(".nss", StringComparison.OrdinalIgnoreCase)
+                ? scriptName
                 : $"{scriptName}.nss";
 
             var searchPaths = GetScriptSearchPaths();
-            
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ScriptService: Searching for '{scriptFileName}' in {searchPaths.Count} paths:");
+            foreach (var path in searchPaths)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Search path: {UnifiedLogger.SanitizePath(path)} (exists: {Directory.Exists(path)})");
+            }
+
             foreach (var searchPath in searchPaths)
             {
                 if (!Directory.Exists(searchPath))
                     continue;
 
-                var scriptFiles = Directory.GetFiles(searchPath, scriptFileName, SearchOption.AllDirectories);
-                
-                if (scriptFiles.Length > 0)
+                // Use case-insensitive file matching (required for Linux compatibility)
+                var scriptFile = FindFileCaseInsensitive(searchPath, scriptFileName);
+
+                if (scriptFile != null)
                 {
-                    var scriptFile = scriptFiles[0]; // Take the first match
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found script '{scriptName}' at: {UnifiedLogger.SanitizePath(scriptFile)}");
-                    
+
                     try
                     {
                         return await File.ReadAllTextAsync(scriptFile);
@@ -159,6 +185,17 @@ namespace DialogEditor.Services
         {
             var paths = new List<string>();
 
+            // Add current dialog file's directory first (highest priority - matches Script Browser behavior)
+            var currentFilePath = DialogContextService.Instance.CurrentFilePath;
+            if (!string.IsNullOrEmpty(currentFilePath))
+            {
+                var dialogDir = Path.GetDirectoryName(currentFilePath);
+                if (!string.IsNullOrEmpty(dialogDir) && Directory.Exists(dialogDir))
+                {
+                    paths.Add(dialogDir);
+                }
+            }
+
             // Add Neverwinter Nights installation path
             var nwnPath = SettingsService.Instance.NeverwinterNightsPath;
             if (!string.IsNullOrEmpty(nwnPath) && Directory.Exists(nwnPath))
@@ -174,7 +211,7 @@ namespace DialogEditor.Services
             if (!string.IsNullOrEmpty(currentModulePath) && Directory.Exists(currentModulePath))
             {
                 paths.Add(currentModulePath);
-                
+
                 // Add common module subdirectories
                 var scriptsDir = Path.Combine(currentModulePath, "scripts");
                 if (Directory.Exists(scriptsDir))
@@ -187,7 +224,7 @@ namespace DialogEditor.Services
                 if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
                 {
                     paths.Add(modulePath);
-                    
+
                     var scriptsDir = Path.Combine(modulePath, "scripts");
                     if (Directory.Exists(scriptsDir))
                         paths.Add(scriptsDir);

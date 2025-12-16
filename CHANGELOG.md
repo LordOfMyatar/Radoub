@@ -14,6 +14,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.2] - 2025-12-16
+**Branch**: `radoub/fix/linux-hak-and-script-preview` | **PR**: #440
+
+### Fix: Linux HAK Crash and Cross-Platform Compatibility
+
+Fixes critical Linux issues discovered during cross-platform testing.
+
+#### Fixed
+- **ErfReader integer overflow**: Added overflow validation when casting `uint32` offsets to `int`
+  - Prevents crashes when reading large ERF/HAK files (>2.1GB offsets)
+  - Uses `long` arithmetic to detect overflow before casting
+- **GameResourceResolver case-sensitive file lookup**: Fixed override folder lookup on Linux
+  - `Directory.GetFiles` pattern matching is case-sensitive on Linux
+  - Now uses `Directory.EnumerateFiles` with case-insensitive LINQ comparison
+- **Bare exception handlers**: Replaced silent `catch` blocks with proper `catch (Exception ex)` and `Debug.WriteLine` logging
+
+#### Changed
+- CI workflows now run tests on both Windows and Linux (ubuntu-latest)
+- Test artifacts named per-platform (`test-results-windows-latest`, `test-results-ubuntu-latest`)
+
+---
+
 ## [0.8.1] - 2025-12-15
 **Branch**: `radoub/docs/dev-docs-to-wiki` | **PR**: #433
 

@@ -67,6 +67,7 @@ namespace DialogEditor.ViewModels
 
                     // Sync with DialogContextService for plugin access (#227)
                     DialogContextService.Instance.CurrentFileName = value;
+                    DialogContextService.Instance.CurrentFilePath = value;
                 }
             }
         }
