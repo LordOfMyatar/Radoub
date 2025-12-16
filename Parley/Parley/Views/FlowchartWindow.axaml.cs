@@ -1,8 +1,10 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using DialogEditor.Utils;
 
 namespace DialogEditor.Views
 {
@@ -12,6 +14,8 @@ namespace DialogEditor.Views
     /// </summary>
     public partial class FlowchartWindow : Window
     {
+        private bool _isRestoringPosition = false;
+
         /// <summary>
         /// Raised when a flowchart node is clicked.
         /// The FlowchartNode parameter contains the clicked node with context (IsLink, OriginalPointer, etc.)
@@ -25,8 +29,8 @@ namespace DialogEditor.Views
             // Forward node click events from the panel
             FlowchartPanelControl.NodeClicked += (sender, node) => NodeClicked?.Invoke(this, node);
 
-            // Restore window position from settings (#377)
-            RestoreWindowPosition();
+            // Restore window position after window opens (Screens not available in constructor)
+            Opened += async (s, e) => await RestoreWindowPositionAsync();
 
             // Save position when window moves or resizes
             PositionChanged += OnPositionChanged;
@@ -37,11 +41,15 @@ namespace DialogEditor.Views
         /// <summary>
         /// Restore window position and size from settings (#377)
         /// </summary>
-        private void RestoreWindowPosition()
+        private async Task RestoreWindowPositionAsync()
         {
+            _isRestoringPosition = true;
             var settings = SettingsService.Instance;
 
-            // Restore size
+            UnifiedLogger.LogUI(LogLevel.DEBUG,
+                $"Restoring flowchart position: Left={settings.FlowchartWindowLeft}, Top={settings.FlowchartWindowTop}");
+
+            // Restore size first
             Width = settings.FlowchartWindowWidth;
             Height = settings.FlowchartWindowHeight;
 
@@ -54,8 +62,18 @@ namespace DialogEditor.Views
                 if (IsPositionOnScreen(targetPos))
                 {
                     Position = targetPos;
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart position restored to ({targetPos.X}, {targetPos.Y})");
+                }
+                else
+                {
+                    UnifiedLogger.LogUI(LogLevel.WARN,
+                        $"Saved flowchart position ({targetPos.X}, {targetPos.Y}) is off-screen, using default");
                 }
             }
+
+            // Allow position saving after a short delay (to avoid saving the restore itself)
+            await Task.Delay(500);
+            _isRestoringPosition = false;
         }
 
         /// <summary>
@@ -80,12 +98,15 @@ namespace DialogEditor.Views
 
         private void OnPositionChanged(object? sender, PixelPointEventArgs e)
         {
-            SaveWindowPosition();
+            if (!_isRestoringPosition)
+            {
+                SaveWindowPosition();
+            }
         }
 
         private void OnPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (e.Property == WidthProperty || e.Property == HeightProperty)
+            if (!_isRestoringPosition && (e.Property == WidthProperty || e.Property == HeightProperty))
             {
                 SaveWindowPosition();
             }
@@ -104,12 +125,15 @@ namespace DialogEditor.Views
                 settings.FlowchartWindowWidth = Width;
                 settings.FlowchartWindowHeight = Height;
             }
+            UnifiedLogger.LogUI(LogLevel.DEBUG,
+                $"Saved flowchart position: ({Position.X}, {Position.Y}), size: ({Width}x{Height})");
         }
 
         private void OnWindowClosed(object? sender, EventArgs e)
         {
             // Mark flowchart as closed (#377)
             SettingsService.Instance.FlowchartWindowOpen = false;
+            UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart window closed, FlowchartWindowOpen = false");
         }
 
         /// <summary>
