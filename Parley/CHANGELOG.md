@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.68-alpha] - 2025-12-16
+**Branch**: `radoub/fix/linux-hak-and-script-preview` | **PR**: #440
+
+### Fix: Linux Script Preview and Cross-Platform Compatibility
+
+Fixes script preview not working on Linux due to case-sensitive filesystem.
+
+#### Fixed
+- **Script preview on Linux**: `ScriptService` now uses case-insensitive file matching
+  - `Directory.GetFiles("MyScript.nss")` is case-sensitive on Linux (ext4, XFS)
+  - Now uses `Directory.EnumerateFiles("*.nss")` with case-insensitive LINQ comparison
+- **Script browser on Linux**: Same fix applied to `ScriptBrowserWindow`
+- **PluginProcess.IsRunning**: Handle `InvalidOperationException` when checking `HasExited` on unstarted processes
+
+#### Changed
+- Test timing margins adjusted for VM environments (debounce tests)
+- Path traversal tests updated for cross-platform behavior (backslash handling differs on Linux)
+
+---
+
 ## [0.1.67-alpha] - 2025-12-15
 **Branch**: `parley/sprint/theme-system-184` | **PR**: #439
 
