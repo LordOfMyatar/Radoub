@@ -22,10 +22,11 @@ Small UI improvements for better UX.
 - **#371 - Documentation menu**: Help > Documentation now opens the User Wiki instead of the old documentation folder
 
 #### Added
-- **#377 - Flowchart window persistence**: Flowchart window position and size now saved to settings
-  - Window reopens at last position when opened
-  - Auto-reopens on app launch if it was open when app closed (Floating layout only)
-  - Settings: `FlowchartWindowLeft`, `FlowchartWindowTop`, `FlowchartWindowWidth`, `FlowchartWindowHeight`, `FlowchartWindowOpen`
+- **#377 - Flowchart persistence**: Flowchart state now saved across sessions
+  - Floating window: Position and size remembered
+  - SideBySide: Panel width (splitter position) remembered
+  - All modes: Auto-reopens on app launch if was visible when closed
+  - Settings: `FlowchartWindowLeft/Top/Width/Height`, `FlowchartPanelWidth`, `FlowchartVisible`
 
 ---
 
