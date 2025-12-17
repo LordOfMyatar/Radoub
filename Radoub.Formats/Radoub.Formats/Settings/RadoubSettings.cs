@@ -54,6 +54,10 @@ public class RadoubSettings : INotifyPropertyChanged
     private bool _tlkUseFemale = false;
     private Language _defaultLanguage = Language.English;  // Default display language
 
+    // Tool paths - auto-populated when tools run, used for cross-tool integration
+    private string _parleyPath = "";
+    private string _manifestPath = "";
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private RadoubSettings()
@@ -143,6 +147,26 @@ public class RadoubSettings : INotifyPropertyChanged
     /// Get the preferred gender for TLK strings.
     /// </summary>
     public Gender PreferredGender => _tlkUseFemale ? Gender.Female : Gender.Male;
+
+    // Tool path properties - auto-populated by tools for cross-tool discovery
+
+    /// <summary>
+    /// Path to Parley.exe. Auto-set when Parley runs.
+    /// </summary>
+    public string ParleyPath
+    {
+        get => _parleyPath;
+        set { if (SetProperty(ref _parleyPath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Path to Manifest.exe. Auto-set when Manifest runs.
+    /// </summary>
+    public string ManifestPath
+    {
+        get => _manifestPath;
+        set { if (SetProperty(ref _manifestPath, value ?? "")) SaveSettings(); }
+    }
 
     /// <summary>
     /// Check if game paths are configured.
@@ -284,6 +308,10 @@ public class RadoubSettings : INotifyPropertyChanged
                     _tlkLanguage = data.TlkLanguage ?? "";
                     _tlkUseFemale = data.TlkUseFemale;
                     _defaultLanguage = data.DefaultLanguage;
+
+                    // Tool paths
+                    _parleyPath = ExpandPath(data.ParleyPath ?? "");
+                    _manifestPath = ExpandPath(data.ManifestPath ?? "");
                 }
             }
         }
@@ -309,7 +337,11 @@ public class RadoubSettings : INotifyPropertyChanged
                 CurrentModulePath = ContractPath(_currentModulePath),
                 TlkLanguage = _tlkLanguage,
                 TlkUseFemale = _tlkUseFemale,
-                DefaultLanguage = _defaultLanguage
+                DefaultLanguage = _defaultLanguage,
+
+                // Tool paths
+                ParleyPath = ContractPath(_parleyPath),
+                ManifestPath = ContractPath(_manifestPath)
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -378,5 +410,9 @@ public class RadoubSettings : INotifyPropertyChanged
         public string? TlkLanguage { get; set; }
         public bool TlkUseFemale { get; set; }
         public Language DefaultLanguage { get; set; } = Language.English;
+
+        // Tool paths for cross-tool discovery
+        public string? ParleyPath { get; set; }
+        public string? ManifestPath { get; set; }
     }
 }

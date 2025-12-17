@@ -346,18 +346,25 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Find Manifest.exe using settings or auto-detection.
+        /// Find Manifest.exe using shared Radoub settings or auto-detection.
         /// </summary>
         private string? FindManifestPath()
         {
-            // First: Check settings
+            // First: Check shared Radoub settings (set by Manifest when it runs)
+            var sharedPath = Radoub.Formats.Settings.RadoubSettings.Instance.ManifestPath;
+            if (!string.IsNullOrEmpty(sharedPath) && File.Exists(sharedPath))
+            {
+                return sharedPath;
+            }
+
+            // Second: Check Parley-specific settings (legacy or manual override)
             var settingsPath = SettingsService.Instance.ManifestPath;
             if (!string.IsNullOrEmpty(settingsPath) && File.Exists(settingsPath))
             {
                 return settingsPath;
             }
 
-            // Second: Auto-detect common locations
+            // Third: Auto-detect common locations
             var parleyDir = AppDomain.CurrentDomain.BaseDirectory;
             var manifestPaths = new[]
             {
@@ -430,7 +437,7 @@ namespace DialogEditor.Views
 
             panel.Children.Add(new TextBlock
             {
-                Text = "Once installed, set the path in Settings > Tools > Manifest Path",
+                Text = "Install Manifest in the same folder as Parley for automatic detection.",
                 TextWrapping = Avalonia.Media.TextWrapping.Wrap,
                 Foreground = Avalonia.Media.Brushes.Gray,
                 FontStyle = Avalonia.Media.FontStyle.Italic

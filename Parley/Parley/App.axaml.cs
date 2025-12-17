@@ -21,6 +21,9 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
+        // Register this tool's path in shared Radoub settings for cross-tool discovery
+        RegisterToolPath();
+
         // Clean up any leftover temp files from previous sessions (fire-and-forget)
         _ = System.Threading.Tasks.Task.Run(CleanupSoundBrowserTempFiles);
 
@@ -169,6 +172,28 @@ public partial class App : Application
         foreach (var plugin in dataValidationPluginsToRemove)
         {
             BindingPlugins.DataValidators.Remove(plugin);
+        }
+    }
+
+    /// <summary>
+    /// Register Parley's executable path in shared Radoub settings.
+    /// This allows other Radoub tools (like Manifest) to find Parley.
+    /// </summary>
+    private static void RegisterToolPath()
+    {
+        try
+        {
+            var exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+            {
+                Radoub.Formats.Settings.RadoubSettings.Instance.ParleyPath = exePath;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Registered Parley path in shared settings: {UnifiedLogger.SanitizePath(exePath)}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Non-critical - log and continue
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not register tool path: {ex.Message}");
         }
     }
 

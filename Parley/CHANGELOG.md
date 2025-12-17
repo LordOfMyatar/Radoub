@@ -34,6 +34,8 @@ Replace Quest Tag/Entry ComboBoxes with TextBox + Browse pattern and add "Open i
   - Opens Manifest journal editor with selected quest/entry
   - Passes CLI args: `--file path.jrl --quest tag --entry id`
   - Button only enabled when quest is selected
+  - Uses shared RadoubSettings for cross-tool path discovery
+- Parley now registers its path in `~/Radoub/RadoubSettings.json` on startup for cross-tool integration
 
 ---
 
