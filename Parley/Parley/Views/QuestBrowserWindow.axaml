@@ -182,8 +182,8 @@
                     HorizontalAlignment="Right"
                     Spacing="10">
             <Button x:Name="OpenInManifestButton"
-                    Content="Open in Manifest"
-                    Width="120"
+                    Content="Manifest"
+                    Padding="12,4"
                     Click="OnOpenInManifestClick"
                     IsEnabled="False"
                     ToolTip.Tip="Open this quest in Manifest journal editor"/>
