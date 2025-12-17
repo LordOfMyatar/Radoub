@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.70-alpha] - 2025-12-17
+**Branch**: `parley/sprint/use-shared-gff` | **PR**: #TBD
+
+### Sprint: Update Parley to Use Shared GFF (#384)
+
+Migrate Parley's DialogEditor from local GFF parser to shared Radoub.Formats.Gff library.
+
+#### Changed
+-
+
+#### Removed
+-
+
+---
+
 ## [0.1.69-alpha] - 2025-12-16
 **Branch**: `parley/sprint/ui-polish` | **PR**: #444
 
