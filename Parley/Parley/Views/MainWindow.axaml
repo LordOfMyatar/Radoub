@@ -591,7 +591,7 @@
                                          TextChanged="OnQuestTagTextChanged"
                                          LostFocus="OnQuestTagLostFocus"
                                          ToolTip.Tip="Enter quest tag or use Browse to select"/>
-                                <Button Content="..." Width="30" Height="24" Padding="0" Margin="5,0,0,0"
+                                <Button Content="Browse" Height="24" Padding="8,0" Margin="5,0,0,0"
                                         Click="OnBrowseQuestClick"
                                         ToolTip.Tip="Browse quests from module.jrl"/>
                                 <Button Content="✕" Width="24" Height="24" Padding="0" Margin="5,0,0,0"
@@ -614,7 +614,7 @@
                                          TextChanged="OnQuestEntryTextChanged"
                                          LostFocus="OnQuestEntryLostFocus"
                                          ToolTip.Tip="Enter entry ID (e.g., 0, 1, 2) or use Browse to select"/>
-                                <Button Content="..." Width="30" Height="24" Padding="0" Margin="5,0,0,0"
+                                <Button Content="Browse" Height="24" Padding="8,0" Margin="5,0,0,0"
                                         Click="OnBrowseQuestEntryClick"
                                         ToolTip.Tip="Browse entries for current quest"/>
                                 <Button Content="✕" Width="24" Height="24" Padding="0" Margin="5,0,0,0"
