@@ -19,10 +19,21 @@ Replace Quest Tag/Entry ComboBoxes with TextBox + Browse pattern and add "Open i
 
 #### Changed
 - **#166**: Quest Tag and Quest Entry fields now use TextBox with Browse button (like Sound/Script fields)
+  - Users can manually type quest tags (faster for known values)
+  - Browse button opens QuestBrowserWindow for discovery/selection
+  - No need to load entire journal into memory at startup
+  - Quest name looked up on-demand from JournalService cache
 
 #### Added
 - **#166**: QuestBrowserWindow for browsing and selecting journal entries
-- **#416**: "Open in Manifest" button to open journal entry in Manifest editor
+  - Two-pane layout: quests on left, entries on right
+  - Search/filter by quest tag or name
+  - Shows entry preview text and "Quest Complete" indicator
+  - Double-click to select and close
+- **#416**: "Open in Manifest" button in QuestBrowserWindow
+  - Opens Manifest journal editor with selected quest/entry
+  - Passes CLI args: `--file path.jrl --quest tag --entry id`
+  - Button only enabled when quest is selected
 
 ---
 

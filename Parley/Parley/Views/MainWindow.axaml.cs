@@ -3330,152 +3330,363 @@ namespace DialogEditor.Views
             }
         }
 
-        private void OnQuestTagChanged(object? sender, SelectionChangedEventArgs e)
+        /// <summary>
+        /// Handle quest tag text changed - update model and validate against journal.
+        /// Issue #166: TextBox-based quest selection.
+        /// </summary>
+        private void OnQuestTagTextChanged(object? sender, TextChangedEventArgs e)
         {
             if (_selectedNode == null || _isPopulatingProperties) return;
 
-            var questTagComboBox = sender as ComboBox;
-            if (questTagComboBox?.SelectedItem is JournalCategory category)
+            var textBox = sender as TextBox;
+            var questTag = textBox?.Text?.Trim() ?? "";
+
+            var dialogNode = _selectedNode.OriginalNode;
+            dialogNode.Quest = questTag;
+
+            // Update quest name display by looking up in journal
+            UpdateQuestNameDisplay(questTag);
+        }
+
+        /// <summary>
+        /// Handle quest tag lost focus - trigger autosave.
+        /// </summary>
+        private void OnQuestTagLostFocus(object? sender, RoutedEventArgs e)
+        {
+            if (_selectedNode == null || _isPopulatingProperties) return;
+
+            var textBox = sender as TextBox;
+            var questTag = textBox?.Text?.Trim() ?? "";
+
+            // Trigger autosave
+            _viewModel.HasUnsavedChanges = true;
+            TriggerDebouncedAutoSave();
+
+            if (!string.IsNullOrEmpty(questTag))
             {
-                var dialogNode = _selectedNode.OriginalNode;
-                dialogNode.Quest = category.Tag;
-
-                // Update quest name display
-                var questNameTextBlock = this.FindControl<TextBlock>("QuestNameTextBlock");
-                if (questNameTextBlock != null)
-                {
-                    var questName = category.Name?.GetDefault();
-                    questNameTextBlock.Text = string.IsNullOrEmpty(questName)
-                        ? ""
-                        : $"Quest: {questName}";
-                }
-
-                // Update Quest Entry dropdown with entries for this quest
-                var questEntryComboBox = this.FindControl<ComboBox>("QuestEntryComboBox");
-                if (questEntryComboBox != null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Setting Quest Entry dropdown ItemsSource to {category.Entries.Count} entries for quest '{category.Tag}'");
-                    questEntryComboBox.ItemsSource = category.Entries;
-                    // Try to preserve current QuestEntry if it exists in this quest
-                    if (dialogNode.QuestEntry != uint.MaxValue)
-                    {
-                        var matchingEntry = category.Entries.FirstOrDefault(e => e.ID == dialogNode.QuestEntry);
-                        questEntryComboBox.SelectedItem = matchingEntry;
-                    }
-                    else
-                    {
-                        questEntryComboBox.SelectedIndex = -1;
-                    }
-                }
-
-                // Trigger autosave
-                _viewModel.HasUnsavedChanges = true;
-                TriggerDebouncedAutoSave();
-
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest tag set to: {category.Tag}");
-                _viewModel.StatusMessage = $"Quest saved: {category.DisplayName}";
-            }
-            else
-            {
-                // Cleared selection
-                var dialogNode = _selectedNode.OriginalNode;
-                dialogNode.Quest = string.Empty;
-                dialogNode.QuestEntry = uint.MaxValue;
-
-                // Trigger autosave for clearing
-                _viewModel.HasUnsavedChanges = true;
-                TriggerDebouncedAutoSave();
-
-                // Clear quest name display
-                var questNameTextBlock = this.FindControl<TextBlock>("QuestNameTextBlock");
-                if (questNameTextBlock != null)
-                    questNameTextBlock.Text = "";
-
-                var questEntryComboBox = this.FindControl<ComboBox>("QuestEntryComboBox");
-                if (questEntryComboBox != null)
-                {
-                    questEntryComboBox.ItemsSource = null;
-                    questEntryComboBox.SelectedIndex = -1;
-                }
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest tag set to: {questTag}");
+                _viewModel.StatusMessage = $"Quest tag: {questTag}";
             }
         }
 
-        private void OnQuestEntryChanged(object? sender, SelectionChangedEventArgs e)
+        /// <summary>
+        /// Update the quest name display by looking up the tag in the journal.
+        /// </summary>
+        private void UpdateQuestNameDisplay(string questTag)
         {
-            if (_selectedNode == null || _isPopulatingProperties) return;
+            var questNameTextBlock = this.FindControl<TextBlock>("QuestNameTextBlock");
+            if (questNameTextBlock == null) return;
 
-            var questEntryComboBox = sender as ComboBox;
-            if (questEntryComboBox?.SelectedItem is JournalEntry entry)
+            if (string.IsNullOrEmpty(questTag))
             {
-                var dialogNode = _selectedNode.OriginalNode;
-                dialogNode.QuestEntry = entry.ID;
+                questNameTextBlock.Text = "";
+                return;
+            }
 
-                // Update text preview
-                var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
-                if (questEntryPreviewTextBlock != null)
-                {
-                    questEntryPreviewTextBlock.Text = entry.TextPreview;
-                }
-
-                // Update End indicator
-                var questEntryEndTextBlock = this.FindControl<TextBlock>("QuestEntryEndTextBlock");
-                if (questEntryEndTextBlock != null)
-                {
-                    questEntryEndTextBlock.Text = entry.End ? "✓ Quest Complete" : "";
-                }
-
-                // Trigger autosave
-                _viewModel.HasUnsavedChanges = true;
-                TriggerDebouncedAutoSave();
-
-                var endStatus = entry.End ? " (Quest Complete - plays reward sound)" : "";
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest entry set to: {entry.ID}{endStatus}");
-                _viewModel.StatusMessage = $"Quest Entry saved - Entry {entry.ID}: {entry.FullText}{endStatus}";
+            // Look up quest in journal
+            var category = JournalService.Instance.GetCategory(questTag);
+            if (category != null)
+            {
+                var questName = category.Name?.GetDefault();
+                questNameTextBlock.Text = string.IsNullOrEmpty(questName)
+                    ? ""
+                    : $"Quest: {questName}";
             }
             else
             {
-                // Cleared selection
-                var dialogNode = _selectedNode.OriginalNode;
+                questNameTextBlock.Text = "(quest not found in journal)";
+            }
+        }
+
+        /// <summary>
+        /// Handle quest entry text changed - update model.
+        /// Issue #166: TextBox-based quest selection.
+        /// </summary>
+        private void OnQuestEntryTextChanged(object? sender, TextChangedEventArgs e)
+        {
+            if (_selectedNode == null || _isPopulatingProperties) return;
+
+            var textBox = sender as TextBox;
+            var entryText = textBox?.Text?.Trim() ?? "";
+
+            var dialogNode = _selectedNode.OriginalNode;
+
+            if (string.IsNullOrEmpty(entryText))
+            {
                 dialogNode.QuestEntry = uint.MaxValue;
+                ClearQuestEntryDisplay();
+            }
+            else if (uint.TryParse(entryText, out uint entryId))
+            {
+                dialogNode.QuestEntry = entryId;
+                UpdateQuestEntryDisplay(dialogNode.Quest, entryId);
+            }
+            // If not a valid number, don't update model (keep previous value)
+        }
 
-                // Trigger autosave for clearing
-                _viewModel.HasUnsavedChanges = true;
-                TriggerDebouncedAutoSave();
+        /// <summary>
+        /// Handle quest entry lost focus - trigger autosave.
+        /// </summary>
+        private void OnQuestEntryLostFocus(object? sender, RoutedEventArgs e)
+        {
+            if (_selectedNode == null || _isPopulatingProperties) return;
 
-                // Clear displays
-                var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
+            // Trigger autosave
+            _viewModel.HasUnsavedChanges = true;
+            TriggerDebouncedAutoSave();
+
+            var dialogNode = _selectedNode.OriginalNode;
+            if (dialogNode.QuestEntry != uint.MaxValue)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest entry set to: {dialogNode.QuestEntry}");
+                _viewModel.StatusMessage = $"Quest entry: {dialogNode.QuestEntry}";
+            }
+        }
+
+        /// <summary>
+        /// Update the quest entry preview display by looking up in journal.
+        /// </summary>
+        private void UpdateQuestEntryDisplay(string? questTag, uint entryId)
+        {
+            var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
+            var questEntryEndTextBlock = this.FindControl<TextBlock>("QuestEntryEndTextBlock");
+
+            if (string.IsNullOrEmpty(questTag))
+            {
                 if (questEntryPreviewTextBlock != null)
                     questEntryPreviewTextBlock.Text = "";
+                if (questEntryEndTextBlock != null)
+                    questEntryEndTextBlock.Text = "";
+                return;
+            }
 
-                var questEntryEndTextBlock = this.FindControl<TextBlock>("QuestEntryEndTextBlock");
+            // Look up entry in journal
+            var entries = JournalService.Instance.GetEntriesForQuest(questTag);
+            var entry = entries.FirstOrDefault(e => e.ID == entryId);
+
+            if (entry != null)
+            {
+                if (questEntryPreviewTextBlock != null)
+                    questEntryPreviewTextBlock.Text = entry.TextPreview;
+                if (questEntryEndTextBlock != null)
+                    questEntryEndTextBlock.Text = entry.End ? "✓ Quest Complete" : "";
+            }
+            else
+            {
+                if (questEntryPreviewTextBlock != null)
+                    questEntryPreviewTextBlock.Text = "(entry not found)";
                 if (questEntryEndTextBlock != null)
                     questEntryEndTextBlock.Text = "";
             }
         }
 
+        /// <summary>
+        /// Clear the quest entry preview display.
+        /// </summary>
+        private void ClearQuestEntryDisplay()
+        {
+            var questEntryPreviewTextBlock = this.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
+            if (questEntryPreviewTextBlock != null)
+                questEntryPreviewTextBlock.Text = "";
+
+            var questEntryEndTextBlock = this.FindControl<TextBlock>("QuestEntryEndTextBlock");
+            if (questEntryEndTextBlock != null)
+                questEntryEndTextBlock.Text = "";
+        }
+
+        /// <summary>
+        /// Open QuestBrowserWindow to select a quest.
+        /// Issue #166: Browse button for quest selection.
+        /// </summary>
+        private async void OnBrowseQuestClick(object? sender, RoutedEventArgs e)
+        {
+            if (_selectedNode == null) return;
+
+            try
+            {
+                var dialogNode = _selectedNode.OriginalNode;
+                var browser = new QuestBrowserWindow(
+                    _viewModel.CurrentFilePath,
+                    dialogNode.Quest,
+                    dialogNode.QuestEntry != uint.MaxValue ? dialogNode.QuestEntry : null);
+
+                var result = await browser.ShowDialog<QuestBrowserResult?>(this);
+
+                if (result != null && !string.IsNullOrEmpty(result.QuestTag))
+                {
+                    // Update TextBoxes with selected values
+                    var questTagTextBox = this.FindControl<TextBox>("QuestTagTextBox");
+                    if (questTagTextBox != null)
+                    {
+                        _isPopulatingProperties = true;
+                        questTagTextBox.Text = result.QuestTag;
+                        _isPopulatingProperties = false;
+                    }
+
+                    dialogNode.Quest = result.QuestTag;
+                    UpdateQuestNameDisplay(result.QuestTag);
+
+                    if (result.EntryId.HasValue)
+                    {
+                        var questEntryTextBox = this.FindControl<TextBox>("QuestEntryTextBox");
+                        if (questEntryTextBox != null)
+                        {
+                            _isPopulatingProperties = true;
+                            questEntryTextBox.Text = result.EntryId.Value.ToString();
+                            _isPopulatingProperties = false;
+                        }
+
+                        dialogNode.QuestEntry = result.EntryId.Value;
+                        UpdateQuestEntryDisplay(result.QuestTag, result.EntryId.Value);
+                    }
+
+                    // Trigger autosave
+                    _viewModel.HasUnsavedChanges = true;
+                    TriggerDebouncedAutoSave();
+
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest selected from browser: {result.QuestTag}");
+                    _viewModel.StatusMessage = result.EntryId.HasValue
+                        ? $"Quest: {result.QuestTag}, Entry: {result.EntryId.Value}"
+                        : $"Quest: {result.QuestTag}";
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening quest browser: {ex.Message}");
+                _viewModel.StatusMessage = $"Error opening quest browser: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Open QuestBrowserWindow with current quest pre-selected to pick an entry.
+        /// Issue #166: Browse button for quest entry selection.
+        /// </summary>
+        private async void OnBrowseQuestEntryClick(object? sender, RoutedEventArgs e)
+        {
+            if (_selectedNode == null) return;
+
+            try
+            {
+                var dialogNode = _selectedNode.OriginalNode;
+
+                // Pre-select current quest tag (if any)
+                var browser = new QuestBrowserWindow(
+                    _viewModel.CurrentFilePath,
+                    dialogNode.Quest,
+                    dialogNode.QuestEntry != uint.MaxValue ? dialogNode.QuestEntry : null);
+
+                var result = await browser.ShowDialog<QuestBrowserResult?>(this);
+
+                if (result != null)
+                {
+                    // If user selected a different quest, update both fields
+                    if (!string.IsNullOrEmpty(result.QuestTag) && result.QuestTag != dialogNode.Quest)
+                    {
+                        var questTagTextBox = this.FindControl<TextBox>("QuestTagTextBox");
+                        if (questTagTextBox != null)
+                        {
+                            _isPopulatingProperties = true;
+                            questTagTextBox.Text = result.QuestTag;
+                            _isPopulatingProperties = false;
+                        }
+
+                        dialogNode.Quest = result.QuestTag;
+                        UpdateQuestNameDisplay(result.QuestTag);
+                    }
+
+                    // Update entry if selected
+                    if (result.EntryId.HasValue)
+                    {
+                        var questEntryTextBox = this.FindControl<TextBox>("QuestEntryTextBox");
+                        if (questEntryTextBox != null)
+                        {
+                            _isPopulatingProperties = true;
+                            questEntryTextBox.Text = result.EntryId.Value.ToString();
+                            _isPopulatingProperties = false;
+                        }
+
+                        dialogNode.QuestEntry = result.EntryId.Value;
+                        UpdateQuestEntryDisplay(result.QuestTag ?? dialogNode.Quest, result.EntryId.Value);
+
+                        // Trigger autosave
+                        _viewModel.HasUnsavedChanges = true;
+                        TriggerDebouncedAutoSave();
+
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Quest entry selected from browser: {result.EntryId.Value}");
+                        _viewModel.StatusMessage = $"Quest entry: {result.EntryId.Value}";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening quest browser: {ex.Message}");
+                _viewModel.StatusMessage = $"Error opening quest browser: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Clear the quest tag field.
+        /// Issue #166: Clear button for quest tag.
+        /// </summary>
         private void OnClearQuestTagClick(object? sender, RoutedEventArgs e)
         {
             if (_selectedNode == null) return;
 
-            var questTagComboBox = this.FindControl<ComboBox>("QuestTagComboBox");
-            if (questTagComboBox != null)
+            var dialogNode = _selectedNode.OriginalNode;
+            dialogNode.Quest = string.Empty;
+            dialogNode.QuestEntry = uint.MaxValue;
+
+            var questTagTextBox = this.FindControl<TextBox>("QuestTagTextBox");
+            if (questTagTextBox != null)
             {
-                questTagComboBox.SelectedIndex = -1; // Clears selection, triggers OnQuestTagChanged
+                _isPopulatingProperties = true;
+                questTagTextBox.Text = "";
+                _isPopulatingProperties = false;
             }
+
+            var questEntryTextBox = this.FindControl<TextBox>("QuestEntryTextBox");
+            if (questEntryTextBox != null)
+            {
+                _isPopulatingProperties = true;
+                questEntryTextBox.Text = "";
+                _isPopulatingProperties = false;
+            }
+
+            UpdateQuestNameDisplay("");
+            ClearQuestEntryDisplay();
+
+            // Trigger autosave
+            _viewModel.HasUnsavedChanges = true;
+            TriggerDebouncedAutoSave();
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "Quest tag cleared");
             _viewModel.StatusMessage = "Quest tag cleared";
         }
 
+        /// <summary>
+        /// Clear the quest entry field.
+        /// Issue #166: Clear button for quest entry.
+        /// </summary>
         private void OnClearQuestEntryClick(object? sender, RoutedEventArgs e)
         {
             if (_selectedNode == null) return;
 
-            var questEntryComboBox = this.FindControl<ComboBox>("QuestEntryComboBox");
-            if (questEntryComboBox != null)
+            var dialogNode = _selectedNode.OriginalNode;
+            dialogNode.QuestEntry = uint.MaxValue;
+
+            var questEntryTextBox = this.FindControl<TextBox>("QuestEntryTextBox");
+            if (questEntryTextBox != null)
             {
-                questEntryComboBox.SelectedIndex = -1; // Clears selection, triggers OnQuestEntryChanged
+                _isPopulatingProperties = true;
+                questEntryTextBox.Text = "";
+                _isPopulatingProperties = false;
             }
+
+            ClearQuestEntryDisplay();
+
+            // Trigger autosave
+            _viewModel.HasUnsavedChanges = true;
+            TriggerDebouncedAutoSave();
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "Quest entry cleared");
             _viewModel.StatusMessage = "Quest entry cleared";
@@ -3896,7 +4107,8 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Load journal file for the current module and populate quest dropdown
+        /// Load journal file for the current module and cache it for quest lookups.
+        /// Issue #166: No longer populates ComboBox - journal is looked up on-demand.
         /// </summary>
         private async Task LoadJournalForCurrentModuleAsync()
         {
@@ -3932,16 +4144,9 @@ namespace DialogEditor.Views
                     return;
                 }
 
-                // Parse journal file
+                // Parse and cache journal file for on-demand lookups
                 var categories = await JournalService.Instance.ParseJournalFileAsync(journalPath);
-
-                // Populate Quest Tag dropdown
-                var questTagComboBox = this.FindControl<ComboBox>("QuestTagComboBox");
-                if (questTagComboBox != null)
-                {
-                    questTagComboBox.ItemsSource = categories;
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {categories.Count} quest categories from journal");
-                }
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {categories.Count} quest categories from journal");
             }
             catch (Exception ex)
             {
