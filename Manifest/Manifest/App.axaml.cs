@@ -2,7 +2,9 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Media;
+using System;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using Manifest.Services;
@@ -15,6 +17,9 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+
+        // Register this tool's path in shared Radoub settings for cross-tool discovery
+        RegisterToolPath();
 
         // Discover and apply theme
         ThemeManager.Instance.DiscoverThemes();
@@ -99,6 +104,28 @@ public partial class App : Application
         foreach (var plugin in dataValidationPluginsToRemove)
         {
             BindingPlugins.DataValidators.Remove(plugin);
+        }
+    }
+
+    /// <summary>
+    /// Register Manifest's executable path in shared Radoub settings.
+    /// This allows other Radoub tools (like Parley) to find Manifest.
+    /// </summary>
+    private static void RegisterToolPath()
+    {
+        try
+        {
+            var exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+            {
+                Radoub.Formats.Settings.RadoubSettings.Instance.ManifestPath = exePath;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Registered Manifest path in shared settings: {UnifiedLogger.SanitizePath(exePath)}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Non-critical - log and continue
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not register tool path: {ex.Message}");
         }
     }
 }

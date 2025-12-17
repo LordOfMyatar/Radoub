@@ -586,15 +586,14 @@
 
                             <TextBlock Text="Quest Tag:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                <ComboBox x:Name="QuestTagComboBox" MinWidth="150"
-                                          SelectionChanged="OnQuestTagChanged"
-                                          ToolTip.Tip="Select a quest from the module's journal">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding DisplayName}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+                                <TextBox x:Name="QuestTagTextBox" MinWidth="150"
+                                         Watermark="quest_tag"
+                                         TextChanged="OnQuestTagTextChanged"
+                                         LostFocus="OnQuestTagLostFocus"
+                                         ToolTip.Tip="Enter quest tag or use Browse to select"/>
+                                <Button Content="Browse" Height="24" Padding="8,0" Margin="5,0,0,0"
+                                        Click="OnBrowseQuestClick"
+                                        ToolTip.Tip="Browse quests from module.jrl"/>
                                 <Button Content="✕" Width="24" Height="24" Padding="0" Margin="5,0,0,0"
                                         Click="OnClearQuestTagClick"
                                         ToolTip.Tip="Clear quest tag"/>
@@ -610,16 +609,14 @@
 
                             <TextBlock Text="Quest Entry:"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                <ComboBox x:Name="QuestEntryComboBox" MinWidth="150"
-                                          SelectionChanged="OnQuestEntryChanged"
-                                          ToolTip.Tip="Select a quest entry">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding DisplayText}"
-                                                   ToolTip.Tip="{Binding FullText}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+                                <TextBox x:Name="QuestEntryTextBox" MinWidth="100" Width="100"
+                                         Watermark="entry ID"
+                                         TextChanged="OnQuestEntryTextChanged"
+                                         LostFocus="OnQuestEntryLostFocus"
+                                         ToolTip.Tip="Enter entry ID (e.g., 0, 1, 2) or use Browse to select"/>
+                                <Button Content="Browse" Height="24" Padding="8,0" Margin="5,0,0,0"
+                                        Click="OnBrowseQuestEntryClick"
+                                        ToolTip.Tip="Browse entries for current quest"/>
                                 <Button Content="✕" Width="24" Height="24" Padding="0" Margin="5,0,0,0"
                                         Click="OnClearQuestEntryClick"
                                         ToolTip.Tip="Clear quest entry"/>

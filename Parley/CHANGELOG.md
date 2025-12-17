@@ -10,6 +10,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.70-alpha] - 2025-12-17
+**Branch**: `parley/sprint/quest-browser` | **PR**: #446 | **Closes**: #166, #416
+
+### Sprint: Quest Browser & Manifest Integration (#166, #416)
+
+Replace Quest Tag/Entry ComboBoxes with TextBox + Browse pattern and add "Open in Manifest" button.
+
+#### Changed
+- **#166**: Quest Tag and Quest Entry fields now use TextBox with Browse button (like Sound/Script fields)
+  - Users can manually type quest tags (faster for known values)
+  - Browse button opens QuestBrowserWindow for discovery/selection
+  - No need to load entire journal into memory at startup
+  - Quest name looked up on-demand from JournalService cache
+
+#### Added
+- **#166**: QuestBrowserWindow for browsing and selecting journal entries
+  - Two-pane layout: quests on left, entries on right
+  - Search/filter by quest tag or name
+  - Shows entry preview text and "Quest Complete" indicator
+  - Double-click to select and close
+- **#416**: "Open in Manifest" button in QuestBrowserWindow
+  - Opens Manifest journal editor with selected quest/entry
+  - Passes CLI args: `--file path.jrl --quest tag --entry id`
+  - Button only enabled when quest is selected
+  - Uses shared RadoubSettings for cross-tool path discovery
+- Parley and Manifest now register their exe paths in `~/Radoub/RadoubSettings.json` on startup for cross-tool discovery
+
+---
+
 ## [0.1.69-alpha] - 2025-12-16
 **Branch**: `parley/sprint/ui-polish` | **PR**: #444
 

@@ -108,6 +108,9 @@ namespace DialogEditor.Services
         private List<string> _scriptSearchPaths = new List<string>(); // Additional directories to search for scripts
         private bool _warnMissingScriptInDialogDirectory = true; // Warn if script not in same directory as dialog
 
+        // Radoub tool integration settings (#416)
+        private string _manifestPath = ""; // Path to Manifest.exe (journal editor)
+
         // Parameter cache settings
         private bool _enableParameterCache = true; // Default: ON
         private int _maxCachedValuesPerParameter = 10; // Default: 10 MRU values
@@ -617,6 +620,13 @@ namespace DialogEditor.Services
             set { if (SetProperty(ref _warnMissingScriptInDialogDirectory, value)) SaveSettings(); }
         }
 
+        // Radoub Tool Integration Properties (#416)
+        public string ManifestPath
+        {
+            get => _manifestPath;
+            set { if (SetProperty(ref _manifestPath, value ?? "")) SaveSettings(); }
+        }
+
         // Parameter Cache Settings Properties
         public bool EnableParameterCache
         {
@@ -805,6 +815,9 @@ namespace DialogEditor.Services
                         _soundBrowserIncludeHakFiles = settings.SoundBrowserIncludeHakFiles;
                         _soundBrowserIncludeBifFiles = settings.SoundBrowserIncludeBifFiles;
 
+                        // Load Radoub tool integration settings (#416)
+                        _manifestPath = ExpandPath(settings.ManifestPath ?? "");
+
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}, theme={(_isDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
                     }
                     else
@@ -876,7 +889,9 @@ namespace DialogEditor.Services
                     // Sound Browser settings (#220)
                     SoundBrowserIncludeGameResources = SoundBrowserIncludeGameResources,
                     SoundBrowserIncludeHakFiles = SoundBrowserIncludeHakFiles,
-                    SoundBrowserIncludeBifFiles = SoundBrowserIncludeBifFiles
+                    SoundBrowserIncludeBifFiles = SoundBrowserIncludeBifFiles,
+                    // Radoub tool integration (#416)
+                    ManifestPath = ContractPath(ManifestPath)
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -1085,6 +1100,9 @@ namespace DialogEditor.Services
             public bool SoundBrowserIncludeGameResources { get; set; } = false;
             public bool SoundBrowserIncludeHakFiles { get; set; } = false;
             public bool SoundBrowserIncludeBifFiles { get; set; } = false;
+
+            // Radoub tool integration settings (#416)
+            public string ManifestPath { get; set; } = "";
         }
     }
 }

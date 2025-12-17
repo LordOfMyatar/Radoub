@@ -363,81 +363,101 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Populates quest-related fields (tag, entry, preview).
+        /// Issue #166: Updated for TextBox-based quest selection.
         /// </summary>
         public void PopulateQuest(DialogNode dialogNode)
         {
-            if (!string.IsNullOrEmpty(dialogNode.Quest))
+            // Populate quest tag TextBox
+            var questTagTextBox = _window.FindControl<TextBox>("QuestTagTextBox");
+            if (questTagTextBox != null)
             {
-                var questTagComboBox = _window.FindControl<ComboBox>("QuestTagComboBox");
-                if (questTagComboBox?.ItemsSource is List<JournalCategory> categories)
-                {
-                    var matchingCategory = categories.FirstOrDefault(c => c.Tag == dialogNode.Quest);
-                    questTagComboBox.SelectedItem = matchingCategory;
+                questTagTextBox.Text = dialogNode.Quest ?? "";
+            }
 
-                    // Populate quest name display
-                    var questNameTextBlock = _window.FindControl<TextBlock>("QuestNameTextBlock");
-                    if (questNameTextBlock != null && matchingCategory != null)
+            // Populate quest name display by looking up in journal
+            var questNameTextBlock = _window.FindControl<TextBlock>("QuestNameTextBlock");
+            if (questNameTextBlock != null)
+            {
+                if (!string.IsNullOrEmpty(dialogNode.Quest))
+                {
+                    var category = JournalService.Instance.GetCategory(dialogNode.Quest);
+                    if (category != null)
                     {
-                        var questName = matchingCategory.Name?.GetDefault();
+                        var questName = category.Name?.GetDefault();
                         questNameTextBlock.Text = string.IsNullOrEmpty(questName)
                             ? ""
                             : $"Quest: {questName}";
                     }
-
-                    // Populate quest entry dropdown
-                    if (matchingCategory != null)
+                    else
                     {
-                        var questEntryComboBox = _window.FindControl<ComboBox>("QuestEntryComboBox");
-                        if (questEntryComboBox != null)
-                        {
-                            questEntryComboBox.ItemsSource = matchingCategory.Entries;
-
-                            if (dialogNode.QuestEntry != uint.MaxValue)
-                            {
-                                var matchingEntry = matchingCategory.Entries.FirstOrDefault(e => e.ID == dialogNode.QuestEntry);
-                                questEntryComboBox.SelectedItem = matchingEntry;
-
-                                if (matchingEntry != null)
-                                {
-                                    var questEntryPreviewTextBlock = _window.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
-                                    if (questEntryPreviewTextBlock != null)
-                                    {
-                                        questEntryPreviewTextBlock.Text = matchingEntry.TextPreview;
-                                    }
-
-                                    var questEntryEndTextBlock = _window.FindControl<TextBlock>("QuestEntryEndTextBlock");
-                                    if (questEntryEndTextBlock != null)
-                                    {
-                                        questEntryEndTextBlock.Text = matchingEntry.End ? "✓ Quest Complete" : "";
-                                    }
-                                }
-                            }
-                        }
+                        questNameTextBlock.Text = "(quest not found in journal)";
                     }
+                }
+                else
+                {
+                    questNameTextBlock.Text = "";
+                }
+            }
+
+            // Populate quest entry TextBox
+            var questEntryTextBox = _window.FindControl<TextBox>("QuestEntryTextBox");
+            if (questEntryTextBox != null)
+            {
+                questEntryTextBox.Text = dialogNode.QuestEntry != uint.MaxValue
+                    ? dialogNode.QuestEntry.ToString()
+                    : "";
+            }
+
+            // Populate entry preview and end status
+            var questEntryPreviewTextBlock = _window.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
+            var questEntryEndTextBlock = _window.FindControl<TextBlock>("QuestEntryEndTextBlock");
+
+            if (dialogNode.QuestEntry != uint.MaxValue && !string.IsNullOrEmpty(dialogNode.Quest))
+            {
+                var entries = JournalService.Instance.GetEntriesForQuest(dialogNode.Quest);
+                var matchingEntry = entries.FirstOrDefault(e => e.ID == dialogNode.QuestEntry);
+
+                if (matchingEntry != null)
+                {
+                    if (questEntryPreviewTextBlock != null)
+                        questEntryPreviewTextBlock.Text = matchingEntry.TextPreview;
+                    if (questEntryEndTextBlock != null)
+                        questEntryEndTextBlock.Text = matchingEntry.End ? "✓ Quest Complete" : "";
+                }
+                else
+                {
+                    if (questEntryPreviewTextBlock != null)
+                        questEntryPreviewTextBlock.Text = "(entry not found)";
+                    if (questEntryEndTextBlock != null)
+                        questEntryEndTextBlock.Text = "";
                 }
             }
             else
             {
-                ClearQuest();
+                if (questEntryPreviewTextBlock != null)
+                    questEntryPreviewTextBlock.Text = "";
+                if (questEntryEndTextBlock != null)
+                    questEntryEndTextBlock.Text = "";
             }
         }
 
         /// <summary>
         /// Clears quest selection fields.
+        /// Issue #166: Updated for TextBox-based quest selection.
         /// </summary>
         public void ClearQuest()
         {
-            var questTagComboBox = _window.FindControl<ComboBox>("QuestTagComboBox");
-            if (questTagComboBox != null)
-                questTagComboBox.SelectedIndex = -1;
+            var questTagTextBox = _window.FindControl<TextBox>("QuestTagTextBox");
+            if (questTagTextBox != null)
+                questTagTextBox.Text = "";
 
             var questNameTextBlock = _window.FindControl<TextBlock>("QuestNameTextBlock");
             if (questNameTextBlock != null)
                 questNameTextBlock.Text = "";
 
-            var questEntryComboBox = _window.FindControl<ComboBox>("QuestEntryComboBox");
-            if (questEntryComboBox != null)
-                questEntryComboBox.SelectedIndex = -1;
+            var questEntryTextBox = _window.FindControl<TextBox>("QuestEntryTextBox");
+            if (questEntryTextBox != null)
+                questEntryTextBox.Text = "";
 
             var questEntryPreviewTextBlock = _window.FindControl<TextBlock>("QuestEntryPreviewTextBlock");
             if (questEntryPreviewTextBlock != null)

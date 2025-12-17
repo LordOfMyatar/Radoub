@@ -1,0 +1,200 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DialogEditor.Views.QuestBrowserWindow"
+        Title="Quest Browser"
+        Width="700" Height="550"
+        MinWidth="500" MinHeight="400"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark1}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Search Box -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="Search:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <TextBox Grid.Column="1" x:Name="SearchBox"
+                     Watermark="Type to filter quests..."
+                     TextChanged="OnSearchTextChanged"/>
+        </Grid>
+
+        <!-- Main Content: Quest List and Entry List -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Quest List (Left) -->
+            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Padding="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" x:Name="QuestCountLabel"
+                               Text="Quests"
+                               FontWeight="Bold"
+                               Margin="0,0,0,5"/>
+
+                    <ListBox Grid.Row="1" x:Name="QuestListBox"
+                             SelectionChanged="OnQuestSelected"
+                             DoubleTapped="OnQuestDoubleClicked">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Vertical" Margin="2">
+                                    <TextBlock Text="{Binding Tag}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               Foreground="Gray"
+                                               FontSize="11"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
+
+            <!-- Entry List (Right) -->
+            <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Padding="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" x:Name="EntryCountLabel"
+                               Text="Entries"
+                               FontWeight="Bold"
+                               Margin="0,0,0,5"/>
+
+                    <ListBox Grid.Row="1" x:Name="EntryListBox"
+                             SelectionChanged="OnEntrySelected"
+                             DoubleTapped="OnEntryDoubleClicked">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding ID}"
+                                               FontWeight="Bold"
+                                               Width="30"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TextPreview}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="5,0,5,0"
+                                               ToolTip.Tip="{Binding FullText}"/>
+                                    <TextBlock Grid.Column="2"
+                                               Text="✓ Complete"
+                                               Foreground="DarkGreen"
+                                               FontWeight="Bold"
+                                               IsVisible="{Binding End}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Entry Preview -->
+        <Border Grid.Row="2"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderThickness="1"
+                Padding="10"
+                Margin="0,10,0,0"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                MinHeight="60"
+                MaxHeight="100">
+            <ScrollViewer>
+                <TextBlock x:Name="EntryPreviewTextBlock"
+                           Text="Select an entry to preview its text"
+                           TextWrapping="Wrap"
+                           Foreground="Gray"
+                           FontStyle="Italic"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Selected Display -->
+        <Border Grid.Row="3"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderThickness="1"
+                Padding="10"
+                Margin="0,10,0,10"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Selected:"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="1"
+                           x:Name="SelectedLabel"
+                           Text="(none)"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Dialog Buttons -->
+        <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10">
+            <Button x:Name="OpenInManifestButton"
+                    Content="Manifest"
+                    Padding="12,4"
+                    Click="OnOpenInManifestClick"
+                    IsEnabled="False"
+                    ToolTip.Tip="Open this quest in Manifest journal editor"/>
+            <Button Content="OK"
+                    Width="80"
+                    Click="OnOkClick"
+                    IsDefault="True"/>
+            <Button Content="Cancel"
+                    Width="80"
+                    Click="OnCancelClick"
+                    IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
