@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.70-alpha] - 2025-12-17
-**Branch**: `parley/sprint/quest-browser` | **PR**: #446
+**Branch**: `parley/sprint/quest-browser` | **PR**: #446 | **Closes**: #166, #416
 
 ### Sprint: Quest Browser & Manifest Integration (#166, #416)
 
@@ -35,7 +35,7 @@ Replace Quest Tag/Entry ComboBoxes with TextBox + Browse pattern and add "Open i
   - Passes CLI args: `--file path.jrl --quest tag --entry id`
   - Button only enabled when quest is selected
   - Uses shared RadoubSettings for cross-tool path discovery
-- Parley now registers its path in `~/Radoub/RadoubSettings.json` on startup for cross-tool integration
+- Parley and Manifest now register their exe paths in `~/Radoub/RadoubSettings.json` on startup for cross-tool discovery
 
 ---
 
