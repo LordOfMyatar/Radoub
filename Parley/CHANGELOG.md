@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.70-alpha] - 2025-12-17
-**Branch**: `parley/sprint/use-shared-gff` | **PR**: #TBD
+**Branch**: `parley/sprint/use-shared-gff` | **PR**: #445
 
 ### Sprint: Update Parley to Use Shared GFF (#384)
 
