@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.70-alpha] - 2025-12-17
+**Branch**: `parley/sprint/quest-browser` | **PR**: #TBD
+
+### Sprint: Quest Browser & Manifest Integration (#166, #416)
+
+Replace Quest Tag/Entry ComboBoxes with TextBox + Browse pattern and add "Open in Manifest" button.
+
+#### Changed
+- **#166**: Quest Tag and Quest Entry fields now use TextBox with Browse button (like Sound/Script fields)
+
+#### Added
+- **#166**: QuestBrowserWindow for browsing and selecting journal entries
+- **#416**: "Open in Manifest" button to open journal entry in Manifest editor
+
+---
+
 ## [0.1.69-alpha] - 2025-12-16
 **Branch**: `parley/sprint/ui-polish` | **PR**: #444
 
