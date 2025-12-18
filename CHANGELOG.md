@@ -14,6 +14,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.3] - TBD
+**Branch**: `radoub/feat/bundle-package` | **PR**: #TBD
+
+### Feat: Bundle Parley and Manifest into Unified Package (#448)
+
+Create combined release package with shared runtime and dependencies.
+
+#### Added
+- Bundled package build configuration
+- Shared runtime and Avalonia dependencies (~670 MB saved)
+- Combined release artifact
+
+#### Notes
+- CEF (plugin WebView) remains separate/optional for plugin developers
+- Individual tool packages still available for standalone installation
+
+---
+
 ## [0.8.2] - 2025-12-16
 **Branch**: `radoub/fix/linux-hak-and-script-preview` | **PR**: #440
 
