@@ -145,6 +145,9 @@ namespace DialogEditor.Views
             // Subscribe to NPC tag coloring setting changes (Issue #134)
             SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
 
+            // Subscribe to dialog change events for FlowView synchronization (#436, #451)
+            DialogChangeEventBus.Instance.DialogChanged += OnDialogChanged;
+
             // Phase 0 Fix: Hide debug console by default
             HideDebugConsoleByDefault();
 
@@ -284,10 +287,56 @@ namespace DialogEditor.Views
             }
         }
 
-        
-        
-        
-        
+        /// <summary>
+        /// Handles dialog change events from the DialogChangeEventBus.
+        /// Updates FlowView panels when dialog structure changes (#436, #451).
+        /// </summary>
+        private void OnDialogChanged(object? sender, DialogChangeEventArgs e)
+        {
+            // Only update flowchart for structure changes (not selection changes)
+            if (e.ChangeType == DialogChangeType.DialogRefreshed ||
+                e.ChangeType == DialogChangeType.NodeAdded ||
+                e.ChangeType == DialogChangeType.NodeDeleted ||
+                e.ChangeType == DialogChangeType.NodeMoved)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"OnDialogChanged: {e.ChangeType} - updating flowchart panels");
+
+                // Update all flowchart panels to reflect the change
+                UpdateAllFlowchartPanels();
+            }
+        }
+
+        /// <summary>
+        /// Updates all flowchart panels (floating, embedded, tabbed) with current dialog.
+        /// Called when dialog structure changes to keep FlowView in sync with TreeView.
+        /// </summary>
+        private void UpdateAllFlowchartPanels()
+        {
+            if (_viewModel.CurrentDialog == null)
+                return;
+
+            // Update floating flowchart window if open
+            _windows.WithWindow<FlowchartWindow>(WindowKeys.Flowchart, w =>
+            {
+                w.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+            });
+
+            // Update embedded panel (side-by-side layout)
+            var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
+            if (embeddedPanel != null)
+            {
+                embeddedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+            }
+
+            // Update tabbed panel
+            var tabbedPanel = this.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
+            if (tabbedPanel != null)
+            {
+                tabbedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+            }
+        }
+
         private void SetupKeyboardShortcuts()
         {
             UnifiedLogger.LogApplication(LogLevel.INFO, "SetupKeyboardShortcuts: Keyboard handler registered");

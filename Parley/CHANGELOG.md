@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.71-alpha] - TBD
+**Branch**: `parley/sprint/drag-drop-collapse` | **PR**: #TBD
+
+### Sprint: Drag-Drop & Collapsible Nodes (#451)
+
+Advanced navigation and organization features for TreeView and FlowView.
+
+#### Added
+- **DialogChangeEventBus**: Centralized event system for TreeView/FlowView synchronization
+- **#450**: TreeView drag-drop node reordering (Aurora Toolset parity)
+- **#251**: FlowView collapse/expand subtrees
+- **#240**: FlowView visual node repositioning
+
+#### Fixed
+- **#436**: FlowView now updates when nodes are added/deleted/moved
+
+---
+
 ## [0.1.70-alpha] - 2025-12-17
 **Branch**: `parley/sprint/quest-browser` | **PR**: #446 | **Closes**: #166, #416
 

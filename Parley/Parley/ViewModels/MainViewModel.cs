@@ -1130,6 +1130,10 @@ namespace DialogEditor.ViewModels
             Dispatcher.UIThread.Post(() =>
             {
                 _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
+
+                // Notify subscribers that the dialog structure was refreshed
+                // This allows FlowView and other components to update automatically
+                DialogChangeEventBus.Instance.PublishDialogRefreshed("RefreshTreeView");
             }, global::Avalonia.Threading.DispatcherPriority.Loaded);
         }
 
@@ -1150,6 +1154,9 @@ namespace DialogEditor.ViewModels
                 Dispatcher.UIThread.Post(() =>
                 {
                     _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
+
+                    // Notify subscribers that the dialog structure was refreshed
+                    DialogChangeEventBus.Instance.PublishDialogRefreshed("RefreshTreeViewAndSelectNode");
                 }, global::Avalonia.Threading.DispatcherPriority.Loaded);
             });
         }
