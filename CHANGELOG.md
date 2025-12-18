@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.8.3] - TBD
-**Branch**: `radoub/feat/bundle-package` | **PR**: #TBD
+**Branch**: `radoub/feat/bundle-package` | **PR**: #449
 
 ### Feat: Bundle Parley and Manifest into Unified Package (#448)
 
