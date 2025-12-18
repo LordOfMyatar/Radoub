@@ -169,6 +169,100 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Moves a node to a new position (reorder or reparent).
+        /// Used for drag-and-drop operations.
+        /// </summary>
+        /// <param name="dialog">The dialog containing the node.</param>
+        /// <param name="node">The node to move.</param>
+        /// <param name="newParent">The new parent (null for root level).</param>
+        /// <param name="insertIndex">Index to insert at in the new parent's children.</param>
+        /// <param name="statusMessage">Output status message.</param>
+        /// <returns>True if moved successfully.</returns>
+        public bool MoveNodeToPosition(Dialog dialog, DialogNode node, DialogNode? newParent, int insertIndex, out string statusMessage)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[MoveNodeToPosition] Moving '{node.DisplayText}' to parent={newParent?.DisplayText ?? "ROOT"}, index={insertIndex}");
+
+            // Validate type compatibility
+            if (newParent == null)
+            {
+                // Moving to root - only Entry nodes allowed
+                if (node.Type != DialogNodeType.Entry)
+                {
+                    statusMessage = "Only NPC Entry nodes can be at root level";
+                    return false;
+                }
+            }
+            else
+            {
+                // Validate parent-child type alternation
+                if (newParent.Type == DialogNodeType.Entry && node.Type != DialogNodeType.Reply)
+                {
+                    statusMessage = "NPC Entry nodes can only have PC Reply children";
+                    return false;
+                }
+                if (newParent.Type == DialogNodeType.Reply && node.Type != DialogNodeType.Entry)
+                {
+                    statusMessage = "PC Reply nodes can only have NPC Entry children";
+                    return false;
+                }
+            }
+
+            // Find and remove from old parent
+            var oldParent = FindParentNode(dialog, node);
+            DialogPtr? oldPtr = null;
+
+            if (oldParent != null)
+            {
+                // Remove from old parent's pointers
+                oldPtr = oldParent.Pointers.FirstOrDefault(p => p.Node == node);
+                if (oldPtr != null)
+                {
+                    oldParent.Pointers.Remove(oldPtr);
+                }
+            }
+            else
+            {
+                // Node was at root level - remove from Starts
+                var startPtr = dialog.Starts.FirstOrDefault(s => s.Node == node);
+                if (startPtr != null)
+                {
+                    oldPtr = startPtr;
+                    dialog.Starts.Remove(startPtr);
+                }
+            }
+
+            if (oldPtr == null)
+            {
+                statusMessage = "Could not find node's pointer in old parent";
+                return false;
+            }
+
+            // Insert into new position
+            if (newParent == null)
+            {
+                // Insert at root level
+                oldPtr.IsStart = true;
+                insertIndex = Math.Min(insertIndex, dialog.Starts.Count);
+                dialog.Starts.Insert(insertIndex, oldPtr);
+            }
+            else
+            {
+                // Insert into new parent's pointers
+                oldPtr.IsStart = false;
+                insertIndex = Math.Min(insertIndex, newParent.Pointers.Count);
+                newParent.Pointers.Insert(insertIndex, oldPtr);
+            }
+
+            // Publish event for view synchronization
+            DialogChangeEventBus.Instance.PublishNodeMoved(node, newParent, oldParent);
+
+            statusMessage = $"Moved '{node.DisplayText}' to {(newParent == null ? "root" : newParent.DisplayText)}";
+            UnifiedLogger.LogApplication(LogLevel.INFO, statusMessage);
+            return true;
+        }
+
+        /// <summary>
         /// Moves a node up in its parent's child list or in the START list.
         /// Returns true if moved, false if already first.
         /// </summary>
