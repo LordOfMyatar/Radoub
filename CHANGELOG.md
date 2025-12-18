@@ -14,6 +14,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.3] - 2025-12-17
+**Branch**: `radoub/feat/bundle-package` | **PR**: #449
+
+### Feat: Bundle Parley and Manifest into Unified Package (#448)
+
+Create combined release package with shared runtime and dependencies.
+
+#### Added
+- `radoub-release.yml` workflow for bundled releases (tag: `radoub-vX.Y.Z`)
+- `/release radoub` option in release command
+- Combined Parley + Manifest packages for Windows, macOS, Linux
+
+#### Notes
+- CEF (plugin WebView) remains separate/optional for plugin developers
+- Individual tool releases remain available (`/release parley`, `/release manifest`)
+
+---
+
 ## [0.8.2] - 2025-12-16
 **Branch**: `radoub/fix/linux-hak-and-script-preview` | **PR**: #440
 
