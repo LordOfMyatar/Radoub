@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.8.3] - TBD
+## [0.8.3] - 2025-12-17
 **Branch**: `radoub/feat/bundle-package` | **PR**: #449
 
 ### Feat: Bundle Parley and Manifest into Unified Package (#448)
@@ -22,13 +22,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Create combined release package with shared runtime and dependencies.
 
 #### Added
-- Bundled package build configuration
-- Shared runtime and Avalonia dependencies (~670 MB saved)
-- Combined release artifact
+- `radoub-release.yml` workflow for bundled releases (tag: `radoub-vX.Y.Z`)
+- `/release radoub` option in release command
+- Combined Parley + Manifest packages for Windows, macOS, Linux
 
 #### Notes
 - CEF (plugin WebView) remains separate/optional for plugin developers
-- Individual tool packages still available for standalone installation
+- Individual tool releases remain available (`/release parley`, `/release manifest`)
 
 ---
 
