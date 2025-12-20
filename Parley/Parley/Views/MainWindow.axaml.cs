@@ -43,6 +43,7 @@ namespace DialogEditor.Views
         private readonly SafeControlFinder _controls; // Issue #342: Safe control access with null-check elimination
         private readonly WindowLifecycleManager _windows; // Issue #343: Centralized window lifecycle management
         private readonly TreeViewDragDropService _dragDropService; // Issue #450: TreeView drag-drop support
+        private readonly FlowchartManager _flowchartManager; // Issue #457: Flowchart layout and sync management
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -54,8 +55,6 @@ namespace DialogEditor.Views
         // These windows have specific callback patterns that require local state tracking
         private ParameterBrowserWindow? _activeParameterBrowserWindow;
         private ScriptBrowserWindow? _activeScriptBrowserWindow;
-        private bool _embeddedFlowchartWired = false;
-        private bool _tabbedFlowchartWired = false;
 
         // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
@@ -132,6 +131,19 @@ namespace DialogEditor.Views
             _dragDropService = new TreeViewDragDropService();
             _dragDropService.DropCompleted += OnDragDropCompleted;
 
+            // Initialize FlowchartManager for layout and sync management (#457)
+            _flowchartManager = new FlowchartManager(
+                window: this,
+                controls: _controls,
+                windows: _windows,
+                getViewModel: () => _viewModel,
+                getSelectedNode: () => _selectedNode,
+                setSelectedNode: node => _selectedNode = node,
+                populatePropertiesPanel: PopulatePropertiesPanel,
+                saveCurrentNodeProperties: SaveCurrentNodeProperties,
+                getIsSettingSelectionProgrammatically: () => _isSettingSelectionProgrammatically,
+                setIsSettingSelectionProgrammatically: value => _isSettingSelectionProgrammatically = value);
+
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainWindow initialized");
@@ -180,7 +192,7 @@ namespace DialogEditor.Views
                 // Restore flowchart state on startup (#377)
                 if (SettingsService.Instance.FlowchartVisible)
                 {
-                    RestoreFlowchartOnStartup();
+                    _flowchartManager.RestoreOnStartup();
                 }
             };
             this.Closing += OnWindowClosing;
@@ -229,7 +241,7 @@ namespace DialogEditor.Views
             _windowPersistenceManager.RestorePanelSizes();
 
             // Initialize menu checkmark states
-            UpdateFlowchartLayoutMenuChecks();
+            _flowchartManager.UpdateLayoutMenuChecks();
 
             // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
             InitializeSpeakerVisualComboBoxes();
@@ -313,201 +325,13 @@ namespace DialogEditor.Views
                     $"OnDialogChanged: {e.ChangeType} - updating flowchart panels");
 
                 // Update all flowchart panels to reflect the change
-                UpdateAllFlowchartPanels();
+                _flowchartManager.UpdateAllPanels();
             }
 
             // Handle collapse/expand events from FlowView to sync TreeView (#451)
             if (e.Context == "FlowView")
             {
-                HandleFlowViewCollapseEvent(e);
-            }
-        }
-
-        /// <summary>
-        /// Handles collapse/expand events from FlowView to sync TreeView state (#451).
-        /// </summary>
-        private void HandleFlowViewCollapseEvent(DialogChangeEventArgs e)
-        {
-            if (_viewModel.DialogNodes == null || _viewModel.DialogNodes.Count == 0)
-                return;
-
-            try
-            {
-                // Suppress TreeView events to prevent loops
-                TreeViewSafeNode.SuppressCollapseEvents = true;
-
-                switch (e.ChangeType)
-                {
-                    case DialogChangeType.NodeCollapsed:
-                        if (e.AffectedNode != null)
-                        {
-                            CollapseTreeViewNode(e.AffectedNode);
-                        }
-                        break;
-
-                    case DialogChangeType.NodeExpanded:
-                        if (e.AffectedNode != null)
-                        {
-                            ExpandTreeViewNode(e.AffectedNode);
-                        }
-                        break;
-
-                    case DialogChangeType.AllCollapsed:
-                        CollapseAllTreeViewNodes();
-                        break;
-
-                    case DialogChangeType.AllExpanded:
-                        ExpandAllTreeViewNodes();
-                        break;
-                }
-            }
-            finally
-            {
-                TreeViewSafeNode.SuppressCollapseEvents = false;
-            }
-        }
-
-        /// <summary>
-        /// Collapses a TreeView node matching the given DialogNode.
-        /// </summary>
-        private void CollapseTreeViewNode(DialogNode dialogNode)
-        {
-            var treeViewNode = FindTreeViewNodeForDialogNode(dialogNode);
-            if (treeViewNode != null)
-            {
-                treeViewNode.IsExpanded = false;
-                UnifiedLogger.LogUI(LogLevel.DEBUG, $"TreeView node collapsed (FlowView sync): {dialogNode.DisplayText.Substring(0, Math.Min(20, dialogNode.DisplayText.Length))}");
-            }
-        }
-
-        /// <summary>
-        /// Expands a TreeView node matching the given DialogNode.
-        /// </summary>
-        private void ExpandTreeViewNode(DialogNode dialogNode)
-        {
-            var treeViewNode = FindTreeViewNodeForDialogNode(dialogNode);
-            if (treeViewNode != null)
-            {
-                treeViewNode.IsExpanded = true;
-                UnifiedLogger.LogUI(LogLevel.DEBUG, $"TreeView node expanded (FlowView sync): {dialogNode.DisplayText.Substring(0, Math.Min(20, dialogNode.DisplayText.Length))}");
-            }
-        }
-
-        /// <summary>
-        /// Collapses all TreeView nodes (#451).
-        /// </summary>
-        private void CollapseAllTreeViewNodes()
-        {
-            if (_viewModel.DialogNodes == null)
-                return;
-
-            foreach (var rootNode in _viewModel.DialogNodes)
-            {
-                CollapseTreeViewNodeRecursive(rootNode);
-            }
-            UnifiedLogger.LogUI(LogLevel.DEBUG, "TreeView: All nodes collapsed (FlowView sync)");
-        }
-
-        /// <summary>
-        /// Expands all TreeView nodes (#451).
-        /// </summary>
-        private void ExpandAllTreeViewNodes()
-        {
-            if (_viewModel.DialogNodes == null)
-                return;
-
-            foreach (var rootNode in _viewModel.DialogNodes)
-            {
-                ExpandTreeViewNodeRecursive(rootNode);
-            }
-            UnifiedLogger.LogUI(LogLevel.DEBUG, "TreeView: All nodes expanded (FlowView sync)");
-        }
-
-        private void CollapseTreeViewNodeRecursive(TreeViewSafeNode node)
-        {
-            node.IsExpanded = false;
-            if (node.Children != null)
-            {
-                foreach (var child in node.Children)
-                {
-                    CollapseTreeViewNodeRecursive(child);
-                }
-            }
-        }
-
-        private void ExpandTreeViewNodeRecursive(TreeViewSafeNode node)
-        {
-            node.IsExpanded = true;
-            if (node.Children != null)
-            {
-                foreach (var child in node.Children)
-                {
-                    ExpandTreeViewNodeRecursive(child);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Finds a TreeViewSafeNode in the tree that corresponds to a DialogNode.
-        /// </summary>
-        private TreeViewSafeNode? FindTreeViewNodeForDialogNode(DialogNode dialogNode)
-        {
-            if (_viewModel.DialogNodes == null)
-                return null;
-
-            foreach (var rootNode in _viewModel.DialogNodes)
-            {
-                var found = FindTreeViewNodeRecursive(rootNode, dialogNode);
-                if (found != null)
-                    return found;
-            }
-            return null;
-        }
-
-        private TreeViewSafeNode? FindTreeViewNodeRecursive(TreeViewSafeNode treeNode, DialogNode target)
-        {
-            if (treeNode.OriginalNode == target)
-                return treeNode;
-
-            if (treeNode.Children != null)
-            {
-                foreach (var child in treeNode.Children)
-                {
-                    var found = FindTreeViewNodeRecursive(child, target);
-                    if (found != null)
-                        return found;
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Updates all flowchart panels (floating, embedded, tabbed) with current dialog.
-        /// Called when dialog structure changes to keep FlowView in sync with TreeView.
-        /// </summary>
-        private void UpdateAllFlowchartPanels()
-        {
-            if (_viewModel.CurrentDialog == null)
-                return;
-
-            // Update floating flowchart window if open
-            _windows.WithWindow<FlowchartWindow>(WindowKeys.Flowchart, w =>
-            {
-                w.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-            });
-
-            // Update embedded panel (side-by-side layout)
-            var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
-            if (embeddedPanel != null)
-            {
-                embeddedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-            }
-
-            // Update tabbed panel
-            var tabbedPanel = this.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
-            if (tabbedPanel != null)
-            {
-                tabbedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
+                _flowchartManager.HandleFlowViewCollapseEvent(e);
             }
         }
 
@@ -1683,548 +1507,22 @@ namespace DialogEditor.Views
             _viewModel.StatusMessage = $"Reopened {closedPanels.Count} plugin panel(s)";
         }
 
-        private void OnFlowchartClick(object? sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // Issue #343: Use WindowLifecycleManager for flowchart window
-                var flowchart = _windows.ShowOrActivate(
-                    WindowKeys.Flowchart,
-                    () =>
-                    {
-                        var w = new FlowchartWindow();
-                        w.NodeClicked += OnFlowchartNodeClicked;
-                        return w;
-                    });
-
-                // Update with current dialog
-                flowchart.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-
-                // Mark flowchart as open (#377)
-                SettingsService.Instance.FlowchartWindowOpen = true;
-                SettingsService.Instance.FlowchartVisible = true;
-
-                _viewModel.StatusMessage = "Flowchart view opened";
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening flowchart: {ex.Message}");
-                _viewModel.StatusMessage = "Error opening flowchart view";
-            }
-        }
+        // Flowchart menu handlers - delegate to FlowchartManager (#457)
+        private void OnFlowchartClick(object? sender, RoutedEventArgs e) => _flowchartManager.OpenFloatingFlowchart();
 
         private void OnFlowchartLayoutClick(object? sender, RoutedEventArgs e)
         {
             if (sender is MenuItem menuItem && menuItem.Tag is string layoutValue)
             {
-                SettingsService.Instance.FlowchartLayout = layoutValue;
-                UpdateFlowchartLayoutMenuChecks();
-
-                // Apply the layout change
-                ApplyFlowchartLayout();
-
-                _viewModel.StatusMessage = $"Flowchart layout set to {layoutValue}";
+                _flowchartManager.ApplyLayout(layoutValue);
             }
         }
 
-        private void UpdateFlowchartLayoutMenuChecks()
-        {
-            var currentLayout = SettingsService.Instance.FlowchartLayout;
+        private async void OnExportFlowchartPngClick(object? sender, RoutedEventArgs e) => await _flowchartManager.ExportToPngAsync();
 
-            var floatingItem = this.FindControl<MenuItem>("FlowchartLayoutFloating");
-            var sideBySideItem = this.FindControl<MenuItem>("FlowchartLayoutSideBySide");
-            var tabbedItem = this.FindControl<MenuItem>("FlowchartLayoutTabbed");
+        private async void OnExportFlowchartSvgClick(object? sender, RoutedEventArgs e) => await _flowchartManager.ExportToSvgAsync();
 
-            if (floatingItem != null)
-                floatingItem.Icon = currentLayout == "Floating" ? new TextBlock { Text = "✓" } : null;
-            if (sideBySideItem != null)
-                sideBySideItem.Icon = currentLayout == "SideBySide" ? new TextBlock { Text = "✓" } : null;
-            if (tabbedItem != null)
-                tabbedItem.Icon = currentLayout == "Tabbed" ? new TextBlock { Text = "✓" } : null;
-        }
-
-        private void ApplyFlowchartLayout()
-        {
-            var layout = SettingsService.Instance.FlowchartLayout;
-
-            // Issue #343: Close existing floating window if switching to embedded mode
-            if (layout != "Floating")
-            {
-                _windows.Close(WindowKeys.Flowchart);
-            }
-
-            // Apply layout based on setting
-            switch (layout)
-            {
-                case "SideBySide":
-                    ShowSideBySideFlowchart();
-                    break;
-                case "Tabbed":
-                    ShowTabbedFlowchart();
-                    break;
-                default: // "Floating"
-                    HideEmbeddedFlowchart();
-                    break;
-            }
-        }
-
-        private void ShowSideBySideFlowchart()
-        {
-            // Hide tabbed panel if it was showing
-            HideTabbedFlowchart();
-
-            // Issue #342: Use WithControls for coordinated multi-control updates
-            var success = _controls.WithControls<Grid, GridSplitter, Border, FlowchartPanel>(
-                "MainContentGrid", "FlowchartSplitter", "EmbeddedFlowchartBorder", "EmbeddedFlowchartPanel",
-                (grid, splitter, border, panel) =>
-                {
-                    if (grid.ColumnDefinitions.Count < 5) return;
-
-                    // Show columns (indices 3 and 4 are the splitter and panel columns)
-                    // Use saved width or default (#377)
-                    var savedWidth = SettingsService.Instance.FlowchartPanelWidth;
-                    grid.ColumnDefinitions[3].Width = new GridLength(5);
-                    grid.ColumnDefinitions[4].Width = new GridLength(savedWidth, GridUnitType.Pixel);
-                    grid.ColumnDefinitions[4].MinWidth = 200;
-
-                    // Show controls
-                    splitter.IsVisible = true;
-                    border.IsVisible = true;
-
-                    // Wire up node click handler if not already done
-                    if (!_embeddedFlowchartWired)
-                    {
-                        panel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
-                        _embeddedFlowchartWired = true;
-                    }
-
-                    // Watch for column width changes to save (#377)
-                    grid.ColumnDefinitions[4].PropertyChanged += OnFlowchartColumnWidthChanged;
-
-                    // Update with current dialog
-                    panel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-                });
-
-            if (success)
-            {
-                // Mark flowchart as visible (#377)
-                SettingsService.Instance.FlowchartVisible = true;
-                UnifiedLogger.LogUI(LogLevel.INFO, "Side-by-side flowchart panel shown");
-            }
-            else
-            {
-                UnifiedLogger.LogUI(LogLevel.WARN, "Failed to show Side-by-Side flowchart: one or more controls not found");
-            }
-        }
-
-        private void OnFlowchartColumnWidthChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property.Name == "Width" && sender is ColumnDefinition colDef && colDef.Width.IsAbsolute)
-            {
-                SettingsService.Instance.FlowchartPanelWidth = colDef.Width.Value;
-            }
-        }
-
-        private void ShowTabbedFlowchart()
-        {
-            // Hide side-by-side panel if it was showing
-            HideSideBySideFlowchart();
-
-            // Issue #342: Use WithControls for coordinated multi-control updates
-            var success = _controls.WithControls<TabItem, FlowchartPanel>(
-                "FlowchartTab", "TabbedFlowchartPanel",
-                (tab, panel) =>
-                {
-                    tab.IsVisible = true;
-
-                    // Wire up node click handler if not already done
-                    if (!_tabbedFlowchartWired)
-                    {
-                        panel.NodeClicked += OnTabbedFlowchartNodeClicked;
-                        _tabbedFlowchartWired = true;
-                    }
-
-                    // Update with current dialog
-                    panel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-                });
-
-            if (success)
-            {
-                // Mark flowchart as visible (#377)
-                SettingsService.Instance.FlowchartVisible = true;
-                UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel shown");
-            }
-            else
-            {
-                UnifiedLogger.LogUI(LogLevel.WARN, "Failed to show Tabbed flowchart: tab or panel not found");
-            }
-        }
-
-        private void HideTabbedFlowchart()
-        {
-            // Issue #342: Use SetVisible shorthand
-            if (_controls.SetVisible("FlowchartTab", false))
-            {
-                UnifiedLogger.LogUI(LogLevel.INFO, "Tabbed flowchart panel hidden");
-            }
-        }
-
-        private void OnTabbedFlowchartNodeClicked(object? sender, FlowchartNode? flowchartNode)
-        {
-            // Reuse the same logic as the floating window
-            OnFlowchartNodeClicked(sender, flowchartNode);
-        }
-
-        private async void OnExportFlowchartPngClick(object? sender, RoutedEventArgs e)
-        {
-            await ExportFlowchartAsync("png");
-        }
-
-        private async void OnExportFlowchartSvgClick(object? sender, RoutedEventArgs e)
-        {
-            await ExportFlowchartAsync("svg");
-        }
-
-        private async Task ExportFlowchartAsync(string format)
-        {
-            try
-            {
-                // Get the active flowchart panel
-                FlowchartPanel? activePanel = GetActiveFlowchartPanel();
-                if (activePanel == null)
-                {
-                    _viewModel.StatusMessage = "No flowchart to export. Open a dialog first.";
-                    return;
-                }
-
-                // Set up file picker
-                var storageProvider = this.StorageProvider;
-                var extension = format.ToLower();
-                var filterName = extension.ToUpper();
-
-                var options = new FilePickerSaveOptions
-                {
-                    Title = $"Export Flowchart as {filterName}",
-                    SuggestedFileName = string.IsNullOrEmpty(_viewModel.CurrentFileName)
-                        ? $"flowchart.{extension}"
-                        : System.IO.Path.GetFileNameWithoutExtension(_viewModel.CurrentFileName) + $"_flowchart.{extension}",
-                    FileTypeChoices = new[]
-                    {
-                        new FilePickerFileType(filterName) { Patterns = new[] { $"*.{extension}" } }
-                    }
-                };
-
-                var file = await storageProvider.SaveFilePickerAsync(options);
-                if (file == null) return;
-
-                var filePath = file.Path.LocalPath;
-
-                bool success;
-                if (format == "png")
-                {
-                    success = await activePanel.ExportToPngAsync(filePath);
-                }
-                else
-                {
-                    success = await activePanel.ExportToSvgAsync(filePath);
-                }
-
-                if (success)
-                {
-                    _viewModel.StatusMessage = $"Flowchart exported to {System.IO.Path.GetFileName(filePath)}";
-                }
-                else
-                {
-                    _viewModel.StatusMessage = "Export failed. Check logs for details.";
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Export flowchart failed: {ex.Message}");
-                _viewModel.StatusMessage = $"Export failed: {ex.Message}";
-            }
-        }
-
-        private FlowchartPanel? GetActiveFlowchartPanel()
-        {
-            var layout = SettingsService.Instance.FlowchartLayout;
-            var embeddedBorder = this.FindControl<Border>("EmbeddedFlowchartBorder");
-            var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
-            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
-            var tabbedPanel = this.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
-
-            switch (layout)
-            {
-                case "SideBySide":
-                    if (embeddedBorder?.IsVisible == true && embeddedPanel?.ViewModel?.HasContent == true)
-                        return embeddedPanel;
-                    break;
-                case "Tabbed":
-                    if (flowchartTab?.IsVisible == true && tabbedPanel?.ViewModel?.HasContent == true)
-                        return tabbedPanel;
-                    break;
-            }
-
-            // For Floating mode or if embedded panels don't have content,
-            // check if we can use the floating window
-            // Issue #343: Use WindowLifecycleManager
-            if (_windows.IsOpen(WindowKeys.Flowchart))
-            {
-                // FlowchartWindow doesn't expose FlowchartPanel directly, so we need to update it
-                // For now, just return the embedded panel if it has content
-                if (embeddedBorder?.IsVisible == true && embeddedPanel?.ViewModel?.HasContent == true)
-                    return embeddedPanel;
-                if (flowchartTab?.IsVisible == true && tabbedPanel?.ViewModel?.HasContent == true)
-                    return tabbedPanel;
-            }
-
-            // If no embedded panel is visible but we have a dialog loaded, use the side-by-side panel
-            // (it's always in the XAML, just hidden)
-            if (_viewModel.CurrentDialog != null && embeddedPanel != null)
-            {
-                // Temporarily update the embedded panel for export
-                embeddedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-                return embeddedPanel;
-            }
-
-            return null;
-        }
-
-        private void HideSideBySideFlowchart()
-        {
-            // Issue #342: Use WithControls for coordinated multi-control updates
-            _controls.WithControls<Grid, GridSplitter, Border>(
-                "MainContentGrid", "FlowchartSplitter", "EmbeddedFlowchartBorder",
-                (grid, splitter, border) =>
-                {
-                    if (grid.ColumnDefinitions.Count < 5) return;
-
-                    // Hide columns (indices 3 and 4 are the splitter and panel columns)
-                    grid.ColumnDefinitions[3].Width = new GridLength(0);
-                    grid.ColumnDefinitions[4].Width = new GridLength(0);
-                    grid.ColumnDefinitions[4].MinWidth = 0;
-
-                    // Hide controls
-                    splitter.IsVisible = false;
-                    border.IsVisible = false;
-                });
-        }
-
-        private void HideEmbeddedFlowchart()
-        {
-            // Hide all embedded flowchart panels (side-by-side and tabbed)
-            HideSideBySideFlowchart();
-            HideTabbedFlowchart();
-            // Mark flowchart as not visible (#377)
-            SettingsService.Instance.FlowchartVisible = false;
-            UnifiedLogger.LogUI(LogLevel.INFO, "All embedded flowchart panels hidden");
-        }
-
-        /// <summary>
-        /// Restore flowchart visibility on startup based on saved settings (#377)
-        /// </summary>
-        private void RestoreFlowchartOnStartup()
-        {
-            var layout = SettingsService.Instance.FlowchartLayout;
-            UnifiedLogger.LogUI(LogLevel.INFO, $"Restoring flowchart on startup: layout={layout}");
-
-            switch (layout)
-            {
-                case "Floating":
-                    OnFlowchartClick(null, null!);
-                    break;
-                case "SideBySide":
-                    ShowSideBySideFlowchart();
-                    break;
-                case "Tabbed":
-                    ShowTabbedFlowchart();
-                    break;
-            }
-        }
-
-        private void OnEmbeddedFlowchartNodeClicked(object? sender, FlowchartNode? flowchartNode)
-        {
-            // Reuse the same logic as the floating window
-            OnFlowchartNodeClicked(sender, flowchartNode);
-        }
-
-        /// <summary>
-        /// Updates the embedded flowchart after a dialog is loaded (if in embedded mode)
-        /// </summary>
-        private void UpdateEmbeddedFlowchartAfterLoad()
-        {
-            var layout = SettingsService.Instance.FlowchartLayout;
-            var embeddedBorder = this.FindControl<Border>("EmbeddedFlowchartBorder");
-            var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
-            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
-            var tabbedPanel = this.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
-
-            if (layout == "SideBySide" && embeddedBorder?.IsVisible == true && embeddedPanel != null)
-            {
-                embeddedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-            }
-            else if (layout == "Tabbed" && flowchartTab?.IsVisible == true && tabbedPanel != null)
-            {
-                tabbedPanel.UpdateDialog(_viewModel.CurrentDialog, _viewModel.CurrentFileName);
-            }
-        }
-
-        /// <summary>
-        /// Handles node clicks from the flowchart window.
-        /// Selects the corresponding node in the TreeView.
-        /// For link nodes, finds the specific link instance rather than the target node.
-        /// </summary>
-        private void OnFlowchartNodeClicked(object? sender, FlowchartNode? flowchartNode)
-        {
-            UnifiedLogger.LogUI(LogLevel.DEBUG, $"OnFlowchartNodeClicked: flowchartNode={flowchartNode?.Id}, OriginalNode={flowchartNode?.OriginalNode?.DisplayText ?? "null"}, IsLink={flowchartNode?.IsLink}");
-
-            // ROOT node has no OriginalNode - just select the ROOT in tree
-            if (flowchartNode?.NodeType == FlowchartNodeType.Root)
-            {
-                var rootNode = _viewModel.DialogNodes?.FirstOrDefault() as TreeViewRootNode;
-                if (rootNode != null)
-                {
-                    _selectedNode = rootNode;
-                    _viewModel.SelectedTreeNode = rootNode;
-                    PopulatePropertiesPanel(rootNode);
-                    UnifiedLogger.LogUI(LogLevel.INFO, "Flowchart → TreeView: Selected ROOT");
-                    _viewModel.StatusMessage = "Selected: ROOT";
-                }
-                return;
-            }
-
-            if (flowchartNode?.OriginalNode == null || _viewModel.DialogNodes == null)
-            {
-                UnifiedLogger.LogUI(LogLevel.WARN, $"OnFlowchartNodeClicked: Early return - OriginalNode null or DialogNodes null");
-                return;
-            }
-
-            try
-            {
-                var treeNavManager = new TreeNavigationManager();
-                TreeViewSafeNode? treeNode = null;
-
-                if (flowchartNode.IsLink)
-                {
-                    // For link nodes, we need to find the specific link instance in the tree
-                    // The link has a pointer (OriginalPointer) that identifies which specific
-                    // link child to select, not just any occurrence of the target node
-                    treeNode = FindLinkNodeInTree(_viewModel.DialogNodes, flowchartNode);
-                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"FindLinkNodeInTree returned: {treeNode?.DisplayText ?? "null"}");
-                }
-                else
-                {
-                    // Regular node - find by DialogNode reference
-                    treeNode = treeNavManager.FindTreeNodeForDialogNode(_viewModel.DialogNodes, flowchartNode.OriginalNode);
-                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"FindTreeNodeForDialogNode returned: {treeNode?.DisplayText ?? "null"}, IsChild={treeNode?.IsChild}");
-                }
-
-                if (treeNode != null)
-                {
-                    // Save previous node properties before switching
-                    if (_selectedNode != null && !(_selectedNode is TreeViewRootNode))
-                    {
-                        SaveCurrentNodeProperties();
-                    }
-
-                    // Expand ancestors to make the node visible
-                    treeNavManager.ExpandAncestors(_viewModel.DialogNodes, treeNode);
-
-                    // Update selection state with flag to prevent feedback loops
-                    // Setting SelectedTreeNode triggers PropertyChanged → View handler → TreeView.SelectedItem
-                    // which would trigger OnDialogTreeViewSelectionChanged causing double population
-                    _isSettingSelectionProgrammatically = true;
-                    try
-                    {
-                        _selectedNode = treeNode;
-                        _viewModel.SelectedTreeNode = treeNode;
-
-                        // Also update the TreeView's selected item directly
-                        var treeView = this.FindControl<TreeView>("DialogTreeView");
-                        if (treeView != null)
-                        {
-                            treeView.SelectedItem = treeNode;
-                        }
-                    }
-                    finally
-                    {
-                        _isSettingSelectionProgrammatically = false;
-                    }
-
-                    // Directly populate properties panel (needed for tabbed mode where TreeView isn't visible)
-                    var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");
-                    var nodePropertiesPanel = this.FindControl<StackPanel>("NodePropertiesPanel");
-
-                    if (treeNode is TreeViewRootNode)
-                    {
-                        if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = true;
-                        if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = false;
-                    }
-                    else
-                    {
-                        if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = false;
-                        if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = true;
-                    }
-
-                    PopulatePropertiesPanel(treeNode);
-
-                    // Bring main window to front briefly to show selection, then return focus to flowchart
-                    Activate();
-
-                    UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart → TreeView: Selected '{treeNode.DisplayText}' (IsLink: {flowchartNode.IsLink})");
-                    _viewModel.StatusMessage = $"Selected: {treeNode.DisplayText}";
-                }
-                else
-                {
-                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Could not find tree node for flowchart node {flowchartNode.Id}");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error syncing flowchart selection: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Finds a link node in the tree that matches the flowchart link node.
-        /// Link nodes in the tree have IsChild=true and point to the same OriginalNode.
-        /// </summary>
-        private TreeViewSafeNode? FindLinkNodeInTree(System.Collections.ObjectModel.ObservableCollection<TreeViewSafeNode> nodes, FlowchartNode flowchartNode)
-        {
-            return FindLinkNodeRecursive(nodes, flowchartNode, new HashSet<TreeViewSafeNode>());
-        }
-
-        private TreeViewSafeNode? FindLinkNodeRecursive(System.Collections.ObjectModel.ObservableCollection<TreeViewSafeNode> nodes, FlowchartNode flowchartNode, HashSet<TreeViewSafeNode> visited)
-        {
-            foreach (var node in nodes)
-            {
-                if (!visited.Add(node)) continue;
-
-                // For a link, we're looking for:
-                // 1. A TreeViewSafeNode with IsChild=true (it's a link/child appearance)
-                // 2. Whose OriginalNode matches the flowchart node's OriginalNode (target)
-                if (node.IsChild && node.OriginalNode == flowchartNode.OriginalNode)
-                {
-                    return node;
-                }
-
-                // Check children
-                if (node.HasChildren)
-                {
-                    node.PopulateChildren();
-                    if (node.Children != null)
-                    {
-                        var found = FindLinkNodeRecursive(node.Children, flowchartNode, visited);
-                        if (found != null)
-                            return found;
-                    }
-                }
-
-                visited.Remove(node);
-            }
-
-            return null;
-        }
+        private void UpdateEmbeddedFlowchartAfterLoad() => _flowchartManager.UpdateAfterLoad();
 
         // Theme methods
         private void ApplySavedTheme()
@@ -2515,22 +1813,8 @@ namespace DialogEditor.Views
             _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode();
 
             // Sync selection to flowchart (Epic #325 Sprint 3 - bidirectional sync)
-            // Issue #343: Use WindowLifecycleManager for floating window
-            _windows.WithWindow<FlowchartWindow>(WindowKeys.Flowchart, w => w.SelectNode(_selectedNode?.OriginalNode));
-            // Embedded panel (side-by-side mode)
-            var embeddedBorder = this.FindControl<Border>("EmbeddedFlowchartBorder");
-            var embeddedPanel = this.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
-            if (embeddedPanel != null && embeddedBorder?.IsVisible == true)
-            {
-                embeddedPanel.SelectNode(_selectedNode?.OriginalNode);
-            }
-            // Tabbed panel (tabbed mode)
-            var flowchartTab = this.FindControl<TabItem>("FlowchartTab");
-            var tabbedPanel = this.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
-            if (tabbedPanel != null && flowchartTab?.IsVisible == true)
-            {
-                tabbedPanel.SelectNode(_selectedNode?.OriginalNode);
-            }
+            // Issue #457: Use FlowchartManager for sync
+            _flowchartManager.SyncSelectionToFlowcharts(_selectedNode?.OriginalNode);
 
             // Show/hide panels based on node type
             var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");

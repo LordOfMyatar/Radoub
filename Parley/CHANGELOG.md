@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.73-alpha] - 2025-12-20
+**Branch**: `parley/sprint/flowchart-manager` | **PR**: #467 | **Closes**: #462
+
+### Sprint 1: Extract FlowchartManager (#457)
+
+Extract flowchart-related code from MainWindow.axaml.cs into dedicated FlowchartManager class.
+
+**Line count**: MainWindow 5,081 -> 4,448 lines (-633 lines)
+
+#### Refactored
+- Extract flowchart layout modes (floating, side-by-side, tabbed)
+- Move PNG/SVG export logic to FlowchartManager
+- Move flowchart node click handling and tree sync
+- Move FlowView collapse/expand event handling
+- Centralize selection sync to all flowchart panels
+
+---
+
 ## [0.1.72-alpha] - 2025-12-20
 **Branch**: `parley/sprint/treeview-nav-ux` | **PR**: #460 | **Closes**: #149, #150
 
