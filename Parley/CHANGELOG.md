@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.75-alpha] - 2025-12-20
-**Branch**: `parley/sprint/script-browser-controller` | **PR**: #TBD | **Closes**: #464
+**Branch**: `parley/sprint/script-browser-controller` | **PR**: #469 | **Closes**: #464
 
 ### Sprint 3: Extract ScriptBrowserController (#457)
 
