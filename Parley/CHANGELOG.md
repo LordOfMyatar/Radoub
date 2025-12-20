@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.72-alpha] - 2025-12-20
-**Branch**: `parley/sprint/treeview-nav-ux` | **PR**: #TBD | **Closes**: #149, #150
+**Branch**: `parley/sprint/treeview-nav-ux` | **PR**: #460 | **Closes**: #149, #150
 
 ### Sprint: TreeView Navigation UX (#459)
 
