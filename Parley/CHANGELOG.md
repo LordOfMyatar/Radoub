@@ -17,11 +17,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Extract quest/journal UI code from MainWindow.axaml.cs into dedicated QuestUIController class.
 
+**Line count**: MainWindow 3,421 → 3,047 lines (-374 lines)
+
 #### Refactored
-- Extract quest tag/entry browsing
-- Move journal integration
-- Move quest display updates
-- Target lines: ~3833-4200
+- Extract quest tag/entry text change handlers
+- Move quest browser dialog handlers (browse quest, browse entry)
+- Extract quest clear button handlers (clear tag, clear entry)
+- Move journal loading/integration
+- Move quest display update methods (name display, entry preview)
 
 ---
 
