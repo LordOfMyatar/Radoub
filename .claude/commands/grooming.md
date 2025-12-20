@@ -145,7 +145,7 @@ gh issue list --state open --limit 100 --json number,title,labels,updatedAt,body
 Group by status:
 - **Missing tool label**: No `parley` or `radoub`
 - **Missing type label**: No `bug`, `enhancement`, `epic`, etc.
-- **Stale**: Not updated in 90+ days
+- **Stale**: Not updated in 15+ days
 - **Unlabeled**: No labels at all
 - **Well-formed**: Passes all checks
 

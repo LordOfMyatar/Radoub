@@ -31,7 +31,9 @@ Help plan the next sprint by reviewing open issues, PRs, and current work.
    - Check for any uncommitted work
 
 2. **Review GitHub Issues**
-   - List open issues: `gh issue list --state open --limit 30`
+   - List open issues with age: `gh issue list --state open --limit 30 --json number,title,labels,updatedAt`
+   - Calculate days since last update for each issue
+   - Flag stale issues (15+ days without activity)
    - Group by epic label when present
    - Note blocked/blocking relationships
 
@@ -72,11 +74,14 @@ Help plan the next sprint by reviewing open issues, PRs, and current work.
 
 ### By Epic
 **Epic N: [Name]**
-- #X - [title] - [blocked?]
-- #X - [title]
+- #X - [title] - [N days] - [blocked?]
+- #X - [title] - [N days]
 
 **Standalone/Tech Debt**
-- #X - [title]
+- #X - [title] - [N days]
+
+### Stale Issues (15+ days)
+- #X - [title] - [N days] - May need attention or closure
 
 ### Blocked Items
 - #X - [title] - Blocked by: #Y or [reason]

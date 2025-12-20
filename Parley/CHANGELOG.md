@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.72-alpha] - 2025-12-20
+**Branch**: `parley/sprint/treeview-nav-ux` | **PR**: #460 | **Closes**: #149, #150
+
+### Sprint: TreeView Navigation UX (#459)
+
+Quality-of-life enhancements for faster dialog authoring workflows.
+
+#### Added
+- **#149**: Child link jump - Navigate from link node to parent
+  - Context menu: "Go to Parent Node"
+  - Keyboard shortcut: Ctrl+J
+- **#150**: Sibling node creation
+  - Ctrl+Shift+D creates sibling of current node
+  - Maintains NPC/PC alternation
+
+---
+
 ## [0.1.71-alpha] - 2025-12-20
 **Branch**: `parley/sprint/drag-drop-collapse` | **PR**: #452 | **Closes**: #251, #436, #450
 
