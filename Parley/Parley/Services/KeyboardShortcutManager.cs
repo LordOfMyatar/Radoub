@@ -44,8 +44,10 @@ namespace DialogEditor.Services
             // to intercept before TextBox's built-in undo/redo
             _ctrlShortcuts[Key.E] = handler.OnExpandSubnodes;
             _ctrlShortcuts[Key.W] = handler.OnCollapseSubnodes;
+            _ctrlShortcuts[Key.J] = handler.OnGoToParentNode; // Issue #149: Jump from link to parent
 
             // Ctrl+Shift shortcuts
+            _ctrlShiftShortcuts[Key.D] = handler.OnAddSiblingNode; // Issue #150: Add sibling node
             _ctrlShiftShortcuts[Key.T] = handler.OnCopyNodeText;
             _ctrlShiftShortcuts[Key.P] = handler.OnCopyNodeProperties;
             _ctrlShiftShortcuts[Key.S] = handler.OnCopyTreeStructure;
@@ -162,6 +164,7 @@ namespace DialogEditor.Services
 
             // Node operations
             shortcuts.Add("Ctrl+D - Add Smart Node");
+            shortcuts.Add("Ctrl+Shift+D - Add Sibling Node");
             shortcuts.Add("Ctrl+R - Add Context-Aware Reply");
             shortcuts.Add("Delete - Delete Node");
 
@@ -183,6 +186,7 @@ namespace DialogEditor.Services
             // Tree navigation
             shortcuts.Add("Ctrl+E - Expand Subnodes");
             shortcuts.Add("Ctrl+W - Collapse Subnodes");
+            shortcuts.Add("Ctrl+J - Go to Parent Node (from link)");
             shortcuts.Add("Ctrl+Shift+Up - Move Node Up");
             shortcuts.Add("Ctrl+Shift+Down - Move Node Down");
 
@@ -206,6 +210,7 @@ namespace DialogEditor.Services
 
         // Node operations
         void OnAddSmartNode();
+        void OnAddSiblingNode(); // Issue #150: Add sibling node (Ctrl+Shift+D)
         void OnAddContextAwareReply();
         void OnDeleteNode();
 
@@ -229,6 +234,7 @@ namespace DialogEditor.Services
         void OnCollapseSubnodes();
         void OnMoveNodeUp();
         void OnMoveNodeDown();
+        void OnGoToParentNode(); // Issue #149: Jump from link to parent node
 
         // View operations
         void OnOpenFlowchart(); // Issue #339: F5 to open flowchart

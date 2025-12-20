@@ -804,6 +804,7 @@ namespace DialogEditor.Views
 
         // Node operations
         void IKeyboardShortcutHandler.OnAddSmartNode() => OnAddSmartNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnAddSiblingNode() => OnAddSiblingNodeClick(null, null!);
         void IKeyboardShortcutHandler.OnAddContextAwareReply() => OnAddContextAwareReply(null, null!);
         void IKeyboardShortcutHandler.OnDeleteNode() => OnDeleteNodeClick(null, null!);
 
@@ -827,6 +828,7 @@ namespace DialogEditor.Views
         void IKeyboardShortcutHandler.OnCollapseSubnodes() => OnCollapseSubnodesClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeUp() => OnMoveNodeUpClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeDown() => OnMoveNodeDownClick(null, null!);
+        void IKeyboardShortcutHandler.OnGoToParentNode() => OnGoToParentNodeClick(null, null!);
 
         // View operations - Issue #339: F5 to open flowchart
         void IKeyboardShortcutHandler.OnOpenFlowchart() => OnFlowchartClick(null, null!);
@@ -4417,6 +4419,45 @@ namespace DialogEditor.Views
             await _nodeCreationHelper.CreateSmartNodeAsync(selectedNode);
         }
 
+        /// <summary>
+        /// Issue #150: Add sibling node - creates node at same level as current selection.
+        /// Uses parent of selected node as target for new node creation.
+        /// </summary>
+        private async void OnAddSiblingNodeClick(object? sender, RoutedEventArgs e)
+        {
+            var selectedNode = GetSelectedTreeNode();
+            if (selectedNode == null)
+            {
+                _viewModel.StatusMessage = "Please select a node first";
+                return;
+            }
+
+            // Cannot add sibling to ROOT
+            if (selectedNode is TreeViewRootNode)
+            {
+                _viewModel.StatusMessage = "Cannot add sibling to ROOT - use Add Node instead";
+                return;
+            }
+
+            // Cannot add sibling to link nodes
+            if (selectedNode.IsChild)
+            {
+                _viewModel.StatusMessage = "Cannot add sibling to link nodes - select the parent node first";
+                return;
+            }
+
+            // Find the parent node in the tree
+            var treeView = this.FindControl<TreeView>("DialogTreeView");
+            if (treeView == null) return;
+
+            var parentNode = _nodeCreationHelper.FindParentNode(treeView, selectedNode);
+
+            // Add node as child of parent (sibling of selected)
+            // This creates a new node at the same level as the selected node
+            await _nodeCreationHelper.CreateSmartNodeAsync(parentNode);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Added sibling node to: {selectedNode.DisplayText}");
+        }
+
 
         /// <summary>
         /// Expands all ancestor nodes to make target node visible (Issue #7)
@@ -4995,6 +5036,48 @@ namespace DialogEditor.Views
 
             CollapseNodeRecursive(selectedNode);
             _viewModel.StatusMessage = $"Collapsed node and all subnodes: {selectedNode.DisplayText}";
+        }
+
+        /// <summary>
+        /// Issue #149: Navigate from a link node to its parent (original) node.
+        /// Only works when a link node (gray) is selected.
+        /// </summary>
+        private void OnGoToParentNodeClick(object? sender, RoutedEventArgs e)
+        {
+            var selectedNode = GetSelectedTreeNode();
+            if (selectedNode == null)
+            {
+                _viewModel.StatusMessage = "Please select a link node";
+                return;
+            }
+
+            // Only works on link nodes
+            if (!selectedNode.IsChild)
+            {
+                _viewModel.StatusMessage = "Go to Parent only works on link nodes (gray nodes)";
+                return;
+            }
+
+            // Get the underlying DialogNode that this link points to
+            var targetDialogNode = selectedNode.OriginalNode;
+            if (targetDialogNode == null)
+            {
+                _viewModel.StatusMessage = "Could not find linked node";
+                return;
+            }
+
+            // Find the non-link occurrence of this node in the tree
+            var parentNode = _viewModel.FindTreeNodeForDialogNode(targetDialogNode);
+            if (parentNode == null || parentNode.IsChild)
+            {
+                _viewModel.StatusMessage = "Could not find parent node in tree";
+                return;
+            }
+
+            // Navigate to and select the parent node
+            _viewModel.SelectedTreeNode = parentNode;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Navigated from link to parent: {parentNode.DisplayText}");
+            _viewModel.StatusMessage = $"Jumped to parent node: {parentNode.DisplayText}";
         }
 
         private void ExpandNodeRecursive(TreeViewSafeNode node, HashSet<TreeViewSafeNode>? visited = null)
