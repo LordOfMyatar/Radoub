@@ -8,7 +8,7 @@
 
 Parley is a cross-platform dialog editor for Neverwinter Nights `.dlg` files. Built with modern technology while maintaining Aurora Engine compatibility.
 
-**Status**: Alpha (v0.1.72)
+**Status**: Alpha (v0.1.75)
 **Platforms**: Windows, Linux, macOS
 
 ---

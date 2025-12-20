@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.75-alpha] - 2025-12-20
+**Branch**: `parley/sprint/script-browser-controller` | **PR**: #469 | **Closes**: #464
+
+### Sprint 3: Extract ScriptBrowserController (#457)
+
+Extract script browser code from MainWindow.axaml.cs into dedicated ScriptBrowserController class.
+
+**Line count**: MainWindow 3,999 -> 3,421 lines (-578 lines)
+
+#### Refactored
+- Extract script browser dialog handlers (conditional, action, conversation scripts)
+- Move script editor launching (external editor integration)
+- Extract parameter browser and suggestion logic
+- Move script preview loading and caching
+- Consolidate parameter declarations management
+- Remove duplicate AddParameterRow, OnParameterChanged, ShowTrimFeedback from MainWindow
+
+---
+
 ## [0.1.74-alpha] - 2025-12-20
 **Branch**: `parley/sprint/treeview-ui-controller` | **PR**: #468 | **Closes**: #463
 
