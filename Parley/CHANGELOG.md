@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.74-alpha] - 2025-12-20
-**Branch**: `parley/sprint/treeview-ui-controller` | **PR**: #TBD | **Closes**: #463
+**Branch**: `parley/sprint/treeview-ui-controller` | **PR**: #468 | **Closes**: #463
 
 ### Sprint 2: Extract TreeViewUIController (#457)
 
