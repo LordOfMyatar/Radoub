@@ -30,7 +30,19 @@ namespace DialogEditor.Services
         DialogLoaded,
 
         /// <summary>A dialog file was closed.</summary>
-        DialogClosed
+        DialogClosed,
+
+        /// <summary>A node was collapsed (children hidden) in a view.</summary>
+        NodeCollapsed,
+
+        /// <summary>A node was expanded (children shown) in a view.</summary>
+        NodeExpanded,
+
+        /// <summary>All nodes were collapsed in a view.</summary>
+        AllCollapsed,
+
+        /// <summary>All nodes were expanded in a view.</summary>
+        AllExpanded
     }
 
     /// <summary>
@@ -215,6 +227,54 @@ namespace DialogEditor.Services
         public void PublishDialogClosed()
         {
             Publish(new DialogChangeEventArgs(DialogChangeType.DialogClosed));
+        }
+
+        /// <summary>
+        /// Publish a node collapsed event.
+        /// </summary>
+        /// <param name="collapsedNode">The node that was collapsed.</param>
+        /// <param name="source">Source of the collapse (e.g., "FlowView", "TreeView").</param>
+        public void PublishNodeCollapsed(DialogNode collapsedNode, string? source = null)
+        {
+            Publish(new DialogChangeEventArgs(
+                DialogChangeType.NodeCollapsed,
+                affectedNode: collapsedNode,
+                context: source));
+        }
+
+        /// <summary>
+        /// Publish a node expanded event.
+        /// </summary>
+        /// <param name="expandedNode">The node that was expanded.</param>
+        /// <param name="source">Source of the expand (e.g., "FlowView", "TreeView").</param>
+        public void PublishNodeExpanded(DialogNode expandedNode, string? source = null)
+        {
+            Publish(new DialogChangeEventArgs(
+                DialogChangeType.NodeExpanded,
+                affectedNode: expandedNode,
+                context: source));
+        }
+
+        /// <summary>
+        /// Publish an all-collapsed event.
+        /// </summary>
+        /// <param name="source">Source of the collapse all (e.g., "FlowView", "TreeView").</param>
+        public void PublishAllCollapsed(string? source = null)
+        {
+            Publish(new DialogChangeEventArgs(
+                DialogChangeType.AllCollapsed,
+                context: source));
+        }
+
+        /// <summary>
+        /// Publish an all-expanded event.
+        /// </summary>
+        /// <param name="source">Source of the expand all (e.g., "FlowView", "TreeView").</param>
+        public void PublishAllExpanded(string? source = null)
+        {
+            Publish(new DialogChangeEventArgs(
+                DialogChangeType.AllExpanded,
+                context: source));
         }
 
         /// <summary>

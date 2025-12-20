@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace DialogEditor.Models
 {
@@ -22,9 +23,11 @@ namespace DialogEditor.Models
     /// Represents a node in the flowchart visualization.
     /// This is a view model for AvaloniaGraphControl - the graph panel uses
     /// DataTemplates to render nodes based on their type.
+    /// Implements INotifyPropertyChanged for IsCollapsed binding updates.
     /// </summary>
-    public class FlowchartNode
+    public class FlowchartNode : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler? PropertyChanged;
         /// <summary>
         /// Unique identifier for this node (matches DialogNode index in parent collection)
         /// </summary>
@@ -74,6 +77,30 @@ namespace DialogEditor.Models
         /// Reference to the original DialogPtr (for link nodes)
         /// </summary>
         public DialogPtr? OriginalPointer { get; }
+
+        /// <summary>
+        /// Whether this node's children are collapsed (hidden) in the flowchart view.
+        /// Used for expand/collapse functionality (#251).
+        /// </summary>
+        private bool _isCollapsed;
+        public bool IsCollapsed
+        {
+            get => _isCollapsed;
+            set
+            {
+                if (_isCollapsed != value)
+                {
+                    _isCollapsed = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsCollapsed)));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Number of visible children (for collapse indicator display).
+        /// Set during graph building.
+        /// </summary>
+        public int ChildCount { get; set; }
 
         public FlowchartNode(
             string id,

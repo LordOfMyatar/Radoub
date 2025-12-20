@@ -24,6 +24,12 @@ namespace DialogEditor.Models
         // Global tracking of expanded nodes to show links instead of duplicating content
         private static readonly HashSet<DialogNode> _globalExpandedNodes = new();
 
+        /// <summary>
+        /// Flag to suppress event publishing during programmatic expand/collapse operations (#451).
+        /// Set to true when syncing from FlowView to prevent event loops.
+        /// </summary>
+        public static bool SuppressCollapseEvents { get; set; }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public TreeViewSafeNode(DialogNode originalNode, HashSet<DialogNode>? ancestors = null, int depth = 0, DialogPtr? sourcePointer = null)
@@ -85,6 +91,20 @@ namespace DialogEditor.Models
                             DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.ERROR,
                                 $"🌳 TreeView: Exception during lazy load of '{_originalNode?.DisplayText ?? "null"}': {ex.Message}");
                             // Don't re-throw - allow UI to continue functioning
+                        }
+                    }
+
+                    // Publish collapse/expand event for FlowView sync (#451)
+                    // Only publish if not a link node and not suppressed (prevents loops)
+                    if (!SuppressCollapseEvents && !IsChild && _originalNode != null)
+                    {
+                        if (_isExpanded)
+                        {
+                            DialogEditor.Services.DialogChangeEventBus.Instance.PublishNodeExpanded(_originalNode, "TreeView");
+                        }
+                        else
+                        {
+                            DialogEditor.Services.DialogChangeEventBus.Instance.PublishNodeCollapsed(_originalNode, "TreeView");
                         }
                     }
                 }

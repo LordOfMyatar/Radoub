@@ -900,7 +900,7 @@ namespace DialogEditor.Services
                 });
 
                 File.WriteAllText(SettingsFilePath, json);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Settings saved to {UnifiedLogger.SanitizePath(SettingsFilePath)}");
+                UnifiedLogger.LogApplication(LogLevel.TRACE, $"Settings saved to {UnifiedLogger.SanitizePath(SettingsFilePath)}");
             }
             catch (Exception ex)
             {

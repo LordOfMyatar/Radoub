@@ -19,12 +19,32 @@ Advanced navigation and organization features for TreeView and FlowView.
 
 #### Added
 - **DialogChangeEventBus**: Centralized event system for TreeView/FlowView synchronization
+  - Singleton pattern with pub/sub for dialog structure changes
+  - Event types: NodeAdded, NodeDeleted, NodeMoved, SelectionChanged, DialogRefreshed
+  - Suppression support for batch operations
+- **TreeViewDragDropService**: Drag-drop infrastructure for dialog tree (#450)
+  - Drag threshold detection (5px movement)
+  - Drop position calculation (Before/After/Into zones)
+  - NPC/PC alternation rule validation
+  - Circular reference prevention
+  - Link node drag prevention (drag original instead)
 - **#450**: TreeView drag-drop node reordering (Aurora Toolset parity)
+  - Visual drop indicators (CSS border/background classes)
+  - Reorder nodes within same parent
+  - Reparent nodes to different parent (with validation)
+  - Undo support for move operations
 - **#251**: FlowView collapse/expand subtrees
-- **#240**: FlowView visual node repositioning
+  - Collapse All / Expand All toolbar buttons
+  - Double-click node to toggle collapse
+  - Child count indicator (▼ N / ▶ N) on nodes with children
+  - Hidden node count in status bar
+#### Deferred
+- **#240**: FlowView visual node repositioning - Requires custom layout engine; AvaloniaGraphControl uses automatic Sugiyama layout
 
 #### Fixed
 - **#436**: FlowView now updates when nodes are added/deleted/moved
+  - MainWindow subscribes to DialogChangeEventBus
+  - Floating, embedded, and tabbed panels all update on structure changes
 
 ---
 

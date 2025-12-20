@@ -1087,12 +1087,13 @@ namespace DialogEditor.ViewModels
             if (nodeToMove == null || nodeToMove is TreeViewRootNode) return;
 
             var node = nodeToMove.OriginalNode;
+            var sourcePointer = nodeToMove.SourcePointer;
 
             // Save state for undo
             SaveUndoState("Move Node");
 
-            // Delegate to NodeOperationsManager
-            bool moved = _nodeOpsManager.MoveNodeToPosition(CurrentDialog, node, newParent, insertIndex, out string statusMessage);
+            // Delegate to NodeOperationsManager - pass sourcePointer to identify correct parent-child relationship
+            bool moved = _nodeOpsManager.MoveNodeToPosition(CurrentDialog, node, sourcePointer, newParent, insertIndex, out string statusMessage);
 
             StatusMessage = statusMessage;
 
