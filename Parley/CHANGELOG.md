@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.74-alpha] - 2025-12-20
+**Branch**: `parley/sprint/treeview-ui-controller` | **PR**: #TBD | **Closes**: #463
+
+### Sprint 2: Extract TreeViewUIController (#457)
+
+Extract TreeView UI handling code from MainWindow.axaml.cs into dedicated TreeViewUIController class.
+
+#### Refactored
+- Extract expand/collapse operations
+- Move selection handling logic
+- Move drag-drop UI event handlers (logic stays in TreeViewDragDropService)
+- Target lines: 541-795, 2376-2560
+
+---
+
 ## [0.1.73-alpha] - 2025-12-20
 **Branch**: `parley/sprint/flowchart-manager` | **PR**: #467 | **Closes**: #462
 
