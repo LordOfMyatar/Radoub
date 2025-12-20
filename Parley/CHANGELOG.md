@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.76-alpha] - 2025-12-20
-**Branch**: `parley/sprint/quest-ui-controller` | **PR**: #TBD | **Closes**: #465
+**Branch**: `parley/sprint/quest-ui-controller` | **PR**: #470 | **Closes**: #465
 
 ### Sprint 4: Extract QuestUIController (#457)
 
