@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.76-alpha] - 2025-12-20
+**Branch**: `parley/sprint/quest-ui-controller` | **PR**: #TBD | **Closes**: #465
+
+### Sprint 4: Extract QuestUIController (#457)
+
+Extract quest/journal UI code from MainWindow.axaml.cs into dedicated QuestUIController class.
+
+#### Refactored
+- Extract quest tag/entry browsing
+- Move journal integration
+- Move quest display updates
+- Target lines: ~3833-4200
+
+---
+
 ## [0.1.75-alpha] - 2025-12-20
 **Branch**: `parley/sprint/script-browser-controller` | **PR**: #469 | **Closes**: #464
 
