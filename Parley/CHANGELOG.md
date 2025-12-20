@@ -10,8 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [0.1.71-alpha] - TBD
-**Branch**: `parley/sprint/drag-drop-collapse` | **PR**: #TBD
+## [0.1.71-alpha] - 2025-12-20
+**Branch**: `parley/sprint/drag-drop-collapse` | **PR**: #452 | **Closes**: #251, #436, #450
 
 ### Sprint: Drag-Drop & Collapsible Nodes (#451)
 
@@ -38,6 +38,10 @@ Advanced navigation and organization features for TreeView and FlowView.
   - Double-click node to toggle collapse
   - Child count indicator (▼ N / ▶ N) on nodes with children
   - Hidden node count in status bar
+- **Drag-drop unit tests**: 29 tests covering validation and move operations
+  - DragDropTests.cs: MoveNodeToPosition tests (16 tests)
+  - DragDropValidationTests.cs: ValidateDrop tests (13 tests)
+
 #### Deferred
 - **#240**: FlowView visual node repositioning - Requires custom layout engine; AvaloniaGraphControl uses automatic Sugiyama layout
 
