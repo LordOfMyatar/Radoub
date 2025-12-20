@@ -17,11 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Extract TreeView UI handling code from MainWindow.axaml.cs into dedicated TreeViewUIController class.
 
+**Line count**: MainWindow 4,448 -> 3,999 lines (-449 lines)
+
 #### Refactored
-- Extract expand/collapse operations
-- Move selection handling logic
-- Move drag-drop UI event handlers (logic stays in TreeViewDragDropService)
-- Target lines: 541-795, 2376-2560
+- Extract drag-drop UI event handlers (pointer events, drag over, drop, visual indicators)
+- Move selection handling logic (selection changed, double-tap expansion)
+- Extract expand/collapse operations (recursive expand/collapse with circular reference protection)
+- Move link navigation (Go to Parent node)
 
 ---
 

@@ -44,6 +44,7 @@ namespace DialogEditor.Views
         private readonly WindowLifecycleManager _windows; // Issue #343: Centralized window lifecycle management
         private readonly TreeViewDragDropService _dragDropService; // Issue #450: TreeView drag-drop support
         private readonly FlowchartManager _flowchartManager; // Issue #457: Flowchart layout and sync management
+        private readonly TreeViewUIController _treeViewUIController; // Issue #463: TreeView UI interactions
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -144,6 +145,21 @@ namespace DialogEditor.Views
                 getIsSettingSelectionProgrammatically: () => _isSettingSelectionProgrammatically,
                 setIsSettingSelectionProgrammatically: value => _isSettingSelectionProgrammatically = value);
 
+            // Initialize TreeViewUIController for TreeView UI interactions (#463)
+            _treeViewUIController = new TreeViewUIController(
+                window: this,
+                controls: _controls,
+                dragDropService: _dragDropService,
+                getViewModel: () => _viewModel,
+                getSelectedNode: () => _selectedNode,
+                setSelectedNode: node => _selectedNode = node,
+                populatePropertiesPanel: PopulatePropertiesPanel,
+                saveCurrentNodeProperties: SaveCurrentNodeProperties,
+                clearAllFields: () => _propertyPopulator.ClearAllFields(),
+                getIsSettingSelectionProgrammatically: () => _isSettingSelectionProgrammatically,
+                syncSelectionToFlowcharts: node => _flowchartManager.SyncSelectionToFlowcharts(node),
+                updatePluginSelectionSync: () => _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode());
+
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainWindow initialized");
@@ -211,8 +227,8 @@ namespace DialogEditor.Views
             // Phase 1 Fix: Set up keyboard shortcuts
             SetupKeyboardShortcuts();
 
-            // Issue #450: Set up TreeView drag-drop handlers
-            SetupTreeViewDragDrop();
+            // Issue #450/#463: Set up TreeView drag-drop handlers via controller
+            _treeViewUIController.SetupTreeViewDragDrop();
 
             // Phase 2a: Watch for node re-selection requests after tree refresh
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -358,267 +374,6 @@ namespace DialogEditor.Views
             };
         }
 
-        /// <summary>
-        /// Sets up drag-drop handlers for the DialogTreeView (#450).
-        /// Enables reordering and reparenting of dialog nodes via drag-drop.
-        /// </summary>
-        private void SetupTreeViewDragDrop()
-        {
-            var treeView = this.FindControl<TreeView>("DialogTreeView");
-            if (treeView == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "SetupTreeViewDragDrop: DialogTreeView not found");
-                return;
-            }
-
-            // Wire up DragOver handler for visual feedback and validation
-            DragDrop.SetAllowDrop(treeView, true);
-            treeView.AddHandler(DragDrop.DragOverEvent, OnTreeViewDragOver);
-            treeView.AddHandler(DragDrop.DropEvent, OnTreeViewDrop);
-            treeView.AddHandler(DragDrop.DragLeaveEvent, OnTreeViewDragLeave);
-
-            // Wire up pointer events for drag initiation on TreeViewItems
-            treeView.AddHandler(Avalonia.Input.InputElement.PointerPressedEvent, OnTreeViewItemPointerPressed, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
-            treeView.AddHandler(Avalonia.Input.InputElement.PointerMovedEvent, OnTreeViewItemPointerMoved, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
-            treeView.AddHandler(Avalonia.Input.InputElement.PointerReleasedEvent, OnTreeViewItemPointerReleased, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, "SetupTreeViewDragDrop: Drag-drop handlers registered");
-        }
-
-        /// <summary>
-        /// Handles pointer pressed on TreeView items to initiate potential drag.
-        /// </summary>
-        private void OnTreeViewItemPointerPressed(object? sender, PointerPressedEventArgs e)
-        {
-            // Find the TreeViewItem and its DataContext (TreeViewSafeNode)
-            var source = e.Source as Control;
-            var treeViewItem = source?.FindAncestorOfType<TreeViewItem>();
-            if (treeViewItem?.DataContext is TreeViewSafeNode node)
-            {
-                _dragDropService.OnPointerPressed(node, e);
-            }
-        }
-
-        /// <summary>
-        /// Handles pointer moved to detect drag threshold and start drag operation.
-        /// </summary>
-        private async void OnTreeViewItemPointerMoved(object? sender, PointerEventArgs e)
-        {
-            if (!_dragDropService.IsDragging && _dragDropService.DraggedNode != null)
-            {
-                var treeView = sender as TreeView;
-                if (_dragDropService.OnPointerMoved(e, treeView))
-                {
-                    // Threshold exceeded, start the drag operation
-                    var draggedNode = _dragDropService.DraggedNode;
-                    if (draggedNode != null)
-                    {
-#pragma warning disable CS0618 // Type or member is obsolete - DataObject and DoDragDrop
-                        var data = new DataObject();
-                        data.Set("TreeViewSafeNode", draggedNode);
-
-                        // Start the drag-drop operation
-                        var result = await DragDrop.DoDragDrop(e, data, DragDropEffects.Move);
-#pragma warning restore CS0618
-
-                        // Always reset after DoDragDrop completes (regardless of result)
-                        // OnTreeViewDrop also calls Reset(), but this ensures cleanup
-                        // even if an exception occurs or drop is outside tree bounds
-                        _dragDropService.Reset();
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Handles pointer released to complete or cancel drag operation.
-        /// </summary>
-        private void OnTreeViewItemPointerReleased(object? sender, PointerReleasedEventArgs e)
-        {
-            // DragDrop.DoDragDrop handles the actual drop - this just resets if no drag started
-            if (!_dragDropService.IsDragging)
-            {
-                _dragDropService.Reset();
-            }
-        }
-
-        /// <summary>
-        /// Handles DragOver event for the TreeView to show drop indicators.
-        /// </summary>
-        private void OnTreeViewDragOver(object? sender, DragEventArgs e)
-        {
-            e.DragEffects = DragDropEffects.None;
-
-            // Get the dragged node from the data
-#pragma warning disable CS0618 // Type or member is obsolete - Data property
-            if (!e.Data.Contains("TreeViewSafeNode"))
-                return;
-
-            var draggedNode = e.Data.Get("TreeViewSafeNode") as TreeViewSafeNode;
-#pragma warning restore CS0618
-            if (draggedNode == null)
-                return;
-
-            // Find the target TreeViewItem under the pointer
-            var treeView = sender as TreeView;
-            var targetItem = FindTreeViewItemAtPosition(treeView, e);
-
-            if (targetItem?.DataContext is TreeViewSafeNode targetNode)
-            {
-                // Calculate drop position based on pointer location within item
-                // GetPosition(targetItem) returns position relative to targetItem, so Y starts at 0
-                // We need bounds relative to self (starting at 0,0) for correct zone calculation
-                var pointerPos = e.GetPosition(targetItem);
-                var itemBounds = new Rect(0, 0, targetItem.Bounds.Width, targetItem.Bounds.Height);
-                var dropPosition = _dragDropService.CalculateDropPosition(pointerPos, itemBounds);
-
-                // Validate the drop
-                var validation = _dragDropService.ValidateDrop(draggedNode, targetNode, dropPosition);
-
-                if (validation.IsValid)
-                {
-                    e.DragEffects = DragDropEffects.Move;
-
-                    // Update visual feedback
-                    _dragDropService.NotifyDropPositionChanged(validation);
-                    UpdateDropIndicator(targetItem, dropPosition);
-                }
-                else
-                {
-                    ClearDropIndicator();
-                }
-            }
-            else
-            {
-                ClearDropIndicator();
-            }
-
-            e.Handled = true;
-        }
-
-        /// <summary>
-        /// Handles Drop event to complete the drag-drop operation.
-        /// </summary>
-        private void OnTreeViewDrop(object? sender, DragEventArgs e)
-        {
-            ClearDropIndicator();
-
-#pragma warning disable CS0618 // Type or member is obsolete - Data property
-            if (!e.Data.Contains("TreeViewSafeNode"))
-                return;
-
-            var draggedNode = e.Data.Get("TreeViewSafeNode") as TreeViewSafeNode;
-#pragma warning restore CS0618
-            if (draggedNode == null)
-                return;
-
-            // Find the target TreeViewItem
-            var treeView = sender as TreeView;
-            var targetItem = FindTreeViewItemAtPosition(treeView, e);
-
-            if (targetItem?.DataContext is TreeViewSafeNode targetNode)
-            {
-                // Use 0,0-based bounds - GetPosition returns relative coordinates
-                var itemBounds = new Rect(0, 0, targetItem.Bounds.Width, targetItem.Bounds.Height);
-                var dropPosition = _dragDropService.CalculateDropPosition(e.GetPosition(targetItem), itemBounds);
-
-                var validation = _dragDropService.ValidateDrop(draggedNode, targetNode, dropPosition);
-                if (validation.IsValid)
-                {
-                    // Get the new parent - prefer TreeViewSafeNode.OriginalNode, fall back to NewParentDialogNode
-                    var newParentDialogNode = validation.NewParent?.OriginalNode ?? validation.NewParentDialogNode;
-
-                    // Perform the move
-                    OnDragDropCompleted(draggedNode, newParentDialogNode, dropPosition, validation.InsertIndex);
-                    e.DragEffects = DragDropEffects.Move;
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        $"OnTreeViewDrop: Invalid drop - {validation.ErrorMessage}");
-                    e.DragEffects = DragDropEffects.None;
-                }
-            }
-
-            _dragDropService.Reset();
-            e.Handled = true;
-        }
-
-        /// <summary>
-        /// Handles DragLeave to clear visual indicators.
-        /// Note: Don't reset here - user might drag back into tree.
-        /// Reset happens after DoDragDrop completes.
-        /// </summary>
-        private void OnTreeViewDragLeave(object? sender, DragEventArgs e)
-        {
-            ClearDropIndicator();
-            _dragDropService.NotifyDropPositionChanged(null);
-        }
-
-        /// <summary>
-        /// Finds the TreeViewItem at the given drag position.
-        /// </summary>
-        private TreeViewItem? FindTreeViewItemAtPosition(TreeView? treeView, DragEventArgs e)
-        {
-            if (treeView == null)
-                return null;
-
-            // Walk up from the source to find a TreeViewItem
-            var source = e.Source as Control;
-            return source?.FindAncestorOfType<TreeViewItem>();
-        }
-
-        // Track current drop indicator target for cleanup
-        private TreeViewItem? _currentDropIndicatorItem;
-        private DropPosition _currentDropPosition;
-
-        /// <summary>
-        /// Updates the visual drop indicator on a TreeViewItem.
-        /// </summary>
-        private void UpdateDropIndicator(TreeViewItem item, DropPosition position)
-        {
-            // Clear previous indicator if different item
-            if (_currentDropIndicatorItem != item)
-            {
-                ClearDropIndicator();
-            }
-
-            _currentDropIndicatorItem = item;
-            _currentDropPosition = position;
-
-            // Apply visual indicator using CSS classes
-            item.Classes.Remove("drop-before");
-            item.Classes.Remove("drop-after");
-            item.Classes.Remove("drop-into");
-
-            switch (position)
-            {
-                case DropPosition.Before:
-                    item.Classes.Add("drop-before");
-                    break;
-                case DropPosition.After:
-                    item.Classes.Add("drop-after");
-                    break;
-                case DropPosition.Into:
-                    item.Classes.Add("drop-into");
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Clears the current drop indicator.
-        /// </summary>
-        private void ClearDropIndicator()
-        {
-            if (_currentDropIndicatorItem != null)
-            {
-                _currentDropIndicatorItem.Classes.Remove("drop-before");
-                _currentDropIndicatorItem.Classes.Remove("drop-after");
-                _currentDropIndicatorItem.Classes.Remove("drop-into");
-                _currentDropIndicatorItem = null;
-            }
-        }
-
         #region IKeyboardShortcutHandler Implementation
 
         // File operations
@@ -647,12 +402,12 @@ namespace DialogEditor.Views
         void IKeyboardShortcutHandler.OnUndo() => OnUndoClick(null, null!);
         void IKeyboardShortcutHandler.OnRedo() => OnRedoClick(null, null!);
 
-        // Tree navigation
-        void IKeyboardShortcutHandler.OnExpandSubnodes() => OnExpandSubnodesClick(null, null!);
-        void IKeyboardShortcutHandler.OnCollapseSubnodes() => OnCollapseSubnodesClick(null, null!);
+        // Tree navigation - delegated to TreeViewUIController (#463)
+        void IKeyboardShortcutHandler.OnExpandSubnodes() => _treeViewUIController.OnExpandSubnodesClick(null, null!);
+        void IKeyboardShortcutHandler.OnCollapseSubnodes() => _treeViewUIController.OnCollapseSubnodesClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeUp() => OnMoveNodeUpClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeDown() => OnMoveNodeDownClick(null, null!);
-        void IKeyboardShortcutHandler.OnGoToParentNode() => OnGoToParentNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnGoToParentNode() => _treeViewUIController.OnGoToParentNodeClick(null, null!);
 
         // View operations - Issue #339: F5 to open flowchart
         void IKeyboardShortcutHandler.OnOpenFlowchart() => OnFlowchartClick(null, null!);
@@ -1774,92 +1529,13 @@ namespace DialogEditor.Views
             _viewModel.MoveNodeToPosition(draggedNode, newParent, insertIndex);
         }
 
+        // Issue #463: Delegated to TreeViewUIController
         private void OnDialogTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            // Skip if this is a programmatic selection (prevents feedback loops from flowchart sync)
-            if (_isSettingSelectionProgrammatically)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnDialogTreeViewSelectionChanged: Skipping - programmatic selection");
-                return;
-            }
+            => _treeViewUIController.OnDialogTreeViewSelectionChanged(sender, e);
 
-            var treeView = sender as TreeView;
-            var newSelectedNode = treeView?.SelectedItem as TreeViewSafeNode;
-
-            // Skip if selection hasn't actually changed (prevents duplicate processing)
-            if (newSelectedNode == _selectedNode)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnDialogTreeViewSelectionChanged: Skipping - same node already selected: {newSelectedNode?.DisplayText ?? "null"}");
-                return;
-            }
-
-            // CRITICAL FIX: Save the PREVIOUS node's properties before switching
-            if (_selectedNode != null && !(_selectedNode is TreeViewRootNode))
-            {
-                SaveCurrentNodeProperties();
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Saved previous node properties before tree selection change");
-            }
-
-            _selectedNode = newSelectedNode;
-
-            // Update ViewModel's selected tree node for Restore button enabling and bindings
-            // Always update - the flags prevent View→ViewModel→View feedback loops elsewhere
-            if (_viewModel != null)
-            {
-                _viewModel.SelectedTreeNode = _selectedNode;
-            }
-
-            // Update DialogContextService.SelectedNodeId for plugin sync (Epic 40 Phase 3 / #234)
-            _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode();
-
-            // Sync selection to flowchart (Epic #325 Sprint 3 - bidirectional sync)
-            // Issue #457: Use FlowchartManager for sync
-            _flowchartManager.SyncSelectionToFlowcharts(_selectedNode?.OriginalNode);
-
-            // Show/hide panels based on node type
-            var conversationSettingsPanel = this.FindControl<StackPanel>("ConversationSettingsPanel");
-            var nodePropertiesPanel = this.FindControl<StackPanel>("NodePropertiesPanel");
-
-            if (_selectedNode is TreeViewRootNode)
-            {
-                // ROOT node: Show conversation settings, hide node properties
-                if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = true;
-                if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = false;
-            }
-            else
-            {
-                // Regular node: Hide conversation settings, show node properties
-                if (conversationSettingsPanel != null) conversationSettingsPanel.IsVisible = false;
-                if (nodePropertiesPanel != null) nodePropertiesPanel.IsVisible = true;
-            }
-
-            if (_selectedNode != null)
-            {
-                PopulatePropertiesPanel(_selectedNode);
-            }
-            else
-            {
-                _propertyPopulator.ClearAllFields();
-            }
-        }
-
+        // Issue #463: Delegated to TreeViewUIController
         private void OnTreeViewItemDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
-        {
-            // Toggle expansion of the selected node when double-tapped
-            if (_selectedNode != null)
-            {
-                try
-                {
-                    _selectedNode.IsExpanded = !_selectedNode.IsExpanded;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Double-tap toggled node expansion: {_selectedNode.IsExpanded}");
-                }
-                catch (Exception ex)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.ERROR, $"Double-tap expand failed: {ex.Message}");
-                    _viewModel.StatusMessage = "Error expanding node - see logs";
-                }
-            }
-        }
+            => _treeViewUIController.OnTreeViewItemDoubleTapped(sender, e);
 
         private void PopulatePropertiesPanel(TreeViewSafeNode node)
         {
@@ -4295,140 +3971,15 @@ namespace DialogEditor.Views
             return result;
         }
 
-        // Expand/Collapse Subnodes (Issue #39)
+        // Issue #463: Expand/Collapse/Navigate delegated to TreeViewUIController
         private void OnExpandSubnodesClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            if (selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a node to expand";
-                return;
-            }
-
-            ExpandNodeRecursive(selectedNode);
-            _viewModel.StatusMessage = $"Expanded node and all subnodes: {selectedNode.DisplayText}";
-        }
+            => _treeViewUIController.OnExpandSubnodesClick(sender, e);
 
         private void OnCollapseSubnodesClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            if (selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a node to collapse";
-                return;
-            }
+            => _treeViewUIController.OnCollapseSubnodesClick(sender, e);
 
-            CollapseNodeRecursive(selectedNode);
-            _viewModel.StatusMessage = $"Collapsed node and all subnodes: {selectedNode.DisplayText}";
-        }
-
-        /// <summary>
-        /// Issue #149: Navigate from a link node to its parent (original) node.
-        /// Only works when a link node (gray) is selected.
-        /// </summary>
         private void OnGoToParentNodeClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            if (selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a link node";
-                return;
-            }
-
-            // Only works on link nodes
-            if (!selectedNode.IsChild)
-            {
-                _viewModel.StatusMessage = "Go to Parent only works on link nodes (gray nodes)";
-                return;
-            }
-
-            // Get the underlying DialogNode that this link points to
-            var targetDialogNode = selectedNode.OriginalNode;
-            if (targetDialogNode == null)
-            {
-                _viewModel.StatusMessage = "Could not find linked node";
-                return;
-            }
-
-            // Find the non-link occurrence of this node in the tree
-            var parentNode = _viewModel.FindTreeNodeForDialogNode(targetDialogNode);
-            if (parentNode == null || parentNode.IsChild)
-            {
-                _viewModel.StatusMessage = "Could not find parent node in tree";
-                return;
-            }
-
-            // Navigate to and select the parent node
-            _viewModel.SelectedTreeNode = parentNode;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Navigated from link to parent: {parentNode.DisplayText}");
-            _viewModel.StatusMessage = $"Jumped to parent node: {parentNode.DisplayText}";
-        }
-
-        private void ExpandNodeRecursive(TreeViewSafeNode node, HashSet<TreeViewSafeNode>? visited = null)
-        {
-            try
-            {
-                // Prevent infinite loops from circular references
-                visited ??= new HashSet<TreeViewSafeNode>();
-
-                if (!visited.Add(node))
-                {
-                    // Already visited - circular reference detected
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Circular reference detected in expand: {node.DisplayText}");
-                    return;
-                }
-
-                node.IsExpanded = true;
-
-                // Copy children list to avoid collection modification issues
-                var children = node.Children?.ToList() ?? new List<TreeViewSafeNode>();
-                foreach (var child in children)
-                {
-                    if (child != null)
-                    {
-                        ExpandNodeRecursive(child, visited);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error expanding node '{node?.DisplayText}': {ex.Message}");
-                _viewModel.StatusMessage = $"Error expanding node: {ex.Message}";
-            }
-        }
-
-        private void CollapseNodeRecursive(TreeViewSafeNode node, HashSet<TreeViewSafeNode>? visited = null)
-        {
-            try
-            {
-                // Prevent infinite loops from circular references
-                visited ??= new HashSet<TreeViewSafeNode>();
-
-                if (!visited.Add(node))
-                {
-                    // Already visited - circular reference detected
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Circular reference detected in collapse: {node.DisplayText}");
-                    return;
-                }
-
-                node.IsExpanded = false;
-
-                // Copy children list to avoid collection modification issues
-                var children = node.Children?.ToList() ?? new List<TreeViewSafeNode>();
-                foreach (var child in children)
-                {
-                    if (child != null)
-                    {
-                        CollapseNodeRecursive(child, visited);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error collapsing node '{node?.DisplayText}': {ex.Message}");
-                _viewModel.StatusMessage = $"Error collapsing node: {ex.Message}";
-            }
-        }
+            => _treeViewUIController.OnGoToParentNodeClick(sender, e);
 
         /// <summary>
         /// Gets the theme-aware success brush for validation feedback.
