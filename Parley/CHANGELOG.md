@@ -10,6 +10,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.71-alpha] - 2025-12-20
+**Branch**: `parley/sprint/drag-drop-collapse` | **PR**: #452 | **Closes**: #251, #436, #450
+
+### Sprint: Drag-Drop & Collapsible Nodes (#451)
+
+Advanced navigation and organization features for TreeView and FlowView.
+
+#### Added
+- **DialogChangeEventBus**: Centralized event system for TreeView/FlowView synchronization
+  - Singleton pattern with pub/sub for dialog structure changes
+  - Event types: NodeAdded, NodeDeleted, NodeMoved, SelectionChanged, DialogRefreshed
+  - Suppression support for batch operations
+- **TreeViewDragDropService**: Drag-drop infrastructure for dialog tree (#450)
+  - Drag threshold detection (5px movement)
+  - Drop position calculation (Before/After/Into zones)
+  - NPC/PC alternation rule validation
+  - Circular reference prevention
+  - Link node drag prevention (drag original instead)
+- **#450**: TreeView drag-drop node reordering (Aurora Toolset parity)
+  - Visual drop indicators (CSS border/background classes)
+  - Reorder nodes within same parent
+  - Reparent nodes to different parent (with validation)
+  - Undo support for move operations
+- **#251**: FlowView collapse/expand subtrees
+  - Collapse All / Expand All toolbar buttons
+  - Double-click node to toggle collapse
+  - Child count indicator (▼ N / ▶ N) on nodes with children
+  - Hidden node count in status bar
+- **Drag-drop unit tests**: 29 tests covering validation and move operations
+  - DragDropTests.cs: MoveNodeToPosition tests (16 tests)
+  - DragDropValidationTests.cs: ValidateDrop tests (13 tests)
+
+#### Deferred
+- **#240**: FlowView visual node repositioning - Requires custom layout engine; AvaloniaGraphControl uses automatic Sugiyama layout
+
+#### Fixed
+- **#436**: FlowView now updates when nodes are added/deleted/moved
+  - MainWindow subscribes to DialogChangeEventBus
+  - Floating, embedded, and tabbed panels all update on structure changes
+
+---
+
 ## [0.1.70-alpha] - 2025-12-17
 **Branch**: `parley/sprint/quest-browser` | **PR**: #446 | **Closes**: #166, #416
 

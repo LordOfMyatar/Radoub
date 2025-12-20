@@ -67,6 +67,25 @@
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
 
+        <!-- TreeView drag-drop indicator styles (#450) -->
+        <!-- Target PART_LayoutRoot inside the template for visual feedback -->
+        <Style Selector="TreeViewItem.drop-before /template/ Border#PART_LayoutRoot">
+            <Setter Property="BorderThickness" Value="0,3,0,0"/>
+            <Setter Property="BorderBrush" Value="#0078D4"/>
+        </Style>
+
+        <Style Selector="TreeViewItem.drop-after /template/ Border#PART_LayoutRoot">
+            <Setter Property="BorderThickness" Value="0,0,0,3"/>
+            <Setter Property="BorderBrush" Value="#0078D4"/>
+        </Style>
+
+        <Style Selector="TreeViewItem.drop-into /template/ Border#PART_LayoutRoot">
+            <Setter Property="Background" Value="#400078D4"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="#0078D4"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+
         <Style Selector="TabControl">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>

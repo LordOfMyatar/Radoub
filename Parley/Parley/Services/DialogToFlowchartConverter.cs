@@ -163,6 +163,8 @@ namespace DialogEditor.Services
                         originalNode: childPtr.Node,
                         originalPointer: childPtr
                     );
+                    // Link nodes are terminal - they don't have children to collapse (#451)
+                    linkNode.ChildCount = 0;
                     graph.AddNode(linkNode);
 
                     // Edge from parent to link node
@@ -218,7 +220,10 @@ namespace DialogEditor.Services
             var hasCondition = sourcePointer != null && !string.IsNullOrEmpty(sourcePointer.ScriptAppears);
             var hasAction = !string.IsNullOrEmpty(node.ScriptAction);
 
-            return new FlowchartNode(
+            // Count children for collapse indicator (#251)
+            var childCount = node.Pointers?.Count ?? 0;
+
+            var flowchartNode = new FlowchartNode(
                 id: nodeId,
                 nodeType: nodeType,
                 text: node.DisplayText,
@@ -230,6 +235,9 @@ namespace DialogEditor.Services
                 originalNode: node,
                 originalPointer: sourcePointer
             );
+
+            flowchartNode.ChildCount = childCount;
+            return flowchartNode;
         }
 
         /// <summary>

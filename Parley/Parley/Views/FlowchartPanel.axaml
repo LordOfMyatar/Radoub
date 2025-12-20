@@ -9,6 +9,13 @@
         <vm:FlowchartPanelViewModel/>
     </Design.DataContext>
 
+    <!-- Style for edge/arrow colors - theme-aware -->
+    <UserControl.Styles>
+        <Style Selector="agc|Connection">
+            <Setter Property="Brush" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Style>
+    </UserControl.Styles>
+
     <Grid RowDefinitions="Auto,*,Auto">
         <!-- Toolbar with zoom controls -->
         <Border Grid.Row="0"
@@ -32,6 +39,23 @@
                         ToolTip.Tip="Refresh flowchart colors" Click="OnRefreshClick"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
                     <TextBlock Text="↻" FontSize="14" TextAlignment="Center"/>
+                </Button>
+                <Rectangle Width="1" Height="20" Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="4,0"/>
+                <Button x:Name="CollapseAllButton" Height="28" Padding="10,4"
+                        ToolTip.Tip="Collapse all nodes"
+                        Click="OnCollapseAllClick">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="📁" FontSize="12"/>
+                        <TextBlock Text="Collapse All" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="ExpandAllButton" Height="28" Padding="10,4"
+                        ToolTip.Tip="Expand all nodes"
+                        Click="OnExpandAllClick">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="📂" FontSize="12"/>
+                        <TextBlock Text="Expand All" VerticalAlignment="Center"/>
+                    </StackPanel>
                 </Button>
             </StackPanel>
         </Border>
@@ -94,7 +118,7 @@
                                                TextWrapping="Wrap"
                                                MaxWidth="180"
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-                                    <!-- Indicators for conditions/actions -->
+                                    <!-- Indicators for conditions/actions/collapse -->
                                     <StackPanel Orientation="Horizontal" Spacing="4">
                                         <TextBlock Text="❓" FontSize="9" Foreground="#0066CC"
                                                    IsVisible="{Binding HasCondition}"
@@ -102,6 +126,22 @@
                                         <TextBlock Text="⚡" FontSize="9" Foreground="#FF6600"
                                                    IsVisible="{Binding HasAction}"
                                                    ToolTip.Tip="Has action script (ScriptAction)"/>
+                                        <!-- Collapse indicator - shows when node has children -->
+                                        <TextBlock x:Name="CollapseIndicator"
+                                                   FontSize="9"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                   Cursor="Hand"
+                                                   ToolTip.Tip="Double-click to collapse/expand children">
+                                            <TextBlock.IsVisible>
+                                                <Binding Path="ChildCount" Converter="{x:Static models:FlowchartHasChildrenConverter.Instance}"/>
+                                            </TextBlock.IsVisible>
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{x:Static models:FlowchartCollapseTextConverter.Instance}">
+                                                    <Binding Path="IsCollapsed"/>
+                                                    <Binding Path="ChildCount"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>

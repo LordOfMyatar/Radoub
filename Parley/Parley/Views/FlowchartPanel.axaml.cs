@@ -66,6 +66,24 @@ namespace DialogEditor.Views
 
             // Listen for theme changes to refresh colors (#141)
             ThemeManager.Instance.ThemeApplied += OnThemeApplied;
+
+            // Subscribe to collapse/expand events from TreeView (#451)
+            DialogChangeEventBus.Instance.DialogChanged += OnDialogChanged;
+        }
+
+        private void OnDialogChanged(object? sender, DialogChangeEventArgs e)
+        {
+            // Handle collapse/expand events from TreeView
+            if (e.ChangeType == DialogChangeType.NodeCollapsed ||
+                e.ChangeType == DialogChangeType.NodeExpanded ||
+                e.ChangeType == DialogChangeType.AllCollapsed ||
+                e.ChangeType == DialogChangeType.AllExpanded)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _viewModel.HandleExternalCollapseEvent(e);
+                });
+            }
         }
 
         private void OnThemeApplied(object? sender, EventArgs e)
@@ -138,6 +156,16 @@ namespace DialogEditor.Views
                 FlowchartScrollViewer.IsVisible = true;
                 UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart manually refreshed with visual tree rebuild");
             }, Avalonia.Threading.DispatcherPriority.Background);
+        }
+
+        private void OnCollapseAllClick(object? sender, RoutedEventArgs e)
+        {
+            _viewModel.CollapseAll();
+        }
+
+        private void OnExpandAllClick(object? sender, RoutedEventArgs e)
+        {
+            _viewModel.ExpandAll();
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
@@ -296,6 +324,17 @@ namespace DialogEditor.Views
 
             if (clickedNode != null)
             {
+                var clickCount = e.ClickCount;
+
+                // Double-click toggles collapse (if node has children) (#251)
+                if (clickCount == 2 && clickedNode.ChildCount > 0)
+                {
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node double-clicked: toggling collapse for {clickedNode.Id}");
+                    _viewModel.ToggleCollapse(clickedNode.Id);
+                    e.Handled = true;
+                    return;
+                }
+
                 UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node clicked: {clickedNode.Id} - {clickedNode.ShortText} (IsLink: {clickedNode.IsLink})");
 
                 // Directly set selection to the clicked node's ID (not by DialogNode lookup)

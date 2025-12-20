@@ -195,11 +195,13 @@
 
                             <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
                             <!-- DRAGON: Do not modify ItemsSource binding, SelectionChanged, or context menu Click handlers -->
+                            <!-- Issue #450: Drag-drop support for node reordering/reparenting -->
                             <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
                                       SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
                                       SelectionChanged="OnDialogTreeViewSelectionChanged"
                                       DoubleTapped="OnTreeViewItemDoubleTapped"
-                                      Padding="0,0,0,20">
+                                      DragDrop.AllowDrop="True"
+                                      Padding="0,0,12,20">
                                 <TreeView.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Add Node" InputGesture="Ctrl+D" Click="OnAddSmartNodeClick"/>

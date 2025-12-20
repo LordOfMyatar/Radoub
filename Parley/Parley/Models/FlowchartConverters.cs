@@ -231,4 +231,51 @@ namespace DialogEditor.Models
             return null;
         }
     }
+
+    /// <summary>
+    /// Converts ChildCount to boolean for visibility binding (#251).
+    /// Returns true if node has children (ChildCount > 0).
+    /// </summary>
+    public class FlowchartHasChildrenConverter : IValueConverter
+    {
+        public static readonly FlowchartHasChildrenConverter Instance = new();
+
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            // Handle boxed int properly
+            if (value is int childCount)
+                return childCount > 0;
+            return false;
+        }
+
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Converts IsCollapsed and ChildCount to collapse indicator text (#251).
+    /// Shows "▶ N" when collapsed, "▼ N" when expanded (where N is child count).
+    /// </summary>
+    public class FlowchartCollapseTextConverter : IMultiValueConverter
+    {
+        public static readonly FlowchartCollapseTextConverter Instance = new();
+
+        public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (values.Count < 2)
+                return string.Empty;
+
+            // Handle boxed values properly
+            var isCollapsed = values[0] is bool b && b;
+            var childCount = values[1] is int c ? c : 0;
+
+            if (childCount <= 0)
+                return string.Empty;
+
+            var icon = isCollapsed ? "▶" : "▼";
+            return $"{icon} {childCount}";
+        }
+    }
 }

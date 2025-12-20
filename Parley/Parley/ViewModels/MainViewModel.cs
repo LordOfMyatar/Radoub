@@ -1075,6 +1075,36 @@ namespace DialogEditor.ViewModels
         }
 
         /// <summary>
+        /// Moves a node to a new position via drag-and-drop.
+        /// Supports both reordering (within same parent) and reparenting (to different parent).
+        /// </summary>
+        /// <param name="nodeToMove">The TreeViewSafeNode being dragged.</param>
+        /// <param name="newParent">The new parent node (null for root level).</param>
+        /// <param name="insertIndex">Index to insert at in the new parent's children.</param>
+        public void MoveNodeToPosition(TreeViewSafeNode nodeToMove, DialogNode? newParent, int insertIndex)
+        {
+            if (CurrentDialog == null) return;
+            if (nodeToMove == null || nodeToMove is TreeViewRootNode) return;
+
+            var node = nodeToMove.OriginalNode;
+            var sourcePointer = nodeToMove.SourcePointer;
+
+            // Save state for undo
+            SaveUndoState("Move Node");
+
+            // Delegate to NodeOperationsManager - pass sourcePointer to identify correct parent-child relationship
+            bool moved = _nodeOpsManager.MoveNodeToPosition(CurrentDialog, node, sourcePointer, newParent, insertIndex, out string statusMessage);
+
+            StatusMessage = statusMessage;
+
+            if (moved)
+            {
+                HasUnsavedChanges = true;
+                RefreshTreeViewAndSelectNode(node);
+            }
+        }
+
+        /// <summary>
         /// Find a sibling node to focus after cutting/deleting a node.
         /// Returns previous sibling if available, otherwise next sibling, otherwise parent.
         /// </summary>
@@ -1130,6 +1160,10 @@ namespace DialogEditor.ViewModels
             Dispatcher.UIThread.Post(() =>
             {
                 _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
+
+                // Notify subscribers that the dialog structure was refreshed
+                // This allows FlowView and other components to update automatically
+                DialogChangeEventBus.Instance.PublishDialogRefreshed("RefreshTreeView");
             }, global::Avalonia.Threading.DispatcherPriority.Loaded);
         }
 
@@ -1150,6 +1184,9 @@ namespace DialogEditor.ViewModels
                 Dispatcher.UIThread.Post(() =>
                 {
                     _treeNavManager.RestoreTreeExpansionState(DialogNodes, expandedNodeRefs);
+
+                    // Notify subscribers that the dialog structure was refreshed
+                    DialogChangeEventBus.Instance.PublishDialogRefreshed("RefreshTreeViewAndSelectNode");
                 }, global::Avalonia.Threading.DispatcherPriority.Loaded);
             });
         }
