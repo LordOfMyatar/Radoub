@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.73-alpha] - 2025-12-20
-**Branch**: `parley/sprint/flowchart-manager` | **PR**: #TBD | **Closes**: #462
+**Branch**: `parley/sprint/flowchart-manager` | **PR**: #467 | **Closes**: #462
 
 ### Sprint 1: Extract FlowchartManager (#457)
 
