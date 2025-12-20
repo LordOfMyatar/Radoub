@@ -55,8 +55,8 @@ public class TreeEditingTests : ParleyTestBase
         StartApplication($"\"{testFile}\"");
         WaitForTitleContains(TestFileName, FileOperationTimeout);
 
-        // Act - Find the Add Node button by name
-        var addButton = MainWindow!.FindFirstDescendant(cf => cf.ByName("+ Node"));
+        // Act - Find the Add Node button by automation ID (more reliable than name with emojis)
+        var addButton = MainWindow!.FindFirstDescendant(cf => cf.ByAutomationId("AddNodeButton"));
 
         // Assert
         Assert.NotNull(addButton);
@@ -71,8 +71,8 @@ public class TreeEditingTests : ParleyTestBase
         StartApplication($"\"{testFile}\"");
         WaitForTitleContains(TestFileName, FileOperationTimeout);
 
-        // Act - Find the Delete button
-        var deleteButton = MainWindow!.FindFirstDescendant(cf => cf.ByName("Delete"));
+        // Act - Find the Delete button by automation ID (more reliable than name with emojis)
+        var deleteButton = MainWindow!.FindFirstDescendant(cf => cf.ByAutomationId("DeleteNodeButton"));
 
         // Assert
         Assert.NotNull(deleteButton);
@@ -131,8 +131,8 @@ public class TreeEditingTests : ParleyTestBase
         firstItem?.Click();
         Thread.Sleep(200);
 
-        // Find delete button - it should be enabled when a node is selected
-        var deleteButton = MainWindow.FindFirstDescendant(cf => cf.ByName("Delete"));
+        // Find delete button by automation ID - it should be enabled when a node is selected
+        var deleteButton = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId("DeleteNodeButton"));
 
         // Assert - Button should exist (enabled state depends on node type)
         Assert.NotNull(deleteButton);
