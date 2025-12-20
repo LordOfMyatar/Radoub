@@ -15,12 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 1: Extract FlowchartManager (#457)
 
-Extract ~1,700 lines of flowchart-related code from MainWindow.axaml.cs into dedicated FlowchartManager class.
+Extract flowchart-related code from MainWindow.axaml.cs into dedicated FlowchartManager class.
+
+**Line count**: MainWindow 5,081 -> 4,448 lines (-633 lines)
 
 #### Refactored
-- Extract flowchart layout modes (side-by-side, tabbed, embedded)
+- Extract flowchart layout modes (floating, side-by-side, tabbed)
 - Move PNG/SVG export logic to FlowchartManager
 - Move flowchart node click handling and tree sync
+- Move FlowView collapse/expand event handling
+- Centralize selection sync to all flowchart panels
 
 ---
 
