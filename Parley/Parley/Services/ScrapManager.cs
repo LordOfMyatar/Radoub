@@ -71,6 +71,13 @@ namespace DialogEditor.Services
             var sanitizedPath = SanitizePath(filePath);
             var timestamp = DateTime.UtcNow;
 
+            // Generate batch ID for subtree tracking (#458, #124)
+            var batchId = Guid.NewGuid().ToString();
+
+            // First pass: create entries and build node-to-entry mapping
+            var nodeToEntry = new Dictionary<DialogNode, ScrapEntry>();
+            var entries = new List<ScrapEntry>();
+
             foreach (var node in nodes)
             {
                 var entry = new ScrapEntry
@@ -83,7 +90,8 @@ namespace DialogEditor.Services
                     NodeText = GetNodePreviewText(node),
                     Speaker = node.Speaker,
                     OriginalIndex = GetNodeIndex(node),
-                    SerializedNode = SerializeNode(node)
+                    SerializedNode = SerializeNode(node),
+                    DeletionBatchId = batchId
                 };
 
                 // Add hierarchy information if available
@@ -93,13 +101,73 @@ namespace DialogEditor.Services
                     entry.ParentNodeText = info.parent != null ? GetNodePreviewText(info.parent) : null;
                 }
 
-                _scrapData.Entries.Add(entry);
+                nodeToEntry[node] = entry;
+                entries.Add(entry);
             }
+
+            // Second pass: set parent-child relationships and identify batch root
+            if (hierarchyInfo != null)
+            {
+                // Find the root of the batch (node with no parent in this batch)
+                var childCounts = new Dictionary<string, int>();
+
+                foreach (var node in nodes)
+                {
+                    var entry = nodeToEntry[node];
+
+                    if (hierarchyInfo.TryGetValue(node, out var info) && info.parent != null)
+                    {
+                        // Check if parent is also in this batch
+                        if (nodeToEntry.TryGetValue(info.parent, out var parentEntry))
+                        {
+                            entry.ParentEntryId = parentEntry.Id;
+
+                            // Count children for each parent
+                            if (!childCounts.ContainsKey(parentEntry.Id))
+                            {
+                                childCounts[parentEntry.Id] = 0;
+                            }
+                            childCounts[parentEntry.Id]++;
+                        }
+                    }
+                }
+
+                // Update child counts
+                foreach (var entry in entries)
+                {
+                    if (childCounts.TryGetValue(entry.Id, out var count))
+                    {
+                        entry.ChildCount = count;
+                    }
+                }
+
+                // Mark the batch root (first entry with no parent in this batch)
+                var batchRoot = entries.FirstOrDefault(e => e.ParentEntryId == null);
+                if (batchRoot != null)
+                {
+                    batchRoot.IsBatchRoot = true;
+                    // Update child count to reflect total descendants
+                    batchRoot.ChildCount = entries.Count - 1;
+                }
+            }
+            else if (entries.Count == 1)
+            {
+                // Single node deletion - it's the batch root
+                entries[0].IsBatchRoot = true;
+            }
+            else if (entries.Count > 0)
+            {
+                // No hierarchy info - mark first as root for display purposes
+                entries[0].IsBatchRoot = true;
+            }
+
+            // Add all entries to scrap data
+            _scrapData.Entries.AddRange(entries);
 
             SaveScrapData();
             UpdateScrapEntriesForFile(filePath);
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Added {nodes.Count} nodes to scrap from {sanitizedPath} ({operation})");
+                $"Added {nodes.Count} nodes to scrap from {sanitizedPath} ({operation}), batch={batchId[..8]}");
         }
 
         /// <summary>
@@ -143,6 +211,79 @@ namespace DialogEditor.Services
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Removed restored node from scrap: {entry.NodeText}");
             }
+        }
+
+        /// <summary>
+        /// Remove an entire batch from scrap (for "Restore with descendants")
+        /// </summary>
+        public void RemoveBatchFromScrap(string batchId)
+        {
+            if (string.IsNullOrEmpty(batchId)) return;
+
+            var batchEntries = _scrapData.Entries.Where(e => e.DeletionBatchId == batchId).ToList();
+            if (batchEntries.Count == 0) return;
+
+            var filePath = batchEntries.First().FilePath;
+            foreach (var entry in batchEntries)
+            {
+                _scrapData.Entries.Remove(entry);
+            }
+
+            SaveScrapData();
+            UpdateScrapEntriesForFile(filePath);
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Removed batch of {batchEntries.Count} nodes from scrap, batchId={batchId[..8]}");
+        }
+
+        /// <summary>
+        /// Get all entries in a deletion batch, ordered for reconstruction (parent before children)
+        /// </summary>
+        public List<ScrapEntry> GetBatchEntries(string batchId)
+        {
+            if (string.IsNullOrEmpty(batchId))
+                return new List<ScrapEntry>();
+
+            var batchEntries = _scrapData.Entries
+                .Where(e => e.DeletionBatchId == batchId)
+                .ToList();
+
+            // Sort by nesting level to ensure parents come before children
+            return batchEntries.OrderBy(e => e.NestingLevel).ToList();
+        }
+
+        /// <summary>
+        /// Get the batch root entry for a given batch ID
+        /// </summary>
+        public ScrapEntry? GetBatchRoot(string batchId)
+        {
+            if (string.IsNullOrEmpty(batchId))
+                return null;
+
+            return _scrapData.Entries.FirstOrDefault(e =>
+                e.DeletionBatchId == batchId && e.IsBatchRoot);
+        }
+
+        /// <summary>
+        /// Get child entries within a batch that have the given parent entry ID
+        /// </summary>
+        public List<ScrapEntry> GetBatchChildren(string parentEntryId)
+        {
+            if (string.IsNullOrEmpty(parentEntryId))
+                return new List<ScrapEntry>();
+
+            return _scrapData.Entries
+                .Where(e => e.ParentEntryId == parentEntryId)
+                .OrderBy(e => e.NodeText) // Stable ordering for predictable restoration
+                .ToList();
+        }
+
+        /// <summary>
+        /// Check if an entry has descendants in the same batch
+        /// </summary>
+        public bool HasBatchDescendants(string entryId)
+        {
+            return _scrapData.Entries.Any(e => e.ParentEntryId == entryId);
         }
 
         /// <summary>
@@ -638,8 +779,41 @@ namespace DialogEditor.Services
         public int NestingLevel { get; set; } = 0;
         public string? ParentNodeText { get; set; }
 
+        // Batch tracking for subtree restoration (#458, #124)
+        /// <summary>
+        /// Groups nodes deleted in the same operation (e.g., deleting a node with children).
+        /// All entries with the same DeletionBatchId were deleted together.
+        /// </summary>
+        public string? DeletionBatchId { get; set; }
+
+        /// <summary>
+        /// Links to the parent entry's Id within the same deletion batch.
+        /// Used to reconstruct parent-child relationships during restoration.
+        /// Null for root nodes in the batch.
+        /// </summary>
+        public string? ParentEntryId { get; set; }
+
+        /// <summary>
+        /// Number of direct children in the deletion batch.
+        /// Used for display purposes (e.g., "[3 children]").
+        /// </summary>
+        public int ChildCount { get; set; } = 0;
+
+        /// <summary>
+        /// True if this is the root node of the deletion batch (first node deleted).
+        /// Used to identify the entry to show in batch-grouped UI.
+        /// </summary>
+        public bool IsBatchRoot { get; set; } = false;
+
         [JsonIgnore]
-        public string DisplayText => $"[{NodeTypeDisplay}] {NodeText}";
+        public string DisplayText
+        {
+            get
+            {
+                var childInfo = ChildCount > 0 ? $" [+{ChildCount}]" : "";
+                return $"[{NodeTypeDisplay}] {NodeText}{childInfo}";
+            }
+        }
 
         [JsonIgnore]
         public string NodeTypeDisplay
@@ -657,11 +831,29 @@ namespace DialogEditor.Services
             }
         }
 
+        /// <summary>
+        /// Display indicator for child count in the deletion batch.
+        /// </summary>
+        [JsonIgnore]
+        public string ChildCountDisplay => ChildCount > 0 ? $"+{ChildCount} children" : "";
+
+        /// <summary>
+        /// True if this entry has children in the deletion batch.
+        /// </summary>
+        [JsonIgnore]
+        public bool HasBatchChildren => ChildCount > 0;
+
         [JsonIgnore]
         public string HierarchyInfo
         {
             get
             {
+                // Show batch info for batch roots with children
+                if (IsBatchRoot && ChildCount > 0)
+                {
+                    return $"Subtree ({ChildCount + 1} nodes)";
+                }
+
                 if (NestingLevel == 0) return "Root level";
                 if (!string.IsNullOrEmpty(ParentNodeText))
                 {
