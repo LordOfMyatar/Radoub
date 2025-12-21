@@ -45,12 +45,12 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Record a completed path for a dialog file.
-        /// Path signature format: "0→2→5→7" (node indices visited)
+        /// Record a visited node for a dialog file.
+        /// Node key format: "E{index}" for entries, "R{index}" for replies.
         /// </summary>
-        public void RecordPath(string filePath, string pathSignature)
+        public void RecordVisitedNode(string filePath, string nodeKey)
         {
-            if (string.IsNullOrEmpty(filePath) || string.IsNullOrEmpty(pathSignature))
+            if (string.IsNullOrEmpty(filePath) || string.IsNullOrEmpty(nodeKey))
                 return;
 
             var sanitizedPath = SanitizePath(filePath);
@@ -61,13 +61,13 @@ namespace DialogEditor.Services
                 _coverageData.Files[sanitizedPath] = fileData;
             }
 
-            if (fileData.VisitedPaths.Add(pathSignature))
+            if (fileData.VisitedNodes.Add(nodeKey))
             {
                 fileData.LastUpdated = DateTime.UtcNow;
                 SaveCoverageData();
 
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Coverage: Recorded path {pathSignature} for {sanitizedPath}");
+                    $"Coverage: Recorded node {nodeKey} for {sanitizedPath}");
 
                 CoverageChanged?.Invoke(this, new CoverageChangedEventArgs(sanitizedPath));
             }
@@ -76,46 +76,46 @@ namespace DialogEditor.Services
         /// <summary>
         /// Get coverage statistics for a dialog file.
         /// </summary>
-        public CoverageStats GetCoverageStats(string filePath, int totalPaths)
+        public CoverageStats GetCoverageStats(string filePath)
         {
             var sanitizedPath = SanitizePath(filePath);
 
             if (!_coverageData.Files.TryGetValue(sanitizedPath, out var fileData))
             {
-                return new CoverageStats(0, totalPaths);
+                return new CoverageStats(0);
             }
 
-            return new CoverageStats(fileData.VisitedPaths.Count, totalPaths);
+            return new CoverageStats(fileData.VisitedNodes.Count);
         }
 
         /// <summary>
-        /// Get all visited path signatures for a dialog file.
+        /// Check if a specific node has been visited.
         /// </summary>
-        public HashSet<string> GetVisitedPaths(string filePath)
+        public bool IsNodeVisited(string filePath, string nodeKey)
         {
             var sanitizedPath = SanitizePath(filePath);
 
             if (_coverageData.Files.TryGetValue(sanitizedPath, out var fileData))
             {
-                return new HashSet<string>(fileData.VisitedPaths);
-            }
-
-            return new HashSet<string>();
-        }
-
-        /// <summary>
-        /// Check if a specific path has been visited.
-        /// </summary>
-        public bool IsPathVisited(string filePath, string pathSignature)
-        {
-            var sanitizedPath = SanitizePath(filePath);
-
-            if (_coverageData.Files.TryGetValue(sanitizedPath, out var fileData))
-            {
-                return fileData.VisitedPaths.Contains(pathSignature);
+                return fileData.VisitedNodes.Contains(nodeKey);
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Get all visited node keys for a dialog file.
+        /// </summary>
+        public HashSet<string> GetVisitedNodes(string filePath)
+        {
+            var sanitizedPath = SanitizePath(filePath);
+
+            if (_coverageData.Files.TryGetValue(sanitizedPath, out var fileData))
+            {
+                return new HashSet<string>(fileData.VisitedNodes);
+            }
+
+            return new HashSet<string>();
         }
 
         /// <summary>
@@ -225,7 +225,17 @@ namespace DialogEditor.Services
     /// </summary>
     public class FileCoverageData
     {
+        /// <summary>
+        /// Set of visited node keys in format "E{index}" for entries, "R{index}" for replies.
+        /// Tracks which individual nodes have been visited during simulation.
+        /// </summary>
+        public HashSet<string> VisitedNodes { get; set; } = new();
+
+        /// <summary>
+        /// Legacy: complete path signatures. Kept for backwards compatibility.
+        /// </summary>
         public HashSet<string> VisitedPaths { get; set; } = new();
+
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
     }
 
@@ -234,19 +244,16 @@ namespace DialogEditor.Services
     /// </summary>
     public class CoverageStats
     {
-        public int VisitedPaths { get; }
-        public int TotalPaths { get; }
-        public double Percentage => TotalPaths > 0 ? (double)VisitedPaths / TotalPaths * 100 : 0;
+        public int VisitedNodes { get; }
 
-        public CoverageStats(int visited, int total)
+        public CoverageStats(int visitedNodes)
         {
-            VisitedPaths = visited;
-            TotalPaths = total;
+            VisitedNodes = visitedNodes;
         }
 
-        public string DisplayText => TotalPaths > 0
-            ? $"{VisitedPaths}/{TotalPaths} paths ({Percentage:F0}%)"
-            : "0 paths";
+        public string DisplayText => VisitedNodes == 1
+            ? "1 node visited"
+            : $"{VisitedNodes} nodes visited";
     }
 
     /// <summary>

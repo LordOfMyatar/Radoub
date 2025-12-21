@@ -21,13 +21,10 @@ namespace DialogEditor.ViewModels
         private readonly string _filePath;
         private readonly CoverageTracker _coverageTracker;
 
-        // Path tracking for coverage
-        private List<int> _currentPath = new();
-        private HashSet<string> _visitedInSession = new();
-
         // Loop detection
         private HashSet<string> _visitedStates = new();
-        private const int MaxPathDepth = 100; // Prevent infinite loops
+        private int _pathDepth = 0;
+        private const int MaxPathDepth = 100;
 
         // UI state
         private string _npcSpeaker = "";
@@ -38,7 +35,6 @@ namespace DialogEditor.ViewModels
         private bool _hasEnded;
         private bool _loopDetected;
         private int _selectedReplyIndex = -1;
-        private int _totalPaths;
 
         // Warnings
         private bool _showNoConditionalsWarning;
@@ -132,7 +128,7 @@ namespace DialogEditor.ViewModels
             private set => SetProperty(ref _showLoopWarning, value);
         }
 
-        public CoverageStats Coverage => _coverageTracker.GetCoverageStats(_filePath, _totalPaths);
+        public CoverageStats Coverage => _coverageTracker.GetCoverageStats(_filePath);
 
         public string CoverageDisplay => Coverage.DisplayText;
 
@@ -141,7 +137,7 @@ namespace DialogEditor.ViewModels
         /// </summary>
         public void StartConversation()
         {
-            _currentPath.Clear();
+            _pathDepth = 0;
             _visitedStates.Clear();
             LoopDetected = false;
             ShowLoopWarning = false;
@@ -170,11 +166,13 @@ namespace DialogEditor.ViewModels
                 return;
 
             SelectedReplyIndex = replyIndex;
+            _pathDepth++;
 
-            // Record the path step
+            // Record the visited reply node
             var reply = _conversationManager.CurrentReplies[replyIndex];
             var replyNodeIndex = _dialog.GetNodeIndex(reply, DialogNodeType.Reply);
-            _currentPath.Add(replyNodeIndex);
+            var nodeKey = $"R{replyNodeIndex}";
+            _coverageTracker.RecordVisitedNode(_filePath, nodeKey);
 
             // Check for loop before advancing
             var stateKey = GetStateKey();
@@ -190,7 +188,7 @@ namespace DialogEditor.ViewModels
             }
 
             // Check for excessive depth
-            if (_currentPath.Count > MaxPathDepth)
+            if (_pathDepth > MaxPathDepth)
             {
                 LoopDetected = true;
                 ShowLoopWarning = true;
@@ -202,7 +200,6 @@ namespace DialogEditor.ViewModels
 
             if (_conversationManager.HasEnded)
             {
-                RecordCompletedPath();
                 HasEnded = true;
                 StatusMessage = "Conversation ended.";
                 ClearDisplay();
@@ -230,7 +227,6 @@ namespace DialogEditor.ViewModels
             else if (Replies.Count == 0)
             {
                 // No replies available - conversation ends
-                RecordCompletedPath();
                 HasEnded = true;
                 StatusMessage = "No replies available.";
                 ClearDisplay();
@@ -255,17 +251,15 @@ namespace DialogEditor.ViewModels
         public void ClearCoverage()
         {
             _coverageTracker.ClearCoverage(_filePath);
-            _visitedInSession.Clear();
             OnPropertyChanged(nameof(CoverageDisplay));
             OnPropertyChanged(nameof(Coverage));
             StatusMessage = "Coverage cleared.";
+            // Refresh replies to remove checkmarks
+            UpdateDisplay();
         }
 
         private void AnalyzeDialogStructure()
         {
-            // Count total leaf paths (entries with no replies)
-            _totalPaths = CountLeafPaths();
-
             // Check for conditionals
             var hasConditionals = HasAnyConditionals();
             ShowNoConditionalsWarning = !hasConditionals;
@@ -274,58 +268,8 @@ namespace DialogEditor.ViewModels
             ShowUnreachableSiblingsWarning = HasUnreachableSiblings();
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"ConversationSimulator: Analyzed dialog - {_totalPaths} paths, " +
+                $"ConversationSimulator: Analyzed dialog - " +
                 $"hasConditionals={hasConditionals}, unreachableSiblings={ShowUnreachableSiblingsWarning}");
-        }
-
-        private int CountLeafPaths()
-        {
-            // Count unique complete paths through the dialog tree
-            // A path is a sequence of choices from start to end
-            var pathCount = 0;
-            var visitedInPath = new HashSet<int>(); // Track nodes in current path to detect loops
-
-            foreach (var start in _dialog.Starts)
-            {
-                if (start.Node != null)
-                {
-                    CountPathsRecursive(start.Node, visitedInPath, ref pathCount);
-                }
-            }
-
-            // Ensure at least 1 path exists
-            return Math.Max(1, pathCount);
-        }
-
-        private void CountPathsRecursive(DialogNode node, HashSet<int> visitedInPath, ref int count)
-        {
-            var nodeIndex = _dialog.GetNodeIndex(node, node.Type);
-
-            // Loop detection - if we've seen this node in the current path, don't count further
-            if (visitedInPath.Contains(nodeIndex))
-                return;
-
-            visitedInPath.Add(nodeIndex);
-
-            if (node.Pointers.Count == 0)
-            {
-                // Leaf node - this is a complete path
-                count++;
-                visitedInPath.Remove(nodeIndex);
-                return;
-            }
-
-            // For NPC entries, we follow each child (engine picks first passing, but we count all for coverage)
-            // For PC replies, each reply is a separate path branch
-            foreach (var ptr in node.Pointers)
-            {
-                if (ptr.Node != null)
-                {
-                    CountPathsRecursive(ptr.Node, visitedInPath, ref count);
-                }
-            }
-
-            visitedInPath.Remove(nodeIndex);
         }
 
         private bool HasAnyConditionals()
@@ -429,23 +373,24 @@ namespace DialogEditor.ViewModels
                     text = "[Continue]";
                 }
 
+                // Check if this reply was visited before
+                var replyNodeIndex = _dialog.GetNodeIndex(reply, DialogNodeType.Reply);
+                var nodeKey = $"R{replyNodeIndex}";
+                var wasVisited = _coverageTracker.IsNodeVisited(_filePath, nodeKey);
+
                 Replies.Add(new ReplyOption
                 {
                     Index = i,
                     Text = text,
-                    HasCondition = false // Reply conditions would be on the pointer, not shown here
+                    HasCondition = false,
+                    WasVisited = wasVisited
                 });
             }
 
             SelectedReplyIndex = Replies.Count > 0 ? 0 : -1;
             OnPropertyChanged(nameof(HasReplies));
-
-            // Record entry visit for path tracking
-            var entryIndex = _dialog.GetNodeIndex(currentEntry, DialogNodeType.Entry);
-            if (_currentPath.Count == 0 || _currentPath.Last() != entryIndex)
-            {
-                _currentPath.Add(entryIndex);
-            }
+            OnPropertyChanged(nameof(CoverageDisplay));
+            OnPropertyChanged(nameof(Coverage));
         }
 
         private void ClearDisplay()
@@ -473,23 +418,6 @@ namespace DialogEditor.ViewModels
             return $"E{entryIndex}:{string.Join(",", replyIndices)}";
         }
 
-        private void RecordCompletedPath()
-        {
-            if (_currentPath.Count == 0)
-                return;
-
-            var pathSignature = string.Join("→", _currentPath);
-
-            if (!_visitedInSession.Contains(pathSignature))
-            {
-                _visitedInSession.Add(pathSignature);
-                _coverageTracker.RecordPath(_filePath, pathSignature);
-
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"ConversationSimulator: Recorded path {pathSignature}");
-            }
-        }
-
         private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value))
@@ -514,7 +442,8 @@ namespace DialogEditor.ViewModels
         public int Index { get; set; }
         public string Text { get; set; } = "";
         public bool HasCondition { get; set; }
+        public bool WasVisited { get; set; }
 
-        public string DisplayText => HasCondition ? $"* {Text}" : Text;
+        public string DisplayText => WasVisited ? $"\u2713 {Text}" : Text;
     }
 }
