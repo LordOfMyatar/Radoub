@@ -10,6 +10,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.79-alpha] - 2025-12-20
+**Branch**: `parley/sprint/conversation-simulator-walker` | **PR**: #480 | **Closes**: #478
+
+### Sprint: Conversation Simulator - Dialog Walker + Coverage
+
+#### Dialog Walker UI
+- Floating window (ConversationSimulatorWindow.axaml)
+- NPC text display with speaker name
+- Script info panel (condition script + action script)
+- Reply selection (radio buttons)
+- Controls: Speak (placeholder), Pause, Skip, Restart, Exit
+
+#### Navigation
+- Step through conversation branches
+- User selects reply at each fork
+- Traverse links within same .dlg
+- Loop detection with warning
+
+#### Coverage Tracking
+- Track unique paths taken (path signatures)
+- Display percentage: "X of Y paths (Z%)"
+- Persist coverage per dialog file (like Scrap)
+- Clear button to reset coverage
+
+#### Warnings
+- ⚠️ "No conditional scripts found"
+- ⚠️ "NPC entries without conditions" (unreachable siblings)
+- ⚠️ "Loop detected"
+
+#### Theme-Aware Colors
+- NPC speaker label uses SpeakerVisualHelper for theme-aware coloring
+- Choices indicator toggles between PC (blue, "Choose response:") and NPC (orange, "Select start:") styling
+- F6 keyboard shortcut opens Conversation Simulator
+
+#### Bug Fixes
+- Fix false "unsaved changes" prompt when opening Conversation Simulator
+- Coverage now tracks unique visited entries (node-based) instead of paths
+
+---
+
 ## [0.1.78-alpha] - 2025-12-20
 **Branch**: `parley/sprint/scrap-settings-migration` | **PR**: #474 | **Closes**: #473
 
