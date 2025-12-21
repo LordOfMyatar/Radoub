@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.78-alpha] - 2025-12-20
-**Branch**: `parley/sprint/scrap-settings-migration` | **PR**: #TBD | **Closes**: #473
+**Branch**: `parley/sprint/scrap-settings-migration` | **PR**: #474 | **Closes**: #473
 
 ### Sprint: Scrap System Redesign & Settings Migration
 
