@@ -793,8 +793,9 @@ namespace DialogEditor.ViewModels
                 _ttsService.Speak(NpcText, npcVoice, TtsRate);
             }
 
-            // Auto-advance if only one reply and AutoAdvance is enabled
-            if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
+            // Auto-advance if only one reply, AutoAdvance is enabled, and NOT auto-speaking
+            // (when auto-speaking, user controls pace via Skip button or manual selection)
+            if (AutoAdvance && !AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry)
             {
                 SelectReply(0);
             }
