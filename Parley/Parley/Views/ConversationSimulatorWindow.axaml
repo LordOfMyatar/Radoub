@@ -227,14 +227,15 @@
                   x:Name="TtsExpander"
                   Header="Text-to-Speech Settings"
                   Margin="0,0,0,10"
-                  IsExpanded="False">
+                  IsExpanded="False"
+                  IsVisible="{Binding TtsAvailable}">
             <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="10">
-                <!-- TTS Available -->
-                <Grid IsVisible="{Binding TtsAvailable}">
+                <!-- TTS Settings -->
+                <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
