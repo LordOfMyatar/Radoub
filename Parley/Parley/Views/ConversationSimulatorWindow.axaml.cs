@@ -176,5 +176,15 @@ namespace DialogEditor.Views
         {
             _viewModel?.ClearCoverage();
         }
+
+        private void OnSpeakClick(object? sender, RoutedEventArgs e)
+        {
+            _viewModel?.Speak();
+        }
+
+        private void OnStopClick(object? sender, RoutedEventArgs e)
+        {
+            _viewModel?.StopSpeaking();
+        }
     }
 }

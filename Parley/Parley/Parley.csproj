@@ -6,6 +6,8 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Define WINDOWS for conditional compilation of Windows-specific TTS code -->
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(DefineConstants);WINDOWS</DefineConstants>
 
     <!-- Version Configuration -->
     <!-- Version properties are set by GitVersion during build -->
@@ -82,6 +84,8 @@
     <PackageReference Include="Google.Protobuf" Version="3.33.2" />
     <!-- Graph layout for native flowchart view (cross-platform) -->
     <PackageReference Include="AvaloniaGraphControl" Version="0.7.0" />
+    <!-- Text-to-Speech for Windows (Sprint #479) -->
+    <PackageReference Include="System.Speech" Version="9.0.0" Condition="'$(RuntimeIdentifier)' == 'win-x64' Or '$(RuntimeIdentifier)' == 'win-arm64' Or $([MSBuild]::IsOSPlatform('Windows'))" />
     <!-- WebView for CEF-based browser embedding (plugin documentation, help) -->
     <!-- Architecture-specific packages: x64 vs ARM64 (CEF natives are platform-specific) -->
     <!-- Using RuntimeInformation.OSArchitecture for native builds (GitHub Actions macos-latest is ARM64) -->

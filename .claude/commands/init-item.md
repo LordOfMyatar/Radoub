@@ -16,7 +16,24 @@ Start a new branch for any GitHub issue - automatically detects item type and ap
 
 ## Workflow
 
-### Step 1: Fetch Issue Details
+### Step 1: Validate Current State
+
+```bash
+git status
+git fetch origin
+```
+
+- Ensure working directory is clean
+- If dirty, ask user to commit or stash changes first
+
+### Step 2: Sync with Main
+
+```bash
+git checkout main
+git pull origin main
+```
+
+### Step 3: Fetch Issue Details
 
 ```bash
 gh issue view [number] --json title,labels,body,milestone
@@ -28,7 +45,7 @@ Extract:
 - **Body**: For additional context
 - **Milestone**: For version targeting
 
-### Step 2: Determine Item Type
+### Step 4: Determine Item Type
 
 Detect type from labels (in priority order):
 
@@ -45,7 +62,7 @@ Determine tool from:
 - Title prefix like `[Parley]`
 - Default to `parley` if ambiguous (ask user to confirm)
 
-### Step 3: Type-Specific Guidance
+### Step 5: Type-Specific Guidance
 
 #### If Epic Detected
 
@@ -84,23 +101,6 @@ Standard fix workflow:
 Standard feature workflow:
 - Branch: `[tool]/feat/[short-name]`
 - PR title: `[Tool] Feat: [Title] (#[number])`
-
-### Step 4: Validate Current State
-
-```bash
-git status
-git fetch origin
-```
-
-- Ensure working directory is clean
-- If dirty, ask user to commit or stash changes first
-
-### Step 5: Sync with Main
-
-```bash
-git checkout main
-git pull origin main
-```
 
 ### Step 6: Create Branch
 

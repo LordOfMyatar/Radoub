@@ -53,6 +53,14 @@ namespace DialogEditor.ViewModels
         private List<int> _rootEntryIndices = new();
         private Dictionary<int, HashSet<int>> _repliesPerRootEntry = new(); // entryIndex -> set of reply indices under that root
 
+        // TTS (Issue #479)
+        private readonly ITtsService _ttsService;
+        private bool _ttsEnabled = true;
+        private double _ttsRate = 1.0;
+        private Dictionary<string, string> _speakerVoiceAssignments = new();
+        private string _pcVoice = "";
+        private string _defaultNpcVoice = "";
+
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? ConversationEnded;
         public event EventHandler? RequestClose;
@@ -63,11 +71,81 @@ namespace DialogEditor.ViewModels
             _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _conversationManager = new ConversationManager(dialog, new AlwaysTrueScriptEngine());
             _coverageTracker = CoverageTracker.Instance;
+            _ttsService = TtsServiceFactory.Instance;
 
             Replies = new ObservableCollection<ReplyOption>();
+            VoiceNames = new ObservableCollection<string>();
+            SpeakerVoiceAssignments = new ObservableCollection<SpeakerVoiceMapping>();
+
+            // Initialize TTS voices
+            InitializeTts();
 
             // Calculate total paths and check for warnings
             AnalyzeDialogStructure();
+        }
+
+        private void InitializeTts()
+        {
+            // Populate voice list
+            VoiceNames.Clear();
+            if (_ttsService.IsAvailable)
+            {
+                foreach (var voice in _ttsService.GetVoiceNames())
+                {
+                    VoiceNames.Add(voice);
+                }
+
+                // Set defaults
+                if (VoiceNames.Count > 0)
+                {
+                    _defaultNpcVoice = VoiceNames[0];
+                    _pcVoice = VoiceNames.Count > 1 ? VoiceNames[1] : VoiceNames[0];
+                }
+            }
+
+            // Collect unique speakers from dialog
+            CollectSpeakers();
+
+            OnPropertyChanged(nameof(TtsAvailable));
+            OnPropertyChanged(nameof(TtsUnavailableReason));
+            OnPropertyChanged(nameof(TtsInstallInstructions));
+        }
+
+        private void CollectSpeakers()
+        {
+            SpeakerVoiceAssignments.Clear();
+            var speakerSet = new HashSet<string>();
+
+            // Collect speakers from all entries
+            foreach (var entry in _dialog.Entries)
+            {
+                var speaker = entry.Speaker ?? "";
+                if (!string.IsNullOrEmpty(speaker) && speakerSet.Add(speaker))
+                {
+                    SpeakerVoiceAssignments.Add(new SpeakerVoiceMapping
+                    {
+                        SpeakerName = speaker,
+                        VoiceName = _defaultNpcVoice,
+                        IsPC = false
+                    });
+                }
+            }
+
+            // Add (Owner) for default NPC speaker
+            SpeakerVoiceAssignments.Add(new SpeakerVoiceMapping
+            {
+                SpeakerName = "(Owner)",
+                VoiceName = _defaultNpcVoice,
+                IsPC = false
+            });
+
+            // Add (PC) for player character
+            SpeakerVoiceAssignments.Add(new SpeakerVoiceMapping
+            {
+                SpeakerName = "(PC)",
+                VoiceName = _pcVoice,
+                IsPC = true
+            });
         }
 
         public string NpcSpeaker
@@ -160,6 +238,61 @@ namespace DialogEditor.ViewModels
         public string CoverageDisplay => Coverage.DisplayText;
 
         public bool CoverageComplete => Coverage.IsComplete;
+
+        // TTS Properties (Issue #479)
+        public bool TtsAvailable => _ttsService.IsAvailable;
+        public string TtsUnavailableReason => _ttsService.UnavailableReason;
+        public string TtsInstallInstructions => _ttsService.InstallInstructions;
+        public bool TtsSpeaking => _ttsService.IsSpeaking;
+        public ObservableCollection<string> VoiceNames { get; }
+        public ObservableCollection<SpeakerVoiceMapping> SpeakerVoiceAssignments { get; }
+
+        public bool TtsEnabled
+        {
+            get => _ttsEnabled;
+            set => SetProperty(ref _ttsEnabled, value);
+        }
+
+        public double TtsRate
+        {
+            get => _ttsRate;
+            set => SetProperty(ref _ttsRate, Math.Clamp(value, 0.5, 2.0));
+        }
+
+        /// <summary>
+        /// Speak the current NPC text using TTS.
+        /// </summary>
+        public void Speak()
+        {
+            if (!TtsAvailable || !TtsEnabled || string.IsNullOrWhiteSpace(NpcText))
+                return;
+
+            // Get the voice for the current speaker
+            var voiceName = GetVoiceForSpeaker(NpcSpeaker);
+            _ttsService.Speak(NpcText, voiceName, TtsRate);
+            OnPropertyChanged(nameof(TtsSpeaking));
+        }
+
+        /// <summary>
+        /// Stop any currently playing TTS.
+        /// </summary>
+        public void StopSpeaking()
+        {
+            _ttsService.Stop();
+            OnPropertyChanged(nameof(TtsSpeaking));
+        }
+
+        private string? GetVoiceForSpeaker(string speaker)
+        {
+            // Check if speaker is empty (use Owner default)
+            var speakerKey = string.IsNullOrEmpty(speaker) ? "(Owner)" : speaker;
+
+            // Find matching voice assignment
+            var assignment = SpeakerVoiceAssignments.FirstOrDefault(a =>
+                a.SpeakerName.Equals(speakerKey, StringComparison.OrdinalIgnoreCase));
+
+            return assignment?.VoiceName ?? _defaultNpcVoice;
+        }
 
         /// <summary>
         /// Start or restart the conversation from the beginning.
@@ -681,5 +814,57 @@ namespace DialogEditor.ViewModels
         public bool IsComplete { get; set; }
 
         public string DisplayText => WasVisited ? $"\u2713 {Text}" : Text;
+    }
+
+    /// <summary>
+    /// Maps a speaker name to a TTS voice.
+    /// Issue #479 - TTS Integration Sprint
+    /// </summary>
+    public class SpeakerVoiceMapping : INotifyPropertyChanged
+    {
+        private string _speakerName = "";
+        private string _voiceName = "";
+        private bool _isPC;
+
+        public string SpeakerName
+        {
+            get => _speakerName;
+            set
+            {
+                if (_speakerName != value)
+                {
+                    _speakerName = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpeakerName)));
+                }
+            }
+        }
+
+        public string VoiceName
+        {
+            get => _voiceName;
+            set
+            {
+                if (_voiceName != value)
+                {
+                    _voiceName = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(VoiceName)));
+                }
+            }
+        }
+
+        public bool IsPC
+        {
+            get => _isPC;
+            set
+            {
+                if (_isPC != value)
+                {
+                    _isPC = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPC)));
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }
