@@ -367,7 +367,9 @@ class Program
         // ============================================================
         // SAVE TO FILE
         // ============================================================
-        string outputPath = @"C:\Users\Sheri\Documents\Neverwinter Nights\modules\LNS_DLG\npc_marta.dlg";
+        // Default to Documents\Neverwinter Nights\modules for NWN module files
+        var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        string outputPath = Path.Combine(documentsPath, "Neverwinter Nights", "modules", "LNS_DLG", "npc_marta.dlg");
 
         // Ensure directory exists
         string? directory = Path.GetDirectoryName(outputPath);
