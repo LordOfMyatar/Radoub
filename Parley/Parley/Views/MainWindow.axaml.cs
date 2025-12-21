@@ -972,6 +972,23 @@ namespace DialogEditor.Views
 
         private void UpdateEmbeddedFlowchartAfterLoad() => _flowchartManager.UpdateAfterLoad();
 
+        // Conversation Simulator handler - Issue #478
+        private void OnConversationSimulatorClick(object? sender, RoutedEventArgs e)
+        {
+            var dialog = DialogContextService.Instance.CurrentDialog;
+            var filePath = DialogContextService.Instance.CurrentFilePath;
+
+            if (dialog == null || string.IsNullOrEmpty(filePath))
+            {
+                _viewModel.StatusMessage = "No dialog loaded. Open a dialog file first.";
+                return;
+            }
+
+            _windows.ShowOrActivate(
+                WindowKeys.ConversationSimulator,
+                () => new ConversationSimulatorWindow(dialog, filePath));
+        }
+
         // Theme methods
         private void ApplySavedTheme()
         {

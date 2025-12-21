@@ -1,0 +1,246 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DialogEditor.Views.ConversationSimulatorWindow"
+        Title="Conversation Simulator"
+        MinWidth="500" MinHeight="400"
+        Width="600" Height="500"
+        SizeToContent="Manual"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Radio button selection styling -->
+        <Style Selector="RadioButton:checked">
+            <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Warnings -->
+            <RowDefinition Height="*"/>      <!-- NPC Text -->
+            <RowDefinition Height="Auto"/>  <!-- Script Info -->
+            <RowDefinition Height="Auto"/>  <!-- Reply Label -->
+            <RowDefinition Height="*"/>      <!-- Replies -->
+            <RowDefinition Height="Auto"/>  <!-- Controls -->
+            <RowDefinition Height="Auto"/>  <!-- Coverage -->
+        </Grid.RowDefinitions>
+
+        <!-- Warnings Panel -->
+        <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,10">
+            <Border Background="#553D0000"
+                    BorderBrush="#883D0000"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="10,5"
+                    IsVisible="{Binding ShowNoConditionalsWarning}">
+                <TextBlock Text="No conditional scripts found in this dialog"
+                           Foreground="#FFFFAA00"/>
+            </Border>
+            <Border Background="#553D0000"
+                    BorderBrush="#883D0000"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="10,5"
+                    IsVisible="{Binding ShowUnreachableSiblingsWarning}">
+                <TextBlock Text="NPC entries without conditions detected (unreachable siblings)"
+                           Foreground="#FFFFAA00"/>
+            </Border>
+            <Border Background="#55550000"
+                    BorderBrush="#88550000"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="10,5"
+                    IsVisible="{Binding ShowLoopWarning}">
+                <TextBlock Text="Loop detected! Use Exit to escape."
+                           Foreground="#FFFF6666"/>
+            </Border>
+        </StackPanel>
+
+        <!-- NPC Text Display -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="15"
+                Margin="0,0,0,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Speaker -->
+                <TextBlock Grid.Row="0"
+                           x:Name="SpeakerLabel"
+                           Text="{Binding NpcSpeaker, StringFormat='[{0}]'}"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           Margin="0,0,0,8"
+                           Foreground="{DynamicResource SystemAccentColor}"/>
+
+                <!-- Text -->
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto">
+                    <TextBlock x:Name="NpcTextBlock"
+                               Text="{Binding NpcText}"
+                               TextWrapping="Wrap"
+                               FontSize="14"
+                               LineHeight="20"/>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- Script Info Panel -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="10,5"
+                Margin="0,0,0,10"
+                IsVisible="{Binding ActionScript, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <StackPanel Orientation="Horizontal" Spacing="20">
+                <StackPanel Orientation="Horizontal" Spacing="5"
+                            IsVisible="{Binding ConditionScript, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="Condition:"
+                               FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{Binding ConditionScript}"
+                               FontSize="11"
+                               FontFamily="Consolas,Courier New,monospace"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="5"
+                            IsVisible="{Binding ActionScript, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="Action:"
+                               FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{Binding ActionScript}"
+                               FontSize="11"
+                               FontFamily="Consolas,Courier New,monospace"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Reply Label -->
+        <TextBlock Grid.Row="3"
+                   Text="Choose response:"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,5"
+                   IsVisible="{Binding HasReplies}"/>
+
+        <!-- Replies List -->
+        <Border Grid.Row="4"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,15"
+                IsVisible="{Binding HasReplies}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="RepliesItemsControl"
+                              ItemsSource="{Binding Replies}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <RadioButton GroupName="Replies"
+                                         Content="{Binding DisplayText}"
+                                         Tag="{Binding Index}"
+                                         Margin="0,3"
+                                         Click="OnReplyClicked"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Conversation Ended Message -->
+        <Border Grid.Row="4"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="20"
+                Margin="0,0,0,15"
+                IsVisible="{Binding HasEnded}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="Conversation Ended"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Control Buttons -->
+        <StackPanel Grid.Row="5"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Spacing="10"
+                    Margin="0,0,0,15">
+            <Button x:Name="SpeakButton"
+                    Content="Speak"
+                    Width="80"
+                    ToolTip.Tip="Text-to-speech (Sprint 2)"
+                    IsEnabled="False"/>
+            <Button x:Name="PauseButton"
+                    Content="Pause"
+                    Width="80"
+                    ToolTip.Tip="Pause for review (Sprint 2)"
+                    IsEnabled="False"/>
+            <Button x:Name="SkipButton"
+                    Content="Skip"
+                    Width="80"
+                    Click="OnSkipClick"
+                    ToolTip.Tip="Auto-advance if single reply"/>
+            <Button x:Name="RestartButton"
+                    Content="Restart"
+                    Width="80"
+                    Click="OnRestartClick"
+                    ToolTip.Tip="Start conversation from beginning"/>
+            <Button x:Name="ExitButton"
+                    Content="Exit"
+                    Width="80"
+                    Click="OnExitClick"
+                    ToolTip.Tip="Exit simulator"/>
+        </StackPanel>
+
+        <!-- Coverage Display -->
+        <Border Grid.Row="6"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="10,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Coverage:"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+
+                <TextBlock Grid.Column="1"
+                           x:Name="CoverageLabel"
+                           Text="{Binding CoverageDisplay}"
+                           VerticalAlignment="Center"/>
+
+                <Button Grid.Column="2"
+                        x:Name="ClearCoverageButton"
+                        Content="Clear"
+                        Padding="15,5"
+                        Click="OnClearCoverageClick"
+                        ToolTip.Tip="Reset coverage tracking for this dialog"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

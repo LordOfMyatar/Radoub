@@ -180,5 +180,6 @@ namespace DialogEditor.Services
         public const string SoundBrowser = "SoundBrowser";
         public const string ScriptBrowser = "ScriptBrowser";
         public const string ParameterBrowser = "ParameterBrowser";
+        public const string ConversationSimulator = "ConversationSimulator";
     }
 }
