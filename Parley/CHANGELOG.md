@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.77-alpha] - 2025-12-20
+**Branch**: `parley/sprint/mainwindow-cleanup` | **PR**: #TBD | **Closes**: #466
+
+### Sprint 5: MainWindow Cleanup & Integration (#457)
+
+Final cleanup after Sprints 1-4. Review remaining MainWindow code and ensure consistent patterns.
+
+**Target**: MainWindow.axaml.cs reduced to <1,500 lines (currently 3,047 lines)
+
+#### Tasks
+- [ ] Review remaining MainWindow code
+- [ ] Ensure consistent patterns across all extracted controllers
+- [ ] Update documentation if needed
+- [ ] Final line count assessment
+
+---
+
 ## [0.1.76-alpha] - 2025-12-20
 **Branch**: `parley/sprint/quest-ui-controller` | **PR**: #470 | **Closes**: #465
 
