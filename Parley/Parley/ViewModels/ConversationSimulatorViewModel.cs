@@ -280,49 +280,52 @@ namespace DialogEditor.ViewModels
 
         private int CountLeafPaths()
         {
-            // Count unique paths by counting leaf entries (entries with no further replies)
-            var leafCount = 0;
-            var visited = new HashSet<int>();
+            // Count unique complete paths through the dialog tree
+            // A path is a sequence of choices from start to end
+            var pathCount = 0;
+            var visitedInPath = new HashSet<int>(); // Track nodes in current path to detect loops
 
             foreach (var start in _dialog.Starts)
             {
                 if (start.Node != null)
                 {
-                    CountLeafPathsRecursive(start.Node, visited, ref leafCount);
+                    CountPathsRecursive(start.Node, visitedInPath, ref pathCount);
                 }
             }
 
             // Ensure at least 1 path exists
-            return Math.Max(1, leafCount);
+            return Math.Max(1, pathCount);
         }
 
-        private void CountLeafPathsRecursive(DialogNode node, HashSet<int> visited, ref int count)
+        private void CountPathsRecursive(DialogNode node, HashSet<int> visitedInPath, ref int count)
         {
             var nodeIndex = _dialog.GetNodeIndex(node, node.Type);
-            if (visited.Contains(nodeIndex))
+
+            // Loop detection - if we've seen this node in the current path, don't count further
+            if (visitedInPath.Contains(nodeIndex))
                 return;
 
-            visited.Add(nodeIndex);
+            visitedInPath.Add(nodeIndex);
 
             if (node.Pointers.Count == 0)
             {
-                // Leaf node
+                // Leaf node - this is a complete path
                 count++;
+                visitedInPath.Remove(nodeIndex);
                 return;
             }
 
+            // For NPC entries, we follow each child (engine picks first passing, but we count all for coverage)
+            // For PC replies, each reply is a separate path branch
             foreach (var ptr in node.Pointers)
             {
-                if (ptr.Node != null && !ptr.IsLink)
+                if (ptr.Node != null)
                 {
-                    CountLeafPathsRecursive(ptr.Node, visited, ref count);
-                }
-                else if (ptr.IsLink && ptr.Node != null)
-                {
-                    // Links can create additional paths - count them
-                    CountLeafPathsRecursive(ptr.Node, visited, ref count);
+                    CountPathsRecursive(ptr.Node, visitedInPath, ref count);
                 }
             }
+
+            visitedInPath.Remove(nodeIndex);
         }
 
         private bool HasAnyConditionals()
