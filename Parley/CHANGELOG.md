@@ -23,9 +23,12 @@ Add cross-platform text-to-speech to the conversation simulator for immersive di
 - EspeakTtsService (Linux espeak-ng)
 - MacOsSayTtsService (macOS say command)
 - TtsServiceFactory for platform detection
-- Per-speaker voice assignment UI
-- Speed control slider
-- Graceful degradation with install instructions
+- Per-speaker voice assignment UI (NPC voices + PC voice)
+- Speed control slider (0.5x - 2.0x)
+- Auto-Speak mode (speaks both NPC and PC lines automatically)
+- Auto-Advance mode (advances when single reply, waits for TTS completion)
+- SpeakCompleted event for proper PC→NPC speech sequencing
+- Graceful degradation with install instructions per platform
 
 ---
 
