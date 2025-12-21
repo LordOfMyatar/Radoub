@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.78-alpha] - 2025-12-20
+**Branch**: `parley/sprint/scrap-settings-migration` | **PR**: #TBD | **Closes**: #473
+
+### Sprint: Scrap System Redesign & Settings Migration
+
+#### Scrap System Redesign (Epic #458)
+- Redesign scrap data model with deletion batch tracking
+- Add "Restore with descendants" operation for subtree restoration
+- UI improvements: child count indicators, batch grouping
+- Fix #370: Redo now properly restores deleted nodes to scrap panel
+- Closes #124: Restore entire subtree chain with one click
+
+#### Settings Migration
+- #412: Migrate game paths to shared RadoubSettings
+- #472: Move Parley folder from ~/Parley/ to ~/Radoub/Parley/
+- Auto-migration preserves existing user settings
+
+---
+
 ## [0.1.77-alpha] - 2025-12-20
 **Branch**: `parley/sprint/mainwindow-cleanup` | **PR**: #471 | **Closes**: #466
 
