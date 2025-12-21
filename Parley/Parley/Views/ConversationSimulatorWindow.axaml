@@ -22,6 +22,7 @@
             <RowDefinition Height="Auto"/>  <!-- Reply Label -->
             <RowDefinition Height="*"/>      <!-- Replies -->
             <RowDefinition Height="Auto"/>  <!-- Controls -->
+            <RowDefinition Height="Auto"/>  <!-- TTS Panel -->
             <RowDefinition Height="Auto"/>  <!-- Coverage -->
         </Grid.RowDefinitions>
 
@@ -195,13 +196,15 @@
             <Button x:Name="SpeakButton"
                     Content="Speak"
                     Width="80"
-                    ToolTip.Tip="Text-to-speech (Sprint 2)"
-                    IsEnabled="False"/>
-            <Button x:Name="PauseButton"
-                    Content="Pause"
+                    Click="OnSpeakClick"
+                    IsEnabled="{Binding TtsAvailable}"
+                    ToolTip.Tip="Speak current NPC text"/>
+            <Button x:Name="StopButton"
+                    Content="Stop"
                     Width="80"
-                    ToolTip.Tip="Pause for review (Sprint 2)"
-                    IsEnabled="False"/>
+                    Click="OnStopClick"
+                    IsEnabled="{Binding TtsSpeaking}"
+                    ToolTip.Tip="Stop speaking"/>
             <Button x:Name="SkipButton"
                     Content="Skip"
                     Width="80"
@@ -219,8 +222,107 @@
                     ToolTip.Tip="Exit simulator"/>
         </StackPanel>
 
-        <!-- Coverage Display -->
+        <!-- TTS Panel (Issue #479) -->
+        <Expander Grid.Row="6"
+                  x:Name="TtsExpander"
+                  Header="Text-to-Speech Settings"
+                  Margin="0,0,0,10"
+                  IsExpanded="False">
+            <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="10">
+                <!-- TTS Available -->
+                <Grid IsVisible="{Binding TtsAvailable}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Enable checkbox, auto-speak, auto-advance, and speed -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15" Margin="0,0,0,10">
+                        <CheckBox Content="Enable TTS"
+                                  IsChecked="{Binding TtsEnabled}"
+                                  ToolTip.Tip="Enable text-to-speech"/>
+                        <CheckBox Content="Auto-Speak"
+                                  IsChecked="{Binding AutoSpeak}"
+                                  ToolTip.Tip="Automatically speak each line"/>
+                        <CheckBox Content="Auto-Advance"
+                                  IsChecked="{Binding AutoAdvance}"
+                                  ToolTip.Tip="Auto-advance when only one reply option (waits for TTS when Auto-Speak is on)"/>
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="Speed:"
+                                       VerticalAlignment="Center"/>
+                            <Slider x:Name="TtsRateSlider"
+                                    Width="100"
+                                    Minimum="0.5"
+                                    Maximum="2.0"
+                                    Value="{Binding TtsRate}"
+                                    TickFrequency="0.1"
+                                    IsSnapToTickEnabled="True"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding TtsRate, StringFormat={}{0:F1}x}"
+                                       Width="35"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Voice Assignments -->
+                    <TextBlock Grid.Row="1"
+                               Text="Voice Assignments:"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,5"/>
+                    <ItemsControl Grid.Row="2"
+                                  ItemsSource="{Binding SpeakerVoiceAssignments}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding SpeakerName}"
+                                               VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1"
+                                              ItemsSource="{Binding $parent[Window].DataContext.VoiceNames}"
+                                              SelectedItem="{Binding VoiceName}"
+                                              MinWidth="150"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Border>
+        </Expander>
+
+        <!-- TTS Unavailable Warning (in same row, mutually exclusive) -->
         <Border Grid.Row="6"
+                Background="#553D0000"
+                BorderBrush="#883D0000"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,10"
+                IsVisible="{Binding !TtsAvailable}">
+            <StackPanel Spacing="5">
+                <TextBlock Text="Text-to-Speech not available"
+                           FontWeight="SemiBold"
+                           Foreground="#FFFFAA00"/>
+                <TextBlock Text="{Binding TtsUnavailableReason}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding TtsInstallInstructions}"
+                           FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Coverage Display -->
+        <Border Grid.Row="7"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="1"

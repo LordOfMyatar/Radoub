@@ -53,6 +53,18 @@ namespace DialogEditor.ViewModels
         private List<int> _rootEntryIndices = new();
         private Dictionary<int, HashSet<int>> _repliesPerRootEntry = new(); // entryIndex -> set of reply indices under that root
 
+        // TTS (Issue #479)
+        private readonly ITtsService _ttsService;
+        private bool _ttsEnabled = true;
+        private bool _autoSpeak = false;
+        private bool _autoAdvance = true;
+        private double _ttsRate = 1.0;
+        private Dictionary<string, string> _speakerVoiceAssignments = new();
+        private string _pcVoice = "";
+        private string _defaultNpcVoice = "";
+        private bool _isSpeakingPcReply = false;
+        private DialogNode? _pendingReplyToAdvance = null;
+
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? ConversationEnded;
         public event EventHandler? RequestClose;
@@ -63,11 +75,84 @@ namespace DialogEditor.ViewModels
             _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             _conversationManager = new ConversationManager(dialog, new AlwaysTrueScriptEngine());
             _coverageTracker = CoverageTracker.Instance;
+            _ttsService = TtsServiceFactory.Instance;
 
             Replies = new ObservableCollection<ReplyOption>();
+            VoiceNames = new ObservableCollection<string>();
+            SpeakerVoiceAssignments = new ObservableCollection<SpeakerVoiceMapping>();
+
+            // Initialize TTS voices and subscribe to events
+            InitializeTts();
+
+            // Subscribe to TTS completion for auto-advance
+            _ttsService.SpeakCompleted += OnTtsSpeakCompleted;
 
             // Calculate total paths and check for warnings
             AnalyzeDialogStructure();
+        }
+
+        private void InitializeTts()
+        {
+            // Populate voice list
+            VoiceNames.Clear();
+            if (_ttsService.IsAvailable)
+            {
+                foreach (var voice in _ttsService.GetVoiceNames())
+                {
+                    VoiceNames.Add(voice);
+                }
+
+                // Set defaults
+                if (VoiceNames.Count > 0)
+                {
+                    _defaultNpcVoice = VoiceNames[0];
+                    _pcVoice = VoiceNames.Count > 1 ? VoiceNames[1] : VoiceNames[0];
+                }
+            }
+
+            // Collect unique speakers from dialog
+            CollectSpeakers();
+
+            OnPropertyChanged(nameof(TtsAvailable));
+            OnPropertyChanged(nameof(TtsUnavailableReason));
+            OnPropertyChanged(nameof(TtsInstallInstructions));
+        }
+
+        private void CollectSpeakers()
+        {
+            SpeakerVoiceAssignments.Clear();
+            var speakerSet = new HashSet<string>();
+
+            // Collect speakers from all entries
+            foreach (var entry in _dialog.Entries)
+            {
+                var speaker = entry.Speaker ?? "";
+                if (!string.IsNullOrEmpty(speaker) && speakerSet.Add(speaker))
+                {
+                    SpeakerVoiceAssignments.Add(new SpeakerVoiceMapping
+                    {
+                        SpeakerName = speaker,
+                        VoiceName = _defaultNpcVoice,
+                        IsPC = false
+                    });
+                }
+            }
+
+            // Add (Owner) for default NPC speaker
+            SpeakerVoiceAssignments.Add(new SpeakerVoiceMapping
+            {
+                SpeakerName = "(Owner)",
+                VoiceName = _defaultNpcVoice,
+                IsPC = false
+            });
+
+            // Add (PC) for player character
+            SpeakerVoiceAssignments.Add(new SpeakerVoiceMapping
+            {
+                SpeakerName = "(PC)",
+                VoiceName = _pcVoice,
+                IsPC = true
+            });
         }
 
         public string NpcSpeaker
@@ -160,6 +245,100 @@ namespace DialogEditor.ViewModels
         public string CoverageDisplay => Coverage.DisplayText;
 
         public bool CoverageComplete => Coverage.IsComplete;
+
+        // TTS Properties (Issue #479)
+        public bool TtsAvailable => _ttsService.IsAvailable;
+        public string TtsUnavailableReason => _ttsService.UnavailableReason;
+        public string TtsInstallInstructions => _ttsService.InstallInstructions;
+        public bool TtsSpeaking => _ttsService.IsSpeaking;
+        public ObservableCollection<string> VoiceNames { get; }
+        public ObservableCollection<SpeakerVoiceMapping> SpeakerVoiceAssignments { get; }
+
+        public bool TtsEnabled
+        {
+            get => _ttsEnabled;
+            set => SetProperty(ref _ttsEnabled, value);
+        }
+
+        public double TtsRate
+        {
+            get => _ttsRate;
+            set => SetProperty(ref _ttsRate, Math.Clamp(value, 0.5, 2.0));
+        }
+
+        public bool AutoSpeak
+        {
+            get => _autoSpeak;
+            set => SetProperty(ref _autoSpeak, value);
+        }
+
+        public bool AutoAdvance
+        {
+            get => _autoAdvance;
+            set => SetProperty(ref _autoAdvance, value);
+        }
+
+        /// <summary>
+        /// Speak the current NPC text using TTS.
+        /// </summary>
+        public void Speak()
+        {
+            if (!TtsAvailable || !TtsEnabled || string.IsNullOrWhiteSpace(NpcText))
+                return;
+
+            // Get the voice for the current speaker
+            var voiceName = GetVoiceForSpeaker(NpcSpeaker);
+            _ttsService.Speak(NpcText, voiceName, TtsRate);
+            OnPropertyChanged(nameof(TtsSpeaking));
+        }
+
+        /// <summary>
+        /// Stop any currently playing TTS.
+        /// </summary>
+        public void StopSpeaking()
+        {
+            _ttsService.Stop();
+            OnPropertyChanged(nameof(TtsSpeaking));
+        }
+
+        /// <summary>
+        /// Handle TTS speech completion for auto-advance.
+        /// </summary>
+        private void OnTtsSpeakCompleted(object? sender, EventArgs e)
+        {
+            OnPropertyChanged(nameof(TtsSpeaking));
+
+            // If we were speaking a PC reply, now advance to NPC response
+            if (_isSpeakingPcReply && _pendingReplyToAdvance != null)
+            {
+                var reply = _pendingReplyToAdvance;
+                _isSpeakingPcReply = false;
+                _pendingReplyToAdvance = null;
+
+                // Use dispatcher to ensure UI thread safety
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => AdvanceToNextEntry(reply));
+                return;
+            }
+
+            // NPC speech completed - auto-advance if enabled and single reply available
+            if (AutoAdvance && AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry && !HasEnded)
+            {
+                // Use dispatcher to ensure UI thread safety
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => SelectReply(0));
+            }
+        }
+
+        private string? GetVoiceForSpeaker(string speaker)
+        {
+            // Check if speaker is empty (use Owner default)
+            var speakerKey = string.IsNullOrEmpty(speaker) ? "(Owner)" : speaker;
+
+            // Find matching voice assignment
+            var assignment = SpeakerVoiceAssignments.FirstOrDefault(a =>
+                a.SpeakerName.Equals(speakerKey, StringComparison.OrdinalIgnoreCase));
+
+            return assignment?.VoiceName ?? _defaultNpcVoice;
+        }
 
         /// <summary>
         /// Start or restart the conversation from the beginning.
@@ -280,6 +459,22 @@ namespace DialogEditor.ViewModels
                 var replyNodeIndex = _dialog.GetNodeIndex(reply, DialogNodeType.Reply);
                 var nodeKey = $"R{replyNodeIndex}";
                 _coverageTracker.RecordVisitedNode(_filePath, nodeKey);
+
+                // Speak PC reply if auto-speak enabled
+                if (AutoSpeak && TtsAvailable && TtsEnabled)
+                {
+                    var pcText = reply.DisplayText;
+                    if (!string.IsNullOrWhiteSpace(pcText))
+                    {
+                        // Store pending reply and speak PC text first
+                        // Advancement will happen when PC speech completes
+                        _isSpeakingPcReply = true;
+                        _pendingReplyToAdvance = reply;
+                        var pcVoice = GetVoiceForSpeaker("(PC)");
+                        _ttsService.Speak(pcText, pcVoice, TtsRate);
+                        return; // Don't advance yet - wait for speech to complete
+                    }
+                }
 
                 // Advance to next entry (first child of this reply)
                 AdvanceToNextEntry(reply);
@@ -627,6 +822,19 @@ namespace DialogEditor.ViewModels
             OnPropertyChanged(nameof(CoverageDisplay));
             OnPropertyChanged(nameof(Coverage));
             OnPropertyChanged(nameof(CoverageComplete));
+
+            // Auto-speak NPC text if enabled
+            if (AutoSpeak && TtsAvailable && TtsEnabled && !string.IsNullOrWhiteSpace(NpcText))
+            {
+                var npcVoice = GetVoiceForSpeaker(NpcSpeaker);
+                _ttsService.Speak(NpcText, npcVoice, TtsRate);
+                // Auto-advance will be triggered by OnTtsSpeakCompleted when speech finishes
+            }
+            else if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
+            {
+                // Auto-advance immediately when not auto-speaking
+                SelectReply(0);
+            }
         }
 
         private void ClearDisplay()
@@ -681,5 +889,57 @@ namespace DialogEditor.ViewModels
         public bool IsComplete { get; set; }
 
         public string DisplayText => WasVisited ? $"\u2713 {Text}" : Text;
+    }
+
+    /// <summary>
+    /// Maps a speaker name to a TTS voice.
+    /// Issue #479 - TTS Integration Sprint
+    /// </summary>
+    public class SpeakerVoiceMapping : INotifyPropertyChanged
+    {
+        private string _speakerName = "";
+        private string _voiceName = "";
+        private bool _isPC;
+
+        public string SpeakerName
+        {
+            get => _speakerName;
+            set
+            {
+                if (_speakerName != value)
+                {
+                    _speakerName = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpeakerName)));
+                }
+            }
+        }
+
+        public string VoiceName
+        {
+            get => _voiceName;
+            set
+            {
+                if (_voiceName != value)
+                {
+                    _voiceName = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(VoiceName)));
+                }
+            }
+        }
+
+        public bool IsPC
+        {
+            get => _isPC;
+            set
+            {
+                if (_isPC != value)
+                {
+                    _isPC = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsPC)));
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }
