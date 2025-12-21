@@ -79,8 +79,11 @@ namespace DialogEditor.ViewModels
             VoiceNames = new ObservableCollection<string>();
             SpeakerVoiceAssignments = new ObservableCollection<SpeakerVoiceMapping>();
 
-            // Initialize TTS voices
+            // Initialize TTS voices and subscribe to events
             InitializeTts();
+
+            // Subscribe to TTS completion for auto-advance
+            _ttsService.SpeakCompleted += OnTtsSpeakCompleted;
 
             // Calculate total paths and check for warnings
             AnalyzeDialogStructure();
@@ -294,6 +297,21 @@ namespace DialogEditor.ViewModels
         {
             _ttsService.Stop();
             OnPropertyChanged(nameof(TtsSpeaking));
+        }
+
+        /// <summary>
+        /// Handle TTS speech completion for auto-advance.
+        /// </summary>
+        private void OnTtsSpeakCompleted(object? sender, EventArgs e)
+        {
+            OnPropertyChanged(nameof(TtsSpeaking));
+
+            // Auto-advance after speech completes if enabled and single reply available
+            if (AutoAdvance && AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry && !HasEnded)
+            {
+                // Use dispatcher to ensure UI thread safety
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => SelectReply(0));
+            }
         }
 
         private string? GetVoiceForSpeaker(string speaker)
@@ -791,12 +809,11 @@ namespace DialogEditor.ViewModels
             {
                 var npcVoice = GetVoiceForSpeaker(NpcSpeaker);
                 _ttsService.Speak(NpcText, npcVoice, TtsRate);
+                // Auto-advance will be triggered by OnTtsSpeakCompleted when speech finishes
             }
-
-            // Auto-advance if only one reply, AutoAdvance is enabled, and NOT auto-speaking
-            // (when auto-speaking, user controls pace via Skip button or manual selection)
-            if (AutoAdvance && !AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry)
+            else if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
             {
+                // Auto-advance immediately when not auto-speaking
                 SelectReply(0);
             }
         }

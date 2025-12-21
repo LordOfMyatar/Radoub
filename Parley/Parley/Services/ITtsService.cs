@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace DialogEditor.Services
@@ -47,5 +48,10 @@ namespace DialogEditor.Services
         /// Only valid when IsAvailable is false.
         /// </summary>
         string InstallInstructions { get; }
+
+        /// <summary>
+        /// Event raised when speech completes (including when stopped).
+        /// </summary>
+        event EventHandler? SpeakCompleted;
     }
 }

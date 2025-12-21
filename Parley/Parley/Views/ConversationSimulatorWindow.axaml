@@ -251,7 +251,7 @@
                                   ToolTip.Tip="Automatically speak each line"/>
                         <CheckBox Content="Auto-Advance"
                                   IsChecked="{Binding AutoAdvance}"
-                                  ToolTip.Tip="Auto-advance when only one reply option"/>
+                                  ToolTip.Tip="Auto-advance when only one reply option (waits for TTS when Auto-Speak is on)"/>
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <TextBlock Text="Speed:"
                                        VerticalAlignment="Center"/>

@@ -16,6 +16,8 @@ namespace DialogEditor.Services
         private Process? _currentProcess;
         private bool _isSpeaking;
 
+        public event EventHandler? SpeakCompleted;
+
         public MacOsSayTtsService()
         {
             try
@@ -156,6 +158,7 @@ namespace DialogEditor.Services
                     {
                         _isSpeaking = false;
                         _currentProcess = null;
+                        SpeakCompleted?.Invoke(this, EventArgs.Empty);
                     };
                 }
             }

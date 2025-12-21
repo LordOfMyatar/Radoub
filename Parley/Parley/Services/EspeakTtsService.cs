@@ -19,6 +19,8 @@ namespace DialogEditor.Services
         private bool _isSpeaking;
         private readonly string _espeakPath;
 
+        public event EventHandler? SpeakCompleted;
+
         public EspeakTtsService()
         {
             // Try to find espeak-ng
@@ -211,6 +213,7 @@ namespace DialogEditor.Services
                     {
                         _isSpeaking = false;
                         _currentProcess = null;
+                        SpeakCompleted?.Invoke(this, EventArgs.Empty);
                     };
                 }
             }

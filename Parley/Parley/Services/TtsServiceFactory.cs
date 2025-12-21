@@ -90,6 +90,10 @@ namespace DialogEditor.Services
             public string UnavailableReason => "TTS is not supported on this platform.";
             public string InstallInstructions => "TTS is not available for this operating system.";
 
+#pragma warning disable CS0067 // Event never used (expected for null implementation)
+            public event EventHandler? SpeakCompleted;
+#pragma warning restore CS0067
+
             public IReadOnlyList<string> GetVoiceNames() => Array.Empty<string>();
             public void Speak(string text, string? voiceName = null, double rate = 1.0) { }
             public void Stop() { }

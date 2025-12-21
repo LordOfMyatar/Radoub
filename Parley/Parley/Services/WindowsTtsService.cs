@@ -24,13 +24,19 @@ namespace DialogEditor.Services
 #endif
         private bool _isSpeaking;
 
+        public event EventHandler? SpeakCompleted;
+
         public WindowsTtsService()
         {
 #if WINDOWS
             try
             {
                 _synthesizer = new SpeechSynthesizer();
-                _synthesizer.SpeakCompleted += (s, e) => _isSpeaking = false;
+                _synthesizer.SpeakCompleted += (s, e) =>
+                {
+                    _isSpeaking = false;
+                    SpeakCompleted?.Invoke(this, EventArgs.Empty);
+                };
 
                 // Get available voices
                 foreach (var voice in _synthesizer.GetInstalledVoices())
