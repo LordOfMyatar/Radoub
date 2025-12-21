@@ -47,6 +47,8 @@ namespace DialogEditor.Views
         private readonly TreeViewUIController _treeViewUIController; // Issue #463: TreeView UI interactions
         private readonly ScriptBrowserController _scriptBrowserController; // Issue #464: Script browsing UI
         private readonly QuestUIController _questUIController; // Issue #465: Quest/journal UI interactions
+        private readonly FileMenuController _fileMenuController; // Issue #466: File menu operations
+        private readonly EditMenuController _editMenuController; // Issue #466: Edit menu operations
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -173,6 +175,24 @@ namespace DialogEditor.Views
                 isPopulatingProperties: () => _isPopulatingProperties,
                 setIsPopulatingProperties: value => _isPopulatingProperties = value,
                 triggerAutoSave: TriggerDebouncedAutoSave);
+
+            // Initialize FileMenuController for file menu operations (#466)
+            _fileMenuController = new FileMenuController(
+                window: this,
+                controls: _controls,
+                getViewModel: () => _viewModel,
+                saveCurrentNodeProperties: SaveCurrentNodeProperties,
+                clearPropertiesPanel: () => _propertyPopulator.ClearAllFields(),
+                populateRecentFilesMenu: () => _fileMenuController?.PopulateRecentFilesMenu(),
+                updateEmbeddedFlowchartAfterLoad: () => _flowchartManager.UpdateAfterLoad(),
+                getParameterUIManager: () => _parameterUIManager,
+                showSaveAsDialogAsync: ShowSaveAsDialogAsync);
+
+            // Initialize EditMenuController for edit menu operations (#466)
+            _editMenuController = new EditMenuController(
+                window: this,
+                getViewModel: () => _viewModel,
+                getSelectedNode: GetSelectedTreeNode);
 
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
@@ -579,200 +599,15 @@ namespace DialogEditor.Views
         public void AddDebugMessage(string message) => _debugAndLoggingHandler.AddDebugMessage(message);
         public void ClearDebugOutput() => _viewModel.ClearDebugMessages();
 
-        // File menu handlers
-        private async void OnNewClick(object? sender, RoutedEventArgs e)
-        {
-            try
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "File → New clicked");
+        // File menu handlers - delegated to FileMenuController (#466)
+        private void OnNewClick(object? sender, RoutedEventArgs e)
+            => _fileMenuController.OnNewClick(sender, e);
 
-                // Prompt for save location FIRST - save now, save often!
-                var storageProvider = StorageProvider;
-                if (storageProvider == null)
-                {
-                    _viewModel.StatusMessage = "Storage provider not available";
-                    return;
-                }
+        private void OnOpenClick(object? sender, RoutedEventArgs e)
+            => _fileMenuController.OnOpenClick(sender, e);
 
-                var options = new FilePickerSaveOptions
-                {
-                    Title = "Save New Dialog File As",
-                    DefaultExtension = "dlg",
-                    SuggestedFileName = "dialog.dlg",
-                    FileTypeChoices = new[]
-                    {
-                        new FilePickerFileType("DLG Dialog Files")
-                        {
-                            Patterns = new[] { "*.dlg" }
-                        },
-                        new FilePickerFileType("JSON Files")
-                        {
-                            Patterns = new[] { "*.json" }
-                        }
-                    }
-                };
-
-                var file = await storageProvider.SaveFilePickerAsync(options);
-                if (file != null)
-                {
-                    var filePath = file.Path.LocalPath;
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Creating new dialog at: {UnifiedLogger.SanitizePath(filePath)}");
-
-                    // Create blank dialog
-                    _viewModel.NewDialog();
-
-                    // Set filename so auto-save works immediately
-                    _viewModel.CurrentFileName = filePath;
-
-                    // Save immediately to create file on disk
-                    await _viewModel.SaveDialogAsync(filePath);
-
-                    _viewModel.StatusMessage = $"New dialog created: {System.IO.Path.GetFileName(filePath)}";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"New dialog created and saved to: {UnifiedLogger.SanitizePath(filePath)}");
-
-                    // Refresh recent files menu
-                    PopulateRecentFilesMenu();
-                }
-                else
-                {
-                    // User cancelled - don't create dialog
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "File → New cancelled by user");
-                }
-            }
-            catch (Exception ex)
-            {
-                _viewModel.StatusMessage = $"Error creating new dialog: {ex.Message}";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to create new dialog: {ex.Message}");
-            }
-        }
-
-        private async void OnOpenClick(object? sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var storageProvider = StorageProvider;
-                if (storageProvider == null)
-                {
-                    _viewModel.StatusMessage = "Storage provider not available";
-                    return;
-                }
-
-                var options = new FilePickerOpenOptions
-                {
-                    Title = "Open Dialog File",
-                    AllowMultiple = false,
-                    FileTypeFilter = new[]
-                    {
-                        new FilePickerFileType("DLG Dialog Files")
-                        {
-                            Patterns = new[] { "*.dlg" }
-                        },
-                        new FilePickerFileType("JSON Files")
-                        {
-                            Patterns = new[] { "*.json" }
-                        },
-                        new FilePickerFileType("All Files")
-                        {
-                            Patterns = new[] { "*.*" }
-                        }
-                    }
-                };
-
-                var files = await storageProvider.OpenFilePickerAsync(options);
-                if (files != null && files.Count > 0)
-                {
-                    var file = files[0];
-                    var filePath = file.Path.LocalPath;
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Opening file: {UnifiedLogger.SanitizePath(filePath)}");
-                    await _viewModel.LoadDialogAsync(filePath);
-
-                    // Issue #5: Removed synchronous creature loading - now loaded lazily when creature picker opens
-
-                    // Update module info bar
-                    UpdateModuleInfo(filePath);
-
-                    // Update embedded flowchart if in side-by-side mode
-                    UpdateEmbeddedFlowchartAfterLoad();
-                }
-            }
-            catch (Exception ex)
-            {
-                _viewModel.StatusMessage = $"Error opening file: {ex.Message}";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open file: {ex.Message}");
-            }
-        }
-
-        private async void OnSaveClick(object? sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrEmpty(_viewModel.CurrentFileName))
-            {
-                OnSaveAsClick(sender, e);
-                return;
-            }
-
-            // Issue #289: Block save if duplicate parameter keys exist
-            if (_parameterUIManager.HasAnyDuplicateKeys())
-            {
-                _viewModel.StatusMessage = "⛔ Cannot save: Fix duplicate parameter keys first!";
-                UnifiedLogger.LogApplication(LogLevel.WARN,
-                    "Save blocked: Duplicate parameter keys detected. User must fix before saving.");
-
-                // Show warning dialog
-                var msgBox = new Window
-                {
-                    Title = "Cannot Save",
-                    Width = 400,
-                    Height = 150,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Content = new StackPanel
-                    {
-                        Margin = new Thickness(20),
-                        Spacing = 15,
-                        Children =
-                        {
-                            new TextBlock
-                            {
-                                Text = "Duplicate parameter keys detected.\n\nFix the duplicate keys (shown with red borders) before saving.",
-                                TextWrapping = Avalonia.Media.TextWrapping.Wrap
-                            },
-                            new Button
-                            {
-                                Content = "OK",
-                                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
-                            }
-                        }
-                    }
-                };
-
-                var okButton = ((StackPanel)msgBox.Content).Children.OfType<Button>().First();
-                okButton.Click += (s, args) => msgBox.Close();
-                msgBox.Show(this);
-                return;
-            }
-
-            // First, save any pending node changes
-            SaveCurrentNodeProperties();
-
-            // Visual feedback - show saving status
-            _viewModel.StatusMessage = "Saving file...";
-
-            // Issue #8: Check save result and show dialog on failure
-            var success = await _viewModel.SaveDialogAsync(_viewModel.CurrentFileName);
-
-            if (success)
-            {
-                _viewModel.StatusMessage = "File saved successfully";
-            }
-            else
-            {
-                // Show error dialog with Save As option
-                var saveAs = await ShowSaveErrorDialog(_viewModel.StatusMessage);
-                if (saveAs)
-                {
-                    OnSaveAsClick(sender, e);
-                }
-            }
-        }
+        private void OnSaveClick(object? sender, RoutedEventArgs e)
+            => _fileMenuController.OnSaveClick(sender, e);
 
         private void SaveCurrentNodeProperties()
         {
@@ -928,20 +763,12 @@ namespace DialogEditor.Views
 
         private void OnCloseClick(object? sender, RoutedEventArgs e)
         {
-            _viewModel.CloseDialog();
-
-            // Clear module info bar
-            ClearModuleInfo();
-
-            // Clear properties panel when file closed
-            _selectedNode = null;
-            _propertyPopulator.ClearAllFields();
+            _fileMenuController.OnCloseClick(sender, e);
+            _selectedNode = null; // Clear local selection reference
         }
 
         private void OnExitClick(object? sender, RoutedEventArgs e)
-        {
-            Close();
-        }
+            => _fileMenuController.OnExitClick(sender, e);
 
         #region Title Bar Handlers (Issue #139)
 
@@ -964,166 +791,19 @@ namespace DialogEditor.Views
 
         #endregion
 
-        private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is MenuItem menuItem && menuItem.Tag is string filePath)
-                {
-                    // Check if file exists before trying to load
-                    if (!System.IO.File.Exists(filePath))
-                    {
-                        var fileName = System.IO.Path.GetFileName(filePath);
-                        var shouldRemove = await ShowConfirmDialog(
-                            "File Not Found",
-                            $"The file '{fileName}' could not be found.\n\nFull path: {UnifiedLogger.SanitizePath(filePath)}\n\nRemove from recent files?");
-
-                        if (shouldRemove)
-                        {
-                            SettingsService.Instance.RemoveRecentFile(filePath);
-                            PopulateRecentFilesMenu(); // Refresh menu
-                        }
-                        return;
-                    }
-
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading recent file: {UnifiedLogger.SanitizePath(filePath)}");
-                    await _viewModel.LoadDialogAsync(filePath);
-
-                    // Issue #5: Removed synchronous creature loading - now loaded lazily when creature picker opens
-
-                    // Update module info bar
-                    UpdateModuleInfo(filePath);
-
-                    // Update embedded flowchart if in side-by-side mode
-                    UpdateEmbeddedFlowchartAfterLoad();
-                }
-            }
-            catch (Exception ex)
-            {
-                _viewModel.StatusMessage = $"Error loading recent file: {ex.Message}";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load recent file: {ex.Message}");
-            }
-        }
-
+        // Recent files - delegated to FileMenuController (#466)
         private void PopulateRecentFilesMenu()
-        {
-            try
-            {
-                var recentFilesMenuItem = this.FindControl<MenuItem>("RecentFilesMenuItem");
-                if (recentFilesMenuItem == null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "RecentFilesMenuItem not found in XAML");
-                    return;
-                }
+            => _fileMenuController.PopulateRecentFilesMenu();
 
-                var menuItems = new System.Collections.Generic.List<object>();
-                var recentFiles = SettingsService.Instance.RecentFiles;
+        // Edit menu handlers - delegated to EditMenuController (#466)
+        private void OnCopyNodeTextClick(object? sender, RoutedEventArgs e)
+            => _editMenuController.OnCopyNodeTextClick(sender, e);
 
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"PopulateRecentFilesMenu: {recentFiles.Count} recent files from settings");
+        private void OnCopyNodePropertiesClick(object? sender, RoutedEventArgs e)
+            => _editMenuController.OnCopyNodePropertiesClick(sender, e);
 
-                if (recentFiles.Count == 0)
-                {
-                    var noFilesItem = new MenuItem { Header = "(No recent files)", IsEnabled = false };
-                    menuItems.Add(noFilesItem);
-                }
-                else
-                {
-                    foreach (var file in recentFiles)
-                    {
-                        var fileName = System.IO.Path.GetFileName(file);
-                        // Escape underscores for menu display (Avalonia treats _ as mnemonic)
-                        var displayName = fileName.Replace("_", "__");
-
-                        var menuItem = new MenuItem
-                        {
-                            Header = displayName,
-                            Tag = file
-                        };
-                        menuItem.Click += OnRecentFileClick;
-                        ToolTip.SetTip(menuItem, file); // Tooltip shows full path
-                        menuItems.Add(menuItem);
-                    }
-
-                    menuItems.Add(new Separator());
-                    var clearItem = new MenuItem { Header = "Clear Recent Files" };
-                    clearItem.Click += (s, args) =>
-                    {
-                        SettingsService.Instance.ClearRecentFiles();
-                        PopulateRecentFilesMenu(); // Refresh menu
-                    };
-                    menuItems.Add(clearItem);
-                }
-
-                recentFilesMenuItem.ItemsSource = menuItems;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error building recent files menu: {ex.Message}");
-            }
-        }
-
-        // Edit menu handlers - Phase 1 Step 8: Copy Operations
-        private async void OnCopyNodeTextClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            var text = _viewModel.GetNodeText(selectedNode);
-
-            if (!string.IsNullOrEmpty(text))
-            {
-                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-                if (clipboard != null)
-                {
-                    await clipboard.SetTextAsync(text);
-                    _viewModel.StatusMessage = "Copied node text to clipboard";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Copied node text to clipboard");
-                }
-            }
-            else
-            {
-                _viewModel.StatusMessage = "No node selected or node has no text";
-            }
-        }
-
-        private async void OnCopyNodePropertiesClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            var properties = _viewModel.GetNodeProperties(selectedNode);
-
-            if (!string.IsNullOrEmpty(properties))
-            {
-                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-                if (clipboard != null)
-                {
-                    await clipboard.SetTextAsync(properties);
-                    _viewModel.StatusMessage = "Copied node properties to clipboard";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Copied node properties to clipboard");
-                }
-            }
-            else
-            {
-                _viewModel.StatusMessage = "No node selected";
-            }
-        }
-
-        private async void OnCopyTreeStructureClick(object? sender, RoutedEventArgs e)
-        {
-            var treeStructure = _viewModel.GetTreeStructure();
-
-            if (!string.IsNullOrEmpty(treeStructure))
-            {
-                var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
-                if (clipboard != null)
-                {
-                    await clipboard.SetTextAsync(treeStructure);
-                    _viewModel.StatusMessage = "Copied tree structure to clipboard";
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Copied tree structure to clipboard");
-                }
-            }
-            else
-            {
-                _viewModel.StatusMessage = "No dialog loaded";
-            }
-        }
+        private void OnCopyTreeStructureClick(object? sender, RoutedEventArgs e)
+            => _editMenuController.OnCopyTreeStructureClick(sender, e);
 
         // View menu handlers
         private void OnClearDebugClick(object? sender, RoutedEventArgs e)
@@ -2252,61 +1932,12 @@ namespace DialogEditor.Views
         // Issue #5: LoadCreaturesFromModuleDirectory removed - creature loading now done lazily
         // in ResourceBrowserManager.BrowseCreatureAsync when user opens the creature picker
 
+        // Module info - delegated to FileMenuController (#466)
         private void UpdateModuleInfo(string dialogFilePath)
-        {
-            try
-            {
-                var moduleDirectory = Path.GetDirectoryName(dialogFilePath);
-                if (string.IsNullOrEmpty(moduleDirectory))
-                {
-                    ClearModuleInfo();
-                    return;
-                }
-
-                // Get module name from module.ifo
-                var moduleName = ModuleInfoParser.GetModuleName(moduleDirectory);
-
-                // Sanitize path for display (replace user directory with ~)
-                var displayPath = PathHelper.SanitizePathForDisplay(moduleDirectory);
-
-                // Update UI
-                var moduleNameTextBlock = this.FindControl<TextBlock>("ModuleNameTextBlock");
-                var modulePathTextBlock = this.FindControl<TextBlock>("ModulePathTextBlock");
-
-                if (moduleNameTextBlock != null)
-                {
-                    moduleNameTextBlock.Text = moduleName ?? Path.GetFileName(moduleDirectory);
-                }
-
-                if (modulePathTextBlock != null)
-                {
-                    modulePathTextBlock.Text = displayPath;
-                }
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Module info updated: {moduleName ?? "(unnamed)"} | {displayPath}");
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to update module info: {ex.Message}");
-                ClearModuleInfo();
-            }
-        }
+            => _fileMenuController.UpdateModuleInfo(dialogFilePath);
 
         private void ClearModuleInfo()
-        {
-            var moduleNameTextBlock = this.FindControl<TextBlock>("ModuleNameTextBlock");
-            var modulePathTextBlock = this.FindControl<TextBlock>("ModulePathTextBlock");
-
-            if (moduleNameTextBlock != null)
-            {
-                moduleNameTextBlock.Text = "No module loaded";
-            }
-
-            if (modulePathTextBlock != null)
-            {
-                modulePathTextBlock.Text = "";
-            }
-        }
+            => _fileMenuController.ClearModuleInfo();
 
 
         private void OnPlaySoundClick(object? sender, RoutedEventArgs e)
@@ -2877,147 +2508,24 @@ namespace DialogEditor.Views
             return result;
         }
 
-        // Phase 1 Step 7: Copy/Paste/Cut handlers
+        // Clipboard/Undo/Redo - delegated to EditMenuController (#466)
         private void OnUndoClick(object? sender, RoutedEventArgs e)
-        {
-            _viewModel.Undo();
-        }
+            => _editMenuController.OnUndoClick(sender, e);
 
         private void OnRedoClick(object? sender, RoutedEventArgs e)
-        {
-            _viewModel.Redo();
-        }
+            => _editMenuController.OnRedoClick(sender, e);
 
         private void OnCutNodeClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            if (selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a node to cut";
-                return;
-            }
-
-            // Use proper Cut method that detaches without deleting children
-            _viewModel.CutNode(selectedNode);
-        }
+            => _editMenuController.OnCutNodeClick(sender, e);
 
         private void OnCopyNodeClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            if (selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a node to copy";
-                return;
-            }
-
-            _viewModel.CopyNode(selectedNode);
-        }
+            => _editMenuController.OnCopyNodeClick(sender, e);
 
         private void OnPasteAsDuplicateClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            if (selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a parent node to paste under";
-                return;
-            }
+            => _editMenuController.OnPasteAsDuplicateClick(sender, e);
 
-            _viewModel.PasteAsDuplicate(selectedNode);
-        }
-
-        private async void OnPasteAsLinkClick(object? sender, RoutedEventArgs e)
-        {
-            var selectedNode = GetSelectedTreeNode();
-            if (selectedNode == null)
-            {
-                _viewModel.StatusMessage = "Please select a parent node to paste link under";
-                return;
-            }
-
-            // Issue #123: Check if clipboard is from Cut operation
-            if (_viewModel.ClipboardWasCut)
-            {
-                var result = await ShowPasteAsLinkAfterCutDialog();
-                switch (result)
-                {
-                    case PasteAfterCutChoice.UndoCut:
-                        // Undo the cut operation first
-                        _viewModel.Undo();
-                        // Now the node is restored, re-copy it so we can paste as link
-                        // Note: After undo, the clipboard may be cleared, so user needs to copy again
-                        _viewModel.StatusMessage = "Cut operation undone. Please copy the node again, then paste as link.";
-                        return;
-                    case PasteAfterCutChoice.PasteAsCopy:
-                        // Delegate to paste as duplicate instead
-                        _viewModel.PasteAsDuplicate(selectedNode);
-                        return;
-                    case PasteAfterCutChoice.Cancel:
-                    default:
-                        _viewModel.StatusMessage = "Paste as link cancelled";
-                        return;
-                }
-            }
-
-            _viewModel.PasteAsLink(selectedNode);
-        }
-
-        private enum PasteAfterCutChoice { Cancel, UndoCut, PasteAsCopy }
-
-        /// <summary>
-        /// Issue #123: Shows dialog when user tries Paste as Link after Cut operation.
-        /// </summary>
-        private async Task<PasteAfterCutChoice> ShowPasteAsLinkAfterCutDialog()
-        {
-            var dialog = new Window
-            {
-                Title = "Cannot Paste as Link After Cut",
-                MinWidth = 450,
-                MaxWidth = 600,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                CanResize = false
-            };
-
-            var panel = new StackPanel { Margin = new Thickness(20) };
-
-            panel.Children.Add(new TextBlock
-            {
-                Text = "Cannot paste as link after a Cut operation.\n\n" +
-                       "Links reference the original node, but Cut will delete it.\n\n" +
-                       "Choose an option:",
-                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
-                MaxWidth = 560,
-                Margin = new Thickness(0, 0, 0, 20)
-            });
-
-            var buttonPanel = new StackPanel
-            {
-                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
-                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
-                Spacing = 10
-            };
-
-            var result = PasteAfterCutChoice.Cancel;
-
-            var undoButton = new Button { Content = "Undo Cut", MinWidth = 100 };
-            undoButton.Click += (s, e) => { result = PasteAfterCutChoice.UndoCut; dialog.Close(); };
-
-            var copyButton = new Button { Content = "Paste as Copy", MinWidth = 100 };
-            copyButton.Click += (s, e) => { result = PasteAfterCutChoice.PasteAsCopy; dialog.Close(); };
-
-            var cancelButton = new Button { Content = "Cancel", MinWidth = 80 };
-            cancelButton.Click += (s, e) => { result = PasteAfterCutChoice.Cancel; dialog.Close(); };
-
-            buttonPanel.Children.Add(undoButton);
-            buttonPanel.Children.Add(copyButton);
-            buttonPanel.Children.Add(cancelButton);
-
-            panel.Children.Add(buttonPanel);
-            dialog.Content = panel;
-
-            await dialog.ShowDialog(this);
-            return result;
-        }
+        private void OnPasteAsLinkClick(object? sender, RoutedEventArgs e)
+            => _editMenuController.OnPasteAsLinkClick(sender, e);
 
         // Issue #463: Expand/Collapse/Navigate delegated to TreeViewUIController
         private void OnExpandSubnodesClick(object? sender, RoutedEventArgs e)

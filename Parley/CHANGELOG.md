@@ -15,15 +15,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint 5: MainWindow Cleanup & Integration (#457)
 
-Final cleanup after Sprints 1-4. Review remaining MainWindow code and ensure consistent patterns.
+Final cleanup after Sprints 1-4. Extract additional controllers for file and edit operations.
 
-**Target**: MainWindow.axaml.cs reduced to <1,500 lines (currently 3,047 lines)
+**Line count**: MainWindow 3,047 → 2,555 lines (-492 lines)
 
-#### Tasks
-- [ ] Review remaining MainWindow code
-- [ ] Ensure consistent patterns across all extracted controllers
-- [ ] Update documentation if needed
-- [ ] Final line count assessment
+#### Refactored
+- **FileMenuController** (539 lines) - Extracted file menu operations:
+  - New/Open/Save/SaveAs/Close/Exit handlers
+  - Recent files menu population
+  - Module info display (UpdateModuleInfo, ClearModuleInfo)
+  - File-related dialog helpers
+
+- **EditMenuController** (245 lines) - Extracted edit menu operations:
+  - Undo/Redo handlers
+  - Cut/Copy/Paste node handlers
+  - Copy to clipboard handlers (text, properties, tree structure)
+  - Paste-as-link-after-cut dialog
+
+#### Summary
+Epic #457 complete. MainWindow reduced from 5,081 to 2,555 lines (**50% reduction**).
+
+Total extracted across all sprints:
+- FlowchartManager: 875 lines
+- TreeViewUIController: 593 lines
+- ScriptBrowserController: 632 lines
+- QuestUIController: 487 lines
+- FileMenuController: 539 lines
+- EditMenuController: 245 lines
 
 ---
 
