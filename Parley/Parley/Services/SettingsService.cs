@@ -188,17 +188,15 @@ namespace DialogEditor.Services
                 // Log migration start (can't use UnifiedLogger yet - it depends on this service)
                 Console.WriteLine($"[Parley] Migrating settings from ~/Parley to ~/Radoub/Parley...");
 
-                // Migrate all files from legacy folder to new folder
-                var filesToMigrate = new[]
+                // Migrate settings files from legacy folder to new folder
+                var settingsToMigrate = new[]
                 {
                     "ParleySettings.json",
                     "SpeakerPreferences.json",
-                    "PluginSettings.json",
-                    "parameter_cache.json",
-                    "scrap.json"
+                    "PluginSettings.json"
                 };
 
-                foreach (var fileName in filesToMigrate)
+                foreach (var fileName in settingsToMigrate)
                 {
                     var legacyPath = Path.Combine(LegacySettingsDirectory, fileName);
                     var newPath = Path.Combine(SettingsDirectory, fileName);
@@ -207,6 +205,27 @@ namespace DialogEditor.Services
                     {
                         File.Copy(legacyPath, newPath);
                         Console.WriteLine($"  Migrated: {fileName}");
+                    }
+                }
+
+                // Migrate cache files to Cache subfolder
+                var cacheDir = Path.Combine(SettingsDirectory, "Cache");
+                Directory.CreateDirectory(cacheDir);
+                var cacheFilesToMigrate = new[]
+                {
+                    "parameter_cache.json",
+                    "scrap.json"
+                };
+
+                foreach (var fileName in cacheFilesToMigrate)
+                {
+                    var legacyPath = Path.Combine(LegacySettingsDirectory, fileName);
+                    var newPath = Path.Combine(cacheDir, fileName);
+
+                    if (File.Exists(legacyPath) && !File.Exists(newPath))
+                    {
+                        File.Copy(legacyPath, newPath);
+                        Console.WriteLine($"  Migrated: {fileName} -> Cache/");
                     }
                 }
 

@@ -36,15 +36,15 @@ namespace DialogEditor.Services
 
         public ScrapManager()
         {
-            // Store in user's ~/Radoub/Parley folder (matches toolset structure)
-            var parleyPath = Path.Combine(
+            // Store in user's ~/Radoub/Parley/Cache folder
+            var cachePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Radoub", "Parley"
+                "Radoub", "Parley", "Cache"
             );
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ScrapManager: Parley folder = {parleyPath}");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ScrapManager: Cache folder = {cachePath}");
 
-            Directory.CreateDirectory(parleyPath);
-            _scrapFilePath = Path.Combine(parleyPath, "scrap.json");
+            Directory.CreateDirectory(cachePath);
+            _scrapFilePath = Path.Combine(cachePath, "scrap.json");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"ScrapManager: Scrap file path = {_scrapFilePath}");
 
             _jsonOptions = new JsonSerializerOptions
@@ -61,18 +61,22 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Add nodes to the scrap for a specific file
+        /// Add nodes to the scrap for a specific file.
+        /// Returns the batchId used, allowing related operations to share the same batch.
         /// </summary>
-        public void AddToScrap(string filePath, List<DialogNode> nodes, string operation = "deleted",
-            Dictionary<DialogNode, (int level, DialogNode? parent)>? hierarchyInfo = null)
+        public string AddToScrap(string filePath, List<DialogNode> nodes, string operation = "deleted",
+            Dictionary<DialogNode, (int level, DialogNode? parent)>? hierarchyInfo = null,
+            string? existingBatchId = null)
         {
-            if (nodes == null || nodes.Count == 0) return;
+            if (nodes == null || nodes.Count == 0) return existingBatchId ?? Guid.NewGuid().ToString();
 
             var sanitizedPath = SanitizePath(filePath);
             var timestamp = DateTime.UtcNow;
 
-            // Generate batch ID for subtree tracking (#458, #124)
-            var batchId = Guid.NewGuid().ToString();
+            // Use existing batch ID if provided (for related operations like orphan cleanup)
+            // Otherwise generate a new one for subtree tracking (#458, #124)
+            var batchId = existingBatchId ?? Guid.NewGuid().ToString();
+            var isFirstInBatch = existingBatchId == null;
 
             // First pass: create entries and build node-to-entry mapping
             var nodeToEntry = new Dictionary<DialogNode, ScrapEntry>();
@@ -142,32 +146,62 @@ namespace DialogEditor.Services
                 }
 
                 // Mark the batch root (first entry with no parent in this batch)
-                var batchRoot = entries.FirstOrDefault(e => e.ParentEntryId == null);
-                if (batchRoot != null)
+                // Only if this is a new batch (not adding to existing)
+                if (isFirstInBatch)
                 {
-                    batchRoot.IsBatchRoot = true;
-                    // Update child count to reflect total descendants
-                    batchRoot.ChildCount = entries.Count - 1;
+                    var batchRoot = entries.FirstOrDefault(e => e.ParentEntryId == null);
+                    if (batchRoot != null)
+                    {
+                        batchRoot.IsBatchRoot = true;
+                        // Update child count to reflect total descendants
+                        batchRoot.ChildCount = entries.Count - 1;
+                    }
                 }
             }
-            else if (entries.Count == 1)
+            else if (isFirstInBatch)
             {
-                // Single node deletion - it's the batch root
-                entries[0].IsBatchRoot = true;
+                // No hierarchy info and this is a new batch
+                if (entries.Count == 1)
+                {
+                    // Single node deletion - it's the batch root
+                    entries[0].IsBatchRoot = true;
+                }
+                else if (entries.Count > 0)
+                {
+                    // No hierarchy info - mark first as root for display purposes
+                    entries[0].IsBatchRoot = true;
+                }
             }
-            else if (entries.Count > 0)
-            {
-                // No hierarchy info - mark first as root for display purposes
-                entries[0].IsBatchRoot = true;
-            }
+            // If adding to existing batch, don't mark any as batch root
 
             // Add all entries to scrap data
             _scrapData.Entries.AddRange(entries);
+
+            // If adding to an existing batch, update the batch root's child count
+            if (!isFirstInBatch)
+            {
+                var existingRoot = _scrapData.Entries.FirstOrDefault(e => e.DeletionBatchId == batchId && e.IsBatchRoot);
+                if (existingRoot != null)
+                {
+                    // Count all entries in this batch (excluding the root)
+                    existingRoot.ChildCount = _scrapData.Entries.Count(e => e.DeletionBatchId == batchId) - 1;
+                }
+            }
 
             SaveScrapData();
             UpdateScrapEntriesForFile(filePath);
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Added {nodes.Count} nodes to scrap from {sanitizedPath} ({operation}), batch={batchId[..8]}");
+
+            return batchId;
+        }
+
+        /// <summary>
+        /// Get a scrap entry by ID (does not remove from scrap)
+        /// </summary>
+        public ScrapEntry? GetEntryById(string entryId)
+        {
+            return _scrapData.Entries.FirstOrDefault(e => e.Id == entryId);
         }
 
         /// <summary>
@@ -428,7 +462,8 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Update the visible scrap entries for a specific file
+        /// Update the visible scrap entries for a specific file.
+        /// Only shows batch roots to avoid UI clutter from subtree entries.
         /// </summary>
         public void UpdateScrapEntriesForFile(string? filePath)
         {
@@ -443,9 +478,10 @@ namespace DialogEditor.Services
 
             var sanitizedPath = SanitizePath(filePath);
 
-            // Only show entries for the current file
+            // Only show batch roots for the current file (hide child entries)
+            // Child entries are still in _scrapData for restoration
             foreach (var entry in _scrapData.Entries
-                .Where(e => e.FilePath == sanitizedPath)
+                .Where(e => e.FilePath == sanitizedPath && e.IsBatchRoot)
                 .OrderByDescending(e => e.Timestamp))
             {
                 ScrapEntries.Add(entry);
@@ -798,10 +834,11 @@ namespace DialogEditor.Services
         {
             // INTERNAL USE ONLY - Called during initialization before any file is loaded.
             // After initialization, always use UpdateScrapEntriesForFile() to filter by current file.
-            // This method loads ALL entries which is needed at startup to populate _scrapData,
-            // but should never be called after a file is loaded.
+            // This method loads ALL batch roots which is needed at startup.
             ScrapEntries.Clear();
-            foreach (var entry in _scrapData.Entries.OrderByDescending(e => e.Timestamp))
+            foreach (var entry in _scrapData.Entries
+                .Where(e => e.IsBatchRoot)
+                .OrderByDescending(e => e.Timestamp))
             {
                 ScrapEntries.Add(entry);
             }
@@ -954,7 +991,11 @@ namespace DialogEditor.Services
                 {
                     var json = File.ReadAllText(_scrapFilePath);
                     var data = JsonSerializer.Deserialize<ScrapData>(json, _jsonOptions);
-                    return data ?? new ScrapData();
+                    if (data != null)
+                    {
+                        MigrateLegacyEntries(data);
+                        return data;
+                    }
                 }
             }
             catch (Exception ex)
@@ -963,6 +1004,33 @@ namespace DialogEditor.Services
             }
 
             return new ScrapData();
+        }
+
+        /// <summary>
+        /// Migrates legacy scrap entries that don't have batch tracking fields set.
+        /// Legacy entries (pre-0.1.78) didn't have IsBatchRoot, so they need to be
+        /// marked as batch roots to appear in the filtered UI.
+        /// </summary>
+        private void MigrateLegacyEntries(ScrapData data)
+        {
+            var migrated = 0;
+            foreach (var entry in data.Entries)
+            {
+                // Legacy entries won't have DeletionBatchId set
+                // Treat each legacy entry as its own batch root
+                if (string.IsNullOrEmpty(entry.DeletionBatchId))
+                {
+                    entry.DeletionBatchId = entry.Id; // Use entry ID as batch ID
+                    entry.IsBatchRoot = true;
+                    migrated++;
+                }
+            }
+
+            if (migrated > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Migrated {migrated} legacy scrap entries to batch format");
+            }
         }
 
         private void SaveScrapData()

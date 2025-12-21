@@ -1725,7 +1725,8 @@ namespace DialogEditor.ViewModels
         #region Scrap Management
 
         /// <summary>
-        /// Restore a node from the scrap back to the dialog
+        /// Restore a node from the scrap back to the dialog.
+        /// Automatically restores entire batch if entry is a batch root with children.
         /// </summary>
         public bool RestoreFromScrap(string entryId, TreeViewSafeNode? selectedParent)
         {
@@ -1733,7 +1734,21 @@ namespace DialogEditor.ViewModels
 
             SaveUndoState("Restore from Scrap");
 
-            var result = _scrapManager.RestoreFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
+            // Check if this is a batch root with children - if so, restore entire batch
+            var entry = _scrapManager.GetEntryById(entryId);
+            RestoreResult result;
+
+            if (entry != null && entry.IsBatchRoot && entry.ChildCount > 0)
+            {
+                // Restore entire batch (node + all children/orphans)
+                result = _scrapManager.RestoreBatchFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
+            }
+            else
+            {
+                // Single node restore
+                result = _scrapManager.RestoreFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
+            }
+
             StatusMessage = result.StatusMessage;
 
             if (result.Success)
