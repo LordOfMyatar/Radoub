@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.81-alpha] - 2025-12-21
+**Branch**: `parley/fix/linux-tts-dropdown-overlap` | **PR**: #TBD
+
+### Fix: Linux TTS Dropdown Overlap (#486)
+
+#### Fixed
+- TTS voice dropdown no longer overlaps Linux installation instructions when no text to speak
+
+---
+
 ## [0.1.80-alpha] - 2025-12-21
 **Branch**: `parley/sprint/tts-integration` | **PR**: #483 | **Closes**: #479
 
