@@ -379,6 +379,55 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Re-add nodes to scrap that were deleted again via Redo.
+        /// Issue #370: Redo should restore deleted nodes to scrap panel.
+        /// </summary>
+        /// <param name="filePath">Current file path</param>
+        /// <param name="dialogBefore">Dialog state before redo (from undo stack)</param>
+        /// <param name="dialogAfter">Dialog state after redo</param>
+        public void RestoreDeletedNodesToScrap(string filePath, Dialog dialogBefore, Dialog dialogAfter)
+        {
+            if (dialogBefore == null || dialogAfter == null || string.IsNullOrEmpty(filePath)) return;
+
+            // Find nodes that were in dialogBefore but not in dialogAfter
+            var nodesRemovedByRedo = new List<DialogNode>();
+
+            // Check entries
+            var afterEntryTexts = new HashSet<string>(
+                dialogAfter.Entries.Select(e => GetNodePreviewText(e))
+            );
+            foreach (var node in dialogBefore.Entries)
+            {
+                var text = GetNodePreviewText(node);
+                if (!afterEntryTexts.Contains(text))
+                {
+                    nodesRemovedByRedo.Add(node);
+                }
+            }
+
+            // Check replies
+            var afterReplyTexts = new HashSet<string>(
+                dialogAfter.Replies.Select(r => GetNodePreviewText(r))
+            );
+            foreach (var node in dialogBefore.Replies)
+            {
+                var text = GetNodePreviewText(node);
+                if (!afterReplyTexts.Contains(text))
+                {
+                    nodesRemovedByRedo.Add(node);
+                }
+            }
+
+            if (nodesRemovedByRedo.Count > 0)
+            {
+                // Re-add these nodes to scrap with "redone" operation
+                AddToScrap(filePath, nodesRemovedByRedo, "redone");
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Restored {nodesRemovedByRedo.Count} nodes to scrap after redo");
+            }
+        }
+
+        /// <summary>
         /// Update the visible scrap entries for a specific file
         /// </summary>
         public void UpdateScrapEntriesForFile(string? filePath)
@@ -551,6 +600,197 @@ namespace DialogEditor.Services
                 Success = true,
                 StatusMessage = statusMessage,
                 RestoredNode = node
+            };
+        }
+
+        /// <summary>
+        /// Restores an entire batch (subtree) from scrap to the specified parent location.
+        /// Reconstructs the original parent-child relationships between nodes.
+        /// Issue #458, #124: "Restore with descendants" operation.
+        /// </summary>
+        public RestoreResult RestoreBatchFromScrap(
+            string entryId,
+            Dialog dialog,
+            TreeViewSafeNode? selectedParent,
+            IndexManager indexManager)
+        {
+            var entry = _scrapData.Entries.FirstOrDefault(e => e.Id == entryId);
+            if (entry == null)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "Entry not found in scrap"
+                };
+            }
+
+            var batchId = entry.DeletionBatchId;
+            if (string.IsNullOrEmpty(batchId))
+            {
+                // No batch - fall back to single node restore
+                return RestoreFromScrap(entryId, dialog, selectedParent, indexManager);
+            }
+
+            // Get all entries in the batch, ordered by nesting level (parents first)
+            var batchEntries = GetBatchEntries(batchId);
+            if (batchEntries.Count <= 1)
+            {
+                // Single node batch - use normal restore
+                return RestoreFromScrap(entryId, dialog, selectedParent, indexManager);
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Restoring batch with {batchEntries.Count} nodes from scrap");
+
+            if (dialog == null)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "No dialog loaded"
+                };
+            }
+
+            if (selectedParent == null)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "Select a location in the tree to restore to"
+                };
+            }
+
+            // Get the batch root node
+            var batchRoot = batchEntries.FirstOrDefault(e => e.IsBatchRoot) ?? batchEntries.First();
+            var rootNode = DeserializeNode(batchRoot.SerializedNode);
+            if (rootNode == null)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "Failed to deserialize batch root node"
+                };
+            }
+
+            // Validate root node can be placed at selected location
+            if (selectedParent is TreeViewRootNode && rootNode.Type != DialogNodeType.Entry)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "Only NPC Entry nodes can be restored to root level"
+                };
+            }
+
+            if (!(selectedParent is TreeViewRootNode) && selectedParent?.OriginalNode != null)
+            {
+                var parentNode = selectedParent.OriginalNode;
+                if (rootNode.Type == DialogNodeType.Entry && parentNode.Type == DialogNodeType.Entry)
+                {
+                    return new RestoreResult
+                    {
+                        Success = false,
+                        StatusMessage = "NPC Entry nodes cannot be children of other NPC Entry nodes"
+                    };
+                }
+            }
+
+            // Build mapping from entry ID to restored node
+            var entryToNode = new Dictionary<string, DialogNode>();
+
+            // First pass: restore all nodes to their respective lists
+            foreach (var scrapEntry in batchEntries)
+            {
+                var node = DeserializeNode(scrapEntry.SerializedNode);
+                if (node == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Failed to deserialize node in batch: {scrapEntry.NodeText}");
+                    continue;
+                }
+
+                // Add to appropriate list
+                if (node.Type == DialogNodeType.Entry)
+                {
+                    dialog.Entries.Add(node);
+                }
+                else
+                {
+                    dialog.Replies.Add(node);
+                }
+
+                entryToNode[scrapEntry.Id] = node;
+            }
+
+            // Second pass: reconstruct parent-child relationships
+            foreach (var scrapEntry in batchEntries)
+            {
+                if (!entryToNode.TryGetValue(scrapEntry.Id, out var node))
+                    continue;
+
+                var nodeIndex = (uint)dialog.GetNodeIndex(node, node.Type);
+
+                // Create pointer to this node
+                var ptr = new DialogPtr
+                {
+                    Node = node,
+                    Type = node.Type,
+                    Index = nodeIndex,
+                    IsLink = false,
+                    ScriptAppears = "",
+                    ConditionParams = new Dictionary<string, string>(),
+                    Comment = "[Restored from scrap]",
+                    Parent = dialog
+                };
+
+                // Determine parent
+                if (scrapEntry.Id == batchRoot.Id)
+                {
+                    // This is the batch root - add under selected parent
+                    if (selectedParent is TreeViewRootNode)
+                    {
+                        ptr.IsStart = true;
+                        dialog.Starts.Add(ptr);
+                    }
+                    else
+                    {
+                        selectedParent!.OriginalNode.Pointers.Add(ptr);
+                        selectedParent.IsExpanded = true;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(scrapEntry.ParentEntryId) &&
+                         entryToNode.TryGetValue(scrapEntry.ParentEntryId, out var parentNode))
+                {
+                    // Add as child of the parent node in the batch
+                    parentNode.Pointers.Add(ptr);
+                }
+                else
+                {
+                    // Orphan in batch - add under batch root
+                    if (entryToNode.TryGetValue(batchRoot.Id, out var batchRootNode))
+                    {
+                        batchRootNode.Pointers.Add(ptr);
+                    }
+                }
+
+                // Register the pointer
+                dialog.LinkRegistry.RegisterLink(ptr);
+            }
+
+            // Recalculate indices
+            indexManager.RecalculatePointerIndices(dialog);
+
+            // Remove entire batch from scrap
+            RemoveBatchFromScrap(batchId);
+
+            var message = $"Restored subtree ({batchEntries.Count} nodes)";
+            UnifiedLogger.LogApplication(LogLevel.INFO, message);
+
+            return new RestoreResult
+            {
+                Success = true,
+                StatusMessage = message,
+                RestoredNode = entryToNode.TryGetValue(batchRoot.Id, out var restoredRoot) ? restoredRoot : null
             };
         }
 

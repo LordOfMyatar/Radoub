@@ -859,6 +859,9 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
+            // Capture current dialog state BEFORE redo to detect deleted nodes (#370)
+            var dialogBeforeRedo = CurrentDialog;
+
             // Capture current tree state to pass to redo (will be saved on undo stack)
             var currentTreeState = CaptureTreeState();
 
@@ -868,6 +871,14 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = nextState.RestoredDialog;
                 // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
+
+                // Issue #370: Re-add nodes to scrap that were deleted by redo
+                if (!string.IsNullOrEmpty(CurrentFileName))
+                {
+                    _scrapManager.RestoreDeletedNodesToScrap(CurrentFileName, dialogBeforeRedo, CurrentDialog);
+                    OnPropertyChanged(nameof(ScrapCount));
+                    OnPropertyChanged(nameof(ScrapTabHeader));
+                }
 
                 // Issue #252: Use the tree state that was saved WITH the redo state
                 // This restores selection/expansion to what it was AFTER the original action
