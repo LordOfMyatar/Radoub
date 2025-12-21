@@ -36,10 +36,10 @@ namespace DialogEditor.Services
 
         public ScrapManager()
         {
-            // Store in user's ~/Parley folder (same as other settings)
+            // Store in user's ~/Radoub/Parley folder (matches toolset structure)
             var parleyPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Parley"
+                "Radoub", "Parley"
             );
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ScrapManager: Parley folder = {parleyPath}");
 

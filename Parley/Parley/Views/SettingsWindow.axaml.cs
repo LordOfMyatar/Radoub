@@ -1134,9 +1134,10 @@ namespace DialogEditor.Views
 
         private void OnOpenPluginsFolderClick(object? sender, RoutedEventArgs e)
         {
+            // New location: ~/Radoub/Parley (matches toolset structure)
             var userDataDir = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Parley",
+                "Radoub", "Parley",
                 "Plugins",
                 "Community"
             );

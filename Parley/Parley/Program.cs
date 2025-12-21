@@ -118,13 +118,14 @@ sealed class Program
 
     /// <summary>
     /// Backup user config folder for safe mode (clean slate approach)
-    /// Renames ~/Parley to ~/Parley.safemode so app starts with defaults
+    /// Renames ~/Radoub/Parley to ~/Radoub/Parley.safemode so app starts with defaults
     /// </summary>
     private static void BackupConfigForSafeMode()
     {
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var parleyDir = Path.Combine(userProfile, "Parley");
-        var backupDir = Path.Combine(userProfile, "Parley.safemode");
+        // New location: ~/Radoub/Parley (matches toolset structure)
+        var parleyDir = Path.Combine(userProfile, "Radoub", "Parley");
+        var backupDir = Path.Combine(userProfile, "Radoub", "Parley.safemode");
 
         try
         {
@@ -138,8 +139,8 @@ sealed class Program
 
                 // Rename current config to backup
                 Directory.Move(parleyDir, backupDir);
-                Console.Error.WriteLine($"Safe mode: Config backed up to ~/Parley.safemode");
-                Console.Error.WriteLine("To restore: delete ~/Parley and rename ~/Parley.safemode to ~/Parley");
+                Console.Error.WriteLine($"Safe mode: Config backed up to ~/Radoub/Parley.safemode");
+                Console.Error.WriteLine("To restore: delete ~/Radoub/Parley and rename ~/Radoub/Parley.safemode to ~/Radoub/Parley");
             }
         }
         catch (Exception ex)

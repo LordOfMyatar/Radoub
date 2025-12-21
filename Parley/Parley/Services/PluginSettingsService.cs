@@ -19,9 +19,10 @@ namespace DialogEditor.Services
 
         private PluginSettingsService()
         {
+            // New location: ~/Radoub/Parley (matches toolset structure)
             var userDataDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Parley"
+                "Radoub", "Parley"
             );
             Directory.CreateDirectory(userDataDir);
             _settingsPath = Path.Combine(userDataDir, "PluginSettings.json");
@@ -73,11 +74,15 @@ namespace DialogEditor.Services
             try
             {
                 // Read plugin settings directly from ParleySettings.json
-                var parleySettingsPath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "Parley",
-                    "ParleySettings.json"
-                );
+                // Check new location first, then legacy location for migration
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                var parleySettingsPath = Path.Combine(userProfile, "Radoub", "Parley", "ParleySettings.json");
+
+                // Fallback to legacy location if new location doesn't exist
+                if (!File.Exists(parleySettingsPath))
+                {
+                    parleySettingsPath = Path.Combine(userProfile, "Parley", "ParleySettings.json");
+                }
 
                 if (File.Exists(parleySettingsPath))
                 {
