@@ -98,10 +98,12 @@ namespace DialogEditor.Services
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"[DeleteNode] Collected {nodesToDelete.Count} nodes to delete");
 
             // Add deleted nodes to scrap BEFORE deleting them
+            // Track the batchId so orphaned nodes can be added to the same batch
+            string? deletionBatchId = null;
             if (nodesToDelete.Count > 0 && currentFileName != null)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "[DeleteNode] Step 3: AddToScrap");
-                _scrapManager.AddToScrap(currentFileName, nodesToDelete, "deleted", hierarchyInfo);
+                deletionBatchId = _scrapManager.AddToScrap(currentFileName, nodesToDelete, "deleted", hierarchyInfo);
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Added {nodesToDelete.Count} deleted nodes to scrap");
             }
@@ -114,13 +116,13 @@ namespace DialogEditor.Services
             var orphanedLinkChildren = _orphanManager.IdentifyOrphanedLinkChildren(dialog, node, nodesToDelete.ToHashSet());
             if (orphanedLinkChildren.Count > 0 && currentFileName != null)
             {
-                // Add orphaned link children to scrap before removing
+                // Add orphaned link children to scrap before removing (same batch as main deletion)
                 var orphanHierarchy = new Dictionary<DialogNode, (int level, DialogNode? parent)>();
                 foreach (var orphan in orphanedLinkChildren)
                 {
                     orphanHierarchy[orphan] = (0, null); // Orphans have no parent after deletion
                 }
-                _scrapManager.AddToScrap(currentFileName, orphanedLinkChildren, "orphaned link child", orphanHierarchy);
+                deletionBatchId = _scrapManager.AddToScrap(currentFileName, orphanedLinkChildren, "orphaned link child", orphanHierarchy, deletionBatchId);
 
                 // Remove from Entries/Replies lists to prevent index corruption
                 _orphanManager.RemoveOrphanedLinkChildrenFromLists(dialog, orphanedLinkChildren);
@@ -146,13 +148,13 @@ namespace DialogEditor.Services
             var additionalOrphans = _orphanManager.RemoveOrphanedNodes(dialog);
             if (additionalOrphans.Count > 0 && currentFileName != null)
             {
-                // Add orphaned nodes to scrap
+                // Add orphaned nodes to scrap (same batch as main deletion)
                 var orphanHierarchy = new Dictionary<DialogNode, (int level, DialogNode? parent)>();
                 foreach (var orphan in additionalOrphans)
                 {
                     orphanHierarchy[orphan] = (0, null); // Orphans have no parent
                 }
-                _scrapManager.AddToScrap(currentFileName, additionalOrphans, "orphaned after deletion", orphanHierarchy);
+                _scrapManager.AddToScrap(currentFileName, additionalOrphans, "orphaned after deletion", orphanHierarchy, deletionBatchId);
 
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Removed {additionalOrphans.Count} orphaned nodes after deletion");

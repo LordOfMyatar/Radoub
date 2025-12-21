@@ -859,6 +859,9 @@ namespace DialogEditor.ViewModels
                 return;
             }
 
+            // Capture current dialog state BEFORE redo to detect deleted nodes (#370)
+            var dialogBeforeRedo = CurrentDialog;
+
             // Capture current tree state to pass to redo (will be saved on undo stack)
             var currentTreeState = CaptureTreeState();
 
@@ -868,6 +871,14 @@ namespace DialogEditor.ViewModels
                 CurrentDialog = nextState.RestoredDialog;
                 // CRITICAL: Rebuild LinkRegistry after redo to fix Issue #28 (IsLink corruption)
                 CurrentDialog.RebuildLinkRegistry();
+
+                // Issue #370: Re-add nodes to scrap that were deleted by redo
+                if (!string.IsNullOrEmpty(CurrentFileName))
+                {
+                    _scrapManager.RestoreDeletedNodesToScrap(CurrentFileName, dialogBeforeRedo, CurrentDialog);
+                    OnPropertyChanged(nameof(ScrapCount));
+                    OnPropertyChanged(nameof(ScrapTabHeader));
+                }
 
                 // Issue #252: Use the tree state that was saved WITH the redo state
                 // This restores selection/expansion to what it was AFTER the original action
@@ -1714,7 +1725,8 @@ namespace DialogEditor.ViewModels
         #region Scrap Management
 
         /// <summary>
-        /// Restore a node from the scrap back to the dialog
+        /// Restore a node from the scrap back to the dialog.
+        /// Automatically restores entire batch if entry is a batch root with children.
         /// </summary>
         public bool RestoreFromScrap(string entryId, TreeViewSafeNode? selectedParent)
         {
@@ -1722,7 +1734,21 @@ namespace DialogEditor.ViewModels
 
             SaveUndoState("Restore from Scrap");
 
-            var result = _scrapManager.RestoreFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
+            // Check if this is a batch root with children - if so, restore entire batch
+            var entry = _scrapManager.GetEntryById(entryId);
+            RestoreResult result;
+
+            if (entry != null && entry.IsBatchRoot && entry.ChildCount > 0)
+            {
+                // Restore entire batch (node + all children/orphans)
+                result = _scrapManager.RestoreBatchFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
+            }
+            else
+            {
+                // Single node restore
+                result = _scrapManager.RestoreFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
+            }
+
             StatusMessage = result.StatusMessage;
 
             if (result.Success)

@@ -115,11 +115,16 @@ namespace Parley.Tests.GUI
             entryNode = GetFirstEntryNode(viewModel);
             Assert.NotNull(entryNode);
 
-            // Act: Delete parent (should scrap parent + children)
+            // Act: Delete parent (should scrap parent + children as a batch)
             viewModel.DeleteNode(entryNode);
 
-            // Assert: Exactly 2 more nodes added to scrap (parent + child) - #352 fix
-            Assert.Equal(initialScrapCount + 2, viewModel.ScrapEntries.Count);
+            // Assert: Only 1 visible entry (batch root) - children hidden in batch (#458)
+            Assert.Equal(initialScrapCount + 1, viewModel.ScrapEntries.Count);
+
+            // Assert: Batch root has child count of 1 (the reply node)
+            var batchRoot = viewModel.ScrapEntries[initialScrapCount];
+            Assert.True(batchRoot.IsBatchRoot, "Entry should be batch root");
+            Assert.Equal(1, batchRoot.ChildCount);
         }
 
         [AvaloniaFact]

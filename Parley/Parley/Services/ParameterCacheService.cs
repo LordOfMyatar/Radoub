@@ -40,11 +40,11 @@ namespace DialogEditor.Services
         /// </summary>
         private string GetCacheFilePath()
         {
-            // Use ~/Parley for cross-platform consistency
+            // Store in ~/Radoub/Parley/Cache folder
             var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var parleyDir = Path.Combine(userProfile, "Parley");
-            Directory.CreateDirectory(parleyDir); // Ensure directory exists
-            return Path.Combine(parleyDir, CacheFileName);
+            var cacheDir = Path.Combine(userProfile, "Radoub", "Parley", "Cache");
+            Directory.CreateDirectory(cacheDir); // Ensure directory exists
+            return Path.Combine(cacheDir, CacheFileName);
         }
 
         /// <summary>

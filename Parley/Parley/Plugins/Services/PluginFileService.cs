@@ -27,9 +27,10 @@ namespace DialogEditor.Plugins.Services
             _security = security ?? throw new ArgumentNullException(nameof(security));
 
             // Sandbox plugins to their own data directory, isolated by plugin ID
+            // New location: ~/Radoub/Parley (matches toolset structure)
             var userDataDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Parley", "PluginData", _security.PluginId
+                "Radoub", "Parley", "PluginData", _security.PluginId
             );
             _sandboxPath = userDataDir;
 

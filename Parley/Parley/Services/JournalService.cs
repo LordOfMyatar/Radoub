@@ -251,9 +251,10 @@ namespace DialogEditor.Services
         /// </summary>
         public static string GetCacheFilePath()
         {
+            // New location: ~/Radoub/Parley (matches toolset structure)
             var userDataDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Parley",
+                "Radoub", "Parley",
                 "Cache");
             return Path.Combine(userDataDir, "journal_cache.json");
         }

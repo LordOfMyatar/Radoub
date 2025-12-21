@@ -26,7 +26,8 @@ namespace DialogEditor.Services
                 if (_settingsDirectory == null)
                 {
                     var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                    _settingsDirectory = Path.Combine(userProfile, "Parley");
+                    // New location: ~/Radoub/Parley (matches toolset structure)
+                    _settingsDirectory = Path.Combine(userProfile, "Radoub", "Parley");
                 }
                 return _settingsDirectory;
             }

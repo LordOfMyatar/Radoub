@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
 using DialogEditor.Utils;
+using Radoub.Formats.Settings;
 
 namespace DialogEditor.Services
 {
@@ -31,13 +32,27 @@ namespace DialogEditor.Services
                 if (_settingsDirectory == null)
                 {
                     var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                    _settingsDirectory = Path.Combine(userProfile, "Parley");
+                    // New location: ~/Radoub/Parley (matches Manifest's ~/Radoub/Manifest pattern)
+                    _settingsDirectory = Path.Combine(userProfile, "Radoub", "Parley");
                 }
                 return _settingsDirectory;
             }
         }
 
+        /// <summary>
+        /// Legacy settings directory (~/Parley) - used for migration
+        /// </summary>
+        private static string LegacySettingsDirectory
+        {
+            get
+            {
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                return Path.Combine(userProfile, "Parley");
+            }
+        }
+
         private static string SettingsFilePath => Path.Combine(SettingsDirectory, "ParleySettings.json");
+        private static string LegacySettingsFilePath => Path.Combine(LegacySettingsDirectory, "ParleySettings.json");
         private const int DefaultMaxRecentFiles = 10;
         
         // Recent files
@@ -72,13 +87,16 @@ namespace DialogEditor.Services
         private double _flowchartPanelWidth = 400; // Width of embedded flowchart panel (SideBySide mode)
         private bool _flowchartVisible = false; // Is flowchart visible (any mode)?
         
-        // Game settings
-        private string _neverwinterNightsPath = "";
-        private string _baseGameInstallPath = ""; // Phase 2: Base game installation (Steam/GOG)
-        private string _currentModulePath = "";
+        // Game settings - DELEGATED to shared RadoubSettings (#412)
+        // These properties now delegate to RadoubSettings.Instance for cross-tool sharing
+        // Only _modulePaths remains Parley-specific (recent module history)
         private List<string> _modulePaths = new List<string>();
-        private string _tlkLanguage = ""; // Empty = auto-detect, or "en", "de", "fr", "es", "it", "pl"
-        private bool _tlkUseFemale = false; // Use dialogf.tlk (female) instead of dialog.tlk (male/default)
+
+        /// <summary>
+        /// Shared settings instance for game paths and TLK configuration.
+        /// Changes here are shared with other Radoub tools (Manifest, etc.).
+        /// </summary>
+        public static RadoubSettings SharedSettings => RadoubSettings.Instance;
 
         // Logging settings
         private int _logRetentionSessions = 3; // Default: keep 3 most recent sessions
@@ -126,10 +144,15 @@ namespace DialogEditor.Services
 
         private SettingsService()
         {
+            // Migrate from legacy ~/Parley to new ~/Radoub/Parley location (#472)
+            MigrateLegacySettingsFolder();
+
             LoadSettings();
 
             // Phase 2: Auto-detect resource paths on first run
-            if (string.IsNullOrEmpty(_neverwinterNightsPath) || string.IsNullOrEmpty(_currentModulePath))
+            // Now delegates to SharedSettings (RadoubSettings) which has its own auto-detection
+            if (string.IsNullOrEmpty(SharedSettings.NeverwinterNightsPath) ||
+                string.IsNullOrEmpty(SharedSettings.CurrentModulePath))
             {
                 AutoDetectResourcePaths();
             }
@@ -138,27 +161,193 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Phase 2: Auto-detect Neverwinter Nights resource paths
+        /// Migrates settings from legacy ~/Parley folder to new ~/Radoub/Parley location.
+        /// This is a one-time migration that runs on first startup after the update.
+        /// </summary>
+        private void MigrateLegacySettingsFolder()
+        {
+            try
+            {
+                // Check if legacy folder exists and new folder doesn't have settings yet
+                if (!Directory.Exists(LegacySettingsDirectory))
+                {
+                    return; // No legacy settings to migrate
+                }
+
+                // Ensure new directory structure exists
+                Directory.CreateDirectory(SettingsDirectory);
+
+                // Check if migration is needed (new location doesn't have settings file)
+                if (File.Exists(SettingsFilePath))
+                {
+                    // New settings already exist - no migration needed
+                    // User may have run a newer version already
+                    return;
+                }
+
+                // Log migration start (can't use UnifiedLogger yet - it depends on this service)
+                Console.WriteLine($"[Parley] Migrating settings from ~/Parley to ~/Radoub/Parley...");
+
+                // Migrate settings files from legacy folder to new folder
+                var settingsToMigrate = new[]
+                {
+                    "ParleySettings.json",
+                    "SpeakerPreferences.json",
+                    "PluginSettings.json"
+                };
+
+                foreach (var fileName in settingsToMigrate)
+                {
+                    var legacyPath = Path.Combine(LegacySettingsDirectory, fileName);
+                    var newPath = Path.Combine(SettingsDirectory, fileName);
+
+                    if (File.Exists(legacyPath) && !File.Exists(newPath))
+                    {
+                        File.Copy(legacyPath, newPath);
+                        Console.WriteLine($"  Migrated: {fileName}");
+                    }
+                }
+
+                // Migrate cache files to Cache subfolder
+                var cacheDir = Path.Combine(SettingsDirectory, "Cache");
+                Directory.CreateDirectory(cacheDir);
+                var cacheFilesToMigrate = new[]
+                {
+                    "parameter_cache.json",
+                    "scrap.json"
+                };
+
+                foreach (var fileName in cacheFilesToMigrate)
+                {
+                    var legacyPath = Path.Combine(LegacySettingsDirectory, fileName);
+                    var newPath = Path.Combine(cacheDir, fileName);
+
+                    if (File.Exists(legacyPath) && !File.Exists(newPath))
+                    {
+                        File.Copy(legacyPath, newPath);
+                        Console.WriteLine($"  Migrated: {fileName} -> Cache/");
+                    }
+                }
+
+                // Migrate Themes folder
+                var legacyThemesDir = Path.Combine(LegacySettingsDirectory, "Themes");
+                var newThemesDir = Path.Combine(SettingsDirectory, "Themes");
+                if (Directory.Exists(legacyThemesDir) && !Directory.Exists(newThemesDir))
+                {
+                    CopyDirectory(legacyThemesDir, newThemesDir);
+                    Console.WriteLine($"  Migrated: Themes folder");
+                }
+
+                // Don't migrate Logs folder - old logs can stay in legacy location
+                // New logs will be created in new location
+
+                // Create a marker file in legacy folder to indicate migration completed
+                var markerPath = Path.Combine(LegacySettingsDirectory, ".migrated_to_radoub");
+                File.WriteAllText(markerPath,
+                    $"Parley settings migrated to ~/Radoub/Parley on {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n" +
+                    $"This folder can be safely deleted if you don't need old log files.\n");
+
+                Console.WriteLine($"[Parley] Settings migration complete.");
+            }
+            catch (Exception ex)
+            {
+                // Don't fail startup if migration fails - just log and continue
+                Console.WriteLine($"[Parley] Warning: Settings migration failed: {ex.Message}");
+                Console.WriteLine($"[Parley] Settings will be created in new location.");
+            }
+        }
+
+        /// <summary>
+        /// Recursively copies a directory and its contents.
+        /// </summary>
+        private static void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (var file in Directory.GetFiles(sourceDir))
+            {
+                var destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, overwrite: false);
+            }
+
+            foreach (var subDir in Directory.GetDirectories(sourceDir))
+            {
+                var destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                CopyDirectory(subDir, destSubDir);
+            }
+        }
+
+        /// <summary>
+        /// Phase 2: Auto-detect Neverwinter Nights resource paths.
+        /// Now delegates to RadoubSettings which has its own auto-detection.
+        /// This method is kept for any Parley-specific path logic (e.g., module paths).
         /// </summary>
         private void AutoDetectResourcePaths()
         {
-            // Try to detect game path
-            if (string.IsNullOrEmpty(_neverwinterNightsPath))
+            // RadoubSettings.Instance already does auto-detection on first access
+            // We just need to check if module path needs additional detection
+            if (string.IsNullOrEmpty(SharedSettings.CurrentModulePath) &&
+                !string.IsNullOrEmpty(SharedSettings.NeverwinterNightsPath))
             {
-                var gamePath = ResourcePathHelper.AutoDetectGamePath();
-                if (!string.IsNullOrEmpty(gamePath))
+                var modulePath = ResourcePathHelper.AutoDetectModulePath(SharedSettings.NeverwinterNightsPath);
+                if (!string.IsNullOrEmpty(modulePath))
                 {
-                    _neverwinterNightsPath = gamePath;
-
-                    // Try to detect module path based on game path
-                    var modulePath = ResourcePathHelper.AutoDetectModulePath(_neverwinterNightsPath);
-                    if (!string.IsNullOrEmpty(modulePath))
-                    {
-                        _currentModulePath = modulePath;
-                    }
-
-                    SaveSettings();
+                    SharedSettings.CurrentModulePath = modulePath;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Migrates game paths from old ParleySettings.json to shared RadoubSettings (#412).
+        /// This is a one-time migration that runs on first startup after the update.
+        /// Only migrates if RadoubSettings doesn't already have values.
+        /// </summary>
+        private void MigrateGamePathsToSharedSettings(SettingsData settings)
+        {
+            bool migrated = false;
+
+            // Migrate NeverwinterNightsPath
+            if (string.IsNullOrEmpty(SharedSettings.NeverwinterNightsPath) &&
+                !string.IsNullOrEmpty(settings.NeverwinterNightsPath))
+            {
+                SharedSettings.NeverwinterNightsPath = ExpandPath(settings.NeverwinterNightsPath);
+                migrated = true;
+            }
+
+            // Migrate BaseGameInstallPath
+            if (string.IsNullOrEmpty(SharedSettings.BaseGameInstallPath) &&
+                !string.IsNullOrEmpty(settings.BaseGameInstallPath))
+            {
+                SharedSettings.BaseGameInstallPath = ExpandPath(settings.BaseGameInstallPath);
+                migrated = true;
+            }
+
+            // Migrate CurrentModulePath
+            if (string.IsNullOrEmpty(SharedSettings.CurrentModulePath) &&
+                !string.IsNullOrEmpty(settings.CurrentModulePath))
+            {
+                SharedSettings.CurrentModulePath = ExpandPath(settings.CurrentModulePath);
+                migrated = true;
+            }
+
+            // Migrate TLK settings
+            if (string.IsNullOrEmpty(SharedSettings.TlkLanguage) &&
+                !string.IsNullOrEmpty(settings.TlkLanguage))
+            {
+                SharedSettings.TlkLanguage = settings.TlkLanguage;
+                migrated = true;
+            }
+
+            // Migrate TlkUseFemale (only if it was explicitly set to true in old settings)
+            if (settings.TlkUseFemale && !SharedSettings.TlkUseFemale)
+            {
+                SharedSettings.TlkUseFemale = true;
+                migrated = true;
+            }
+
+            if (migrated)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Migrated game paths from ParleySettings to shared RadoubSettings");
             }
         }
 
@@ -340,45 +529,93 @@ namespace DialogEditor.Services
             set { if (SetProperty(ref _flowchartVisible, value)) SaveSettings(); }
         }
 
-        // Game Settings Properties
+        // Game Settings Properties - DELEGATED to shared RadoubSettings (#412)
+        // Changes here are automatically persisted to ~/Radoub/RadoubSettings.json
+        // and shared with other Radoub tools (Manifest, etc.)
+
+        /// <summary>
+        /// User documents path (contains modules, override, etc.).
+        /// SHARED: Changes apply to all Radoub tools.
+        /// </summary>
         public string NeverwinterNightsPath
         {
-            get => _neverwinterNightsPath;
-            set { if (SetProperty(ref _neverwinterNightsPath, value ?? "")) SaveSettings(); }
+            get => SharedSettings.NeverwinterNightsPath;
+            set
+            {
+                if (SharedSettings.NeverwinterNightsPath != value)
+                {
+                    SharedSettings.NeverwinterNightsPath = value ?? "";
+                    OnPropertyChanged();
+                }
+            }
         }
 
         /// <summary>
-        /// Phase 2: Base game installation path (Steam/GOG - contains data\ folder)
+        /// Base game installation path (Steam/GOG - contains data\ folder).
+        /// SHARED: Changes apply to all Radoub tools.
         /// </summary>
         public string BaseGameInstallPath
         {
-            get => _baseGameInstallPath;
-            set { if (SetProperty(ref _baseGameInstallPath, value ?? "")) SaveSettings(); }
-        }
-
-        public string CurrentModulePath
-        {
-            get => _currentModulePath;
-            set { if (SetProperty(ref _currentModulePath, value ?? "")) SaveSettings(); }
+            get => SharedSettings.BaseGameInstallPath;
+            set
+            {
+                if (SharedSettings.BaseGameInstallPath != value)
+                {
+                    SharedSettings.BaseGameInstallPath = value ?? "";
+                    OnPropertyChanged();
+                }
+            }
         }
 
         /// <summary>
-        /// TLK language preference. Empty = auto-detect, or specify: "en", "de", "fr", "es", "it", "pl"
+        /// Currently active module path.
+        /// SHARED: Changes apply to all Radoub tools.
+        /// </summary>
+        public string CurrentModulePath
+        {
+            get => SharedSettings.CurrentModulePath;
+            set
+            {
+                if (SharedSettings.CurrentModulePath != value)
+                {
+                    SharedSettings.CurrentModulePath = value ?? "";
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// TLK language preference. Empty = auto-detect.
+        /// SHARED: Changes apply to all Radoub tools.
         /// </summary>
         public string TlkLanguage
         {
-            get => _tlkLanguage;
-            set { if (SetProperty(ref _tlkLanguage, value ?? "")) SaveSettings(); }
+            get => SharedSettings.TlkLanguage;
+            set
+            {
+                if (SharedSettings.TlkLanguage != value)
+                {
+                    SharedSettings.TlkLanguage = value ?? "";
+                    OnPropertyChanged();
+                }
+            }
         }
 
         /// <summary>
         /// Use female TLK variant (dialogf.tlk) instead of default (dialog.tlk).
-        /// Some languages have gendered text variants.
+        /// SHARED: Changes apply to all Radoub tools.
         /// </summary>
         public bool TlkUseFemale
         {
-            get => _tlkUseFemale;
-            set { if (SetProperty(ref _tlkUseFemale, value)) SaveSettings(); }
+            get => SharedSettings.TlkUseFemale;
+            set
+            {
+                if (SharedSettings.TlkUseFemale != value)
+                {
+                    SharedSettings.TlkUseFemale = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
         public List<string> ModulePaths
@@ -768,13 +1005,12 @@ namespace DialogEditor.Services
                         _enableNpcTagColoring = settings.EnableNpcTagColoring; // Issue #16, #36
                         _showDeleteConfirmation = settings.ShowDeleteConfirmation; // Issue #14
 
-                        // Load game settings (expand ~ to user home directory)
-                        _neverwinterNightsPath = ExpandPath(settings.NeverwinterNightsPath ?? "");
-                        _baseGameInstallPath = ExpandPath(settings.BaseGameInstallPath ?? ""); // Phase 2
-                        _currentModulePath = ExpandPath(settings.CurrentModulePath ?? "");
+                        // Issue #412: Migrate game paths from ParleySettings to shared RadoubSettings
+                        // Only migrate if RadoubSettings doesn't already have values (first run after update)
+                        MigrateGamePathsToSharedSettings(settings);
+
+                        // Load Parley-specific module paths (recent module history)
                         _modulePaths = ExpandPaths(settings.ModulePaths?.ToList() ?? new List<string>());
-                        _tlkLanguage = settings.TlkLanguage ?? ""; // TLK language preference
-                        _tlkUseFemale = settings.TlkUseFemale; // TLK gender preference
 
                         // Load logging settings (backwards compatible with old LogRetentionDays)
                         if (settings.LogRetentionSessions > 0)
@@ -870,12 +1106,15 @@ namespace DialogEditor.Services
                     // Keep NpcSpeakerPreferences = null to avoid saving back to main settings
                     EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
                     ShowDeleteConfirmation = ShowDeleteConfirmation, // Issue #14
-                    NeverwinterNightsPath = ContractPath(NeverwinterNightsPath), // Use ~ for home directory
-                    BaseGameInstallPath = ContractPath(BaseGameInstallPath), // Use ~ for home directory
-                    CurrentModulePath = ContractPath(CurrentModulePath), // Use ~ for home directory
-                    ModulePaths = ContractPaths(_modulePaths), // Use ~ for home directory
-                    TlkLanguage = TlkLanguage, // TLK language preference
-                    TlkUseFemale = TlkUseFemale, // TLK gender preference
+                    // Issue #412: Game paths now stored in shared RadoubSettings
+                    // Keep empty values here for backwards compatibility (old versions will see empty)
+                    // Don't save game paths to ParleySettings anymore - they go to RadoubSettings
+                    NeverwinterNightsPath = "", // DEPRECATED: Use RadoubSettings
+                    BaseGameInstallPath = "", // DEPRECATED: Use RadoubSettings
+                    CurrentModulePath = "", // DEPRECATED: Use RadoubSettings
+                    ModulePaths = ContractPaths(_modulePaths), // Parley-specific: recent module history
+                    TlkLanguage = "", // DEPRECATED: Use RadoubSettings
+                    TlkUseFemale = false, // DEPRECATED: Use RadoubSettings
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
                     DebugLogFilterLevel = DebugLogFilterLevel,

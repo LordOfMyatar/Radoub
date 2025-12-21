@@ -25,9 +25,10 @@ namespace DialogEditor.Plugins
             _officialPluginsPath = Path.Combine(appDir, "Plugins", "Official");
 
             // Community plugins in user data directory
+            // New location: ~/Radoub/Parley (matches toolset structure)
             var userDataDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Parley"
+                "Radoub", "Parley"
             );
             _communityPluginsPath = Path.Combine(userDataDir, "Plugins", "Community");
 

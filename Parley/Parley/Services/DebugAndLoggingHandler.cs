@@ -42,9 +42,10 @@ namespace DialogEditor.Services
         {
             try
             {
+                // New location: ~/Radoub/Parley/Logs (matches toolset structure)
                 var logFolder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "Parley", "Logs");
+                    "Radoub", "Parley", "Logs");
 
                 if (!Directory.Exists(logFolder))
                 {
@@ -75,9 +76,10 @@ namespace DialogEditor.Services
         {
             try
             {
+                // New location: ~/Radoub/Parley/Logs (matches toolset structure)
                 var logFolder = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "Parley", "Logs");
+                    "Radoub", "Parley", "Logs");
 
                 if (!Directory.Exists(logFolder))
                 {

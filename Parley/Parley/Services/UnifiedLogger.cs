@@ -16,9 +16,10 @@ namespace DialogEditor.Services
 
     public static class UnifiedLogger
     {
+        // New location: ~/Radoub/Parley/Logs (matches Manifest's pattern)
         private static readonly string BaseLogDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Parley", "Logs");
+            "Radoub", "Parley", "Logs");
         private static LogLevel _currentLogLevel = LogLevel.INFO;
         private static Action<string>? _debugConsoleCallback;
         private static readonly string SessionId = DateTime.Now.ToString("yyyyMMdd_HHmmss");
