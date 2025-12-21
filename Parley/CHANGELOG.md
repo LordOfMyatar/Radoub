@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.81-alpha] - 2025-12-21
-**Branch**: `parley/fix/linux-tts-dropdown-overlap` | **PR**: #TBD
+**Branch**: `parley/fix/linux-tts-dropdown-overlap` | **PR**: #487
 
 ### Fix: Linux TTS Dropdown Overlap (#486)
 
