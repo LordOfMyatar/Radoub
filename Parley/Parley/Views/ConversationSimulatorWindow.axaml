@@ -241,10 +241,17 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Enable checkbox and speed -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="20" Margin="0,0,0,10">
+                    <!-- Enable checkbox, auto-speak, auto-advance, and speed -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="15" Margin="0,0,0,10">
                         <CheckBox Content="Enable TTS"
-                                  IsChecked="{Binding TtsEnabled}"/>
+                                  IsChecked="{Binding TtsEnabled}"
+                                  ToolTip.Tip="Enable text-to-speech"/>
+                        <CheckBox Content="Auto-Speak"
+                                  IsChecked="{Binding AutoSpeak}"
+                                  ToolTip.Tip="Automatically speak each line"/>
+                        <CheckBox Content="Auto-Advance"
+                                  IsChecked="{Binding AutoAdvance}"
+                                  ToolTip.Tip="Auto-advance when only one reply option"/>
                         <StackPanel Orientation="Horizontal" Spacing="5">
                             <TextBlock Text="Speed:"
                                        VerticalAlignment="Center"/>

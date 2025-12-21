@@ -56,6 +56,8 @@ namespace DialogEditor.ViewModels
         // TTS (Issue #479)
         private readonly ITtsService _ttsService;
         private bool _ttsEnabled = true;
+        private bool _autoSpeak = false;
+        private bool _autoAdvance = true;
         private double _ttsRate = 1.0;
         private Dictionary<string, string> _speakerVoiceAssignments = new();
         private string _pcVoice = "";
@@ -259,6 +261,18 @@ namespace DialogEditor.ViewModels
             set => SetProperty(ref _ttsRate, Math.Clamp(value, 0.5, 2.0));
         }
 
+        public bool AutoSpeak
+        {
+            get => _autoSpeak;
+            set => SetProperty(ref _autoSpeak, value);
+        }
+
+        public bool AutoAdvance
+        {
+            get => _autoAdvance;
+            set => SetProperty(ref _autoAdvance, value);
+        }
+
         /// <summary>
         /// Speak the current NPC text using TTS.
         /// </summary>
@@ -413,6 +427,17 @@ namespace DialogEditor.ViewModels
                 var replyNodeIndex = _dialog.GetNodeIndex(reply, DialogNodeType.Reply);
                 var nodeKey = $"R{replyNodeIndex}";
                 _coverageTracker.RecordVisitedNode(_filePath, nodeKey);
+
+                // Speak PC reply if auto-speak enabled
+                if (AutoSpeak && TtsAvailable && TtsEnabled)
+                {
+                    var pcText = reply.DisplayText;
+                    if (!string.IsNullOrWhiteSpace(pcText))
+                    {
+                        var pcVoice = GetVoiceForSpeaker("(PC)");
+                        _ttsService.Speak(pcText, pcVoice, TtsRate);
+                    }
+                }
 
                 // Advance to next entry (first child of this reply)
                 AdvanceToNextEntry(reply);
@@ -760,6 +785,19 @@ namespace DialogEditor.ViewModels
             OnPropertyChanged(nameof(CoverageDisplay));
             OnPropertyChanged(nameof(Coverage));
             OnPropertyChanged(nameof(CoverageComplete));
+
+            // Auto-speak NPC text if enabled
+            if (AutoSpeak && TtsAvailable && TtsEnabled && !string.IsNullOrWhiteSpace(NpcText))
+            {
+                var npcVoice = GetVoiceForSpeaker(NpcSpeaker);
+                _ttsService.Speak(NpcText, npcVoice, TtsRate);
+            }
+
+            // Auto-advance if only one reply and AutoAdvance is enabled
+            if (AutoAdvance && Replies.Count == 1 && !_isSelectingRootEntry)
+            {
+                SelectReply(0);
+            }
         }
 
         private void ClearDisplay()
