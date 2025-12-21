@@ -26,8 +26,9 @@
             <RowDefinition Height="Auto"/>  <!-- Coverage -->
         </Grid.RowDefinitions>
 
-        <!-- Warnings Panel -->
-        <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,10">
+        <!-- Warnings Panel (Issue #484: Toggleable via ShowWarnings setting) -->
+        <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,10"
+                    IsVisible="{Binding ShowWarnings}">
             <Border Background="#553D0000"
                     BorderBrush="#883D0000"
                     BorderThickness="1"
@@ -154,11 +155,25 @@
                               ItemsSource="{Binding Replies}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <RadioButton GroupName="Replies"
-                                         Content="{Binding DisplayText}"
-                                         Tag="{Binding Index}"
-                                         Margin="0,3"
-                                         Click="OnReplyClicked"/>
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Issue #484: Warning icon for unreachable entries (respects ShowWarnings setting) -->
+                                <TextBlock Text="⚠️"
+                                           ToolTip.Tip="Unreachable: A prior sibling NPC entry has no condition script"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,5,0">
+                                    <TextBlock.IsVisible>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="IsUnreachable"/>
+                                            <Binding Path="$parent[Window].DataContext.ShowWarnings"/>
+                                        </MultiBinding>
+                                    </TextBlock.IsVisible>
+                                </TextBlock>
+                                <RadioButton GroupName="Replies"
+                                             Content="{Binding DisplayText}"
+                                             Tag="{Binding Index}"
+                                             Margin="0,3"
+                                             Click="OnReplyClicked"/>
+                            </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -334,6 +349,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0"
@@ -347,7 +363,15 @@
                            Text="{Binding CoverageDisplay}"
                            VerticalAlignment="Center"/>
 
-                <Button Grid.Column="2"
+                <!-- Issue #484: Toggle warnings visibility -->
+                <CheckBox Grid.Column="2"
+                          Content="⚠️ Warnings"
+                          IsChecked="{Binding ShowWarnings}"
+                          VerticalAlignment="Center"
+                          Margin="0,0,10,0"
+                          ToolTip.Tip="Show/hide unreachable sibling warnings"/>
+
+                <Button Grid.Column="3"
                         x:Name="ClearCoverageButton"
                         Content="Clear"
                         Padding="15,5"

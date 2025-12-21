@@ -279,6 +279,23 @@ namespace DialogEditor.ViewModels
         }
 
         /// <summary>
+        /// Issue #484: Show/hide warnings in the simulator.
+        /// Bound to SettingsService for persistence.
+        /// </summary>
+        public bool ShowWarnings
+        {
+            get => SettingsService.Instance.SimulatorShowWarnings;
+            set
+            {
+                if (SettingsService.Instance.SimulatorShowWarnings != value)
+                {
+                    SettingsService.Instance.SimulatorShowWarnings = value;
+                    OnPropertyChanged(nameof(ShowWarnings));
+                }
+            }
+        }
+
+        /// <summary>
         /// Speak the current NPC text using TTS.
         /// </summary>
         public void Speak()
@@ -382,6 +399,9 @@ namespace DialogEditor.ViewModels
             // Get current coverage to show per-entry stats
             var coverage = Coverage;
 
+            // Issue #484: Calculate unreachable siblings for root entries
+            var unreachableIndices = Models.TreeViewSafeNode.CalculateUnreachableSiblings(_dialog.Starts);
+
             Replies.Clear();
             for (int i = 0; i < _dialog.Starts.Count; i++)
             {
@@ -421,7 +441,8 @@ namespace DialogEditor.ViewModels
                     Text = $"{text}{conditionInfo}{coverageIndicator}",
                     HasCondition = !string.IsNullOrEmpty(start.ScriptAppears),
                     WasVisited = wasVisited,
-                    IsComplete = isEntryComplete
+                    IsComplete = isEntryComplete,
+                    IsUnreachable = unreachableIndices.Contains(i)
                 });
             }
 
@@ -887,6 +908,11 @@ namespace DialogEditor.ViewModels
         public bool HasCondition { get; set; }
         public bool WasVisited { get; set; }
         public bool IsComplete { get; set; }
+        /// <summary>
+        /// Issue #484: True if this NPC entry is unreachable due to a prior sibling
+        /// without a condition script.
+        /// </summary>
+        public bool IsUnreachable { get; set; }
 
         public string DisplayText => WasVisited ? $"\u2713 {Text}" : Text;
     }

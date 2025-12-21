@@ -187,6 +187,13 @@ namespace DialogEditor.Views
                 enableNpcTagColoringCheckBox.IsChecked = settings.EnableNpcTagColoring;
             }
 
+            // Dialog Warnings (Issue #484)
+            var simulatorShowWarningsCheckBox = this.FindControl<CheckBox>("SimulatorShowWarningsCheckBox");
+            if (simulatorShowWarningsCheckBox != null)
+            {
+                simulatorShowWarningsCheckBox.IsChecked = settings.SimulatorShowWarnings;
+            }
+
             if (externalEditorPathTextBox != null)
             {
                 externalEditorPathTextBox.Text = settings.ExternalEditorPath;
@@ -1417,6 +1424,21 @@ namespace DialogEditor.Views
             {
                 SettingsService.Instance.EnableNpcTagColoring = checkbox.IsChecked == true;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"NPC tag coloring: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
+            }
+        }
+
+        /// <summary>
+        /// Issue #484: Handle simulator warnings toggle
+        /// </summary>
+        private void OnSimulatorShowWarningsChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var checkbox = sender as CheckBox;
+            if (checkbox != null)
+            {
+                SettingsService.Instance.SimulatorShowWarnings = checkbox.IsChecked == true;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Dialog warnings: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
             }
         }
 

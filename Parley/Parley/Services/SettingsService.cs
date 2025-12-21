@@ -121,6 +121,9 @@ namespace DialogEditor.Services
         // Confirmation dialog settings (Issue #14)
         private bool _showDeleteConfirmation = true; // Default: ON (show delete confirmation dialog)
 
+        // Conversation Simulator settings (#484)
+        private bool _simulatorShowWarnings = true; // Default: ON (show unreachable sibling warnings)
+
         // Script editor settings
         private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
         private List<string> _scriptSearchPaths = new List<string>(); // Additional directories to search for scripts
@@ -833,6 +836,21 @@ namespace DialogEditor.Services
             }
         }
 
+        /// <summary>
+        /// Issue #484: Show warnings in Conversation Simulator (unreachable siblings, etc.)
+        /// </summary>
+        public bool SimulatorShowWarnings
+        {
+            get => _simulatorShowWarnings;
+            set
+            {
+                if (SetProperty(ref _simulatorShowWarnings, value))
+                {
+                    SaveSettings();
+                }
+            }
+        }
+
         // Script Editor Settings Properties
         public string ExternalEditorPath
         {
@@ -1004,6 +1022,7 @@ namespace DialogEditor.Services
 
                         _enableNpcTagColoring = settings.EnableNpcTagColoring; // Issue #16, #36
                         _showDeleteConfirmation = settings.ShowDeleteConfirmation; // Issue #14
+                        _simulatorShowWarnings = settings.SimulatorShowWarnings; // Issue #484
 
                         // Issue #412: Migrate game paths from ParleySettings to shared RadoubSettings
                         // Only migrate if RadoubSettings doesn't already have values (first run after update)
@@ -1106,6 +1125,7 @@ namespace DialogEditor.Services
                     // Keep NpcSpeakerPreferences = null to avoid saving back to main settings
                     EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
                     ShowDeleteConfirmation = ShowDeleteConfirmation, // Issue #14
+                    SimulatorShowWarnings = SimulatorShowWarnings, // Issue #484
                     // Issue #412: Game paths now stored in shared RadoubSettings
                     // Keep empty values here for backwards compatibility (old versions will see empty)
                     // Don't save game paths to ParleySettings anymore - they go to RadoubSettings
@@ -1339,6 +1359,9 @@ namespace DialogEditor.Services
             public bool SoundBrowserIncludeGameResources { get; set; } = false;
             public bool SoundBrowserIncludeHakFiles { get; set; } = false;
             public bool SoundBrowserIncludeBifFiles { get; set; } = false;
+
+            // Conversation Simulator settings (#484)
+            public bool SimulatorShowWarnings { get; set; } = true; // Show unreachable sibling warnings
 
             // Radoub tool integration settings (#416)
             public string ManifestPath { get; set; } = "";
