@@ -62,6 +62,8 @@ namespace DialogEditor.ViewModels
         private Dictionary<string, string> _speakerVoiceAssignments = new();
         private string _pcVoice = "";
         private string _defaultNpcVoice = "";
+        private bool _isSpeakingPcReply = false;
+        private DialogNode? _pendingReplyToAdvance = null;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? ConversationEnded;
@@ -306,7 +308,19 @@ namespace DialogEditor.ViewModels
         {
             OnPropertyChanged(nameof(TtsSpeaking));
 
-            // Auto-advance after speech completes if enabled and single reply available
+            // If we were speaking a PC reply, now advance to NPC response
+            if (_isSpeakingPcReply && _pendingReplyToAdvance != null)
+            {
+                var reply = _pendingReplyToAdvance;
+                _isSpeakingPcReply = false;
+                _pendingReplyToAdvance = null;
+
+                // Use dispatcher to ensure UI thread safety
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => AdvanceToNextEntry(reply));
+                return;
+            }
+
+            // NPC speech completed - auto-advance if enabled and single reply available
             if (AutoAdvance && AutoSpeak && Replies.Count == 1 && !_isSelectingRootEntry && !HasEnded)
             {
                 // Use dispatcher to ensure UI thread safety
@@ -452,8 +466,13 @@ namespace DialogEditor.ViewModels
                     var pcText = reply.DisplayText;
                     if (!string.IsNullOrWhiteSpace(pcText))
                     {
+                        // Store pending reply and speak PC text first
+                        // Advancement will happen when PC speech completes
+                        _isSpeakingPcReply = true;
+                        _pendingReplyToAdvance = reply;
                         var pcVoice = GetVoiceForSpeaker("(PC)");
                         _ttsService.Speak(pcText, pcVoice, TtsRate);
+                        return; // Don't advance yet - wait for speech to complete
                     }
                 }
 
