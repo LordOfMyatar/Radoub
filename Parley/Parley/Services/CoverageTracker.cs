@@ -76,16 +76,51 @@ namespace DialogEditor.Services
         /// <summary>
         /// Get coverage statistics for a dialog file.
         /// </summary>
-        public CoverageStats GetCoverageStats(string filePath)
+        /// <param name="filePath">Path to the dialog file</param>
+        /// <param name="totalReplies">Total number of reply nodes in the dialog</param>
+        /// <param name="rootEntryIndices">Entry indices that are root entries (conversation starters)</param>
+        /// <param name="repliesPerRootEntry">Mapping of root entry index to set of reply indices under that entry</param>
+        public CoverageStats GetCoverageStats(
+            string filePath,
+            int totalReplies = 0,
+            IReadOnlyList<int>? rootEntryIndices = null,
+            IReadOnlyDictionary<int, HashSet<int>>? repliesPerRootEntry = null)
         {
             var sanitizedPath = SanitizePath(filePath);
 
             if (!_coverageData.Files.TryGetValue(sanitizedPath, out var fileData))
             {
-                return new CoverageStats(0);
+                return new CoverageStats(0, 0, totalReplies, 0, rootEntryIndices?.Count ?? 0, new Dictionary<int, (int visited, int total)>());
             }
 
-            return new CoverageStats(fileData.VisitedNodes.Count);
+            // Count visited replies (keys starting with "R")
+            var visitedReplies = fileData.VisitedNodes.Count(k => k.StartsWith("R"));
+
+            // Count visited root entries and per-entry coverage
+            var visitedRootEntries = 0;
+            var totalRootEntries = rootEntryIndices?.Count ?? 0;
+            var perEntryCoverage = new Dictionary<int, (int visited, int total)>();
+
+            if (rootEntryIndices != null)
+            {
+                foreach (var entryIndex in rootEntryIndices)
+                {
+                    var key = $"E{entryIndex}";
+                    if (fileData.VisitedNodes.Contains(key))
+                    {
+                        visitedRootEntries++;
+                    }
+
+                    // Calculate per-entry reply coverage
+                    if (repliesPerRootEntry != null && repliesPerRootEntry.TryGetValue(entryIndex, out var replyIndices))
+                    {
+                        var visitedCount = replyIndices.Count(ri => fileData.VisitedNodes.Contains($"R{ri}"));
+                        perEntryCoverage[entryIndex] = (visitedCount, replyIndices.Count);
+                    }
+                }
+            }
+
+            return new CoverageStats(fileData.VisitedNodes.Count, visitedReplies, totalReplies, visitedRootEntries, totalRootEntries, perEntryCoverage);
         }
 
         /// <summary>
@@ -245,15 +280,93 @@ namespace DialogEditor.Services
     public class CoverageStats
     {
         public int VisitedNodes { get; }
+        public int VisitedReplies { get; }
+        public int TotalReplies { get; }
+        public int VisitedRootEntries { get; }
+        public int TotalRootEntries { get; }
 
-        public CoverageStats(int visitedNodes)
+        /// <summary>
+        /// Per-entry coverage: entryIndex -> (visited replies, total replies under that entry)
+        /// </summary>
+        public IReadOnlyDictionary<int, (int visited, int total)> PerEntryCoverage { get; }
+
+        public CoverageStats(
+            int visitedNodes,
+            int visitedReplies,
+            int totalReplies,
+            int visitedRootEntries,
+            int totalRootEntries,
+            IReadOnlyDictionary<int, (int visited, int total)> perEntryCoverage)
         {
             VisitedNodes = visitedNodes;
+            VisitedReplies = visitedReplies;
+            TotalReplies = totalReplies;
+            VisitedRootEntries = visitedRootEntries;
+            TotalRootEntries = totalRootEntries;
+            PerEntryCoverage = perEntryCoverage;
         }
 
-        public string DisplayText => VisitedNodes == 1
-            ? "1 node visited"
-            : $"{VisitedNodes} nodes visited";
+        public bool IsComplete => TotalReplies > 0 && VisitedReplies >= TotalReplies;
+        public bool RootEntriesComplete => TotalRootEntries > 0 && VisitedRootEntries >= TotalRootEntries;
+
+        /// <summary>
+        /// Check if a specific root entry has full coverage.
+        /// </summary>
+        public bool IsEntryComplete(int entryIndex)
+        {
+            if (PerEntryCoverage.TryGetValue(entryIndex, out var coverage))
+            {
+                return coverage.total > 0 && coverage.visited >= coverage.total;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get coverage text for a specific entry (e.g., "2/3 replies")
+        /// </summary>
+        public string GetEntryCoverageText(int entryIndex)
+        {
+            if (PerEntryCoverage.TryGetValue(entryIndex, out var coverage))
+            {
+                return $"{coverage.visited}/{coverage.total}";
+            }
+            return "0/0";
+        }
+
+        public string DisplayText
+        {
+            get
+            {
+                var parts = new List<string>();
+
+                // Root entries (primary metric)
+                if (TotalRootEntries > 0)
+                {
+                    parts.Add($"{VisitedRootEntries}/{TotalRootEntries} starts");
+                }
+
+                // Replies (secondary metric)
+                if (TotalReplies > 0)
+                {
+                    parts.Add($"{VisitedReplies}/{TotalReplies} replies");
+                }
+
+                if (parts.Count == 0)
+                {
+                    return VisitedNodes == 1
+                        ? "1 node visited"
+                        : $"{VisitedNodes} nodes visited";
+                }
+
+                var result = string.Join(", ", parts);
+                if (IsComplete && RootEntriesComplete)
+                {
+                    result += " - Complete!";
+                }
+
+                return result;
+            }
+        }
     }
 
     /// <summary>

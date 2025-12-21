@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using DialogEditor.Utils;
 
 namespace DialogEditor.ViewModels
 {
@@ -21,6 +22,11 @@ namespace DialogEditor.ViewModels
         private readonly string _filePath;
         private readonly CoverageTracker _coverageTracker;
 
+        // State tracking
+        private bool _isSelectingRootEntry = true; // Start by showing root entries
+        private DialogNode? _currentEntry;
+        private List<DialogNode> _currentReplies = new();
+
         // Loop detection
         private HashSet<string> _visitedStates = new();
         private int _pathDepth = 0;
@@ -28,6 +34,7 @@ namespace DialogEditor.ViewModels
 
         // UI state
         private string _npcSpeaker = "";
+        private string _npcSpeakerColor = SpeakerVisualHelper.ColorPalette.Orange; // Default NPC color
         private string _npcText = "";
         private string _conditionScript = "";
         private string _actionScript = "";
@@ -40,6 +47,11 @@ namespace DialogEditor.ViewModels
         private bool _showNoConditionalsWarning;
         private bool _showUnreachableSiblingsWarning;
         private bool _showLoopWarning;
+
+        // Coverage
+        private int _totalReplies;
+        private List<int> _rootEntryIndices = new();
+        private Dictionary<int, HashSet<int>> _repliesPerRootEntry = new(); // entryIndex -> set of reply indices under that root
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? ConversationEnded;
@@ -62,6 +74,15 @@ namespace DialogEditor.ViewModels
         {
             get => _npcSpeaker;
             private set => SetProperty(ref _npcSpeaker, value);
+        }
+
+        /// <summary>
+        /// Color for the current NPC speaker (hex string like "#FF8A65")
+        /// </summary>
+        public string NpcSpeakerColor
+        {
+            get => _npcSpeakerColor;
+            private set => SetProperty(ref _npcSpeakerColor, value);
         }
 
         public string NpcText
@@ -110,6 +131,12 @@ namespace DialogEditor.ViewModels
 
         public bool HasReplies => Replies.Count > 0;
 
+        /// <summary>
+        /// True when showing PC reply choices, false when showing NPC entry choices (root selection).
+        /// Used to toggle between PC (blue circle) and NPC (orange square) indicator styling.
+        /// </summary>
+        public bool IsShowingPcChoices => !_isSelectingRootEntry && HasReplies;
+
         public bool ShowNoConditionalsWarning
         {
             get => _showNoConditionalsWarning;
@@ -128,37 +155,106 @@ namespace DialogEditor.ViewModels
             private set => SetProperty(ref _showLoopWarning, value);
         }
 
-        public CoverageStats Coverage => _coverageTracker.GetCoverageStats(_filePath);
+        public CoverageStats Coverage => _coverageTracker.GetCoverageStats(_filePath, _totalReplies, _rootEntryIndices, _repliesPerRootEntry);
 
         public string CoverageDisplay => Coverage.DisplayText;
 
+        public bool CoverageComplete => Coverage.IsComplete;
+
         /// <summary>
         /// Start or restart the conversation from the beginning.
+        /// Shows all root entries for the user to choose from.
         /// </summary>
         public void StartConversation()
         {
             _pathDepth = 0;
             _visitedStates.Clear();
+            _currentEntry = null;
+            _currentReplies.Clear();
             LoopDetected = false;
             ShowLoopWarning = false;
+            _isSelectingRootEntry = true;
+            OnPropertyChanged(nameof(IsShowingPcChoices));
 
-            _conversationManager.StartConversation();
-
-            if (_conversationManager.HasEnded)
+            if (_dialog.Starts.Count == 0)
             {
                 HasEnded = true;
-                StatusMessage = "Conversation has no valid starting entry.";
+                StatusMessage = "Dialog has no starting entries.";
                 ClearDisplay();
                 return;
             }
 
             HasEnded = false;
-            UpdateDisplay();
-            StatusMessage = "Conversation started.";
+            ShowRootEntrySelection();
+            StatusMessage = "Select a conversation start.";
         }
 
         /// <summary>
-        /// Select a reply and advance to the next NPC entry.
+        /// Display all root entries as selectable options.
+        /// </summary>
+        private void ShowRootEntrySelection()
+        {
+            NpcSpeaker = "[Conversation Starts]";
+            NpcSpeakerColor = SpeakerVisualHelper.ColorPalette.Orange; // Default NPC color for menu
+            NpcText = "Select which conversation branch to test:";
+            ConditionScript = "";
+            ActionScript = "";
+
+            // Get current coverage to show per-entry stats
+            var coverage = Coverage;
+
+            Replies.Clear();
+            for (int i = 0; i < _dialog.Starts.Count; i++)
+            {
+                var start = _dialog.Starts[i];
+                if (start.Node == null) continue;
+
+                var text = start.Node.DisplayText;
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    text = $"[Entry {i}]";
+                }
+
+                // Truncate long text for display
+                if (text.Length > 50)
+                {
+                    text = text.Substring(0, 47) + "...";
+                }
+
+                // Show condition script if present
+                var conditionInfo = !string.IsNullOrEmpty(start.ScriptAppears)
+                    ? $" [{start.ScriptAppears}]"
+                    : "";
+
+                // Get entry index and per-entry coverage
+                var entryIndex = _dialog.GetNodeIndex(start.Node, DialogNodeType.Entry);
+                var nodeKey = $"E{entryIndex}";
+                var wasVisited = _coverageTracker.IsNodeVisited(_filePath, nodeKey);
+
+                // Show per-entry coverage (e.g., "2/3")
+                var entryCoverage = coverage.GetEntryCoverageText(entryIndex);
+                var isEntryComplete = coverage.IsEntryComplete(entryIndex);
+                var coverageIndicator = isEntryComplete ? $" ({entryCoverage})" : $" ({entryCoverage})";
+
+                Replies.Add(new ReplyOption
+                {
+                    Index = i,
+                    Text = $"{text}{conditionInfo}{coverageIndicator}",
+                    HasCondition = !string.IsNullOrEmpty(start.ScriptAppears),
+                    WasVisited = wasVisited,
+                    IsComplete = isEntryComplete
+                });
+            }
+
+            SelectedReplyIndex = Replies.Count > 0 ? 0 : -1;
+            OnPropertyChanged(nameof(HasReplies));
+            OnPropertyChanged(nameof(CoverageDisplay));
+            OnPropertyChanged(nameof(Coverage));
+            OnPropertyChanged(nameof(CoverageComplete));
+        }
+
+        /// <summary>
+        /// Select a reply/entry and advance the conversation.
         /// </summary>
         public void SelectReply(int replyIndex)
         {
@@ -166,14 +262,70 @@ namespace DialogEditor.ViewModels
                 return;
 
             SelectedReplyIndex = replyIndex;
+
+            // Handle root entry selection
+            if (_isSelectingRootEntry)
+            {
+                SelectRootEntry(replyIndex);
+                return;
+            }
+
+            // Normal reply selection
             _pathDepth++;
 
             // Record the visited reply node
-            var reply = _conversationManager.CurrentReplies[replyIndex];
-            var replyNodeIndex = _dialog.GetNodeIndex(reply, DialogNodeType.Reply);
-            var nodeKey = $"R{replyNodeIndex}";
+            if (replyIndex < _currentReplies.Count)
+            {
+                var reply = _currentReplies[replyIndex];
+                var replyNodeIndex = _dialog.GetNodeIndex(reply, DialogNodeType.Reply);
+                var nodeKey = $"R{replyNodeIndex}";
+                _coverageTracker.RecordVisitedNode(_filePath, nodeKey);
+
+                // Advance to next entry (first child of this reply)
+                AdvanceToNextEntry(reply);
+            }
+        }
+
+        /// <summary>
+        /// Select a root entry to start the conversation.
+        /// </summary>
+        private void SelectRootEntry(int index)
+        {
+            if (index < 0 || index >= _dialog.Starts.Count)
+                return;
+
+            var start = _dialog.Starts[index];
+            if (start.Node == null)
+                return;
+
+            _isSelectingRootEntry = false;
+            OnPropertyChanged(nameof(IsShowingPcChoices));
+            _currentEntry = start.Node;
+
+            // Record that we visited this entry
+            var entryIndex = _dialog.GetNodeIndex(_currentEntry, DialogNodeType.Entry);
+            var nodeKey = $"E{entryIndex}";
             _coverageTracker.RecordVisitedNode(_filePath, nodeKey);
 
+            // Get replies for this entry
+            _currentReplies.Clear();
+            foreach (var ptr in _currentEntry.Pointers)
+            {
+                if (ptr.Node != null)
+                {
+                    _currentReplies.Add(ptr.Node);
+                }
+            }
+
+            UpdateDisplay();
+            StatusMessage = $"Started from entry {index + 1} of {_dialog.Starts.Count}.";
+        }
+
+        /// <summary>
+        /// Advance to the next NPC entry after selecting a reply.
+        /// </summary>
+        private void AdvanceToNextEntry(DialogNode reply)
+        {
             // Check for loop before advancing
             var stateKey = GetStateKey();
             if (_visitedStates.Contains(stateKey))
@@ -193,20 +345,44 @@ namespace DialogEditor.ViewModels
                 LoopDetected = true;
                 ShowLoopWarning = true;
                 StatusMessage = "Maximum path depth reached. Possible infinite loop.";
+                return;
             }
 
-            // Advance the conversation
-            _conversationManager.PickReply(replyIndex);
-
-            if (_conversationManager.HasEnded)
+            // Find next entry (child of this reply)
+            if (reply.Pointers.Count == 0)
             {
+                // Conversation ends
                 HasEnded = true;
                 StatusMessage = "Conversation ended.";
                 ClearDisplay();
                 OnPropertyChanged(nameof(CoverageDisplay));
                 OnPropertyChanged(nameof(Coverage));
+                OnPropertyChanged(nameof(CoverageComplete));
                 ConversationEnded?.Invoke(this, EventArgs.Empty);
                 return;
+            }
+
+            // Pick the first available entry (engine behavior)
+            // In the future, we could show multiple NPC responses if they exist
+            var nextPtr = reply.Pointers.FirstOrDefault(p => p.Node != null);
+            if (nextPtr?.Node == null)
+            {
+                HasEnded = true;
+                StatusMessage = "Conversation ended (no valid continuation).";
+                ClearDisplay();
+                return;
+            }
+
+            _currentEntry = nextPtr.Node;
+
+            // Get replies for this entry
+            _currentReplies.Clear();
+            foreach (var ptr in _currentEntry.Pointers)
+            {
+                if (ptr.Node != null)
+                {
+                    _currentReplies.Add(ptr.Node);
+                }
             }
 
             UpdateDisplay();
@@ -253,6 +429,7 @@ namespace DialogEditor.ViewModels
             _coverageTracker.ClearCoverage(_filePath);
             OnPropertyChanged(nameof(CoverageDisplay));
             OnPropertyChanged(nameof(Coverage));
+            OnPropertyChanged(nameof(CoverageComplete));
             StatusMessage = "Coverage cleared.";
             // Refresh replies to remove checkmarks
             UpdateDisplay();
@@ -260,6 +437,30 @@ namespace DialogEditor.ViewModels
 
         private void AnalyzeDialogStructure()
         {
+            // Count total replies for coverage tracking
+            _totalReplies = _dialog.Replies.Count;
+
+            // Collect root entry indices and map replies per root entry
+            _rootEntryIndices.Clear();
+            _repliesPerRootEntry.Clear();
+
+            foreach (var start in _dialog.Starts)
+            {
+                if (start.Node != null)
+                {
+                    var entryIndex = _dialog.GetNodeIndex(start.Node, DialogNodeType.Entry);
+                    if (entryIndex >= 0)
+                    {
+                        _rootEntryIndices.Add(entryIndex);
+
+                        // Collect all reply indices reachable from this root entry
+                        var replyIndices = new HashSet<int>();
+                        CollectRepliesUnderNode(start.Node, replyIndices, new HashSet<DialogNode>());
+                        _repliesPerRootEntry[entryIndex] = replyIndices;
+                    }
+                }
+            }
+
             // Check for conditionals
             var hasConditionals = HasAnyConditionals();
             ShowNoConditionalsWarning = !hasConditionals;
@@ -269,7 +470,37 @@ namespace DialogEditor.ViewModels
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG,
                 $"ConversationSimulator: Analyzed dialog - " +
+                $"totalReplies={_totalReplies}, rootEntries={_rootEntryIndices.Count}, " +
                 $"hasConditionals={hasConditionals}, unreachableSiblings={ShowUnreachableSiblingsWarning}");
+        }
+
+        /// <summary>
+        /// Recursively collect all reply indices reachable from a node.
+        /// </summary>
+        private void CollectRepliesUnderNode(DialogNode node, HashSet<int> replyIndices, HashSet<DialogNode> visited)
+        {
+            if (visited.Contains(node))
+                return; // Avoid infinite loops from links
+
+            visited.Add(node);
+
+            foreach (var ptr in node.Pointers)
+            {
+                if (ptr.Node == null)
+                    continue;
+
+                if (ptr.Type == DialogNodeType.Reply)
+                {
+                    var replyIndex = _dialog.GetNodeIndex(ptr.Node, DialogNodeType.Reply);
+                    if (replyIndex >= 0)
+                    {
+                        replyIndices.Add(replyIndex);
+                    }
+                }
+
+                // Continue traversing (both entries and replies can have children)
+                CollectRepliesUnderNode(ptr.Node, replyIndices, visited);
+            }
         }
 
         private bool HasAnyConditionals()
@@ -343,30 +574,34 @@ namespace DialogEditor.ViewModels
 
         private void UpdateDisplay()
         {
-            var currentEntry = _conversationManager.CurrentEntry;
-            if (currentEntry == null)
+            if (_currentEntry == null)
             {
                 ClearDisplay();
                 return;
             }
 
             // Update NPC display
-            NpcSpeaker = currentEntry.SpeakerDisplay;
-            NpcText = currentEntry.DisplayText;
+            NpcSpeaker = _currentEntry.SpeakerDisplay;
+            NpcSpeakerColor = SpeakerVisualHelper.GetSpeakerColor(_currentEntry.Speaker ?? "", isPC: false);
+            NpcText = _currentEntry.DisplayText;
 
             // Update script info (from current entry)
-            ActionScript = currentEntry.ScriptAction ?? "";
+            ActionScript = _currentEntry.ScriptAction ?? "";
 
             // Get condition script from the pointer that led here (if available)
             // For simplicity, clear condition script at entry level
             ConditionScript = "";
 
+            // Record that we visited this entry
+            var entryIndex = _dialog.GetNodeIndex(_currentEntry, DialogNodeType.Entry);
+            var entryKey = $"E{entryIndex}";
+            _coverageTracker.RecordVisitedNode(_filePath, entryKey);
+
             // Update available replies
             Replies.Clear();
-            var replies = _conversationManager.CurrentReplies;
-            for (int i = 0; i < replies.Count; i++)
+            for (int i = 0; i < _currentReplies.Count; i++)
             {
-                var reply = replies[i];
+                var reply = _currentReplies[i];
                 var text = reply.DisplayText;
                 if (string.IsNullOrWhiteSpace(text))
                 {
@@ -391,6 +626,7 @@ namespace DialogEditor.ViewModels
             OnPropertyChanged(nameof(HasReplies));
             OnPropertyChanged(nameof(CoverageDisplay));
             OnPropertyChanged(nameof(Coverage));
+            OnPropertyChanged(nameof(CoverageComplete));
         }
 
         private void ClearDisplay()
@@ -407,11 +643,10 @@ namespace DialogEditor.ViewModels
         private string GetStateKey()
         {
             // Create a state key based on current entry + available replies
-            var entry = _conversationManager.CurrentEntry;
-            if (entry == null) return "";
+            if (_currentEntry == null) return "";
 
-            var entryIndex = _dialog.GetNodeIndex(entry, DialogNodeType.Entry);
-            var replyIndices = _conversationManager.CurrentReplies
+            var entryIndex = _dialog.GetNodeIndex(_currentEntry, DialogNodeType.Entry);
+            var replyIndices = _currentReplies
                 .Select(r => _dialog.GetNodeIndex(r, DialogNodeType.Reply))
                 .OrderBy(i => i);
 
@@ -443,6 +678,7 @@ namespace DialogEditor.ViewModels
         public string Text { get; set; } = "";
         public bool HasCondition { get; set; }
         public bool WasVisited { get; set; }
+        public bool IsComplete { get; set; }
 
         public string DisplayText => WasVisited ? $"\u2713 {Text}" : Text;
     }

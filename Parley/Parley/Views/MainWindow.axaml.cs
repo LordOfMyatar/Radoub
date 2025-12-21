@@ -446,6 +446,9 @@ namespace DialogEditor.Views
         // View operations - Issue #339: F5 to open flowchart
         void IKeyboardShortcutHandler.OnOpenFlowchart() => OnFlowchartClick(null, null!);
 
+        // Issue #478: F6 to open conversation simulator
+        void IKeyboardShortcutHandler.OnOpenConversationSimulator() => OnConversationSimulatorClick(null, null!);
+
         #endregion
 
         private void OnAddContextAwareReply(object? sender, RoutedEventArgs e)
@@ -1483,13 +1486,21 @@ namespace DialogEditor.Views
             // Issue #253: Save undo state only if value actually changed
             SaveUndoIfValueChanged(control);
 
+            // Issue #478: Only auto-save if value actually changed
+            // This prevents false dirty flags when focus moves to other windows (e.g., Conversation Simulator)
+            var currentValue = GetFieldValue(control);
+            bool valueChanged = currentValue != _originalFieldValue;
+
             // Clear the edit session tracker (Issue #74)
             _currentEditFieldName = null;
             _originalFieldValue = null;
             _undoStateSavedForCurrentEdit = false;
 
-            // Auto-save the specific property that changed
-            AutoSaveProperty(control.Name ?? "");
+            // Auto-save the specific property only if it changed
+            if (valueChanged)
+            {
+                AutoSaveProperty(control.Name ?? "");
+            }
         }
 
         private void AutoSaveProperty(string propertyName)

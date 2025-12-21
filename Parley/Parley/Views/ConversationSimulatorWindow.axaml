@@ -122,12 +122,22 @@
             </StackPanel>
         </Border>
 
-        <!-- Reply Label -->
-        <TextBlock Grid.Row="3"
-                   Text="Choose response:"
-                   FontWeight="SemiBold"
-                   Margin="0,0,0,5"
-                   IsVisible="{Binding HasReplies}"/>
+        <!-- Reply Label with PC indicator -->
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,5"
+                    IsVisible="{Binding HasReplies}">
+            <!-- PC Circle Symbol (color set in code-behind from SpeakerVisualHelper) -->
+            <Ellipse x:Name="PcCircle"
+                     Width="14" Height="14"
+                     StrokeThickness="1"
+                     Margin="0,0,8,0"
+                     VerticalAlignment="Center"/>
+            <TextBlock x:Name="ChooseResponseLabel"
+                       Text="Choose response:"
+                       FontWeight="SemiBold"
+                       VerticalAlignment="Center"/>
+        </StackPanel>
 
         <!-- Replies List -->
         <Border Grid.Row="4"

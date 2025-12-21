@@ -64,6 +64,7 @@ namespace DialogEditor.Services
             // No modifier shortcuts
             _noModifierShortcuts[Key.Delete] = handler.OnDeleteNode;
             _noModifierShortcuts[Key.F5] = handler.OnOpenFlowchart; // Issue #339: F5 to open flowchart
+            _noModifierShortcuts[Key.F6] = handler.OnOpenConversationSimulator; // Issue #478: F6 to open conversation simulator
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "KeyboardShortcutManager: Registered all shortcuts");
         }
@@ -192,6 +193,7 @@ namespace DialogEditor.Services
 
             // View
             shortcuts.Add("F5 - Open Flowchart");
+            shortcuts.Add("F6 - Open Conversation Simulator");
 
             return shortcuts;
         }
@@ -238,5 +240,6 @@ namespace DialogEditor.Services
 
         // View operations
         void OnOpenFlowchart(); // Issue #339: F5 to open flowchart
+        void OnOpenConversationSimulator(); // Issue #478: F6 to open conversation simulator
     }
 }

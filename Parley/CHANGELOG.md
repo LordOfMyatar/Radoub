@@ -39,6 +39,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - ⚠️ "NPC entries without conditions" (unreachable siblings)
 - ⚠️ "Loop detected"
 
+#### Theme-Aware Colors
+- NPC speaker label uses SpeakerVisualHelper for theme-aware coloring
+- Choices indicator toggles between PC (blue, "Choose response:") and NPC (orange, "Select start:") styling
+- F6 keyboard shortcut opens Conversation Simulator
+
+#### Bug Fixes
+- Fix false "unsaved changes" prompt when opening Conversation Simulator
+- Coverage now tracks unique visited entries (node-based) instead of paths
+
 ---
 
 ## [0.1.78-alpha] - 2025-12-20
