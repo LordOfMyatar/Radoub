@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.82-alpha] - 2025-12-21
+**Branch**: `parley/sprint/simulator-warnings` | **PR**: #485 | **Closes**: #484
+
+### Sprint: Conversation Simulator - Warnings System
+
+Implement warning detection for the conversation simulator (Epic #222).
+
+#### Planned
+- ⚠️ Verify/fix "No conditional scripts" detection
+- ⚠️ Verify/fix "Unreachable siblings" detection
+- ⚠️ Verify/fix loop detection during navigation
+- Add tests for warning conditions
+
+---
+
 ## [0.1.81-alpha] - 2025-12-21
 **Branch**: `parley/fix/linux-tts-dropdown-overlap` | **PR**: #487
 
