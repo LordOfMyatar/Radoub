@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.79-alpha] - 2025-12-20
-**Branch**: `parley/sprint/conversation-simulator-walker` | **PR**: #TBD | **Closes**: #478
+**Branch**: `parley/sprint/conversation-simulator-walker` | **PR**: #480 | **Closes**: #478
 
 ### Sprint: Conversation Simulator - Dialog Walker + Coverage
 
