@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.80-alpha] - 2025-12-21
+**Branch**: `parley/sprint/tts-integration` | **PR**: #TBD | **Closes**: #479
+
+### Sprint: Text-to-Speech Integration (Epic #222)
+
+Add cross-platform text-to-speech to the conversation simulator for immersive dialog testing.
+
+#### Added
+- ITtsService interface for platform-agnostic TTS
+- WindowsTtsService (System.Speech.Synthesis)
+- EspeakTtsService (Linux espeak-ng)
+- MacOsSayTtsService (macOS say command)
+- TtsServiceFactory for platform detection
+- Per-speaker voice assignment UI
+- Speed control slider
+- Graceful degradation with install instructions
+
+---
+
 ## [0.1.79-alpha] - 2025-12-20
 **Branch**: `parley/sprint/conversation-simulator-walker` | **PR**: #480 | **Closes**: #478
 
