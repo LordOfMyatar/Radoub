@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.83-alpha] - 2025-12-22
+**Branch**: `parley/fix/linux-espeak-audio` | **PR**: #TBD
+
+### Fix: Linux espeak-ng Audio Playback (#489)
+
+#### Fixed
+- espeak-ng TTS now plays audio on Linux
+
+---
+
 ## [0.1.82-alpha] - 2025-12-21
 **Branch**: `parley/sprint/simulator-warnings` | **PR**: #485 | **Closes**: #484
 
