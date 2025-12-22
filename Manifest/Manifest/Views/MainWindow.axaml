@@ -104,42 +104,47 @@
                             <StackPanel x:Name="CategoryProperties" IsVisible="False" Spacing="8">
                                 <TextBlock Text="Category Properties" FontWeight="SemiBold"/>
 
+                                <!-- Name first (most important) -->
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Name:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="CategoryNameBox" Width="250"/>
+                                </StackPanel>
+
+                                <!-- Tag second -->
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="Tag:" Width="80" VerticalAlignment="Center"/>
                                     <TextBox x:Name="CategoryTagBox" Width="200"/>
                                 </StackPanel>
 
+                                <!-- Priority and XP side-by-side -->
+                                <StackPanel Orientation="Horizontal" Spacing="20">
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock Text="Priority:" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="CategoryPriorityBox" Width="100">
+                                            <ComboBoxItem Content="Highest" Tag="0"/>
+                                            <ComboBoxItem Content="High" Tag="1"/>
+                                            <ComboBoxItem Content="Medium" Tag="2"/>
+                                            <ComboBoxItem Content="Low" Tag="3"/>
+                                            <ComboBoxItem Content="Lowest" Tag="4"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock Text="XP:" VerticalAlignment="Center"/>
+                                        <NumericUpDown x:Name="CategoryXPBox" Width="80" Minimum="0" ShowButtonSpinner="False"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- TLK info (less important, moved down) -->
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <TextBox x:Name="CategoryStrRefBox" Width="150" IsReadOnly="True" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <TextBlock x:Name="CategorySourceLabel" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontStyle="Italic" VerticalAlignment="Center"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="Language:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Language:" Width="80" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <ComboBox x:Name="CategoryLanguageBox" Width="120" SelectionChanged="OnCategoryLanguageChanged"/>
                                     <Button x:Name="CategoryViewAllLangsBtn" Content="View All..." Click="OnViewCategoryLanguages" ToolTip.Tip="View all available translations"/>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="Name:" Width="80" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="CategoryNameBox" Width="200"/>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="Priority:" Width="80" VerticalAlignment="Center"/>
-                                    <ComboBox x:Name="CategoryPriorityBox" Width="120">
-                                        <ComboBoxItem Content="Highest" Tag="0"/>
-                                        <ComboBoxItem Content="High" Tag="1"/>
-                                        <ComboBoxItem Content="Medium" Tag="2"/>
-                                        <ComboBoxItem Content="Low" Tag="3"/>
-                                        <ComboBoxItem Content="Lowest" Tag="4"/>
-                                    </ComboBox>
-                                </StackPanel>
-
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="XP:" Width="80" VerticalAlignment="Center"/>
-                                    <NumericUpDown x:Name="CategoryXPBox" Width="100" Minimum="0" ShowButtonSpinner="False"/>
                                 </StackPanel>
 
                                 <StackPanel Spacing="5">
@@ -152,30 +157,36 @@
                             <StackPanel x:Name="EntryProperties" IsVisible="False" Spacing="8">
                                 <TextBlock Text="Entry Properties" FontWeight="SemiBold"/>
 
-                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="ID:" Width="80" VerticalAlignment="Center"/>
-                                    <NumericUpDown x:Name="EntryIdBox" Width="150" Minimum="0" ShowButtonSpinner="False"/>
+                                <!-- Text first - largest and most important -->
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="Text:"/>
+                                    <TextBox x:Name="EntryTextBox" Height="200" AcceptsReturn="True" TextWrapping="Wrap"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                                 </StackPanel>
 
-                                <CheckBox x:Name="EntryEndBox" Content="End (completes category)"/>
+                                <!-- ID and End checkbox side-by-side -->
+                                <StackPanel Orientation="Horizontal" Spacing="20">
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <TextBlock Text="ID:" VerticalAlignment="Center"/>
+                                        <NumericUpDown x:Name="EntryIdBox" Width="100" Minimum="0" ShowButtonSpinner="False"/>
+                                    </StackPanel>
+                                    <CheckBox x:Name="EntryEndBox" Content="End (completes category)" VerticalAlignment="Center"/>
+                                </StackPanel>
 
+                                <!-- TLK info (less important, moved down) -->
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBlock Text="StrRef:" Width="80" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <TextBox x:Name="EntryStrRefBox" Width="150" IsReadOnly="True" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <TextBlock x:Name="EntrySourceLabel" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontStyle="Italic" VerticalAlignment="Center"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="10">
-                                    <TextBlock Text="Language:" Width="80" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Language:" Width="80" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <ComboBox x:Name="EntryLanguageBox" Width="120" SelectionChanged="OnEntryLanguageChanged"/>
                                     <Button x:Name="EntryViewAllLangsBtn" Content="View All..." Click="OnViewEntryLanguages" ToolTip.Tip="View all available translations"/>
                                 </StackPanel>
-
-                                <StackPanel Spacing="5">
-                                    <TextBlock Text="Text:"/>
-                                    <TextBox x:Name="EntryTextBox" Height="150" AcceptsReturn="True" TextWrapping="Wrap"/>
-                                </StackPanel>
                             </StackPanel>
+
 
                             <!-- No Selection -->
                             <TextBlock x:Name="NoSelectionText" Text="Select a category or entry to edit its properties."

@@ -1,4 +1,5 @@
 using Avalonia;
+using Manifest.Services;
 using System;
 
 namespace Manifest;
@@ -11,6 +12,17 @@ sealed class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Parse command line arguments
+        var options = CommandLineService.Parse(args);
+
+        // Handle --help
+        if (options.ShowHelp)
+        {
+            CommandLineService.PrintHelp();
+            return 0;
+        }
+
+        // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
     }

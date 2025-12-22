@@ -41,7 +41,101 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Handle window closing
         Closing += OnWindowClosing;
 
+        // Handle command line file on startup
+        Opened += OnWindowOpened;
+
         UnifiedLogger.LogApplication(LogLevel.INFO, "Manifest MainWindow initialized");
+    }
+
+    private async void OnWindowOpened(object? sender, EventArgs e)
+    {
+        // Only handle once
+        Opened -= OnWindowOpened;
+
+        await HandleStartupFileAsync();
+    }
+
+    /// <summary>
+    /// Handle command line arguments for file loading and navigation.
+    /// Enables cross-tool integration (e.g., Parley's "Open in Manifest" feature).
+    /// </summary>
+    private async Task HandleStartupFileAsync()
+    {
+        var options = CommandLineService.Options;
+
+        if (string.IsNullOrEmpty(options.FilePath))
+            return;
+
+        if (!File.Exists(options.FilePath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Command line file not found: {UnifiedLogger.SanitizePath(options.FilePath)}");
+            UpdateStatus($"File not found: {Path.GetFileName(options.FilePath)}");
+            return;
+        }
+
+        // Load the file
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading file from command line: {UnifiedLogger.SanitizePath(options.FilePath)}");
+        await LoadFile(options.FilePath);
+
+        // Navigate to quest if specified
+        if (!string.IsNullOrEmpty(options.QuestTag))
+        {
+            NavigateToQuest(options.QuestTag, options.EntryId);
+        }
+    }
+
+    /// <summary>
+    /// Navigate to a specific quest category and optionally select an entry.
+    /// </summary>
+    private void NavigateToQuest(string questTag, uint? entryId)
+    {
+        if (_currentJrl == null) return;
+
+        // Find the category with matching tag
+        var category = _currentJrl.Categories.FirstOrDefault(c =>
+            string.Equals(c.Tag, questTag, StringComparison.OrdinalIgnoreCase));
+
+        if (category == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Quest tag not found: {questTag}");
+            UpdateStatus($"Quest not found: {questTag}");
+            return;
+        }
+
+        // Find and select the tree item
+        foreach (var treeItem in JournalTree.Items.OfType<TreeViewItem>())
+        {
+            if (treeItem.Tag is CategoryTreeItem catItem && catItem.Category == category)
+            {
+                treeItem.IsExpanded = true;
+
+                // If entry ID specified, find and select that entry
+                if (entryId.HasValue)
+                {
+                    var entry = category.Entries.FirstOrDefault(e => e.ID == entryId.Value);
+                    if (entry != null)
+                    {
+                        foreach (var entTreeItem in treeItem.Items.OfType<TreeViewItem>())
+                        {
+                            if (entTreeItem.Tag is EntryTreeItem entItem && entItem.Entry == entry)
+                            {
+                                JournalTree.SelectedItem = entTreeItem;
+                                entTreeItem.Focus();
+                                UnifiedLogger.LogApplication(LogLevel.INFO, $"Navigated to quest '{questTag}' entry {entryId}");
+                                return;
+                            }
+                        }
+                        UnifiedLogger.LogApplication(LogLevel.WARN, $"Entry ID {entryId} not found in quest '{questTag}'");
+                    }
+                }
+
+                // Select the category itself
+                JournalTree.SelectedItem = treeItem;
+                treeItem.Focus();
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Navigated to quest '{questTag}'");
+                return;
+            }
+        }
     }
 
     private void RestoreWindowPosition()
