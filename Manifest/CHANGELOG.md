@@ -17,9 +17,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Add command-line argument support for cross-tool integration and improve journal entry layout.
 
-#### Planned
-- Command-line arguments for opening to specific file/quest/entry (#447)
+#### Added
+- Command-line arguments for cross-tool integration (#447)
+  - `--file <path>` - Open specific JRL file
+  - `--quest <tag>` - Navigate to quest category
+  - `--entry <id>` - Select specific entry
+  - Enables Parley's "Open in Manifest" feature
+
+#### Changed
 - Journal entry layout improvements (#423)
+  - Category: Name field moved to top, Tag second
+  - Category: Priority and XP fields side-by-side
+  - Entry: Text field first and larger (200px height)
+  - Entry: ID and End checkbox side-by-side
+  - TLK info (StrRef/Language) de-emphasized with muted colors
 
 ---
 
