@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace DialogEditor.Services
@@ -136,9 +137,12 @@ namespace DialogEditor.Services
         private void ParseVoices(string output)
         {
             // espeak-ng --voices output format:
-            // Pty Language Age/Gender VoiceName       File          Other Languages
-            //  5  af              M  afrikaans       ...
-            // We want the VoiceName column
+            // Pty Language       Age/Gender VoiceName          File          Other Languages
+            //  5  af              --/M      Afrikaans          gmw/af
+            //  2  en-gb           --/M      English_(Great_Britain) gmw/en
+            //
+            // The -v flag expects the Language column (e.g., "en-gb", "en-us"), not VoiceName
+            // We extract language codes and use them directly
 
             var lines = output.Split('\n');
             foreach (var line in lines)
@@ -146,20 +150,42 @@ namespace DialogEditor.Services
                 if (string.IsNullOrWhiteSpace(line)) continue;
                 if (line.StartsWith("Pty") || line.StartsWith(" Pty")) continue; // Header
 
-                // Parse the line - VoiceName is typically the 4th column
-                var parts = Regex.Split(line.Trim(), @"\s{2,}");
-                if (parts.Length >= 4)
+                // Parse the line - Language is the 2nd column (after Pty number)
+                // Format: " 5  en-gb           --/M      English..."
+                var trimmedLine = line.TrimStart();
+                var parts = Regex.Split(trimmedLine, @"\s+");
+                if (parts.Length >= 2)
                 {
-                    var voiceName = parts[3].Trim();
-                    if (!string.IsNullOrEmpty(voiceName) && !_voiceNames.Contains(voiceName))
+                    // parts[0] is priority (e.g., "5"), parts[1] is language code (e.g., "en-gb")
+                    var languageCode = parts[1].Trim();
+                    // Skip variant entries (they start with "variant")
+                    if (languageCode == "variant") continue;
+                    // Skip empty or invalid codes
+                    if (string.IsNullOrEmpty(languageCode)) continue;
+                    // Avoid duplicates
+                    if (!_voiceNames.Contains(languageCode))
                     {
-                        _voiceNames.Add(voiceName);
+                        _voiceNames.Add(languageCode);
                     }
                 }
             }
 
-            // Sort voices for better UX
-            _voiceNames.Sort();
+            // Sort voices for better UX, but put English variants first
+            _voiceNames.Sort((a, b) =>
+            {
+                // Prioritize "en" voices at the top
+                var aIsEnglish = a.StartsWith("en");
+                var bIsEnglish = b.StartsWith("en");
+                if (aIsEnglish && !bIsEnglish) return -1;
+                if (!aIsEnglish && bIsEnglish) return 1;
+                return string.Compare(a, b, StringComparison.Ordinal);
+            });
+
+            // Ensure "en" is in the list as default (if any English variant exists)
+            if (!_voiceNames.Contains("en") && _voiceNames.Any(v => v.StartsWith("en")))
+            {
+                _voiceNames.Insert(0, "en");
+            }
         }
 
         public bool IsAvailable => _isAvailable;
@@ -198,8 +224,10 @@ namespace DialogEditor.Services
                     Arguments = args,
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
+                    // Don't redirect stdout/stderr - espeak-ng needs direct audio device access
+                    // Redirecting can cause espeak-ng to output audio data to stdout instead of playing
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false
                 };
 
                 _currentProcess = Process.Start(psi);

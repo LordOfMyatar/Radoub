@@ -16,7 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fix: Linux espeak-ng Audio Playback (#489)
 
 #### Fixed
-- espeak-ng TTS now plays audio on Linux
+- espeak-ng TTS now plays audio on Linux (disabled stdout/stderr redirection)
+- Voice selection now uses language codes (e.g., "en-us") instead of display names
+- English voices prioritized in voice list with "en" as default
+- Timing-sensitive tests now skip on Linux (OS-specific timing jitter)
 
 ---
 
