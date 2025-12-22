@@ -16,16 +16,17 @@ namespace DialogEditor.Services
     public class PiperTtsService : ITtsService
     {
         private readonly List<string> _voiceNames = new();
-        private readonly Dictionary<string, string> _voiceModelMap = new(); // Display name -> model name
+        private readonly Dictionary<string, string> _voiceModelMap = new(); // Display name -> full path to ONNX
         private readonly bool _isAvailable;
         private readonly string _unavailableReason = "";
         private Process? _currentProcess;
         private bool _isSpeaking;
         private readonly string _piperPath;
+        private readonly string _voicesDir;
 
         // NWN-supported languages with Piper voice models
-        // Format: (model name, display name, gender)
-        // Using medium quality models for balance of quality and speed
+        // Format: (model base name, display name)
+        // Users must download these models to ~/.local/share/piper-voices/
         private static readonly (string Model, string DisplayName)[] NwnVoices =
         {
             // English voices
@@ -53,6 +54,11 @@ namespace DialogEditor.Services
 
         public PiperTtsService()
         {
+            // Set up voices directory
+            _voicesDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".local", "share", "piper-voices");
+
             // Try to find piper
             _piperPath = FindPiperPath();
 
@@ -67,17 +73,17 @@ namespace DialogEditor.Services
 
             try
             {
-                // Build voice list
+                // Build voice list from installed models
                 BuildVoiceList();
 
                 _isAvailable = _voiceNames.Count > 0;
                 if (!_isAvailable)
                 {
-                    _unavailableReason = "No Piper voices configured.";
+                    _unavailableReason = $"No Piper voice models found in {_voicesDir}";
                 }
 
                 UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"PiperTtsService: Initialized with {_voiceNames.Count} voices");
+                    $"PiperTtsService: Initialized with {_voiceNames.Count} voices from {_voicesDir}");
             }
             catch (Exception ex)
             {
@@ -133,21 +139,36 @@ namespace DialogEditor.Services
 
         private void BuildVoiceList()
         {
-            // Add all configured NWN voices
-            // Piper will auto-download models on first use
+            // Only add voices that have downloaded ONNX models
+            if (!Directory.Exists(_voicesDir))
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"PiperTtsService: Voices directory does not exist: {_voicesDir}");
+                return;
+            }
+
             foreach (var (model, displayName) in NwnVoices)
             {
-                _voiceNames.Add(displayName);
-                _voiceModelMap[displayName] = model;
+                var onnxPath = Path.Combine(_voicesDir, $"{model}.onnx");
+                var jsonPath = Path.Combine(_voicesDir, $"{model}.onnx.json");
+
+                // Only add if both model and config exist
+                if (File.Exists(onnxPath) && File.Exists(jsonPath))
+                {
+                    _voiceNames.Add(displayName);
+                    _voiceModelMap[displayName] = onnxPath;  // Store full path
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"PiperTtsService: Found voice model: {model}");
+                }
             }
         }
 
         /// <summary>
-        /// Get the Piper model name for a display name.
+        /// Get the full path to the ONNX model for a display name.
         /// </summary>
-        public string GetModelName(string displayName)
+        public string GetModelPath(string displayName)
         {
-            return _voiceModelMap.TryGetValue(displayName, out var model) ? model : displayName;
+            return _voiceModelMap.TryGetValue(displayName, out var path) ? path : "";
         }
 
         public bool IsAvailable => _isAvailable;
@@ -163,10 +184,24 @@ namespace DialogEditor.Services
                 // Stop any current speech
                 Stop();
 
-                // Get model name
-                var modelName = string.IsNullOrEmpty(voiceName)
-                    ? NwnVoices[0].Model  // Default to first voice
-                    : GetModelName(voiceName);
+                // Get model path (full path to ONNX file)
+                string modelPath;
+                if (string.IsNullOrEmpty(voiceName) || !_voiceModelMap.ContainsKey(voiceName))
+                {
+                    // Use first available voice
+                    modelPath = _voiceModelMap.Values.FirstOrDefault() ?? "";
+                }
+                else
+                {
+                    modelPath = GetModelPath(voiceName);
+                }
+
+                if (string.IsNullOrEmpty(modelPath) || !File.Exists(modelPath))
+                {
+                    UnifiedLogger.LogApplication(LogLevel.ERROR,
+                        $"PiperTtsService: Voice model not found: {voiceName}");
+                    return;
+                }
 
                 // Calculate length_scale (inverse of rate: 0.5 = faster, 2.0 = slower)
                 // rate 0.5 -> length_scale 2.0, rate 2.0 -> length_scale 0.5
@@ -177,8 +212,8 @@ namespace DialogEditor.Services
                 var tempWavFile = Path.Combine(Path.GetTempPath(), $"piper_tts_{Guid.NewGuid()}.wav");
 
                 // Build piper command
-                // piper --model <model> --output_file <file> --length_scale <scale>
-                var args = $"--model {modelName} --output_file \"{tempWavFile}\" --length_scale {lengthScale:F2}";
+                // piper --model <path> --output_file <file> --length_scale <scale>
+                var args = $"--model \"{modelPath}\" --output_file \"{tempWavFile}\" --length_scale {lengthScale:F2}";
 
                 var psi = new ProcessStartInfo
                 {
@@ -316,9 +351,15 @@ namespace DialogEditor.Services
         public string UnavailableReason => _unavailableReason;
 
         public string InstallInstructions =>
-            "Install Piper TTS for high-quality neural voices:\n" +
-            "  pip install piper-tts\n\n" +
-            "Voice models are downloaded automatically on first use.\n" +
+            "Install Piper TTS for high-quality neural voices:\n\n" +
+            "1. Install piper:\n" +
+            "   pipx install piper-tts  (or: pip install piper-tts)\n\n" +
+            "2. Download voice models to ~/.local/share/piper-voices/\n" +
+            "   Example for English:\n" +
+            "   mkdir -p ~/.local/share/piper-voices\n" +
+            "   cd ~/.local/share/piper-voices\n" +
+            "   wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx\n" +
+            "   wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json\n\n" +
             "For more voices, see: https://rhasspy.github.io/piper-samples/";
     }
 }
