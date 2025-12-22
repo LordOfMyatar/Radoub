@@ -177,7 +177,7 @@ jobs:
       shell: bash
       run: |
         echo "Bundle contents:"
-        find ./bundle -type f | head -50
+        find ./bundle -type f 2>/dev/null | head -50 || true
 
     # macOS: Create .app bundles
     - name: Create macOS App Bundles
