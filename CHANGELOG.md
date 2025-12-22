@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.8.4] - 2025-12-21
-**Branch**: `radoub/chore/release-0.8.4` | **PR**: #TBD
+**Branch**: `radoub/chore/release-0.8.4` | **PR**: #500
 
 ### Bundle Release: Parley 0.1.84 + Manifest 0.8.0
 
