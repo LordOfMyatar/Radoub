@@ -393,13 +393,15 @@ namespace DialogEditor.Services
         public string InstallInstructions =>
             "Install Piper TTS for high-quality neural voices:\n\n" +
             "1. Install piper:\n" +
-            "   pipx install piper-tts  (or: pip install piper-tts)\n\n" +
+            "   pipx install piper-tts\n\n" +
             "2. Download voice models to ~/.local/share/piper-voices/\n" +
-            "   Example for English:\n" +
             "   mkdir -p ~/.local/share/piper-voices\n" +
             "   cd ~/.local/share/piper-voices\n" +
+            "   # English (US) - Lessac voice:\n" +
             "   wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx\n" +
             "   wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json\n\n" +
-            "For more voices, see: https://rhasspy.github.io/piper-samples/";
+            "For more voices, see: https://rhasspy.github.io/piper-samples/\n\n" +
+            "Alternative: Install espeak-ng for basic formant synthesis:\n" +
+            "   sudo apt install espeak-ng";
     }
 }

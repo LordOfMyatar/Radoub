@@ -18,8 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 #### Added
 
 **Piper TTS Integration** (Neural voices - high quality):
-- PiperTtsService with auto-download voice models
-- Preferred over espeak-ng when installed (`pip install piper-tts`)
+- PiperTtsService for natural-sounding neural voice synthesis
+- Preferred over espeak-ng when installed
 - 13 neural voice models for NWN languages:
   - English US (Lessac, Amy), English GB (Alan, Alba)
   - German (Thorsten, Eva)
@@ -32,6 +32,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Male and female variants for 6 NWN languages
 - Uses `+m3`/`+f3` suffixes for distinct voices
 - Friendly display names (e.g., "English (Male)")
+
+#### Installation (Linux)
+
+**Option 1: Piper TTS** (recommended for quality)
+```bash
+pipx install piper-tts
+mkdir -p ~/.local/share/piper-voices
+cd ~/.local/share/piper-voices
+# Download English voice:
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+```
+More voices: https://rhasspy.github.io/piper-samples/
+
+**Option 2: espeak-ng** (basic, no download required)
+```bash
+sudo apt install espeak-ng
+```
 
 #### Technical
 - TtsServiceFactory auto-detects: Piper > espeak-ng (Linux), Piper > say > espeak-ng (macOS)

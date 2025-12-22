@@ -306,10 +306,13 @@ namespace DialogEditor.Services
         public string UnavailableReason => _unavailableReason;
 
         public string InstallInstructions =>
-            "Install espeak-ng for TTS support:\n" +
+            "Install espeak-ng for basic TTS support:\n" +
             "  Ubuntu/Debian: sudo apt install espeak-ng\n" +
             "  Fedora: sudo dnf install espeak-ng\n" +
             "  Arch: sudo pacman -S espeak-ng\n" +
-            "  macOS: brew install espeak-ng";
+            "  macOS: brew install espeak-ng\n\n" +
+            "For higher quality neural voices, install Piper TTS:\n" +
+            "  pipx install piper-tts\n" +
+            "  Then download voice models to ~/.local/share/piper-voices/";
     }
 }
