@@ -14,6 +14,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.8.4] - 2025-12-21
+**Branch**: `radoub/chore/release-0.8.4` | **PR**: #500
+
+### Bundle Release: Parley 0.1.84 + Manifest 0.8.0
+
+Bundled release with significant Parley and Manifest updates since 0.8.3.
+
+#### Parley Highlights (0.1.76 → 0.1.84)
+- **Conversation Simulator** - Dialog walker with coverage tracking, TTS playback, warnings system
+- **Linux TTS** - Piper neural voices + espeak-ng fallback with voice variants
+- **Scrap System Redesign** - Settings migration, improved UX
+- **TreeView UX** - Drag-drop, collapsible nodes, navigation improvements
+- **Architecture** - Controller extraction (5 sprints of MainWindow cleanup)
+
+#### Manifest Highlights (0.7.0 → 0.8.0)
+- **CLI Arguments** - `--file`, `--quest`, `--entry` for cross-tool integration
+- **UI Polish** - Improved journal entry layout
+
+See tool-specific CHANGELOGs for full details:
+- [Parley CHANGELOG](Parley/CHANGELOG.md)
+- [Manifest CHANGELOG](Manifest/CHANGELOG.md)
+
+---
+
 ## [0.8.3] - 2025-12-17
 **Branch**: `radoub/feat/bundle-package` | **PR**: #449
 
