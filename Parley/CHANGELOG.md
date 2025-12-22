@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: Enhance Linux TTS with Piper and Voice Variants (#491)
 
+#### Added
+- Male and female voice variants for NWN-supported languages:
+  - English (Male/Female)
+  - German (Male/Female)
+  - French (Male/Female)
+  - Spanish (Male/Female)
+  - Italian (Male/Female)
+  - Polish (Male/Female)
+- Friendly display names in voice dropdown (e.g., "English (Male)")
+- Uses espeak-ng variant syntax (`+m3`/`+f3`) for distinct voices
+
 ---
 
 ## [0.1.83-alpha] - 2025-12-22

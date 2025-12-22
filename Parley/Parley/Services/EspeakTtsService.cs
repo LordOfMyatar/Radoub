@@ -10,15 +10,28 @@ namespace DialogEditor.Services
     /// <summary>
     /// Linux TTS implementation using espeak-ng.
     /// Issue #479 - TTS Integration Sprint
+    /// Issue #491 - Voice variants with male/female options
     /// </summary>
     public class EspeakTtsService : ITtsService
     {
         private readonly List<string> _voiceNames = new();
+        private readonly Dictionary<string, string> _voiceCodeMap = new(); // Display name -> espeak voice code
         private readonly bool _isAvailable;
         private readonly string _unavailableReason = "";
         private Process? _currentProcess;
         private bool _isSpeaking;
         private readonly string _espeakPath;
+
+        // NWN-supported languages with their espeak-ng codes and display names
+        private static readonly (string Code, string DisplayName)[] NwnLanguages =
+        {
+            ("en", "English"),
+            ("de", "German"),
+            ("fr", "French"),
+            ("es", "Spanish"),
+            ("it", "Italian"),
+            ("pl", "Polish")
+        };
 
         public event EventHandler? SpeakCompleted;
 
@@ -38,12 +51,8 @@ namespace DialogEditor.Services
 
             try
             {
-                // Get available voices
-                var voiceOutput = RunEspeakCommand("--voices");
-                if (!string.IsNullOrEmpty(voiceOutput))
-                {
-                    ParseVoices(voiceOutput);
-                }
+                // Build voice list for NWN-supported languages with male/female variants
+                BuildNwnVoiceList();
 
                 _isAvailable = _voiceNames.Count > 0;
                 if (!_isAvailable)
@@ -134,15 +143,45 @@ namespace DialogEditor.Services
             }
         }
 
-        private void ParseVoices(string output)
+        /// <summary>
+        /// Build voice list with male/female variants for NWN-supported languages.
+        /// Uses espeak-ng voice+variant syntax: "en+m3" for male, "en+f3" for female.
+        /// Issue #491
+        /// </summary>
+        private void BuildNwnVoiceList()
         {
-            // espeak-ng --voices output format:
-            // Pty Language       Age/Gender VoiceName          File          Other Languages
-            //  5  af              --/M      Afrikaans          gmw/af
-            //  2  en-gb           --/M      English_(Great_Britain) gmw/en
-            //
-            // The -v flag expects the Language column (e.g., "en-gb", "en-us"), not VoiceName
-            // We extract language codes and use them directly
+            // Get available base voices from espeak-ng to validate
+            var voiceOutput = RunEspeakCommand("--voices");
+            var availableVoices = ParseAvailableVoices(voiceOutput);
+
+            foreach (var (code, displayName) in NwnLanguages)
+            {
+                // Check if base language is available in espeak-ng
+                if (!availableVoices.Contains(code))
+                    continue;
+
+                // Add male variant (using +m3 for a clearer male voice)
+                var maleDisplayName = $"{displayName} (Male)";
+                var maleCode = $"{code}+m3";
+                _voiceNames.Add(maleDisplayName);
+                _voiceCodeMap[maleDisplayName] = maleCode;
+
+                // Add female variant (using +f3 for a clearer female voice)
+                var femaleDisplayName = $"{displayName} (Female)";
+                var femaleCode = $"{code}+f3";
+                _voiceNames.Add(femaleDisplayName);
+                _voiceCodeMap[femaleDisplayName] = femaleCode;
+            }
+        }
+
+        /// <summary>
+        /// Parse espeak-ng --voices output to get available base language codes.
+        /// </summary>
+        private HashSet<string> ParseAvailableVoices(string output)
+        {
+            var voices = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (string.IsNullOrEmpty(output))
+                return voices;
 
             var lines = output.Split('\n');
             foreach (var line in lines)
@@ -150,42 +189,31 @@ namespace DialogEditor.Services
                 if (string.IsNullOrWhiteSpace(line)) continue;
                 if (line.StartsWith("Pty") || line.StartsWith(" Pty")) continue; // Header
 
-                // Parse the line - Language is the 2nd column (after Pty number)
-                // Format: " 5  en-gb           --/M      English..."
                 var trimmedLine = line.TrimStart();
                 var parts = Regex.Split(trimmedLine, @"\s+");
                 if (parts.Length >= 2)
                 {
-                    // parts[0] is priority (e.g., "5"), parts[1] is language code (e.g., "en-gb")
                     var languageCode = parts[1].Trim();
-                    // Skip variant entries (they start with "variant")
                     if (languageCode == "variant") continue;
-                    // Skip empty or invalid codes
                     if (string.IsNullOrEmpty(languageCode)) continue;
-                    // Avoid duplicates
-                    if (!_voiceNames.Contains(languageCode))
-                    {
-                        _voiceNames.Add(languageCode);
-                    }
+
+                    // Add the full code (e.g., "en-gb") and base code (e.g., "en")
+                    voices.Add(languageCode);
+                    var baseLang = languageCode.Split('-')[0];
+                    voices.Add(baseLang);
                 }
             }
 
-            // Sort voices for better UX, but put English variants first
-            _voiceNames.Sort((a, b) =>
-            {
-                // Prioritize "en" voices at the top
-                var aIsEnglish = a.StartsWith("en");
-                var bIsEnglish = b.StartsWith("en");
-                if (aIsEnglish && !bIsEnglish) return -1;
-                if (!aIsEnglish && bIsEnglish) return 1;
-                return string.Compare(a, b, StringComparison.Ordinal);
-            });
+            return voices;
+        }
 
-            // Ensure "en" is in the list as default (if any English variant exists)
-            if (!_voiceNames.Contains("en") && _voiceNames.Any(v => v.StartsWith("en")))
-            {
-                _voiceNames.Insert(0, "en");
-            }
+        /// <summary>
+        /// Translate display name to espeak-ng voice code.
+        /// Returns the original name if no mapping exists (backwards compatibility).
+        /// </summary>
+        public string GetVoiceCode(string displayName)
+        {
+            return _voiceCodeMap.TryGetValue(displayName, out var code) ? code : displayName;
         }
 
         public bool IsAvailable => _isAvailable;
@@ -211,7 +239,9 @@ namespace DialogEditor.Services
                 var args = $"-s {speed}";
                 if (!string.IsNullOrEmpty(voiceName))
                 {
-                    args += $" -v \"{voiceName}\"";
+                    // Translate display name to espeak voice code (e.g., "English (Male)" -> "en+m3")
+                    var espeakCode = GetVoiceCode(voiceName);
+                    args += $" -v \"{espeakCode}\"";
                 }
 
                 // Escape text for shell
