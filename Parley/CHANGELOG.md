@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.83-alpha] - 2025-12-22
-**Branch**: `parley/fix/linux-espeak-audio` | **PR**: #TBD
+**Branch**: `parley/fix/linux-espeak-audio` | **PR**: #490
 
 ### Fix: Linux espeak-ng Audio Playback (#489)
 
