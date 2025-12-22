@@ -15,13 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Conversation Simulator - Warnings System
 
-Implement warning detection for the conversation simulator (Epic #222).
+Implement warning detection for unreachable NPC entries (Epic #222).
 
-#### Planned
-- ⚠️ Verify/fix "No conditional scripts" detection
-- ⚠️ Verify/fix "Unreachable siblings" detection
-- ⚠️ Verify/fix loop detection during navigation
-- Add tests for warning conditions
+#### Added
+- ⚠️ Per-node unreachable sibling warnings in main tree view
+- ⚠️ Per-entry unreachable sibling warnings in conversation simulator
+- "Show Dialog Warnings" toggle in Settings > UI Settings
+- Live refresh of warnings when setting is toggled
+
+#### Technical
+- `TreeViewSafeNode.CalculateUnreachableSiblings()` - static method for reuse
+- `ReplyOption.IsUnreachable` property for simulator entries
+- MultiBinding pattern for compound visibility (warning + setting)
 
 ---
 
