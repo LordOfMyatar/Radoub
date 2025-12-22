@@ -20,6 +20,8 @@ namespace DialogEditor.Services
         private readonly bool _isAvailable;
         private readonly string _unavailableReason = "";
         private Process? _currentProcess;
+        private Process? _playbackProcess;
+        private string? _currentTempFile;
         private bool _isSpeaking;
         private readonly string _piperPath;
         private readonly string _voicesDir;
@@ -208,8 +210,9 @@ namespace DialogEditor.Services
                 var lengthScale = 1.0 / rate;
                 lengthScale = Math.Clamp(lengthScale, 0.5, 2.0);
 
-                // Create temp file for audio output
+                // Create temp file for audio output and track it
                 var tempWavFile = Path.Combine(Path.GetTempPath(), $"piper_tts_{Guid.NewGuid()}.wav");
+                _currentTempFile = tempWavFile;
 
                 // Build piper command
                 // piper --model <path> --output_file <file> --length_scale <scale>
@@ -302,14 +305,19 @@ namespace DialogEditor.Services
                     RedirectStandardError = false
                 };
 
-                var playProcess = Process.Start(psi);
-                if (playProcess != null)
+                _playbackProcess = Process.Start(psi);
+                if (_playbackProcess != null)
                 {
-                    playProcess.EnableRaisingEvents = true;
-                    playProcess.Exited += (s, e) =>
+                    _playbackProcess.EnableRaisingEvents = true;
+                    _playbackProcess.Exited += (s, e) =>
                     {
                         _isSpeaking = false;
-                        CleanupTempFile(wavFile);  // Clean up after playback
+                        _playbackProcess = null;
+                        if (_currentTempFile == wavFile)
+                        {
+                            CleanupTempFile(wavFile);  // Clean up after playback
+                            _currentTempFile = null;
+                        }
                         SpeakCompleted?.Invoke(this, EventArgs.Empty);
                     };
                 }
@@ -317,6 +325,7 @@ namespace DialogEditor.Services
                 {
                     _isSpeaking = false;
                     CleanupTempFile(wavFile);
+                    if (_currentTempFile == wavFile) _currentTempFile = null;
                     SpeakCompleted?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -347,11 +356,27 @@ namespace DialogEditor.Services
         {
             try
             {
+                // Kill piper process if running
                 if (_currentProcess != null && !_currentProcess.HasExited)
                 {
                     _currentProcess.Kill();
                     _currentProcess = null;
                 }
+
+                // Kill playback process if running
+                if (_playbackProcess != null && !_playbackProcess.HasExited)
+                {
+                    _playbackProcess.Kill();
+                    _playbackProcess = null;
+                }
+
+                // Clean up temp file from previous operation
+                if (_currentTempFile != null)
+                {
+                    CleanupTempFile(_currentTempFile);
+                    _currentTempFile = null;
+                }
+
                 _isSpeaking = false;
             }
             catch (Exception ex)
