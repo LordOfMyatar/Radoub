@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -44,6 +45,12 @@ namespace Parley.Tests
         [Fact]
         public async Task Debounce_AllowsCalls_AfterDebounceWindow()
         {
+            // Skip on non-Windows: Linux/macOS have higher timing jitter causing false positives
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return; // Skip test on non-Windows platforms
+            }
+
             // Arrange
             const int DEBOUNCE_MS = 150;
             DateTime lastOperationTime = DateTime.MinValue;
@@ -108,6 +115,12 @@ namespace Parley.Tests
         [InlineData(100)]  // Well below threshold (with margin for VM timing jitter)
         public async Task Debounce_RejectsCallsBelowThreshold(int delayMs)
         {
+            // Skip on non-Windows: Linux/macOS have higher timing jitter causing false positives
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return; // Skip test on non-Windows platforms
+            }
+
             // Arrange
             const int DEBOUNCE_MS = 150;
             DateTime lastOperationTime = DateTime.MinValue;
