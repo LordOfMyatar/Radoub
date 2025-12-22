@@ -7,6 +7,7 @@ namespace DialogEditor.Services
     /// <summary>
     /// Factory for creating platform-appropriate TTS service.
     /// Issue #479 - TTS Integration Sprint
+    /// Issue #491 - Piper TTS integration (preferred on Linux/macOS)
     /// </summary>
     public static class TtsServiceFactory
     {
@@ -44,7 +45,16 @@ namespace DialogEditor.Services
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                // On macOS, try the native 'say' command first
+                // On macOS, try Piper first for high-quality neural voices
+                var piperService = new PiperTtsService();
+                if (piperService.IsAvailable)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        "TtsServiceFactory: Creating PiperTtsService (macOS)");
+                    return piperService;
+                }
+
+                // Try the native 'say' command
                 var sayService = new MacOsSayTtsService();
                 if (sayService.IsAvailable)
                 {
@@ -67,8 +77,18 @@ namespace DialogEditor.Services
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
+                // Try Piper first (higher quality neural TTS)
+                var piperService = new PiperTtsService();
+                if (piperService.IsAvailable)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        "TtsServiceFactory: Creating PiperTtsService (Linux)");
+                    return piperService;
+                }
+
+                // Fall back to espeak-ng
                 UnifiedLogger.LogApplication(LogLevel.INFO,
-                    "TtsServiceFactory: Creating EspeakTtsService");
+                    "TtsServiceFactory: Creating EspeakTtsService (Linux)");
                 return new EspeakTtsService();
             }
             else

@@ -16,15 +16,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Feature: Enhance Linux TTS with Piper and Voice Variants (#491)
 
 #### Added
-- Male and female voice variants for NWN-supported languages:
-  - English (Male/Female)
-  - German (Male/Female)
-  - French (Male/Female)
-  - Spanish (Male/Female)
-  - Italian (Male/Female)
-  - Polish (Male/Female)
-- Friendly display names in voice dropdown (e.g., "English (Male)")
-- Uses espeak-ng variant syntax (`+m3`/`+f3`) for distinct voices
+
+**Piper TTS Integration** (Neural voices - high quality):
+- PiperTtsService with auto-download voice models
+- Preferred over espeak-ng when installed (`pip install piper-tts`)
+- 13 neural voice models for NWN languages:
+  - English US (Lessac, Amy), English GB (Alan, Alba)
+  - German (Thorsten, Eva)
+  - French (UPMC, Siwis)
+  - Spanish (Sharvard, Carlfm)
+  - Italian (Riccardo)
+  - Polish (Gosia, Darkman)
+
+**espeak-ng Voice Variants** (Formant synthesis - fallback):
+- Male and female variants for 6 NWN languages
+- Uses `+m3`/`+f3` suffixes for distinct voices
+- Friendly display names (e.g., "English (Male)")
+
+#### Technical
+- TtsServiceFactory auto-detects: Piper > espeak-ng (Linux), Piper > say > espeak-ng (macOS)
 
 ---
 
