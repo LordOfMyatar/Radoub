@@ -20,6 +20,7 @@ namespace DialogEditor.Models
         protected readonly int _depth;
         private ObservableCollection<TreeViewSafeNode>? _children;
         private bool _isExpanded;
+        private readonly bool _isUnreachableSibling; // Issue #484: Warning for unreachable NPC entries
 
         // Global tracking of expanded nodes to show links instead of duplicating content
         private static readonly HashSet<DialogNode> _globalExpandedNodes = new();
@@ -32,12 +33,13 @@ namespace DialogEditor.Models
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public TreeViewSafeNode(DialogNode originalNode, HashSet<DialogNode>? ancestors = null, int depth = 0, DialogPtr? sourcePointer = null)
+        public TreeViewSafeNode(DialogNode originalNode, HashSet<DialogNode>? ancestors = null, int depth = 0, DialogPtr? sourcePointer = null, bool isUnreachableSibling = false)
         {
             _originalNode = originalNode;
             _sourcePointer = sourcePointer;
             _ancestorNodes = ancestors ?? new HashSet<DialogNode>();
             _depth = depth;
+            _isUnreachableSibling = isUnreachableSibling;
 
             // Notify WPF that properties are available
             OnPropertyChanged(nameof(DisplayText));
@@ -50,6 +52,12 @@ namespace DialogEditor.Models
 
         // Check if this node is a child/link (IsChild=1)
         public bool IsChild => _sourcePointer?.IsLink ?? false;
+
+        /// <summary>
+        /// Issue #484: True if this is an NPC entry sibling that will never be reached
+        /// because a prior sibling has no condition script (Aurora picks first passing condition).
+        /// </summary>
+        public bool IsUnreachableSibling => _isUnreachableSibling;
 
         // IsExpanded for TreeView expand/collapse functionality
         public bool IsExpanded
@@ -335,6 +343,12 @@ namespace DialogEditor.Models
             // Track nodes already added to this parent to prevent duplicates (same as copy tree)
             var addedNodes = new HashSet<DialogNode>();
 
+            // Issue #484: Pre-calculate unreachable sibling warnings for NPC entries
+            // Aurora picks the first entry whose condition passes. If an entry has no condition,
+            // it always passes, making all subsequent sibling entries unreachable.
+            var unreachableSiblingIndices = CalculateUnreachableSiblings(_originalNode.Pointers);
+
+            int pointerIndex = 0;
             foreach (var pointer in _originalNode.Pointers)
             {
                 if (pointer.Node != null)
@@ -372,7 +386,11 @@ namespace DialogEditor.Models
 
                         // Pass down ancestor chain for circular detection AND the source pointer for properties display
                         var newAncestors = new HashSet<DialogNode>(_ancestorNodes) { _originalNode };
-                        var childNode = new TreeViewSafeNode(pointer.Node, newAncestors, _depth + 1, pointer);
+
+                        // Issue #484: Check if this entry is unreachable
+                        bool isUnreachable = unreachableSiblingIndices.Contains(pointerIndex);
+
+                        var childNode = new TreeViewSafeNode(pointer.Node, newAncestors, _depth + 1, pointer, isUnreachable);
                         _children.Add(childNode);
                     }
                 }
@@ -380,11 +398,53 @@ namespace DialogEditor.Models
                 {
                     DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.WARN, $"🌳 TreeView: Pointer to Index {pointer.Index} has null Node!");
                 }
+                pointerIndex++;
             }
 
             DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Finished populating '{_originalNode.DisplayText}', added {_children.Count} children");
         }
-        
+
+        /// <summary>
+        /// Issue #484: Calculate which entry siblings are unreachable.
+        /// Aurora engine picks the first NPC entry whose condition passes.
+        /// If an entry has no condition script, it always passes, blocking all subsequent siblings.
+        /// </summary>
+        /// <param name="pointers">List of sibling pointers to analyze</param>
+        /// <returns>Set of pointer indices that are unreachable</returns>
+        public static HashSet<int> CalculateUnreachableSiblings(IList<DialogPtr> pointers)
+        {
+            var unreachableIndices = new HashSet<int>();
+
+            // Only applies to Entry type siblings (NPC responses)
+            // Reply siblings (PC choices) are all shown to the player
+            var entryPointers = pointers
+                .Select((ptr, idx) => (ptr, idx))
+                .Where(x => x.ptr.Type == DialogNodeType.Entry && !x.ptr.IsLink && x.ptr.Node != null)
+                .ToList();
+
+            if (entryPointers.Count <= 1)
+                return unreachableIndices; // No siblings to compare
+
+            // Find the first entry without a condition - it blocks everything after it
+            bool foundBlocker = false;
+            foreach (var (ptr, idx) in entryPointers)
+            {
+                if (foundBlocker)
+                {
+                    // Everything after an unconditional entry is unreachable
+                    unreachableIndices.Add(idx);
+                }
+                else if (string.IsNullOrEmpty(ptr.ScriptAppears))
+                {
+                    // This entry has no condition - it will always be picked
+                    // All subsequent siblings become unreachable
+                    foundBlocker = true;
+                }
+            }
+
+            return unreachableIndices;
+        }
+
         // For TreeView binding - determines if node should show expand arrow (virtual for override)
         // Child/link nodes don't expand, matching NWN Toolset behavior
         public virtual bool HasChildren

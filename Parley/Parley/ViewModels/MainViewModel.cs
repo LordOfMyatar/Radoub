@@ -157,6 +157,11 @@ namespace DialogEditor.ViewModels
             set => SetProperty(ref _dialogNodes, value);
         }
 
+        /// <summary>
+        /// Issue #484: Expose warning visibility setting for tree view binding
+        /// </summary>
+        public bool ShowDialogWarnings => SettingsService.Instance.SimulatorShowWarnings;
+
         public ObservableCollection<ScrapEntry> ScrapEntries => _scrapManager.ScrapEntries;
 
         public ScrapEntry? SelectedScrapEntry
@@ -245,8 +250,22 @@ namespace DialogEditor.ViewModels
                 OnPropertyChanged(nameof(ScrapTabHeader));
                 UpdateScrapBadgeVisibility();
             };
+
+            // Issue #484: Subscribe to settings changes to refresh tree when warning visibility changes
+            SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
         }
 
+        /// <summary>
+        /// Issue #484: Handle settings changes that require UI refresh
+        /// </summary>
+        private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SettingsService.SimulatorShowWarnings))
+            {
+                // Notify the tree view binding that ShowDialogWarnings changed
+                OnPropertyChanged(nameof(ShowDialogWarnings));
+            }
+        }
 
         public void AddDebugMessage(string message)
         {
@@ -447,6 +466,11 @@ namespace DialogEditor.ViewModels
                 // Add starting entries to root's children using TreeViewSafeNode
                 // CRITICAL: Pass the start DialogPtr as sourcePointer so conditional scripts work
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🎯 About to iterate through {CurrentDialog.Starts.Count} start entries");
+
+                // Issue #484: Pre-calculate unreachable sibling warnings for root entries
+                var unreachableRootIndices = TreeViewSafeNode.CalculateUnreachableSiblings(CurrentDialog.Starts);
+
+                int startIndex = 0;
                 foreach (var start in CurrentDialog.Starts)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🎯 Processing start with Index={start.Index}");
@@ -454,8 +478,12 @@ namespace DialogEditor.ViewModels
                     {
                         var entry = CurrentDialog.Entries[(int)start.Index];
                         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🎯 Got entry: '{entry.DisplayText}' - about to create TreeViewSafeNode with SourcePointer");
+
+                        // Issue #484: Check if this root entry is unreachable
+                        bool isUnreachable = unreachableRootIndices.Contains(startIndex);
+
                         // Pass the start DialogPtr as the source pointer so conditional scripts and parameters work
-                        var safeNode = new TreeViewSafeNode(entry, ancestors: null, depth: 0, sourcePointer: start);
+                        var safeNode = new TreeViewSafeNode(entry, ancestors: null, depth: 0, sourcePointer: start, isUnreachableSibling: isUnreachable);
                         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🎯 Created TreeViewSafeNode with DisplayText: '{safeNode.DisplayText}', SourcePointer: {start != null}");
                         rootNode.Children?.Add(safeNode);
                         UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added to Root: '{entry.DisplayText}'");
@@ -464,6 +492,7 @@ namespace DialogEditor.ViewModels
                     {
                         UnifiedLogger.LogApplication(LogLevel.WARN, $"Start pointer index {start.Index} exceeds entry count {CurrentDialog.Entries.Count}");
                     }
+                    startIndex++;
                 }
 
                 // If no starts found, show all entries under root

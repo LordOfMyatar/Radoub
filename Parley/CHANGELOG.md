@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.82-alpha] - 2025-12-21
+**Branch**: `parley/sprint/simulator-warnings` | **PR**: #485 | **Closes**: #484
+
+### Sprint: Conversation Simulator - Warnings System
+
+Implement warning detection for unreachable NPC entries (Epic #222).
+
+#### Added
+- ⚠️ Per-node unreachable sibling warnings in main tree view
+- ⚠️ Per-entry unreachable sibling warnings in conversation simulator
+- "Show Dialog Warnings" toggle in Settings > UI Settings
+- Live refresh of warnings when setting is toggled
+
+#### Technical
+- `TreeViewSafeNode.CalculateUnreachableSiblings()` - static method for reuse
+- `ReplyOption.IsUnreachable` property for simulator entries
+- MultiBinding pattern for compound visibility (warning + setting)
+
+---
+
 ## [0.1.81-alpha] - 2025-12-21
 **Branch**: `parley/fix/linux-tts-dropdown-overlap` | **PR**: #487
 
