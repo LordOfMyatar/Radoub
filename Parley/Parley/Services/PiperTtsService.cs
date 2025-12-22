@@ -243,21 +243,25 @@ namespace DialogEditor.Services
                 // Handle completion asynchronously
                 Task.Run(() =>
                 {
+                    string? stderrOutput = null;
                     try
                     {
+                        // Read stderr while process is running (before WaitForExit)
+                        stderrOutput = _currentProcess.StandardError.ReadToEnd();
                         _currentProcess.WaitForExit();
 
                         if (_currentProcess.ExitCode == 0 && File.Exists(tempWavFile))
                         {
                             // Play the generated WAV file using aplay (Linux) or afplay (macOS)
+                            // Note: PlayWavFile handles cleanup of temp file after playback
                             PlayWavFile(tempWavFile);
                         }
                         else
                         {
-                            var stderr = _currentProcess.StandardError.ReadToEnd();
                             UnifiedLogger.LogApplication(LogLevel.ERROR,
-                                $"PiperTtsService: piper failed - {stderr}");
+                                $"PiperTtsService: piper failed (exit {_currentProcess.ExitCode}) - {stderrOutput}");
                             _isSpeaking = false;
+                            CleanupTempFile(tempWavFile);
                             SpeakCompleted?.Invoke(this, EventArgs.Empty);
                         }
                     }
@@ -266,13 +270,8 @@ namespace DialogEditor.Services
                         UnifiedLogger.LogApplication(LogLevel.ERROR,
                             $"PiperTtsService: Error during synthesis - {ex.Message}");
                         _isSpeaking = false;
+                        CleanupTempFile(tempWavFile);
                         SpeakCompleted?.Invoke(this, EventArgs.Empty);
-                    }
-                    finally
-                    {
-                        // Clean up temp file
-                        try { if (File.Exists(tempWavFile)) File.Delete(tempWavFile); }
-                        catch { /* ignore cleanup errors */ }
                     }
                 });
             }
@@ -310,12 +309,14 @@ namespace DialogEditor.Services
                     playProcess.Exited += (s, e) =>
                     {
                         _isSpeaking = false;
+                        CleanupTempFile(wavFile);  // Clean up after playback
                         SpeakCompleted?.Invoke(this, EventArgs.Empty);
                     };
                 }
                 else
                 {
                     _isSpeaking = false;
+                    CleanupTempFile(wavFile);
                     SpeakCompleted?.Invoke(this, EventArgs.Empty);
                 }
             }
@@ -324,7 +325,21 @@ namespace DialogEditor.Services
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
                     $"PiperTtsService: Failed to play audio - {ex.Message}");
                 _isSpeaking = false;
+                CleanupTempFile(wavFile);
                 SpeakCompleted?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        private static void CleanupTempFile(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                    File.Delete(filePath);
+            }
+            catch
+            {
+                // Ignore cleanup errors
             }
         }
 
