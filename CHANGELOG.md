@@ -14,6 +14,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.0] - 2025-12-22
+**Branch**: `radoub/sprint/dictionary-library` | **PR**: #507
+
+### Sprint: Dictionary Library Creation (#504)
+
+Build shared `Radoub.Dictionary` library for D&D/NWN spell-checking (Epic #43, Sprint 1 of 3).
+
+#### Added
+- `Radoub.Dictionary` project - Shared spell-check library
+- `DictionaryManager` - Core dictionary operations (load, save, merge)
+- `SpellChecker` - Hybrid spell-check engine combining Hunspell + custom dictionaries
+- `TermExtractor` - Extract terms from .2da files and dialogs
+- JSON-based custom dictionary format for D&D/NWN terminology
+- Bundled en_US Hunspell dictionary (~550KB)
+- Unit tests (54 tests)
+
+#### Dependencies
+- [WeCantSpell.Hunspell](https://github.com/aarondandy/WeCantSpell.Hunspell) v7.0.1 (MIT)
+- [LibreOffice en_US dictionary](https://cgit.freedesktop.org/libreoffice/dictionaries/) (BSD/Public Domain)
+
+---
+
 ## [0.8.4] - 2025-12-21
 **Branch**: `radoub/chore/release-0.8.4` | **PR**: #500
 

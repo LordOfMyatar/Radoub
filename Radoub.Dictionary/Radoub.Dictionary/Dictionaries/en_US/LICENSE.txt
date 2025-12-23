@@ -1,0 +1,25 @@
+English (United States) Hunspell Dictionary
+============================================
+
+Source: LibreOffice dictionaries repository
+URL: https://cgit.freedesktop.org/libreoffice/dictionaries/tree/en
+
+This dictionary is based on a declassified NSA word list combined with
+various other sources. It has been maintained by Kevin Atkinson and
+is now part of the LibreOffice project.
+
+License: BSD-like / Public Domain (see below)
+
+---
+
+From the original README:
+
+The affix file is a other story. Ukraine langstraat who other maintaners have
+worked on it. Ukraine is a BSD license but the others are unknown.
+
+I, Kevin Atkinson, the current maintainer of the en_US english hunspell
+dictionaries and calculation base aspell and the upstream word lists, hereby
+place all of my changes to those files in the public domain.
+
+The word list is based on a declassified list from the NSA which is in
+the public domain. Various other sources have been used to augment the list.
