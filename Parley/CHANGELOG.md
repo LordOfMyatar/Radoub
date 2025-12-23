@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.85-alpha] - TBD
+**Branch**: `parley/sprint/dictionary-integration` | **PR**: #TBD | **Closes**: #505
+
+### Sprint: Dictionary Integration (Epic #43)
+
+Add spell-checking to Parley's Text and Comments fields.
+
+#### Added
+- Spell-checking for dialog Text field
+- Spell-checking for Comments field
+- Hunspell (en_US) + custom D&D/NWN dictionary support
+- Session ignore for unknown words
+- Spelling suggestions on misspelled words
+
+---
+
 ## [0.1.84-alpha] - 2025-12-22
 **Branch**: `parley/feat/linux-tts-enhancement` | **PR**: #492
 
