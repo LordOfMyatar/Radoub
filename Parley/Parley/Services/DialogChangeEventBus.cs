@@ -202,6 +202,17 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Publish a node modified event (text, speaker, or other property changed).
+        /// </summary>
+        public void PublishNodeModified(DialogNode modifiedNode, string? context = null)
+        {
+            Publish(new DialogChangeEventArgs(
+                DialogChangeType.NodeModified,
+                affectedNode: modifiedNode,
+                context: context));
+        }
+
+        /// <summary>
         /// Publish a dialog refreshed event (tree was rebuilt).
         /// </summary>
         public void PublishDialogRefreshed(string? context = null)

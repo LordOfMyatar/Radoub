@@ -99,8 +99,14 @@ namespace DialogEditor.Services
             var control = _findControl("TextTextBox") as TextBox;
             if (control != null && node.OriginalNode.Text != null)
             {
-                node.OriginalNode.Text.Strings[0] = control.Text ?? "";
+                var newText = control.Text ?? "";
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"💾 SaveText: Updating text to '{newText.Substring(0, Math.Min(50, newText.Length))}...'");
+                node.OriginalNode.Text.Strings[0] = newText;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "💾 SaveText: Calling _refreshTreeDisplay()");
                 _refreshTreeDisplay(); // Update tree display
+
+                // Notify FlowView and other subscribers of the text change
+                DialogChangeEventBus.Instance.PublishNodeModified(node.OriginalNode, "TextChanged");
             }
         }
 
