@@ -4,6 +4,7 @@
         xmlns:views="using:DialogEditor.Views"
         xmlns:models="using:DialogEditor.Models"
         xmlns:services="using:DialogEditor.Services"
+        xmlns:controls="using:DialogEditor.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
@@ -341,7 +342,7 @@
 
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <!-- Tab order: Ctrl+D lands here (1), then scripts, then back to speaker row -->
-                    <TextBox x:Name="TextTextBox" AcceptsReturn="True"
+                    <controls:SpellCheckTextBox x:Name="TextTextBox" AcceptsReturn="True"
                             TextWrapping="Wrap"
                             TabIndex="1"
                             GotFocus="OnFieldGotFocus"
@@ -666,7 +667,7 @@
 
                             <!-- Comment -->
                             <TextBlock Text="Comment:"/>
-                            <TextBox x:Name="CommentTextBox" AcceptsReturn="True" MinHeight="50"
+                            <controls:SpellCheckTextBox x:Name="CommentTextBox" AcceptsReturn="True" MinHeight="50"
                                     TextWrapping="Wrap" Margin="0,0,0,5"
                                     GotFocus="OnFieldGotFocus"
                                     LostFocus="OnFieldLostFocus"/>

@@ -3,6 +3,7 @@
              x:Class="DialogEditor.App"
              xmlns:local="using:DialogEditor"
              xmlns:models="using:DialogEditor.Models"
+             xmlns:controls="using:DialogEditor.Controls"
              RequestedThemeVariant="Light">
              <!-- Light theme by default. Users can switch via View menu. -->
 
@@ -26,6 +27,12 @@
         </Style>
 
         <Style Selector="TextBox">
+            <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+        </Style>
+
+        <!-- SpellCheckTextBox inherits TextBox styling -->
+        <Style Selector="controls|SpellCheckTextBox">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
