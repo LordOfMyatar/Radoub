@@ -1,0 +1,10 @@
+# Build results
+bin/
+obj/
+
+# IDE
+.vs/
+*.user
+
+# Test results
+TestResults/
