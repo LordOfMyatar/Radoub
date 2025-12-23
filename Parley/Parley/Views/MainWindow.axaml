@@ -345,6 +345,7 @@
                     <controls:SpellCheckTextBox x:Name="TextTextBox" AcceptsReturn="True"
                             TextWrapping="Wrap"
                             TabIndex="1"
+                            MinHeight="80"
                             GotFocus="OnFieldGotFocus"
                             LostFocus="OnFieldLostFocus"
                             ScrollViewer.VerticalScrollBarVisibility="Auto"

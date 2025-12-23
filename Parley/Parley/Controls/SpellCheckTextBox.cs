@@ -19,8 +19,11 @@ namespace DialogEditor.Controls
     /// Displays spelling errors with theme-aware underlines and provides
     /// right-click context menu with suggestions.
     /// </summary>
-    public partial class SpellCheckTextBox : TextBox
+    public class SpellCheckTextBox : TextBox
     {
+        // Use TextBox's default template/style instead of looking for SpellCheckTextBox-specific one
+        protected override Type StyleKeyOverride => typeof(TextBox);
+
         private readonly List<SpellingError> _currentErrors = new();
         private SpellingError? _errorAtCaret;
         private DispatcherTimer? _spellCheckTimer;
