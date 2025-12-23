@@ -114,15 +114,18 @@ namespace DialogEditor.Controls
         {
             if (_currentErrors.Count > 0)
             {
-                // Set border to spelling error color
-                BorderBrush = SpellCheckService.Instance.GetSpellingErrorBrush();
-                BorderThickness = new Thickness(2);
+                // Subtle indicator: thin colored left border (like VS Code's problem gutter)
+                var errorBrush = SpellCheckService.Instance.GetSpellingErrorBrush();
+                BorderBrush = errorBrush;
+                BorderThickness = new Thickness(3, 1, 1, 1); // Thicker left border only
 
-                // Update tooltip with error summary
-                var errorWords = string.Join(", ", _currentErrors.Take(5).Select(e => e.Word));
-                if (_currentErrors.Count > 5)
-                    errorWords += $" (+{_currentErrors.Count - 5} more)";
-                ToolTip.SetTip(this, $"Spelling: {_currentErrors.Count} error(s): {errorWords}");
+                // Build clear tooltip showing exactly which words are misspelled
+                var errorList = _currentErrors.Take(8).Select(e => $"• {e.Word}");
+                var tooltip = $"Spelling errors ({_currentErrors.Count}):\n{string.Join("\n", errorList)}";
+                if (_currentErrors.Count > 8)
+                    tooltip += $"\n  ...and {_currentErrors.Count - 8} more";
+                tooltip += "\n\nRight-click a word for suggestions";
+                ToolTip.SetTip(this, tooltip);
             }
             else
             {

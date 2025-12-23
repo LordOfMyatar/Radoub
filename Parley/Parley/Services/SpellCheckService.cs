@@ -12,6 +12,13 @@ namespace DialogEditor.Services
     /// Provides spell-checking functionality for Parley dialogs.
     /// Wraps Radoub.Dictionary with theme-aware styling for error indicators.
     /// </summary>
+    /// <remarks>
+    /// TODO (Sprint 3): Persistence and settings
+    /// - Auto-load/save custom dictionary on startup/shutdown
+    /// - Support multiple custom dictionary files (e.g., LOTR.dic, Diablo.dic)
+    /// - Preferences UI to enable/disable dictionaries and manage custom word lists
+    /// - Store dictionary paths in RadoubSettings.json
+    /// </remarks>
     public class SpellCheckService : IDisposable
     {
         private static SpellCheckService? _instance;

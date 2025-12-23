@@ -106,9 +106,26 @@ public partial class SpellChecker : IDisposable
         if (string.IsNullOrWhiteSpace(text))
             yield break;
 
+        // Find all <TOKEN> ranges to exclude from spell checking (NWN variables like <FirstName>)
+        var tokenRanges = new List<(int Start, int End)>();
+        var tokenMatches = TokenPattern().Matches(text);
+        foreach (Match tokenMatch in tokenMatches)
+        {
+            tokenRanges.Add((tokenMatch.Index, tokenMatch.Index + tokenMatch.Length));
+        }
+
         var matches = WordPattern().Matches(text);
         foreach (Match match in matches)
         {
+            // Skip words that are inside a <TOKEN> range
+            var wordStart = match.Index;
+            var wordEnd = match.Index + match.Length;
+            var isInsideToken = tokenRanges.Any(range =>
+                wordStart >= range.Start && wordEnd <= range.End);
+
+            if (isInsideToken)
+                continue;
+
             var word = match.Value;
             if (!IsCorrect(word))
             {
@@ -240,6 +257,10 @@ public partial class SpellChecker : IDisposable
 
     [GeneratedRegex(@"\b[\w']+\b", RegexOptions.Compiled)]
     private static partial Regex WordPattern();
+
+    // Matches NWN token variables like <FirstName>, <CUSTOM1016>, etc.
+    [GeneratedRegex(@"<[^>]+>", RegexOptions.Compiled)]
+    private static partial Regex TokenPattern();
 
     public void Dispose()
     {
