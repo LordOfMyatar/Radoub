@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -138,70 +140,153 @@ namespace DialogEditor.Controls
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
-            base.OnPointerPressed(e);
+            var point = e.GetCurrentPoint(this);
 
-            // Check if right-click on a misspelled word
-            if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed)
+            // Check if right-click
+            if (point.Properties.IsRightButtonPressed)
             {
-                UpdateErrorAtCaret();
+                // Get the character index at the click position
+                var clickPosition = point.Position;
+                var charIndex = GetCharacterIndexFromPoint(clickPosition);
 
-                // Show spell-check context menu if on an error
-                if (_errorAtCaret != null)
-                {
-                    e.Handled = true;
-                    ShowSpellCheckContextMenu();
-                }
+                // Find error at clicked position
+                _errorAtCaret = _currentErrors.FirstOrDefault(err =>
+                    charIndex >= err.StartIndex && charIndex <= err.StartIndex + err.Length);
+
+                // Build and set context menu (replaces default Cut/Copy/Paste)
+                BuildContextMenu();
             }
+
+            base.OnPointerPressed(e);
         }
 
         /// <summary>
-        /// Show context menu with spelling suggestions.
+        /// Build context menu with spell-check options + standard edit options.
         /// </summary>
-        private void ShowSpellCheckContextMenu()
+        private void BuildContextMenu()
         {
-            var error = _errorAtCaret;
-            if (error == null) return;
-
             var menu = new ContextMenu();
-            var suggestions = SpellCheckService.Instance.GetSuggestions(error.Word, 5).ToList();
 
-            if (suggestions.Any())
+            // If on a misspelled word, show spell-check options first
+            if (_errorAtCaret != null)
             {
-                foreach (var suggestion in suggestions)
+                var error = _errorAtCaret;
+                var suggestions = SpellCheckService.Instance.GetSuggestions(error.Word, 5).ToList();
+
+                if (suggestions.Any())
                 {
-                    var item = new MenuItem
+                    foreach (var suggestion in suggestions)
                     {
-                        Header = suggestion,
-                        FontWeight = FontWeight.Bold
-                    };
-                    var suggestionCopy = suggestion; // Capture for lambda
-                    item.Click += (_, _) => ReplaceWordAtCaret(suggestionCopy);
-                    menu.Items.Add(item);
+                        var item = new MenuItem
+                        {
+                            Header = suggestion,
+                            FontWeight = FontWeight.Bold
+                        };
+                        var suggestionCopy = suggestion;
+                        item.Click += (_, _) => ReplaceWordAtPosition(error, suggestionCopy);
+                        menu.Items.Add(item);
+                    }
+                }
+                else
+                {
+                    menu.Items.Add(new MenuItem { Header = "(No suggestions)", IsEnabled = false });
                 }
 
                 menu.Items.Add(new Separator());
-            }
-            else
-            {
-                menu.Items.Add(new MenuItem
-                {
-                    Header = "(No suggestions)",
-                    IsEnabled = false
-                });
+
+                var ignoreItem = new MenuItem { Header = $"Ignore \"{error.Word}\"" };
+                ignoreItem.Click += (_, _) => { SpellCheckService.Instance.IgnoreForSession(error.Word); CheckSpelling(); };
+                menu.Items.Add(ignoreItem);
+
+                var addItem = new MenuItem { Header = $"Add \"{error.Word}\" to Dictionary" };
+                addItem.Click += (_, _) => { SpellCheckService.Instance.AddToCustomDictionary(error.Word); CheckSpelling(); };
+                menu.Items.Add(addItem);
+
                 menu.Items.Add(new Separator());
             }
 
-            // Ignore for session
-            var ignoreItem = new MenuItem { Header = $"Ignore \"{error.Word}\"" };
-            ignoreItem.Click += (_, _) => IgnoreWordAtCaret();
-            menu.Items.Add(ignoreItem);
+            // Standard edit options - use TextBox built-in commands
+            var cutItem = new MenuItem { Header = "Cut" };
+            cutItem.Click += (_, _) => Cut();
+            cutItem.IsEnabled = SelectedText?.Length > 0;
+            menu.Items.Add(cutItem);
 
-            // Add to dictionary
-            var addItem = new MenuItem { Header = $"Add \"{error.Word}\" to Dictionary" };
-            addItem.Click += (_, _) => AddWordAtCaretToDictionary();
-            menu.Items.Add(addItem);
+            var copyItem = new MenuItem { Header = "Copy" };
+            copyItem.Click += (_, _) => Copy();
+            copyItem.IsEnabled = SelectedText?.Length > 0;
+            menu.Items.Add(copyItem);
 
-            menu.Open(this);
+            var pasteItem = new MenuItem { Header = "Paste" };
+            pasteItem.Click += (_, _) => Paste();
+            menu.Items.Add(pasteItem);
+
+            // Set as the context menu (replaces default)
+            ContextMenu = menu;
+        }
+
+        /// <summary>
+        /// Replace a word at a specific position with a suggestion.
+        /// </summary>
+        private void ReplaceWordAtPosition(SpellingError error, string replacement)
+        {
+            var text = Text;
+            if (string.IsNullOrEmpty(text)) return;
+
+            var newText = text.Substring(0, error.StartIndex) +
+                          replacement +
+                          text.Substring(error.StartIndex + error.Length);
+
+            Text = newText;
+            CaretIndex = error.StartIndex + replacement.Length;
+            CheckSpelling();
+        }
+
+        /// <summary>
+        /// Get character index from a point in the TextBox.
+        /// Uses simple character position estimation based on click location.
+        /// </summary>
+        private int GetCharacterIndexFromPoint(Point point)
+        {
+            var text = Text ?? string.Empty;
+            if (string.IsNullOrEmpty(text))
+                return 0;
+
+            // Try to find TextPresenter for accurate hit testing
+            var presenter = this.FindDescendantOfType<TextPresenter>();
+            if (presenter?.TextLayout != null)
+            {
+                // Adjust point relative to presenter
+                var presenterBounds = presenter.Bounds;
+                var presenterPoint = new Point(
+                    point.X - presenterBounds.X,
+                    point.Y - presenterBounds.Y);
+                var hit = presenter.TextLayout.HitTestPoint(presenterPoint);
+                return Math.Clamp(hit.TextPosition, 0, text.Length);
+            }
+
+            // Fallback: use caret position (already set by base class on click)
+            return CaretIndex;
+        }
+
+        /// <summary>
+        /// Find a descendant control of a specific type.
+        /// </summary>
+        private T? FindDescendantOfType<T>() where T : class
+        {
+            var queue = new Queue<Control>();
+            queue.Enqueue(this);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (current is T match && current != this)
+                    return match;
+
+                foreach (var child in current.GetVisualChildren().OfType<Control>())
+                    queue.Enqueue(child);
+            }
+
+            return null;
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
