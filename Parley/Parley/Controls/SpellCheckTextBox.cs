@@ -87,6 +87,7 @@ namespace DialogEditor.Controls
             if (!IsSpellCheckEnabled || !SpellCheckService.Instance.IsReady)
             {
                 _currentErrors.Clear();
+                UpdateErrorIndicator();
                 return;
             }
 
@@ -99,7 +100,33 @@ namespace DialogEditor.Controls
             if (_currentErrors.Count != previousCount || _currentErrors.Count > 0)
             {
                 SpellingErrorsChanged?.Invoke(this, new SpellingErrorsChangedEventArgs(_currentErrors));
-                InvalidateVisual();
+                UpdateErrorIndicator();
+            }
+        }
+
+        /// <summary>
+        /// Update visual indicator for spelling errors.
+        /// </summary>
+        private void UpdateErrorIndicator()
+        {
+            if (_currentErrors.Count > 0)
+            {
+                // Set border to spelling error color
+                BorderBrush = SpellCheckService.Instance.GetSpellingErrorBrush();
+                BorderThickness = new Thickness(2);
+
+                // Update tooltip with error summary
+                var errorWords = string.Join(", ", _currentErrors.Take(5).Select(e => e.Word));
+                if (_currentErrors.Count > 5)
+                    errorWords += $" (+{_currentErrors.Count - 5} more)";
+                ToolTip.SetTip(this, $"Spelling: {_currentErrors.Count} error(s): {errorWords}");
+            }
+            else
+            {
+                // Reset to default
+                BorderBrush = null;
+                BorderThickness = new Thickness(1);
+                ToolTip.SetTip(this, null);
             }
         }
 
