@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.0] - 2025-12-22
-**Branch**: `radoub/sprint/dictionary-library` | **PR**: #TBD
+**Branch**: `radoub/sprint/dictionary-library` | **PR**: #507
 
 ### Sprint: Dictionary Library Creation (#504)
 
