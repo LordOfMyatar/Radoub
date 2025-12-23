@@ -14,6 +14,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.0] - 2025-12-22
+**Branch**: `radoub/sprint/dictionary-library` | **PR**: #TBD
+
+### Sprint: Dictionary Library Creation (#504)
+
+Build shared `Radoub.Dictionary` library for D&D/NWN spell-checking (Epic #43, Sprint 1 of 3).
+
+#### Added
+- `Radoub.Dictionary` project - Shared spell-check library
+- `DictionaryManager` - Core dictionary operations (load, save, merge)
+- `SpellChecker` - Spell-check engine (word matching, suggestions)
+- `TermExtractor` - Extract terms from .2da files and dialogs
+- JSON-based dictionary format
+- Unit tests for all components
+
+---
+
 ## [0.8.4] - 2025-12-21
 **Branch**: `radoub/chore/release-0.8.4` | **PR**: #500
 
