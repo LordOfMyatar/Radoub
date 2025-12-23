@@ -12,7 +12,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="WeCantSpell.Hunspell" Version="7.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Radoub.Formats\Radoub.Formats\Radoub.Formats.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Dictionaries\**\*" />
   </ItemGroup>
 
 </Project>

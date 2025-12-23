@@ -24,10 +24,15 @@ Build shared `Radoub.Dictionary` library for D&D/NWN spell-checking (Epic #43, S
 #### Added
 - `Radoub.Dictionary` project - Shared spell-check library
 - `DictionaryManager` - Core dictionary operations (load, save, merge)
-- `SpellChecker` - Spell-check engine (word matching, suggestions)
+- `SpellChecker` - Hybrid spell-check engine combining Hunspell + custom dictionaries
 - `TermExtractor` - Extract terms from .2da files and dialogs
-- JSON-based dictionary format
-- Unit tests for all components
+- JSON-based custom dictionary format for D&D/NWN terminology
+- Bundled en_US Hunspell dictionary (~550KB)
+- Unit tests (54 tests)
+
+#### Dependencies
+- [WeCantSpell.Hunspell](https://github.com/aarondandy/WeCantSpell.Hunspell) v7.0.1 (MIT)
+- [LibreOffice en_US dictionary](https://cgit.freedesktop.org/libreoffice/dictionaries/) (BSD/Public Domain)
 
 ---
 

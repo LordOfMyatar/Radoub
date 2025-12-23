@@ -1,17 +1,24 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
+using WeCantSpell.Hunspell;
 
 namespace Radoub.Dictionary;
 
 /// <summary>
-/// Provides spell-checking functionality using loaded dictionaries.
+/// Provides spell-checking functionality using Hunspell and custom dictionaries.
+/// Uses WeCantSpell.Hunspell for base language checking and DictionaryManager for
+/// D&amp;D/NWN-specific terminology overlay.
 /// </summary>
-public partial class SpellChecker
+public partial class SpellChecker : IDisposable
 {
     private readonly DictionaryManager _dictionaryManager;
     private readonly HashSet<string> _sessionIgnored = new(StringComparer.OrdinalIgnoreCase);
+    private WordList? _hunspell;
+    private bool _disposed;
 
     /// <summary>
     /// Creates a new spell checker using the given dictionary manager.
+    /// Call LoadHunspellDictionaryAsync to enable base language checking.
     /// </summary>
     public SpellChecker(DictionaryManager dictionaryManager)
     {
@@ -19,9 +26,50 @@ public partial class SpellChecker
     }
 
     /// <summary>
+    /// Whether Hunspell is loaded and available for base language checking.
+    /// </summary>
+    public bool IsHunspellLoaded => _hunspell != null;
+
+    /// <summary>
+    /// Loads a Hunspell dictionary from file paths.
+    /// </summary>
+    /// <param name="dicPath">Path to the .dic file.</param>
+    /// <param name="affPath">Path to the .aff file.</param>
+    public async Task LoadHunspellDictionaryAsync(string dicPath, string affPath)
+    {
+        _hunspell = await WordList.CreateFromFilesAsync(dicPath, affPath);
+    }
+
+    /// <summary>
+    /// Loads a Hunspell dictionary from streams.
+    /// </summary>
+    public async Task LoadHunspellDictionaryAsync(Stream dicStream, Stream affStream)
+    {
+        _hunspell = await WordList.CreateFromStreamsAsync(dicStream, affStream);
+    }
+
+    /// <summary>
+    /// Loads a bundled Hunspell dictionary from embedded resources.
+    /// </summary>
+    /// <param name="languageCode">Language code (e.g., "en_US", "es_ES").</param>
+    public async Task LoadBundledDictionaryAsync(string languageCode)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var dicResourceName = $"Radoub.Dictionary.Dictionaries.{languageCode}.{languageCode}.dic";
+        var affResourceName = $"Radoub.Dictionary.Dictionaries.{languageCode}.{languageCode}.aff";
+
+        using var dicStream = assembly.GetManifestResourceStream(dicResourceName)
+            ?? throw new FileNotFoundException($"Bundled dictionary not found: {languageCode}.dic");
+        using var affStream = assembly.GetManifestResourceStream(affResourceName)
+            ?? throw new FileNotFoundException($"Bundled dictionary not found: {languageCode}.aff");
+
+        _hunspell = await WordList.CreateFromStreamsAsync(dicStream, affStream);
+    }
+
+    /// <summary>
     /// Checks if a word is spelled correctly.
     /// </summary>
-    /// <returns>True if the word is known (in dictionary, ignored, or session-ignored).</returns>
+    /// <returns>True if the word is known (in Hunspell, custom dictionary, ignored, or session-ignored).</returns>
     public bool IsCorrect(string word)
     {
         if (string.IsNullOrWhiteSpace(word))
@@ -35,8 +83,19 @@ public partial class SpellChecker
         if (IsNumber(cleanWord))
             return true;
 
-        // Check dictionary and ignore lists
-        return _dictionaryManager.IsKnown(cleanWord) || _sessionIgnored.Contains(cleanWord);
+        // Check session ignore list first (fastest)
+        if (_sessionIgnored.Contains(cleanWord))
+            return true;
+
+        // Check custom dictionary (D&D/NWN terms)
+        if (_dictionaryManager.IsKnown(cleanWord))
+            return true;
+
+        // Check Hunspell if loaded (base language)
+        if (_hunspell != null && _hunspell.Check(cleanWord))
+            return true;
+
+        return false;
     }
 
     /// <summary>
@@ -77,18 +136,32 @@ public partial class SpellChecker
         if (string.IsNullOrWhiteSpace(cleanWord))
             yield break;
 
-        // Find words with small edit distance
-        var candidates = _dictionaryManager.GetAllWords()
-            .Select(w => new { Word = w, Distance = LevenshteinDistance(cleanWord.ToLowerInvariant(), w.ToLowerInvariant()) })
-            .Where(x => x.Distance <= 3) // Max 3 edits
-            .OrderBy(x => x.Distance)
-            .ThenBy(x => Math.Abs(x.Word.Length - cleanWord.Length))
-            .Take(maxSuggestions)
-            .Select(x => x.Word);
+        var suggestions = new List<string>();
 
-        foreach (var candidate in candidates)
+        // Get Hunspell suggestions first (better quality for real words)
+        if (_hunspell != null)
         {
-            yield return candidate;
+            suggestions.AddRange(_hunspell.Suggest(cleanWord).Take(maxSuggestions));
+        }
+
+        // Add custom dictionary suggestions if we need more
+        if (suggestions.Count < maxSuggestions)
+        {
+            var remaining = maxSuggestions - suggestions.Count;
+            var customSuggestions = _dictionaryManager.GetAllWords()
+                .Select(w => new { Word = w, Distance = LevenshteinDistance(cleanWord.ToLowerInvariant(), w.ToLowerInvariant()) })
+                .Where(x => x.Distance <= 3 && !suggestions.Contains(x.Word, StringComparer.OrdinalIgnoreCase))
+                .OrderBy(x => x.Distance)
+                .ThenBy(x => Math.Abs(x.Word.Length - cleanWord.Length))
+                .Take(remaining)
+                .Select(x => x.Word);
+
+            suggestions.AddRange(customSuggestions);
+        }
+
+        foreach (var suggestion in suggestions.Take(maxSuggestions))
+        {
+            yield return suggestion;
         }
     }
 
@@ -167,6 +240,25 @@ public partial class SpellChecker
 
     [GeneratedRegex(@"\b[\w']+\b", RegexOptions.Compiled)]
     private static partial Regex WordPattern();
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                // WordList doesn't implement IDisposable but clear reference
+                _hunspell = null;
+            }
+            _disposed = true;
+        }
+    }
 }
 
 /// <summary>

@@ -48,6 +48,13 @@ Aurora Engine file format parsers used by Parley and Manifest.
 
 **Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF
 
+### Radoub.Dictionary - Shared Library
+
+D&D/NWN spell-checking library providing:
+- Base language checking via [Hunspell](https://hunspell.github.io/) dictionaries
+- Custom dictionary support for D&D/NWN terminology (proper nouns, spells, creatures)
+- Term extraction from game files (.2da, dialogs)
+
 ---
 
 ## Project Philosophy
@@ -124,6 +131,9 @@ See [LICENSE](LICENSE) for details.
 - Original Aurora Toolset developers
 - NWN community for 20+ years of modding excellence
 - [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT) - Primary reference for Aurora file format parsing
+- [WeCantSpell.Hunspell](https://github.com/aarondandy/WeCantSpell.Hunspell) (MIT) - .NET Hunspell port for spell-checking
+- [Hunspell](https://hunspell.github.io/) - Spell-checking engine used by LibreOffice, Firefox, Chrome
+- [LibreOffice Dictionaries](https://cgit.freedesktop.org/libreoffice/dictionaries/) - English dictionary files (BSD/Public Domain)
 - All contributors and testers
 
 ---

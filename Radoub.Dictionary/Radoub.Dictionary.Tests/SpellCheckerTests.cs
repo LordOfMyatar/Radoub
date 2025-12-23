@@ -216,4 +216,104 @@ public class SpellCheckerTests
         // "car" and "cart" should be near the top (edit distance 1)
         Assert.True(suggestions.IndexOf("car") <= 1 || suggestions.IndexOf("cart") <= 1);
     }
+
+    [Fact]
+    public void IsHunspellLoaded_ReturnsFalseByDefault()
+    {
+        var manager = new DictionaryManager();
+        var checker = new SpellChecker(manager);
+
+        Assert.False(checker.IsHunspellLoaded);
+    }
+
+    [Fact]
+    public async Task LoadBundledDictionary_LoadsEnglishDictionary()
+    {
+        var manager = new DictionaryManager();
+        using var checker = new SpellChecker(manager);
+
+        await checker.LoadBundledDictionaryAsync("en_US");
+
+        Assert.True(checker.IsHunspellLoaded);
+    }
+
+    [Fact]
+    public async Task IsCorrect_WithHunspell_RecognizesEnglishWords()
+    {
+        var manager = new DictionaryManager();
+        using var checker = new SpellChecker(manager);
+        await checker.LoadBundledDictionaryAsync("en_US");
+
+        Assert.True(checker.IsCorrect("hello"));
+        Assert.True(checker.IsCorrect("world"));
+        Assert.True(checker.IsCorrect("adventure"));
+    }
+
+    [Fact]
+    public async Task IsCorrect_WithHunspell_DetectsMisspelledWords()
+    {
+        var manager = new DictionaryManager();
+        using var checker = new SpellChecker(manager);
+        await checker.LoadBundledDictionaryAsync("en_US");
+
+        Assert.False(checker.IsCorrect("helo"));  // misspelled "hello"
+        Assert.False(checker.IsCorrect("wrold")); // misspelled "world"
+    }
+
+    [Fact]
+    public async Task IsCorrect_CustomDictionaryOverridesHunspell()
+    {
+        var manager = new DictionaryManager();
+        manager.AddWord("Neverwinter");  // Not in Hunspell
+        manager.AddWord("Aribeth");       // Not in Hunspell
+        using var checker = new SpellChecker(manager);
+        await checker.LoadBundledDictionaryAsync("en_US");
+
+        // Custom dictionary words recognized
+        Assert.True(checker.IsCorrect("Neverwinter"));
+        Assert.True(checker.IsCorrect("Aribeth"));
+
+        // Hunspell words still work
+        Assert.True(checker.IsCorrect("adventure"));
+    }
+
+    [Fact]
+    public async Task GetSuggestions_WithHunspell_ProvidesBetterSuggestions()
+    {
+        var manager = new DictionaryManager();
+        using var checker = new SpellChecker(manager);
+        await checker.LoadBundledDictionaryAsync("en_US");
+
+        var suggestions = checker.GetSuggestions("adventur", 5).ToList();
+
+        // Hunspell should suggest "adventure", "adventurer", etc.
+        Assert.Contains(suggestions, s => s.StartsWith("adventur", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task CheckText_WithHunspell_FindsRealMisspellings()
+    {
+        var manager = new DictionaryManager();
+        manager.AddWord("Neverwinter");  // Add game term
+        using var checker = new SpellChecker(manager);
+        await checker.LoadBundledDictionaryAsync("en_US");
+
+        // "spyes" is misspelled, but "Neverwinter" is in custom dictionary
+        var errors = checker.CheckText("The spyes of Neverwinter are watching.").ToList();
+
+        Assert.Single(errors);
+        Assert.Equal("spyes", errors[0].Word);
+    }
+
+    [Fact]
+    public void Dispose_CleansUpResources()
+    {
+        var manager = new DictionaryManager();
+        var checker = new SpellChecker(manager);
+
+        checker.Dispose();
+
+        // Should not throw on second dispose
+        checker.Dispose();
+    }
 }
