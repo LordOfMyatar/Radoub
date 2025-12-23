@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.85-alpha] - TBD
-**Branch**: `parley/sprint/dictionary-integration` | **PR**: #TBD | **Closes**: #505
+**Branch**: `parley/sprint/dictionary-integration` | **PR**: #509 | **Closes**: #505
 
 ### Sprint: Dictionary Integration (Epic #43)
 
