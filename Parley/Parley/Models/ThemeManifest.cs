@@ -158,6 +158,10 @@ namespace DialogEditor.Models
         [JsonPropertyName("auto_trim_border")]
         public string? AutoTrimBorder { get; set; }
 
+        // Spelling error underline color (Sprint #505)
+        [JsonPropertyName("spelling_error")]
+        public string? SpellingError { get; set; }
+
         // Multi-NPC speaker colors (Issue #16 integration)
         [JsonPropertyName("speaker_1")]
         public string? Speaker1 { get; set; }

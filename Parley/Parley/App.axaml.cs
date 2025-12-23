@@ -38,6 +38,9 @@ public partial class App : Application
             UnifiedLogger.LogApplication(LogLevel.INFO, "Safe mode enabled - using factory defaults");
         }
 
+        // Initialize spell-checking (async, non-blocking)
+        _ = SpellCheckService.Instance.InitializeAsync();
+
         // Discover and apply themes
         ThemeManager.Instance.DiscoverThemes();
 

@@ -101,5 +101,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Radoub.Formats\Radoub.Formats\Radoub.Formats.csproj" />
+    <ProjectReference Include="..\..\Radoub.Dictionary\Radoub.Dictionary\Radoub.Dictionary.csproj" />
   </ItemGroup>
 </Project>
