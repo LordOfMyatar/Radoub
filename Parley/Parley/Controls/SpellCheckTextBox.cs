@@ -13,12 +13,13 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using DialogEditor.Services;
 using Radoub.Dictionary;
+using Avalonia.Layout;
 
 namespace DialogEditor.Controls
 {
     /// <summary>
     /// TextBox with integrated spell-checking.
-    /// Displays spelling errors with theme-aware underlines and provides
+    /// Displays spelling errors with theme-aware squiggly underlines and provides
     /// right-click context menu with suggestions.
     /// </summary>
     public class SpellCheckTextBox : TextBox
@@ -29,6 +30,8 @@ namespace DialogEditor.Controls
         private readonly List<SpellingError> _currentErrors = new();
         private SpellingError? _errorAtCaret;
         private DispatcherTimer? _spellCheckTimer;
+        private SpellCheckUnderlineOverlay? _underlineOverlay;
+        private TextPresenter? _textPresenter;
 
         /// <summary>
         /// Whether spell-checking is enabled for this TextBox.
@@ -60,6 +63,35 @@ namespace DialogEditor.Controls
                 Interval = TimeSpan.FromMilliseconds(300)
             };
             _spellCheckTimer.Tick += OnSpellCheckTimerTick;
+        }
+
+        protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
+        {
+            base.OnApplyTemplate(e);
+
+            // Find the TextPresenter in the template
+            _textPresenter = e.NameScope.Find<TextPresenter>("PART_TextPresenter");
+
+            if (_textPresenter != null)
+            {
+                // Create the underline overlay
+                _underlineOverlay = new SpellCheckUnderlineOverlay(this);
+
+                // Find the parent of the TextPresenter and add overlay as sibling
+                if (_textPresenter.Parent is Panel panel)
+                {
+                    panel.Children.Add(_underlineOverlay);
+                }
+
+                // Subscribe to layout updates to redraw underlines when text reflows
+                _textPresenter.PropertyChanged += (s, args) =>
+                {
+                    if (args.Property.Name == "TextLayout")
+                    {
+                        _underlineOverlay?.InvalidateVisual();
+                    }
+                };
+            }
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -114,29 +146,18 @@ namespace DialogEditor.Controls
         /// </summary>
         private void UpdateErrorIndicator()
         {
-            if (_currentErrors.Count > 0)
-            {
-                // Subtle indicator: thin colored left border (like VS Code's problem gutter)
-                var errorBrush = SpellCheckService.Instance.GetSpellingErrorBrush();
-                BorderBrush = errorBrush;
-                BorderThickness = new Thickness(3, 1, 1, 1); // Thicker left border only
+            // Invalidate the underline overlay to redraw squiggly lines
+            _underlineOverlay?.InvalidateVisual();
 
-                // Build clear tooltip showing exactly which words are misspelled
-                var errorList = _currentErrors.Take(8).Select(e => $"• {e.Word}");
-                var tooltip = $"Spelling errors ({_currentErrors.Count}):\n{string.Join("\n", errorList)}";
-                if (_currentErrors.Count > 8)
-                    tooltip += $"\n  ...and {_currentErrors.Count - 8} more";
-                tooltip += "\n\nRight-click a word for suggestions";
-                ToolTip.SetTip(this, tooltip);
-            }
-            else
-            {
-                // Reset to default
-                BorderBrush = null;
-                BorderThickness = new Thickness(1);
-                ToolTip.SetTip(this, null);
-            }
+            // Remove tooltip - squiggly lines are the primary indicator now
+            // Users right-click on underlined words for suggestions
+            ToolTip.SetTip(this, null);
         }
+
+        /// <summary>
+        /// Get the TextPresenter for hit testing and text bounds.
+        /// </summary>
+        internal TextPresenter? GetTextPresenter() => _textPresenter ?? FindDescendantOfType<TextPresenter>();
 
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
@@ -271,7 +292,7 @@ namespace DialogEditor.Controls
         /// <summary>
         /// Find a descendant control of a specific type.
         /// </summary>
-        private T? FindDescendantOfType<T>() where T : class
+        internal T? FindDescendantOfType<T>() where T : class
         {
             var queue = new Queue<Control>();
             queue.Enqueue(this);
@@ -416,6 +437,127 @@ namespace DialogEditor.Controls
         public SpellingErrorsChangedEventArgs(IReadOnlyList<SpellingError> errors)
         {
             Errors = errors;
+        }
+    }
+
+    /// <summary>
+    /// Overlay control that draws squiggly underlines for spelling errors.
+    /// Positioned over the TextPresenter to render underlines at correct text positions.
+    /// </summary>
+    internal class SpellCheckUnderlineOverlay : Control
+    {
+        private readonly SpellCheckTextBox _owner;
+
+        public SpellCheckUnderlineOverlay(SpellCheckTextBox owner)
+        {
+            _owner = owner;
+            IsHitTestVisible = false; // Allow clicks to pass through to TextBox
+            ClipToBounds = true; // Don't draw outside our bounds
+        }
+
+        public override void Render(DrawingContext context)
+        {
+            base.Render(context);
+
+            var presenter = _owner.GetTextPresenter();
+            if (presenter?.TextLayout == null)
+                return;
+
+            var errors = _owner.CurrentErrors;
+            if (errors.Count == 0)
+                return;
+
+            var text = _owner.Text ?? string.Empty;
+            if (string.IsNullOrEmpty(text))
+                return;
+
+            // Get the brush for squiggly lines
+            var brush = SpellCheckService.Instance.GetSpellingErrorBrush();
+            var pen = new Pen(brush, 1.5);
+
+            // Get scroll offset if TextBox is scrollable
+            var scrollViewer = FindScrollViewer();
+            var scrollOffset = scrollViewer?.Offset ?? default;
+
+            foreach (var error in errors)
+            {
+                if (error.StartIndex >= text.Length)
+                    continue;
+
+                var endIndex = Math.Min(error.StartIndex + error.Length, text.Length);
+
+                // Get the bounds of the misspelled word using HitTestTextRange
+                var textRects = presenter.TextLayout.HitTestTextRange(error.StartIndex, endIndex - error.StartIndex);
+
+                foreach (var rect in textRects)
+                {
+                    // Calculate position relative to this overlay (which is sibling to TextPresenter)
+                    // Account for scroll offset
+                    var presenterPos = presenter.Bounds.Position;
+                    var startX = presenterPos.X + rect.Left - scrollOffset.X;
+                    var endX = presenterPos.X + rect.Right - scrollOffset.X;
+                    var y = presenterPos.Y + rect.Bottom - 2 - scrollOffset.Y; // Position just below text baseline
+
+                    // Skip if completely off-screen
+                    if (endX < 0 || startX > Bounds.Width || y < 0 || y > Bounds.Height + 10)
+                        continue;
+
+                    // Draw squiggly line
+                    DrawSquigglyLine(context, pen, startX, endX, y);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Draw a squiggly/wavy underline from startX to endX at vertical position y.
+        /// </summary>
+        private static void DrawSquigglyLine(DrawingContext context, Pen pen, double startX, double endX, double y)
+        {
+            const double waveHeight = 2.0;
+            const double waveLength = 4.0;
+
+            var geometry = new StreamGeometry();
+            using (var ctx = geometry.Open())
+            {
+                ctx.BeginFigure(new Point(startX, y), false);
+
+                var x = startX;
+                var up = true;
+
+                while (x < endX)
+                {
+                    var nextX = Math.Min(x + waveLength / 2, endX);
+                    var nextY = up ? y - waveHeight : y + waveHeight;
+
+                    ctx.LineTo(new Point(nextX, nextY));
+
+                    x = nextX;
+                    up = !up;
+                }
+            }
+
+            context.DrawGeometry(null, pen, geometry);
+        }
+
+        /// <summary>
+        /// Find ScrollViewer in owner's visual tree.
+        /// </summary>
+        private ScrollViewer? FindScrollViewer()
+        {
+            var queue = new Queue<Control>();
+            queue.Enqueue(_owner);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                if (current is ScrollViewer sv && current != _owner)
+                    return sv;
+
+                foreach (var child in current.GetVisualChildren().OfType<Control>())
+                    queue.Enqueue(child);
+            }
+
+            return null;
         }
     }
 }
