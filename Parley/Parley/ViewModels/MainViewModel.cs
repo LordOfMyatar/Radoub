@@ -771,11 +771,7 @@ namespace DialogEditor.ViewModels
             // Focus on the newly created node after tree refresh
             NodeToSelectAfterRefresh = newNode;
 
-            // Refresh the tree
-            RefreshTreeView();
-
-            // Update UI state
-            HasUnsavedChanges = true;
+            RefreshTreeViewAndMarkDirty();
             StatusMessage = successMessage;
 
             return newNode;
@@ -1009,13 +1005,8 @@ namespace DialogEditor.ViewModels
                 }
 
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "DeleteNode: About to refresh tree");
-
-                // Refresh tree
-                RefreshTreeView();
-
+                RefreshTreeViewAndMarkDirty();
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "DeleteNode: Tree refresh completed");
-
-                HasUnsavedChanges = true;
             }
             catch (Exception ex)
             {
@@ -1201,6 +1192,16 @@ namespace DialogEditor.ViewModels
                     DialogChangeEventBus.Instance.PublishDialogRefreshed("RefreshTreeViewAndSelectNode");
                 }, global::Avalonia.Threading.DispatcherPriority.Loaded);
             });
+        }
+
+        /// <summary>
+        /// Refreshes tree view and marks dialog as having unsaved changes.
+        /// Common pattern after node operations that modify the dialog structure.
+        /// </summary>
+        private void RefreshTreeViewAndMarkDirty()
+        {
+            RefreshTreeView();
+            HasUnsavedChanges = true;
         }
 
         // Node to re-select after tree refresh (used by View to restore selection)
@@ -1474,8 +1475,7 @@ namespace DialogEditor.ViewModels
                 {
                     NodeToSelectAfterRefresh = result.PastedNode;
                 }
-                RefreshTreeView();
-                HasUnsavedChanges = true;
+                RefreshTreeViewAndMarkDirty();
             }
         }
 
@@ -1529,8 +1529,7 @@ namespace DialogEditor.ViewModels
 
             // Issue #122: Focus on parent node (link is under parent, not standalone)
             NodeToSelectAfterRefresh = parent.OriginalNode;
-            RefreshTreeView();
-            HasUnsavedChanges = true;
+            RefreshTreeViewAndMarkDirty();
             StatusMessage = $"Pasted link under {parent.DisplayText}: {linkPtr.Node?.DisplayText}";
         }
 
@@ -1723,8 +1722,7 @@ namespace DialogEditor.ViewModels
 
             if (result.Success)
             {
-                RefreshTreeView();
-                HasUnsavedChanges = true;
+                RefreshTreeViewAndMarkDirty();
             }
 
             return result.Success;
