@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.86-alpha] - 2025-12-23
+**Branch**: `parley/sprint/script-browser-hak` | **PR**: #TBD | **Closes**: #516
+
+### Sprint: Script Browser HAK Support (Epic #364)
+
+Enable script discovery in HAK/ERF archives using Radoub.Formats ERF parsing.
+
+#### Added
+- TBD
+
+---
+
 ## [0.1.85-alpha] - 2025-12-23
 **Branch**: `parley/sprint/dictionary-integration` | **PR**: #509 | **Closes**: #505
 
