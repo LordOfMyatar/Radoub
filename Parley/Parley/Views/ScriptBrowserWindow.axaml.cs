@@ -609,15 +609,8 @@ namespace DialogEditor.Views
 
                     if (scriptEntry.IsBuiltIn)
                     {
-                        // Built-in scripts are compiled (.ncs), no source available
-                        scriptContent = $"// Built-in game script: {scriptEntry.Name}\n" +
-                                        $"// Source: {scriptEntry.Source}\n" +
-                                        "//\n" +
-                                        "// Built-in scripts are pre-compiled in the game files.\n" +
-                                        "// Source code (.nss) is not available for preview.\n" +
-                                        "//\n" +
-                                        "// This script can still be referenced in dialogs.\n" +
-                                        "// For documentation, see NWN Lexicon or community wikis.";
+                        // Built-in scripts - extract .nss source from game BIFs
+                        scriptContent = await LoadScriptContentFromGameFilesAsync(scriptEntry);
                     }
                     else if (scriptEntry.IsFromHak)
                     {
@@ -753,6 +746,54 @@ namespace DialogEditor.Views
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR,
                     $"Error extracting script from HAK: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Load script content from game BIF files (built-in scripts).
+        /// NWN:EE includes .nss source files in nwn_base_scripts.bif.
+        /// </summary>
+        private async Task<string?> LoadScriptContentFromGameFilesAsync(ScriptEntry scriptEntry)
+        {
+            if (!scriptEntry.IsBuiltIn)
+                return null;
+
+            try
+            {
+                // Extract script data from game BIFs on background thread
+                var scriptData = await Task.Run(() =>
+                    GameResourceService.Instance.FindResource(scriptEntry.Name, ResourceTypes.Nss));
+
+                if (scriptData == null || scriptData.Length == 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"No .nss source found for built-in script '{scriptEntry.Name}'");
+                    return $"// Built-in game script: {scriptEntry.Name}\n" +
+                           $"// Source: {scriptEntry.Source}\n" +
+                           "//\n" +
+                           "// Source code (.nss) not found in game files.\n" +
+                           "// This may be a compiled-only script.\n" +
+                           "// The script name can still be referenced in dialogs.";
+                }
+
+                // NWScript source files are plain text
+                var content = System.Text.Encoding.UTF8.GetString(scriptData);
+
+                // Add source header for context
+                var header = $"// Built-in script from: {scriptEntry.Source}\n" +
+                            $"// ResRef: {scriptEntry.Name}\n" +
+                            "//\n";
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Extracted built-in script '{scriptEntry.Name}' ({scriptData.Length} bytes)");
+
+                return header + content;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Error extracting built-in script: {ex.Message}");
                 return null;
             }
         }
