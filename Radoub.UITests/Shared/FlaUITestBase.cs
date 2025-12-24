@@ -63,6 +63,14 @@ public abstract class FlaUITestBase : IDisposable
         var parleySettingsDir = Path.Combine(_isolatedSettingsDir, "Parley");
         Directory.CreateDirectory(parleySettingsDir);
 
+        // Pre-seed Parley settings with test-friendly defaults
+        // SideBySide layout is most stable for automated testing (no separate windows)
+        var defaultSettings = @"{
+  ""FlowchartLayout"": ""SideBySide"",
+  ""FlowchartVisible"": false
+}";
+        File.WriteAllText(Path.Combine(parleySettingsDir, "ParleySettings.json"), defaultSettings);
+
         var processInfo = new ProcessStartInfo
         {
             FileName = ApplicationPath,
