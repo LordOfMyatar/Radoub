@@ -32,6 +32,7 @@ namespace Parley.Views.Helpers
         private readonly Action _clearPropertiesPanel;
         private readonly Action _populateRecentFilesMenu;
         private readonly Action _updateEmbeddedFlowchartAfterLoad;
+        private readonly Action _clearFlowcharts;
         private readonly Func<ScriptParameterUIManager> _getParameterUIManager;
         private readonly Func<Task<bool>> _showSaveAsDialogAsync;
 
@@ -43,6 +44,7 @@ namespace Parley.Views.Helpers
             Action clearPropertiesPanel,
             Action populateRecentFilesMenu,
             Action updateEmbeddedFlowchartAfterLoad,
+            Action clearFlowcharts,
             Func<ScriptParameterUIManager> getParameterUIManager,
             Func<Task<bool>> showSaveAsDialogAsync)
         {
@@ -53,6 +55,7 @@ namespace Parley.Views.Helpers
             _clearPropertiesPanel = clearPropertiesPanel ?? throw new ArgumentNullException(nameof(clearPropertiesPanel));
             _populateRecentFilesMenu = populateRecentFilesMenu ?? throw new ArgumentNullException(nameof(populateRecentFilesMenu));
             _updateEmbeddedFlowchartAfterLoad = updateEmbeddedFlowchartAfterLoad ?? throw new ArgumentNullException(nameof(updateEmbeddedFlowchartAfterLoad));
+            _clearFlowcharts = clearFlowcharts ?? throw new ArgumentNullException(nameof(clearFlowcharts));
             _getParameterUIManager = getParameterUIManager ?? throw new ArgumentNullException(nameof(getParameterUIManager));
             _showSaveAsDialogAsync = showSaveAsDialogAsync ?? throw new ArgumentNullException(nameof(showSaveAsDialogAsync));
         }
@@ -240,6 +243,7 @@ namespace Parley.Views.Helpers
             ViewModel.CloseDialog();
             ClearModuleInfo();
             _clearPropertiesPanel();
+            _clearFlowcharts(); // #378: Clear all flowchart views when file closed
         }
 
         /// <summary>

@@ -361,7 +361,8 @@ namespace Parley.Views.Helpers
         }
 
         /// <summary>
-        /// Updates the embedded flowchart after a dialog is loaded (if in embedded mode).
+        /// Updates all flowchart views after a dialog is loaded.
+        /// Handles floating window, side-by-side, and tabbed layouts (#394).
         /// </summary>
         public void UpdateAfterLoad()
         {
@@ -371,6 +372,13 @@ namespace Parley.Views.Helpers
             var flowchartTab = _window.FindControl<TabItem>("FlowchartTab");
             var tabbedPanel = _window.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
 
+            // Update floating window if open (#394)
+            _windows.WithWindow<FlowchartWindow>(WindowKeys.Flowchart, w =>
+            {
+                w.UpdateDialog(ViewModel.CurrentDialog, ViewModel.CurrentFileName);
+                UnifiedLogger.LogUI(LogLevel.DEBUG, "Floating flowchart updated after dialog load");
+            });
+
             if (layout == "SideBySide" && embeddedBorder?.IsVisible == true && embeddedPanel != null)
             {
                 embeddedPanel.UpdateDialog(ViewModel.CurrentDialog, ViewModel.CurrentFileName);
@@ -379,6 +387,35 @@ namespace Parley.Views.Helpers
             {
                 tabbedPanel.UpdateDialog(ViewModel.CurrentDialog, ViewModel.CurrentFileName);
             }
+        }
+
+        /// <summary>
+        /// Clears all flowchart views when a dialog file is closed (#378).
+        /// </summary>
+        public void ClearAll()
+        {
+            // Clear floating window if open
+            _windows.WithWindow<FlowchartWindow>(WindowKeys.Flowchart, w =>
+            {
+                w.Clear();
+                UnifiedLogger.LogUI(LogLevel.DEBUG, "Floating flowchart cleared");
+            });
+
+            // Clear embedded panel (side-by-side layout)
+            var embeddedPanel = _window.FindControl<FlowchartPanel>("EmbeddedFlowchartPanel");
+            if (embeddedPanel != null)
+            {
+                embeddedPanel.Clear();
+            }
+
+            // Clear tabbed panel
+            var tabbedPanel = _window.FindControl<FlowchartPanel>("TabbedFlowchartPanel");
+            if (tabbedPanel != null)
+            {
+                tabbedPanel.Clear();
+            }
+
+            UnifiedLogger.LogUI(LogLevel.DEBUG, "All flowchart views cleared");
         }
 
         /// <summary>

@@ -68,9 +68,11 @@
                           VerticalScrollBarVisibility="Auto"
                           AllowAutoHide="False"
                           IsVisible="{Binding HasContent}">
-                <!-- LayoutTransformControl updates scrollbar extents when zooming (unlike RenderTransform) -->
-                <LayoutTransformControl x:Name="ZoomContainer">
-                    <agc:GraphPanel x:Name="FlowchartGraphPanel"
+                <!-- FitContainer: Stretch for normal scrolling, Center for fit mode -->
+                <Border x:Name="FitContainer" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    <!-- LayoutTransformControl updates scrollbar extents when zooming (unlike RenderTransform) -->
+                    <LayoutTransformControl x:Name="ZoomContainer">
+                        <agc:GraphPanel x:Name="FlowchartGraphPanel"
                                     Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
                                     Graph="{Binding Graph}"
                                     LayoutMethod="SugiyamaScheme">
@@ -147,8 +149,9 @@
                             </Border>
                         </DataTemplate>
                     </agc:GraphPanel.DataTemplates>
-                    </agc:GraphPanel>
-                </LayoutTransformControl>
+                        </agc:GraphPanel>
+                    </LayoutTransformControl>
+                </Border>
             </ScrollViewer>
 
             <!-- Placeholder when no content -->

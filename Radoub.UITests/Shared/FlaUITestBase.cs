@@ -156,27 +156,58 @@ public abstract class FlaUITestBase : IDisposable
             throw new InvalidOperationException("MainWindow is null - cannot click menu");
         }
 
-        // Click first menu to open it
-        var menu = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
+        const int maxRetries = 5;
+        const int retryDelayMs = 300;
+
+        // Click first menu to open it (with retry)
+        FlaUI.Core.AutomationElements.AutomationElement? menu = null;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            menu = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
+            if (menu != null) break;
+            Thread.Sleep(retryDelayMs);
+            // Refresh window reference in case UI hasn't fully loaded
+            if (App != null && !App.HasExited && Automation != null)
+            {
+                MainWindow = App.GetMainWindow(Automation, TimeSpan.FromMilliseconds(500));
+            }
+        }
         if (menu == null)
         {
-            throw new InvalidOperationException($"Menu '{menuPath[0]}' not found in window");
+            throw new InvalidOperationException($"Menu '{menuPath[0]}' not found in window after {maxRetries} attempts");
         }
         menu.AsMenuItem().Click();
 
-        // Small delay for menu to open
-        Thread.Sleep(100);
+        // Wait for menu dropdown to fully render (Avalonia animations + resource pressure)
+        Thread.Sleep(300);
 
-        // Click subsequent items
+        // Click subsequent items (with retry for each)
         for (int i = 1; i < menuPath.Length; i++)
         {
-            var item = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+            FlaUI.Core.AutomationElements.AutomationElement? item = null;
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                // For submenus, search from the desktop to find popup menus
+                // Avalonia creates popup menus as separate top-level elements
+                var desktop = Automation?.GetDesktop();
+                if (desktop != null)
+                {
+                    item = desktop.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+                }
+                // Fallback to searching from MainWindow
+                if (item == null && MainWindow != null)
+                {
+                    item = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+                }
+                if (item != null) break;
+                Thread.Sleep(retryDelayMs);
+            }
             if (item == null)
             {
-                throw new InvalidOperationException($"Menu item '{menuPath[i]}' not found");
+                throw new InvalidOperationException($"Menu item '{menuPath[i]}' not found after {maxRetries} attempts");
             }
             item.AsMenuItem().Click();
-            Thread.Sleep(50);
+            Thread.Sleep(100);
         }
     }
 
