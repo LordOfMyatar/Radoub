@@ -554,34 +554,6 @@ namespace DialogEditor.ViewModels
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Skipped auto-select (undo/redo will restore selection)");
                 }
 
-                // No longer creating orphan containers - using Scrap Tab instead
-                // Orphaned nodes are now managed via the ScrapManager service
-                // Commented out old orphan container system:
-                // var orphanedNodes = FindOrphanedNodes(rootNode);
-                // UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PopulateDialogNodes: Found {orphanedNodes.Count} orphaned nodes");
-                // CreateOrUpdateOrphanContainers(orphanedNodes, rootNode);
-
-                // 🔧 TEMPORARY DEBUGGING DISABLED - Parser workaround now provides complete conversation tree
-                // The parser workaround transfers Reply[1] and Reply[2] from Entry[1] to Entry[0] fixing the conversation flow
-                /*
-                if (CurrentDialog.Entries.Count > 3) // Only show if there are many entries, suggesting missing connections
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "⚠️  PARSER BUG DETECTED: Showing disconnected entries as separate roots");
-                    UnifiedLogger.LogApplication(LogLevel.WARN, "⚠️  Entry[0] should have multiple reply options but parser only found 1 pointer");
-
-                    for (int i = 1; i < CurrentDialog.Entries.Count; i++) // Skip Entry[0] since it's already shown
-                    {
-                        var entry = CurrentDialog.Entries[i];
-                        if (entry.Type == DialogNodeType.Entry)
-                        {
-                            UnifiedLogger.LogApplication(LogLevel.INFO, $"📋 Adding Entry[{i}] as debugging root: '{entry.DisplayText}'");
-                            var safeNode = new TreeViewSafeNode(entry);
-                            newNodes.Add(safeNode);
-                        }
-                    }
-                }
-                */
-
                 // Assign new collection to trigger UI update
                 DialogNodes = newNodes;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Populated {DialogNodes.Count} root dialog nodes for tree view");
@@ -1386,35 +1358,11 @@ namespace DialogEditor.ViewModels
                     await LoadDialogAsync(originalFileName);
                 }
 
-                var results = testResults.ToString();
-
-                // Phase 0: Application shutdown if requested
-                // if (closeAppAfterTest)
-                // {
-                //     UnifiedLogger.LogApplication(LogLevel.INFO, "Round-trip test completed, closing application");
-                //     Dispatcher.UIThread.Post(() =>
-                //     {
-                //         Application.Current.Shutdown();
-                //     });
-                // }
-
-                return results;
+                return testResults.ToString();
             }
             catch (Exception ex)
             {
-                var errorMessage = $"Round-trip test failed: {ex.Message}";
-
-                // Phase 0: Application shutdown if requested (even on error)
-                // if (closeAppAfterTest)
-                // {
-                //     UnifiedLogger.LogApplication(LogLevel.ERROR, $"Round-trip test failed: {ex.Message}, closing application");
-                //     Dispatcher.UIThread.Post(() =>
-                //     {
-                //         Application.Current.Shutdown();
-                //     });
-                // }
-
-                return errorMessage;
+                return $"Round-trip test failed: {ex.Message}";
             }
         }
 
@@ -1676,13 +1624,6 @@ namespace DialogEditor.ViewModels
 
             return state;
         }
-
-        // DELETED: 693 lines of deprecated orphan containerization code (2025-11-19)
-        // This functionality was replaced by OrphanNodeManager service and ScrapManager.
-        // Dead code included: FindOrphanedNodes, CreateOrUpdateOrphanContainers,
-        // DetectAndContainerizeOrphansSync, CreateOrUpdateOrphanContainersInModel,
-        // CollectReachableNodesForOrphanDetection, IsNodeInSubtree, FindParentEntry
-        // Git history preserves original implementation if needed for reference.
 
         /// <summary>
         /// Restores tree expansion state and selection
