@@ -56,8 +56,13 @@ public class FileOperationTests : ParleyTestBase
         // Arrange
         StartApplication();
 
-        // Wait for app to fully load before interacting with menus
-        Thread.Sleep(1000);
+        // Wait for app to fully initialize by checking for window title
+        // "Parley" should appear in title once app is ready
+        var ready = WaitForTitleContains("Parley", FileOperationTimeout);
+        Assert.True(ready, "App should show 'Parley' in title when ready");
+
+        // Additional wait for menu system to initialize
+        Thread.Sleep(500);
 
         // Refresh window reference
         MainWindow = App?.GetMainWindow(Automation!, DefaultTimeout);
@@ -66,7 +71,7 @@ public class FileOperationTests : ParleyTestBase
         // Act - Click File > New
         ClickMenu("File", "New");
 
-        // Allow time for new file to be created
+        // Wait for new file operation to complete
         Thread.Sleep(500);
 
         // Refresh window reference after operation
