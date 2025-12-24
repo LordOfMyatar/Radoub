@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.87-alpha] - 2025-12-24
+**Branch**: `parley/sprint/flowview-bug-bash` | **PR**: #TBD | **Closes**: #514
+
+### Sprint: FlowView Bug Bash
+
+Fix four related FlowView rendering and navigation bugs.
+
+#### Fixed
+- #455 - FlowView: Fit to Window doesn't center content, appears mostly off-screen
+- #454 - FlowView: Shift+drag panning broken in side-by-side mode, scrollbars missing
+- #394 - Floating FlowchartWindow doesn't render when opened before DLG file
+- #378 - Flowchart doesn't clear when file closed
+
+---
+
 ## [0.1.86-alpha] - 2025-12-23
 **Branch**: `parley/sprint/script-browser-hak` | **PR**: #518 | **Closes**: #516
 
