@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.86-alpha] - 2025-12-23
-**Branch**: `parley/sprint/script-browser-hak` | **PR**: #TBD | **Closes**: #516
+**Branch**: `parley/sprint/script-browser-hak` | **PR**: #518 | **Closes**: #516
 
 ### Sprint: Script Browser HAK Support (Epic #364)
 
