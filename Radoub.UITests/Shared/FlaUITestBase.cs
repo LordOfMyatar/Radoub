@@ -156,8 +156,8 @@ public abstract class FlaUITestBase : IDisposable
             throw new InvalidOperationException("MainWindow is null - cannot click menu");
         }
 
-        const int maxRetries = 3;
-        const int retryDelayMs = 200;
+        const int maxRetries = 5;
+        const int retryDelayMs = 300;
 
         // Click first menu to open it (with retry)
         FlaUI.Core.AutomationElements.AutomationElement? menu = null;
@@ -166,6 +166,11 @@ public abstract class FlaUITestBase : IDisposable
             menu = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
             if (menu != null) break;
             Thread.Sleep(retryDelayMs);
+            // Refresh window reference in case UI hasn't fully loaded
+            if (App != null && !App.HasExited && Automation != null)
+            {
+                MainWindow = App.GetMainWindow(Automation, TimeSpan.FromMilliseconds(500));
+            }
         }
         if (menu == null)
         {
@@ -173,8 +178,8 @@ public abstract class FlaUITestBase : IDisposable
         }
         menu.AsMenuItem().Click();
 
-        // Wait for menu to open
-        Thread.Sleep(150);
+        // Wait for menu dropdown to fully render (Avalonia animations + resource pressure)
+        Thread.Sleep(300);
 
         // Click subsequent items (with retry for each)
         for (int i = 1; i < menuPath.Length; i++)
@@ -182,7 +187,18 @@ public abstract class FlaUITestBase : IDisposable
             FlaUI.Core.AutomationElements.AutomationElement? item = null;
             for (int attempt = 0; attempt < maxRetries; attempt++)
             {
-                item = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+                // For submenus, search from the desktop to find popup menus
+                // Avalonia creates popup menus as separate top-level elements
+                var desktop = Automation?.GetDesktop();
+                if (desktop != null)
+                {
+                    item = desktop.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+                }
+                // Fallback to searching from MainWindow
+                if (item == null && MainWindow != null)
+                {
+                    item = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+                }
                 if (item != null) break;
                 Thread.Sleep(retryDelayMs);
             }
@@ -191,7 +207,7 @@ public abstract class FlaUITestBase : IDisposable
                 throw new InvalidOperationException($"Menu item '{menuPath[i]}' not found after {maxRetries} attempts");
             }
             item.AsMenuItem().Click();
-            Thread.Sleep(50);
+            Thread.Sleep(100);
         }
     }
 
