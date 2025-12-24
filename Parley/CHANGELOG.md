@@ -15,12 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: MainView Quick Wins (Tech Debt)
 
-Quick refactoring wins for MainViewModel and MainWindow (~90 min effort).
+Quick refactoring wins for MainViewModel.
 
 #### Changed
-- #521 - Remove dead code from MainViewModel (commented blocks)
-- #523 - Create CompleteNodeOperation helper to consolidate Status/Refresh/Dirty pattern
-- #525 - Create UiStateManager for explicit UI state tracking
+- #521 - Remove dead code from MainViewModel (~50 lines of commented blocks)
+- #523 - Create RefreshTreeViewAndMarkDirty() helper to consolidate pattern
 
 ---
 
