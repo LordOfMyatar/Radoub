@@ -38,6 +38,9 @@ public partial class App : Application
 
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
+
+        // Initialize spell-checking (async, non-blocking)
+        _ = SpellCheckService.Instance.InitializeAsync();
     }
 
     public override void OnFrameworkInitializationCompleted()

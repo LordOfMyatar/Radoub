@@ -15,10 +15,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Dictionary Integration (#506)
 
-Integrate `Radoub.Dictionary` spell-checking into Manifest module manager.
+Integrate `Radoub.Dictionary` spell-checking into Manifest journal editor. Final sprint (3 of 3) for Dictionary epic #43.
 
 #### Added
-- TBD
+- `SpellCheckService` for dictionary initialization and spell-checking
+- `SpellCheckTextBox` control with red squiggly underlines for misspellings
+- Right-click context menu with spelling suggestions and "Add to Dictionary"
+- Spell-check settings in Preferences window (enable/disable, word count display)
+- Shared custom dictionary with Parley at `~/Radoub/Dictionaries/custom.dic`
+- 8 new spell-check unit tests in Manifest.Tests
+
+#### Test Infrastructure
+- Updated `run-tests.ps1` to run all 5 test projects (Formats, Dictionary, Parley, Manifest, UITests)
+- Added `-UIOnly` and `-UnitOnly` parameters for selective test execution
+- Created `run-tests.sh` for Linux/macOS (unit tests only - FlaUI is Windows-only)
+- Updated `post-merge.md` command with full test suite execution and keyboard warning
+
+#### Fields with Spell-Check
+- Category Name
+- Category Comment
+- Entry Text
 
 ---
 

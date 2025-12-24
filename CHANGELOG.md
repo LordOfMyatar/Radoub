@@ -14,6 +14,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.1] - 2025-12-23
+**Branch**: `manifest/sprint/dictionary-integration` | **PR**: #511
+
+### Test Infrastructure Improvements
+
+#### Added
+- `run-tests.ps1` - Unified test runner for all 5 test projects (Windows)
+- `run-tests.sh` - Linux/macOS test runner (unit tests only - FlaUI is Windows-only)
+- Test script parameters: `-UIOnly`, `-UnitOnly` for selective test execution
+- Updated `post-merge.md` command with full test suite execution
+  - Privacy scan before tests
+  - "Hands off keyboard" warning for UI tests
+  - Test results appended to PR description
+
+#### Test Projects
+| Project | Tests |
+|---------|-------|
+| Radoub.Formats.Tests | 165 |
+| Radoub.Dictionary.Tests | 54 |
+| Parley.Tests | 461 |
+| Manifest.Tests | 32 |
+| Radoub.UITests | 52 |
+| **Total** | **764** |
+
+---
+
 ## [0.9.0] - 2025-12-22
 **Branch**: `radoub/sprint/dictionary-library` | **PR**: #507
 

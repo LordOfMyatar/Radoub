@@ -46,6 +46,9 @@ public partial class PreferencesWindow : Window
         // Load log retention
         LogRetentionSlider.Value = settings.LogRetentionSessions;
         LogRetentionLabel.Text = settings.LogRetentionSessions.ToString();
+
+        // Load spell check settings
+        LoadSpellCheckSettings();
     }
 
     private void LoadThemeList()
@@ -409,6 +412,29 @@ public partial class PreferencesWindow : Window
         UserPathValidationText.Foreground = result.IsValid
             ? Avalonia.Media.Brushes.Green
             : Avalonia.Media.Brushes.Red;
+    }
+
+    #endregion
+
+    #region Spell Check
+
+    private void LoadSpellCheckSettings()
+    {
+        SpellCheckEnabledCheckBox.IsChecked = SettingsService.Instance.SpellCheckEnabled;
+        UpdateDictionaryInfo();
+    }
+
+    private void OnSpellCheckEnabledChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_isLoading) return;
+
+        SettingsService.Instance.SpellCheckEnabled = SpellCheckEnabledCheckBox.IsChecked ?? true;
+    }
+
+    private void UpdateDictionaryInfo()
+    {
+        var wordCount = SpellCheckService.Instance.GetCustomWordCount();
+        DictionaryInfoText.Text = $"Custom dictionary: {wordCount} words";
     }
 
     #endregion
