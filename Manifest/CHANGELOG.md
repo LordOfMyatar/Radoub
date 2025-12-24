@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.0-alpha] - 2025-12-23
+**Branch**: `manifest/sprint/dictionary-integration` | **PR**: #TBD
+
+### Sprint: Dictionary Integration (#506)
+
+Integrate `Radoub.Dictionary` spell-checking into Manifest module manager.
+
+#### Added
+- TBD
+
+---
+
 ## [0.8.0-alpha] - 2025-12-21
 **Branch**: `manifest/sprint/cli-ui-polish` | **PR**: #493 | **Closes**: #447, #423
 
