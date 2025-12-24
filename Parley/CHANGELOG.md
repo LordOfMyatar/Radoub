@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.87-alpha] - 2025-12-24
-**Branch**: `parley/sprint/flowview-bug-bash` | **PR**: #TBD | **Closes**: #514
+**Branch**: `parley/sprint/flowview-bug-bash` | **PR**: #520 | **Closes**: #514
 
 ### Sprint: FlowView Bug Bash
 
