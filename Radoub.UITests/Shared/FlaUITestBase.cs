@@ -156,24 +156,39 @@ public abstract class FlaUITestBase : IDisposable
             throw new InvalidOperationException("MainWindow is null - cannot click menu");
         }
 
-        // Click first menu to open it
-        var menu = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
+        const int maxRetries = 3;
+        const int retryDelayMs = 200;
+
+        // Click first menu to open it (with retry)
+        FlaUI.Core.AutomationElements.AutomationElement? menu = null;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            menu = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[0]));
+            if (menu != null) break;
+            Thread.Sleep(retryDelayMs);
+        }
         if (menu == null)
         {
-            throw new InvalidOperationException($"Menu '{menuPath[0]}' not found in window");
+            throw new InvalidOperationException($"Menu '{menuPath[0]}' not found in window after {maxRetries} attempts");
         }
         menu.AsMenuItem().Click();
 
-        // Small delay for menu to open
-        Thread.Sleep(100);
+        // Wait for menu to open
+        Thread.Sleep(150);
 
-        // Click subsequent items
+        // Click subsequent items (with retry for each)
         for (int i = 1; i < menuPath.Length; i++)
         {
-            var item = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+            FlaUI.Core.AutomationElements.AutomationElement? item = null;
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                item = MainWindow.FindFirstDescendant(cf => cf.ByName(menuPath[i]));
+                if (item != null) break;
+                Thread.Sleep(retryDelayMs);
+            }
             if (item == null)
             {
-                throw new InvalidOperationException($"Menu item '{menuPath[i]}' not found");
+                throw new InvalidOperationException($"Menu item '{menuPath[i]}' not found after {maxRetries} attempts");
             }
             item.AsMenuItem().Click();
             Thread.Sleep(50);

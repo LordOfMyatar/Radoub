@@ -22,6 +22,7 @@ Fix four related FlowView rendering and navigation bugs.
 - #454 - FlowView: Shift+drag panning broken in side-by-side mode, scrollbars missing
 - #394 - Floating FlowchartWindow doesn't render when opened before DLG file
 - #378 - Flowchart doesn't clear when file closed
+- UI Tests: ClickMenu now retries up to 3 times for menu items (eliminates flaky test failures)
 
 ---
 
