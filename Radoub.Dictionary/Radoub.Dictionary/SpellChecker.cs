@@ -64,6 +64,29 @@ public partial class SpellChecker : IDisposable
             ?? throw new FileNotFoundException($"Bundled dictionary not found: {languageCode}.aff");
 
         _hunspell = await WordList.CreateFromStreamsAsync(dicStream, affStream);
+
+        // Also load the bundled NWN/D&D dictionary
+        await LoadBundledNwnDictionaryAsync();
+    }
+
+    /// <summary>
+    /// Loads the bundled NWN/D&D terminology dictionary from embedded resources.
+    /// </summary>
+    public async Task LoadBundledNwnDictionaryAsync()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = "Radoub.Dictionary.Dictionaries.nwn.nwn.dic";
+
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+        {
+            // NWN dictionary is optional - don't throw if not found
+            return;
+        }
+
+        using var reader = new StreamReader(stream);
+        var json = await reader.ReadToEndAsync();
+        _dictionaryManager.LoadDictionaryFromJson(json);
     }
 
     /// <summary>

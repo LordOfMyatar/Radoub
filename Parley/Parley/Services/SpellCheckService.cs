@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
@@ -13,11 +14,10 @@ namespace DialogEditor.Services
     /// Wraps Radoub.Dictionary with theme-aware styling for error indicators.
     /// </summary>
     /// <remarks>
-    /// TODO (Sprint 3): Persistence and settings
-    /// - Auto-load/save custom dictionary on startup/shutdown
+    /// Custom dictionary is stored at ~/Radoub/Dictionaries/custom.dic (shared across all Radoub tools).
+    /// TODO (Sprint 3): Additional features
     /// - Support multiple custom dictionary files (e.g., LOTR.dic, Diablo.dic)
     /// - Preferences UI to enable/disable dictionaries and manage custom word lists
-    /// - Store dictionary paths in RadoubSettings.json
     /// </remarks>
     public class SpellCheckService : IDisposable
     {
@@ -30,9 +30,16 @@ namespace DialogEditor.Services
         private bool _isInitialized;
 
         /// <summary>
-        /// Whether spell-checking is available and loaded.
+        /// Path to the Radoub-wide custom dictionary file.
+        /// Located at ~/Radoub/Dictionaries/custom.dic
         /// </summary>
-        public bool IsReady => _isInitialized && _spellChecker != null;
+        private readonly string _customDictionaryPath;
+
+        /// <summary>
+        /// Whether spell-checking is available and loaded.
+        /// Also checks if spell-check is enabled in settings.
+        /// </summary>
+        public bool IsReady => _isInitialized && _spellChecker != null && SettingsService.Instance.SpellCheckEnabled;
 
         /// <summary>
         /// Event raised when spell-check is ready for use.
@@ -42,6 +49,12 @@ namespace DialogEditor.Services
         private SpellCheckService()
         {
             _dictionaryManager = new DictionaryManager();
+
+            // Setup custom dictionary path: ~/Radoub/Dictionaries/custom.dic
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var dictionariesDir = Path.Combine(userProfile, "Radoub", "Dictionaries");
+            Directory.CreateDirectory(dictionariesDir);
+            _customDictionaryPath = Path.Combine(dictionariesDir, "custom.dic");
         }
 
         /// <summary>
@@ -56,9 +69,16 @@ namespace DialogEditor.Services
             {
                 _spellChecker = new SpellChecker(_dictionaryManager);
                 await _spellChecker.LoadBundledDictionaryAsync("en_US");
+
+                // Load custom dictionary if it exists
+                await LoadCustomDictionaryInternalAsync();
+
                 _isInitialized = true;
 
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Spell-check initialized with en_US dictionary");
+                var totalWordCount = GetCustomWordCount();
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Spell-check initialized with en_US + NWN dictionaries ({totalWordCount} custom/NWN words)");
+
                 Ready?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
@@ -111,6 +131,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Add a word to the custom dictionary permanently.
+        /// Automatically saves to disk.
         /// </summary>
         public void AddToCustomDictionary(string word)
         {
@@ -118,6 +139,9 @@ namespace DialogEditor.Services
             {
                 _dictionaryManager.AddWord(word.Trim());
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added '{word}' to custom dictionary");
+
+                // Save immediately
+                _ = SaveCustomDictionaryAsync();
             }
         }
 
@@ -125,6 +149,11 @@ namespace DialogEditor.Services
         /// Get the number of session-ignored words.
         /// </summary>
         public int SessionIgnoredCount => _spellChecker?.SessionIgnoredCount ?? 0;
+
+        /// <summary>
+        /// Get the number of custom words.
+        /// </summary>
+        public int GetCustomWordCount() => _dictionaryManager.WordCount;
 
         /// <summary>
         /// Clear all session-ignored words.
@@ -174,6 +203,50 @@ namespace DialogEditor.Services
 
             // Ultimate fallback
             return new SolidColorBrush(Color.Parse("#D32F2F"));
+        }
+
+        /// <summary>
+        /// Load the Radoub-wide custom dictionary if it exists.
+        /// </summary>
+        private async Task LoadCustomDictionaryInternalAsync()
+        {
+            if (!File.Exists(_customDictionaryPath))
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "No custom dictionary file found, starting fresh");
+                return;
+            }
+
+            try
+            {
+                await _dictionaryManager.LoadDictionaryAsync(_customDictionaryPath);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Loaded custom dictionary: {_dictionaryManager.WordCount} words");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load custom dictionary: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Save the custom dictionary to disk.
+        /// </summary>
+        public async Task SaveCustomDictionaryAsync()
+        {
+            try
+            {
+                await _dictionaryManager.ExportDictionaryAsync(
+                    _customDictionaryPath,
+                    "Radoub Custom Dictionary",
+                    "User-added custom words for spell checking");
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Saved custom dictionary: {_dictionaryManager.WordCount} words");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to save custom dictionary: {ex.Message}");
+            }
         }
 
         /// <summary>

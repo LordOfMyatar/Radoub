@@ -80,10 +80,11 @@ namespace DialogEditor.Services
         public void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
         {
             // Create grid: [Key TextBox] [=] [Value TextBox] [Delete Button]
+            // Use Auto with MinWidth so fields start compact but can expand with content
             var grid = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, MinWidth = 100 });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, MinWidth = 100 });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 

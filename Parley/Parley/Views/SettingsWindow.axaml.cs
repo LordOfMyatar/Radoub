@@ -194,6 +194,13 @@ namespace DialogEditor.Views
                 simulatorShowWarningsCheckBox.IsChecked = settings.SimulatorShowWarnings;
             }
 
+            // Spell Check (Issue #505)
+            var spellCheckEnabledCheckBox = this.FindControl<CheckBox>("SpellCheckEnabledCheckBox");
+            if (spellCheckEnabledCheckBox != null)
+            {
+                spellCheckEnabledCheckBox.IsChecked = settings.SpellCheckEnabled;
+            }
+
             if (externalEditorPathTextBox != null)
             {
                 externalEditorPathTextBox.Text = settings.ExternalEditorPath;
@@ -1439,6 +1446,20 @@ namespace DialogEditor.Views
             {
                 SettingsService.Instance.SimulatorShowWarnings = checkbox.IsChecked == true;
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Dialog warnings: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
+            }
+        }
+
+        /// <summary>
+        /// Issue #505: Handle spell check toggle
+        /// </summary>
+        private void OnSpellCheckEnabledChanged(object? sender, RoutedEventArgs e)
+        {
+            if (_isInitializing) return;
+
+            var checkbox = sender as CheckBox;
+            if (checkbox != null)
+            {
+                SettingsService.Instance.SpellCheckEnabled = checkbox.IsChecked == true;
             }
         }
 

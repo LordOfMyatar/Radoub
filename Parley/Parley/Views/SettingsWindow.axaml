@@ -284,6 +284,19 @@
                                           TextWrapping="Wrap" FontSize="11" Foreground="Gray" Margin="25,0,0,0"/>
                             </StackPanel>
                         </Border>
+
+                        <!-- Spell Check (Issue #505) -->
+                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Spell Check" FontWeight="Bold"/>
+                                <CheckBox x:Name="SpellCheckEnabledCheckBox"
+                                         Content="Enable spell checking"
+                                         Checked="OnSpellCheckEnabledChanged"
+                                         Unchecked="OnSpellCheckEnabledChanged"/>
+                                <TextBlock Text="Underlines misspelled words in dialog text and comments. Right-click for suggestions."
+                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray" Margin="25,0,0,0"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

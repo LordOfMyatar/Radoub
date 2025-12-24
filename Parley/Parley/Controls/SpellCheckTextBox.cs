@@ -63,6 +63,18 @@ namespace DialogEditor.Controls
                 Interval = TimeSpan.FromMilliseconds(300)
             };
             _spellCheckTimer.Tick += OnSpellCheckTimerTick;
+
+            // Subscribe to settings changes to immediately clear/show underlines
+            SettingsService.Instance.PropertyChanged += OnSettingsChanged;
+        }
+
+        private void OnSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SettingsService.SpellCheckEnabled))
+            {
+                // Immediately recheck spelling (will clear if disabled)
+                CheckSpelling();
+            }
         }
 
         protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
