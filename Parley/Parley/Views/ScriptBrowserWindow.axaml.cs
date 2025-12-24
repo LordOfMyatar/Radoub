@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -9,6 +10,7 @@ using Avalonia.Platform.Storage;
 using DialogEditor.Services;
 using DialogEditor.Utils;
 using Radoub.Formats.Common;
+using Radoub.Formats.Erf;
 
 namespace DialogEditor.Views
 {
@@ -19,11 +21,41 @@ namespace DialogEditor.Views
     {
         public string Name { get; set; } = "";
         public bool IsBuiltIn { get; set; }
-        public string Source { get; set; } = ""; // "Module", "Override", "BIF: filename"
+        public string Source { get; set; } = ""; // "Module", "Override", "BIF: filename", "HAK: filename"
 
-        public string DisplayName => IsBuiltIn ? $"🎮 {Name}" : Name;
+        /// <summary>
+        /// If from HAK, the path to the HAK file.
+        /// </summary>
+        public string? HakPath { get; set; }
+
+        /// <summary>
+        /// If from HAK, the ERF resource entry for extraction.
+        /// </summary>
+        public ErfResourceEntry? ErfEntry { get; set; }
+
+        /// <summary>
+        /// True if this script comes from a HAK file (requires extraction for preview).
+        /// </summary>
+        public bool IsFromHak => HakPath != null && ErfEntry != null;
+
+        /// <summary>
+        /// Full file path for filesystem scripts.
+        /// </summary>
+        public string? FilePath { get; set; }
+
+        public string DisplayName => IsBuiltIn ? $"🎮 {Name}" : IsFromHak ? $"📦 {Name}" : Name;
 
         public override string ToString() => DisplayName;
+    }
+
+    /// <summary>
+    /// Cached HAK file script data to avoid re-scanning on each browser open.
+    /// </summary>
+    internal class ScriptHakCacheEntry
+    {
+        public string HakPath { get; set; } = "";
+        public DateTime LastModified { get; set; }
+        public List<ScriptEntry> Scripts { get; set; } = new();
     }
 
     public partial class ScriptBrowserWindow : Window
@@ -31,12 +63,19 @@ namespace DialogEditor.Views
         private readonly ScriptService _scriptService;
         private List<ScriptEntry> _moduleScripts;
         private List<ScriptEntry> _builtInScripts;
+        private List<ScriptEntry> _hakScripts;
         private string? _selectedScript;
         private bool _selectedIsBuiltIn;
         private string? _overridePath;
         private readonly string? _dialogFilePath;
         private bool _showBuiltIn;
+        private bool _showHakScripts;
         private bool _builtInScriptsLoaded;
+        private bool _hakScriptsLoaded;
+        private ScriptEntry? _selectedScriptEntry;
+
+        // Static cache for HAK file contents - persists across window instances
+        private static readonly Dictionary<string, ScriptHakCacheEntry> _hakCache = new();
 
         public string? SelectedScript => _selectedScript;
 
@@ -51,6 +90,7 @@ namespace DialogEditor.Views
             _scriptService = ScriptService.Instance;
             _moduleScripts = new List<ScriptEntry>();
             _builtInScripts = new List<ScriptEntry>();
+            _hakScripts = new List<ScriptEntry>();
             _dialogFilePath = dialogFilePath;
 
             // Check if game resources are available for built-in scripts
@@ -60,6 +100,9 @@ namespace DialogEditor.Views
             {
                 ToolTip.SetTip(ShowBuiltInCheckBox, "Game path not configured in Settings. Cannot load built-in scripts.");
             }
+
+            // Enable HAK checkbox - HAKs can be found in dialog directory
+            ShowHakCheckBox.IsEnabled = true;
 
             UpdateLocationDisplay();
             LoadScripts();
@@ -164,6 +207,20 @@ namespace DialogEditor.Views
             UpdateScriptList();
         }
 
+        private async void OnShowHakChanged(object? sender, RoutedEventArgs e)
+        {
+            _showHakScripts = ShowHakCheckBox.IsChecked == true;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Script browser: Show HAK scripts = {_showHakScripts}");
+
+            // Load HAK scripts on first toggle (lazy load)
+            if (_showHakScripts && !_hakScriptsLoaded)
+            {
+                await LoadHakScriptsAsync();
+            }
+
+            UpdateScriptList();
+        }
+
         private async void LoadScripts()
         {
             await LoadScriptsAsync();
@@ -233,10 +290,174 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load built-in scripts: {ex.Message}");
             }
 
-            await System.Threading.Tasks.Task.CompletedTask;
+            await Task.CompletedTask;
         }
 
-        private System.Threading.Tasks.Task<List<ScriptEntry>> LoadScriptsFromPathAsync(string path)
+        private async Task LoadHakScriptsAsync()
+        {
+            try
+            {
+                _hakScripts = new List<ScriptEntry>();
+
+                // Get HAK paths to scan
+                var hakPaths = new List<string>();
+
+                // 1. Dialog file directory (highest priority for module HAKs)
+                var dialogDir = GetDialogDirectory();
+                if (!string.IsNullOrEmpty(dialogDir))
+                {
+                    hakPaths.AddRange(GetHakFilesFromPath(dialogDir));
+                }
+
+                // 2. Override path if set
+                if (!string.IsNullOrEmpty(_overridePath))
+                {
+                    hakPaths.AddRange(GetHakFilesFromPath(_overridePath));
+                }
+
+                // 3. NWN user hak folder
+                var userPath = SettingsService.Instance.NeverwinterNightsPath;
+                if (!string.IsNullOrEmpty(userPath) && Directory.Exists(userPath))
+                {
+                    var hakFolder = Path.Combine(userPath, "hak");
+                    if (Directory.Exists(hakFolder))
+                    {
+                        hakPaths.AddRange(GetHakFilesFromPath(hakFolder));
+                    }
+                }
+
+                // Deduplicate HAK paths (same file might be found in multiple locations)
+                hakPaths = hakPaths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+                if (hakPaths.Count == 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "Script Browser: No HAK files found to scan");
+                    _hakScriptsLoaded = true;
+                    return;
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Script Browser: Scanning {hakPaths.Count} HAK files for scripts");
+
+                // Scan HAKs for .nss scripts
+                for (int i = 0; i < hakPaths.Count; i++)
+                {
+                    var hakPath = hakPaths[i];
+                    var hakName = Path.GetFileName(hakPath);
+                    ScriptCountLabel.Text = $"Loading HAK {i + 1}/{hakPaths.Count}: {hakName}...";
+
+                    await Task.Run(() => ScanHakForScripts(hakPath));
+                }
+
+                _hakScripts = _hakScripts.OrderBy(s => s.Name).ToList();
+                _hakScriptsLoaded = true;
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Script Browser: Loaded {_hakScripts.Count} scripts from HAK files");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load HAK scripts: {ex.Message}");
+            }
+        }
+
+        private IEnumerable<string> GetHakFilesFromPath(string path)
+        {
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    return Directory.GetFiles(path, "*.hak", SearchOption.TopDirectoryOnly);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Error scanning for HAKs in {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
+            }
+            return Enumerable.Empty<string>();
+        }
+
+        private void ScanHakForScripts(string hakPath)
+        {
+            try
+            {
+                var hakFileName = Path.GetFileName(hakPath);
+                var lastModified = File.GetLastWriteTimeUtc(hakPath);
+
+                // Check cache first
+                if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
+                {
+                    // Use cached scripts - deep copy to avoid shared state issues
+                    foreach (var script in cached.Scripts)
+                    {
+                        // Skip if we already have this script from module (module overrides HAK)
+                        if (_moduleScripts.Any(s => s.Name.Equals(script.Name, StringComparison.OrdinalIgnoreCase)))
+                            continue;
+                        // Skip if already found in another HAK
+                        if (_hakScripts.Any(s => s.Name.Equals(script.Name, StringComparison.OrdinalIgnoreCase)))
+                            continue;
+
+                        _hakScripts.Add(new ScriptEntry
+                        {
+                            Name = script.Name,
+                            IsBuiltIn = false,
+                            Source = script.Source,
+                            HakPath = script.HakPath,
+                            ErfEntry = script.ErfEntry
+                        });
+                    }
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Script Browser: Used cached {cached.Scripts.Count} scripts from {hakFileName}");
+                    return;
+                }
+
+                // Not cached or outdated - scan HAK
+                // Use ReadMetadataOnly to avoid loading entire file into memory (large HAKs can be 800MB+)
+                var erf = ErfReader.ReadMetadataOnly(hakPath);
+                var nssResources = erf.GetResourcesByType(ResourceTypes.Nss).ToList();
+                var newCacheEntry = new ScriptHakCacheEntry
+                {
+                    HakPath = hakPath,
+                    LastModified = lastModified,
+                    Scripts = new List<ScriptEntry>()
+                };
+
+                foreach (var resource in nssResources)
+                {
+                    var scriptName = resource.ResRef;
+                    var scriptEntry = new ScriptEntry
+                    {
+                        Name = scriptName,
+                        IsBuiltIn = false,
+                        Source = $"HAK: {hakFileName}",
+                        HakPath = hakPath,
+                        ErfEntry = resource
+                    };
+
+                    // Add to cache
+                    newCacheEntry.Scripts.Add(scriptEntry);
+
+                    // Skip if we already have this script from module (module overrides HAK)
+                    if (_moduleScripts.Any(s => s.Name.Equals(scriptName, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+                    // Skip if already found in another HAK
+                    if (_hakScripts.Any(s => s.Name.Equals(scriptName, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
+                    _hakScripts.Add(scriptEntry);
+                }
+
+                // Update cache
+                _hakCache[hakPath] = newCacheEntry;
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Script Browser: Scanned and cached {nssResources.Count} scripts in {hakFileName}");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning HAK {UnifiedLogger.SanitizePath(hakPath)}: {ex.Message}");
+            }
+        }
+
+        private Task<List<ScriptEntry>> LoadScriptsFromPathAsync(string path)
         {
             var scripts = new List<ScriptEntry>();
 
@@ -255,7 +476,8 @@ namespace DialogEditor.Views
                             {
                                 Name = scriptName,
                                 IsBuiltIn = false,
-                                Source = "Module"
+                                Source = "Module",
+                                FilePath = scriptFile
                             });
                         }
                     }
@@ -278,11 +500,29 @@ namespace DialogEditor.Views
 
             var searchText = SearchBox?.Text?.ToLowerInvariant();
 
-            // Combine module and built-in scripts
+            // Combine module, HAK, and built-in scripts (in priority order)
             var allScripts = _moduleScripts.ToList();
+            if (_showHakScripts)
+            {
+                // Add HAK scripts that aren't already in module list
+                foreach (var hakScript in _hakScripts)
+                {
+                    if (!allScripts.Any(s => s.Name.Equals(hakScript.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        allScripts.Add(hakScript);
+                    }
+                }
+            }
             if (_showBuiltIn)
             {
-                allScripts.AddRange(_builtInScripts);
+                // Add built-in scripts that aren't already in module or HAK list
+                foreach (var builtIn in _builtInScripts)
+                {
+                    if (!allScripts.Any(s => s.Name.Equals(builtIn.Name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        allScripts.Add(builtIn);
+                    }
+                }
             }
 
             var scriptsToDisplay = allScripts;
@@ -294,9 +534,9 @@ namespace DialogEditor.Views
                     .ToList();
             }
 
-            // Sort: module scripts first, then built-in, both alphabetical
+            // Sort: module scripts first, then HAK, then built-in, all alphabetical
             scriptsToDisplay = scriptsToDisplay
-                .OrderBy(s => s.IsBuiltIn)
+                .OrderBy(s => s.IsBuiltIn ? 2 : s.IsFromHak ? 1 : 0)
                 .ThenBy(s => s.Name)
                 .ToList();
 
@@ -306,7 +546,8 @@ namespace DialogEditor.Views
             }
 
             // Update count label
-            var moduleCount = scriptsToDisplay.Count(s => !s.IsBuiltIn);
+            var moduleCount = scriptsToDisplay.Count(s => !s.IsBuiltIn && !s.IsFromHak);
+            var hakCount = scriptsToDisplay.Count(s => s.IsFromHak);
             var builtInCount = scriptsToDisplay.Count(s => s.IsBuiltIn);
 
             if (scriptsToDisplay.Count == 0)
@@ -328,6 +569,10 @@ namespace DialogEditor.Views
             else
             {
                 var countText = $"{moduleCount} module";
+                if (hakCount > 0)
+                {
+                    countText += $" + {hakCount} 📦 HAK";
+                }
                 if (builtInCount > 0)
                 {
                     countText += $" + {builtInCount} 🎮 built-in";
@@ -348,10 +593,11 @@ namespace DialogEditor.Views
             {
                 _selectedScript = scriptEntry.Name;
                 _selectedIsBuiltIn = scriptEntry.IsBuiltIn;
+                _selectedScriptEntry = scriptEntry;
                 SelectedScriptLabel.Text = scriptEntry.DisplayName;
 
-                // Disable "Open in Editor" for built-in scripts (they're in BIF, not files)
-                OpenInEditorButton.IsEnabled = !scriptEntry.IsBuiltIn;
+                // Disable "Open in Editor" for built-in scripts and HAK scripts (they're in archives, not files)
+                OpenInEditorButton.IsEnabled = !scriptEntry.IsBuiltIn && !scriptEntry.IsFromHak;
 
                 // Load script preview
                 try
@@ -373,27 +619,41 @@ namespace DialogEditor.Views
                                         "// This script can still be referenced in dialogs.\n" +
                                         "// For documentation, see NWN Lexicon or community wikis.";
                     }
+                    else if (scriptEntry.IsFromHak)
+                    {
+                        // HAK scripts - extract from archive for preview
+                        scriptContent = await LoadScriptContentFromHakAsync(scriptEntry);
+                    }
                     else
                     {
-                        // If override path is set, load from there first
-                        if (!string.IsNullOrEmpty(_overridePath))
+                        // Module/filesystem scripts
+                        // First try using stored FilePath if available
+                        if (!string.IsNullOrEmpty(scriptEntry.FilePath) && File.Exists(scriptEntry.FilePath))
                         {
-                            scriptContent = await LoadScriptContentFromPathAsync(scriptEntry.Name, _overridePath);
+                            scriptContent = await File.ReadAllTextAsync(scriptEntry.FilePath);
                         }
                         else
                         {
-                            // Try dialog directory
-                            var dialogDir = GetDialogDirectory();
-                            if (!string.IsNullOrEmpty(dialogDir))
+                            // If override path is set, load from there first
+                            if (!string.IsNullOrEmpty(_overridePath))
                             {
-                                scriptContent = await LoadScriptContentFromPathAsync(scriptEntry.Name, dialogDir);
+                                scriptContent = await LoadScriptContentFromPathAsync(scriptEntry.Name, _overridePath);
                             }
-                        }
+                            else
+                            {
+                                // Try dialog directory
+                                var dialogDir = GetDialogDirectory();
+                                if (!string.IsNullOrEmpty(dialogDir))
+                                {
+                                    scriptContent = await LoadScriptContentFromPathAsync(scriptEntry.Name, dialogDir);
+                                }
+                            }
 
-                        // Fall back to service if still not found
-                        if (string.IsNullOrEmpty(scriptContent))
-                        {
-                            scriptContent = await _scriptService.GetScriptContentAsync(scriptEntry.Name);
+                            // Fall back to service if still not found
+                            if (string.IsNullOrEmpty(scriptContent))
+                            {
+                                scriptContent = await _scriptService.GetScriptContentAsync(scriptEntry.Name);
+                            }
                         }
                     }
 
@@ -419,6 +679,7 @@ namespace DialogEditor.Views
             {
                 _selectedScript = null;
                 _selectedIsBuiltIn = false;
+                _selectedScriptEntry = null;
                 SelectedScriptLabel.Text = "(none)";
                 PreviewHeaderLabel.Text = "Script Preview";
                 PreviewTextBox.Text = "";
@@ -452,6 +713,48 @@ namespace DialogEditor.Views
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Load script content from a HAK file by extracting the resource.
+        /// </summary>
+        private async Task<string?> LoadScriptContentFromHakAsync(ScriptEntry scriptEntry)
+        {
+            if (!scriptEntry.IsFromHak || scriptEntry.HakPath == null || scriptEntry.ErfEntry == null)
+                return null;
+
+            try
+            {
+                // Extract script data from HAK on background thread
+                var scriptData = await Task.Run(() =>
+                    ErfReader.ExtractResource(scriptEntry.HakPath, scriptEntry.ErfEntry));
+
+                if (scriptData == null || scriptData.Length == 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Failed to extract script '{scriptEntry.Name}' from HAK: empty data");
+                    return null;
+                }
+
+                // NWScript source files are plain text
+                var content = System.Text.Encoding.UTF8.GetString(scriptData);
+
+                // Add source header for context
+                var header = $"// Script from HAK: {Path.GetFileName(scriptEntry.HakPath)}\n" +
+                            $"// ResRef: {scriptEntry.Name}\n" +
+                            "//\n";
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Extracted script '{scriptEntry.Name}' from HAK ({scriptData.Length} bytes)");
+
+                return header + content;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Error extracting script from HAK: {ex.Message}");
+                return null;
+            }
         }
 
         private void OnScriptDoubleClicked(object? sender, RoutedEventArgs e)

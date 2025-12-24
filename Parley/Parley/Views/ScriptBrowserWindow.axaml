@@ -67,10 +67,11 @@
             </StackPanel>
         </Grid>
 
-        <!-- Search Box and Built-in Toggle -->
+        <!-- Search Box and Source Toggles -->
         <Grid Grid.Row="1" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
@@ -81,6 +82,16 @@
                      TextChanged="OnSearchTextChanged"/>
 
             <CheckBox Grid.Column="1"
+                      x:Name="ShowHakCheckBox"
+                      Content="📦 Show HAK"
+                      ToolTip.Tip="Show scripts from HAK files in module and user hak folder"
+                      VerticalAlignment="Center"
+                      IsChecked="False"
+                      Margin="0,0,10,0"
+                      Checked="OnShowHakChanged"
+                      Unchecked="OnShowHakChanged"/>
+
+            <CheckBox Grid.Column="2"
                       x:Name="ShowBuiltInCheckBox"
                       Content="🎮 Show built-in"
                       ToolTip.Tip="Show built-in game scripts from base game (requires game path in Settings)"

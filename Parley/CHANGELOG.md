@@ -18,7 +18,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Enable script discovery in HAK/ERF archives using Radoub.Formats ERF parsing.
 
 #### Added
-- TBD
+- Script Browser: "📦 Show HAK" checkbox to include scripts from HAK files
+- Script Browser: Scans dialog directory, override path, and NWN user hak folder for HAK files
+- Script Browser: Displays HAK scripts with 📦 icon prefix and source attribution (e.g., "HAK: customscripts.hak")
+- Script Browser: Preview extraction for HAK scripts - view source code directly from archives
+- Script Browser: HAK metadata caching for fast repeated access (persists across window instances)
+- Script Browser: Priority ordering matches NWN resource system (Module > HAK > Built-in)
+- ScriptEntry: Added HakPath, ErfEntry, FilePath properties for source tracking
 
 ---
 
