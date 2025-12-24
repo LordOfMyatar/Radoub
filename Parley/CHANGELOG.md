@@ -10,6 +10,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.85-alpha] - 2025-12-23
+**Branch**: `parley/sprint/dictionary-integration` | **PR**: #509 | **Closes**: #505
+
+### Sprint: Dictionary Integration (Epic #43)
+
+Add spell-checking to Parley's Text and Comments fields.
+
+#### Added
+- Spell-checking for dialog Text field
+- Spell-checking for Comments field
+- Hunspell (en_US) + custom D&D/NWN dictionary support
+- Bundled NWN/D&D terminology dictionary (~450 terms: spells, creatures, deities, etc.)
+- Session ignore for unknown words
+- Spelling suggestions on misspelled words
+- Custom dictionary persistence at `~/Radoub/Dictionaries/custom.dic` (shared across Radoub tools)
+- "Add to Dictionary" saves permanently across sessions
+- Spell-check enable/disable toggle in Settings > UI Settings
+
+#### Fixed
+- Spell-check toggle now takes effect immediately (no restart required)
+- Scripts tab parameter fields no longer stretch to full width
+
+---
+
 ## [0.1.84-alpha] - 2025-12-22
 **Branch**: `parley/feat/linux-tts-enhancement` | **PR**: #492
 

@@ -38,6 +38,7 @@
     "edit_mode_unsaved": "#FF6600",
     "edit_mode_saved": "#00FF00",
     "auto_trim_border": "#FF00FF",
+    "spelling_error": "#00FF00",
     "speaker_1": "#FF00FF",
     "speaker_2": "#00FFFF",
     "speaker_3": "#FFFF00",

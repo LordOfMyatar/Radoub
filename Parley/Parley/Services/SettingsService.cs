@@ -143,6 +143,9 @@ namespace DialogEditor.Services
         private bool _soundBrowserIncludeHakFiles = false;
         private bool _soundBrowserIncludeBifFiles = false;
 
+        // Spell Check settings (#505)
+        private bool _spellCheckEnabled = true; // Default: ON
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private SettingsService()
@@ -946,6 +949,20 @@ namespace DialogEditor.Services
             set { if (SetProperty(ref _soundBrowserIncludeBifFiles, value)) SaveSettings(); }
         }
 
+        // Spell Check Settings (#505)
+        public bool SpellCheckEnabled
+        {
+            get => _spellCheckEnabled;
+            set
+            {
+                if (SetProperty(ref _spellCheckEnabled, value))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Spell check {(value ? "enabled" : "disabled")}");
+                }
+            }
+        }
+
         private void LoadSettings()
         {
             try
@@ -1070,6 +1087,9 @@ namespace DialogEditor.Services
                         _soundBrowserIncludeHakFiles = settings.SoundBrowserIncludeHakFiles;
                         _soundBrowserIncludeBifFiles = settings.SoundBrowserIncludeBifFiles;
 
+                        // Load Spell Check settings (#505)
+                        _spellCheckEnabled = settings.SpellCheckEnabled;
+
                         // Load Radoub tool integration settings (#416)
                         _manifestPath = ExpandPath(settings.ManifestPath ?? "");
 
@@ -1149,6 +1169,8 @@ namespace DialogEditor.Services
                     SoundBrowserIncludeGameResources = SoundBrowserIncludeGameResources,
                     SoundBrowserIncludeHakFiles = SoundBrowserIncludeHakFiles,
                     SoundBrowserIncludeBifFiles = SoundBrowserIncludeBifFiles,
+                    // Spell Check settings (#505)
+                    SpellCheckEnabled = SpellCheckEnabled,
                     // Radoub tool integration (#416)
                     ManifestPath = ContractPath(ManifestPath)
                 };
@@ -1359,6 +1381,9 @@ namespace DialogEditor.Services
             public bool SoundBrowserIncludeGameResources { get; set; } = false;
             public bool SoundBrowserIncludeHakFiles { get; set; } = false;
             public bool SoundBrowserIncludeBifFiles { get; set; } = false;
+
+            // Spell Check settings (#505)
+            public bool SpellCheckEnabled { get; set; } = true; // Default: ON
 
             // Conversation Simulator settings (#484)
             public bool SimulatorShowWarnings { get; set; } = true; // Show unreachable sibling warnings

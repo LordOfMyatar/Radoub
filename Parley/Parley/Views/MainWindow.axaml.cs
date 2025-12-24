@@ -365,11 +365,12 @@ namespace DialogEditor.Views
         /// </summary>
         private void OnDialogChanged(object? sender, DialogChangeEventArgs e)
         {
-            // Only update flowchart for structure changes (not selection changes)
+            // Update flowchart for structure changes and node modifications
             if (e.ChangeType == DialogChangeType.DialogRefreshed ||
                 e.ChangeType == DialogChangeType.NodeAdded ||
                 e.ChangeType == DialogChangeType.NodeDeleted ||
-                e.ChangeType == DialogChangeType.NodeMoved)
+                e.ChangeType == DialogChangeType.NodeMoved ||
+                e.ChangeType == DialogChangeType.NodeModified)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
                     $"OnDialogChanged: {e.ChangeType} - updating flowchart panels");
@@ -1491,6 +1492,9 @@ namespace DialogEditor.Views
             var currentValue = GetFieldValue(control);
             bool valueChanged = currentValue != _originalFieldValue;
 
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"📝 OnFieldLostFocus: {control.Name}, original='{_originalFieldValue?.Substring(0, Math.Min(30, _originalFieldValue?.Length ?? 0))}', current='{currentValue?.Substring(0, Math.Min(30, currentValue?.Length ?? 0))}', changed={valueChanged}");
+
             // Clear the edit session tracker (Issue #74)
             _currentEditFieldName = null;
             _originalFieldValue = null;
@@ -1499,6 +1503,7 @@ namespace DialogEditor.Views
             // Auto-save the specific property only if it changed
             if (valueChanged)
             {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"📝 OnFieldLostFocus: Calling AutoSaveProperty for {control.Name}");
                 AutoSaveProperty(control.Name ?? "");
             }
         }
@@ -1692,14 +1697,18 @@ namespace DialogEditor.Views
 
         private void RefreshTreeDisplayPreserveState()
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "🔄 RefreshTreeDisplayPreserveState: Starting tree refresh");
+
             // Phase 0 Fix: Save expansion state AND selection before refresh
             var expandedNodes = new HashSet<TreeViewSafeNode>();
             SaveExpansionState(_viewModel.DialogNodes, expandedNodes);
 
             var selectedNodeText = _selectedNode?.OriginalNode?.DisplayText;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔄 RefreshTreeDisplayPreserveState: Selected node text = '{selectedNodeText?.Substring(0, Math.Min(30, selectedNodeText?.Length ?? 0))}...'");
 
             // Force refresh by re-populating
             _viewModel.PopulateDialogNodes();
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "🔄 RefreshTreeDisplayPreserveState: PopulateDialogNodes completed");
 
             // Restore expansion state and selection after UI updates
             global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
