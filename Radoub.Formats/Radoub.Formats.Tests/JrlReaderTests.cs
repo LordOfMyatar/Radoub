@@ -223,7 +223,14 @@ public class JrlReaderTests
     public void Read_XP2Chapter2ModuleJrl_DumpsContents()
     {
         // Manual test to analyze real JRL file structure
-        var filePath = @"C:\Users\Sheri\Documents\Neverwinter Nights\modules\XP2_Chapter2\module.jrl";
+        // Use NWN_MODULES environment variable or skip
+        var nwnModules = Environment.GetEnvironmentVariable("NWN_MODULES");
+        if (string.IsNullOrEmpty(nwnModules))
+        {
+            Assert.Fail("Set NWN_MODULES environment variable to your modules folder");
+            return;
+        }
+        var filePath = Path.Combine(nwnModules, "XP2_Chapter2", "module.jrl");
 
         if (!File.Exists(filePath))
         {
