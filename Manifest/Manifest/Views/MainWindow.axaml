@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:Manifest.Controls"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Manifest.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -107,7 +108,7 @@
                                 <!-- Name first (most important) -->
                                 <StackPanel Orientation="Horizontal" Spacing="10">
                                     <TextBlock Text="Name:" Width="80" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="CategoryNameBox" Width="250"/>
+                                    <controls:SpellCheckTextBox x:Name="CategoryNameBox" Width="250"/>
                                 </StackPanel>
 
                                 <!-- Tag second -->
@@ -149,7 +150,7 @@
 
                                 <StackPanel Spacing="5">
                                     <TextBlock Text="Comment:"/>
-                                    <TextBox x:Name="CategoryCommentBox" Height="60" AcceptsReturn="True" TextWrapping="Wrap"/>
+                                    <controls:SpellCheckTextBox x:Name="CategoryCommentBox" Height="60" AcceptsReturn="True" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </StackPanel>
 
@@ -160,7 +161,7 @@
                                 <!-- Text first - largest and most important -->
                                 <StackPanel Spacing="5">
                                     <TextBlock Text="Text:"/>
-                                    <TextBox x:Name="EntryTextBox" Height="200" AcceptsReturn="True" TextWrapping="Wrap"
+                                    <controls:SpellCheckTextBox x:Name="EntryTextBox" Height="200" AcceptsReturn="True" TextWrapping="Wrap"
                                              ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                                 </StackPanel>
 

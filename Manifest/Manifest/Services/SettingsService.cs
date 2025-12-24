@@ -56,6 +56,9 @@ namespace Manifest.Services
         private int _logRetentionSessions = 3;
         private LogLevel _logLevel = LogLevel.INFO;
 
+        // Spell-check settings
+        private bool _spellCheckEnabled = true;
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private SettingsService()
@@ -147,6 +150,20 @@ namespace Manifest.Services
             }
         }
 
+        // Spell-check Settings
+        public bool SpellCheckEnabled
+        {
+            get => _spellCheckEnabled;
+            set
+            {
+                if (SetProperty(ref _spellCheckEnabled, value))
+                {
+                    SaveSettings();
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Spell-check {(value ? "enabled" : "disabled")}");
+                }
+            }
+        }
+
         private void LoadSettings()
         {
             try
@@ -184,6 +201,9 @@ namespace Manifest.Services
                         _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
                         _logLevel = settings.LogLevel;
 
+                        // Load spell-check settings
+                        _spellCheckEnabled = settings.SpellCheckEnabled;
+
                         UnifiedLogger.LogApplication(LogLevel.INFO, "Loaded settings from file");
                     }
                 }
@@ -214,7 +234,8 @@ namespace Manifest.Services
                     FontFamily = FontFamily,
                     CurrentThemeId = CurrentThemeId,
                     LogRetentionSessions = LogRetentionSessions,
-                    LogLevel = CurrentLogLevel
+                    LogLevel = CurrentLogLevel,
+                    SpellCheckEnabled = SpellCheckEnabled
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -264,6 +285,9 @@ namespace Manifest.Services
             // Logging settings
             public int LogRetentionSessions { get; set; } = 3;
             public LogLevel LogLevel { get; set; } = LogLevel.INFO;
+
+            // Spell-check settings
+            public bool SpellCheckEnabled { get; set; } = true;
         }
     }
 }

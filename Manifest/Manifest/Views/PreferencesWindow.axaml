@@ -121,6 +121,27 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Spell Check Settings -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Spell Check" FontWeight="Bold"/>
+                        <TextBlock Text="Configure spell-checking for journal text. Custom dictionary is shared with other Radoub tools."
+                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                        <!-- Enable/Disable -->
+                        <CheckBox x:Name="SpellCheckEnabledCheckBox"
+                                 Content="Enable spell checking"
+                                 Checked="OnSpellCheckEnabledChanged"
+                                 Unchecked="OnSpellCheckEnabledChanged"/>
+
+                        <!-- Dictionary Info -->
+                        <TextBlock x:Name="DictionaryInfoText"
+                                  Text="Custom dictionary: 0 words"
+                                  FontSize="11"
+                                  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Logging Settings -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
                     <StackPanel Spacing="8">
