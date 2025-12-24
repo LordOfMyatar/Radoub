@@ -69,6 +69,25 @@ namespace DialogEditor.Views
 
             // Subscribe to collapse/expand events from TreeView (#451)
             DialogChangeEventBus.Instance.DialogChanged += OnDialogChanged;
+
+            // Re-fit when viewport size changes (if in fit mode)
+            FlowchartScrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
+        }
+
+        private void OnScrollViewerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            // Re-fit when bounds change while in fit mode
+            if (_isFitMode && e.Property == BoundsProperty)
+            {
+                // Debounce to avoid excessive recalculations during resize
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    if (_isFitMode && _viewModel.HasContent)
+                    {
+                        FitToWindow();
+                    }
+                }, Avalonia.Threading.DispatcherPriority.Background);
+            }
         }
 
         private void OnDialogChanged(object? sender, DialogChangeEventArgs e)
@@ -208,40 +227,110 @@ namespace DialogEditor.Views
         {
             _currentZoom = Math.Clamp(zoom, MinZoom, MaxZoom);
 
+            // Exit fit mode when using normal zoom controls
+            if (_isFitMode)
+            {
+                FitContainer.Margin = new Thickness(0);
+                ZoomContainer.Margin = new Thickness(0);
+                FlowchartGraphPanel.Margin = new Thickness(0);
+                // Reset to Stretch so ScrollViewer can scroll when content exceeds viewport
+                FitContainer.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+                FitContainer.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch;
+                _isFitMode = false;
+            }
+
             // Apply scale transform via LayoutTransformControl (updates scrollbar extents)
             ZoomContainer.LayoutTransform = new ScaleTransform(_currentZoom, _currentZoom);
 
             // Update zoom level display
             ZoomLevelText.Text = $"{(int)(_currentZoom * 100)}%";
 
-            UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart zoom: {_currentZoom:P0}");
+            // Log extent vs viewport for debugging scrollbar/panning behavior
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                var maxScrollX = FlowchartScrollViewer.Extent.Width - FlowchartScrollViewer.Viewport.Width;
+                var maxScrollY = FlowchartScrollViewer.Extent.Height - FlowchartScrollViewer.Viewport.Height;
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart zoom: {_currentZoom:P0}, extent=({FlowchartScrollViewer.Extent.Width:F0}x{FlowchartScrollViewer.Extent.Height:F0}), viewport=({FlowchartScrollViewer.Viewport.Width:F0}x{FlowchartScrollViewer.Viewport.Height:F0}), maxScroll=({maxScrollX:F0},{maxScrollY:F0})");
+            }, Avalonia.Threading.DispatcherPriority.Background);
         }
+
+        // Track if we're in "fit mode" (with centered alignment)
+        private bool _isFitMode;
 
         private void FitToWindow()
         {
             // Reset to 1.0 first to get accurate unscaled bounds
             ZoomContainer.LayoutTransform = new ScaleTransform(1.0, 1.0);
-
-            // Force layout update to get accurate measurements
+            ZoomContainer.Margin = new Thickness(0);
             ZoomContainer.UpdateLayout();
 
-            // Get the actual size of the graph panel content (unscaled)
-            var graphBounds = FlowchartGraphPanel.Bounds;
             var scrollViewerBounds = FlowchartScrollViewer.Bounds;
-
-            if (graphBounds.Width <= 0 || graphBounds.Height <= 0 ||
-                scrollViewerBounds.Width <= 0 || scrollViewerBounds.Height <= 0)
+            if (scrollViewerBounds.Width <= 0 || scrollViewerBounds.Height <= 0)
             {
                 SetZoom(1.0);
                 return;
             }
 
-            // Calculate zoom to fit both width and height
-            var scaleX = scrollViewerBounds.Width / graphBounds.Width;
-            var scaleY = scrollViewerBounds.Height / graphBounds.Height;
-            var fitZoom = Math.Min(scaleX, scaleY) * 0.9; // 90% to leave some margin
+            // Find the actual content bounds by scanning visual children
+            var contentBounds = GetGraphContentBounds();
+            if (contentBounds == null)
+            {
+                SetZoom(1.0);
+                return;
+            }
 
-            SetZoom(fitZoom);
+            var (_, _, contentWidth, contentHeight) = contentBounds.Value;
+
+            // Calculate zoom based on actual content size (not panel size)
+            var scaleX = scrollViewerBounds.Width / contentWidth;
+            var scaleY = scrollViewerBounds.Height / contentHeight;
+            var fitZoom = Math.Min(scaleX, scaleY) * 0.9; // 90% to leave margin
+
+            _isFitMode = true;
+
+            // Apply zoom
+            _currentZoom = Math.Clamp(fitZoom, MinZoom, MaxZoom);
+            ZoomContainer.LayoutTransform = new ScaleTransform(_currentZoom, _currentZoom);
+            ZoomLevelText.Text = $"{(int)(_currentZoom * 100)}%";
+
+            // Set Center alignment for fit mode centering
+            FitContainer.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center;
+            FitContainer.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+
+            // Reset margins and scroll
+            FlowchartGraphPanel.Margin = new Thickness(0);
+            ZoomContainer.Margin = new Thickness(0);
+            FitContainer.Margin = new Thickness(0);
+            FlowchartScrollViewer.Offset = new Vector(0, 0);
+
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"FitToWindow: zoom={_currentZoom:P0}, content=({contentWidth:F0}x{contentHeight:F0})");
+        }
+
+        /// <summary>
+        /// Gets the actual bounding box of graph content (nodes and edges), excluding dead space.
+        /// Returns null if no content found.
+        /// </summary>
+        private (double minX, double minY, double width, double height)? GetGraphContentBounds()
+        {
+            double minX = double.MaxValue, minY = double.MaxValue;
+            double maxX = double.MinValue, maxY = double.MinValue;
+
+            foreach (var child in FlowchartGraphPanel.GetVisualChildren())
+            {
+                if (child is Visual visual && visual.Bounds.Width > 0 && visual.Bounds.Height > 0)
+                {
+                    var bounds = visual.Bounds;
+                    minX = Math.Min(minX, bounds.X);
+                    minY = Math.Min(minY, bounds.Y);
+                    maxX = Math.Max(maxX, bounds.Right);
+                    maxY = Math.Max(maxY, bounds.Bottom);
+                }
+            }
+
+            if (minX == double.MaxValue)
+                return null;
+
+            return (minX, minY, maxX - minX, maxY - minY);
         }
 
         #endregion
@@ -256,11 +345,18 @@ namespace DialogEditor.Views
             bool shouldPan = point.Properties.IsMiddleButtonPressed ||
                             (point.Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Shift));
 
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"PointerPressed: left={point.Properties.IsLeftButtonPressed}, shift={e.KeyModifiers.HasFlag(KeyModifiers.Shift)}, shouldPan={shouldPan}");
+
             if (shouldPan)
             {
                 _isPanning = true;
                 _panStartPoint = point.Position;
                 _panStartOffset = new Vector(FlowchartScrollViewer.Offset.X, FlowchartScrollViewer.Offset.Y);
+
+                var maxScrollX = FlowchartScrollViewer.Extent.Width - FlowchartScrollViewer.Viewport.Width;
+                var maxScrollY = FlowchartScrollViewer.Extent.Height - FlowchartScrollViewer.Viewport.Height;
+                var canPan = maxScrollX > 0 || maxScrollY > 0;
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Panning started: offset=({_panStartOffset.X:F0},{_panStartOffset.Y:F0}), extent=({FlowchartScrollViewer.Extent.Width:F0}x{FlowchartScrollViewer.Extent.Height:F0}), viewport=({FlowchartScrollViewer.Viewport.Width:F0}x{FlowchartScrollViewer.Viewport.Height:F0}), maxScroll=({maxScrollX:F0},{maxScrollY:F0}), canPan={canPan}");
 
                 // Capture the pointer for reliable tracking
                 e.Pointer.Capture(FlowchartScrollViewer);
@@ -278,11 +374,14 @@ namespace DialogEditor.Views
             var currentPoint = e.GetPosition(FlowchartScrollViewer);
             var delta = _panStartPoint - currentPoint;
 
-            // Update scroll offset (inverted for natural panning feel)
-            FlowchartScrollViewer.Offset = new Vector(
-                _panStartOffset.X + delta.X,
-                _panStartOffset.Y + delta.Y
-            );
+            // Calculate max scroll offsets
+            var maxScrollX = Math.Max(0, FlowchartScrollViewer.Extent.Width - FlowchartScrollViewer.Viewport.Width);
+            var maxScrollY = Math.Max(0, FlowchartScrollViewer.Extent.Height - FlowchartScrollViewer.Viewport.Height);
+
+            // Update scroll offset (clamped to valid range)
+            var newOffsetX = Math.Clamp(_panStartOffset.X + delta.X, 0, maxScrollX);
+            var newOffsetY = Math.Clamp(_panStartOffset.Y + delta.Y, 0, maxScrollY);
+            FlowchartScrollViewer.Offset = new Vector(newOffsetX, newOffsetY);
 
             e.Handled = true;
         }
@@ -305,6 +404,30 @@ namespace DialogEditor.Views
 
         private void OnGraphPanelPointerPressed(object? sender, PointerPressedEventArgs e)
         {
+            var point = e.GetCurrentPoint(FlowchartGraphPanel);
+
+            // Check for panning first - Shift+left or middle button starts pan mode
+            bool shouldPan = point.Properties.IsMiddleButtonPressed ||
+                            (point.Properties.IsLeftButtonPressed && e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+
+            if (shouldPan)
+            {
+                // Delegate to ScrollViewer panning
+                _isPanning = true;
+                _panStartPoint = e.GetPosition(FlowchartScrollViewer);
+                _panStartOffset = new Vector(FlowchartScrollViewer.Offset.X, FlowchartScrollViewer.Offset.Y);
+
+                var maxScrollX = FlowchartScrollViewer.Extent.Width - FlowchartScrollViewer.Viewport.Width;
+                var maxScrollY = FlowchartScrollViewer.Extent.Height - FlowchartScrollViewer.Viewport.Height;
+                var canPan = maxScrollX > 0 || maxScrollY > 0;
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Panning started (from GraphPanel): offset=({_panStartOffset.X:F0},{_panStartOffset.Y:F0}), extent=({FlowchartScrollViewer.Extent.Width:F0}x{FlowchartScrollViewer.Extent.Height:F0}), viewport=({FlowchartScrollViewer.Viewport.Width:F0}x{FlowchartScrollViewer.Viewport.Height:F0}), maxScroll=({maxScrollX:F0},{maxScrollY:F0}), canPan={canPan}");
+
+                e.Pointer.Capture(FlowchartScrollViewer);
+                e.Handled = true;
+                FlowchartScrollViewer.Cursor = new Avalonia.Input.Cursor(StandardCursorType.SizeAll);
+                return;
+            }
+
             // Find if we clicked on a FlowchartNode
             var source = e.Source as Visual;
             if (source == null) return;

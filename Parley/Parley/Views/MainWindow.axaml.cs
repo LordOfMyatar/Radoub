@@ -185,6 +185,7 @@ namespace DialogEditor.Views
                 clearPropertiesPanel: () => _propertyPopulator.ClearAllFields(),
                 populateRecentFilesMenu: () => _fileMenuController?.PopulateRecentFilesMenu(),
                 updateEmbeddedFlowchartAfterLoad: () => _flowchartManager.UpdateAfterLoad(),
+                clearFlowcharts: () => _flowchartManager.ClearAll(), // #378: Clear flowcharts on file close
                 getParameterUIManager: () => _parameterUIManager,
                 showSaveAsDialogAsync: ShowSaveAsDialogAsync);
 
