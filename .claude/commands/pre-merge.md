@@ -76,14 +76,37 @@ dotnet build Parley/Parley
 dotnet build Radoub.Formats/Radoub.Formats
 ```
 
-**Test Execution** (based on Step 3 analysis):
-```bash
-# If UI changes detected
-dotnet test Radoub.UITests
+**Run Full Test Suite**:
 
-# If format library changes detected
-dotnet test Radoub.Formats/Radoub.Formats.Tests
+**⚠️ IMPORTANT: UI TESTS REQUIRE HANDS-OFF KEYBOARD ⚠️**
+
+Before running tests, display this warning to the user:
+
+> **🚨 HANDS OFF KEYBOARD AND MOUSE 🚨**
+>
+> UI tests (FlaUI) will be launching applications and simulating input.
+> **Do NOT touch the keyboard or mouse** until tests complete.
+> Any input during UI tests may cause failures.
+>
+> Press Enter when ready, or Ctrl+C to skip tests.
+
+**Windows** (full suite including UI tests):
+```powershell
+# Run from repository root
+.\Radoub.UITests\run-tests.ps1
 ```
+
+**Linux/macOS** (unit tests only - FlaUI is Windows-only):
+```bash
+# Run from repository root
+./Radoub.UITests/run-tests.sh
+```
+
+**Capture Test Results** for PR update:
+- Total tests run
+- Passed count
+- Failed count
+- Any failed test names
 
 ### Step 5: Code Review
 
@@ -188,13 +211,18 @@ Output format:
 
 ---
 
-### Testing Required
+### Test Results
 
-| Test Suite | Needed | Status |
-|------------|--------|--------|
-| Radoub.UITests | [Yes/No] | [✅ Passed / ❌ Failed / ⏳ Not Run] |
-| Radoub.Formats.Tests | [Yes/No] | [✅ Passed / ❌ Failed / ⏳ Not Run] |
-| Manual Testing | [Yes/No] | [ ] Verify: [specific items] |
+| Project | Status | Passed | Failed |
+|---------|--------|--------|--------|
+| Radoub.Formats.Tests | ✅/❌ | N | N |
+| Radoub.Dictionary.Tests | ✅/❌ | N | N |
+| Parley.Tests | ✅/❌ | N | N |
+| Manifest.Tests | ✅/❌ | N | N |
+| Radoub.UITests | ✅/❌/⏭️ | N | N |
+
+**Total**: Passed N, Failed N
+**Manual Testing**: [ ] Verify: [specific items if needed]
 
 ---
 
@@ -269,8 +297,20 @@ gh pr edit [number] --body "$(cat <<'EOF'
 [Categorized file list]
 
 ## Test Results
-- Unit Tests: [✅/❌] [count] passed
-- UI Tests: [✅/❌/⏳] [status]
+
+**Privacy Scan**: ✅ No hardcoded paths found
+
+**Test Suite**: [Windows / Linux/macOS]
+
+| Project | Status | Passed | Failed |
+|---------|--------|--------|--------|
+| Radoub.Formats.Tests | ✅/❌ | N | N |
+| Radoub.Dictionary.Tests | ✅/❌ | N | N |
+| Parley.Tests | ✅/❌ | N | N |
+| Manifest.Tests | ✅/❌ | N | N |
+| Radoub.UITests | ✅/❌/⏭️ | N | N |
+
+**Total**: Passed N, Failed N
 
 ## Checklist
 - [x] Build passes
@@ -283,6 +323,8 @@ gh pr edit [number] --body "$(cat <<'EOF'
 EOF
 )"
 ```
+
+**Note**: Radoub.UITests shows ⏭️ on Linux/macOS since FlaUI is Windows-only.
 
 **Also check if the related Epic issue needs updating**:
 - If this PR closes sprint work, update the Epic with completion status

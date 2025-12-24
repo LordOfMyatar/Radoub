@@ -10,6 +10,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.86-alpha] - 2025-12-23
+**Branch**: `parley/sprint/script-browser-hak` | **PR**: #518 | **Closes**: #516
+
+### Sprint: Script Browser HAK Support (Epic #364)
+
+Enable script discovery in HAK/ERF archives using Radoub.Formats ERF parsing.
+
+#### Added
+- Script Browser: "📦 Show HAK" checkbox to include scripts from HAK files
+- Script Browser: Scans dialog directory, override path, and NWN user hak folder for HAK files
+- Script Browser: Displays HAK scripts with 📦 icon prefix and source attribution (e.g., "HAK: customscripts.hak")
+- Script Browser: Preview extraction for HAK scripts - view source code directly from archives
+- Script Browser: Preview extraction for built-in scripts - lists .nss source files from game BIFs
+- Script Browser: HAK metadata caching for fast repeated access (persists across window instances)
+- Script Browser: Priority ordering matches NWN resource system (Module > HAK > Built-in)
+- ScriptEntry: Added HakPath, ErfEntry, FilePath properties for source tracking
+- UI Tests: Settings isolation prevents test runs from modifying user preferences
+- UI Tests: Pre-seed SideBySide flowchart layout for stable automated testing
+
+---
+
 ## [0.1.85-alpha] - 2025-12-23
 **Branch**: `parley/sprint/dictionary-integration` | **PR**: #509 | **Closes**: #505
 

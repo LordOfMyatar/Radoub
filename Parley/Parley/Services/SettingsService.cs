@@ -31,9 +31,18 @@ namespace DialogEditor.Services
             {
                 if (_settingsDirectory == null)
                 {
-                    var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                    // New location: ~/Radoub/Parley (matches Manifest's ~/Radoub/Manifest pattern)
-                    _settingsDirectory = Path.Combine(userProfile, "Radoub", "Parley");
+                    // Check for test override first (allows UI tests to use isolated settings)
+                    var testDir = Environment.GetEnvironmentVariable("PARLEY_SETTINGS_DIR");
+                    if (!string.IsNullOrEmpty(testDir))
+                    {
+                        _settingsDirectory = testDir;
+                    }
+                    else
+                    {
+                        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                        // New location: ~/Radoub/Parley (matches Manifest's ~/Radoub/Manifest pattern)
+                        _settingsDirectory = Path.Combine(userProfile, "Radoub", "Parley");
+                    }
                 }
                 return _settingsDirectory;
             }

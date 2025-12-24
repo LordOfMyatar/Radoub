@@ -8,12 +8,18 @@ namespace Radoub.UITests.Shared;
 /// <summary>
 /// Base class for all FlaUI-based UI tests.
 /// Handles application launch and teardown.
+/// Uses isolated settings directories to prevent tests from modifying user preferences.
 /// </summary>
 public abstract class FlaUITestBase : IDisposable
 {
     protected Application? App { get; private set; }
     protected UIA3Automation? Automation { get; private set; }
     protected Window? MainWindow { get; set; }
+
+    /// <summary>
+    /// Isolated settings directory for this test run. Cleaned up on dispose.
+    /// </summary>
+    private string? _isolatedSettingsDir;
 
     /// <summary>
     /// Path to the application executable. Override in derived classes.
@@ -33,6 +39,7 @@ public abstract class FlaUITestBase : IDisposable
     /// <summary>
     /// Launches the application and gets the main window.
     /// Call this at the start of tests.
+    /// Uses isolated settings directories to prevent tests from modifying user preferences.
     /// </summary>
     protected void StartApplication(string? arguments = null)
     {
@@ -48,12 +55,34 @@ public abstract class FlaUITestBase : IDisposable
 
         Automation = new UIA3Automation();
 
+        // Create isolated settings directory for this test run
+        _isolatedSettingsDir = Path.Combine(Path.GetTempPath(), "Radoub.UITests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_isolatedSettingsDir);
+
+        // Create Parley subdirectory for Parley-specific settings
+        var parleySettingsDir = Path.Combine(_isolatedSettingsDir, "Parley");
+        Directory.CreateDirectory(parleySettingsDir);
+
+        // Pre-seed Parley settings with test-friendly defaults
+        // SideBySide layout is most stable for automated testing (no separate windows)
+        var defaultSettings = @"{
+  ""FlowchartLayout"": ""SideBySide"",
+  ""FlowchartVisible"": false
+}";
+        File.WriteAllText(Path.Combine(parleySettingsDir, "ParleySettings.json"), defaultSettings);
+
         var processInfo = new ProcessStartInfo
         {
             FileName = ApplicationPath,
             Arguments = arguments ?? string.Empty,
             UseShellExecute = false
         };
+
+        // Set environment variables for isolated settings
+        // RADOUB_SETTINGS_DIR: ~/Radoub equivalent (RadoubSettings.json)
+        // PARLEY_SETTINGS_DIR: ~/Radoub/Parley equivalent (ParleySettings.json)
+        processInfo.Environment["RADOUB_SETTINGS_DIR"] = _isolatedSettingsDir;
+        processInfo.Environment["PARLEY_SETTINGS_DIR"] = parleySettingsDir;
 
         App = Application.Launch(processInfo);
 
@@ -229,6 +258,30 @@ public abstract class FlaUITestBase : IDisposable
     public void Dispose()
     {
         StopApplication();
+        CleanupIsolatedSettings();
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Cleans up the isolated settings directory created for this test run.
+    /// </summary>
+    private void CleanupIsolatedSettings()
+    {
+        if (string.IsNullOrEmpty(_isolatedSettingsDir))
+            return;
+
+        try
+        {
+            if (Directory.Exists(_isolatedSettingsDir))
+            {
+                Directory.Delete(_isolatedSettingsDir, recursive: true);
+            }
+        }
+        catch
+        {
+            // Best effort cleanup - ignore errors (file locks, etc.)
+        }
+
+        _isolatedSettingsDir = null;
     }
 }

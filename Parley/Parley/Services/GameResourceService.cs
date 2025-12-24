@@ -351,8 +351,8 @@ public class GameResourceService : IDisposable
         try
         {
             // Nss = 2009 (script source), Ncs = 2010 (compiled script)
-            // We want Ncs since built-in scripts are compiled
-            return resolver.ListResources(ResourceTypes.Ncs);
+            // NWN:EE includes source files in nwn_base_scripts.bif - use Nss for preview/extraction
+            return resolver.ListResources(ResourceTypes.Nss);
         }
         catch (Exception ex)
         {

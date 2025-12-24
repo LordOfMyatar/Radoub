@@ -33,12 +33,26 @@ public class RadoubSettings : INotifyPropertyChanged
         }
     }
 
+    private static string? _settingsDirectory;
     private static string SettingsDirectory
     {
         get
         {
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            return Path.Combine(userProfile, "Radoub");
+            if (_settingsDirectory == null)
+            {
+                // Check for test override first (allows UI tests to use isolated settings)
+                var testDir = Environment.GetEnvironmentVariable("RADOUB_SETTINGS_DIR");
+                if (!string.IsNullOrEmpty(testDir))
+                {
+                    _settingsDirectory = testDir;
+                }
+                else
+                {
+                    var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                    _settingsDirectory = Path.Combine(userProfile, "Radoub");
+                }
+            }
+            return _settingsDirectory;
         }
     }
 
