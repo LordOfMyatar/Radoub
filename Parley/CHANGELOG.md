@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.88-alpha] - 2025-12-24
-**Branch**: `parley/sprint/mainview-quick-wins` | **PR**: #TBD
+**Branch**: `parley/sprint/mainview-quick-wins` | **PR**: #527
 
 ### Sprint: MainView Quick Wins (Tech Debt)
 
