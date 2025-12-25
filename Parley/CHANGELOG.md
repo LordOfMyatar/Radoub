@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.90-alpha] - 2025-12-24
+**Branch**: `parley/refactor/dialog-factory` | **PR**: #TBD
+
+### Refactor: Extract DialogFactory Service (#524)
+
+Extract dialog creation from MainWindow.axaml.cs into dedicated DialogFactory service.
+
+---
+
 ## [0.1.89-alpha] - 2025-12-24
 **Branch**: `parley/refactor/mainwindow-constructor` | **PR**: #528
 
