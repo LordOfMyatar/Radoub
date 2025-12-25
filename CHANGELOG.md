@@ -19,10 +19,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Dictionary Language Selection (#515)
 
-#### Added
-- Additional language dictionary support (#508)
-  - Auto-detection of installed dictionaries from user's Dictionaries folder
-  - Platform-specific dictionary paths (Windows/Linux/macOS)
+#### Added (Radoub.Dictionary)
+- **DictionaryDiscovery** - Scan for available Hunspell and custom dictionaries (#508)
+  - Auto-detects bundled dictionaries (en_US, NWN)
+  - Scans `~/Radoub/Dictionaries/` for user-installed languages
+  - Hunspell dictionaries: `{lang_code}/{lang_code}.dic` + `.aff`
+  - Custom JSON dictionaries: `*.dic` or `*.json` files
+- **DictionarySettingsService** - Persist language preferences (#508)
+  - Settings stored at `~/Radoub/Dictionaries/settings.json`
+  - Events for hot-swap: `PrimaryLanguageChanged`, `CustomDictionaryToggled`
+- **DictionaryInfo** model with metadata (name, type, path, bundled flag)
 
 ---
 

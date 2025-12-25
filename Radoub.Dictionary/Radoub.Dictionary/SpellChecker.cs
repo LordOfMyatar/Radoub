@@ -52,7 +52,8 @@ public partial class SpellChecker : IDisposable
     /// Loads a bundled Hunspell dictionary from embedded resources.
     /// </summary>
     /// <param name="languageCode">Language code (e.g., "en_US", "es_ES").</param>
-    public async Task LoadBundledDictionaryAsync(string languageCode)
+    /// <param name="loadNwnDictionary">Whether to also load the NWN/D&D terminology dictionary.</param>
+    public async Task LoadBundledDictionaryAsync(string languageCode, bool loadNwnDictionary = false)
     {
         var assembly = Assembly.GetExecutingAssembly();
         var dicResourceName = $"Radoub.Dictionary.Dictionaries.{languageCode}.{languageCode}.dic";
@@ -65,8 +66,11 @@ public partial class SpellChecker : IDisposable
 
         _hunspell = await WordList.CreateFromStreamsAsync(dicStream, affStream);
 
-        // Also load the bundled NWN/D&D dictionary
-        await LoadBundledNwnDictionaryAsync();
+        // Optionally load the bundled NWN/D&D dictionary
+        if (loadNwnDictionary)
+        {
+            await LoadBundledNwnDictionaryAsync();
+        }
     }
 
     /// <summary>

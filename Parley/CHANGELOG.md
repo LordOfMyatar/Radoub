@@ -16,7 +16,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Dictionary Language Selection (#515)
 
 #### Added
-- Dictionary language selection in Settings (#510)
+- **Dictionaries tab** in Settings (#510)
+  - Primary language dropdown (select Hunspell dictionary)
+  - Custom dictionaries list with enable/disable toggles (like Plugins tab)
+  - NWN/D&D dictionary now toggleable (previously always-on)
+  - "Open Dictionaries Folder" and "Refresh" buttons
+- Hot-swap dictionary support - changes apply immediately without restart
+- `SpellCheckService.DictionariesReloaded` event for UI refresh
 
 ---
 
