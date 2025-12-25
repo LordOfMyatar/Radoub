@@ -142,6 +142,38 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Dictionaries Settings -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Dictionaries" FontWeight="Bold"/>
+                        <TextBlock Text="Select the language dictionary for spell checking. Add custom dictionaries to ~/Radoub/Dictionaries/."
+                                  TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                        <!-- Primary Language -->
+                        <TextBlock Text="Primary Language" FontWeight="Normal" Margin="0,5,0,0"/>
+                        <ComboBox x:Name="PrimaryLanguageComboBox"
+                                 SelectionChanged="OnPrimaryLanguageChanged"
+                                 HorizontalAlignment="Stretch"/>
+
+                        <!-- Custom Dictionaries -->
+                        <TextBlock Text="Custom Dictionaries" FontWeight="Normal" Margin="0,10,0,0"/>
+                        <ListBox x:Name="CustomDictionariesListBox"
+                                MinHeight="80"
+                                MaxHeight="200"
+                                Background="Transparent"/>
+
+                        <!-- Dictionary Actions -->
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                            <Button Content="📂 Open Folder"
+                                   ToolTip.Tip="Open dictionaries folder in file explorer"
+                                   Click="OnOpenDictionariesFolderClick"/>
+                            <Button Content="🔄 Refresh"
+                                   ToolTip.Tip="Rescan for new dictionaries"
+                                   Click="OnRefreshDictionariesClick"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
                 <!-- Logging Settings -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="10" CornerRadius="5">
                     <StackPanel Spacing="8">

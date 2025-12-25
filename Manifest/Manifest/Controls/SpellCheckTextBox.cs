@@ -64,6 +64,9 @@ namespace Manifest.Controls
 
             // Subscribe to settings changes to immediately clear/show underlines
             SettingsService.Instance.PropertyChanged += OnSettingsChanged;
+
+            // Subscribe to dictionary reloads for hot-swap support
+            SpellCheckService.Instance.DictionariesReloaded += OnDictionariesReloaded;
         }
 
         private void OnSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -73,6 +76,12 @@ namespace Manifest.Controls
                 // Immediately recheck spelling (will clear if disabled)
                 CheckSpelling();
             }
+        }
+
+        private void OnDictionariesReloaded(object? sender, EventArgs e)
+        {
+            // Re-check spelling with new dictionaries
+            Dispatcher.UIThread.Post(CheckSpelling);
         }
 
         protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -434,6 +443,10 @@ namespace Manifest.Controls
             base.OnUnloaded(e);
             _spellCheckTimer?.Stop();
             _spellCheckTimer = null;
+
+            // Unsubscribe from events
+            SettingsService.Instance.PropertyChanged -= OnSettingsChanged;
+            SpellCheckService.Instance.DictionariesReloaded -= OnDictionariesReloaded;
         }
     }
 

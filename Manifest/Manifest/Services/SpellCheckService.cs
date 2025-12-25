@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Media;
 using Radoub.Dictionary;
+using Radoub.Dictionary.Models;
 
 namespace Manifest.Services
 {
     /// <summary>
     /// Provides spell-checking functionality for Manifest journal editor.
     /// Wraps Radoub.Dictionary with theme-aware styling for error indicators.
+    /// Supports hot-swapping of dictionaries when settings change.
     /// </summary>
     /// <remarks>
     /// Custom dictionary is stored at ~/Radoub/Dictionaries/custom.dic (shared across all Radoub tools).
@@ -22,10 +24,17 @@ namespace Manifest.Services
         private static SpellCheckService? _instance;
         public static SpellCheckService Instance => _instance ??= new SpellCheckService();
 
-        private readonly DictionaryManager _dictionaryManager;
+        private DictionaryManager _dictionaryManager;
         private SpellChecker? _spellChecker;
+        private DictionaryDiscovery? _discovery;
         private bool _disposed;
         private bool _isInitialized;
+        private bool _isReloading;
+
+        /// <summary>
+        /// Tracks words added by the user (separate from loaded dictionaries).
+        /// </summary>
+        private readonly HashSet<string> _userAddedWords = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Path to the Radoub-wide custom dictionary file.
@@ -37,12 +46,17 @@ namespace Manifest.Services
         /// Whether spell-checking is available and loaded.
         /// Also checks if spell-check is enabled in settings.
         /// </summary>
-        public bool IsReady => _isInitialized && _spellChecker != null && SettingsService.Instance.SpellCheckEnabled;
+        public bool IsReady => _isInitialized && _spellChecker != null && SettingsService.Instance.SpellCheckEnabled && !_isReloading;
 
         /// <summary>
         /// Event raised when spell-check is ready for use.
         /// </summary>
         public event EventHandler? Ready;
+
+        /// <summary>
+        /// Event raised when dictionaries are reloaded (for UI refresh).
+        /// </summary>
+        public event EventHandler? DictionariesReloaded;
 
         private SpellCheckService()
         {
@@ -53,10 +67,14 @@ namespace Manifest.Services
             var dictionariesDir = Path.Combine(userProfile, "Radoub", "Dictionaries");
             Directory.CreateDirectory(dictionariesDir);
             _customDictionaryPath = Path.Combine(dictionariesDir, "custom.dic");
+
+            // Subscribe to dictionary settings changes for hot-swap
+            DictionarySettingsService.Instance.PrimaryLanguageChanged += OnPrimaryLanguageChanged;
+            DictionarySettingsService.Instance.CustomDictionaryToggled += OnCustomDictionaryToggled;
         }
 
         /// <summary>
-        /// Initialize spell-checking with bundled English dictionary.
+        /// Initialize spell-checking with selected language and enabled dictionaries.
         /// Call this once at app startup.
         /// </summary>
         public async Task InitializeAsync()
@@ -65,18 +83,10 @@ namespace Manifest.Services
 
             try
             {
-                _spellChecker = new SpellChecker(_dictionaryManager);
-                await _spellChecker.LoadBundledDictionaryAsync("en_US");
-
-                // Load custom dictionary if it exists
-                await LoadCustomDictionaryInternalAsync();
+                _discovery = new DictionaryDiscovery(DictionaryDiscovery.GetDefaultUserDictionaryPath());
+                await LoadDictionariesAsync();
 
                 _isInitialized = true;
-
-                var totalWordCount = GetCustomWordCount();
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"Spell-check initialized with en_US dictionary ({totalWordCount} custom words)");
-
                 Ready?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
@@ -84,6 +94,142 @@ namespace Manifest.Services
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to initialize spell-check: {ex.Message}");
                 _isInitialized = false;
             }
+        }
+
+        /// <summary>
+        /// Load all dictionaries based on current settings.
+        /// </summary>
+        private async Task LoadDictionariesAsync()
+        {
+            var settings = DictionarySettingsService.Instance;
+            var primaryLanguage = settings.PrimaryLanguage;
+
+            // Clear discovery cache to pick up any new dictionaries
+            _discovery?.ClearCache();
+
+            // Clear user-added words tracking (will be repopulated from file)
+            _userAddedWords.Clear();
+
+            // Create fresh dictionary manager and spell checker
+            _dictionaryManager = new DictionaryManager();
+            _spellChecker?.Dispose();
+            _spellChecker = new SpellChecker(_dictionaryManager);
+
+            // Load primary language (Hunspell)
+            await LoadPrimaryLanguageAsync(primaryLanguage);
+
+            // Load enabled custom dictionaries
+            await LoadEnabledCustomDictionariesAsync();
+
+            // Load user's custom dictionary (words they've added)
+            await LoadCustomDictionaryInternalAsync();
+
+            var totalWordCount = GetCustomWordCount();
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Spell-check loaded: {primaryLanguage} + {_dictionaryManager.DictionaryCount} custom dictionaries ({totalWordCount} words)");
+        }
+
+        /// <summary>
+        /// Load the primary Hunspell language dictionary.
+        /// </summary>
+        private async Task LoadPrimaryLanguageAsync(string languageCode)
+        {
+            if (_spellChecker == null || _discovery == null) return;
+
+            var languages = _discovery.GetAvailableLanguages();
+            var langInfo = languages.FirstOrDefault(l => l.Id == languageCode);
+
+            if (langInfo == null)
+            {
+                // Fallback to bundled en_US
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Language {languageCode} not found, falling back to en_US");
+                await _spellChecker.LoadBundledDictionaryAsync("en_US");
+                return;
+            }
+
+            if (langInfo.IsBundled)
+            {
+                // Load from embedded resources
+                await _spellChecker.LoadBundledDictionaryAsync(languageCode);
+            }
+            else
+            {
+                // Load from user's file system
+                var affPath = Path.ChangeExtension(langInfo.Path, ".aff");
+                await _spellChecker.LoadHunspellDictionaryAsync(langInfo.Path, affPath);
+            }
+        }
+
+        /// <summary>
+        /// Load all enabled custom dictionaries.
+        /// </summary>
+        private async Task LoadEnabledCustomDictionariesAsync()
+        {
+            if (_discovery == null) return;
+
+            var settings = DictionarySettingsService.Instance;
+            var customDictionaries = _discovery.GetAvailableCustomDictionaries();
+
+            foreach (var dict in customDictionaries)
+            {
+                if (!settings.IsCustomDictionaryEnabled(dict.Id))
+                    continue;
+
+                try
+                {
+                    if (dict.IsBundled)
+                    {
+                        // NWN dictionary
+                        if (dict.Id == "nwn")
+                        {
+                            await _spellChecker!.LoadBundledNwnDictionaryAsync();
+                        }
+                    }
+                    else
+                    {
+                        // User dictionary from file system
+                        await _dictionaryManager.LoadDictionaryAsync(dict.Path);
+                    }
+
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded custom dictionary: {dict.Id}");
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load dictionary {dict.Id}: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reload all dictionaries (hot-swap). Called when settings change.
+        /// </summary>
+        public async Task ReloadDictionariesAsync()
+        {
+            if (!_isInitialized) return;
+
+            _isReloading = true;
+
+            try
+            {
+                await LoadDictionariesAsync();
+                DictionariesReloaded?.Invoke(this, EventArgs.Empty);
+            }
+            finally
+            {
+                _isReloading = false;
+            }
+        }
+
+        private async void OnPrimaryLanguageChanged(object? sender, string newLanguage)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Primary language changing to {newLanguage}");
+            await ReloadDictionariesAsync();
+        }
+
+        private async void OnCustomDictionaryToggled(object? sender, DictionaryToggleEventArgs e)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Dictionary {e.DictionaryId} {(e.IsEnabled ? "enabled" : "disabled")}");
+            await ReloadDictionariesAsync();
         }
 
         /// <summary>
@@ -135,8 +281,10 @@ namespace Manifest.Services
         {
             if (!string.IsNullOrWhiteSpace(word))
             {
-                _dictionaryManager.AddWord(word.Trim());
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added '{word}' to custom dictionary");
+                var trimmedWord = word.Trim();
+                _dictionaryManager.AddWord(trimmedWord);
+                _userAddedWords.Add(trimmedWord);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added '{trimmedWord}' to custom dictionary");
 
                 // Save immediately
                 _ = SaveCustomDictionaryAsync();
@@ -216,9 +364,26 @@ namespace Manifest.Services
 
             try
             {
-                await _dictionaryManager.LoadDictionaryAsync(_customDictionaryPath);
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"Loaded custom dictionary: {_dictionaryManager.WordCount} words");
+                // Load the file to get words
+                var json = await File.ReadAllTextAsync(_customDictionaryPath);
+                var dict = System.Text.Json.JsonSerializer.Deserialize<CustomDictionary>(json,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+
+                if (dict != null)
+                {
+                    // Track user-added words separately
+                    foreach (var word in dict.AllWords)
+                    {
+                        if (!string.IsNullOrWhiteSpace(word))
+                        {
+                            _userAddedWords.Add(word.Trim());
+                            _dictionaryManager.AddWord(word.Trim());
+                        }
+                    }
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Loaded custom dictionary: {_userAddedWords.Count} user words");
+                }
             }
             catch (Exception ex)
             {
@@ -227,19 +392,30 @@ namespace Manifest.Services
         }
 
         /// <summary>
-        /// Save the custom dictionary to disk.
+        /// Save the custom dictionary to disk (only user-added words).
         /// </summary>
         public async Task SaveCustomDictionaryAsync()
         {
             try
             {
-                await _dictionaryManager.ExportDictionaryAsync(
-                    _customDictionaryPath,
-                    "Radoub Custom Dictionary",
-                    "User-added custom words for spell checking");
+                var dict = new CustomDictionary
+                {
+                    Source = "Radoub Custom Dictionary",
+                    Description = "User-added custom words for spell checking",
+                    Words = _userAddedWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList()
+                };
+
+                var json = System.Text.Json.JsonSerializer.Serialize(dict,
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+                    });
+
+                await File.WriteAllTextAsync(_customDictionaryPath, json);
 
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Saved custom dictionary: {_dictionaryManager.WordCount} words");
+                    $"Saved custom dictionary: {_userAddedWords.Count} user words");
             }
             catch (Exception ex)
             {
@@ -269,6 +445,10 @@ namespace Manifest.Services
         {
             if (!_disposed)
             {
+                // Unsubscribe from events
+                DictionarySettingsService.Instance.PrimaryLanguageChanged -= OnPrimaryLanguageChanged;
+                DictionarySettingsService.Instance.CustomDictionaryToggled -= OnCustomDictionaryToggled;
+
                 _spellChecker?.Dispose();
                 _spellChecker = null;
                 _disposed = true;
