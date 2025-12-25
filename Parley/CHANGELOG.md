@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.89-alpha] - 2025-12-24
-**Branch**: `parley/refactor/mainwindow-constructor` | **PR**: #TBD
+**Branch**: `parley/refactor/mainwindow-constructor` | **PR**: #528
 
 ### Refactor: Extract MainWindow Constructor Initialization (#522)
 
