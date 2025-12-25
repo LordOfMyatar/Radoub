@@ -24,6 +24,13 @@ Add dictionary language selection UI to Manifest Settings, matching Parley's imp
   - NWN/D&D dictionary toggleable
   - "Open Dictionaries Folder" and "Refresh" buttons
 - Hot-swap dictionary support - changes apply immediately without restart
+- Recent Files menu (File > Open Recent)
+  - Tracks last 10 opened journal files
+  - Clear Recent Files option
+  - Auto-removes missing files
+
+#### Fixed
+- Custom dictionary (custom.dic) no longer appears redundantly in dictionary list
 
 ---
 

@@ -212,6 +212,10 @@ public class DictionaryDiscovery
                 if (fileName.Equals("settings", StringComparison.OrdinalIgnoreCase))
                     continue;
 
+                // Skip user's personal custom dictionary (handled separately by SpellCheckService)
+                if (fileName.Equals("custom", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 // Skip if it looks like a Hunspell file (has matching .aff)
                 var affPath = Path.ChangeExtension(file, ".aff");
                 if (File.Exists(affPath))

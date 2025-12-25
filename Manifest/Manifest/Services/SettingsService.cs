@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
 using Radoub.Formats.Settings;
@@ -67,6 +68,11 @@ namespace Manifest.Services
 
         // Spell-check settings
         private bool _spellCheckEnabled = true;
+
+        // Recent files
+        private const int DefaultMaxRecentFiles = 10;
+        private List<string> _recentFiles = new List<string>();
+        private int _maxRecentFiles = DefaultMaxRecentFiles;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -173,6 +179,59 @@ namespace Manifest.Services
             }
         }
 
+        // Recent Files
+        public List<string> RecentFiles => _recentFiles.ToList();
+
+        public int MaxRecentFiles
+        {
+            get => _maxRecentFiles;
+            set
+            {
+                if (SetProperty(ref _maxRecentFiles, Math.Max(1, Math.Min(20, value))))
+                {
+                    TrimRecentFiles();
+                    SaveSettings();
+                }
+            }
+        }
+
+        public void AddRecentFile(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                return;
+
+            _recentFiles.Remove(filePath);
+            _recentFiles.Insert(0, filePath);
+            TrimRecentFiles();
+            OnPropertyChanged(nameof(RecentFiles));
+            SaveSettings();
+        }
+
+        public void RemoveRecentFile(string filePath)
+        {
+            if (_recentFiles.Remove(filePath))
+            {
+                OnPropertyChanged(nameof(RecentFiles));
+                SaveSettings();
+            }
+        }
+
+        public void ClearRecentFiles()
+        {
+            if (_recentFiles.Count > 0)
+            {
+                _recentFiles.Clear();
+                OnPropertyChanged(nameof(RecentFiles));
+                SaveSettings();
+            }
+        }
+
+        private void TrimRecentFiles()
+        {
+            while (_recentFiles.Count > MaxRecentFiles)
+                _recentFiles.RemoveAt(_recentFiles.Count - 1);
+        }
+
         private void LoadSettings()
         {
             try
@@ -213,7 +272,13 @@ namespace Manifest.Services
                         // Load spell-check settings
                         _spellCheckEnabled = settings.SpellCheckEnabled;
 
-                        UnifiedLogger.LogApplication(LogLevel.INFO, "Loaded settings from file");
+                        // Load recent files
+                        _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
+                        _maxRecentFiles = Math.Max(1, Math.Min(20, settings.MaxRecentFiles));
+                        // Clean up non-existent files
+                        _recentFiles.RemoveAll(f => !File.Exists(f));
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files");
                     }
                 }
                 else
@@ -244,7 +309,9 @@ namespace Manifest.Services
                     CurrentThemeId = CurrentThemeId,
                     LogRetentionSessions = LogRetentionSessions,
                     LogLevel = CurrentLogLevel,
-                    SpellCheckEnabled = SpellCheckEnabled
+                    SpellCheckEnabled = SpellCheckEnabled,
+                    RecentFiles = _recentFiles,
+                    MaxRecentFiles = MaxRecentFiles
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -297,6 +364,10 @@ namespace Manifest.Services
 
             // Spell-check settings
             public bool SpellCheckEnabled { get; set; } = true;
+
+            // Recent files
+            public List<string> RecentFiles { get; set; } = new List<string>();
+            public int MaxRecentFiles { get; set; } = DefaultMaxRecentFiles;
         }
     }
 }

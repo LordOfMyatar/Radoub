@@ -17,6 +17,7 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
+                <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
                 <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile}"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
