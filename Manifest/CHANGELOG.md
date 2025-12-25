@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.11.0-alpha] - 2025-12-25
+**Branch**: `manifest/feat/dictionary-settings` | **PR**: #TBD
+
+### Feature: Add Dictionary Settings to Manifest UI (#540)
+
+Add dictionary language selection UI to Manifest Settings, matching Parley's implementation.
+
+#### Added
+- Dictionaries tab in Settings window
+  - Primary Language dropdown (select Hunspell dictionary)
+  - Custom Dictionaries list with enable/disable toggles
+  - NWN/D&D dictionary toggleable
+  - "Open Dictionaries Folder" and "Refresh" buttons
+- Hot-swap dictionary support - changes apply immediately without restart
+
+---
+
 ## [0.10.0-alpha] - 2025-12-25
 **Branch**: `manifest/feat/flaui-smoke-tests` | **PR**: #537
 
