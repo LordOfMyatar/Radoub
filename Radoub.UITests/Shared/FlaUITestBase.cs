@@ -59,17 +59,23 @@ public abstract class FlaUITestBase : IDisposable
         _isolatedSettingsDir = Path.Combine(Path.GetTempPath(), "Radoub.UITests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_isolatedSettingsDir);
 
-        // Create Parley subdirectory for Parley-specific settings
+        // Create tool-specific subdirectories for settings
         var parleySettingsDir = Path.Combine(_isolatedSettingsDir, "Parley");
+        var manifestSettingsDir = Path.Combine(_isolatedSettingsDir, "Manifest");
         Directory.CreateDirectory(parleySettingsDir);
+        Directory.CreateDirectory(manifestSettingsDir);
 
         // Pre-seed Parley settings with test-friendly defaults
         // SideBySide layout is most stable for automated testing (no separate windows)
-        var defaultSettings = @"{
+        var parleySettings = @"{
   ""FlowchartLayout"": ""SideBySide"",
   ""FlowchartVisible"": false
 }";
-        File.WriteAllText(Path.Combine(parleySettingsDir, "ParleySettings.json"), defaultSettings);
+        File.WriteAllText(Path.Combine(parleySettingsDir, "ParleySettings.json"), parleySettings);
+
+        // Pre-seed Manifest settings with test-friendly defaults
+        var manifestSettings = @"{}";
+        File.WriteAllText(Path.Combine(manifestSettingsDir, "ManifestSettings.json"), manifestSettings);
 
         var processInfo = new ProcessStartInfo
         {
@@ -81,8 +87,10 @@ public abstract class FlaUITestBase : IDisposable
         // Set environment variables for isolated settings
         // RADOUB_SETTINGS_DIR: ~/Radoub equivalent (RadoubSettings.json)
         // PARLEY_SETTINGS_DIR: ~/Radoub/Parley equivalent (ParleySettings.json)
+        // MANIFEST_SETTINGS_DIR: ~/Radoub/Manifest equivalent (ManifestSettings.json)
         processInfo.Environment["RADOUB_SETTINGS_DIR"] = _isolatedSettingsDir;
         processInfo.Environment["PARLEY_SETTINGS_DIR"] = parleySettingsDir;
+        processInfo.Environment["MANIFEST_SETTINGS_DIR"] = manifestSettingsDir;
 
         App = Application.Launch(processInfo);
 
