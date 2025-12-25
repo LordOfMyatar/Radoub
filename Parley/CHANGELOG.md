@@ -10,6 +10,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.92-alpha] - 2025-12-24
+**Branch**: `parley/refactor/remove-parser-dead-code` | **PR**: #532
+
+### Refactor: Remove Dead Code from DialogParser (#531)
+
+Remove ~2,000 lines of dead/duplicated code from DialogParser.cs that remained after Phase 1-3 refactoring extractions.
+
+#### Changed
+- DialogParser.cs reduced from ~3,900 lines to ~500 lines
+- Removed duplicated implementations that now delegate to support classes:
+  - DialogBuilder (Phase 2)
+  - DialogWriter (Phase 3)
+  - GffIndexFixer (Phase 1)
+
+#### Removed
+- Duplicated field creation methods (CreatePointerFields, CreateRootFields, etc.)
+- Duplicated binary builders (BuildLocStringFieldData, BuildCExoStringFieldData, etc.)
+- Duplicated calculation methods (CalculateEntryFieldCount, CalculateLabelSize, etc.)
+- Duplicated index fixing methods
+
+---
+
 ## [0.1.91-alpha] - 2025-12-24
 **Branch**: `parley/refactor/service-coordinator` | **PR**: #530
 

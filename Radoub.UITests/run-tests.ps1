@@ -1,9 +1,10 @@
 # Run all Radoub test projects
-# Usage: .\run-tests.ps1 [-UIOnly] [-UnitOnly]
+# Usage: .\run-tests.ps1 [-UIOnly] [-UnitOnly] [-SkipPrivacy]
 
 param(
     [switch]$UIOnly,
-    [switch]$UnitOnly
+    [switch]$UnitOnly,
+    [switch]$SkipPrivacy
 )
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
@@ -15,9 +16,59 @@ Write-Host "Radoub Test Suite" -ForegroundColor Cyan
 Write-Host "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
-$totalPassed = 0
-$totalFailed = 0
-$results = @()
+$script:totalPassed = 0
+$script:totalFailed = 0
+$script:results = @()
+
+# Privacy scan for hardcoded paths
+function Invoke-PrivacyScan {
+    Write-Host "`n=== Privacy Scan ===" -ForegroundColor Magenta
+    Write-Host "Checking for hardcoded paths..." -ForegroundColor Yellow
+
+    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.Dictionary", "Manifest")
+
+    # Patterns that indicate actual hardcoded user paths (not path detection logic)
+    # Uses regex with word boundaries to avoid matching comments like "// Unix: /home/"
+    $patterns = @(
+        'C:\\Users\\[A-Za-z]',     # Windows user path with username start
+        'C:/Users/[A-Za-z]',       # Windows user path forward slash
+        '"/Users/[A-Za-z]',        # Mac user path in string
+        '"/home/[A-Za-z]'          # Linux user path in string
+    )
+
+    $violations = @()
+
+    foreach ($dir in $searchDirs) {
+        if (Test-Path $dir) {
+            $files = Get-ChildItem -Path $dir -Recurse -Include "*.cs" -ErrorAction SilentlyContinue
+            foreach ($file in $files) {
+                $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
+                if ($content) {
+                    foreach ($pattern in $patterns) {
+                        if ($content -match $pattern) {
+                            $relativePath = $file.FullName.Replace((Get-Location).Path + "\", "")
+                            # Exclude test files and test data
+                            if ($relativePath -notmatch "\.Tests\\|TestData\\|\.test\.cs$") {
+                                $violations += "$relativePath matches pattern '$pattern'"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if ($violations.Count -eq 0) {
+        Write-Host "  PASS - No hardcoded paths found" -ForegroundColor Green
+        return $true
+    } else {
+        Write-Host "  FAIL - Found hardcoded paths:" -ForegroundColor Red
+        foreach ($v in $violations) {
+            Write-Host "    $v" -ForegroundColor Red
+        }
+        return $false
+    }
+}
 
 # Unit/Headless Tests (fast, no UI required)
 $unitTests = @(
@@ -61,10 +112,10 @@ function Invoke-TestProject {
         $color = if ($failed -eq 0) { "Green" } else { "Red" }
 
         Write-Host "  $status - Passed: $passed, Failed: $failed, Total: $total" -ForegroundColor $color
-        $script:results += @{ Name = $name; Passed = $passed; Failed = $failed; Status = $status }
+        $script:results += [PSCustomObject]@{ Name = $name; Passed = $passed; Failed = $failed; Status = $status }
     } else {
         Write-Host "  Could not parse results" -ForegroundColor Gray
-        $script:results += @{ Name = $name; Passed = 0; Failed = 0; Status = "UNKNOWN" }
+        $script:results += [PSCustomObject]@{ Name = $name; Passed = 0; Failed = 0; Status = "UNKNOWN" }
     }
 
     # Show failed tests if any
@@ -73,6 +124,11 @@ function Invoke-TestProject {
         Write-Host "  Failed tests:" -ForegroundColor Red
         $failedTests | ForEach-Object { Write-Host "    $($_.Line)" -ForegroundColor Red }
     }
+}
+
+# Run privacy scan first (unless skipped)
+if (-not $SkipPrivacy) {
+    Invoke-PrivacyScan | Out-Null
 }
 
 # Run unit tests unless UIOnly specified
