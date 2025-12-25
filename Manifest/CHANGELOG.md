@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.10.0-alpha] - 2025-12-25
+**Branch**: `manifest/feat/flaui-smoke-tests` | **PR**: #TBD
+
+### Feature: FlaUI Smoke Tests (#512)
+
+Add FlaUI automation tests for Manifest to match Parley's test coverage pattern.
+
+#### Added
+- Application smoke tests (launch, main window visible, menu accessible)
+- TLK integration tests (load JRL with StrRefs, verify localization)
+- Basic workflow tests (open file, verify tree loads, close cleanly)
+
+---
+
 ## [0.9.0-alpha] - 2025-12-23
 **Branch**: `manifest/sprint/dictionary-integration` | **PR**: #511
 
