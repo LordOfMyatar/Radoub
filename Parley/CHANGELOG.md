@@ -19,8 +19,8 @@ After deleting a node, focus now moves to the nearest sibling instead of jumping
 
 #### Changed
 - Focus behavior after node deletion:
-  1. Next sibling (if exists)
-  2. Previous sibling (if no next sibling)
+  1. Previous sibling (if exists) - stays at same visual position
+  2. Next sibling (if no previous sibling)
   3. Parent (if no siblings)
 
 ---

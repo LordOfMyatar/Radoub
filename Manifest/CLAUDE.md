@@ -118,14 +118,14 @@ Follow Radoub conventions (see `../CLAUDE.md`):
 
 ## Sprint Plan
 
-### Sprint 1: Application Shell (Current - #405)
+### Sprint 1: Application Shell (#405) - COMPLETED
 - Project structure
 - Settings service
 - Logging service
 - Basic MainWindow
 - File dialogs
 
-### Sprint 2: File I/O
+### Sprint 2: File I/O (Next)
 - Open JRL via JrlReader
 - Display in TreeView
 - Save via JrlWriter

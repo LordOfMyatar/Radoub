@@ -325,7 +325,7 @@ git push origin parley/feat/my-feature
 **MainViewModel has been significantly refactored - prefer adding logic to services/managers**
 
 **Current Status**:
-- MainViewModel.cs is ~1,744 lines (down from ~3,500+)
+- MainViewModel.cs is ~1,502 lines (down from ~3,500+)
 - Goal: Extract services and managers into separate classes - largely achieved
 - Pattern: Services handle business logic, ViewModel coordinates UI state
 
@@ -357,7 +357,7 @@ public void DoComplexThing() => _complexService.Execute(CurrentDialog);
 ```
 
 ### MainWindow Architecture
-**MainWindow.axaml.cs is currently ~4,329 lines** - handles UI events and coordination
+**MainWindow.axaml.cs is currently ~2,121 lines** - handles UI events and coordination
 
 **Key Components**:
 - **Handler classes** in `Parley/Handlers/` for complex operations:
@@ -380,7 +380,7 @@ public void DoComplexThing() => _complexService.Execute(CurrentDialog);
 
 ## Project Status
 
-**Current Version**: v0.1.65-alpha (December 2025)
+**Current Version**: v0.1.93-alpha (December 2025)
 
 **Completed Features**:
 - ✅ Core dialog editing with full Aurora compatibility
