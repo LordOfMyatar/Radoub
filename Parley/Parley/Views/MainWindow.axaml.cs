@@ -28,41 +28,18 @@ namespace DialogEditor.Views
     public partial class MainWindow : Window, IKeyboardShortcutHandler
     {
         private readonly MainViewModel _viewModel;
-        private readonly SafeControlFinder _controls; // Issue #342: Safe control access with null-check elimination
-        private readonly WindowLifecycleManager _windows; // Issue #343: Centralized window lifecycle management
+        private readonly SafeControlFinder _controls;
+        private readonly WindowLifecycleManager _windows;
 
-        // Services initialized in InitializeServices()
-        private AudioService _audioService = null!;
-        private CreatureService _creatureService = null!;
-        private PluginManager _pluginManager = null!;
-        private PluginPanelManager _pluginPanelManager = null!;
-        private PropertyPanelPopulator _propertyPopulator = null!;
-        private PropertyAutoSaveService _propertyAutoSaveService = null!;
-        private ScriptParameterUIManager _parameterUIManager = null!;
-        private NodeCreationHelper _nodeCreationHelper = null!;
-        private ResourceBrowserManager _resourceBrowserManager = null!;
-        private KeyboardShortcutManager _keyboardShortcutManager = null!;
-        private DebugAndLoggingHandler _debugAndLoggingHandler = null!;
-        private WindowPersistenceManager _windowPersistenceManager = null!;
-        private PluginSelectionSyncHelper _pluginSelectionSyncHelper = null!;
-        private TreeViewDragDropService _dragDropService = null!;
-        private DialogFactory _dialogFactory = null!;
+        // Service and controller containers (#526)
+        private readonly MainWindowServices _services;
+        private readonly MainWindowControllers _controllers;
 
-        // Controllers initialized in InitializeControllers()
-        private FlowchartManager _flowchartManager = null!;
-        private TreeViewUIController _treeViewUIController = null!;
-        private ScriptBrowserController _scriptBrowserController = null!;
-        private QuestUIController _questUIController = null!;
-        private FileMenuController _fileMenuController = null!;
-        private EditMenuController _editMenuController = null!;
-
-        // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
+        // Auto-save timer
         private System.Timers.Timer? _autoSaveTimer;
 
-        // Centralized UI state management (#525)
+        // UI state management
         private readonly UiStateManager _uiState = new();
-
-        // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
         public MainWindow()
         {
@@ -71,16 +48,13 @@ namespace DialogEditor.Views
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
 
-            // Issue #342: Initialize SafeControlFinder for cleaner control access
             _controls = new SafeControlFinder(this);
-
-            // Issue #343: Initialize WindowLifecycleManager for centralized window tracking
             _windows = new WindowLifecycleManager();
+            _services = new MainWindowServices();
+            _controllers = new MainWindowControllers();
 
-            // Initialize selected tree node to null (no selection on startup)
             _viewModel.SelectedTreeNode = null;
 
-            // Issue #522: Extract initialization into focused methods
             InitializeServices();
             InitializeControllers();
             InitializeLogging();
@@ -89,52 +63,56 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Initializes core services and helpers used throughout the application.
+        /// Initializes services that require MainWindow context.
+        /// Core services are created in MainWindowServices constructor.
         /// </summary>
         private void InitializeServices()
         {
-            _audioService = new AudioService();
-            _creatureService = new CreatureService();
-            _pluginManager = new PluginManager();
-            _pluginPanelManager = new PluginPanelManager(this);
-            _pluginPanelManager.SetPluginManager(_pluginManager); // For panel reopen restart (#235)
-            _propertyPopulator = new PropertyPanelPopulator(this);
-            _propertyAutoSaveService = new PropertyAutoSaveService(
+            // Plugin panel requires window reference
+            _services.PluginPanel = new PluginPanelManager(this);
+            _services.PluginPanel.SetPluginManager(_services.Plugin);
+
+            // Property services
+            _services.PropertyPopulator = new PropertyPanelPopulator(this);
+            _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
                 refreshTreeDisplay: RefreshTreeDisplayPreserveState,
                 loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
                 clearScriptPreview: ClearScriptPreview,
                 triggerDebouncedAutoSave: TriggerDebouncedAutoSave);
-            _parameterUIManager = new ScriptParameterUIManager(
+            _services.ParameterUI = new ScriptParameterUIManager(
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 triggerAutoSave: () => { _viewModel.HasUnsavedChanges = true; TriggerDebouncedAutoSave(); },
                 isPopulatingProperties: () => _uiState.IsPopulatingProperties,
                 getSelectedNode: () => _selectedNode);
-            _nodeCreationHelper = new NodeCreationHelper(
+
+            // UI helpers
+            _services.NodeCreation = new NodeCreationHelper(
                 viewModel: _viewModel,
                 findControl: this.FindControl<Control>,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 triggerAutoSave: TriggerDebouncedAutoSave);
-            _resourceBrowserManager = new ResourceBrowserManager(
-                audioService: _audioService,
-                creatureService: _creatureService,
+            _services.ResourceBrowser = new ResourceBrowserManager(
+                audioService: _services.Audio,
+                creatureService: _services.Creature,
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 autoSaveProperty: AutoSaveProperty,
                 getSelectedNode: () => _selectedNode,
-                getCurrentFilePath: () => _viewModel.CurrentFilePath); // Issue #5: For lazy creature loading
-            _keyboardShortcutManager = new KeyboardShortcutManager();
-            _keyboardShortcutManager.RegisterShortcuts(this);
-            _debugAndLoggingHandler = new DebugAndLoggingHandler(
+                getCurrentFilePath: () => _viewModel.CurrentFilePath);
+            _services.KeyboardShortcuts.RegisterShortcuts(this);
+
+            // Window services
+            _services.DebugLogging = new DebugAndLoggingHandler(
                 viewModel: _viewModel,
                 findControl: this.FindControl<Control>,
                 getStorageProvider: () => this.StorageProvider,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg);
-            _windowPersistenceManager = new WindowPersistenceManager(
+            _services.WindowPersistence = new WindowPersistenceManager(
                 window: this,
                 findControl: this.FindControl<Control>);
-            _pluginSelectionSyncHelper = new PluginSelectionSyncHelper(
+            _services.PluginSelectionSync = new PluginSelectionSyncHelper(
                 viewModel: _viewModel,
                 findControl: this.FindControl<Control>,
                 getSelectedNode: () => _selectedNode,
@@ -143,12 +121,9 @@ namespace DialogEditor.Views
                     _controls.WithControl<TreeView>("DialogTreeView", tv => tv.SelectedItem = node);
                 });
 
-            // Initialize drag-drop service for TreeView (#450)
-            _dragDropService = new TreeViewDragDropService();
-            _dragDropService.DropCompleted += OnDragDropCompleted;
-
-            // Issue #524: Dialog factory for reusable confirmation/error dialogs
-            _dialogFactory = new DialogFactory(this);
+            // TreeView and dialog services
+            _services.DragDrop.DropCompleted += OnDragDropCompleted;
+            _services.Dialog = new DialogFactory(this);
         }
 
         /// <summary>
@@ -156,8 +131,7 @@ namespace DialogEditor.Views
         /// </summary>
         private void InitializeControllers()
         {
-            // Initialize FlowchartManager for layout and sync management (#457)
-            _flowchartManager = new FlowchartManager(
+            _controllers.Flowchart = new FlowchartManager(
                 window: this,
                 controls: _controls,
                 windows: _windows,
@@ -169,34 +143,31 @@ namespace DialogEditor.Views
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
                 setIsSettingSelectionProgrammatically: value => _uiState.IsSettingSelectionProgrammatically = value);
 
-            // Initialize TreeViewUIController for TreeView UI interactions (#463)
-            _treeViewUIController = new TreeViewUIController(
+            _controllers.TreeView = new TreeViewUIController(
                 window: this,
                 controls: _controls,
-                dragDropService: _dragDropService,
+                dragDropService: _services.DragDrop,
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
                 setSelectedNode: node => _selectedNode = node,
                 populatePropertiesPanel: PopulatePropertiesPanel,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
-                clearAllFields: () => _propertyPopulator.ClearAllFields(),
+                clearAllFields: () => _services.PropertyPopulator.ClearAllFields(),
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
-                syncSelectionToFlowcharts: node => _flowchartManager.SyncSelectionToFlowcharts(node),
-                updatePluginSelectionSync: () => _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode());
+                syncSelectionToFlowcharts: node => _controllers.Flowchart.SyncSelectionToFlowcharts(node),
+                updatePluginSelectionSync: () => _services.PluginSelectionSync.UpdateDialogContextSelectedNode());
 
-            // Initialize ScriptBrowserController for script browsing UI (#464)
-            _scriptBrowserController = new ScriptBrowserController(
+            _controllers.ScriptBrowser = new ScriptBrowserController(
                 window: this,
                 controls: _controls,
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
                 autoSaveProperty: AutoSaveProperty,
                 isPopulatingProperties: () => _uiState.IsPopulatingProperties,
-                parameterUIManager: _parameterUIManager,
+                parameterUIManager: _services.ParameterUI,
                 triggerAutoSave: () => { _viewModel.HasUnsavedChanges = true; TriggerDebouncedAutoSave(); });
 
-            // Initialize QuestUIController for quest/journal UI interactions (#465)
-            _questUIController = new QuestUIController(
+            _controllers.Quest = new QuestUIController(
                 window: this,
                 controls: _controls,
                 getViewModel: () => _viewModel,
@@ -205,21 +176,19 @@ namespace DialogEditor.Views
                 setIsPopulatingProperties: value => _uiState.IsPopulatingProperties = value,
                 triggerAutoSave: TriggerDebouncedAutoSave);
 
-            // Initialize FileMenuController for file menu operations (#466)
-            _fileMenuController = new FileMenuController(
+            _controllers.FileMenu = new FileMenuController(
                 window: this,
                 controls: _controls,
                 getViewModel: () => _viewModel,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
-                clearPropertiesPanel: () => _propertyPopulator.ClearAllFields(),
-                populateRecentFilesMenu: () => _fileMenuController?.PopulateRecentFilesMenu(),
-                updateEmbeddedFlowchartAfterLoad: () => _flowchartManager.UpdateAfterLoad(),
-                clearFlowcharts: () => _flowchartManager.ClearAll(), // #378: Clear flowcharts on file close
-                getParameterUIManager: () => _parameterUIManager,
+                clearPropertiesPanel: () => _services.PropertyPopulator.ClearAllFields(),
+                populateRecentFilesMenu: () => _controllers.FileMenu?.PopulateRecentFilesMenu(),
+                updateEmbeddedFlowchartAfterLoad: () => _controllers.Flowchart.UpdateAfterLoad(),
+                clearFlowcharts: () => _controllers.Flowchart.ClearAll(),
+                getParameterUIManager: () => _services.ParameterUI,
                 showSaveAsDialogAsync: ShowSaveAsDialogAsync);
 
-            // Initialize EditMenuController for edit menu operations (#466)
-            _editMenuController = new EditMenuController(
+            _controllers.EditMenu = new EditMenuController(
                 window: this,
                 getViewModel: () => _viewModel,
                 getSelectedNode: GetSelectedTreeNode);
@@ -256,14 +225,11 @@ namespace DialogEditor.Views
             // Hook up window lifecycle events
             this.Opened += OnWindowOpened;
             this.Closing += OnWindowClosing;
-            this.PositionChanged += (s, e) => _windowPersistenceManager.SaveWindowPosition();
+            this.PositionChanged += (s, e) => _services.WindowPersistence.SaveWindowPosition();
             this.PropertyChanged += OnWindowPropertyChanged;
             this.Loaded += OnWindowLoaded;
 
-            // Phase 2a: Watch for node re-selection requests after tree refresh
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-
-            // Auto-scroll debug console to end when new messages added
             _viewModel.DebugMessages.CollectionChanged += OnDebugMessagesCollectionChanged;
         }
 
@@ -272,19 +238,11 @@ namespace DialogEditor.Views
         /// </summary>
         private void SetupUILayout()
         {
-            _windowPersistenceManager.LoadAnimationValues();
-
-            // Apply saved theme preference
+            _services.WindowPersistence.LoadAnimationValues();
             ApplySavedTheme();
-
-            // Phase 0 Fix: Hide debug console by default
             HideDebugConsoleByDefault();
-
-            // Phase 1 Fix: Set up keyboard shortcuts
             SetupKeyboardShortcuts();
-
-            // Issue #450/#463: Set up TreeView drag-drop handlers via controller
-            _treeViewUIController.SetupTreeViewDragDrop();
+            _controllers.TreeView.SetupTreeViewDragDrop();
         }
 
         /// <summary>
@@ -292,27 +250,20 @@ namespace DialogEditor.Views
         /// </summary>
         private async void OnWindowOpened(object? sender, EventArgs e)
         {
-            // Restore window position from settings
-            await _windowPersistenceManager.RestoreWindowPositionAsync();
-
+            await _services.WindowPersistence.RestoreWindowPositionAsync();
             PopulateRecentFilesMenu();
+            await _services.WindowPersistence.HandleStartupFileAsync(_viewModel);
 
-            // Handle command line file loading (Issue #9)
-            await _windowPersistenceManager.HandleStartupFileAsync(_viewModel);
-
-            // Start enabled plugins after window opens
-            var startedPlugins = await _pluginManager.StartEnabledPluginsAsync();
+            var startedPlugins = await _services.Plugin.StartEnabledPluginsAsync();
             if (startedPlugins.Count > 0)
             {
-                // Show in status bar instead of popup (less intrusive)
                 _viewModel.StatusMessage = $"Plugins active: {string.Join(", ", startedPlugins)}";
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Started plugins: {string.Join(", ", startedPlugins)}");
             }
 
-            // Restore flowchart state on startup (#377)
             if (SettingsService.Instance.FlowchartVisible)
             {
-                _flowchartManager.RestoreOnStartup();
+                _controllers.Flowchart.RestoreOnStartup();
             }
         }
 
@@ -321,11 +272,11 @@ namespace DialogEditor.Views
         /// </summary>
         private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
         {
-            if (!_windowPersistenceManager.IsRestoringPosition)
+            if (!_services.WindowPersistence.IsRestoringPosition)
             {
                 if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
                 {
-                    _windowPersistenceManager.SaveWindowPosition();
+                    _services.WindowPersistence.SaveWindowPosition();
                 }
             }
         }
@@ -348,11 +299,11 @@ namespace DialogEditor.Views
         private void OnWindowLoaded(object? sender, RoutedEventArgs e)
         {
             // Controls are now available, restore settings
-            _windowPersistenceManager.RestoreDebugSettings();
-            _windowPersistenceManager.RestorePanelSizes();
+            _services.WindowPersistence.RestoreDebugSettings();
+            _services.WindowPersistence.RestorePanelSizes();
 
             // Initialize menu checkmark states
-            _flowchartManager.UpdateLayoutMenuChecks();
+            _controllers.Flowchart.UpdateLayoutMenuChecks();
 
             // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
             InitializeSpeakerVisualComboBoxes();
@@ -437,13 +388,13 @@ namespace DialogEditor.Views
                     $"OnDialogChanged: {e.ChangeType} - updating flowchart panels");
 
                 // Update all flowchart panels to reflect the change
-                _flowchartManager.UpdateAllPanels();
+                _controllers.Flowchart.UpdateAllPanels();
             }
 
             // Handle collapse/expand events from FlowView to sync TreeView (#451)
             if (e.Context == "FlowView")
             {
-                _flowchartManager.HandleFlowViewCollapseEvent(e);
+                _controllers.Flowchart.HandleFlowViewCollapseEvent(e);
             }
         }
 
@@ -454,7 +405,7 @@ namespace DialogEditor.Views
             // Tunneling event for shortcuts that intercept before TreeView (Ctrl+Shift+Up/Down)
             this.AddHandler(KeyDownEvent, (sender, e) =>
             {
-                if (_keyboardShortcutManager.HandlePreviewKeyDown(e))
+                if (_services.KeyboardShortcuts.HandlePreviewKeyDown(e))
                 {
                     e.Handled = true;
                 }
@@ -463,7 +414,7 @@ namespace DialogEditor.Views
             // Standard KeyDown events
             this.KeyDown += (sender, e) =>
             {
-                if (_keyboardShortcutManager.HandleKeyDown(e))
+                if (_services.KeyboardShortcuts.HandleKeyDown(e))
                 {
                     e.Handled = true;
                 }
@@ -499,11 +450,11 @@ namespace DialogEditor.Views
         void IKeyboardShortcutHandler.OnRedo() => OnRedoClick(null, null!);
 
         // Tree navigation - delegated to TreeViewUIController (#463)
-        void IKeyboardShortcutHandler.OnExpandSubnodes() => _treeViewUIController.OnExpandSubnodesClick(null, null!);
-        void IKeyboardShortcutHandler.OnCollapseSubnodes() => _treeViewUIController.OnCollapseSubnodesClick(null, null!);
+        void IKeyboardShortcutHandler.OnExpandSubnodes() => _controllers.TreeView.OnExpandSubnodesClick(null, null!);
+        void IKeyboardShortcutHandler.OnCollapseSubnodes() => _controllers.TreeView.OnCollapseSubnodesClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeUp() => OnMoveNodeUpClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeDown() => OnMoveNodeDownClick(null, null!);
-        void IKeyboardShortcutHandler.OnGoToParentNode() => _treeViewUIController.OnGoToParentNodeClick(null, null!);
+        void IKeyboardShortcutHandler.OnGoToParentNode() => _controllers.TreeView.OnGoToParentNodeClick(null, null!);
 
         // View operations - Issue #339: F5 to open flowchart
         void IKeyboardShortcutHandler.OnOpenFlowchart() => OnFlowchartClick(null, null!);
@@ -566,7 +517,7 @@ namespace DialogEditor.Views
                     ? "this file"
                     : System.IO.Path.GetFileName(_viewModel.CurrentFileName);
 
-                var shouldSave = await _dialogFactory.ShowConfirmDialogAsync(
+                var shouldSave = await _services.Dialog.ShowConfirmDialogAsync(
                     "Unsaved Changes",
                     $"Do you want to save changes to {fileName}"
                 );
@@ -586,7 +537,7 @@ namespace DialogEditor.Views
                     if (!saveSuccess)
                     {
                         // Save failed (e.g., read-only file) - offer Save As
-                        var saveAs = await _dialogFactory.ShowSaveErrorDialogAsync(_viewModel.StatusMessage);
+                        var saveAs = await _services.Dialog.ShowSaveErrorDialogAsync(_viewModel.StatusMessage);
                         if (saveAs)
                         {
                             // Show Save As dialog
@@ -601,7 +552,7 @@ namespace DialogEditor.Views
                         else
                         {
                             // User chose Cancel - ask if they want to discard
-                            var discardChanges = await _dialogFactory.ShowConfirmDialogAsync(
+                            var discardChanges = await _services.Dialog.ShowConfirmDialogAsync(
                                 "Discard Changes?",
                                 "Save failed. Do you want to discard changes and close anyway?");
                             if (!discardChanges)
@@ -631,22 +582,22 @@ namespace DialogEditor.Views
         {
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
-            _audioService.Dispose();
+            _services.Audio.Dispose();
 
             // Issue #343: Close all managed windows (Settings, Flowchart)
             _windows.CloseAll();
 
             // Close browser windows managed by ScriptBrowserController
-            _scriptBrowserController.CloseAllBrowserWindows();
+            _controllers.ScriptBrowser.CloseAllBrowserWindows();
 
             // Close plugin panel windows (Epic 3 / #225)
-            _pluginPanelManager.Dispose();
+            _services.PluginPanel.Dispose();
 
             // Dispose plugin selection sync helper (Epic 40 Phase 3 / #234)
-            _pluginSelectionSyncHelper.Dispose();
+            _services.PluginSelectionSync.Dispose();
 
             // Save window position on close
-            _windowPersistenceManager.SaveWindowPosition();
+            _services.WindowPersistence.SaveWindowPosition();
         }
 
         
@@ -661,18 +612,18 @@ namespace DialogEditor.Views
         }
 
         
-        public void AddDebugMessage(string message) => _debugAndLoggingHandler.AddDebugMessage(message);
+        public void AddDebugMessage(string message) => _services.DebugLogging.AddDebugMessage(message);
         public void ClearDebugOutput() => _viewModel.ClearDebugMessages();
 
         // File menu handlers - delegated to FileMenuController (#466)
         private void OnNewClick(object? sender, RoutedEventArgs e)
-            => _fileMenuController.OnNewClick(sender, e);
+            => _controllers.FileMenu.OnNewClick(sender, e);
 
         private void OnOpenClick(object? sender, RoutedEventArgs e)
-            => _fileMenuController.OnOpenClick(sender, e);
+            => _controllers.FileMenu.OnOpenClick(sender, e);
 
         private void OnSaveClick(object? sender, RoutedEventArgs e)
-            => _fileMenuController.OnSaveClick(sender, e);
+            => _controllers.FileMenu.OnSaveClick(sender, e);
 
         private void SaveCurrentNodeProperties()
         {
@@ -757,12 +708,12 @@ namespace DialogEditor.Views
 
             // CRITICAL FIX: Save script parameters from UI before saving file
             // Update action parameters (on DialogNode)
-            _parameterUIManager.UpdateActionParamsFromUI(dialogNode);
+            _services.ParameterUI.UpdateActionParamsFromUI(dialogNode);
 
             // Update condition parameters (on DialogPtr if available)
             if (_selectedNode.SourcePointer != null)
             {
-                _parameterUIManager.UpdateConditionParamsFromUI(_selectedNode.SourcePointer);
+                _services.ParameterUI.UpdateConditionParamsFromUI(_selectedNode.SourcePointer);
             }
         }
 
@@ -828,12 +779,12 @@ namespace DialogEditor.Views
 
         private void OnCloseClick(object? sender, RoutedEventArgs e)
         {
-            _fileMenuController.OnCloseClick(sender, e);
+            _controllers.FileMenu.OnCloseClick(sender, e);
             _selectedNode = null; // Clear local selection reference
         }
 
         private void OnExitClick(object? sender, RoutedEventArgs e)
-            => _fileMenuController.OnExitClick(sender, e);
+            => _controllers.FileMenu.OnExitClick(sender, e);
 
         #region Title Bar Handlers (Issue #139)
 
@@ -858,17 +809,17 @@ namespace DialogEditor.Views
 
         // Recent files - delegated to FileMenuController (#466)
         private void PopulateRecentFilesMenu()
-            => _fileMenuController.PopulateRecentFilesMenu();
+            => _controllers.FileMenu.PopulateRecentFilesMenu();
 
         // Edit menu handlers - delegated to EditMenuController (#466)
         private void OnCopyNodeTextClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnCopyNodeTextClick(sender, e);
+            => _controllers.EditMenu.OnCopyNodeTextClick(sender, e);
 
         private void OnCopyNodePropertiesClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnCopyNodePropertiesClick(sender, e);
+            => _controllers.EditMenu.OnCopyNodePropertiesClick(sender, e);
 
         private void OnCopyTreeStructureClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnCopyTreeStructureClick(sender, e);
+            => _controllers.EditMenu.OnCopyTreeStructureClick(sender, e);
 
         // View menu handlers
         private void OnClearDebugClick(object? sender, RoutedEventArgs e)
@@ -901,12 +852,12 @@ namespace DialogEditor.Views
 
         private void OnOpenLogFolderClick(object? sender, RoutedEventArgs e)
         {
-            _debugAndLoggingHandler.OpenLogFolder();
+            _services.DebugLogging.OpenLogFolder();
         }
 
         private async void OnExportLogsClick(object? sender, RoutedEventArgs e)
         {
-            await _debugAndLoggingHandler.ExportLogsAsync(this);
+            await _services.DebugLogging.ExportLogsAsync(this);
         }
 
         // Scrap tab handlers
@@ -914,12 +865,12 @@ namespace DialogEditor.Views
         {
             var treeView = this.FindControl<TreeView>("DialogTreeView");
             var selectedNode = treeView?.SelectedItem as TreeViewSafeNode;
-            _debugAndLoggingHandler.RestoreFromScrap(selectedNode);
+            _services.DebugLogging.RestoreFromScrap(selectedNode);
         }
 
         private async void OnClearScrapClick(object? sender, RoutedEventArgs e)
         {
-            await _debugAndLoggingHandler.ClearScrapAsync(this);
+            await _services.DebugLogging.ClearScrapAsync(this);
         }
 
         private void HideDebugConsoleByDefault()
@@ -994,7 +945,7 @@ namespace DialogEditor.Views
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"  Panel: {p.FullPanelId}, PanelId={p.PanelId}, PluginId={p.PluginId}");
             }
 
-            var closedPanels = _pluginPanelManager.GetClosedPanels().ToList();
+            var closedPanels = _services.PluginPanel.GetClosedPanels().ToList();
             UnifiedLogger.LogPlugin(LogLevel.INFO, $"OnPluginPanelsClick: {closedPanels.Count} closed panels");
 
             if (closedPanels.Count == 0)
@@ -1014,28 +965,28 @@ namespace DialogEditor.Views
             foreach (var panel in closedPanels)
             {
                 UnifiedLogger.LogPlugin(LogLevel.INFO, $"Reopening panel: {panel.FullPanelId}");
-                _pluginPanelManager.ReopenPanel(panel);
+                _services.PluginPanel.ReopenPanel(panel);
             }
 
             _viewModel.StatusMessage = $"Reopened {closedPanels.Count} plugin panel(s)";
         }
 
         // Flowchart menu handlers - delegate to FlowchartManager (#457)
-        private void OnFlowchartClick(object? sender, RoutedEventArgs e) => _flowchartManager.OpenFloatingFlowchart();
+        private void OnFlowchartClick(object? sender, RoutedEventArgs e) => _controllers.Flowchart.OpenFloatingFlowchart();
 
         private void OnFlowchartLayoutClick(object? sender, RoutedEventArgs e)
         {
             if (sender is MenuItem menuItem && menuItem.Tag is string layoutValue)
             {
-                _flowchartManager.ApplyLayout(layoutValue);
+                _controllers.Flowchart.ApplyLayout(layoutValue);
             }
         }
 
-        private async void OnExportFlowchartPngClick(object? sender, RoutedEventArgs e) => await _flowchartManager.ExportToPngAsync();
+        private async void OnExportFlowchartPngClick(object? sender, RoutedEventArgs e) => await _controllers.Flowchart.ExportToPngAsync();
 
-        private async void OnExportFlowchartSvgClick(object? sender, RoutedEventArgs e) => await _flowchartManager.ExportToSvgAsync();
+        private async void OnExportFlowchartSvgClick(object? sender, RoutedEventArgs e) => await _controllers.Flowchart.ExportToSvgAsync();
 
-        private void UpdateEmbeddedFlowchartAfterLoad() => _flowchartManager.UpdateAfterLoad();
+        private void UpdateEmbeddedFlowchartAfterLoad() => _controllers.Flowchart.UpdateAfterLoad();
 
         // Conversation Simulator handler - Issue #478
         private void OnConversationSimulatorClick(object? sender, RoutedEventArgs e)
@@ -1138,7 +1089,7 @@ namespace DialogEditor.Views
                 // Issue #343: Use WindowLifecycleManager for Settings window
                 _windows.ShowOrActivate(
                     WindowKeys.Settings,
-                    () => new SettingsWindow(pluginManager: _pluginManager),
+                    () => new SettingsWindow(pluginManager: _services.Plugin),
                     OnSettingsWindowClosed);
             }
             catch (Exception ex)
@@ -1162,7 +1113,7 @@ namespace DialogEditor.Views
                 // Open preferences with Resource Paths tab selected (tab 0)
                 _windows.ShowOrActivate(
                     WindowKeys.Settings,
-                    () => new SettingsWindow(initialTab: 0, pluginManager: _pluginManager),
+                    () => new SettingsWindow(initialTab: 0, pluginManager: _services.Plugin),
                     OnSettingsWindowClosed);
             }
             catch (Exception ex)
@@ -1186,7 +1137,7 @@ namespace DialogEditor.Views
                 // Open preferences with Logging tab selected (tab 2)
                 _windows.ShowOrActivate(
                     WindowKeys.Settings,
-                    () => new SettingsWindow(initialTab: 2, pluginManager: _pluginManager),
+                    () => new SettingsWindow(initialTab: 2, pluginManager: _services.Plugin),
                     OnSettingsWindowClosed);
             }
             catch (Exception ex)
@@ -1306,11 +1257,11 @@ namespace DialogEditor.Views
 
         // Issue #463: Delegated to TreeViewUIController
         private void OnDialogTreeViewSelectionChanged(object? sender, SelectionChangedEventArgs e)
-            => _treeViewUIController.OnDialogTreeViewSelectionChanged(sender, e);
+            => _controllers.TreeView.OnDialogTreeViewSelectionChanged(sender, e);
 
         // Issue #463: Delegated to TreeViewUIController
         private void OnTreeViewItemDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
-            => _treeViewUIController.OnTreeViewItemDoubleTapped(sender, e);
+            => _controllers.TreeView.OnTreeViewItemDoubleTapped(sender, e);
 
         private void PopulatePropertiesPanel(TreeViewSafeNode node)
         {
@@ -1318,10 +1269,10 @@ namespace DialogEditor.Views
             _uiState.IsPopulatingProperties = true;
 
             // CRITICAL FIX: Clear all fields FIRST to prevent stale data
-            _propertyPopulator.ClearAllFields();
+            _services.PropertyPopulator.ClearAllFields();
 
             // Populate Conversation Settings (dialog-level properties) - always populate these
-            _propertyPopulator.PopulateConversationSettings(_viewModel.CurrentDialog);
+            _services.PropertyPopulator.PopulateConversationSettings(_viewModel.CurrentDialog);
 
             // Issue #19: If ROOT node selected, keep only conversation settings enabled
             // All node-specific properties should remain disabled
@@ -1339,23 +1290,23 @@ namespace DialogEditor.Views
                 $"HasSourcePointer={node.SourcePointer != null}, DisplayText='{node.DisplayText}'");
 
             // Populate all node properties using helper
-            _propertyPopulator.PopulateNodeType(dialogNode);
-            _propertyPopulator.PopulateSpeaker(dialogNode);
-            _propertyPopulator.PopulateBasicProperties(dialogNode, node);
-            _propertyPopulator.PopulateAnimation(dialogNode);
-            _propertyPopulator.PopulateIsChildIndicator(node);
+            _services.PropertyPopulator.PopulateNodeType(dialogNode);
+            _services.PropertyPopulator.PopulateSpeaker(dialogNode);
+            _services.PropertyPopulator.PopulateBasicProperties(dialogNode, node);
+            _services.PropertyPopulator.PopulateAnimation(dialogNode);
+            _services.PropertyPopulator.PopulateIsChildIndicator(node);
 
             // Populate scripts with callbacks for async operations
-            _propertyPopulator.PopulateScripts(dialogNode, node,
+            _services.PropertyPopulator.PopulateScripts(dialogNode, node,
                 (script, isCondition) => _ = LoadParameterDeclarationsAsync(script, isCondition),
                 (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
                 (isCondition) => ClearScriptPreview(isCondition));
 
             // Populate quest fields
-            _propertyPopulator.PopulateQuest(dialogNode);
+            _services.PropertyPopulator.PopulateQuest(dialogNode);
 
             // Populate script parameters
-            _propertyPopulator.PopulateParameterGrids(dialogNode, node.SourcePointer, AddParameterRow);
+            _services.PropertyPopulator.PopulateParameterGrids(dialogNode, node.SourcePointer, AddParameterRow);
 
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Populated properties for node: {dialogNode.DisplayText}");
 
@@ -1571,7 +1522,7 @@ namespace DialogEditor.Views
 
         private void AutoSaveProperty(string propertyName)
         {
-            var result = _propertyAutoSaveService.AutoSaveProperty(_selectedNode, propertyName);
+            var result = _services.PropertyAutoSave.AutoSaveProperty(_selectedNode, propertyName);
 
             if (result.Success)
             {
@@ -1839,19 +1790,19 @@ namespace DialogEditor.Views
         // Properties panel handlers
         private void OnAddConditionsParamClick(object? sender, RoutedEventArgs e)
         {
-            _parameterUIManager.OnAddConditionsParamClick();
+            _services.ParameterUI.OnAddConditionsParamClick();
         }
 
         private void OnAddActionsParamClick(object? sender, RoutedEventArgs e)
         {
-            _parameterUIManager.OnAddActionsParamClick();
+            _services.ParameterUI.OnAddActionsParamClick();
         }
 
         private async void OnSuggestConditionsParamClick(object? sender, RoutedEventArgs e)
-            => await _scriptBrowserController.OnSuggestConditionsParamClickAsync();
+            => await _controllers.ScriptBrowser.OnSuggestConditionsParamClickAsync();
 
         private async void OnSuggestActionsParamClick(object? sender, RoutedEventArgs e)
-            => await _scriptBrowserController.OnSuggestActionsParamClickAsync();
+            => await _controllers.ScriptBrowser.OnSuggestActionsParamClickAsync();
 
         #region Script Browser Delegation Methods
         // These methods delegate to ScriptBrowserController but are kept as instance methods
@@ -1859,16 +1810,16 @@ namespace DialogEditor.Views
         // during construction before the controller is initialized.
 
         private Task LoadParameterDeclarationsAsync(string scriptName, bool isCondition)
-            => _scriptBrowserController.LoadParameterDeclarationsAsync(scriptName, isCondition);
+            => _controllers.ScriptBrowser.LoadParameterDeclarationsAsync(scriptName, isCondition);
 
         private Task LoadScriptPreviewAsync(string scriptName, bool isCondition)
-            => _scriptBrowserController.LoadScriptPreviewAsync(scriptName, isCondition);
+            => _controllers.ScriptBrowser.LoadScriptPreviewAsync(scriptName, isCondition);
 
         private void ClearScriptPreview(bool isCondition)
-            => _scriptBrowserController.ClearScriptPreview(isCondition);
+            => _controllers.ScriptBrowser.ClearScriptPreview(isCondition);
 
         private void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
-            => _parameterUIManager.AddParameterRow(parent, key, value, isCondition);
+            => _services.ParameterUI.AddParameterRow(parent, key, value, isCondition);
 
         #endregion
 
@@ -1914,7 +1865,7 @@ namespace DialogEditor.Views
 
         private async void OnBrowseCreatureClick(object? sender, RoutedEventArgs e)
         {
-            await _resourceBrowserManager.BrowseCreatureAsync(this);
+            await _services.ResourceBrowser.BrowseCreatureAsync(this);
         }
 
 
@@ -2032,10 +1983,10 @@ namespace DialogEditor.Views
 
         // Module info - delegated to FileMenuController (#466)
         private void UpdateModuleInfo(string dialogFilePath)
-            => _fileMenuController.UpdateModuleInfo(dialogFilePath);
+            => _controllers.FileMenu.UpdateModuleInfo(dialogFilePath);
 
         private void ClearModuleInfo()
-            => _fileMenuController.ClearModuleInfo();
+            => _controllers.FileMenu.ClearModuleInfo();
 
 
         private void OnPlaySoundClick(object? sender, RoutedEventArgs e)
@@ -2060,7 +2011,7 @@ namespace DialogEditor.Views
                     return;
                 }
 
-                _audioService.Play(soundPath);
+                _services.Audio.Play(soundPath);
                 _viewModel.StatusMessage = $"Playing: {soundFileName}";
                 UnifiedLogger.LogApplication(LogLevel.INFO, $"Playing sound: {soundPath}");
             }
@@ -2102,33 +2053,33 @@ namespace DialogEditor.Views
         private void OnBrowseConversationScriptClick(object? sender, RoutedEventArgs e)
         {
             if (sender is not Button button) return;
-            _scriptBrowserController.OnBrowseConversationScriptClick(button.Tag?.ToString());
+            _controllers.ScriptBrowser.OnBrowseConversationScriptClick(button.Tag?.ToString());
         }
 
         // Quest UI event handlers - delegated to QuestUIController (#465)
         private void OnQuestTagTextChanged(object? sender, TextChangedEventArgs e) =>
-            _questUIController.OnQuestTagTextChanged(sender, e);
+            _controllers.Quest.OnQuestTagTextChanged(sender, e);
 
         private void OnQuestTagLostFocus(object? sender, RoutedEventArgs e) =>
-            _questUIController.OnQuestTagLostFocus(sender, e);
+            _controllers.Quest.OnQuestTagLostFocus(sender, e);
 
         private void OnQuestEntryTextChanged(object? sender, TextChangedEventArgs e) =>
-            _questUIController.OnQuestEntryTextChanged(sender, e);
+            _controllers.Quest.OnQuestEntryTextChanged(sender, e);
 
         private void OnQuestEntryLostFocus(object? sender, RoutedEventArgs e) =>
-            _questUIController.OnQuestEntryLostFocus(sender, e);
+            _controllers.Quest.OnQuestEntryLostFocus(sender, e);
 
         private void OnBrowseQuestClick(object? sender, RoutedEventArgs e) =>
-            _questUIController.OnBrowseQuestClick(sender, e);
+            _controllers.Quest.OnBrowseQuestClick(sender, e);
 
         private void OnBrowseQuestEntryClick(object? sender, RoutedEventArgs e) =>
-            _questUIController.OnBrowseQuestEntryClick(sender, e);
+            _controllers.Quest.OnBrowseQuestEntryClick(sender, e);
 
         private void OnClearQuestTagClick(object? sender, RoutedEventArgs e) =>
-            _questUIController.OnClearQuestTagClick(sender, e);
+            _controllers.Quest.OnClearQuestTagClick(sender, e);
 
         private void OnClearQuestEntryClick(object? sender, RoutedEventArgs e) =>
-            _questUIController.OnClearQuestEntryClick(sender, e);
+            _controllers.Quest.OnClearQuestEntryClick(sender, e);
 
         /// <summary>
         /// Find a sound file by searching all configured paths and categories.
@@ -2183,16 +2134,16 @@ namespace DialogEditor.Views
         }
 
         private void OnBrowseConditionalScriptClick(object? sender, RoutedEventArgs e)
-            => _scriptBrowserController.OnBrowseConditionalScriptClick();
+            => _controllers.ScriptBrowser.OnBrowseConditionalScriptClick();
 
         private void OnBrowseActionScriptClick(object? sender, RoutedEventArgs e)
-            => _scriptBrowserController.OnBrowseActionScriptClick();
+            => _controllers.ScriptBrowser.OnBrowseActionScriptClick();
 
         private void OnEditConditionalScriptClick(object? sender, RoutedEventArgs e)
-            => _scriptBrowserController.OnEditConditionalScriptClick();
+            => _controllers.ScriptBrowser.OnEditConditionalScriptClick();
 
         private void OnEditActionScriptClick(object? sender, RoutedEventArgs e)
-            => _scriptBrowserController.OnEditActionScriptClick();
+            => _controllers.ScriptBrowser.OnEditActionScriptClick();
 
         // Node creation handlers - Phase 1 Step 3/4
         /// <summary>
@@ -2201,7 +2152,7 @@ namespace DialogEditor.Views
         private async void OnAddSmartNodeClick(object? sender, RoutedEventArgs e)
         {
             var selectedNode = GetSelectedTreeNode();
-            await _nodeCreationHelper.CreateSmartNodeAsync(selectedNode);
+            await _services.NodeCreation.CreateSmartNodeAsync(selectedNode);
         }
 
         /// <summary>
@@ -2235,11 +2186,11 @@ namespace DialogEditor.Views
             var treeView = this.FindControl<TreeView>("DialogTreeView");
             if (treeView == null) return;
 
-            var parentNode = _nodeCreationHelper.FindParentNode(treeView, selectedNode);
+            var parentNode = _services.NodeCreation.FindParentNode(treeView, selectedNode);
 
             // Add node as child of parent (sibling of selected)
             // This creates a new node at the same level as the selected node
-            await _nodeCreationHelper.CreateSmartNodeAsync(parentNode);
+            await _services.NodeCreation.CreateSmartNodeAsync(parentNode);
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Added sibling node to: {selectedNode.DisplayText}");
         }
 
@@ -2374,7 +2325,7 @@ namespace DialogEditor.Views
             if (SettingsService.Instance.ShowDeleteConfirmation)
             {
                 // Confirm deletion with "Don't show this again" option
-                confirmed = await _dialogFactory.ShowConfirmDialogAsync(
+                confirmed = await _services.Dialog.ShowConfirmDialogAsync(
                     "Delete Node",
                     $"Are you sure you want to delete this node and all its children?\n\n\"{selectedNode.DisplayText}\"",
                     showDontAskAgain: true
@@ -2436,7 +2387,7 @@ namespace DialogEditor.Views
                 if (!string.IsNullOrEmpty(_viewModel.CurrentFileName))
                 {
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"CurrentFileName changed to: {UnifiedLogger.SanitizePath(_viewModel.CurrentFileName)} - loading journal");
-                    await _questUIController.LoadJournalForCurrentModuleAsync();
+                    await _controllers.Quest.LoadJournalForCurrentModuleAsync();
                 }
             }
 
@@ -2448,7 +2399,7 @@ namespace DialogEditor.Views
                 // Only handle non-ROOT programmatic selection
                 // Skip if selection came from TreeView or plugin sync (flags set by respective handlers)
                 if (selectedNode != null && !(selectedNode is TreeViewRootNode) &&
-                    !_uiState.IsSettingSelectionProgrammatically && !_pluginSelectionSyncHelper.IsSettingSelectionProgrammatically)
+                    !_uiState.IsSettingSelectionProgrammatically && !_services.PluginSelectionSync.IsSettingSelectionProgrammatically)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG,
                         $"View: SelectedTreeNode changed to '{selectedNode.DisplayText}', scheduling selection");
@@ -2464,7 +2415,7 @@ namespace DialogEditor.Views
                             await Task.Delay(50);
 
                             // Expand ALL ancestors to ensure node is visible in visual tree
-                            _nodeCreationHelper.ExpandToNode(treeView, selectedNode);
+                            _services.NodeCreation.ExpandToNode(treeView, selectedNode);
                             UnifiedLogger.LogApplication(LogLevel.DEBUG,
                                 $"View: Expanded ancestors for '{selectedNode.DisplayText}'");
 
@@ -2489,32 +2440,32 @@ namespace DialogEditor.Views
 
         // Clipboard/Undo/Redo - delegated to EditMenuController (#466)
         private void OnUndoClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnUndoClick(sender, e);
+            => _controllers.EditMenu.OnUndoClick(sender, e);
 
         private void OnRedoClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnRedoClick(sender, e);
+            => _controllers.EditMenu.OnRedoClick(sender, e);
 
         private void OnCutNodeClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnCutNodeClick(sender, e);
+            => _controllers.EditMenu.OnCutNodeClick(sender, e);
 
         private void OnCopyNodeClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnCopyNodeClick(sender, e);
+            => _controllers.EditMenu.OnCopyNodeClick(sender, e);
 
         private void OnPasteAsDuplicateClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnPasteAsDuplicateClick(sender, e);
+            => _controllers.EditMenu.OnPasteAsDuplicateClick(sender, e);
 
         private void OnPasteAsLinkClick(object? sender, RoutedEventArgs e)
-            => _editMenuController.OnPasteAsLinkClick(sender, e);
+            => _controllers.EditMenu.OnPasteAsLinkClick(sender, e);
 
         // Issue #463: Expand/Collapse/Navigate delegated to TreeViewUIController
         private void OnExpandSubnodesClick(object? sender, RoutedEventArgs e)
-            => _treeViewUIController.OnExpandSubnodesClick(sender, e);
+            => _controllers.TreeView.OnExpandSubnodesClick(sender, e);
 
         private void OnCollapseSubnodesClick(object? sender, RoutedEventArgs e)
-            => _treeViewUIController.OnCollapseSubnodesClick(sender, e);
+            => _controllers.TreeView.OnCollapseSubnodesClick(sender, e);
 
         private void OnGoToParentNodeClick(object? sender, RoutedEventArgs e)
-            => _treeViewUIController.OnGoToParentNodeClick(sender, e);
+            => _controllers.TreeView.OnGoToParentNodeClick(sender, e);
 
         /// <summary>
         /// Gets the theme-aware success brush for validation feedback.
