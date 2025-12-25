@@ -208,6 +208,10 @@ public class DictionaryDiscovery
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
 
+                // Skip settings file
+                if (fileName.Equals("settings", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 // Skip if it looks like a Hunspell file (has matching .aff)
                 var affPath = Path.ChangeExtension(file, ".aff");
                 if (File.Exists(affPath))
