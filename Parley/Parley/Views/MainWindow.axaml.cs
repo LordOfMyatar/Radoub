@@ -28,28 +28,32 @@ namespace DialogEditor.Views
     public partial class MainWindow : Window, IKeyboardShortcutHandler
     {
         private readonly MainViewModel _viewModel;
-        private readonly AudioService _audioService;
-        private readonly CreatureService _creatureService;
-        private readonly PluginManager _pluginManager;
-        private readonly PluginPanelManager _pluginPanelManager; // Manages plugin panel windows (Epic 3 / #225)
-        private readonly PropertyPanelPopulator _propertyPopulator; // Helper for populating properties panel
-        private readonly PropertyAutoSaveService _propertyAutoSaveService; // Handles auto-saving of node properties
-        private readonly ScriptParameterUIManager _parameterUIManager; // Manages script parameter UI and synchronization
-        private readonly NodeCreationHelper _nodeCreationHelper; // Handles smart node creation and tree navigation
-        private readonly ResourceBrowserManager _resourceBrowserManager; // Manages resource browser dialogs
-        private readonly KeyboardShortcutManager _keyboardShortcutManager; // Manages keyboard shortcuts
-        private readonly DebugAndLoggingHandler _debugAndLoggingHandler; // Handles debug and logging operations
-        private readonly WindowPersistenceManager _windowPersistenceManager; // Manages window and panel persistence
-        private readonly PluginSelectionSyncHelper _pluginSelectionSyncHelper; // Handles plugin ↔ tree selection sync (#234)
         private readonly SafeControlFinder _controls; // Issue #342: Safe control access with null-check elimination
         private readonly WindowLifecycleManager _windows; // Issue #343: Centralized window lifecycle management
-        private readonly TreeViewDragDropService _dragDropService; // Issue #450: TreeView drag-drop support
-        private readonly FlowchartManager _flowchartManager; // Issue #457: Flowchart layout and sync management
-        private readonly TreeViewUIController _treeViewUIController; // Issue #463: TreeView UI interactions
-        private readonly ScriptBrowserController _scriptBrowserController; // Issue #464: Script browsing UI
-        private readonly QuestUIController _questUIController; // Issue #465: Quest/journal UI interactions
-        private readonly FileMenuController _fileMenuController; // Issue #466: File menu operations
-        private readonly EditMenuController _editMenuController; // Issue #466: Edit menu operations
+
+        // Services initialized in InitializeServices()
+        private AudioService _audioService = null!;
+        private CreatureService _creatureService = null!;
+        private PluginManager _pluginManager = null!;
+        private PluginPanelManager _pluginPanelManager = null!;
+        private PropertyPanelPopulator _propertyPopulator = null!;
+        private PropertyAutoSaveService _propertyAutoSaveService = null!;
+        private ScriptParameterUIManager _parameterUIManager = null!;
+        private NodeCreationHelper _nodeCreationHelper = null!;
+        private ResourceBrowserManager _resourceBrowserManager = null!;
+        private KeyboardShortcutManager _keyboardShortcutManager = null!;
+        private DebugAndLoggingHandler _debugAndLoggingHandler = null!;
+        private WindowPersistenceManager _windowPersistenceManager = null!;
+        private PluginSelectionSyncHelper _pluginSelectionSyncHelper = null!;
+        private TreeViewDragDropService _dragDropService = null!;
+
+        // Controllers initialized in InitializeControllers()
+        private FlowchartManager _flowchartManager = null!;
+        private TreeViewUIController _treeViewUIController = null!;
+        private ScriptBrowserController _scriptBrowserController = null!;
+        private QuestUIController _questUIController = null!;
+        private FileMenuController _fileMenuController = null!;
+        private EditMenuController _editMenuController = null!;
 
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
@@ -74,6 +78,20 @@ namespace DialogEditor.Views
 
             // Initialize selected tree node to null (no selection on startup)
             _viewModel.SelectedTreeNode = null;
+
+            // Issue #522: Extract initialization into focused methods
+            InitializeServices();
+            InitializeControllers();
+            InitializeLogging();
+            RegisterEventHandlers();
+            SetupUILayout();
+        }
+
+        /// <summary>
+        /// Initializes core services and helpers used throughout the application.
+        /// </summary>
+        private void InitializeServices()
+        {
             _audioService = new AudioService();
             _creatureService = new CreatureService();
             _pluginManager = new PluginManager();
@@ -127,7 +145,13 @@ namespace DialogEditor.Views
             // Initialize drag-drop service for TreeView (#450)
             _dragDropService = new TreeViewDragDropService();
             _dragDropService.DropCompleted += OnDragDropCompleted;
+        }
 
+        /// <summary>
+        /// Initializes UI controllers that coordinate complex interactions.
+        /// </summary>
+        private void InitializeControllers()
+        {
             // Initialize FlowchartManager for layout and sync management (#457)
             _flowchartManager = new FlowchartManager(
                 window: this,
@@ -195,7 +219,13 @@ namespace DialogEditor.Views
                 window: this,
                 getViewModel: () => _viewModel,
                 getSelectedNode: GetSelectedTreeNode);
+        }
 
+        /// <summary>
+        /// Initializes logging infrastructure.
+        /// </summary>
+        private void InitializeLogging()
+        {
             DebugLogger.Initialize(this);
             UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
             UnifiedLogger.LogApplication(LogLevel.INFO, "Parley MainWindow initialized");
@@ -203,12 +233,13 @@ namespace DialogEditor.Views
             // Cleanup old log sessions on startup
             var retentionCount = SettingsService.Instance.LogRetentionSessions;
             UnifiedLogger.CleanupOldSessions(retentionCount);
+        }
 
-            _windowPersistenceManager.LoadAnimationValues();
-
-            // Apply saved theme preference
-            ApplySavedTheme();
-
+        /// <summary>
+        /// Registers all event handlers for window, theme, settings, and UI events.
+        /// </summary>
+        private void RegisterEventHandlers()
+        {
             // Subscribe to theme changes to refresh tree view colors
             ThemeManager.Instance.ThemeApplied += OnThemeApplied;
 
@@ -218,72 +249,96 @@ namespace DialogEditor.Views
             // Subscribe to dialog change events for FlowView synchronization (#436, #451)
             DialogChangeEventBus.Instance.DialogChanged += OnDialogChanged;
 
-            // Phase 0 Fix: Hide debug console by default
-            HideDebugConsoleByDefault();
-
-            // Hook up menu events
-            this.Opened += async (s, e) =>
-            {
-                // Restore window position from settings
-                await _windowPersistenceManager.RestoreWindowPositionAsync();
-
-                PopulateRecentFilesMenu();
-
-                // Handle command line file loading (Issue #9)
-                await _windowPersistenceManager.HandleStartupFileAsync(_viewModel);
-
-                // Start enabled plugins after window opens
-                var startedPlugins = await _pluginManager.StartEnabledPluginsAsync();
-                if (startedPlugins.Count > 0)
-                {
-                    // Show in status bar instead of popup (less intrusive)
-                    _viewModel.StatusMessage = $"Plugins active: {string.Join(", ", startedPlugins)}";
-                    UnifiedLogger.LogPlugin(LogLevel.INFO, $"Started plugins: {string.Join(", ", startedPlugins)}");
-                }
-
-                // Restore flowchart state on startup (#377)
-                if (SettingsService.Instance.FlowchartVisible)
-                {
-                    _flowchartManager.RestoreOnStartup();
-                }
-            };
+            // Hook up window lifecycle events
+            this.Opened += OnWindowOpened;
             this.Closing += OnWindowClosing;
             this.PositionChanged += (s, e) => _windowPersistenceManager.SaveWindowPosition();
-            this.PropertyChanged += (s, e) =>
-            {
-                if (!_windowPersistenceManager.IsRestoringPosition)
-                {
-                    if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
-                    {
-                        _windowPersistenceManager.SaveWindowPosition();
-                    }
-                }
-            };
+            this.PropertyChanged += OnWindowPropertyChanged;
+            this.Loaded += OnWindowLoaded;
+
+            // Phase 2a: Watch for node re-selection requests after tree refresh
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+            // Auto-scroll debug console to end when new messages added
+            _viewModel.DebugMessages.CollectionChanged += OnDebugMessagesCollectionChanged;
+        }
+
+        /// <summary>
+        /// Configures initial UI layout and settings.
+        /// </summary>
+        private void SetupUILayout()
+        {
+            _windowPersistenceManager.LoadAnimationValues();
+
+            // Apply saved theme preference
+            ApplySavedTheme();
+
+            // Phase 0 Fix: Hide debug console by default
+            HideDebugConsoleByDefault();
 
             // Phase 1 Fix: Set up keyboard shortcuts
             SetupKeyboardShortcuts();
 
             // Issue #450/#463: Set up TreeView drag-drop handlers via controller
             _treeViewUIController.SetupTreeViewDragDrop();
+        }
 
-            // Phase 2a: Watch for node re-selection requests after tree refresh
-            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        /// <summary>
+        /// Handles window opened event - restores state and starts plugins.
+        /// </summary>
+        private async void OnWindowOpened(object? sender, EventArgs e)
+        {
+            // Restore window position from settings
+            await _windowPersistenceManager.RestoreWindowPositionAsync();
 
-            // Auto-scroll debug console to end when new messages added
-            _viewModel.DebugMessages.CollectionChanged += (s, e) =>
+            PopulateRecentFilesMenu();
+
+            // Handle command line file loading (Issue #9)
+            await _windowPersistenceManager.HandleStartupFileAsync(_viewModel);
+
+            // Start enabled plugins after window opens
+            var startedPlugins = await _pluginManager.StartEnabledPluginsAsync();
+            if (startedPlugins.Count > 0)
             {
-                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
-                {
-                    var debugListBox = this.FindControl<ListBox>("DebugListBox");
-                    if (debugListBox != null && debugListBox.ItemCount > 0)
-                    {
-                        debugListBox.ScrollIntoView(debugListBox.ItemCount - 1);
-                    }
-                }
-            };
+                // Show in status bar instead of popup (less intrusive)
+                _viewModel.StatusMessage = $"Plugins active: {string.Join(", ", startedPlugins)}";
+                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Started plugins: {string.Join(", ", startedPlugins)}");
+            }
 
-            // Restore debug settings when window is loaded (controls are available)
-            this.Loaded += OnWindowLoaded;
+            // Restore flowchart state on startup (#377)
+            if (SettingsService.Instance.FlowchartVisible)
+            {
+                _flowchartManager.RestoreOnStartup();
+            }
+        }
+
+        /// <summary>
+        /// Handles window property changes for position/size persistence.
+        /// </summary>
+        private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (!_windowPersistenceManager.IsRestoringPosition)
+            {
+                if (e.Property.Name == nameof(Width) || e.Property.Name == nameof(Height))
+                {
+                    _windowPersistenceManager.SaveWindowPosition();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles debug messages collection changes - auto-scrolls to latest message.
+        /// </summary>
+        private void OnDebugMessagesCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+            {
+                var debugListBox = this.FindControl<ListBox>("DebugListBox");
+                if (debugListBox != null && debugListBox.ItemCount > 0)
+                {
+                    debugListBox.ScrollIntoView(debugListBox.ItemCount - 1);
+                }
+            }
         }
 
         private void OnWindowLoaded(object? sender, RoutedEventArgs e)
