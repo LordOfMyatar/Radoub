@@ -31,6 +31,11 @@ namespace DialogEditor.Services
         private bool _isReloading;
 
         /// <summary>
+        /// Tracks words added by the user (separate from loaded dictionaries).
+        /// </summary>
+        private readonly HashSet<string> _userAddedWords = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
         /// Path to the Radoub-wide custom dictionary file.
         /// Located at ~/Radoub/Dictionaries/custom.dic
         /// </summary>
@@ -270,8 +275,10 @@ namespace DialogEditor.Services
         {
             if (!string.IsNullOrWhiteSpace(word))
             {
-                _dictionaryManager.AddWord(word.Trim());
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added '{word}' to custom dictionary");
+                var trimmedWord = word.Trim();
+                _dictionaryManager.AddWord(trimmedWord);
+                _userAddedWords.Add(trimmedWord);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added '{trimmedWord}' to custom dictionary");
 
                 // Save immediately
                 _ = SaveCustomDictionaryAsync();
@@ -351,9 +358,26 @@ namespace DialogEditor.Services
 
             try
             {
-                await _dictionaryManager.LoadDictionaryAsync(_customDictionaryPath);
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"Loaded custom dictionary: {_dictionaryManager.WordCount} words");
+                // Load the file to get words
+                var json = await File.ReadAllTextAsync(_customDictionaryPath);
+                var dict = System.Text.Json.JsonSerializer.Deserialize<Radoub.Dictionary.Models.CustomDictionary>(json,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+
+                if (dict != null)
+                {
+                    // Track user-added words separately
+                    foreach (var word in dict.AllWords)
+                    {
+                        if (!string.IsNullOrWhiteSpace(word))
+                        {
+                            _userAddedWords.Add(word.Trim());
+                            _dictionaryManager.AddWord(word.Trim());
+                        }
+                    }
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Loaded custom dictionary: {_userAddedWords.Count} user words");
+                }
             }
             catch (Exception ex)
             {
@@ -362,19 +386,30 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Save the custom dictionary to disk.
+        /// Save the custom dictionary to disk (only user-added words).
         /// </summary>
         public async Task SaveCustomDictionaryAsync()
         {
             try
             {
-                await _dictionaryManager.ExportDictionaryAsync(
-                    _customDictionaryPath,
-                    "Radoub Custom Dictionary",
-                    "User-added custom words for spell checking");
+                var dict = new Radoub.Dictionary.Models.CustomDictionary
+                {
+                    Source = "Radoub Custom Dictionary",
+                    Description = "User-added custom words for spell checking",
+                    Words = _userAddedWords.OrderBy(w => w, StringComparer.OrdinalIgnoreCase).ToList()
+                };
+
+                var json = System.Text.Json.JsonSerializer.Serialize(dict,
+                    new System.Text.Json.JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+                    });
+
+                await File.WriteAllTextAsync(_customDictionaryPath, json);
 
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Saved custom dictionary: {_dictionaryManager.WordCount} words");
+                    $"Saved custom dictionary: {_userAddedWords.Count} user words");
             }
             catch (Exception ex)
             {
