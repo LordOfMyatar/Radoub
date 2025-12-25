@@ -395,8 +395,7 @@ public void DoComplexThing() => _complexService.Execute(CurrentDialog);
 - ✅ NPC speaker color preferences
 
 **In Progress**:
-- Shared GFF library (Radoub.Formats) integration
-- JRL (Journal) reader/writer for Manifest tool
+See [Parley GitHub Project](https://github.com/users/LordOfMyatar/projects/2) for current work items.
 
 ---
 
