@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.11.0-alpha] - 2025-12-25
-**Branch**: `manifest/feat/dictionary-settings` | **PR**: #TBD
+**Branch**: `manifest/feat/dictionary-settings` | **PR**: #541
 
 ### Feature: Add Dictionary Settings to Manifest UI (#540)
 
