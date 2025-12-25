@@ -14,6 +14,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.2] - 2025-12-25
+**Branch**: `radoub/sprint/dictionary-language` | **PR**: #539
+
+### Sprint: Dictionary Language Selection (#515)
+
+#### Added (Radoub.Dictionary)
+- **DictionaryDiscovery** - Scan for available Hunspell and custom dictionaries (#508)
+  - Auto-detects bundled dictionaries (en_US, NWN)
+  - Scans `~/Radoub/Dictionaries/` for user-installed languages
+  - Hunspell dictionaries: `{lang_code}/{lang_code}.dic` + `.aff`
+  - Custom JSON dictionaries: `*.dic` or `*.json` files
+- **DictionarySettingsService** - Persist language preferences (#508)
+  - Settings stored at `~/Radoub/Dictionaries/settings.json`
+  - Events for hot-swap: `PrimaryLanguageChanged`, `CustomDictionaryToggled`
+- **DictionaryInfo** model with metadata (name, type, path, bundled flag)
+
+---
+
 ## [0.9.1] - 2025-12-23
 **Branch**: `manifest/sprint/dictionary-integration` | **PR**: #511
 

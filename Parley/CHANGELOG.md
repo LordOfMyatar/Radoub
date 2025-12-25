@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.94-alpha] - 2025-12-25
+**Branch**: `radoub/sprint/dictionary-language` | **PR**: #539
+
+### Sprint: Dictionary Language Selection (#515)
+
+#### Added
+- **Dictionaries tab** in Settings (#510)
+  - Primary language dropdown (select Hunspell dictionary)
+  - Custom dictionaries list with enable/disable toggles (like Plugins tab)
+  - NWN/D&D dictionary now toggleable (previously always-on)
+  - "Open Dictionaries Folder" and "Refresh" buttons
+- Hot-swap dictionary support - changes apply immediately without restart
+- `SpellCheckService.DictionariesReloaded` event for UI refresh
+
+---
+
 ## [0.1.93-alpha] - 2025-12-25
 **Branch**: `parley/fix/delete-focus-sibling` | **PR**: #538
 
