@@ -104,6 +104,12 @@ namespace Manifest.Services
             var settings = DictionarySettingsService.Instance;
             var primaryLanguage = settings.PrimaryLanguage;
 
+            // Clear discovery cache to pick up any new dictionaries
+            _discovery?.ClearCache();
+
+            // Clear user-added words tracking (will be repopulated from file)
+            _userAddedWords.Clear();
+
             // Create fresh dictionary manager and spell checker
             _dictionaryManager = new DictionaryManager();
             _spellChecker?.Dispose();
