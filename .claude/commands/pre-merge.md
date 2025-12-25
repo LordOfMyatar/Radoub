@@ -48,12 +48,7 @@ Based on changed files:
 
 ### Step 4: Run Automated Checks
 
-**Privacy Scan** - Check for hardcoded paths:
-```bash
-# Search for potential path leaks
-grep -r "C:\\Users" --include="*.cs" Parley/ Radoub.Formats/ || echo "No hardcoded paths found"
-grep -r "/Users/" --include="*.cs" Parley/ Radoub.Formats/ || echo "No hardcoded paths found"
-```
+**Privacy Scan**: Included in test suite (run-tests.ps1). No manual step needed.
 
 **CHANGELOG Validation**:
 ```bash
