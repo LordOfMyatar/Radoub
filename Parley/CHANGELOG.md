@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.88-alpha] - 2025-12-24
+**Branch**: `parley/sprint/mainview-quick-wins` | **PR**: #527
+
+### Sprint: MainView Quick Wins (Tech Debt)
+
+Quick refactoring wins for MainViewModel.
+
+#### Changed
+- #521 - Remove dead code from MainViewModel (~50 lines of commented blocks)
+- #523 - Create RefreshTreeViewAndMarkDirty() helper to consolidate pattern
+- #525 - Create UiStateManager for centralized UI state tracking
+
+---
+
 ## [0.1.87-alpha] - 2025-12-24
 **Branch**: `parley/sprint/flowview-bug-bash` | **PR**: #520 | **Closes**: #514
 
