@@ -34,9 +34,28 @@ public static class TestPaths
     public static string ParleyTestFiles => Path.Combine(RepoRoot, "Parley", "TestingTools", "TestFiles");
 
     /// <summary>
-    /// Gets a specific test dialog file path.
+    /// Gets a specific Parley test dialog file path.
     /// </summary>
     public static string GetTestFile(string filename) => Path.Combine(ParleyTestFiles, filename);
+
+    /// <summary>
+    /// Gets the path to a built Manifest executable.
+    /// </summary>
+    /// <param name="configuration">Build configuration (Debug or Release)</param>
+    public static string GetManifestExePath(string configuration = "Debug")
+    {
+        return Path.Combine(RepoRoot, "Manifest", "Manifest", "bin", configuration, "net9.0", "Manifest.exe");
+    }
+
+    /// <summary>
+    /// Gets path to Manifest test files directory.
+    /// </summary>
+    public static string ManifestTestFiles => Path.Combine(RepoRoot, "Manifest", "Manifest.Tests", "TestData");
+
+    /// <summary>
+    /// Gets a specific Manifest test file path.
+    /// </summary>
+    public static string GetManifestTestFile(string filename) => Path.Combine(ManifestTestFiles, filename);
 
     /// <summary>
     /// Creates a temporary directory for test output.

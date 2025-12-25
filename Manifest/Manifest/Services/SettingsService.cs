@@ -30,8 +30,17 @@ namespace Manifest.Services
             {
                 if (_settingsDirectory == null)
                 {
-                    var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                    _settingsDirectory = Path.Combine(userProfile, "Radoub", "Manifest");
+                    // Check for environment variable override (used for UI testing isolation)
+                    var envDir = Environment.GetEnvironmentVariable("MANIFEST_SETTINGS_DIR");
+                    if (!string.IsNullOrEmpty(envDir))
+                    {
+                        _settingsDirectory = envDir;
+                    }
+                    else
+                    {
+                        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                        _settingsDirectory = Path.Combine(userProfile, "Radoub", "Manifest");
+                    }
                 }
                 return _settingsDirectory;
             }
