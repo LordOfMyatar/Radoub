@@ -18,7 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Reduce MainWindow.axaml.cs constructor from 140+ lines to focused initialization methods.
 
 #### Changed
-- (Work in progress)
+- Extract constructor into 5 focused initialization methods:
+  - `InitializeServices()` - Core services and helpers
+  - `InitializeControllers()` - UI controllers
+  - `InitializeLogging()` - Logging infrastructure
+  - `RegisterEventHandlers()` - Event subscriptions
+  - `SetupUILayout()` - UI configuration
+- Extract inline event handlers to named methods:
+  - `OnWindowOpened()` - Window opened handler
+  - `OnWindowPropertyChanged()` - Window property change handler
+  - `OnDebugMessagesCollectionChanged()` - Debug message scroll handler
+- Constructor reduced from ~225 lines to 22 lines
 
 ---
 
