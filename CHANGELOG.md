@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.2] - 2025-12-25
-**Branch**: `radoub/sprint/dictionary-language` | **PR**: #TBD
+**Branch**: `radoub/sprint/dictionary-language` | **PR**: #539
 
 ### Sprint: Dictionary Language Selection (#515)
 
