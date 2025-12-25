@@ -973,6 +973,9 @@ namespace DialogEditor.ViewModels
             {
                 var node = nodeToDelete.OriginalNode;
 
+                // Find sibling to focus BEFORE deleting (tree structure changes after deletion)
+                var siblingToFocus = FindSiblingForFocus(node);
+
                 // Save state for undo before deleting
                 SaveUndoState("Delete Node");
 
@@ -1004,7 +1007,13 @@ namespace DialogEditor.ViewModels
                     StatusMessage = $"Node and children deleted successfully";
                 }
 
+                // Refresh tree and focus sibling (or parent, or root if no sibling)
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "DeleteNode: About to refresh tree");
+                if (siblingToFocus != null)
+                {
+                    // Set the node to focus after tree refresh (will be picked up by PopulateDialogNodes)
+                    NodeToSelectAfterRefresh = siblingToFocus;
+                }
                 RefreshTreeViewAndMarkDirty();
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "DeleteNode: Tree refresh completed");
             }

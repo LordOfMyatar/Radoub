@@ -118,27 +118,15 @@ Follow Radoub conventions (see `../CLAUDE.md`):
 
 ## Sprint Plan
 
-### Sprint 1: Application Shell (Current - #405)
-- Project structure
-- Settings service
-- Logging service
-- Basic MainWindow
-- File dialogs
+See [Radoub GitHub Project](https://github.com/users/LordOfMyatar/projects/3) for current sprint status.
 
-### Sprint 2: File I/O
-- Open JRL via JrlReader
-- Display in TreeView
-- Save via JrlWriter
-- Dirty state
+### Completed
+- Sprint 1: Application Shell (#405)
 
-### Sprint 3: Category Editing
-- Property panel for categories
-- Add/Delete/Reorder categories
-
-### Sprint 4: Entry Editing
-- Property panel for entries
-- Add/Delete/Reorder entries
-- Auto-increment ID
+### Planned
+- Sprint 2: File I/O (JRL read/write, TreeView display)
+- Sprint 3: Category Editing
+- Sprint 4: Entry Editing
 
 ## Resources
 

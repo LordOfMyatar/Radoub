@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.93-alpha] - 2025-12-25
+**Branch**: `parley/fix/delete-focus-sibling` | **PR**: #538
+
+### Fix: Deleting Node Jumps Focus to Root Instead of Nearest Sibling (#435)
+
+After deleting a node, focus now moves to the nearest sibling instead of jumping to root.
+
+#### Changed
+- Focus behavior after node deletion:
+  1. Previous sibling (if exists) - stays at same visual position
+  2. Next sibling (if no previous sibling)
+  3. Parent (if no siblings)
+
+---
+
 ## [0.1.92-alpha] - 2025-12-24
 **Branch**: `parley/refactor/remove-parser-dead-code` | **PR**: #532
 
