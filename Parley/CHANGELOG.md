@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.93-alpha] - 2025-12-25
-**Branch**: `parley/fix/delete-focus-sibling` | **PR**: #TBD
+**Branch**: `parley/fix/delete-focus-sibling` | **PR**: #538
 
 ### Fix: Deleting Node Jumps Focus to Root Instead of Nearest Sibling (#435)
 
