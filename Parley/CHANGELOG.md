@@ -15,7 +15,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactor: Create ServiceCoordinator (#526)
 
-Consolidate MainWindow's 24 service dependencies into a ServiceCoordinator class.
+Consolidate MainWindow's 24 service dependencies into organized container classes.
+
+#### Added
+- `Views/Helpers/MainWindowServices.cs` - Container for 15 service dependencies:
+  - Core: Audio, Creature
+  - Plugin: Plugin, PluginPanel
+  - Property: PropertyPopulator, PropertyAutoSave, ParameterUI
+  - UI: NodeCreation, ResourceBrowser, KeyboardShortcuts
+  - Window: DebugLogging, WindowPersistence, PluginSelectionSync
+  - TreeView/Dialog: DragDrop, Dialog
+- `Views/Helpers/MainWindowControllers.cs` - Container for 6 controller dependencies:
+  - Flowchart, TreeView, ScriptBrowser, Quest, FileMenu, EditMenu
+
+#### Changed
+- MainWindow field count reduced from 24 to 6 (ViewModel, Controls, Windows, Services, Controllers, UiState)
+- Removed verbose development comments (Phase 0/1/2 notes)
+- MainWindow reduced by ~49 lines
 
 ---
 
