@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.10.0-alpha] - 2025-12-25
-**Branch**: `manifest/feat/flaui-smoke-tests` | **PR**: #TBD
+**Branch**: `manifest/feat/flaui-smoke-tests` | **PR**: #537
 
 ### Feature: FlaUI Smoke Tests (#512)
 
