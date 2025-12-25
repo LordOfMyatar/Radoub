@@ -32,11 +32,12 @@ Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI, pl
 
 Cross-platform journal editor for Neverwinter Nights JRL files.
 
-**Status**: Alpha (v0.7.0)
+**Status**: Alpha (v0.11.0)
 **Platforms**: Windows, Linux, macOS
 **Key Features**:
 - Quest category and entry editing
 - TLK string resolution with multi-language support
+- Spell-checking with custom dictionary support
 - Theme support (dark/light, accessibility themes)
 - Auto-detect game installation paths
 
