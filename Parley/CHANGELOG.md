@@ -20,6 +20,7 @@ Quick refactoring wins for MainViewModel.
 #### Changed
 - #521 - Remove dead code from MainViewModel (~50 lines of commented blocks)
 - #523 - Create RefreshTreeViewAndMarkDirty() helper to consolidate pattern
+- #525 - Create UiStateManager for centralized UI state tracking
 
 ---
 

@@ -20,6 +20,7 @@ using DialogEditor.Utils;
 using DialogEditor.Services;
 using DialogEditor.Parsers;
 using DialogEditor.Plugins;
+using Parley.Services;
 using Parley.Views.Helpers;
 
 namespace DialogEditor.Views
@@ -53,8 +54,8 @@ namespace DialogEditor.Views
         // DEBOUNCED AUTO-SAVE: Timer for file auto-save after inactivity
         private System.Timers.Timer? _autoSaveTimer;
 
-        // Flag to prevent auto-save during programmatic updates
-        private bool _isPopulatingProperties = false;
+        // Centralized UI state management (#525)
+        private readonly UiStateManager _uiState = new();
 
         // DEBOUNCED NODE CREATION: Moved to NodeCreationHelper service (Issue #76)
 
@@ -89,7 +90,7 @@ namespace DialogEditor.Views
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 triggerAutoSave: () => { _viewModel.HasUnsavedChanges = true; TriggerDebouncedAutoSave(); },
-                isPopulatingProperties: () => _isPopulatingProperties,
+                isPopulatingProperties: () => _uiState.IsPopulatingProperties,
                 getSelectedNode: () => _selectedNode);
             _nodeCreationHelper = new NodeCreationHelper(
                 viewModel: _viewModel,
@@ -137,8 +138,8 @@ namespace DialogEditor.Views
                 setSelectedNode: node => _selectedNode = node,
                 populatePropertiesPanel: PopulatePropertiesPanel,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
-                getIsSettingSelectionProgrammatically: () => _isSettingSelectionProgrammatically,
-                setIsSettingSelectionProgrammatically: value => _isSettingSelectionProgrammatically = value);
+                getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
+                setIsSettingSelectionProgrammatically: value => _uiState.IsSettingSelectionProgrammatically = value);
 
             // Initialize TreeViewUIController for TreeView UI interactions (#463)
             _treeViewUIController = new TreeViewUIController(
@@ -151,7 +152,7 @@ namespace DialogEditor.Views
                 populatePropertiesPanel: PopulatePropertiesPanel,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 clearAllFields: () => _propertyPopulator.ClearAllFields(),
-                getIsSettingSelectionProgrammatically: () => _isSettingSelectionProgrammatically,
+                getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
                 syncSelectionToFlowcharts: node => _flowchartManager.SyncSelectionToFlowcharts(node),
                 updatePluginSelectionSync: () => _pluginSelectionSyncHelper.UpdateDialogContextSelectedNode());
 
@@ -162,7 +163,7 @@ namespace DialogEditor.Views
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
                 autoSaveProperty: AutoSaveProperty,
-                isPopulatingProperties: () => _isPopulatingProperties,
+                isPopulatingProperties: () => _uiState.IsPopulatingProperties,
                 parameterUIManager: _parameterUIManager,
                 triggerAutoSave: () => { _viewModel.HasUnsavedChanges = true; TriggerDebouncedAutoSave(); });
 
@@ -172,8 +173,8 @@ namespace DialogEditor.Views
                 controls: _controls,
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
-                isPopulatingProperties: () => _isPopulatingProperties,
-                setIsPopulatingProperties: value => _isPopulatingProperties = value,
+                isPopulatingProperties: () => _uiState.IsPopulatingProperties,
+                setIsPopulatingProperties: value => _uiState.IsPopulatingProperties = value,
                 triggerAutoSave: TriggerDebouncedAutoSave);
 
             // Initialize FileMenuController for file menu operations (#466)
@@ -1230,7 +1231,7 @@ namespace DialogEditor.Views
         }
 
         private TreeViewSafeNode? _selectedNode;
-        private bool _isSettingSelectionProgrammatically = false;  // For ViewModel SelectedTreeNode binding feedback
+        // _uiState.IsSettingSelectionProgrammatically moved to _uiState (#525)
 
         /// <summary>
         /// Handles completion of a TreeView drag-drop operation (#450).
@@ -1255,7 +1256,7 @@ namespace DialogEditor.Views
         private void PopulatePropertiesPanel(TreeViewSafeNode node)
         {
             // CRITICAL FIX: Prevent auto-save during programmatic updates
-            _isPopulatingProperties = true;
+            _uiState.IsPopulatingProperties = true;
 
             // CRITICAL FIX: Clear all fields FIRST to prevent stale data
             _propertyPopulator.ClearAllFields();
@@ -1267,7 +1268,7 @@ namespace DialogEditor.Views
             // All node-specific properties should remain disabled
             if (node is TreeViewRootNode)
             {
-                _isPopulatingProperties = false;
+                _uiState.IsPopulatingProperties = false;
                 return; // Node fields remain disabled from ClearAllFields
             }
 
@@ -1300,7 +1301,7 @@ namespace DialogEditor.Views
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Populated properties for node: {dialogNode.DisplayText}");
 
             // Re-enable auto-save after population complete
-            _isPopulatingProperties = false;
+            _uiState.IsPopulatingProperties = false;
         }
 
 
@@ -1374,9 +1375,9 @@ namespace DialogEditor.Views
         // FIELD-LEVEL AUTO-SAVE: Event handlers for immediate save
         private void OnAnimationSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnAnimationSelectionChanged: _selectedNode={_selectedNode != null}, _isPopulatingProperties={_isPopulatingProperties}");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnAnimationSelectionChanged: _selectedNode={_selectedNode != null}, _uiState.IsPopulatingProperties={_uiState.IsPopulatingProperties}");
 
-            if (_selectedNode != null && !_isPopulatingProperties)
+            if (_selectedNode != null && !_uiState.IsPopulatingProperties)
             {
                 var comboBox = sender as ComboBox;
                 if (comboBox != null)
@@ -1423,7 +1424,7 @@ namespace DialogEditor.Views
         // Issue #74/#253: Track field value on focus, only save undo if value changes
         private void OnFieldGotFocus(object? sender, GotFocusEventArgs e)
         {
-            if (_selectedNode == null || _isPopulatingProperties) return;
+            if (_selectedNode == null || _uiState.IsPopulatingProperties) return;
             if (_viewModel.CurrentDialog == null) return;
 
             var control = sender as Control;
@@ -1480,7 +1481,7 @@ namespace DialogEditor.Views
         // FIELD-LEVEL AUTO-SAVE: Save property when field loses focus
         private void OnFieldLostFocus(object? sender, RoutedEventArgs e)
         {
-            if (_selectedNode == null || _isPopulatingProperties) return;
+            if (_selectedNode == null || _uiState.IsPopulatingProperties) return;
 
             var control = sender as Control;
             if (control == null) return;
@@ -1897,7 +1898,7 @@ namespace DialogEditor.Views
             try
             {
                 // Don't trigger during property population
-                if (_isPopulatingProperties) return;
+                if (_uiState.IsPopulatingProperties) return;
 
                 var comboBox = sender as ComboBox;
                 var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
@@ -1934,7 +1935,7 @@ namespace DialogEditor.Views
             try
             {
                 // Don't trigger during property population
-                if (_isPopulatingProperties) return;
+                if (_uiState.IsPopulatingProperties) return;
 
                 var comboBox = sender as ComboBox;
                 var speakerTextBox = this.FindControl<TextBox>("SpeakerTextBox");
@@ -2388,7 +2389,7 @@ namespace DialogEditor.Views
                 // Only handle non-ROOT programmatic selection
                 // Skip if selection came from TreeView or plugin sync (flags set by respective handlers)
                 if (selectedNode != null && !(selectedNode is TreeViewRootNode) &&
-                    !_isSettingSelectionProgrammatically && !_pluginSelectionSyncHelper.IsSettingSelectionProgrammatically)
+                    !_uiState.IsSettingSelectionProgrammatically && !_pluginSelectionSyncHelper.IsSettingSelectionProgrammatically)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG,
                         $"View: SelectedTreeNode changed to '{selectedNode.DisplayText}', scheduling selection");
@@ -2409,7 +2410,7 @@ namespace DialogEditor.Views
                                 $"View: Expanded ancestors for '{selectedNode.DisplayText}'");
 
                             // Set flag to prevent feedback loop when setting SelectedItem
-                            _isSettingSelectionProgrammatically = true;
+                            _uiState.IsSettingSelectionProgrammatically = true;
                             try
                             {
                                 // Force set TreeView selection (binding alone doesn't work for lazy-loaded children)
@@ -2419,7 +2420,7 @@ namespace DialogEditor.Views
                             }
                             finally
                             {
-                                _isSettingSelectionProgrammatically = false;
+                                _uiState.IsSettingSelectionProgrammatically = false;
                             }
                         }
                     }, global::Avalonia.Threading.DispatcherPriority.Background);
