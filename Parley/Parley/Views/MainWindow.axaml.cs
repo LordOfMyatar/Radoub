@@ -46,6 +46,7 @@ namespace DialogEditor.Views
         private WindowPersistenceManager _windowPersistenceManager = null!;
         private PluginSelectionSyncHelper _pluginSelectionSyncHelper = null!;
         private TreeViewDragDropService _dragDropService = null!;
+        private DialogFactory _dialogFactory = null!;
 
         // Controllers initialized in InitializeControllers()
         private FlowchartManager _flowchartManager = null!;
@@ -145,6 +146,9 @@ namespace DialogEditor.Views
             // Initialize drag-drop service for TreeView (#450)
             _dragDropService = new TreeViewDragDropService();
             _dragDropService.DropCompleted += OnDragDropCompleted;
+
+            // Issue #524: Dialog factory for reusable confirmation/error dialogs
+            _dialogFactory = new DialogFactory(this);
         }
 
         /// <summary>
@@ -562,9 +566,9 @@ namespace DialogEditor.Views
                     ? "this file"
                     : System.IO.Path.GetFileName(_viewModel.CurrentFileName);
 
-                var shouldSave = await ShowConfirmDialog(
+                var shouldSave = await _dialogFactory.ShowConfirmDialogAsync(
                     "Unsaved Changes",
-                    $"Do you want to save changes to {fileName}?"
+                    $"Do you want to save changes to {fileName}"
                 );
 
                 if (shouldSave)
@@ -582,7 +586,7 @@ namespace DialogEditor.Views
                     if (!saveSuccess)
                     {
                         // Save failed (e.g., read-only file) - offer Save As
-                        var saveAs = await ShowSaveErrorDialog(_viewModel.StatusMessage);
+                        var saveAs = await _dialogFactory.ShowSaveErrorDialogAsync(_viewModel.StatusMessage);
                         if (saveAs)
                         {
                             // Show Save As dialog
@@ -597,7 +601,7 @@ namespace DialogEditor.Views
                         else
                         {
                             // User chose Cancel - ask if they want to discard
-                            var discardChanges = await ShowConfirmDialog(
+                            var discardChanges = await _dialogFactory.ShowConfirmDialogAsync(
                                 "Discard Changes?",
                                 "Save failed. Do you want to discard changes and close anyway?");
                             if (!discardChanges)
@@ -2370,7 +2374,7 @@ namespace DialogEditor.Views
             if (SettingsService.Instance.ShowDeleteConfirmation)
             {
                 // Confirm deletion with "Don't show this again" option
-                confirmed = await ShowConfirmDialog(
+                confirmed = await _dialogFactory.ShowConfirmDialogAsync(
                     "Delete Node",
                     $"Are you sure you want to delete this node and all its children?\n\n\"{selectedNode.DisplayText}\"",
                     showDontAskAgain: true
@@ -2481,125 +2485,6 @@ namespace DialogEditor.Views
                     }, global::Avalonia.Threading.DispatcherPriority.Background);
                 }
             }
-        }
-
-        private async Task<bool> ShowConfirmDialog(string title, string message, bool showDontAskAgain = false)
-        {
-            var dialog = new Window
-            {
-                Title = title,
-                MinWidth = 400,
-                MaxWidth = 600,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                CanResize = false
-            };
-
-            var panel = new StackPanel { Margin = new Thickness(20) };
-
-            panel.Children.Add(new TextBlock
-            {
-                Text = message,
-                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
-                MaxWidth = 560, // MaxWidth - margins
-                Margin = new Thickness(0, 0, 0, 20)
-            });
-
-            // "Don't show this again" checkbox (Issue #14)
-            CheckBox? dontAskCheckBox = null;
-            if (showDontAskAgain)
-            {
-                dontAskCheckBox = new CheckBox
-                {
-                    Content = "Don't show this again",
-                    Margin = new Thickness(0, 0, 0, 20)
-                };
-                panel.Children.Add(dontAskCheckBox);
-            }
-
-            var buttonPanel = new StackPanel
-            {
-                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
-                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
-                Spacing = 10
-            };
-
-            var result = false;
-
-            var yesButton = new Button { Content = "Yes", Width = 80 };
-            yesButton.Click += (s, e) =>
-            {
-                result = true;
-                // Save "don't ask again" preference if checkbox is checked (Issue #14)
-                if (dontAskCheckBox?.IsChecked == true)
-                {
-                    SettingsService.Instance.ShowDeleteConfirmation = false;
-                }
-                dialog.Close();
-            };
-
-            var noButton = new Button { Content = "No", Width = 80 };
-            noButton.Click += (s, e) => { result = false; dialog.Close(); };
-
-            buttonPanel.Children.Add(yesButton);
-            buttonPanel.Children.Add(noButton);
-
-            panel.Children.Add(buttonPanel);
-            dialog.Content = panel;
-
-            await dialog.ShowDialog(this);
-            return result;
-        }
-
-        /// <summary>
-        /// Issue #8: Shows error dialog with option to Save As when save fails.
-        /// Returns true if user wants to Save As, false to dismiss.
-        /// </summary>
-        private async Task<bool> ShowSaveErrorDialog(string errorMessage)
-        {
-            var dialog = new Window
-            {
-                Title = "Save Failed",
-                MinWidth = 400,
-                MaxWidth = 500,
-                SizeToContent = SizeToContent.WidthAndHeight,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                CanResize = false
-            };
-
-            var panel = new StackPanel { Margin = new Thickness(20) };
-
-            panel.Children.Add(new TextBlock
-            {
-                Text = errorMessage,
-                TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
-                MaxWidth = 460,
-                Margin = new Thickness(0, 0, 0, 20)
-            });
-
-            var buttonPanel = new StackPanel
-            {
-                Orientation = global::Avalonia.Layout.Orientation.Horizontal,
-                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
-                Spacing = 10
-            };
-
-            var result = false;
-
-            var saveAsButton = new Button { Content = "Save As...", Width = 100 };
-            saveAsButton.Click += (s, e) => { result = true; dialog.Close(); };
-
-            var cancelButton = new Button { Content = "Cancel", Width = 80 };
-            cancelButton.Click += (s, e) => { result = false; dialog.Close(); };
-
-            buttonPanel.Children.Add(saveAsButton);
-            buttonPanel.Children.Add(cancelButton);
-
-            panel.Children.Add(buttonPanel);
-            dialog.Content = panel;
-
-            await dialog.ShowDialog(this);
-            return result;
         }
 
         // Clipboard/Undo/Redo - delegated to EditMenuController (#466)

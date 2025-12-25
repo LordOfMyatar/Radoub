@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.90-alpha] - 2025-12-24
+**Branch**: `parley/refactor/dialog-factory` | **PR**: #529
+
+### Refactor: Extract DialogFactory Service (#524)
+
+Extract dialog creation from MainWindow.axaml.cs into dedicated DialogFactory service.
+
+#### Added
+- `Services/DialogFactory.cs` - Reusable dialog factory with:
+  - `ShowConfirmDialogAsync()` - Yes/No confirmation with optional "Don't show again" checkbox
+  - `ShowSaveErrorDialogAsync()` - Save failed dialog with Save As option
+
+#### Changed
+- MainWindow now uses DialogFactory for all confirmation dialogs
+- MainWindow reduced by ~117 lines
+
+---
+
 ## [0.1.89-alpha] - 2025-12-24
 **Branch**: `parley/refactor/mainwindow-constructor` | **PR**: #528
 
