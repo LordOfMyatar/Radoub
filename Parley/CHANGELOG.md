@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.89-alpha] - 2025-12-24
+**Branch**: `parley/refactor/mainwindow-constructor` | **PR**: #TBD
+
+### Refactor: Extract MainWindow Constructor Initialization (#522)
+
+Reduce MainWindow.axaml.cs constructor from 140+ lines to focused initialization methods.
+
+#### Changed
+- (Work in progress)
+
+---
+
 ## [0.1.88-alpha] - 2025-12-24
 **Branch**: `parley/sprint/mainview-quick-wins` | **PR**: #527
 
