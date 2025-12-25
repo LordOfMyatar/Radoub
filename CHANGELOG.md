@@ -14,6 +14,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.2] - 2025-12-25
+**Branch**: `radoub/sprint/dictionary-language` | **PR**: #TBD
+
+### Sprint: Dictionary Language Selection (#515)
+
+#### Added
+- Additional language dictionary support (#508)
+  - Auto-detection of installed dictionaries from user's Dictionaries folder
+  - Platform-specific dictionary paths (Windows/Linux/macOS)
+
+---
+
 ## [0.9.1] - 2025-12-23
 **Branch**: `manifest/sprint/dictionary-integration` | **PR**: #511
 

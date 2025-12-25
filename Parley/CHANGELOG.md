@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.94-alpha] - 2025-12-25
+**Branch**: `radoub/sprint/dictionary-language` | **PR**: #TBD
+
+### Sprint: Dictionary Language Selection (#515)
+
+#### Added
+- Dictionary language selection in Settings (#510)
+
+---
+
 ## [0.1.93-alpha] - 2025-12-25
 **Branch**: `parley/fix/delete-focus-sibling` | **PR**: #538
 
