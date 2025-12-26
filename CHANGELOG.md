@@ -14,6 +14,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.9] - 2025-12-26
+**Branch**: `radoub/sprint/item-filter-panel` | **PR**: #TBD
+
+### Sprint: Item Filter Panel Component (#552)
+
+Part of Epic #546 (Shared Inventory UI Components).
+
+#### Added (Radoub.Formats)
+- **ItemFilterPanel** - Collapsible filter control for item lists
+  - Text search (Name, Tag, ResRef) with debounce
+  - Source filter (Standard/Custom items)
+  - Type filter (from baseitems.2da categories)
+  - Filter state persistence
+
+---
+
 ## [0.9.8] - 2025-12-26
 **Branch**: `radoub/sprint/game-data-service` | **PR**: #572
 
