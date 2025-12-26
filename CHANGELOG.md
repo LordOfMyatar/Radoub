@@ -14,6 +14,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.5] - 2025-12-26
+**Branch**: `radoub/sprint/utm-parser-store-model` | **PR**: #TBD
+
+### Sprint: UTM Parser and Store Model (#556)
+
+Part of Epic #547 (File Format Parsers).
+
+#### Added (Radoub.Formats)
+- **UTM Parser** - Read/write support for store blueprint files
+- `UtmFile` - Strongly-typed store representation
+- `UtmReader` / `UtmWriter` - Static parser/serializer pair
+
+#### MVP Fields
+- Store properties: ResRef, Tag, LocName, MarkUp, MarkDown, StoreGold
+- StoreList: 5 inventory panels with item references
+- WillOnlyBuy/WillNotBuy: Base item type filters
+
+---
+
 ## [0.9.4] - 2025-12-25
 **Branch**: `radoub/sprint/utc-parser-creature-model` | **PR**: #561
 
