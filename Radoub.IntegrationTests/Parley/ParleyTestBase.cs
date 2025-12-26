@@ -1,6 +1,6 @@
-using Radoub.UITests.Shared;
+using Radoub.IntegrationTests.Shared;
 
-namespace Radoub.UITests.Parley;
+namespace Radoub.IntegrationTests.Parley;
 
 /// <summary>
 /// Base class for Parley-specific UI tests.

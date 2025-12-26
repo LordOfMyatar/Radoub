@@ -1,0 +1,97 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Radoub.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Radoub.UI.Controls.ItemListView"
+             x:DataType="vm:ItemViewModel">
+
+  <UserControl.Styles>
+    <!-- Ensure scrollbars are always visible -->
+    <Style Selector="ScrollViewer">
+      <Setter Property="AllowAutoHide" Value="False"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Toolbar row for Select All / Select None -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="4" Spacing="8">
+      <Button x:Name="SelectAllButton" Content="Select All" Click="OnSelectAllClick"/>
+      <Button x:Name="SelectNoneButton" Content="Select None" Click="OnSelectNoneClick"/>
+      <TextBlock x:Name="SelectionCountText" VerticalAlignment="Center" Margin="8,0,0,0"/>
+    </StackPanel>
+
+    <!-- DataGrid -->
+    <DataGrid Grid.Row="1"
+              x:Name="ItemsGrid"
+              AutoGenerateColumns="False"
+              CanUserReorderColumns="True"
+              CanUserResizeColumns="True"
+              CanUserSortColumns="True"
+              IsReadOnly="False"
+              SelectionMode="Extended"
+              GridLinesVisibility="Horizontal"
+              HeadersVisibility="Column"
+              SelectionChanged="OnSelectionChanged">
+
+      <!-- Row context menu -->
+      <DataGrid.ContextMenu>
+        <ContextMenu x:Name="RowContextMenu">
+          <MenuItem x:Name="MenuOpen" Header="Open" Click="OnContextMenuOpen"/>
+          <MenuItem x:Name="MenuEdit" Header="Edit" Click="OnContextMenuEdit"/>
+          <Separator/>
+          <MenuItem x:Name="MenuCopy" Header="Copy ResRef" Click="OnContextMenuCopyResRef"/>
+          <MenuItem x:Name="MenuCopyTag" Header="Copy Tag" Click="OnContextMenuCopyTag"/>
+          <Separator/>
+          <MenuItem x:Name="MenuSelectAll" Header="Select All" Click="OnSelectAllClick"/>
+          <MenuItem x:Name="MenuSelectNone" Header="Select None" Click="OnSelectNoneClick"/>
+        </ContextMenu>
+      </DataGrid.ContextMenu>
+
+      <DataGrid.Columns>
+        <!-- Checkbox column for bulk selection -->
+        <DataGridTemplateColumn Header="&#x2610;" Width="40" CanUserResize="False" CanUserSort="False">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate DataType="vm:ItemViewModel">
+              <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
+        <!-- Icon column placeholder -->
+        <DataGridTemplateColumn Header="" Width="32" CanUserResize="False" CanUserSort="False">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate DataType="vm:ItemViewModel">
+              <!-- Icon placeholder - will be replaced with actual icon loading -->
+              <Border Width="24" Height="24"
+                      Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                      CornerRadius="2"/>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+
+        <!-- Name column - flex width -->
+        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+
+        <!-- ResRef column - fixed width -->
+        <DataGridTextColumn Header="ResRef" Binding="{Binding ResRef}" Width="120"/>
+
+        <!-- Tag column - fixed width -->
+        <DataGridTextColumn Header="Tag" Binding="{Binding Tag}" Width="120"/>
+
+        <!-- Type column - fixed width -->
+        <DataGridTextColumn Header="Type" Binding="{Binding BaseItemName}" Width="100"/>
+
+        <!-- Value column - fixed width -->
+        <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="80"/>
+
+        <!-- Properties column - flex width -->
+        <DataGridTextColumn Header="Properties" Binding="{Binding PropertiesDisplay}" Width="*"/>
+
+      </DataGrid.Columns>
+    </DataGrid>
+  </Grid>
+</UserControl>

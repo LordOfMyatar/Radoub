@@ -3,7 +3,7 @@ using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
 
-namespace Radoub.UITests.Shared;
+namespace Radoub.IntegrationTests.Shared;
 
 /// <summary>
 /// Base class for all FlaUI-based UI tests.
@@ -56,7 +56,7 @@ public abstract class FlaUITestBase : IDisposable
         Automation = new UIA3Automation();
 
         // Create isolated settings directory for this test run
-        _isolatedSettingsDir = Path.Combine(Path.GetTempPath(), "Radoub.UITests", Guid.NewGuid().ToString("N"));
+        _isolatedSettingsDir = Path.Combine(Path.GetTempPath(), "Radoub.IntegrationTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_isolatedSettingsDir);
 
         // Create tool-specific subdirectories for settings
