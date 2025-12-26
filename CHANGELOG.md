@@ -14,6 +14,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.9] - 2025-12-26
+**Branch**: `radoub/sprint/item-list-view` | **PR**: #574
+
+### Sprint: Inventory List View Component (#551)
+
+Part of Epic #546 (Shared Inventory UI Components).
+
+#### Added (Radoub.UI)
+- **Radoub.UI** - New shared UI component library for Radoub tools
+- **ItemListView** - DataGrid-based control for item display
+  - Multi-column display (Name, ResRef, Tag, Type, Value, Properties)
+  - Built-in sorting via column headers
+  - Multi-select with checkboxes (Select All / Select None)
+  - Row selection with Extended mode (Ctrl+click, Shift+click)
+  - Column width persistence via IColumnSettings interface
+  - Row context menu (Open, Edit, Copy ResRef, Copy Tag)
+  - Drag source support for drag-drop operations
+  - Theme-aware styling with DynamicResource bindings
+- **ItemViewModel** - ViewModel for DataGrid item binding
+  - Wraps UtiFile with display-friendly properties
+  - Observable IsSelected property for checkbox binding
+- **ItemViewModelFactory** - Factory for creating ItemViewModels
+  - Resolves display names from LocalizedName or TLK
+  - Resolves base item type from baseitems.2da
+  - Formats item properties from 2DA chain
+- **IColumnSettings** - Interface for column width persistence
+- 17 unit tests (ItemViewModel, ItemViewModelFactory)
+
+---
+
 ## [0.9.8] - 2025-12-26
 **Branch**: `radoub/sprint/game-data-service` | **PR**: #572
 
@@ -190,7 +220,7 @@ Part of Epic #547 (File Format Parsers).
 | Radoub.Dictionary.Tests | 54 |
 | Parley.Tests | 461 |
 | Manifest.Tests | 32 |
-| Radoub.UITests | 52 |
+| Radoub.IntegrationTests | 52 |
 | **Total** | **764** |
 
 ---
@@ -481,7 +511,7 @@ TLK (Talk Table) and 2DA (Two-Dimensional Array) file reading support.
 FlaUI-based GUI testing framework for Radoub tools.
 
 **Added**:
-- `Radoub.UITests` project - Shared GUI test infrastructure
+- `Radoub.IntegrationTests` project - Shared GUI test infrastructure
 - FlaUI integration for Windows desktop testing (no external dependencies)
 - Basic Parley launch smoke tests
 

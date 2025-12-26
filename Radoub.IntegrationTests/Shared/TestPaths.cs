@@ -1,4 +1,4 @@
-namespace Radoub.UITests.Shared;
+namespace Radoub.IntegrationTests.Shared;
 
 /// <summary>
 /// Centralized path management for UI tests.
@@ -13,7 +13,7 @@ public static class TestPaths
     {
         get
         {
-            // Navigate from bin/Debug/net9.0 up to Radoub.UITests, then up to Radoub root
+            // Navigate from bin/Debug/net9.0 up to Radoub.IntegrationTests, then up to Radoub root
             var testDir = AppDomain.CurrentDomain.BaseDirectory;
             return Path.GetFullPath(Path.Combine(testDir, "..", "..", "..", ".."));
         }
@@ -63,7 +63,7 @@ public static class TestPaths
     /// </summary>
     public static string CreateTempTestDirectory()
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "Radoub.UITests", Guid.NewGuid().ToString("N"));
+        var tempDir = Path.Combine(Path.GetTempPath(), "Radoub.IntegrationTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
         return tempDir;
     }

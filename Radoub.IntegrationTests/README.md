@@ -1,4 +1,4 @@
-# Radoub.UITests
+# Radoub.IntegrationTests
 
 Automated GUI testing for Radoub tools using FlaUI.
 
@@ -46,19 +46,19 @@ dotnet build Parley/Parley
 ### Run All UI Tests
 
 ```powershell
-dotnet test Radoub.UITests
+dotnet test Radoub.IntegrationTests
 ```
 
 ### Run Only Smoke Tests
 
 ```powershell
-dotnet test Radoub.UITests --filter "Category=Smoke"
+dotnet test Radoub.IntegrationTests --filter "Category=Smoke"
 ```
 
 ### Run Parley Tests Only
 
 ```powershell
-dotnet test Radoub.UITests --filter "FullyQualifiedName~Parley"
+dotnet test Radoub.IntegrationTests --filter "FullyQualifiedName~Parley"
 ```
 
 ### From Visual Studio
@@ -72,8 +72,8 @@ dotnet test Radoub.UITests --filter "FullyQualifiedName~Parley"
 ## Project Structure
 
 ```
-Radoub.UITests/
-├── Radoub.UITests.csproj    # Test project file
+Radoub.IntegrationTests/
+├── Radoub.IntegrationTests.csproj    # Test project file
 ├── README.md                 # This file
 ├── Shared/                   # Common utilities
 │   ├── FlaUITestBase.cs      # Base class with app launch/teardown

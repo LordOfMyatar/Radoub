@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Radoub.UITests.Manifest;
+namespace Radoub.IntegrationTests.Manifest;
 
 /// <summary>
 /// Collection definition for Manifest tests that must run sequentially.

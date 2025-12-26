@@ -1,7 +1,7 @@
-using Radoub.UITests.Shared;
+using Radoub.IntegrationTests.Shared;
 using Xunit;
 
-namespace Radoub.UITests.Manifest;
+namespace Radoub.IntegrationTests.Manifest;
 
 /// <summary>
 /// Tests for TLK (Talk Table) integration.

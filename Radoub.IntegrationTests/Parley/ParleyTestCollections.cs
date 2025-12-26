@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Radoub.UITests.Parley;
+namespace Radoub.IntegrationTests.Parley;
 
 /// <summary>
 /// Collection definition for Parley tests that must run sequentially.
