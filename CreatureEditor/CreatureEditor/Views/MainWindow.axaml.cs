@@ -1,0 +1,856 @@
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using CreatureEditor.Services;
+using Radoub.Formats.Bic;
+using Radoub.Formats.Services;
+using Radoub.Formats.Utc;
+using Radoub.Formats.Uti;
+using Radoub.UI.Controls;
+using Radoub.UI.ViewModels;
+using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+
+namespace CreatureEditor.Views;
+
+public partial class MainWindow : Window, INotifyPropertyChanged
+{
+    private UtcFile? _currentCreature;
+    private string? _currentFilePath;
+    private bool _isDirty;
+    private bool _isBicFile;
+
+    // Equipment slots collection
+    private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
+
+    // Backpack items collection
+    private ObservableCollection<ItemViewModel> _backpackItems = new();
+
+    // Palette items collection (available items to add)
+    private ObservableCollection<ItemViewModel> _paletteItems = new();
+
+    // Selection state tracking
+    private bool _hasSelection;
+    private bool _hasBackpackSelection;
+    private bool _hasPaletteSelection;
+
+    // Bindable properties for UI state
+    public bool HasFile => _currentCreature != null;
+    public bool HasSelection
+    {
+        get => _hasSelection;
+        private set { _hasSelection = value; OnPropertyChanged(); }
+    }
+    public bool HasBackpackSelection
+    {
+        get => _hasBackpackSelection;
+        private set { _hasBackpackSelection = value; OnPropertyChanged(); }
+    }
+    public bool HasPaletteSelection
+    {
+        get => _hasPaletteSelection;
+        private set { _hasPaletteSelection = value; OnPropertyChanged(); }
+    }
+    public bool CanAddItem => HasFile && HasPaletteSelection;
+
+    public new event PropertyChangedEventHandler? PropertyChanged;
+
+    public MainWindow()
+    {
+        InitializeComponent();
+        // Note: Don't set DataContext = this; it causes stack overflow with Radoub.UI controls.
+        // Use ElementName bindings in XAML instead.
+
+        InitializeEquipmentSlots();
+        RestoreWindowPosition();
+
+        Closing += OnWindowClosing;
+        Opened += OnWindowOpened;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "CreatureEditor MainWindow initialized");
+    }
+
+    private void InitializeEquipmentSlots()
+    {
+        // Create all equipment slots using the factory
+        var allSlots = EquipmentSlotFactory.CreateAllSlots();
+        foreach (var slot in allSlots)
+        {
+            _equipmentSlots.Add(slot);
+        }
+
+        // Bind to EquipmentPanel
+        EquipmentPanel.Slots = _equipmentSlots;
+
+        // Bind backpack and palette lists
+        BackpackList.Items = _backpackItems;
+        PaletteList.Items = _paletteItems;
+
+        // Wire up filter to palette list
+        PaletteFilter.Items = _paletteItems;
+        PaletteFilter.FilteredItems = new ObservableCollection<ItemViewModel>();
+
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Initialized {_equipmentSlots.Count} equipment slots");
+    }
+
+    private async void OnWindowOpened(object? sender, EventArgs e)
+    {
+        Opened -= OnWindowOpened;
+
+        UpdateRecentFilesMenu();
+        await HandleStartupFileAsync();
+    }
+
+    private async Task HandleStartupFileAsync()
+    {
+        var options = CommandLineService.Options;
+
+        if (string.IsNullOrEmpty(options.FilePath))
+            return;
+
+        if (!File.Exists(options.FilePath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Command line file not found: {UnifiedLogger.SanitizePath(options.FilePath)}");
+            UpdateStatus($"File not found: {Path.GetFileName(options.FilePath)}");
+            return;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading file from command line: {UnifiedLogger.SanitizePath(options.FilePath)}");
+        await LoadFile(options.FilePath);
+    }
+
+    private void RestoreWindowPosition()
+    {
+        var settings = SettingsService.Instance;
+        Position = new Avalonia.PixelPoint((int)settings.WindowLeft, (int)settings.WindowTop);
+        Width = settings.WindowWidth;
+        Height = settings.WindowHeight;
+
+        if (settings.WindowMaximized)
+        {
+            WindowState = WindowState.Maximized;
+        }
+
+        // Restore panel widths
+        if (MainGrid.ColumnDefinitions.Count > 0)
+        {
+            MainGrid.ColumnDefinitions[0].Width = new Avalonia.Controls.GridLength(settings.LeftPanelWidth);
+        }
+    }
+
+    private void SaveWindowPosition()
+    {
+        var settings = SettingsService.Instance;
+
+        if (WindowState == WindowState.Normal)
+        {
+            settings.WindowLeft = Position.X;
+            settings.WindowTop = Position.Y;
+            settings.WindowWidth = Width;
+            settings.WindowHeight = Height;
+        }
+        settings.WindowMaximized = WindowState == WindowState.Maximized;
+
+        // Save panel widths
+        if (MainGrid.ColumnDefinitions.Count > 0)
+        {
+            settings.LeftPanelWidth = MainGrid.ColumnDefinitions[0].Width.Value;
+        }
+    }
+
+    private async void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_isDirty)
+        {
+            e.Cancel = true;
+            var result = await ShowUnsavedChangesDialog();
+            if (result == "Save")
+            {
+                await SaveFile();
+                Close();
+            }
+            else if (result == "Discard")
+            {
+                _isDirty = false;
+                Close();
+            }
+        }
+        else
+        {
+            SaveWindowPosition();
+        }
+    }
+
+    private async Task<string> ShowUnsavedChangesDialog()
+    {
+        var dialog = new Window
+        {
+            Title = "Unsaved Changes",
+            Width = 350,
+            Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var result = "Cancel";
+
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
+        panel.Children.Add(new TextBlock { Text = "You have unsaved changes. What would you like to do?" });
+
+        var buttonPanel = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+
+        var saveButton = new Button { Content = "Save" };
+        saveButton.Click += (s, e) => { result = "Save"; dialog.Close(); };
+
+        var discardButton = new Button { Content = "Discard" };
+        discardButton.Click += (s, e) => { result = "Discard"; dialog.Close(); };
+
+        var cancelButton = new Button { Content = "Cancel" };
+        cancelButton.Click += (s, e) => { result = "Cancel"; dialog.Close(); };
+
+        buttonPanel.Children.Add(saveButton);
+        buttonPanel.Children.Add(discardButton);
+        buttonPanel.Children.Add(cancelButton);
+        panel.Children.Add(buttonPanel);
+
+        dialog.Content = panel;
+        await dialog.ShowDialog(this);
+
+        return result;
+    }
+
+    #region File Operations
+
+    private void UpdateRecentFilesMenu()
+    {
+        RecentFilesMenu.Items.Clear();
+
+        var recentFiles = SettingsService.Instance.RecentFiles;
+
+        if (recentFiles.Count == 0)
+        {
+            var emptyItem = new MenuItem { Header = "(No recent files)", IsEnabled = false };
+            RecentFilesMenu.Items.Add(emptyItem);
+            return;
+        }
+
+        foreach (var filePath in recentFiles)
+        {
+            var fileName = Path.GetFileName(filePath);
+            var displayPath = UnifiedLogger.SanitizePath(filePath);
+
+            var menuItem = new MenuItem
+            {
+                Header = fileName,
+                Tag = filePath
+            };
+            ToolTip.SetTip(menuItem, displayPath);
+            menuItem.Click += OnRecentFileClick;
+
+            RecentFilesMenu.Items.Add(menuItem);
+        }
+
+        RecentFilesMenu.Items.Add(new Separator());
+
+        var clearItem = new MenuItem { Header = "Clear Recent Files" };
+        clearItem.Click += OnClearRecentFilesClick;
+        RecentFilesMenu.Items.Add(clearItem);
+    }
+
+    private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && menuItem.Tag is string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                await LoadFile(filePath);
+            }
+            else
+            {
+                UpdateStatus($"File not found: {Path.GetFileName(filePath)}");
+                SettingsService.Instance.RemoveRecentFile(filePath);
+                UpdateRecentFilesMenu();
+            }
+        }
+    }
+
+    private void OnClearRecentFilesClick(object? sender, RoutedEventArgs e)
+    {
+        SettingsService.Instance.ClearRecentFiles();
+        UpdateRecentFilesMenu();
+    }
+
+    private async void OnOpenClick(object? sender, RoutedEventArgs e)
+    {
+        await OpenFile();
+    }
+
+    private async void OnSaveClick(object? sender, RoutedEventArgs e)
+    {
+        await SaveFile();
+    }
+
+    private async void OnSaveAsClick(object? sender, RoutedEventArgs e)
+    {
+        await SaveFileAs();
+    }
+
+    private void OnCloseFileClick(object? sender, RoutedEventArgs e)
+    {
+        CloseFile();
+    }
+
+    private void OnExitClick(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private async Task OpenFile()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open Creature File",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Creature Files") { Patterns = new[] { "*.utc", "*.bic" } },
+                new FilePickerFileType("Creature Blueprints") { Patterns = new[] { "*.utc" } },
+                new FilePickerFileType("Player Characters") { Patterns = new[] { "*.bic" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        if (files.Count > 0)
+        {
+            var file = files[0];
+            await LoadFile(file.Path.LocalPath);
+        }
+    }
+
+    private async Task LoadFile(string filePath)
+    {
+        try
+        {
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+            _isBicFile = extension == ".bic";
+
+            if (_isBicFile)
+            {
+                _currentCreature = BicReader.Read(filePath);
+                UnifiedLogger.LogCreature(LogLevel.INFO, $"Loaded BIC (player character): {UnifiedLogger.SanitizePath(filePath)}");
+            }
+            else
+            {
+                _currentCreature = UtcReader.Read(filePath);
+                UnifiedLogger.LogCreature(LogLevel.INFO, $"Loaded UTC (creature blueprint): {UnifiedLogger.SanitizePath(filePath)}");
+            }
+
+            _currentFilePath = filePath;
+            _isDirty = false;
+
+            PopulateInventoryUI();
+            UpdateTitle();
+            UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
+            UpdateInventoryCounts();
+            OnPropertyChanged(nameof(HasFile));
+            OnPropertyChanged(nameof(CanAddItem));
+
+            SettingsService.Instance.AddRecentFile(filePath);
+            UpdateRecentFilesMenu();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogCreature(LogLevel.ERROR, $"Failed to load creature: {ex.Message}");
+            UpdateStatus($"Error loading file: {ex.Message}");
+            await ShowErrorDialog("Load Error", $"Failed to load creature file:\n{ex.Message}");
+        }
+    }
+
+    private async Task SaveFile()
+    {
+        if (_currentCreature == null || string.IsNullOrEmpty(_currentFilePath)) return;
+
+        try
+        {
+            if (_isBicFile && _currentCreature is BicFile bicFile)
+            {
+                BicWriter.Write(bicFile, _currentFilePath);
+            }
+            else
+            {
+                UtcWriter.Write(_currentCreature, _currentFilePath);
+            }
+
+            _isDirty = false;
+            UpdateTitle();
+            UpdateStatus($"Saved: {Path.GetFileName(_currentFilePath)}");
+
+            UnifiedLogger.LogCreature(LogLevel.INFO, $"Saved creature: {UnifiedLogger.SanitizePath(_currentFilePath)}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogCreature(LogLevel.ERROR, $"Failed to save creature: {ex.Message}");
+            UpdateStatus($"Error saving file: {ex.Message}");
+            await ShowErrorDialog("Save Error", $"Failed to save creature file:\n{ex.Message}");
+        }
+    }
+
+    private async Task SaveFileAs()
+    {
+        if (_currentCreature == null) return;
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save Creature As",
+            DefaultExtension = _isBicFile ? ".bic" : ".utc",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("Creature Blueprint") { Patterns = new[] { "*.utc" } },
+                new FilePickerFileType("Player Character") { Patterns = new[] { "*.bic" } }
+            }
+        });
+
+        if (file != null)
+        {
+            _currentFilePath = file.Path.LocalPath;
+            _isBicFile = Path.GetExtension(_currentFilePath).ToLowerInvariant() == ".bic";
+            await SaveFile();
+            UpdateTitle();
+            SettingsService.Instance.AddRecentFile(_currentFilePath);
+            UpdateRecentFilesMenu();
+        }
+    }
+
+    private void CloseFile()
+    {
+        _currentCreature = null;
+        _currentFilePath = null;
+        _isDirty = false;
+        _isBicFile = false;
+
+        ClearInventoryUI();
+        UpdateTitle();
+        UpdateStatus("Ready");
+        UpdateInventoryCounts();
+        OnPropertyChanged(nameof(HasFile));
+        OnPropertyChanged(nameof(CanAddItem));
+    }
+
+    #endregion
+
+    #region Inventory UI
+
+    private void PopulateInventoryUI()
+    {
+        if (_currentCreature == null) return;
+
+        // Clear existing data
+        ClearInventoryUI();
+
+        // Populate equipment slots from EquipItemList
+        foreach (var equippedItem in _currentCreature.EquipItemList)
+        {
+            var slot = EquipmentSlotFactory.GetSlotByFlag(_equipmentSlots, equippedItem.Slot);
+            if (slot != null && !string.IsNullOrEmpty(equippedItem.EquipRes))
+            {
+                // Create placeholder item from ResRef (full resolution requires game data)
+                var itemVm = CreatePlaceholderItem(equippedItem.EquipRes);
+                slot.EquippedItem = itemVm;
+                UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Equipped {equippedItem.EquipRes} to {slot.Name}");
+            }
+        }
+
+        // Populate backpack from ItemList
+        foreach (var invItem in _currentCreature.ItemList)
+        {
+            if (!string.IsNullOrEmpty(invItem.InventoryRes))
+            {
+                var itemVm = CreatePlaceholderItem(invItem.InventoryRes, invItem.Dropable, invItem.Pickpocketable);
+                _backpackItems.Add(itemVm);
+                UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Added to backpack: {invItem.InventoryRes}");
+            }
+        }
+
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {_backpackItems.Count} in backpack");
+    }
+
+    /// <summary>
+    /// Creates an ItemViewModel from a ResRef, attempting to load the actual UTI file.
+    /// Falls back to placeholder data if UTI file not found.
+    /// </summary>
+    private ItemViewModel CreatePlaceholderItem(string resRef, bool dropable = true, bool pickpocketable = false)
+    {
+        UtiFile? item = null;
+        var source = GameResourceSource.Bif;
+
+        // Try to load actual UTI file from the module directory
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            var moduleDir = Path.GetDirectoryName(_currentFilePath);
+            if (moduleDir != null)
+            {
+                var utiPath = Path.Combine(moduleDir, resRef + ".uti");
+                if (File.Exists(utiPath))
+                {
+                    try
+                    {
+                        item = Radoub.Formats.Uti.UtiReader.Read(utiPath);
+                        source = GameResourceSource.Module;
+                        UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Loaded UTI: {resRef}");
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {resRef}: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        // Fall back to placeholder if UTI not found
+        if (item == null)
+        {
+            item = new UtiFile
+            {
+                TemplateResRef = resRef,
+                Tag = resRef
+            };
+            item.LocalizedName.SetString(0, resRef);
+        }
+
+        // Get display name from LocalizedName (prefer English = 0)
+        var displayName = item.LocalizedName.GetDefault();
+        if (string.IsNullOrEmpty(displayName))
+            displayName = resRef;
+
+        // Format properties count
+        var propsDisplay = item.Properties.Count > 0
+            ? $"{item.Properties.Count} properties"
+            : "";
+
+        return new ItemViewModel(
+            item,
+            resolvedName: displayName,
+            baseItemName: $"BaseItem:{item.BaseItem}",
+            propertiesDisplay: propsDisplay,
+            source: source
+        );
+    }
+
+    private void ClearInventoryUI()
+    {
+        // Clear equipment slots
+        EquipmentPanel.ClearAllSlots();
+
+        // Clear backpack
+        _backpackItems.Clear();
+
+        // Update selection state
+        HasSelection = false;
+        HasBackpackSelection = false;
+    }
+
+    #endregion
+
+    #region Equipment Panel Events
+
+    private void OnEquipmentSlotClicked(object? sender, EquipmentSlotViewModel slot)
+    {
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Equipment slot clicked: {slot.Name}");
+        HasSelection = slot.HasItem;
+    }
+
+    private void OnEquipmentSlotDoubleClicked(object? sender, EquipmentSlotViewModel slot)
+    {
+        if (slot.HasItem)
+        {
+            // TODO: Open item properties dialog
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"Equipment slot double-clicked: {slot.Name} - {slot.EquippedItem?.Name}");
+        }
+    }
+
+    private void OnEquipmentSlotItemDropped(object? sender, EquipmentSlotDropEventArgs e)
+    {
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Item dropped on slot: {e.TargetSlot.Name}");
+        // TODO: Handle item drop (equip item to slot)
+        MarkDirty();
+    }
+
+    #endregion
+
+    #region Backpack List Events
+
+    private void OnBackpackSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        HasBackpackSelection = BackpackList.SelectedItems.Count > 0;
+        HasSelection = HasBackpackSelection;
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack selection changed: {BackpackList.SelectedItems.Count} items");
+    }
+
+    private void OnBackpackCheckedChanged(object? sender, EventArgs e)
+    {
+        var checkedCount = BackpackList.CheckedItems.Count;
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack checked items: {checkedCount}");
+    }
+
+    private void OnBackpackDragStarting(object? sender, ItemDragEventArgs e)
+    {
+        // Set drag data for backpack items
+        e.Data = e.Items;
+        e.DataFormat = "BackpackItem";
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack drag starting: {e.Items.Count} items");
+    }
+
+    #endregion
+
+    #region Palette List Events
+
+    private void OnPaletteSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        HasPaletteSelection = PaletteList.SelectedItems.Count > 0;
+        OnPropertyChanged(nameof(CanAddItem));
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Palette selection changed: {PaletteList.SelectedItems.Count} items");
+    }
+
+    private void OnPaletteDragStarting(object? sender, ItemDragEventArgs e)
+    {
+        // Set drag data for palette items
+        e.Data = e.Items;
+        e.DataFormat = "PaletteItem";
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Palette drag starting: {e.Items.Count} items");
+    }
+
+    #endregion
+
+    #region Edit Operations
+
+    private void OnDeleteClick(object? sender, RoutedEventArgs e)
+    {
+        if (EquipmentPanel.SelectedSlot?.HasItem == true)
+        {
+            // Unequip item from slot
+            var slot = EquipmentPanel.SelectedSlot;
+            slot.EquippedItem = null;
+            MarkDirty();
+            UpdateInventoryCounts();
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Unequipped item from {slot.Name}");
+        }
+        else if (HasBackpackSelection)
+        {
+            OnDeleteSelectedClick(sender, e);
+        }
+    }
+
+    private void OnDeleteSelectedClick(object? sender, RoutedEventArgs e)
+    {
+        // Delete checked items first, then selected items
+        var toDelete = BackpackList.CheckedItems.Count > 0
+            ? BackpackList.CheckedItems
+            : BackpackList.SelectedItems;
+
+        if (toDelete.Count == 0) return;
+
+        foreach (var item in toDelete.ToArray())
+        {
+            _backpackItems.Remove(item);
+        }
+
+        MarkDirty();
+        UpdateInventoryCounts();
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Deleted {toDelete.Count} items from backpack");
+    }
+
+    private void OnAddItemClick(object? sender, RoutedEventArgs e)
+    {
+        OnAddToBackpackClick(sender, e);
+    }
+
+    private void OnAddToBackpackClick(object? sender, RoutedEventArgs e)
+    {
+        if (!HasFile || !HasPaletteSelection) return;
+
+        foreach (var item in PaletteList.SelectedItems)
+        {
+            // TODO: Clone the item and add to backpack
+            // _backpackItems.Add(clonedItem);
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Would add to backpack: {item.Name}");
+        }
+
+        MarkDirty();
+        UpdateInventoryCounts();
+    }
+
+    private void OnEquipSelectedClick(object? sender, RoutedEventArgs e)
+    {
+        if (!HasFile || !HasPaletteSelection) return;
+
+        // TODO: Determine appropriate slot and equip item
+        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Equip selected clicked");
+    }
+
+    #endregion
+
+    #region UI Updates
+
+    private void UpdateTitle()
+    {
+        var displayPath = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "Untitled";
+        var dirty = _isDirty ? "*" : "";
+        var fileType = _isBicFile ? " (Player)" : "";
+        Title = $"Creature Editor - {displayPath}{fileType}{dirty}";
+    }
+
+    private void UpdateStatus(string message)
+    {
+        StatusText.Text = message;
+    }
+
+    private void UpdateInventoryCounts()
+    {
+        if (_currentCreature == null)
+        {
+            InventoryCountText.Text = "";
+            FilePathText.Text = "";
+            return;
+        }
+
+        var equippedCount = _equipmentSlots.Count(s => s.HasItem);
+        var backpackCount = _backpackItems.Count;
+        InventoryCountText.Text = $"{equippedCount} equipped, {backpackCount} in backpack";
+        FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
+    }
+
+    private void MarkDirty()
+    {
+        if (!_isDirty)
+        {
+            _isDirty = true;
+            UpdateTitle();
+        }
+    }
+
+    #endregion
+
+    #region Keyboard Shortcuts
+
+    private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            switch (e.Key)
+            {
+                case Key.O:
+                    _ = OpenFile();
+                    e.Handled = true;
+                    break;
+                case Key.S:
+                    if (HasFile)
+                    {
+                        _ = SaveFile();
+                        e.Handled = true;
+                    }
+                    break;
+            }
+        }
+        else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
+        {
+            switch (e.Key)
+            {
+                case Key.S:
+                    if (HasFile)
+                    {
+                        _ = SaveFileAs();
+                        e.Handled = true;
+                    }
+                    break;
+            }
+        }
+        else if (e.KeyModifiers == KeyModifiers.None)
+        {
+            switch (e.Key)
+            {
+                case Key.Delete:
+                    if (HasSelection)
+                    {
+                        OnDeleteClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.F1:
+                    OnAboutClick(sender, new RoutedEventArgs());
+                    e.Handled = true;
+                    break;
+            }
+        }
+    }
+
+    #endregion
+
+    #region Dialogs
+
+    private void OnSettingsClick(object? sender, RoutedEventArgs e)
+    {
+        // TODO: Open settings window
+        UpdateStatus("Settings not yet implemented");
+    }
+
+    private void OnAboutClick(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new Window
+        {
+            Title = "About Creature Editor",
+            Width = 350,
+            Height = 220,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+        panel.Children.Add(new TextBlock { Text = "Creature Editor", FontSize = 24, FontWeight = Avalonia.Media.FontWeight.Bold });
+        panel.Children.Add(new TextBlock { Text = "Creature and Inventory Editor" });
+        panel.Children.Add(new TextBlock { Text = "for Neverwinter Nights" });
+        panel.Children.Add(new TextBlock { Text = "Version 0.1.0-alpha" });
+        panel.Children.Add(new TextBlock { Text = "Part of the Radoub Toolset", Margin = new Avalonia.Thickness(0, 10, 0, 0) });
+
+        var button = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center, Margin = new Avalonia.Thickness(0, 10, 0, 0) };
+        button.Click += (s, e) => dialog.Close();
+        panel.Children.Add(button);
+
+        dialog.Content = panel;
+        dialog.Show(this);
+    }
+
+    private async Task ShowErrorDialog(string title, string message)
+    {
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 400,
+            Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
+        panel.Children.Add(new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
+
+        var button = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+        button.Click += (s, e) => dialog.Close();
+        panel.Children.Add(button);
+
+        dialog.Content = panel;
+        await dialog.ShowDialog(this);
+    }
+
+    #endregion
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+}

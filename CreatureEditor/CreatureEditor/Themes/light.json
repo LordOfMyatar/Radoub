@@ -1,0 +1,36 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.creatureeditor.theme.light",
+    "name": "Light Theme",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Default light theme for CreatureEditor",
+    "type": "theme",
+    "tags": ["light", "default"]
+  },
+  "base_theme": "Light",
+  "colors": {
+    "background": "#FFFFFF",
+    "sidebar": "#F5F5F5",
+    "text": "#1A1A1A",
+    "selection": "#E3F2FD",
+    "border": "#E0E0E0",
+    "accent": "#1976D2",
+    "error": "#D32F2F",
+    "warning": "#F57C00",
+    "success": "#388E3C",
+    "info": "#1976D2"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas, Courier New, monospace",
+    "size": 14
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 10,
+    "min_control_height": 28
+  }
+}

@@ -1,0 +1,153 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:Radoub.UI.Controls"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="CreatureEditor.Views.MainWindow"
+        x:Name="MainWindowInstance"
+        Title="Creature Editor"
+        Width="1200" Height="800"
+        MinWidth="800" MinHeight="600"
+        KeyDown="OnWindowKeyDown">
+
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
+                <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
+                <Separator/>
+                <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="Save _As..." Click="OnSaveAsClick" InputGesture="Ctrl+Shift+S" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <Separator/>
+                <MenuItem Header="_Close" Click="OnCloseFileClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False"/>
+                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Cu_t" InputGesture="Ctrl+X" IsEnabled="False"/>
+                <MenuItem Header="_Copy" InputGesture="Ctrl+C" IsEnabled="False"/>
+                <MenuItem Header="_Paste" InputGesture="Ctrl+V" IsEnabled="False"/>
+                <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About Creature Editor" Click="OnAboutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Toolbar -->
+        <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1" Padding="5,3">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <Button Content="Open" Click="OnOpenClick" ToolTip.Tip="Open Creature (Ctrl+O)" Padding="8,4"/>
+                <Button Content="Save" Click="OnSaveClick" ToolTip.Tip="Save Creature (Ctrl+S)" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}" Padding="8,4"/>
+                <Separator Width="1" Margin="5,0" Background="{DynamicResource SystemBaseMediumLowColor}"/>
+                <Button Content="Add Item" Click="OnAddItemClick" ToolTip.Tip="Add Selected to Inventory" IsEnabled="{Binding CanAddItem, ElementName=MainWindowInstance}" Padding="8,4"/>
+                <Button Content="Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Delete)" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}" Padding="8,4"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0" Padding="5,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText" Grid.Column="0" Text="Ready"/>
+                <TextBlock x:Name="InventoryCountText" Grid.Column="1" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <TextBlock x:Name="FilePathText" Grid.Column="2" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content - 3-Panel Layout -->
+        <Grid x:Name="MainGrid">
+            <Grid.ColumnDefinitions>
+                <!-- Left: Equipment + Backpack -->
+                <ColumnDefinition Width="350" MinWidth="250"/>
+                <ColumnDefinition Width="5"/>
+                <!-- Right: Item Palette -->
+                <ColumnDefinition Width="*" MinWidth="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel: Equipment Slots + Backpack -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Equipment Slots Panel -->
+                <Border Grid.Row="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Equipment" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <controls:EquipmentSlotsPanel x:Name="EquipmentPanel"
+                                                       ShowNaturalSlots="True"
+                                                       SlotClicked="OnEquipmentSlotClicked"
+                                                       SlotDoubleClicked="OnEquipmentSlotDoubleClicked"
+                                                       ItemDropped="OnEquipmentSlotItemDropped"/>
+                    </DockPanel>
+                </Border>
+
+                <!-- Splitter -->
+                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Background="{DynamicResource SystemBaseMediumLowColor}"/>
+
+                <!-- Backpack List -->
+                <Border Grid.Row="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Backpack" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                        <!-- Bulk Operations -->
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                            <CheckBox x:Name="BulkDropableCheck" Content="Dropable" IsEnabled="{Binding HasBackpackSelection, ElementName=MainWindowInstance}"/>
+                            <CheckBox x:Name="BulkPickpocketCheck" Content="Pickpocketable" IsEnabled="{Binding HasBackpackSelection, ElementName=MainWindowInstance}"/>
+                            <Button Content="Delete Selected" Click="OnDeleteSelectedClick" IsEnabled="{Binding HasBackpackSelection, ElementName=MainWindowInstance}" Padding="6,2"/>
+                        </StackPanel>
+
+                        <!-- Backpack Items List -->
+                        <controls:ItemListView x:Name="BackpackList"
+                                                ContextKey="Backpack"
+                                                SelectionChanged="OnBackpackSelectionChanged"
+                                                CheckedItemsChanged="OnBackpackCheckedChanged"
+                                                DragStarting="OnBackpackDragStarting"/>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource SystemBaseMediumLowColor}"/>
+
+            <!-- Right Panel: Item Palette -->
+            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Item Palette" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                    <!-- Filter Panel -->
+                    <controls:ItemFilterPanel x:Name="PaletteFilter"
+                                               DockPanel.Dock="Top"
+                                               ContextKey="Palette"
+                                               Margin="0,0,0,5"/>
+
+                    <!-- Add to Inventory Buttons -->
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                        <Button Content="Add to Backpack" Click="OnAddToBackpackClick" IsEnabled="{Binding HasPaletteSelection, ElementName=MainWindowInstance}" Padding="8,4"/>
+                        <Button Content="Equip Selected" Click="OnEquipSelectedClick" IsEnabled="{Binding HasPaletteSelection, ElementName=MainWindowInstance}" Padding="8,4"/>
+                    </StackPanel>
+
+                    <!-- Item List -->
+                    <controls:ItemListView x:Name="PaletteList"
+                                            ContextKey="Palette"
+                                            SelectionChanged="OnPaletteSelectionChanged"
+                                            DragStarting="OnPaletteDragStarting"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>
