@@ -1,3 +1,4 @@
+using Radoub.Formats.Gff;
 using Radoub.Formats.Jrl;
 
 namespace Manifest.Tests;
@@ -98,9 +99,9 @@ public static class TestDataGenerator
         return jrl;
     }
 
-    private static JrlLocString CreateLocString(string text)
+    private static CExoLocString CreateLocString(string text)
     {
-        var loc = new JrlLocString();
+        var loc = new CExoLocString();
         loc.SetString(0, text);
         return loc;
     }

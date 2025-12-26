@@ -155,19 +155,22 @@ public static class GffReader
         uint fixedWidthSize = header.LabelCount * 18; // 2-byte length + 16-byte padded
         uint auroraFixedSize = header.LabelCount * 16; // GFF 16-byte fixed format
 
-        bool isNullTerminated = Math.Abs((int)expectedSize - (int)nullTerminatedSize) < 10;
-        bool isFixedWidth = Math.Abs((int)expectedSize - (int)fixedWidthSize) < 10;
-        bool isAuroraFixed = Math.Abs((int)expectedSize - (int)auroraFixedSize) < 10;
+        // Prioritize exact matches, then use tolerance-based matching
+        // Aurora fixed format: exactly 16 bytes per label
+        if (expectedSize == auroraFixedSize)
+            return ParseAuroraFixedLabels(buffer, header, offset);
 
+        // Length-prefixed format: exactly 18 bytes per label (2-byte length + 16-byte padded)
+        if (expectedSize == fixedWidthSize)
+            return ParseLengthPrefixedLabels(buffer, header, offset);
+
+        // Null-terminated: check if close to calculated size
+        bool isNullTerminated = Math.Abs((int)expectedSize - (int)nullTerminatedSize) < 5;
         if (isNullTerminated)
             return ParseNullTerminatedLabels(buffer, header, offset);
-        else if (isFixedWidth)
-            return ParseLengthPrefixedLabels(buffer, header, offset);
-        else if (isAuroraFixed)
-            return ParseAuroraFixedLabels(buffer, header, offset);
-        else
-            // Default to 16-byte fixed format
-            return ParseAuroraFixedLabels(buffer, header, offset);
+
+        // Fallback to aurora fixed format (most common for standard GFF files)
+        return ParseAuroraFixedLabels(buffer, header, offset);
     }
 
     private static uint CalculateNullTerminatedSize(byte[] buffer, int startOffset, int labelCount)

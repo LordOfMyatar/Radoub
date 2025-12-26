@@ -128,20 +128,20 @@ public class JrlReaderTests
     }
 
     [Fact]
-    public void JrlLocString_GetDefault_ReturnsEnglish()
+    public void CExoLocString_GetDefault_ReturnsEnglish()
     {
-        var locString = new JrlLocString();
-        locString.Strings[0] = "English";
-        locString.Strings[2] = "French";
+        var locString = new CExoLocString();
+        locString.LocalizedStrings[0] = "English";
+        locString.LocalizedStrings[2] = "French";
 
         Assert.Equal("English", locString.GetDefault());
     }
 
     [Fact]
-    public void JrlLocString_GetDefault_FallsBackToFirst()
+    public void CExoLocString_GetDefault_FallsBackToFirst()
     {
-        var locString = new JrlLocString();
-        locString.Strings[2] = "French";
+        var locString = new CExoLocString();
+        locString.LocalizedStrings[2] = "French";
 
         Assert.Equal("French", locString.GetDefault());
     }
@@ -266,10 +266,10 @@ public class JrlReaderTests
                 strRefUsage[category.Name.StrRef].Add($"Category:{category.Tag}:Name");
             }
 
-            if (category.Name.Strings.Any())
+            if (category.Name.LocalizedStrings.Any())
             {
-                Console.WriteLine($"  Name Strings: {category.Name.Strings.Count}");
-                foreach (var kvp in category.Name.Strings)
+                Console.WriteLine($"  Name Strings: {category.Name.LocalizedStrings.Count}");
+                foreach (var kvp in category.Name.LocalizedStrings)
                 {
                     Console.WriteLine($"    Lang {kvp.Key}: {kvp.Value.Substring(0, Math.Min(50, kvp.Value.Length))}...");
                 }
@@ -291,10 +291,10 @@ public class JrlReaderTests
                     strRefUsage[entry.Text.StrRef].Add($"Category:{category.Tag}:Entry:{entry.ID}");
                 }
 
-                if (entry.Text.Strings.Any())
+                if (entry.Text.LocalizedStrings.Any())
                 {
-                    Console.WriteLine($"      Text Strings: {entry.Text.Strings.Count}");
-                    foreach (var kvp in entry.Text.Strings)
+                    Console.WriteLine($"      Text Strings: {entry.Text.LocalizedStrings.Count}");
+                    foreach (var kvp in entry.Text.LocalizedStrings)
                     {
                         var preview = kvp.Value.Substring(0, Math.Min(60, kvp.Value.Length));
                         Console.WriteLine($"        Lang {kvp.Key}: {preview}...");
@@ -330,7 +330,7 @@ public class JrlReaderTests
             Console.WriteLine("=== Sample Data Structure ===");
             Console.WriteLine($"Category Tag: {sampleCat.Tag}");
             Console.WriteLine($"  Name.StrRef: {sampleCat.Name.StrRef}");
-            Console.WriteLine($"  Name.Strings.Count: {sampleCat.Name.Strings.Count}");
+            Console.WriteLine($"  Name.LocalizedStrings.Count: {sampleCat.Name.LocalizedStrings.Count}");
             Console.WriteLine($"  Entries.Count: {sampleCat.Entries.Count}");
 
             if (sampleCat.Entries.Any())
@@ -338,7 +338,7 @@ public class JrlReaderTests
                 var sampleEntry = sampleCat.Entries[0];
                 Console.WriteLine($"  Entry[0].ID: {sampleEntry.ID}");
                 Console.WriteLine($"  Entry[0].Text.StrRef: {sampleEntry.Text.StrRef}");
-                Console.WriteLine($"  Entry[0].Text.Strings.Count: {sampleEntry.Text.Strings.Count}");
+                Console.WriteLine($"  Entry[0].Text.LocalizedStrings.Count: {sampleEntry.Text.LocalizedStrings.Count}");
                 Console.WriteLine($"  Entry[0].End: {sampleEntry.End}");
             }
         }

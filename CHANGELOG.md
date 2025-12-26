@@ -14,6 +14,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.3] - 2025-12-25
+**Branch**: `radoub/sprint/uti-parser` | **PR**: #559
+
+### Sprint: UTI Parser and Item Model (#548)
+
+Part of Epic #547 (File Format Parsers).
+
+#### Added (Radoub.Formats)
+- **UTI Parser** - Read/write support for item blueprint files
+- `UtiFile` - Strongly-typed item representation
+- `ItemProperty` - Item property model with defaults
+- Comprehensive unit tests (16 tests)
+
+#### Changed (Radoub.Formats)
+- **CExoLocString Consolidation** - Single localized string class for all GFF formats
+  - Enhanced with `SetString()` method and renamed `GetDefaultString()` to `GetDefault()`
+  - Removed duplicate `JrlLocString` and `UtiLocString` classes (~90 lines saved)
+  - JrlReader/JrlWriter simplified to use CExoLocString directly
+
+#### Changed (Parley, Manifest)
+- Updated to use consolidated `CExoLocString` from Radoub.Formats.Gff
+
+#### Fixed (Radoub.Formats)
+- **GffReader**: Label format detection now prioritizes exact size matches
+- **UtiWriter**: GffList.Count now correctly set when building lists
+
+---
+
 ## [0.9.2] - 2025-12-25
 **Branch**: `radoub/sprint/dictionary-language` | **PR**: #539
 

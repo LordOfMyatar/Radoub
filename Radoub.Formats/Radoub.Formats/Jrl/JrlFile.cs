@@ -1,3 +1,5 @@
+using Radoub.Formats.Gff;
+
 namespace Radoub.Formats.Jrl;
 
 /// <summary>
@@ -52,7 +54,7 @@ public class JournalCategory
     /// <summary>
     /// Quest name (localized string)
     /// </summary>
-    public JrlLocString Name { get; set; } = new();
+    public CExoLocString Name { get; set; } = new();
 
     /// <summary>
     /// Priority for sorting (lower = higher priority)
@@ -101,59 +103,10 @@ public class JournalEntry
     /// <summary>
     /// Entry text (localized string)
     /// </summary>
-    public JrlLocString Text { get; set; } = new();
+    public CExoLocString Text { get; set; } = new();
 
     /// <summary>
     /// Whether this entry marks quest completion
     /// </summary>
     public bool End { get; set; }
-}
-
-/// <summary>
-/// Localized string for JRL files.
-/// Simplified version of CExoLocString for JRL-specific use.
-/// </summary>
-public class JrlLocString
-{
-    /// <summary>
-    /// String reference into TLK file (0xFFFFFFFF = no reference)
-    /// </summary>
-    public uint StrRef { get; set; } = 0xFFFFFFFF;
-
-    /// <summary>
-    /// Localized strings keyed by language ID.
-    /// Language ID = (LanguageEnum * 2) + Gender (0=male, 1=female)
-    /// </summary>
-    public Dictionary<uint, string> Strings { get; set; } = new();
-
-    /// <summary>
-    /// Get string for specific language ID (default: English male = 0)
-    /// </summary>
-    public string GetString(uint languageId = 0)
-    {
-        return Strings.TryGetValue(languageId, out var text) ? text : string.Empty;
-    }
-
-    /// <summary>
-    /// Get default string (English male, or first available)
-    /// </summary>
-    public string GetDefault()
-    {
-        if (Strings.TryGetValue(0, out var english))
-            return english;
-        return Strings.Values.FirstOrDefault() ?? string.Empty;
-    }
-
-    /// <summary>
-    /// Set string for a language ID
-    /// </summary>
-    public void SetString(uint languageId, string text)
-    {
-        Strings[languageId] = text;
-    }
-
-    /// <summary>
-    /// True if no strings and no TLK reference
-    /// </summary>
-    public bool IsEmpty => Strings.Count == 0 && StrRef == 0xFFFFFFFF;
 }

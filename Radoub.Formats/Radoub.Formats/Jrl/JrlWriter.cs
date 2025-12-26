@@ -79,7 +79,7 @@ public static class JrlWriter
         {
             Type = GffField.CExoLocString,
             Label = "Name",
-            Value = ConvertToGffLocString(category.Name)
+            Value = category.Name
         });
 
         // Priority (DWORD)
@@ -156,7 +156,7 @@ public static class JrlWriter
         {
             Type = GffField.CExoLocString,
             Label = "Text",
-            Value = ConvertToGffLocString(entry.Text)
+            Value = entry.Text
         });
 
         // End (WORD - 0 or 1)
@@ -168,20 +168,5 @@ public static class JrlWriter
         });
 
         return entryStruct;
-    }
-
-    private static CExoLocString ConvertToGffLocString(JrlLocString jrlLocString)
-    {
-        var result = new CExoLocString
-        {
-            StrRef = jrlLocString.StrRef
-        };
-
-        foreach (var kvp in jrlLocString.Strings)
-        {
-            result.LocalizedStrings[kvp.Key] = kvp.Value;
-        }
-
-        return result;
     }
 }
