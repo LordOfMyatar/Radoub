@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.95-alpha] - 2025-12-26
+**Branch**: `parley/refactor/mainwindow-size` | **PR**: #569
+
+### Refactor: Reduce MainWindow.axaml.cs Size (#535)
+
+Part of Epic #479 (Parley Refactoring).
+
+#### Added
+- `MainWindow.Properties.cs` - Partial class for property panel handlers and auto-save logic
+- `MainWindow.TreeOps.cs` - Partial class for tree expand/collapse and state persistence
+- `MainWindow.Theme.cs` - Partial class for theme application and handlers
+
+#### Changed
+- MainWindow.axaml.cs reduced from 2,485 to 1,596 lines (36% reduction)
+- Code-behind now uses partial classes for maintainability
+
+---
+
 ## [0.1.94-alpha] - 2025-12-25
 **Branch**: `radoub/sprint/dictionary-language` | **PR**: #539
 
