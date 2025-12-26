@@ -5,7 +5,10 @@ using Avalonia.Platform.Storage;
 using CreatureEditor.Services;
 using Radoub.Formats.Bic;
 using Radoub.Formats.Utc;
+using Radoub.UI.Controls;
+using Radoub.UI.ViewModels;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -21,11 +24,37 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private bool _isDirty;
     private bool _isBicFile;
 
+    // Equipment slots collection
+    private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
+
+    // Backpack items collection
+    private ObservableCollection<ItemViewModel> _backpackItems = new();
+
+    // Palette items collection (available items to add)
+    private ObservableCollection<ItemViewModel> _paletteItems = new();
+
+    // Selection state tracking
+    private bool _hasSelection;
+    private bool _hasBackpackSelection;
+    private bool _hasPaletteSelection;
+
     // Bindable properties for UI state
     public bool HasFile => _currentCreature != null;
-    public bool HasSelection => false; // TODO: implement
-    public bool HasBackpackSelection => false; // TODO: implement
-    public bool HasPaletteSelection => false; // TODO: implement
+    public bool HasSelection
+    {
+        get => _hasSelection;
+        private set { _hasSelection = value; OnPropertyChanged(); }
+    }
+    public bool HasBackpackSelection
+    {
+        get => _hasBackpackSelection;
+        private set { _hasBackpackSelection = value; OnPropertyChanged(); }
+    }
+    public bool HasPaletteSelection
+    {
+        get => _hasPaletteSelection;
+        private set { _hasPaletteSelection = value; OnPropertyChanged(); }
+    }
     public bool CanAddItem => HasFile && HasPaletteSelection;
 
     public new event PropertyChangedEventHandler? PropertyChanged;
@@ -35,12 +64,36 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         DataContext = this;
 
+        InitializeEquipmentSlots();
         RestoreWindowPosition();
 
         Closing += OnWindowClosing;
         Opened += OnWindowOpened;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "CreatureEditor MainWindow initialized");
+    }
+
+    private void InitializeEquipmentSlots()
+    {
+        // Create all equipment slots using the factory
+        var allSlots = EquipmentSlotFactory.CreateAllSlots();
+        foreach (var slot in allSlots)
+        {
+            _equipmentSlots.Add(slot);
+        }
+
+        // Bind to EquipmentPanel
+        EquipmentPanel.Slots = _equipmentSlots;
+
+        // Bind backpack and palette lists
+        BackpackList.Items = _backpackItems;
+        PaletteList.Items = _paletteItems;
+
+        // Wire up filter to palette list
+        PaletteFilter.Items = _paletteItems;
+        PaletteFilter.FilteredItems = new ObservableCollection<ItemViewModel>();
+
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Initialized {_equipmentSlots.Count} equipment slots");
     }
 
     private async void OnWindowOpened(object? sender, EventArgs e)
@@ -298,11 +351,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _currentFilePath = filePath;
             _isDirty = false;
 
-            UpdateUI();
+            PopulateInventoryUI();
             UpdateTitle();
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
             UpdateInventoryCounts();
             OnPropertyChanged(nameof(HasFile));
+            OnPropertyChanged(nameof(CanAddItem));
 
             SettingsService.Instance.AddRecentFile(filePath);
             UpdateRecentFilesMenu();
@@ -372,17 +426,118 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void CloseFile()
     {
-        // TODO: Check for unsaved changes
         _currentCreature = null;
         _currentFilePath = null;
         _isDirty = false;
         _isBicFile = false;
 
-        UpdateUI();
+        ClearInventoryUI();
         UpdateTitle();
         UpdateStatus("Ready");
         UpdateInventoryCounts();
         OnPropertyChanged(nameof(HasFile));
+        OnPropertyChanged(nameof(CanAddItem));
+    }
+
+    #endregion
+
+    #region Inventory UI
+
+    private void PopulateInventoryUI()
+    {
+        if (_currentCreature == null) return;
+
+        // Clear existing data
+        ClearInventoryUI();
+
+        // TODO: Populate equipment slots from _currentCreature.EquipItemList
+        // TODO: Populate backpack from _currentCreature.ItemList
+        // This requires resolving item references to actual UtiFile data
+
+        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Populated inventory UI from creature data");
+    }
+
+    private void ClearInventoryUI()
+    {
+        // Clear equipment slots
+        EquipmentPanel.ClearAllSlots();
+
+        // Clear backpack
+        _backpackItems.Clear();
+
+        // Update selection state
+        HasSelection = false;
+        HasBackpackSelection = false;
+    }
+
+    #endregion
+
+    #region Equipment Panel Events
+
+    private void OnEquipmentSlotClicked(object? sender, EquipmentSlotViewModel slot)
+    {
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Equipment slot clicked: {slot.Name}");
+        HasSelection = slot.HasItem;
+    }
+
+    private void OnEquipmentSlotDoubleClicked(object? sender, EquipmentSlotViewModel slot)
+    {
+        if (slot.HasItem)
+        {
+            // TODO: Open item properties dialog
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"Equipment slot double-clicked: {slot.Name} - {slot.EquippedItem?.Name}");
+        }
+    }
+
+    private void OnEquipmentSlotItemDropped(object? sender, EquipmentSlotDropEventArgs e)
+    {
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Item dropped on slot: {e.TargetSlot.Name}");
+        // TODO: Handle item drop (equip item to slot)
+        MarkDirty();
+    }
+
+    #endregion
+
+    #region Backpack List Events
+
+    private void OnBackpackSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        HasBackpackSelection = BackpackList.SelectedItems.Count > 0;
+        HasSelection = HasBackpackSelection;
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack selection changed: {BackpackList.SelectedItems.Count} items");
+    }
+
+    private void OnBackpackCheckedChanged(object? sender, EventArgs e)
+    {
+        var checkedCount = BackpackList.CheckedItems.Count;
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack checked items: {checkedCount}");
+    }
+
+    private void OnBackpackDragStarting(object? sender, ItemDragEventArgs e)
+    {
+        // Set drag data for backpack items
+        e.Data = e.Items;
+        e.DataFormat = "BackpackItem";
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack drag starting: {e.Items.Count} items");
+    }
+
+    #endregion
+
+    #region Palette List Events
+
+    private void OnPaletteSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        HasPaletteSelection = PaletteList.SelectedItems.Count > 0;
+        OnPropertyChanged(nameof(CanAddItem));
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Palette selection changed: {PaletteList.SelectedItems.Count} items");
+    }
+
+    private void OnPaletteDragStarting(object? sender, ItemDragEventArgs e)
+    {
+        // Set drag data for palette items
+        e.Data = e.Items;
+        e.DataFormat = "PaletteItem";
+        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Palette drag starting: {e.Items.Count} items");
     }
 
     #endregion
@@ -391,42 +546,71 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnDeleteClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: Delete selected item
-        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Delete clicked");
+        if (EquipmentPanel.SelectedSlot?.HasItem == true)
+        {
+            // Unequip item from slot
+            var slot = EquipmentPanel.SelectedSlot;
+            slot.EquippedItem = null;
+            MarkDirty();
+            UpdateInventoryCounts();
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Unequipped item from {slot.Name}");
+        }
+        else if (HasBackpackSelection)
+        {
+            OnDeleteSelectedClick(sender, e);
+        }
     }
 
     private void OnDeleteSelectedClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: Delete selected backpack items
-        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Delete selected clicked");
+        // Delete checked items first, then selected items
+        var toDelete = BackpackList.CheckedItems.Count > 0
+            ? BackpackList.CheckedItems
+            : BackpackList.SelectedItems;
+
+        if (toDelete.Count == 0) return;
+
+        foreach (var item in toDelete.ToArray())
+        {
+            _backpackItems.Remove(item);
+        }
+
+        MarkDirty();
+        UpdateInventoryCounts();
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Deleted {toDelete.Count} items from backpack");
     }
 
     private void OnAddItemClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: Add item from palette
-        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Add item clicked");
+        OnAddToBackpackClick(sender, e);
     }
 
     private void OnAddToBackpackClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: Add selected palette item to backpack
-        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Add to backpack clicked");
+        if (!HasFile || !HasPaletteSelection) return;
+
+        foreach (var item in PaletteList.SelectedItems)
+        {
+            // TODO: Clone the item and add to backpack
+            // _backpackItems.Add(clonedItem);
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Would add to backpack: {item.Name}");
+        }
+
+        MarkDirty();
+        UpdateInventoryCounts();
     }
 
     private void OnEquipSelectedClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: Equip selected palette item
+        if (!HasFile || !HasPaletteSelection) return;
+
+        // TODO: Determine appropriate slot and equip item
         UnifiedLogger.LogInventory(LogLevel.DEBUG, "Equip selected clicked");
     }
 
     #endregion
 
     #region UI Updates
-
-    private void UpdateUI()
-    {
-        // TODO: Populate equipment slots, backpack list, and item palette
-    }
 
     private void UpdateTitle()
     {
@@ -450,8 +634,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        var equippedCount = _currentCreature.EquipItemList?.Count ?? 0;
-        var backpackCount = _currentCreature.ItemList?.Count ?? 0;
+        var equippedCount = _equipmentSlots.Count(s => s.HasItem);
+        var backpackCount = _backpackItems.Count;
         InventoryCountText.Text = $"{equippedCount} equipped, {backpackCount} in backpack";
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
@@ -463,22 +647,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _isDirty = true;
             UpdateTitle();
         }
-    }
-
-    #endregion
-
-    #region Filter and Search
-
-    private void OnClearSearchClick(object? sender, RoutedEventArgs e)
-    {
-        SearchBox.Text = "";
-    }
-
-    private void OnEquipmentTabChanged(object? sender, RoutedEventArgs e)
-    {
-        var showNatural = NaturalSlotsTab.IsChecked == true;
-        UnifiedLogger.LogUI(LogLevel.DEBUG, $"Equipment tab changed: {(showNatural ? "Natural" : "Standard")}");
-        // TODO: Update equipment slots display
     }
 
     #endregion

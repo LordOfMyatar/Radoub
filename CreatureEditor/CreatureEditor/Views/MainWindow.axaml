@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:Radoub.UI.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="CreatureEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -87,18 +88,11 @@
                 <Border Grid.Row="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Top" Text="Equipment" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <StackPanel>
-                            <!-- Tab buttons for Standard/Natural -->
-                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,10">
-                                <RadioButton x:Name="StandardSlotsTab" Content="Standard" IsChecked="True" GroupName="EquipmentTabs" Click="OnEquipmentTabChanged"/>
-                                <RadioButton x:Name="NaturalSlotsTab" Content="Natural" GroupName="EquipmentTabs" Click="OnEquipmentTabChanged"/>
-                            </StackPanel>
-
-                            <!-- Equipment Grid Placeholder -->
-                            <Border x:Name="EquipmentSlotsContainer" Height="200" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1">
-                                <TextBlock Text="Equipment slots will be rendered here" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            </Border>
-                        </StackPanel>
+                        <controls:EquipmentSlotsPanel x:Name="EquipmentPanel"
+                                                       ShowNaturalSlots="True"
+                                                       SlotClicked="OnEquipmentSlotClicked"
+                                                       SlotDoubleClicked="OnEquipmentSlotDoubleClicked"
+                                                       ItemDropped="OnEquipmentSlotItemDropped"/>
                     </DockPanel>
                 </Border>
 
@@ -117,10 +111,12 @@
                             <Button Content="Delete Selected" Click="OnDeleteSelectedClick" IsEnabled="{Binding HasBackpackSelection}" Padding="6,2"/>
                         </StackPanel>
 
-                        <!-- Backpack Items List Placeholder -->
-                        <Border x:Name="BackpackListContainer" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1">
-                            <TextBlock Text="Backpack items will be listed here" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                        </Border>
+                        <!-- Backpack Items List -->
+                        <controls:ItemListView x:Name="BackpackList"
+                                                ContextKey="Backpack"
+                                                SelectionChanged="OnBackpackSelectionChanged"
+                                                CheckedItemsChanged="OnBackpackCheckedChanged"
+                                                DragStarting="OnBackpackDragStarting"/>
                     </DockPanel>
                 </Border>
             </Grid>
@@ -133,33 +129,23 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Item Palette" FontWeight="Bold" Margin="0,0,0,5"/>
 
-                    <!-- Filter Panel Placeholder -->
-                    <Border DockPanel.Dock="Top" x:Name="FilterPanelContainer" Height="80" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="0,0,0,5">
-                        <StackPanel Margin="5">
-                            <!-- Search -->
-                            <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,5">
-                                <TextBox x:Name="SearchBox" Width="200" Watermark="Search items..."/>
-                                <Button Content="X" Click="OnClearSearchClick" ToolTip.Tip="Clear search" Padding="6,2"/>
-                            </StackPanel>
-                            <!-- Source Filters -->
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <CheckBox x:Name="ShowStandardCheck" Content="Standard" IsChecked="True"/>
-                                <CheckBox x:Name="ShowCustomCheck" Content="Custom" IsChecked="True"/>
-                                <ComboBox x:Name="ItemTypeFilter" Width="150" PlaceholderText="All Types"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
+                    <!-- Filter Panel -->
+                    <controls:ItemFilterPanel x:Name="PaletteFilter"
+                                               DockPanel.Dock="Top"
+                                               ContextKey="Palette"
+                                               Margin="0,0,0,5"/>
 
-                    <!-- Add to Inventory Button -->
+                    <!-- Add to Inventory Buttons -->
                     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
                         <Button Content="Add to Backpack" Click="OnAddToBackpackClick" IsEnabled="{Binding HasPaletteSelection}" Padding="8,4"/>
                         <Button Content="Equip Selected" Click="OnEquipSelectedClick" IsEnabled="{Binding HasPaletteSelection}" Padding="8,4"/>
                     </StackPanel>
 
-                    <!-- Item List Placeholder -->
-                    <Border x:Name="ItemPaletteContainer" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1">
-                        <TextBlock Text="Available items will be listed here" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </Border>
+                    <!-- Item List -->
+                    <controls:ItemListView x:Name="PaletteList"
+                                            ContextKey="Palette"
+                                            SelectionChanged="OnPaletteSelectionChanged"
+                                            DragStarting="OnPaletteDragStarting"/>
                 </DockPanel>
             </Border>
         </Grid>
