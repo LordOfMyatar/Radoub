@@ -104,6 +104,14 @@ public partial class ItemListView : UserControl
         {
             column.PropertyChanged += OnColumnPropertyChanged;
         }
+
+        // Ensure ItemsSource is set after control is fully loaded
+        // This handles the case where Items was set before the control loaded
+        if (Items != null && ItemsGrid.ItemsSource != Items)
+        {
+            ItemsGrid.ItemsSource = Items;
+            UpdateSelectionCount();
+        }
     }
 
     private void OnUnloaded(object? sender, RoutedEventArgs e)
@@ -190,7 +198,11 @@ public partial class ItemListView : UserControl
                 SubscribeToItemChanges(newItems);
             }
 
-            ItemsGrid.ItemsSource = newItems;
+            // ItemsGrid may be null if called before InitializeComponent completes
+            if (ItemsGrid != null)
+            {
+                ItemsGrid.ItemsSource = newItems;
+            }
             UpdateSelectionCount();
         }
     }

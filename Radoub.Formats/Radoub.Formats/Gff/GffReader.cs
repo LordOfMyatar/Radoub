@@ -351,7 +351,8 @@ public static class GffReader
                 GffField.CExoString => ReadCExoString(buffer, dataOffset),
                 GffField.CResRef => ReadCResRef(buffer, dataOffset),
                 GffField.CExoLocString => ReadCExoLocString(buffer, dataOffset),
-                GffField.Struct => ReadStructReference(buffer, dataOffset, structs),
+                // Struct fields: DataOrDataOffset IS the struct index directly, not an offset into FieldData
+                GffField.Struct => ReadStructByIndex(field.DataOrDataOffset, structs),
                 GffField.List => ReadList(buffer, (int)field.DataOrDataOffset, header, structs),
                 GffField.VOID => ReadVoid(buffer, dataOffset),
                 _ => null
@@ -448,11 +449,11 @@ public static class GffReader
         return locString;
     }
 
-    private static GffStruct? ReadStructReference(byte[] buffer, int offset, GffStruct[] structs)
+    /// <summary>
+    /// Read a struct by direct index (for Struct type fields where DataOrDataOffset is the index).
+    /// </summary>
+    private static GffStruct? ReadStructByIndex(uint structIndex, GffStruct[] structs)
     {
-        ValidateAccess(buffer, offset, 4);
-        var structIndex = ReadUInt32(buffer, ref offset);
-
         if (structIndex >= structs.Length)
             throw new InvalidDataException($"Invalid struct index: {structIndex} >= {structs.Length}");
 

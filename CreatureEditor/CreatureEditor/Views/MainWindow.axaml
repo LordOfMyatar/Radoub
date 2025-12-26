@@ -18,10 +18,10 @@
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
                 <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
                 <Separator/>
-                <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile}"/>
-                <MenuItem Header="Save _As..." Click="OnSaveAsClick" InputGesture="Ctrl+Shift+S" IsEnabled="{Binding HasFile}"/>
+                <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="Save _As..." Click="OnSaveAsClick" InputGesture="Ctrl+Shift+S" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
                 <Separator/>
-                <MenuItem Header="_Close" Click="OnCloseFileClick" IsEnabled="{Binding HasFile}"/>
+                <MenuItem Header="_Close" Click="OnCloseFileClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
             </MenuItem>
             <MenuItem Header="_Edit">
@@ -31,7 +31,7 @@
                 <MenuItem Header="Cu_t" InputGesture="Ctrl+X" IsEnabled="False"/>
                 <MenuItem Header="_Copy" InputGesture="Ctrl+C" IsEnabled="False"/>
                 <MenuItem Header="_Paste" InputGesture="Ctrl+V" IsEnabled="False"/>
-                <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection}"/>
+                <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
@@ -45,10 +45,10 @@
         <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1" Padding="5,3">
             <StackPanel Orientation="Horizontal" Spacing="5">
                 <Button Content="Open" Click="OnOpenClick" ToolTip.Tip="Open Creature (Ctrl+O)" Padding="8,4"/>
-                <Button Content="Save" Click="OnSaveClick" ToolTip.Tip="Save Creature (Ctrl+S)" IsEnabled="{Binding HasFile}" Padding="8,4"/>
+                <Button Content="Save" Click="OnSaveClick" ToolTip.Tip="Save Creature (Ctrl+S)" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}" Padding="8,4"/>
                 <Separator Width="1" Margin="5,0" Background="{DynamicResource SystemBaseMediumLowColor}"/>
-                <Button Content="Add Item" Click="OnAddItemClick" ToolTip.Tip="Add Selected to Inventory" IsEnabled="{Binding CanAddItem}" Padding="8,4"/>
-                <Button Content="Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Delete)" IsEnabled="{Binding HasSelection}" Padding="8,4"/>
+                <Button Content="Add Item" Click="OnAddItemClick" ToolTip.Tip="Add Selected to Inventory" IsEnabled="{Binding CanAddItem, ElementName=MainWindowInstance}" Padding="8,4"/>
+                <Button Content="Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Delete)" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}" Padding="8,4"/>
             </StackPanel>
         </Border>
 
@@ -106,9 +106,9 @@
 
                         <!-- Bulk Operations -->
                         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
-                            <CheckBox x:Name="BulkDropableCheck" Content="Dropable" IsEnabled="{Binding HasBackpackSelection}"/>
-                            <CheckBox x:Name="BulkPickpocketCheck" Content="Pickpocketable" IsEnabled="{Binding HasBackpackSelection}"/>
-                            <Button Content="Delete Selected" Click="OnDeleteSelectedClick" IsEnabled="{Binding HasBackpackSelection}" Padding="6,2"/>
+                            <CheckBox x:Name="BulkDropableCheck" Content="Dropable" IsEnabled="{Binding HasBackpackSelection, ElementName=MainWindowInstance}"/>
+                            <CheckBox x:Name="BulkPickpocketCheck" Content="Pickpocketable" IsEnabled="{Binding HasBackpackSelection, ElementName=MainWindowInstance}"/>
+                            <Button Content="Delete Selected" Click="OnDeleteSelectedClick" IsEnabled="{Binding HasBackpackSelection, ElementName=MainWindowInstance}" Padding="6,2"/>
                         </StackPanel>
 
                         <!-- Backpack Items List -->
@@ -137,8 +137,8 @@
 
                     <!-- Add to Inventory Buttons -->
                     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
-                        <Button Content="Add to Backpack" Click="OnAddToBackpackClick" IsEnabled="{Binding HasPaletteSelection}" Padding="8,4"/>
-                        <Button Content="Equip Selected" Click="OnEquipSelectedClick" IsEnabled="{Binding HasPaletteSelection}" Padding="8,4"/>
+                        <Button Content="Add to Backpack" Click="OnAddToBackpackClick" IsEnabled="{Binding HasPaletteSelection, ElementName=MainWindowInstance}" Padding="8,4"/>
+                        <Button Content="Equip Selected" Click="OnEquipSelectedClick" IsEnabled="{Binding HasPaletteSelection, ElementName=MainWindowInstance}" Padding="8,4"/>
                     </StackPanel>
 
                     <!-- Item List -->

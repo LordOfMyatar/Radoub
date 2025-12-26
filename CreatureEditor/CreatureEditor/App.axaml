@@ -5,6 +5,8 @@
 
     <Application.Styles>
         <FluentTheme />
+        <!-- DataGrid requires explicit style inclusion -->
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
 
         <!-- Theme-aware window background -->
         <Style Selector="Window">

@@ -4,7 +4,9 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using CreatureEditor.Services;
 using Radoub.Formats.Bic;
+using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
+using Radoub.Formats.Uti;
 using Radoub.UI.Controls;
 using Radoub.UI.ViewModels;
 using System;
@@ -62,7 +64,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = this;
+        // Note: Don't set DataContext = this; it causes stack overflow with Radoub.UI controls.
+        // Use ElementName bindings in XAML instead.
 
         InitializeEquipmentSlots();
         RestoreWindowPosition();
@@ -450,11 +453,93 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Clear existing data
         ClearInventoryUI();
 
-        // TODO: Populate equipment slots from _currentCreature.EquipItemList
-        // TODO: Populate backpack from _currentCreature.ItemList
-        // This requires resolving item references to actual UtiFile data
+        // Populate equipment slots from EquipItemList
+        foreach (var equippedItem in _currentCreature.EquipItemList)
+        {
+            var slot = EquipmentSlotFactory.GetSlotByFlag(_equipmentSlots, equippedItem.Slot);
+            if (slot != null && !string.IsNullOrEmpty(equippedItem.EquipRes))
+            {
+                // Create placeholder item from ResRef (full resolution requires game data)
+                var itemVm = CreatePlaceholderItem(equippedItem.EquipRes);
+                slot.EquippedItem = itemVm;
+                UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Equipped {equippedItem.EquipRes} to {slot.Name}");
+            }
+        }
 
-        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Populated inventory UI from creature data");
+        // Populate backpack from ItemList
+        foreach (var invItem in _currentCreature.ItemList)
+        {
+            if (!string.IsNullOrEmpty(invItem.InventoryRes))
+            {
+                var itemVm = CreatePlaceholderItem(invItem.InventoryRes, invItem.Dropable, invItem.Pickpocketable);
+                _backpackItems.Add(itemVm);
+                UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Added to backpack: {invItem.InventoryRes}");
+            }
+        }
+
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {_backpackItems.Count} in backpack");
+    }
+
+    /// <summary>
+    /// Creates an ItemViewModel from a ResRef, attempting to load the actual UTI file.
+    /// Falls back to placeholder data if UTI file not found.
+    /// </summary>
+    private ItemViewModel CreatePlaceholderItem(string resRef, bool dropable = true, bool pickpocketable = false)
+    {
+        UtiFile? item = null;
+        var source = GameResourceSource.Bif;
+
+        // Try to load actual UTI file from the module directory
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            var moduleDir = Path.GetDirectoryName(_currentFilePath);
+            if (moduleDir != null)
+            {
+                var utiPath = Path.Combine(moduleDir, resRef + ".uti");
+                if (File.Exists(utiPath))
+                {
+                    try
+                    {
+                        item = Radoub.Formats.Uti.UtiReader.Read(utiPath);
+                        source = GameResourceSource.Module;
+                        UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Loaded UTI: {resRef}");
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {resRef}: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        // Fall back to placeholder if UTI not found
+        if (item == null)
+        {
+            item = new UtiFile
+            {
+                TemplateResRef = resRef,
+                Tag = resRef
+            };
+            item.LocalizedName.SetString(0, resRef);
+        }
+
+        // Get display name from LocalizedName (prefer English = 0)
+        var displayName = item.LocalizedName.GetDefault();
+        if (string.IsNullOrEmpty(displayName))
+            displayName = resRef;
+
+        // Format properties count
+        var propsDisplay = item.Properties.Count > 0
+            ? $"{item.Properties.Count} properties"
+            : "";
+
+        return new ItemViewModel(
+            item,
+            resolvedName: displayName,
+            baseItemName: $"BaseItem:{item.BaseItem}",
+            propertiesDisplay: propsDisplay,
+            source: source
+        );
     }
 
     private void ClearInventoryUI()
