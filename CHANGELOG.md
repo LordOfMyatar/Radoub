@@ -14,6 +14,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.4] - 2025-12-25
+**Branch**: `radoub/sprint/utc-parser-creature-model` | **PR**: #561
+
+### Sprint: UTC Parser and Creature Model (#549)
+
+Part of Epic #547 (File Format Parsers).
+
+#### Added (Radoub.Formats)
+- **UTC Parser** - Read/write support for creature blueprint files
+- `UtcFile` - Strongly-typed creature representation
+- `UtcReader` / `UtcWriter` - Static parser/serializer pair
+- `CreatureClass`, `SpecialAbility` - Class and ability models
+- `EquippedItem` - Equipment slot mapping (14 slots)
+- `InventoryItem` - Backpack item references
+- `EquipmentSlots` - Slot constants with name lookup
+- 28 unit tests (reader + round-trip)
+
+#### Added (CLAUDE.md)
+- Sprint Workflow section - commit between sprint items
+
+#### MVP Fields
+- Identity: FirstName, LastName, Tag
+- Basic info: Race, Gender, ClassList
+- Inventory: ItemList, Equip_ItemList with parsed UTI data
+
+---
+
 ## [0.9.3] - 2025-12-25
 **Branch**: `radoub/sprint/uti-parser` | **PR**: #559
 
