@@ -22,11 +22,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Part of Epic #547 (File Format Parsers).
 
 #### Added (Radoub.Formats)
-- **UTC Parser** - Read support for creature blueprint files
+- **UTC Parser** - Read/write support for creature blueprint files
 - `UtcFile` - Strongly-typed creature representation
-- `CreatureModel` - Creature data with identity, stats, and inventory
-- `EquippedItem` - Equipment slot mapping (14+ slots)
+- `UtcReader` / `UtcWriter` - Static parser/serializer pair
+- `CreatureClass`, `SpecialAbility` - Class and ability models
+- `EquippedItem` - Equipment slot mapping (14 slots)
 - `InventoryItem` - Backpack item references
+- `EquipmentSlots` - Slot constants with name lookup
+- 28 unit tests (reader + round-trip)
+
+#### Added (CLAUDE.md)
+- Sprint Workflow section - commit between sprint items
 
 #### MVP Fields
 - Identity: FirstName, LastName, Tag
