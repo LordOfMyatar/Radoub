@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.12] - 2025-12-26
-**Branch**: `radoub/sprint/creature-editor-mvp` | **PR**: #TBD
+**Branch**: `radoub/sprint/creature-editor-mvp` | **PR**: #578
 
 ### Sprint: Creature Editor MVP - Inventory Panel (#554)
 
