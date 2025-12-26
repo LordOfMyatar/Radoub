@@ -80,7 +80,7 @@ public static class JrlReader
         var nameField = categoryStruct.GetField("Name");
         if (nameField != null && nameField.IsCExoLocString && nameField.Value is CExoLocString nameLocString)
         {
-            category.Name = ConvertLocString(nameLocString);
+            category.Name = nameLocString;
         }
 
         // Parse EntryList
@@ -112,24 +112,9 @@ public static class JrlReader
         var textField = entryStruct.GetField("Text");
         if (textField != null && textField.IsCExoLocString && textField.Value is CExoLocString textLocString)
         {
-            entry.Text = ConvertLocString(textLocString);
+            entry.Text = textLocString;
         }
 
         return entry;
-    }
-
-    private static JrlLocString ConvertLocString(CExoLocString gffLocString)
-    {
-        var result = new JrlLocString
-        {
-            StrRef = gffLocString.StrRef
-        };
-
-        foreach (var kvp in gffLocString.LocalizedStrings)
-        {
-            result.Strings[kvp.Key] = kvp.Value;
-        }
-
-        return result;
     }
 }

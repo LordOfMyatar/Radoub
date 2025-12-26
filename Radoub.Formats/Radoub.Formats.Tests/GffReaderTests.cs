@@ -74,7 +74,7 @@ public class GffReaderTests
 
         var locString = locStringField.Value as CExoLocString;
         Assert.NotNull(locString);
-        Assert.Equal("English text", locString.GetDefaultString());
+        Assert.Equal("English text", locString.GetDefault());
     }
 
     [Fact]
@@ -163,22 +163,22 @@ public class GffReaderTests
     }
 
     [Fact]
-    public void CExoLocString_GetDefaultString_ReturnsEnglishFirst()
+    public void CExoLocString_GetDefault_ReturnsEnglishFirst()
     {
         var locString = new CExoLocString();
         locString.LocalizedStrings[0] = "English";
         locString.LocalizedStrings[2] = "French";
 
-        Assert.Equal("English", locString.GetDefaultString());
+        Assert.Equal("English", locString.GetDefault());
     }
 
     [Fact]
-    public void CExoLocString_GetDefaultString_ReturnsFallback_WhenNoEnglish()
+    public void CExoLocString_GetDefault_ReturnsFallback_WhenNoEnglish()
     {
         var locString = new CExoLocString();
         locString.LocalizedStrings[2] = "French";
 
-        Assert.Equal("French", locString.GetDefaultString());
+        Assert.Equal("French", locString.GetDefault());
     }
 
     [Fact]

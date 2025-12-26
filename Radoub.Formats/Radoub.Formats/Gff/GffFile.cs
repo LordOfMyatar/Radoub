@@ -199,6 +199,7 @@ public class GffList
 
 /// <summary>
 /// A localized string supporting multiple languages.
+/// Used by all GFF-based file types (DLG, JRL, UTI, UTC, etc.).
 /// </summary>
 public class CExoLocString
 {
@@ -208,7 +209,7 @@ public class CExoLocString
     public uint StrRef { get; set; } = 0xFFFFFFFF;
 
     /// <summary>
-    /// Number of localized substrings.
+    /// Number of localized substrings (used during binary parsing).
     /// </summary>
     public uint SubStringCount { get; set; }
 
@@ -227,9 +228,17 @@ public class CExoLocString
     }
 
     /// <summary>
+    /// Set string for a specific language ID.
+    /// </summary>
+    public void SetString(uint languageId, string text)
+    {
+        LocalizedStrings[languageId] = text;
+    }
+
+    /// <summary>
     /// Get the default string (English male, or first available).
     /// </summary>
-    public string GetDefaultString()
+    public string GetDefault()
     {
         // Try English male (0) first, then any available language
         if (LocalizedStrings.TryGetValue(0, out var english))
