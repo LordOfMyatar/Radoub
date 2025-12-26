@@ -28,6 +28,9 @@ Part of Epic #546 (Shared Inventory UI Components).
   - Built-in sorting via column headers
   - Multi-select with checkboxes (Select All / Select None)
   - Row selection with Extended mode (Ctrl+click, Shift+click)
+  - Column width persistence via IColumnSettings interface
+  - Row context menu (Open, Edit, Copy ResRef, Copy Tag)
+  - Drag source support for drag-drop operations
   - Theme-aware styling with DynamicResource bindings
 - **ItemViewModel** - ViewModel for DataGrid item binding
   - Wraps UtiFile with display-friendly properties
@@ -36,6 +39,7 @@ Part of Epic #546 (Shared Inventory UI Components).
   - Resolves display names from LocalizedName or TLK
   - Resolves base item type from baseitems.2da
   - Formats item properties from 2DA chain
+- **IColumnSettings** - Interface for column width persistence
 - 17 unit tests (ItemViewModel, ItemViewModelFactory)
 
 ---

@@ -35,6 +35,20 @@
               HeadersVisibility="Column"
               SelectionChanged="OnSelectionChanged">
 
+      <!-- Row context menu -->
+      <DataGrid.ContextMenu>
+        <ContextMenu x:Name="RowContextMenu">
+          <MenuItem x:Name="MenuOpen" Header="Open" Click="OnContextMenuOpen"/>
+          <MenuItem x:Name="MenuEdit" Header="Edit" Click="OnContextMenuEdit"/>
+          <Separator/>
+          <MenuItem x:Name="MenuCopy" Header="Copy ResRef" Click="OnContextMenuCopyResRef"/>
+          <MenuItem x:Name="MenuCopyTag" Header="Copy Tag" Click="OnContextMenuCopyTag"/>
+          <Separator/>
+          <MenuItem x:Name="MenuSelectAll" Header="Select All" Click="OnSelectAllClick"/>
+          <MenuItem x:Name="MenuSelectNone" Header="Select None" Click="OnSelectNoneClick"/>
+        </ContextMenu>
+      </DataGrid.ContextMenu>
+
       <DataGrid.Columns>
         <!-- Checkbox column for bulk selection -->
         <DataGridTemplateColumn Header="&#x2610;" Width="40" CanUserResize="False" CanUserSort="False">
