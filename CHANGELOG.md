@@ -14,6 +14,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.9] - 2025-12-26
+**Branch**: `radoub/sprint/item-list-view` | **PR**: #TBD
+
+### Sprint: Inventory List View Component (#551)
+
+Part of Epic #546 (Shared Inventory UI Components).
+
+#### Added (Radoub.UI)
+- TBD
+
+---
+
 ## [0.9.8] - 2025-12-26
 **Branch**: `radoub/sprint/game-data-service` | **PR**: #572
 
