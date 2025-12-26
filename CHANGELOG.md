@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.7] - 2025-12-26
-**Branch**: `radoub/sprint/item-property-resolver` | **PR**: #TBD
+**Branch**: `radoub/sprint/item-property-resolver` | **PR**: #568
 
 ### Sprint: Item Property Resolver (#567)
 
