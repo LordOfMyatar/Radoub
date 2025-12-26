@@ -22,7 +22,7 @@ for arg in "$@"; do
 done
 
 TIMESTAMP=$(date +"%Y%m%d%H%M%S")
-OUTPUT_DIR="Radoub.UITests/TestOutput"
+OUTPUT_DIR="Radoub.IntegrationTests/TestOutput"
 mkdir -p "$OUTPUT_DIR"
 
 echo "========================================"
@@ -43,7 +43,7 @@ UNIT_TESTS=(
 )
 
 # UI Tests (Windows-only, FlaUI requires Windows)
-# Note: Radoub.UITests uses FlaUI which is Windows-only
+# Note: Radoub.IntegrationTests uses FlaUI which is Windows-only
 # On Linux/macOS, only unit/headless tests are available
 UI_TESTS=()
 

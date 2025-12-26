@@ -43,7 +43,7 @@ Based on changed files:
 
 | Changed | Tests Required |
 |---------|---------------|
-| `Parley/Parley/Views/*.axaml` | UI tests (Radoub.UITests) |
+| `Parley/Parley/Views/*.axaml` | UI tests (Radoub.IntegrationTests) |
 | `Parley/Parley/ViewModels/*.cs` | UI tests + manual verification |
 | `Radoub.Formats/**/*.cs` | Unit tests (Radoub.Formats.Tests) |
 | `*.md` only | No automated tests |
@@ -90,13 +90,13 @@ Before running tests, display this warning to the user:
 **Windows** (full suite including UI tests):
 ```powershell
 # Run from repository root
-.\Radoub.UITests\run-tests.ps1
+.\Radoub.IntegrationTests\run-tests.ps1
 ```
 
 **Linux/macOS** (unit tests only - FlaUI is Windows-only):
 ```bash
 # Run from repository root
-./Radoub.UITests/run-tests.sh
+./Radoub.IntegrationTests/run-tests.sh
 ```
 
 **Capture Test Results** for PR update:
@@ -247,7 +247,7 @@ Output format:
 | Radoub.Dictionary.Tests | ✅/❌ | N | N |
 | Parley.Tests | ✅/❌ | N | N |
 | Manifest.Tests | ✅/❌ | N | N |
-| Radoub.UITests | ✅/❌/⏭️ | N | N |
+| Radoub.IntegrationTests | ✅/❌/⏭️ | N | N |
 
 **Total**: Passed N, Failed N
 **Manual Testing**: [ ] Verify: [specific items if needed]
@@ -348,7 +348,7 @@ gh pr edit [number] --body "$(cat <<'EOF'
 | Radoub.Dictionary.Tests | ✅/❌ | N | N |
 | Parley.Tests | ✅/❌ | N | N |
 | Manifest.Tests | ✅/❌ | N | N |
-| Radoub.UITests | ✅/❌/⏭️ | N | N |
+| Radoub.IntegrationTests | ✅/❌/⏭️ | N | N |
 
 **Total**: Passed N, Failed N
 
@@ -364,7 +364,7 @@ EOF
 )"
 ```
 
-**Note**: Radoub.UITests shows ⏭️ on Linux/macOS since FlaUI is Windows-only.
+**Note**: Radoub.IntegrationTests shows ⏭️ on Linux/macOS since FlaUI is Windows-only.
 
 **Also check if the related Epic issue needs updating**:
 - If this PR closes sprint work, update the Epic with completion status

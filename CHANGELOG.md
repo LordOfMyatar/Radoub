@@ -220,7 +220,7 @@ Part of Epic #547 (File Format Parsers).
 | Radoub.Dictionary.Tests | 54 |
 | Parley.Tests | 461 |
 | Manifest.Tests | 32 |
-| Radoub.UITests | 52 |
+| Radoub.IntegrationTests | 52 |
 | **Total** | **764** |
 
 ---
@@ -511,7 +511,7 @@ TLK (Talk Table) and 2DA (Two-Dimensional Array) file reading support.
 FlaUI-based GUI testing framework for Radoub tools.
 
 **Added**:
-- `Radoub.UITests` project - Shared GUI test infrastructure
+- `Radoub.IntegrationTests` project - Shared GUI test infrastructure
 - FlaUI integration for Windows desktop testing (no external dependencies)
 - Basic Parley launch smoke tests
 

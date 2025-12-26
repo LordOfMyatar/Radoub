@@ -1,6 +1,6 @@
-using Radoub.UITests.Shared;
+using Radoub.IntegrationTests.Shared;
 
-namespace Radoub.UITests.Manifest;
+namespace Radoub.IntegrationTests.Manifest;
 
 /// <summary>
 /// Base class for Manifest-specific UI tests.

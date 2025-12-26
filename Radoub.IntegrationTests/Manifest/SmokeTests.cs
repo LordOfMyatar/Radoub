@@ -1,7 +1,7 @@
 using FlaUI.Core.AutomationElements;
 using Xunit;
 
-namespace Radoub.UITests.Manifest;
+namespace Radoub.IntegrationTests.Manifest;
 
 /// <summary>
 /// Basic smoke tests to verify Manifest launches and responds.

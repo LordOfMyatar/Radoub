@@ -8,7 +8,7 @@ param(
 )
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
-$outputDir = "Radoub.UITests\TestOutput"
+$outputDir = "Radoub.IntegrationTests\TestOutput"
 if (-not (Test-Path $outputDir)) { New-Item -ItemType Directory -Path $outputDir | Out-Null }
 
 Write-Host "========================================" -ForegroundColor Cyan
@@ -80,7 +80,7 @@ $unitTests = @(
 
 # UI Tests (slower, requires display)
 $uiTests = @(
-    @{ Name = "Radoub.UITests"; Path = "Radoub.UITests" }
+    @{ Name = "Radoub.IntegrationTests"; Path = "Radoub.IntegrationTests" }
 )
 
 function Invoke-TestProject {

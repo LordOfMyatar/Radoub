@@ -1,7 +1,7 @@
 using FlaUI.Core.AutomationElements;
 using Xunit;
 
-namespace Radoub.UITests.Parley;
+namespace Radoub.IntegrationTests.Parley;
 
 /// <summary>
 /// Basic smoke tests to verify Parley launches and responds.

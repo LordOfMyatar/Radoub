@@ -1,7 +1,7 @@
-using Radoub.UITests.Shared;
+using Radoub.IntegrationTests.Shared;
 using Xunit;
 
-namespace Radoub.UITests.Parley;
+namespace Radoub.IntegrationTests.Parley;
 
 /// <summary>
 /// Tests for file operations: Open, Save, Save As, Close, New.

@@ -1,8 +1,8 @@
 using FlaUI.Core.Definitions;
-using Radoub.UITests.Shared;
+using Radoub.IntegrationTests.Shared;
 using Xunit;
 
-namespace Radoub.UITests.Parley;
+namespace Radoub.IntegrationTests.Parley;
 
 /// <summary>
 /// Tests for dialog tree editing operations: add, delete, move nodes.
