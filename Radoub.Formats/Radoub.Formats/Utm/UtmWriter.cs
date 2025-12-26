@@ -1,4 +1,5 @@
 using Radoub.Formats.Gff;
+using static Radoub.Formats.Gff.GffFieldBuilder;
 
 namespace Radoub.Formats.Utm;
 
@@ -91,143 +92,42 @@ public static class UtmWriter
         return root;
     }
 
-    private static void AddByteField(GffStruct parent, string label, byte value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.BYTE,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddWordField(GffStruct parent, string label, ushort value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.WORD,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddIntField(GffStruct parent, string label, int value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.INT,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddCExoStringField(GffStruct parent, string label, string value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.CExoString,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddCResRefField(GffStruct parent, string label, string value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.CResRef,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddLocStringField(GffStruct parent, string label, CExoLocString locString)
-    {
-        var field = new GffField
-        {
-            Type = GffField.CExoLocString,
-            Label = label,
-            Value = locString
-        };
-        parent.Fields.Add(field);
-    }
-
     private static void AddStoreList(GffStruct parent, List<StorePanel> panels)
     {
         var list = new GffList();
-
         foreach (var panel in panels)
         {
             var panelStruct = new GffStruct { Type = (uint)panel.PanelId };
-
-            // Add ItemList to panel
             AddPanelItemList(panelStruct, panel.Items);
-
             list.Elements.Add(panelStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        var field = new GffField
-        {
-            Type = GffField.List,
-            Label = "StoreList",
-            Value = list
-        };
-        parent.Fields.Add(field);
+        AddListField(parent, "StoreList", list);
     }
 
     private static void AddPanelItemList(GffStruct panelStruct, List<StoreItem> items)
     {
         var list = new GffList();
-
         foreach (var item in items)
         {
             var itemStruct = new GffStruct { Type = 0 };
-
             AddCResRefField(itemStruct, "InventoryRes", item.InventoryRes);
             AddByteField(itemStruct, "Infinite", (byte)(item.Infinite ? 1 : 0));
             AddWordField(itemStruct, "Repos_PosX", item.Repos_PosX);
             AddWordField(itemStruct, "Repos_PosY", item.Repos_PosY);
-
             list.Elements.Add(itemStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        var field = new GffField
-        {
-            Type = GffField.List,
-            Label = "ItemList",
-            Value = list
-        };
-        panelStruct.Fields.Add(field);
+        AddListField(panelStruct, "ItemList", list);
     }
 
     private static void AddBaseItemList(GffStruct parent, string label, List<int> baseItems)
     {
         var list = new GffList();
-
         foreach (var baseItem in baseItems)
         {
             var itemStruct = new GffStruct { Type = 0 };
             AddIntField(itemStruct, "BaseItem", baseItem);
             list.Elements.Add(itemStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        var field = new GffField
-        {
-            Type = GffField.List,
-            Label = label,
-            Value = list
-        };
-        parent.Fields.Add(field);
+        AddListField(parent, label, list);
     }
 }

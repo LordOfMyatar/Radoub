@@ -1,4 +1,5 @@
 using Radoub.Formats.Gff;
+using static Radoub.Formats.Gff.GffFieldBuilder;
 
 namespace Radoub.Formats.Utc;
 
@@ -175,7 +176,6 @@ public static class UtcWriter
     private static void AddClassList(GffStruct root, List<CreatureClass> classes)
     {
         var list = new GffList();
-
         foreach (var cls in classes)
         {
             var classStruct = new GffStruct { Type = 2 };
@@ -183,63 +183,36 @@ public static class UtcWriter
             AddShortField(classStruct, "ClassLevel", cls.ClassLevel);
             list.Elements.Add(classStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        root.Fields.Add(new GffField
-        {
-            Type = GffField.List,
-            Label = "ClassList",
-            Value = list
-        });
+        AddListField(root, "ClassList", list);
     }
 
     private static void AddFeatList(GffStruct root, List<ushort> feats)
     {
         var list = new GffList();
-
         foreach (var feat in feats)
         {
             var featStruct = new GffStruct { Type = 1 };
             AddWordField(featStruct, "Feat", feat);
             list.Elements.Add(featStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        root.Fields.Add(new GffField
-        {
-            Type = GffField.List,
-            Label = "FeatList",
-            Value = list
-        });
+        AddListField(root, "FeatList", list);
     }
 
     private static void AddSkillList(GffStruct root, List<byte> skills)
     {
         var list = new GffList();
-
         foreach (var rank in skills)
         {
             var skillStruct = new GffStruct { Type = 0 };
             AddByteField(skillStruct, "Rank", rank);
             list.Elements.Add(skillStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        root.Fields.Add(new GffField
-        {
-            Type = GffField.List,
-            Label = "SkillList",
-            Value = list
-        });
+        AddListField(root, "SkillList", list);
     }
 
     private static void AddSpecAbilityList(GffStruct root, List<SpecialAbility> abilities)
     {
         var list = new GffList();
-
         foreach (var abil in abilities)
         {
             var abilStruct = new GffStruct { Type = 4 };
@@ -248,21 +221,12 @@ public static class UtcWriter
             AddByteField(abilStruct, "SpellFlags", abil.SpellFlags);
             list.Elements.Add(abilStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        root.Fields.Add(new GffField
-        {
-            Type = GffField.List,
-            Label = "SpecAbilityList",
-            Value = list
-        });
+        AddListField(root, "SpecAbilityList", list);
     }
 
     private static void AddItemList(GffStruct root, List<InventoryItem> items)
     {
         var list = new GffList();
-
         foreach (var item in items)
         {
             var itemStruct = new GffStruct { Type = 0 };
@@ -273,21 +237,12 @@ public static class UtcWriter
             AddByteField(itemStruct, "Pickpocketable", (byte)(item.Pickpocketable ? 1 : 0));
             list.Elements.Add(itemStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        root.Fields.Add(new GffField
-        {
-            Type = GffField.List,
-            Label = "ItemList",
-            Value = list
-        });
+        AddListField(root, "ItemList", list);
     }
 
     private static void AddEquipItemList(GffStruct root, List<EquippedItem> items)
     {
         var list = new GffList();
-
         foreach (var item in items)
         {
             // StructID is the equipment slot bit flag
@@ -295,108 +250,7 @@ public static class UtcWriter
             AddCResRefField(equipStruct, "EquipRes", item.EquipRes);
             list.Elements.Add(equipStruct);
         }
-
-        list.Count = (uint)list.Elements.Count;
-
-        root.Fields.Add(new GffField
-        {
-            Type = GffField.List,
-            Label = "Equip_ItemList",
-            Value = list
-        });
+        AddListField(root, "Equip_ItemList", list);
     }
 
-    #region Field Helpers
-
-    private static void AddByteField(GffStruct parent, string label, byte value)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.BYTE,
-            Label = label,
-            Value = value
-        });
-    }
-
-    private static void AddWordField(GffStruct parent, string label, ushort value)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.WORD,
-            Label = label,
-            Value = value
-        });
-    }
-
-    private static void AddShortField(GffStruct parent, string label, short value)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.SHORT,
-            Label = label,
-            Value = value
-        });
-    }
-
-    private static void AddIntField(GffStruct parent, string label, int value)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.INT,
-            Label = label,
-            Value = value
-        });
-    }
-
-    private static void AddDwordField(GffStruct parent, string label, uint value)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.DWORD,
-            Label = label,
-            Value = value
-        });
-    }
-
-    private static void AddFloatField(GffStruct parent, string label, float value)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.FLOAT,
-            Label = label,
-            Value = value
-        });
-    }
-
-    private static void AddCExoStringField(GffStruct parent, string label, string value)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.CExoString,
-            Label = label,
-            Value = value
-        });
-    }
-
-    private static void AddCResRefField(GffStruct parent, string label, string value)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.CResRef,
-            Label = label,
-            Value = value
-        });
-    }
-
-    private static void AddLocStringField(GffStruct parent, string label, CExoLocString locString)
-    {
-        parent.Fields.Add(new GffField
-        {
-            Type = GffField.CExoLocString,
-            Label = label,
-            Value = locString
-        });
-    }
-
-    #endregion
 }

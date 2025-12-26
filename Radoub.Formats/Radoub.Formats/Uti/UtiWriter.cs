@@ -1,4 +1,5 @@
 using Radoub.Formats.Gff;
+using static Radoub.Formats.Gff.GffFieldBuilder;
 
 namespace Radoub.Formats.Uti;
 
@@ -108,102 +109,13 @@ public static class UtiWriter
         return root;
     }
 
-    private static void AddByteField(GffStruct parent, string label, byte value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.BYTE,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddWordField(GffStruct parent, string label, ushort value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.WORD,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddIntField(GffStruct parent, string label, int value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.INT,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddDwordField(GffStruct parent, string label, uint value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.DWORD,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddCExoStringField(GffStruct parent, string label, string value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.CExoString,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddCResRefField(GffStruct parent, string label, string value)
-    {
-        var field = new GffField
-        {
-            Type = GffField.CResRef,
-            Label = label,
-            Value = value
-        };
-        parent.Fields.Add(field);
-    }
-
-    private static void AddLocStringField(GffStruct parent, string label, CExoLocString locString)
-    {
-        var field = new GffField
-        {
-            Type = GffField.CExoLocString,
-            Label = label,
-            Value = locString
-        };
-        parent.Fields.Add(field);
-    }
-
     private static void AddPropertiesList(GffStruct parent, List<ItemProperty> properties)
     {
         var list = new GffList();
-
         foreach (var prop in properties)
-        {
-            var propStruct = BuildPropertyStruct(prop);
-            list.Elements.Add(propStruct);
-        }
+            list.Elements.Add(BuildPropertyStruct(prop));
 
-        list.Count = (uint)list.Elements.Count;
-
-        var field = new GffField
-        {
-            Type = GffField.List,
-            Label = "PropertiesList",
-            Value = list
-        };
-        parent.Fields.Add(field);
+        AddListField(parent, "PropertiesList", list);
     }
 
     private static GffStruct BuildPropertyStruct(ItemProperty prop)
