@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.5] - 2025-12-26
-**Branch**: `radoub/sprint/utm-parser-store-model` | **PR**: #TBD
+**Branch**: `radoub/sprint/utm-parser-store-model` | **PR**: #562
 
 ### Sprint: UTM Parser and Store Model (#556)
 
