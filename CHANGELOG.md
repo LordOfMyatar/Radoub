@@ -22,7 +22,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Part of Epic #546 (Shared Inventory UI Components).
 
 #### Added (Radoub.UI)
-- TBD
+- **Radoub.UI** - New shared UI component library for Radoub tools
+- **ItemListView** - DataGrid-based control for item display
+  - Multi-column display (Name, ResRef, Tag, Type, Value, Properties)
+  - Built-in sorting via column headers
+  - Multi-select with checkboxes (Select All / Select None)
+  - Row selection with Extended mode (Ctrl+click, Shift+click)
+  - Theme-aware styling with DynamicResource bindings
+- **ItemViewModel** - ViewModel for DataGrid item binding
+  - Wraps UtiFile with display-friendly properties
+  - Observable IsSelected property for checkbox binding
+- **ItemViewModelFactory** - Factory for creating ItemViewModels
+  - Resolves display names from LocalizedName or TLK
+  - Resolves base item type from baseitems.2da
+  - Formats item properties from 2DA chain
+- 17 unit tests (ItemViewModel, ItemViewModelFactory)
 
 ---
 
