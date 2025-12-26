@@ -14,6 +14,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.11] - 2025-12-26
+**Branch**: `radoub/sprint/equipment-slots-panel` | **PR**: #576
+
+### Sprint: Equipment Slots Panel Component (#553)
+
+Part of Epic #546 (Shared Inventory UI Components).
+
+#### Added (Radoub.UI)
+- **EquipmentSlotsPanel** - Visual equipment slot display for creatures
+  - Standard equipment slots (14 slots: Head, Chest, Boots, etc.)
+  - Natural equipment slots (4 creature-only slots: Claws, Skin)
+  - Grid layout with labeled slots and item icons
+  - Validation warnings for invalid equipment
+  - Drag-drop support to/from backpack
+
+---
+
 ## [0.9.10] - 2025-12-26
 **Branch**: `radoub/sprint/item-filter-panel` | **PR**: #573
 

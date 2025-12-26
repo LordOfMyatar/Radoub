@@ -1,0 +1,107 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="using:Radoub.UI.Controls"
+                    xmlns:vm="using:Radoub.UI.ViewModels">
+
+  <Design.PreviewWith>
+    <Border Padding="20" Background="Gray">
+      <controls:EquipmentSlotControl/>
+    </Border>
+  </Design.PreviewWith>
+
+  <ControlTheme x:Key="{x:Type controls:EquipmentSlotControl}" TargetType="controls:EquipmentSlotControl">
+    <Setter Property="Width" Value="72"/>
+    <Setter Property="Height" Value="88"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <StackPanel Spacing="2" DataContext="{TemplateBinding Slot}">
+          <!-- Slot border with item icon area -->
+          <Border x:Name="SlotBorder"
+                  Width="64"
+                  Height="64"
+                  BorderThickness="1"
+                  BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                  Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                  CornerRadius="4">
+            <Grid>
+              <!-- Empty slot placeholder -->
+              <Border x:Name="EmptyPlaceholder"
+                      IsVisible="{Binding IsEmpty, FallbackValue=True}"
+                      Background="Transparent"
+                      CornerRadius="3">
+                <TextBlock Text="+"
+                           FontSize="24"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+              </Border>
+
+              <!-- Item icon placeholder -->
+              <Border x:Name="ItemIcon"
+                      IsVisible="{Binding HasItem, FallbackValue=False}"
+                      Background="{DynamicResource SystemControlBackgroundListMediumBrush}"
+                      CornerRadius="3"
+                      Margin="4">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                  <!-- Placeholder - in future, show actual item icon -->
+                  <TextBlock Text="*"
+                             FontSize="20"
+                             FontWeight="Bold"
+                             Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                             HorizontalAlignment="Center"/>
+                </StackPanel>
+              </Border>
+
+              <!-- Warning indicator -->
+              <Border x:Name="WarningBadge"
+                      IsVisible="{Binding HasWarning, FallbackValue=False}"
+                      HorizontalAlignment="Right"
+                      VerticalAlignment="Top"
+                      Margin="2"
+                      Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                      CornerRadius="8"
+                      Width="16"
+                      Height="16">
+                <TextBlock Text="!"
+                           FontSize="10"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource SystemFillColorCautionBrush}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+              </Border>
+
+              <!-- Selection indicator -->
+              <Border x:Name="SelectionBorder"
+                      IsVisible="{Binding IsSelected, FallbackValue=False}"
+                      BorderThickness="2"
+                      BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}"
+                      CornerRadius="4"
+                      IsHitTestVisible="False"/>
+            </Grid>
+          </Border>
+
+          <!-- Slot label -->
+          <TextBlock x:Name="SlotLabel"
+                     Text="{Binding Name, FallbackValue=Slot}"
+                     FontSize="10"
+                     HorizontalAlignment="Center"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                     TextTrimming="CharacterEllipsis"
+                     MaxWidth="70"/>
+
+          <!-- Tooltip -->
+          <ToolTip.Tip>
+            <TextBlock Text="{Binding Tooltip, FallbackValue=Empty slot}"/>
+          </ToolTip.Tip>
+        </StackPanel>
+      </ControlTemplate>
+    </Setter>
+
+    <!-- Pointer over state -->
+    <Style Selector="^:pointerover /template/ Border#SlotBorder">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

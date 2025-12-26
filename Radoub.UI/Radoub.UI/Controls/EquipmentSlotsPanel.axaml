@@ -1,0 +1,145 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Radoub.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="500"
+             x:Class="Radoub.UI.Controls.EquipmentSlotsPanel"
+             x:DataType="vm:EquipmentSlotViewModel">
+
+  <UserControl.Styles>
+    <!-- Equipment slot style -->
+    <Style Selector="Border.equipment-slot">
+      <Setter Property="Width" Value="64"/>
+      <Setter Property="Height" Value="64"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+      <Setter Property="Margin" Value="4"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <Style Selector="Border.equipment-slot:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseMediumLowBrush}"/>
+    </Style>
+
+    <Style Selector="Border.equipment-slot.selected">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <Style Selector="Border.equipment-slot.has-item">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}"/>
+    </Style>
+
+    <Style Selector="Border.equipment-slot.has-warning">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+    </Style>
+
+    <!-- Slot label style -->
+    <Style Selector="TextBlock.slot-label">
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+    </Style>
+
+    <!-- Warning icon style -->
+    <Style Selector="TextBlock.warning-icon">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Tab bar for Standard/Natural toggle -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            Padding="4">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <RadioButton x:Name="StandardTab"
+                     Content="Standard Equipment"
+                     IsChecked="True"
+                     GroupName="EquipmentTabs"/>
+        <RadioButton x:Name="NaturalTab"
+                     Content="Natural (Creature)"
+                     GroupName="EquipmentTabs"/>
+      </StackPanel>
+    </Border>
+
+    <!-- Slot panels container -->
+    <Grid Grid.Row="1">
+      <!-- Standard equipment slots panel -->
+      <ScrollViewer x:Name="StandardPanel" IsVisible="True">
+        <Grid Margin="8" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,*,*,*">
+          <!-- Row 0: Head -->
+          <StackPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotHead" Content="{Binding}"/>
+          </StackPanel>
+
+          <!-- Row 1: Cloak, Neck -->
+          <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotCloak" Content="{Binding}"/>
+          </StackPanel>
+          <StackPanel Grid.Row="1" Grid.Column="3" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotNeck" Content="{Binding}"/>
+          </StackPanel>
+
+          <!-- Row 2: Arms, Chest, Left Ring, Right Ring -->
+          <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotArms" Content="{Binding}"/>
+          </StackPanel>
+          <StackPanel Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotChest" Content="{Binding}"/>
+          </StackPanel>
+          <StackPanel Grid.Row="2" Grid.Column="3" HorizontalAlignment="Center">
+            <StackPanel Spacing="4">
+              <ContentControl x:Name="SlotLeftRing" Content="{Binding}"/>
+              <ContentControl x:Name="SlotRightRing" Content="{Binding}"/>
+            </StackPanel>
+          </StackPanel>
+
+          <!-- Row 3: Right Hand, Belt, Left Hand -->
+          <StackPanel Grid.Row="3" Grid.Column="0" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotRightHand" Content="{Binding}"/>
+          </StackPanel>
+          <StackPanel Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotBelt" Content="{Binding}"/>
+          </StackPanel>
+          <StackPanel Grid.Row="3" Grid.Column="3" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotLeftHand" Content="{Binding}"/>
+          </StackPanel>
+
+          <!-- Row 4: Boots, Ammunition slots -->
+          <StackPanel Grid.Row="4" Grid.Column="0" HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotBoots" Content="{Binding}"/>
+          </StackPanel>
+          <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+            <ContentControl x:Name="SlotArrows" Content="{Binding}"/>
+            <ContentControl x:Name="SlotBullets" Content="{Binding}"/>
+            <ContentControl x:Name="SlotBolts" Content="{Binding}"/>
+          </StackPanel>
+        </Grid>
+      </ScrollViewer>
+
+      <!-- Natural equipment slots panel (creature-only) -->
+      <ScrollViewer x:Name="NaturalPanel" IsVisible="False">
+        <StackPanel Margin="8" Spacing="8" HorizontalAlignment="Center">
+          <TextBlock Text="Creature Natural Equipment"
+                     HorizontalAlignment="Center"
+                     FontWeight="SemiBold"
+                     Margin="0,0,0,8"/>
+
+          <WrapPanel HorizontalAlignment="Center">
+            <ContentControl x:Name="SlotClaw1" Content="{Binding}"/>
+            <ContentControl x:Name="SlotClaw2" Content="{Binding}"/>
+            <ContentControl x:Name="SlotClaw3" Content="{Binding}"/>
+          </WrapPanel>
+
+          <ContentControl x:Name="SlotSkin" Content="{Binding}" HorizontalAlignment="Center"/>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>
