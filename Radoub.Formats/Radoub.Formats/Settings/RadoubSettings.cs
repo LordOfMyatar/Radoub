@@ -71,6 +71,7 @@ public class RadoubSettings : INotifyPropertyChanged
     // Tool paths - auto-populated when tools run, used for cross-tool integration
     private string _parleyPath = "";
     private string _manifestPath = "";
+    private string _creatureEditorPath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -180,6 +181,15 @@ public class RadoubSettings : INotifyPropertyChanged
     {
         get => _manifestPath;
         set { if (SetProperty(ref _manifestPath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Path to CreatureEditor.exe. Auto-set when CreatureEditor runs.
+    /// </summary>
+    public string CreatureEditorPath
+    {
+        get => _creatureEditorPath;
+        set { if (SetProperty(ref _creatureEditorPath, value ?? "")) SaveSettings(); }
     }
 
     /// <summary>
@@ -326,6 +336,7 @@ public class RadoubSettings : INotifyPropertyChanged
                     // Tool paths
                     _parleyPath = ExpandPath(data.ParleyPath ?? "");
                     _manifestPath = ExpandPath(data.ManifestPath ?? "");
+                    _creatureEditorPath = ExpandPath(data.CreatureEditorPath ?? "");
                 }
             }
         }
@@ -355,7 +366,8 @@ public class RadoubSettings : INotifyPropertyChanged
 
                 // Tool paths
                 ParleyPath = ContractPath(_parleyPath),
-                ManifestPath = ContractPath(_manifestPath)
+                ManifestPath = ContractPath(_manifestPath),
+                CreatureEditorPath = ContractPath(_creatureEditorPath)
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -428,5 +440,6 @@ public class RadoubSettings : INotifyPropertyChanged
         // Tool paths for cross-tool discovery
         public string? ParleyPath { get; set; }
         public string? ManifestPath { get; set; }
+        public string? CreatureEditorPath { get; set; }
     }
 }
