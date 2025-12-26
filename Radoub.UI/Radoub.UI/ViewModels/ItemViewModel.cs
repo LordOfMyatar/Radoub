@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
 
 namespace Radoub.UI.ViewModels;
@@ -18,16 +19,19 @@ public partial class ItemViewModel : ObservableObject
     /// <param name="resolvedName">Display name (from TLK or LocalizedName).</param>
     /// <param name="baseItemName">Name of base item type (from baseitems.2da).</param>
     /// <param name="propertiesDisplay">Formatted properties string.</param>
+    /// <param name="source">Source of the item (BIF = Standard, others = Custom).</param>
     public ItemViewModel(
         UtiFile item,
         string resolvedName,
         string baseItemName,
-        string propertiesDisplay)
+        string propertiesDisplay,
+        GameResourceSource source = GameResourceSource.Bif)
     {
         _item = item;
         Name = resolvedName;
         BaseItemName = baseItemName;
         PropertiesDisplay = propertiesDisplay;
+        Source = source;
     }
 
     /// <summary>
@@ -95,4 +99,19 @@ public partial class ItemViewModel : ObservableObject
     /// True if item is cursed (undroppable).
     /// </summary>
     public bool IsCursed => _item.Cursed;
+
+    /// <summary>
+    /// Source of the item resource.
+    /// </summary>
+    public GameResourceSource Source { get; }
+
+    /// <summary>
+    /// True if item is from base game (BIF).
+    /// </summary>
+    public bool IsStandard => Source == GameResourceSource.Bif;
+
+    /// <summary>
+    /// True if item is from custom content (Override, HAK, or Module).
+    /// </summary>
+    public bool IsCustom => Source != GameResourceSource.Bif;
 }

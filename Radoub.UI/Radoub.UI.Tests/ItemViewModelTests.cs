@@ -1,4 +1,5 @@
 using Radoub.Formats.Gff;
+using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
 using Radoub.UI.ViewModels;
 using Xunit;
@@ -31,6 +32,64 @@ public class ItemViewModelTests
         Assert.Equal(1, vm.BaseItem);
         Assert.Equal(150u, vm.Value); // Cost + AddCost
         Assert.Equal("Enhancement +1", vm.PropertiesDisplay);
+    }
+
+    [Fact]
+    public void Source_DefaultsToBif()
+    {
+        var item = new UtiFile();
+        var vm = new ItemViewModel(item, "Test", "Type", "");
+
+        Assert.Equal(GameResourceSource.Bif, vm.Source);
+    }
+
+    [Fact]
+    public void Source_CanBeSetViaConstructor()
+    {
+        var item = new UtiFile();
+        var vm = new ItemViewModel(item, "Test", "Type", "", GameResourceSource.Override);
+
+        Assert.Equal(GameResourceSource.Override, vm.Source);
+    }
+
+    [Fact]
+    public void IsStandard_TrueWhenSourceIsBif()
+    {
+        var item = new UtiFile();
+        var vm = new ItemViewModel(item, "Test", "Type", "", GameResourceSource.Bif);
+
+        Assert.True(vm.IsStandard);
+        Assert.False(vm.IsCustom);
+    }
+
+    [Fact]
+    public void IsCustom_TrueWhenSourceIsOverride()
+    {
+        var item = new UtiFile();
+        var vm = new ItemViewModel(item, "Test", "Type", "", GameResourceSource.Override);
+
+        Assert.False(vm.IsStandard);
+        Assert.True(vm.IsCustom);
+    }
+
+    [Fact]
+    public void IsCustom_TrueWhenSourceIsHak()
+    {
+        var item = new UtiFile();
+        var vm = new ItemViewModel(item, "Test", "Type", "", GameResourceSource.Hak);
+
+        Assert.False(vm.IsStandard);
+        Assert.True(vm.IsCustom);
+    }
+
+    [Fact]
+    public void IsCustom_TrueWhenSourceIsModule()
+    {
+        var item = new UtiFile();
+        var vm = new ItemViewModel(item, "Test", "Type", "", GameResourceSource.Module);
+
+        Assert.False(vm.IsStandard);
+        Assert.True(vm.IsCustom);
     }
 
     [Fact]
