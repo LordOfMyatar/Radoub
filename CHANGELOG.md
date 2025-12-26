@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.13] - 2025-12-26
-**Branch**: `radoub/feat/uti-bif-loading` | **PR**: #TBD
+**Branch**: `radoub/feat/uti-bif-loading` | **PR**: #581
 
 ### Feature: Load UTI Items from BIF Archives (#579)
 
