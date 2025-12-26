@@ -14,6 +14,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.8] - 2025-12-26
+**Branch**: `radoub/sprint/game-data-service` | **PR**: #572
+
+### Sprint: Game Data Service Foundation (#550)
+
+Part of Epic #545 (Shared Game Data Infrastructure).
+
+#### Added (Radoub.Formats)
+- **IGameDataService** interface - Centralized game data access API
+  - `Get2DA(name)` - Load and cache 2DA files
+  - `Get2DAValue()` - Convenience method for single value lookup
+  - `GetString(strRef)` - TLK string resolution with custom TLK support
+  - `FindResource()` / `ListResources()` - Resource access via resolver
+- **GameDataService** - Implementation with 2DA caching
+  - Negative caching for missing resources (avoids repeated lookups)
+  - Settings-based configuration via RadoubSettings
+  - Cache invalidation via `ClearCache()` and `ReloadConfiguration()`
+- 23 new unit tests for GameDataService
+
+---
+
 ## [0.9.7] - 2025-12-26
 **Branch**: `radoub/sprint/item-property-resolver` | **PR**: #568
 
