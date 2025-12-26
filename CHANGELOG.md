@@ -22,10 +22,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Part of Epic #547 (File Format Parsers).
 
 #### Added (Radoub.Formats)
-- UTI (item) file parser - read/write support
-- `ItemModel` - Strongly-typed item representation
-- `ItemProperty` - Item property with 2DA resolution
-- Item property resolution from itempropdef.2da chain
+- **UTI Parser** - Read/write support for item blueprint files
+- `UtiFile` - Strongly-typed item representation
+- `ItemProperty` - Item property model with defaults
+- Comprehensive unit tests (16 tests)
+
+#### Changed (Radoub.Formats)
+- **CExoLocString Consolidation** - Single localized string class for all GFF formats
+  - Enhanced with `SetString()` method and renamed `GetDefaultString()` to `GetDefault()`
+  - Removed duplicate `JrlLocString` and `UtiLocString` classes (~90 lines saved)
+  - JrlReader/JrlWriter simplified to use CExoLocString directly
+
+#### Fixed (Radoub.Formats)
+- **GffReader**: Label format detection now prioritizes exact size matches
+- **UtiWriter**: GffList.Count now correctly set when building lists
 
 ---
 
