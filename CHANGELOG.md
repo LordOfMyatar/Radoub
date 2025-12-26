@@ -14,6 +14,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.13] - 2025-12-26
+**Branch**: `radoub/feat/uti-bif-loading` | **PR**: #TBD
+
+### Feature: Load UTI Items from BIF Archives (#579)
+
+Part of Epic #544 (Creature Editor Tool).
+
+#### Added (CreatureEditor)
+- UTI loading from BIF archives (base game items)
+
+---
+
 ## [0.9.12] - 2025-12-26
 **Branch**: `radoub/sprint/creature-editor-mvp` | **PR**: #578
 
