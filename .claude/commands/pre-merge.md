@@ -2,6 +2,8 @@
 
 Analyze the current PR and generate a comprehensive pre-merge checklist with automated checks.
 
+**MAINTAINABILITY IS A HIGH PRIORITY.** We learned hard lessons from Parley's MainWindow growing into an untestable monolith. Every PR should leave the codebase cleaner than we found it. Don't merge technical debt - fix it or create issues.
+
 ## Usage
 
 ```
@@ -105,21 +107,43 @@ Before running tests, display this warning to the user:
 
 ### Step 5: Code Review
 
-Run built-in review commands:
+**THIS STEP IS MANDATORY, NOT OPTIONAL.** Code review catches technical debt before it merges. Be thorough - we don't want another MainWindow situation.
 
-**Security Review**:
+#### 5a. Technical Debt Scan
+
+Review all changed files looking for:
+
+| Issue | Action Required |
+|-------|-----------------|
+| **Duplicated code** | Extract to shared helper/base class, or create issue |
+| **Large files (>500 lines)** | Consider splitting, or create refactor issue |
+| **Large methods (>50 lines)** | Extract sub-methods, or create issue |
+| **Missing abstractions** | Identify patterns that should be interfaces/base classes |
+| **Hardcoded values** | Extract to constants or configuration |
+| **Copy-paste patterns** | Flag for refactoring before or after merge |
+
+If issues are found:
+1. **Small fixes** (< 15 min): Fix them now, in this branch
+2. **Medium fixes** (15-60 min): Discuss with user - fix now or create issue?
+3. **Large fixes** (> 1 hour): Create GitHub issue, link to Epic if applicable
+
+**Do not silently ignore technical debt.** Either fix it or document it.
+
+#### 5b. Security Review
+
 ```
 /security-review
 ```
 Checks for: injection vulnerabilities, auth bypass, hardcoded secrets, path traversal, etc.
 
-**General Code Review**:
+#### 5c. General Code Review
+
 ```
 /review
 ```
 Checks for: logic errors, code quality, best practices, potential bugs.
 
-Document findings in the checklist output.
+Document all findings in the checklist output.
 
 ### Step 6: Documentation Check
 
@@ -166,6 +190,8 @@ Files to check:
 
 **Wiki Updates** (https://github.com/LordOfMyatar/Radoub/wiki):
 
+**⚠️ WIKI UPDATES ARE NOT OPTIONAL.** Developer documentation rots fast. If the code changed, the docs probably need to change too. We're shipping features quickly - that means wiki pages go stale quickly. Check them.
+
 If changes affect user-facing features, check if wiki pages need updates:
 
 | Change Type | Wiki Pages to Review |
@@ -184,14 +210,21 @@ If changes affect user-facing features, check if wiki pages need updates:
 | Delete behavior | [Parley-Developer-Delete-Behavior](Parley-Developer-Delete-Behavior) |
 | Copy/Paste | [Parley-Developer-CopyPaste](Parley-Developer-CopyPaste) |
 | Scrap/Orphan system | [Parley-Developer-Scrap-System](Parley-Developer-Scrap-System) |
+| Radoub.Formats | [Radoub-Formats](Radoub-Formats) and format-specific pages |
 
 Wiki repo location: `d:\LOM\workspace\Radoub.wiki\`
 
 **Wiki Freshness Dates**:
 
-Developer wiki pages have a freshness date at the bottom. When updating a wiki page:
-1. Update the `*Page freshness: YYYY-MM-DD*` line at the bottom
-2. Commit and push the wiki changes
+Developer wiki pages have a freshness date at the bottom. **A page older than 30 days with related code changes is STALE.**
+
+When reviewing wiki pages:
+1. Check the `*Page freshness: YYYY-MM-DD*` at the bottom
+2. If the page is stale AND code in that area changed, UPDATE IT
+3. If you update a page, set freshness to today's date
+4. Commit and push wiki changes before merge
+
+**New Code = New Docs**: If you're adding a new parser, controller, or major feature, create or update the corresponding wiki page. Future Claude sessions and human developers need to understand the architecture.
 
 ### Step 7: Generate Checklist
 
@@ -229,8 +262,18 @@ Output format:
 
 ---
 
-### Code Review
+### Code Review (MANDATORY)
 
+**Technical Debt Scan**:
+- [x/⚠️] Duplicated code: [✅ None found / ⚠️ Found - see Action Items]
+- [x/⚠️] Large files (>500 lines): [✅ None / ⚠️ [list files]]
+- [x/⚠️] Large methods (>50 lines): [✅ None / ⚠️ [list methods]]
+- [x/⚠️] Missing abstractions: [✅ None / ⚠️ [describe]]
+- [x/⚠️] Copy-paste patterns: [✅ None / ⚠️ [describe]]
+
+**Issues Created This Review**: [#xxx, #yyy] or None
+
+**Reviews**:
 - [x/⚠️] Security review: [✅ No issues / ⚠️ [N] findings]
 - [x/⚠️] General review: [✅ No issues / ⚠️ [N] findings]
 
@@ -250,6 +293,8 @@ Output format:
   - [ ] New workflows documented
 - [x/⚠️] Wiki updates: [Needed/Not needed]
   - [ ] Pages reviewed: [list affected pages]
+  - [ ] Freshness dates checked (30-day rule)
+  - [ ] New features have corresponding wiki pages
 
 ---
 
