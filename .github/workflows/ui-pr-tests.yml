@@ -1,0 +1,63 @@
+name: Radoub.UI PR Test Suite
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'Radoub.UI/**'
+      - '.github/workflows/ui-pr-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'Radoub.UI/**'
+      - '.github/workflows/ui-pr-tests.yml'
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore Radoub.UI.sln
+      working-directory: ./Radoub.UI
+
+    - name: Build solution
+      run: dotnet build Radoub.UI.sln --configuration Release --no-restore
+      working-directory: ./Radoub.UI
+
+    - name: Run tests
+      run: dotnet test Radoub.UI.Tests/Radoub.UI.Tests.csproj --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=normal"
+      working-directory: ./Radoub.UI
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: ui-test-results-${{ matrix.os }}
+        path: ./Radoub.UI/Radoub.UI.Tests/TestResults/test-results.trx
+        retention-days: 30
+
+    - name: Test Report
+      uses: dorny/test-reporter@v2
+      if: always()
+      with:
+        name: UI Test Results (${{ matrix.os }})
+        path: './Radoub.UI/Radoub.UI.Tests/TestResults/test-results.trx'
+        reporter: dotnet-trx
+        fail-on-error: true

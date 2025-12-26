@@ -24,21 +24,33 @@ public class ItemViewModelFactory
     /// Create an ItemViewModel from a UtiFile.
     /// Resolves display name, base item type, and properties.
     /// </summary>
-    public ItemViewModel Create(UtiFile item)
+    /// <param name="item">The item to wrap.</param>
+    /// <param name="source">Source of the item resource (default: Bif for standard items).</param>
+    public ItemViewModel Create(UtiFile item, GameResourceSource source = GameResourceSource.Bif)
     {
         var displayName = ResolveDisplayName(item);
         var baseItemName = ResolveBaseItemName(item.BaseItem);
         var propertiesDisplay = ResolvePropertiesDisplay(item.Properties);
 
-        return new ItemViewModel(item, displayName, baseItemName, propertiesDisplay);
+        return new ItemViewModel(item, displayName, baseItemName, propertiesDisplay, source);
     }
 
     /// <summary>
-    /// Create ItemViewModels for a collection of items.
+    /// Create ItemViewModels for a collection of items (all assumed to be from same source).
     /// </summary>
-    public IEnumerable<ItemViewModel> Create(IEnumerable<UtiFile> items)
+    /// <param name="items">Items to wrap.</param>
+    /// <param name="source">Source of all items (default: Bif for standard items).</param>
+    public IEnumerable<ItemViewModel> Create(IEnumerable<UtiFile> items, GameResourceSource source = GameResourceSource.Bif)
     {
-        return items.Select(Create);
+        return items.Select(i => Create(i, source));
+    }
+
+    /// <summary>
+    /// Create ItemViewModels from items with their source information.
+    /// </summary>
+    public IEnumerable<ItemViewModel> Create(IEnumerable<(UtiFile item, GameResourceSource source)> itemsWithSource)
+    {
+        return itemsWithSource.Select(x => Create(x.item, x.source));
     }
 
     private string ResolveDisplayName(UtiFile item)

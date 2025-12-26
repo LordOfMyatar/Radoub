@@ -37,6 +37,7 @@ declare -a RESULTS
 # Unit/Headless Tests (fast, no UI required)
 UNIT_TESTS=(
     "Radoub.Formats.Tests:Radoub.Formats/Radoub.Formats.Tests"
+    "Radoub.UI.Tests:Radoub.UI/Radoub.UI.Tests"
     "Radoub.Dictionary.Tests:Radoub.Dictionary/Radoub.Dictionary.Tests"
     "Parley.Tests:Parley/Parley.Tests"
     "Manifest.Tests:Manifest/Manifest.Tests"
