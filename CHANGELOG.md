@@ -21,6 +21,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Part of Epic #544 (Creature Editor Tool).
 
+**Status**: Partial - UI framework complete, BIF support needed for full functionality.
+
+#### Added (CreatureEditor)
+- **Project scaffold** - Avalonia UI application with theming and logging
+- **MainWindow** - 3-panel layout with Equipment, Backpack, and Palette sections
+- **File operations** - Open/Save/Recent Files for UTC and BIC files
+- **Inventory display** - DataGrid shows backpack items from creature
+- **UTI loading** - Loads item data from module directory
+
+#### Added (Radoub.UI)
+- DataGrid styles integration (StyleInclude required for Avalonia DataGrid)
+
+#### Fixed (Radoub.Formats)
+- GffReader Struct field parsing - DataOrDataOffset is direct struct index, not offset into FieldData
+- Fixes BIC file parsing errors (e.g., MiscVisuals field)
+
+#### Known Limitations
+- Base game items (nw_*) show placeholder data - requires BIF support (#579)
+- Equipment slots not visually populated (#580)
+- Item palette not populated (#580)
+
 ---
 
 ## [0.9.11] - 2025-12-26
