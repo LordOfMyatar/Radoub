@@ -33,6 +33,9 @@ Part of Epic #547 (File Format Parsers).
   - Removed duplicate `JrlLocString` and `UtiLocString` classes (~90 lines saved)
   - JrlReader/JrlWriter simplified to use CExoLocString directly
 
+#### Changed (Parley, Manifest)
+- Updated to use consolidated `CExoLocString` from Radoub.Formats.Gff
+
 #### Fixed (Radoub.Formats)
 - **GffReader**: Label format detection now prioritizes exact size matches
 - **UtiWriter**: GffList.Count now correctly set when building lists
