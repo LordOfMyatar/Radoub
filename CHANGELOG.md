@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.9] - 2025-12-26
-**Branch**: `radoub/sprint/item-list-view` | **PR**: #TBD
+**Branch**: `radoub/sprint/item-list-view` | **PR**: #574
 
 ### Sprint: Inventory List View Component (#551)
 
