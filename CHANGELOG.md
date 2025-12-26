@@ -14,6 +14,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.6] - 2025-12-26
+**Branch**: `radoub/sprint/bic-parser-gff-builder` | **PR**: #TBD
+
+### Sprint: BIC Parser and GffFieldBuilder Refactor (#565)
+
+Part of Epic #547 (File Format Parsers).
+
+#### Added (Radoub.Formats)
+- **BIC Parser** - Read/write support for player character files
+- `BicFile` extends `UtcFile` with player-specific fields
+- `BicReader` / `BicWriter` - Static parser/serializer pair
+- Player fields: Experience, Gold, Age, QBList, ReputationList
+
+#### Changed (Radoub.Formats)
+- **GffFieldBuilder** - Extracted shared helper methods from format writers (#563)
+  - Common field creation: `AddByteField`, `AddIntField`, `AddFloatField`, etc.
+  - Reduces duplication across `UtiWriter`, `UtcWriter`, `UtmWriter`, `BicWriter`
+
+---
+
 ## [0.9.5] - 2025-12-26
 **Branch**: `radoub/sprint/utm-parser-store-model` | **PR**: #562
 
