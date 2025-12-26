@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.11] - 2025-12-26
-**Branch**: `radoub/sprint/equipment-slots-panel` | **PR**: #TBD
+**Branch**: `radoub/sprint/equipment-slots-panel` | **PR**: #576
 
 ### Sprint: Equipment Slots Panel Component (#553)
 
