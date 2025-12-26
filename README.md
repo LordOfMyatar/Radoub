@@ -47,7 +47,7 @@ Cross-platform journal editor for Neverwinter Nights JRL files.
 
 Aurora Engine file format parsers used by Parley and Manifest.
 
-**Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF
+**Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF, DLG, JRL, UTC, UTI, UTM, BIC
 
 ### Radoub.Dictionary - Shared Library
 
