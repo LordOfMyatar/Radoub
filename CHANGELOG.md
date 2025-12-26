@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.6] - 2025-12-26
-**Branch**: `radoub/sprint/bic-parser-gff-builder` | **PR**: #TBD
+**Branch**: `radoub/sprint/bic-parser-gff-builder` | **PR**: #566
 
 ### Sprint: BIC Parser and GffFieldBuilder Refactor (#565)
 
