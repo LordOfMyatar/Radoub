@@ -237,6 +237,171 @@ public class UtcReaderTests
         Assert.Contains("9999", name);
     }
 
+    #region Round-Trip Tests
+
+    [Fact]
+    public void RoundTrip_MinimalUtc_PreservesData()
+    {
+        var original = CreateMinimalUtcFile();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.FileType, utc2.FileType);
+        Assert.Equal(utc.FileVersion, utc2.FileVersion);
+        Assert.Equal(utc.ClassList.Count, utc2.ClassList.Count);
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithIdentityFields_PreservesData()
+    {
+        var original = CreateUtcWithIdentityFields();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.TemplateResRef, utc2.TemplateResRef);
+        Assert.Equal(utc.Tag, utc2.Tag);
+        Assert.Equal(utc.Comment, utc2.Comment);
+        Assert.Equal(utc.PaletteID, utc2.PaletteID);
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithAbilityScores_PreservesData()
+    {
+        var original = CreateUtcWithAbilityScores();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.Str, utc2.Str);
+        Assert.Equal(utc.Dex, utc2.Dex);
+        Assert.Equal(utc.Con, utc2.Con);
+        Assert.Equal(utc.Int, utc2.Int);
+        Assert.Equal(utc.Wis, utc2.Wis);
+        Assert.Equal(utc.Cha, utc2.Cha);
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithClassList_PreservesData()
+    {
+        var original = CreateUtcWithClassList();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.ClassList.Count, utc2.ClassList.Count);
+        for (int i = 0; i < utc.ClassList.Count; i++)
+        {
+            Assert.Equal(utc.ClassList[i].Class, utc2.ClassList[i].Class);
+            Assert.Equal(utc.ClassList[i].ClassLevel, utc2.ClassList[i].ClassLevel);
+        }
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithInventory_PreservesData()
+    {
+        var original = CreateUtcWithInventory();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.ItemList.Count, utc2.ItemList.Count);
+        for (int i = 0; i < utc.ItemList.Count; i++)
+        {
+            Assert.Equal(utc.ItemList[i].InventoryRes, utc2.ItemList[i].InventoryRes);
+            Assert.Equal(utc.ItemList[i].Dropable, utc2.ItemList[i].Dropable);
+        }
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithEquippedItems_PreservesData()
+    {
+        var original = CreateUtcWithEquippedItems();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.EquipItemList.Count, utc2.EquipItemList.Count);
+        foreach (var item in utc.EquipItemList)
+        {
+            var item2 = utc2.EquipItemList.FirstOrDefault(e => e.Slot == item.Slot);
+            Assert.NotNull(item2);
+            Assert.Equal(item.EquipRes, item2.EquipRes);
+        }
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithScripts_PreservesData()
+    {
+        var original = CreateUtcWithScripts();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.ScriptAttacked, utc2.ScriptAttacked);
+        Assert.Equal(utc.ScriptDamaged, utc2.ScriptDamaged);
+        Assert.Equal(utc.ScriptDeath, utc2.ScriptDeath);
+        Assert.Equal(utc.ScriptDialogue, utc2.ScriptDialogue);
+        Assert.Equal(utc.ScriptSpawn, utc2.ScriptSpawn);
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithFeatList_PreservesData()
+    {
+        var original = CreateUtcWithFeatList();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.FeatList.Count, utc2.FeatList.Count);
+        for (int i = 0; i < utc.FeatList.Count; i++)
+        {
+            Assert.Equal(utc.FeatList[i], utc2.FeatList[i]);
+        }
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithSkillList_PreservesData()
+    {
+        var original = CreateUtcWithSkillList();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.SkillList.Count, utc2.SkillList.Count);
+        for (int i = 0; i < utc.SkillList.Count; i++)
+        {
+            Assert.Equal(utc.SkillList[i], utc2.SkillList[i]);
+        }
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithSpecialAbilities_PreservesData()
+    {
+        var original = CreateUtcWithSpecialAbilities();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.SpecAbilityList.Count, utc2.SpecAbilityList.Count);
+        Assert.Equal(utc.SpecAbilityList[0].Spell, utc2.SpecAbilityList[0].Spell);
+        Assert.Equal(utc.SpecAbilityList[0].SpellCasterLevel, utc2.SpecAbilityList[0].SpellCasterLevel);
+        Assert.Equal(utc.SpecAbilityList[0].SpellFlags, utc2.SpecAbilityList[0].SpellFlags);
+    }
+
+    #endregion
+
     #region Test Helpers
 
     private static byte[] CreateMinimalUtcFile()
