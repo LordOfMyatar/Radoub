@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.3] - 2025-12-25
-**Branch**: `radoub/sprint/uti-parser` | **PR**: #TBD
+**Branch**: `radoub/sprint/uti-parser` | **PR**: #559
 
 ### Sprint: UTI Parser and Item Model (#548)
 
