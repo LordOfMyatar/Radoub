@@ -14,6 +14,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.3] - 2025-12-25
+**Branch**: `radoub/sprint/uti-parser` | **PR**: #TBD
+
+### Sprint: UTI Parser and Item Model (#548)
+
+Part of Epic #547 (File Format Parsers).
+
+#### Added (Radoub.Formats)
+- UTI (item) file parser - read/write support
+- `ItemModel` - Strongly-typed item representation
+- `ItemProperty` - Item property with 2DA resolution
+- Item property resolution from itempropdef.2da chain
+
+---
+
 ## [0.9.2] - 2025-12-25
 **Branch**: `radoub/sprint/dictionary-language` | **PR**: #539
 
