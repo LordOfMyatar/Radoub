@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Radoub.Formats.Common;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Tlk;
 
@@ -142,22 +143,23 @@ public class TlkService : IDisposable
     }
 
     /// <summary>
-    /// Resolve a JrlLocString to display text.
+    /// Resolve a CExoLocString to display text.
     /// Checks embedded strings first, then falls back to StrRef.
+    /// 2025-12-25: Updated to use consolidated CExoLocString (Sprint #548)
     /// </summary>
-    public string ResolveLocString(Radoub.Formats.Jrl.JrlLocString locString, Language? preferredLanguage = null)
+    public string ResolveLocString(CExoLocString locString, Language? preferredLanguage = null)
     {
         var language = preferredLanguage ?? RadoubSettings.Instance.EffectiveLanguage;
         var gender = RadoubSettings.Instance.PreferredGender;
         var combinedId = LanguageHelper.ToCombinedId(language, gender);
 
         // 1. Try exact match (language + gender)
-        if (locString.Strings.TryGetValue(combinedId, out var text) && !string.IsNullOrEmpty(text))
+        if (locString.LocalizedStrings.TryGetValue(combinedId, out var text) && !string.IsNullOrEmpty(text))
             return text;
 
         // 2. Try language without gender preference
         var defaultCombinedId = LanguageHelper.ToCombinedId(language, Gender.Male);
-        if (locString.Strings.TryGetValue(defaultCombinedId, out text) && !string.IsNullOrEmpty(text))
+        if (locString.LocalizedStrings.TryGetValue(defaultCombinedId, out text) && !string.IsNullOrEmpty(text))
             return text;
 
         // 3. Try StrRef
@@ -172,13 +174,13 @@ public class TlkService : IDisposable
         foreach (var fallback in LanguageHelper.FallbackOrder)
         {
             var fallbackId = LanguageHelper.ToCombinedId(fallback, Gender.Male);
-            if (locString.Strings.TryGetValue(fallbackId, out text) && !string.IsNullOrEmpty(text))
+            if (locString.LocalizedStrings.TryGetValue(fallbackId, out text) && !string.IsNullOrEmpty(text))
                 return text;
         }
 
         // 5. Return any embedded string
-        if (locString.Strings.Count > 0)
-            return locString.Strings.Values.First();
+        if (locString.LocalizedStrings.Count > 0)
+            return locString.LocalizedStrings.Values.First();
 
         return string.Empty;
     }
@@ -186,13 +188,13 @@ public class TlkService : IDisposable
     /// <summary>
     /// Get information about a LocString's source.
     /// </summary>
-    public LocStringInfo GetLocStringInfo(Radoub.Formats.Jrl.JrlLocString locString)
+    public LocStringInfo GetLocStringInfo(CExoLocString locString)
     {
-        var hasEmbedded = locString.Strings.Count > 0;
+        var hasEmbedded = locString.LocalizedStrings.Count > 0;
         var hasStrRef = LanguageHelper.IsValidStrRef(locString.StrRef);
         var isCustomStrRef = hasStrRef && LanguageHelper.IsCustomTlkStrRef(locString.StrRef);
 
-        var embeddedLanguages = locString.Strings.Keys
+        var embeddedLanguages = locString.LocalizedStrings.Keys
             .Select(id => LanguageHelper.GetLanguage(id))
             .Distinct()
             .ToList();
@@ -241,12 +243,12 @@ public class TlkService : IDisposable
     /// <summary>
     /// Get all available translations for a LocString.
     /// </summary>
-    public Dictionary<Language, string> GetAllTranslations(Radoub.Formats.Jrl.JrlLocString locString)
+    public Dictionary<Language, string> GetAllTranslations(CExoLocString locString)
     {
         var translations = new Dictionary<Language, string>();
 
         // Get embedded strings
-        foreach (var (combinedId, text) in locString.Strings)
+        foreach (var (combinedId, text) in locString.LocalizedStrings)
         {
             var language = LanguageHelper.GetLanguage(combinedId);
             if (!translations.ContainsKey(language) && !string.IsNullOrEmpty(text))

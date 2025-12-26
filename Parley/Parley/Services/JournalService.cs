@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Utils;
 
-// Alias Radoub.Formats.Jrl types to avoid conflict with DialogEditor.Models types
+// Alias Radoub.Formats types to avoid conflict with DialogEditor.Models types
 using JrlFile = Radoub.Formats.Jrl.JrlFile;
 using JrlReader = Radoub.Formats.Jrl.JrlReader;
-using JrlLocString = Radoub.Formats.Jrl.JrlLocString;
+using CExoLocString = Radoub.Formats.Gff.CExoLocString;
 
 namespace DialogEditor.Services
 {
@@ -111,20 +111,21 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Convert JrlLocString to DialogEditor LocString.
+        /// Convert CExoLocString to DialogEditor LocString.
         /// 2025-12-14: Now preserves StrRef for TLK internationalization (Issue #403)
+        /// 2025-12-25: Updated to use consolidated CExoLocString (Sprint #548)
         /// </summary>
-        private LocString? ConvertLocString(JrlLocString jrlLocString)
+        private LocString? ConvertLocString(CExoLocString cexoLocString)
         {
-            if (jrlLocString.IsEmpty)
+            if (cexoLocString.IsEmpty)
                 return null;
 
             var locString = new LocString
             {
-                StrRef = jrlLocString.StrRef
+                StrRef = cexoLocString.StrRef
             };
 
-            foreach (var kvp in jrlLocString.Strings)
+            foreach (var kvp in cexoLocString.LocalizedStrings)
             {
                 locString.Strings[(int)kvp.Key] = kvp.Value;
             }

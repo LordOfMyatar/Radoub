@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Manifest.Services;
 using Radoub.Formats.Common;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Jrl;
 using System;
 using System.Collections.Generic;
@@ -453,7 +454,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_currentJrl == null) return;
 
-        var name = new JrlLocString();
+        var name = new CExoLocString();
         name.SetString(0, "New Category");
 
         // Generate unique tag - find next available suffix
@@ -520,7 +521,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ? ((category.Entries.Max(e => e.ID) / 100) + 1) * 100
             : 100;
 
-        var entryText = new JrlLocString();
+        var entryText = new CExoLocString();
         entryText.SetString(0, "");
 
         var newEntry = new JournalEntry
@@ -719,7 +720,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void PopulateLanguageComboBox(ComboBox comboBox, JrlLocString locString)
+    private void PopulateLanguageComboBox(ComboBox comboBox, CExoLocString locString)
     {
         comboBox.Items.Clear();
 
@@ -731,7 +732,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var languagesToShow = new HashSet<Language>();
 
         // Add embedded languages
-        foreach (var (combinedId, _) in locString.Strings)
+        foreach (var (combinedId, _) in locString.LocalizedStrings)
         {
             languagesToShow.Add(LanguageHelper.GetLanguage(combinedId));
         }
@@ -1010,7 +1011,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void ShowAllLanguagesDialog(string title, JrlLocString locString)
+    private void ShowAllLanguagesDialog(string title, CExoLocString locString)
     {
         var translations = TlkService.Instance.GetAllTranslations(locString);
         var info = TlkService.Instance.GetLocStringInfo(locString);
