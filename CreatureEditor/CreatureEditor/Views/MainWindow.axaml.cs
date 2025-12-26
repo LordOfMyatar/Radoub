@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using CreatureEditor.Services;
 using Radoub.Formats.Bic;
+using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.Formats.Uti;
@@ -25,6 +26,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string? _currentFilePath;
     private bool _isDirty;
     private bool _isBicFile;
+
+    // Game data service for BIF/TLK lookups
+    private readonly IGameDataService _gameDataService;
+    private readonly ItemViewModelFactory _itemViewModelFactory;
 
     // Equipment slots collection
     private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
@@ -66,6 +71,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         // Note: Don't set DataContext = this; it causes stack overflow with Radoub.UI controls.
         // Use ElementName bindings in XAML instead.
+
+        // Initialize game data service for BIF/TLK lookups
+        _gameDataService = new GameDataService();
+        _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
+
+        if (_gameDataService.IsConfigured)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, "GameDataService initialized - BIF lookup enabled");
+        }
+        else
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "GameDataService not configured - BIF lookup disabled");
+        }
 
         InitializeEquipmentSlots();
         RestoreWindowPosition();
@@ -184,6 +202,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         else
         {
             SaveWindowPosition();
+            _gameDataService.Dispose();
         }
     }
 
@@ -482,14 +501,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     /// <summary>
     /// Creates an ItemViewModel from a ResRef, attempting to load the actual UTI file.
-    /// Falls back to placeholder data if UTI file not found.
+    /// Resolution order: Module directory → Override → HAK → BIF archives.
+    /// Falls back to placeholder data if UTI file not found anywhere.
     /// </summary>
     private ItemViewModel CreatePlaceholderItem(string resRef, bool dropable = true, bool pickpocketable = false)
     {
         UtiFile? item = null;
         var source = GameResourceSource.Bif;
 
-        // Try to load actual UTI file from the module directory
+        // 1. Try module directory first (highest priority for module-specific items)
         if (!string.IsNullOrEmpty(_currentFilePath))
         {
             var moduleDir = Path.GetDirectoryName(_currentFilePath);
@@ -500,19 +520,40 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 {
                     try
                     {
-                        item = Radoub.Formats.Uti.UtiReader.Read(utiPath);
+                        item = UtiReader.Read(utiPath);
                         source = GameResourceSource.Module;
-                        UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Loaded UTI: {resRef}");
+                        UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Loaded UTI from module: {resRef}");
                     }
                     catch (Exception ex)
                     {
-                        UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {resRef}: {ex.Message}");
+                        UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {resRef} from module: {ex.Message}");
                     }
                 }
             }
         }
 
-        // Fall back to placeholder if UTI not found
+        // 2. Try GameDataService (Override → HAK → BIF) if not found in module
+        if (item == null && _gameDataService.IsConfigured)
+        {
+            try
+            {
+                var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
+                if (utiData != null)
+                {
+                    item = UtiReader.Read(utiData);
+                    // GameDataService searches Override first, then HAK, then BIF
+                    // For now, mark as Bif source (could enhance to track actual source)
+                    source = GameResourceSource.Bif;
+                    UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Loaded UTI from game data: {resRef}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {resRef} from game data: {ex.Message}");
+            }
+        }
+
+        // 3. Fall back to placeholder if UTI not found anywhere
         if (item == null)
         {
             item = new UtiFile
@@ -521,25 +562,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 Tag = resRef
             };
             item.LocalizedName.SetString(0, resRef);
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Created placeholder for UTI: {resRef}");
+
+            // Return basic placeholder without factory resolution
+            return new ItemViewModel(
+                item,
+                resolvedName: resRef,
+                baseItemName: "(unknown)",
+                propertiesDisplay: "",
+                source: source
+            );
         }
 
-        // Get display name from LocalizedName (prefer English = 0)
-        var displayName = item.LocalizedName.GetDefault();
-        if (string.IsNullOrEmpty(displayName))
-            displayName = resRef;
-
-        // Format properties count
-        var propsDisplay = item.Properties.Count > 0
-            ? $"{item.Properties.Count} properties"
-            : "";
-
-        return new ItemViewModel(
-            item,
-            resolvedName: displayName,
-            baseItemName: $"BaseItem:{item.BaseItem}",
-            propertiesDisplay: propsDisplay,
-            source: source
-        );
+        // Use factory for proper name resolution via 2DA/TLK
+        return _itemViewModelFactory.Create(item, source);
     }
 
     private void ClearInventoryUI()

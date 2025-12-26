@@ -22,7 +22,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Part of Epic #544 (Creature Editor Tool).
 
 #### Added (CreatureEditor)
-- UTI loading from BIF archives (base game items)
+- **GameDataService integration** - Enables BIF/Override/TLK lookups for base game items
+- **UTI loading from BIF archives** - Base game items (e.g., `nw_it_torch001`) now load full data
+- **ItemViewModelFactory usage** - Proper name resolution via baseitems.2da and TLK strings
+- **Resource resolution order**: Module directory → Override → HAK → BIF archives
+
+#### Changed (CreatureEditor)
+- `CreatePlaceholderItem` now uses GameDataService for BIF lookups when module file not found
+- Item display names resolved via TLK instead of showing ResRef placeholders
+- Base item types resolved via baseitems.2da lookups
 
 ---
 
