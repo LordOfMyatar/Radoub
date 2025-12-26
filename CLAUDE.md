@@ -235,6 +235,33 @@ When adding a new tool to Radoub:
 
 ---
 
+## Sprint Workflow
+
+**Commit Between Sprint Items**:
+- Commit after completing each discrete item within a sprint
+- This provides clear history and makes rollback easier
+- Use descriptive commit messages that reference the sprint issue
+
+**Example Sprint Workflow**:
+```
+# After completing UTC reader
+git add . && git commit -m "[Radoub] feat: Add UTC reader for creature blueprints (#549)"
+
+# After completing UTC writer
+git add . && git commit -m "[Radoub] feat: Add UTC writer for creature blueprints (#549)"
+
+# After completing tests
+git add . && git commit -m "[Radoub] test: Add UTC round-trip tests (#549)"
+```
+
+**Benefits**:
+- Each commit represents a working state
+- Easier to review individual changes
+- Simpler to bisect if issues arise
+- Clear progress tracking in git history
+
+---
+
 ## Documentation Standards
 
 Follow the same standards as Parley (see `Parley/CLAUDE.md`):
