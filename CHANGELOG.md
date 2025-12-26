@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.4] - 2025-12-25
-**Branch**: `radoub/sprint/utc-parser-creature-model` | **PR**: #TBD
+**Branch**: `radoub/sprint/utc-parser-creature-model` | **PR**: #561
 
 ### Sprint: UTC Parser and Creature Model (#549)
 
