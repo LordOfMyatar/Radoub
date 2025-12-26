@@ -14,6 +14,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.7] - 2025-12-26
+**Branch**: `radoub/sprint/item-property-resolver` | **PR**: #568
+
+### Sprint: Item Property Resolver (#567)
+
+Part of Epic #547 (File Format Parsers).
+
+#### Added (Radoub.Formats)
+- **ItemPropertyResolver** - Resolve item property names from 2DA chain
+- Parse itempropdef.2da for property definitions
+- Subtype 2DA resolution (iprp_*.2da)
+- Cost table and param table resolution
+- Formatted property strings (e.g., "Enhancement Bonus +3")
+
+---
+
 ## [0.9.6] - 2025-12-26
 **Branch**: `radoub/sprint/bic-parser-gff-builder` | **PR**: #566
 
