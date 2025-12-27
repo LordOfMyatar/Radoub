@@ -10,6 +10,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.98-alpha] - 2025-12-27
+**Branch**: `parley/refactor/gff-binary-writer` | **PR**: #600
+
+### Refactor: Extract GffBinaryWriter from DialogWriter (#533)
+
+Extracted binary writing methods from DialogWriter.cs (2,593 lines) into new GffBinaryWriter class.
+
+| File | Before | After | Change |
+|------|--------|-------|--------|
+| DialogWriter.cs | 2,593 | 1,915 | -678 lines (26%) |
+| GffBinaryWriter.cs | - | 659 | New file |
+
+**Extracted Methods:**
+- `Write()` - Main binary output (header, structs, fields, labels, field data)
+- `WriteFieldIndices()` - Field index array writing
+- `WriteListIndices()` - List indices section (conversation flow)
+- Supporting helpers: `WriteHeader`, `WriteStructs`, `WriteFields`, `WriteLabels`, `WriteFieldData`
+
+All 500 tests pass.
+
+---
+
 ## [0.1.97-alpha] - 2025-12-27
 **Branch**: `parley/refactor/mainviewmodel-size` | **PR**: #596
 
