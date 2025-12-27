@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.14] - 2025-12-26
-**Branch**: `radoub/sprint/creature-editor-cleanup` | **PR**: #TBD
+**Branch**: `radoub/sprint/creature-editor-cleanup` | **PR**: #584
 
 ### Sprint: CreatureEditor Cleanup (#582, #583)
 
