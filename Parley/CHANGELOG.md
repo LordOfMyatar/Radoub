@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.99-alpha] - 2025-12-27
+**Branch**: `parley/refactor/gff-field-factory` | **PR**: #TBD
+
+### Refactor: Extract GffFieldFactory from DialogWriter (#534)
+
+Extract field creation helpers from DialogWriter.cs into dedicated factory class.
+
+**Target Methods:**
+- `BuildLocStringFieldData()`
+- `BuildCExoStringFieldData()`
+- `BuildCResRefFieldData()`
+- `AddLabelAndField()`
+- `CreatePointerFields()`
+
+---
+
 ## [0.1.98-alpha] - 2025-12-27
 **Branch**: `parley/refactor/gff-binary-writer` | **PR**: #600
 
