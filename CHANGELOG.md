@@ -14,6 +14,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.14] - 2025-12-26
+**Branch**: `radoub/sprint/creature-editor-cleanup` | **PR**: #TBD
+
+### Sprint: CreatureEditor Cleanup (#582, #583)
+
+Part of Epic #544 (Creature Editor Tool).
+
+#### Refactoring (#582)
+- TBD: Extract FileOperationsController from MainWindow
+- TBD: Extract DialogHelper utility class
+- TBD: Extract InventoryController (partial class or controller)
+
+#### Testing (#583)
+- TBD: Add CreatureEditor.Tests project structure
+- TBD: Add SettingsService and CommandLineService unit tests
+- TBD: Add FlaUI integration tests
+
+---
+
 ## [0.9.13] - 2025-12-26
 **Branch**: `radoub/feat/uti-bif-loading` | **PR**: #581
 
