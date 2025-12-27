@@ -1,7 +1,8 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="using:Radoub.UI.Controls"
-                    xmlns:vm="using:Radoub.UI.ViewModels">
+                    xmlns:vm="using:Radoub.UI.ViewModels"
+                    xmlns:svg="using:Avalonia.Svg.Skia">
 
   <Design.PreviewWith>
     <Border Padding="20" Background="Gray">
@@ -10,11 +11,20 @@
   </Design.PreviewWith>
 
   <ControlTheme x:Key="{x:Type controls:EquipmentSlotControl}" TargetType="controls:EquipmentSlotControl">
-    <Setter Property="Width" Value="72"/>
-    <Setter Property="Height" Value="88"/>
+    <Setter Property="Width" Value="80"/>
+    <Setter Property="Height" Value="110"/>
     <Setter Property="Template">
       <ControlTemplate>
-        <StackPanel Spacing="2" DataContext="{TemplateBinding Slot}">
+        <StackPanel Spacing="2" DataContext="{Binding Slot, RelativeSource={RelativeSource TemplatedParent}}">
+          <!-- Slot name on top -->
+          <TextBlock x:Name="SlotLabelTop"
+                     Text="{Binding Name, FallbackValue=Slot}"
+                     FontSize="10"
+                     HorizontalAlignment="Center"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                     TextTrimming="CharacterEllipsis"
+                     MaxWidth="70"/>
+
           <!-- Slot border with item icon area -->
           <Border x:Name="SlotBorder"
                   Width="64"
@@ -24,32 +34,30 @@
                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                   CornerRadius="4">
             <Grid>
-              <!-- Empty slot placeholder -->
+              <!-- Empty slot placeholder with icon -->
               <Border x:Name="EmptyPlaceholder"
                       IsVisible="{Binding IsEmpty, FallbackValue=True}"
                       Background="Transparent"
                       CornerRadius="3">
-                <TextBlock Text="+"
-                           FontSize="24"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
+                <svg:Svg Path="{Binding IconPath}"
+                         Width="40"
+                         Height="40"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Opacity="0.5"/>
               </Border>
 
-              <!-- Item icon placeholder -->
+              <!-- Item equipped - show icon with full opacity -->
               <Border x:Name="ItemIcon"
                       IsVisible="{Binding HasItem, FallbackValue=False}"
                       Background="{DynamicResource SystemControlBackgroundListMediumBrush}"
                       CornerRadius="3"
-                      Margin="4">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                  <!-- Placeholder - in future, show actual item icon -->
-                  <TextBlock Text="*"
-                             FontSize="20"
-                             FontWeight="Bold"
-                             Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                             HorizontalAlignment="Center"/>
-                </StackPanel>
+                      Margin="2">
+                <svg:Svg Path="{Binding IconPath}"
+                         Width="48"
+                         Height="48"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"/>
               </Border>
 
               <!-- Warning indicator -->
@@ -80,14 +88,15 @@
             </Grid>
           </Border>
 
-          <!-- Slot label -->
-          <TextBlock x:Name="SlotLabel"
-                     Text="{Binding Name, FallbackValue=Slot}"
-                     FontSize="10"
+          <!-- Item name below slot (or empty if no item) -->
+          <TextBlock x:Name="ItemNameLabel"
+                     Text="{Binding EquippedItem.Name, FallbackValue=''}"
+                     FontSize="9"
                      HorizontalAlignment="Center"
-                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                     TextTrimming="CharacterEllipsis"
-                     MaxWidth="70"/>
+                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                     TextWrapping="Wrap"
+                     TextAlignment="Center"
+                     MaxWidth="80"/>
 
           <!-- Tooltip -->
           <ToolTip.Tip>

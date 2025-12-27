@@ -59,6 +59,13 @@ public partial class MainWindow
     {
         if (sender is MenuItem menuItem && menuItem.Tag is string filePath)
         {
+            // Close the entire menu hierarchy before async work
+            // Find the top-level File menu and close it
+            if (RecentFilesMenu.Parent is MenuItem fileMenu)
+            {
+                fileMenu.Close();
+            }
+
             if (File.Exists(filePath))
             {
                 await LoadFile(filePath);

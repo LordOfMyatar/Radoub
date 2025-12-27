@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
+using Radoub.UI.Services;
 
 namespace Radoub.UI.ViewModels;
 
@@ -114,4 +115,10 @@ public partial class ItemViewModel : ObservableObject
     /// True if item is from custom content (Override, HAK, or Module).
     /// </summary>
     public bool IsCustom => Source != GameResourceSource.Bif;
+
+    /// <summary>
+    /// Path to placeholder icon based on item type.
+    /// Icons from game-icons.net (CC BY 3.0).
+    /// </summary>
+    public string IconPath => ItemIconHelper.GetIconPath(BaseItem);
 }

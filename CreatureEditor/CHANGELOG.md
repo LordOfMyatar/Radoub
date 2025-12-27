@@ -20,14 +20,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Item filtering** - Filter panel wired to GameDataService for item type dropdown
 - **GitHub workflows** - `quartermaster-pr-build.yml` and `quartermaster-pr-tests.yml`
 - **External branding** - Window title, About dialog, CLI help, menus use "Quartermaster"
+- **Equipment slot display** - Equipped items from BIC files now display in slots with name labels
+- **Placeholder icons** - SVG icons from game-icons.net (CC BY 3.0) for equipment slots and item lists
+- **ItemIconHelper** - Maps equipment slots and item types to placeholder icons
 
 #### Changed
 - PaletteList now displays filtered items from ItemFilterPanel
 - ClearInventoryUI clears palette items and selection state
+- Equipment slot control now shows slot name on top, item name on bottom
+- Item lists (palette, backpack) now show item type icons
+
+#### Fixed
+- **BIC equipped items** - Fixed parsing of `EquippedRes` field (was using wrong field name)
+- **BIC inventory items** - Fixed parsing of `InventoryRes` field for backpack items
 
 #### Infrastructure
 - Workflow parity with Parley for PR checks and CI
 - Internal namespace remains `CreatureEditor` (like Parley/DialogEditor pattern)
+- Added Avalonia.Svg.Skia package for SVG icon support
 
 ---
 

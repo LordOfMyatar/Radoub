@@ -125,6 +125,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Opened -= OnWindowOpened;
 
         UpdateRecentFilesMenu();
+
+        // Start loading game items in background immediately
+        StartGameItemsLoad();
+
         await HandleStartupFileAsync();
     }
 

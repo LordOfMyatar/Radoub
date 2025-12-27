@@ -7,6 +7,7 @@
         <FluentTheme />
         <!-- DataGrid requires explicit style inclusion -->
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+        <!-- Radoub.UI control themes are loaded via MergedDictionaries below -->
 
         <!-- Theme-aware window background -->
         <Style Selector="Window">
@@ -71,11 +72,18 @@
     </Application.Styles>
 
     <Application.Resources>
-        <!-- Default font size and family -->
-        <x:Double x:Key="GlobalFontSize">14</x:Double>
-        <FontFamily x:Key="GlobalFontFamily">$Default</FontFamily>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Radoub.UI control themes -->
+                <ResourceInclude Source="avares://Radoub.UI/Controls/EquipmentSlotControl.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <!-- Default theme background -->
-        <SolidColorBrush x:Key="ThemeBackground">#FFFFFF</SolidColorBrush>
+            <!-- Default font size and family -->
+            <x:Double x:Key="GlobalFontSize">14</x:Double>
+            <FontFamily x:Key="GlobalFontFamily">$Default</FontFamily>
+
+            <!-- Default theme background -->
+            <SolidColorBrush x:Key="ThemeBackground">#FFFFFF</SolidColorBrush>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

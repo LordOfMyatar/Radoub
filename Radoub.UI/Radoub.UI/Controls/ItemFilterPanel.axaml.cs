@@ -223,6 +223,12 @@ public partial class ItemFilterPanel : UserControl
         SaveFilterState();
         _debounceTimer.Stop();
         _debounceTimer.Dispose();
+
+        // Unsubscribe from collection changes
+        if (Items != null)
+        {
+            Items.CollectionChanged -= OnItemsCollectionChanged;
+        }
     }
 
     #endregion
@@ -235,6 +241,18 @@ public partial class ItemFilterPanel : UserControl
 
         if (change.Property == ItemsProperty)
         {
+            // Unsubscribe from old collection
+            if (change.OldValue is ObservableCollection<ItemViewModel> oldItems)
+            {
+                oldItems.CollectionChanged -= OnItemsCollectionChanged;
+            }
+
+            // Subscribe to new collection
+            if (change.NewValue is ObservableCollection<ItemViewModel> newItems)
+            {
+                newItems.CollectionChanged += OnItemsCollectionChanged;
+            }
+
             ApplyFilter();
         }
         else if (change.Property == SearchTextProperty)
@@ -260,6 +278,12 @@ public partial class ItemFilterPanel : UserControl
     {
         // Run filter on UI thread
         Avalonia.Threading.Dispatcher.UIThread.Post(ApplyFilter);
+    }
+
+    private void OnItemsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        // Re-apply filter when source items change
+        ApplyFilter();
     }
 
     #endregion
