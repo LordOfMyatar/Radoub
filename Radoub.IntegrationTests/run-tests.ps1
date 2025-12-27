@@ -25,7 +25,7 @@ function Invoke-PrivacyScan {
     Write-Host "`n=== Privacy Scan ===" -ForegroundColor Magenta
     Write-Host "Checking for hardcoded paths..." -ForegroundColor Yellow
 
-    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest")
+    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest", "CreatureEditor")
 
     # Patterns that indicate actual hardcoded user paths (not path detection logic)
     # Uses regex with word boundaries to avoid matching comments like "// Unix: /home/"
@@ -76,7 +76,8 @@ $unitTests = @(
     @{ Name = "Radoub.UI.Tests"; Path = "Radoub.UI\Radoub.UI.Tests" },
     @{ Name = "Radoub.Dictionary.Tests"; Path = "Radoub.Dictionary\Radoub.Dictionary.Tests" },
     @{ Name = "Parley.Tests"; Path = "Parley\Parley.Tests" },
-    @{ Name = "Manifest.Tests"; Path = "Manifest\Manifest.Tests" }
+    @{ Name = "Manifest.Tests"; Path = "Manifest\Manifest.Tests" },
+    @{ Name = "CreatureEditor.Tests"; Path = "CreatureEditor\CreatureEditor.Tests" }
 )
 
 # UI Tests (slower, requires display)

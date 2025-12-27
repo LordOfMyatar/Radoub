@@ -62,8 +62,10 @@ public abstract class FlaUITestBase : IDisposable
         // Create tool-specific subdirectories for settings
         var parleySettingsDir = Path.Combine(_isolatedSettingsDir, "Parley");
         var manifestSettingsDir = Path.Combine(_isolatedSettingsDir, "Manifest");
+        var creatureEditorSettingsDir = Path.Combine(_isolatedSettingsDir, "CreatureEditor");
         Directory.CreateDirectory(parleySettingsDir);
         Directory.CreateDirectory(manifestSettingsDir);
+        Directory.CreateDirectory(creatureEditorSettingsDir);
 
         // Pre-seed Parley settings with test-friendly defaults
         // SideBySide layout is most stable for automated testing (no separate windows)
@@ -77,6 +79,10 @@ public abstract class FlaUITestBase : IDisposable
         var manifestSettings = @"{}";
         File.WriteAllText(Path.Combine(manifestSettingsDir, "ManifestSettings.json"), manifestSettings);
 
+        // Pre-seed CreatureEditor settings with test-friendly defaults
+        var creatureEditorSettings = @"{}";
+        File.WriteAllText(Path.Combine(creatureEditorSettingsDir, "CreatureEditorSettings.json"), creatureEditorSettings);
+
         var processInfo = new ProcessStartInfo
         {
             FileName = ApplicationPath,
@@ -88,9 +94,11 @@ public abstract class FlaUITestBase : IDisposable
         // RADOUB_SETTINGS_DIR: ~/Radoub equivalent (RadoubSettings.json)
         // PARLEY_SETTINGS_DIR: ~/Radoub/Parley equivalent (ParleySettings.json)
         // MANIFEST_SETTINGS_DIR: ~/Radoub/Manifest equivalent (ManifestSettings.json)
+        // CREATUREEDITOR_SETTINGS_DIR: ~/Radoub/CreatureEditor equivalent
         processInfo.Environment["RADOUB_SETTINGS_DIR"] = _isolatedSettingsDir;
         processInfo.Environment["PARLEY_SETTINGS_DIR"] = parleySettingsDir;
         processInfo.Environment["MANIFEST_SETTINGS_DIR"] = manifestSettingsDir;
+        processInfo.Environment["CREATUREEDITOR_SETTINGS_DIR"] = creatureEditorSettingsDir;
 
         App = Application.Launch(processInfo);
 
