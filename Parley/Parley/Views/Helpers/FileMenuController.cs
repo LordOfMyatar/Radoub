@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using DialogEditor.Parsers;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 using DialogEditor.ViewModels;
 

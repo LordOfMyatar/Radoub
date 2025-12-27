@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 
 namespace DialogEditor.Services

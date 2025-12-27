@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Plugins.Security;
 
 namespace DialogEditor.Plugins

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using Parley.Models;
 
 namespace DialogEditor.Services

@@ -18,6 +18,7 @@ using DialogEditor.ViewModels;
 using DialogEditor.Models;
 using DialogEditor.Utils;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Parsers;
 using DialogEditor.Plugins;
 using Parley.Services;

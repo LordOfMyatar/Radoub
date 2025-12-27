@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.ViewModels;
 
 namespace DialogEditor.Views

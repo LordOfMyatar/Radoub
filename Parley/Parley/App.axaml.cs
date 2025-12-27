@@ -12,6 +12,7 @@ using DialogEditor.Views;
 using DialogEditor.Services;
 using DialogEditor.Plugins;
 using System.ComponentModel;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor;
 

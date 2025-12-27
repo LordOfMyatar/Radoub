@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Manifest.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Jrl;

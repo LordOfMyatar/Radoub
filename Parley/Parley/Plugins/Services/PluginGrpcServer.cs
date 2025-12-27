@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DialogEditor.Plugins.Proto;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 using Avalonia.Controls;
 using Avalonia.Threading;

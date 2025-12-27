@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Bif;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;

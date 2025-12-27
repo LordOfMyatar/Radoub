@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 
 namespace DialogEditor.Plugins

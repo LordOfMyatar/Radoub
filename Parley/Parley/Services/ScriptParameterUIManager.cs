@@ -6,6 +6,7 @@ using Avalonia.Styling;
 using DialogEditor.Models;
 using DialogEditor.Utils;
 using System;
+using Radoub.Formats.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;

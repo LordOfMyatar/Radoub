@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using CreatureEditor.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Bic;
 using Radoub.Formats.Common;
 using Radoub.Formats.Utc;

@@ -5,6 +5,7 @@ using AvaloniaGraphControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.ViewModels
 {

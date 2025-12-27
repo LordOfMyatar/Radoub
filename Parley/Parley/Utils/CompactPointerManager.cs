@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using Microsoft.Extensions.Logging;
+using LogLevel = Radoub.Formats.Logging.LogLevel;
 
 namespace DialogEditor.Utils
 {
@@ -33,7 +35,7 @@ namespace DialogEditor.Utils
         /// </summary>
         public CompactPointerResult ProcessDialog(Dialog dialog)
         {
-            UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, "🎯 COMPACT POINTER MANAGER: Starting deduplication analysis");
+            UnifiedLogger.LogParser(LogLevel.INFO, "🎯 COMPACT POINTER MANAGER: Starting deduplication analysis");
 
             // Clear previous data
             _structMap.Clear();
@@ -41,7 +43,7 @@ namespace DialogEditor.Utils
 
             // Count original pointers for analysis
             int originalPointerCount = CountAllPointers(dialog);
-            UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"📊 Original pointer count: {originalPointerCount}");
+            UnifiedLogger.LogParser(LogLevel.INFO, $"📊 Original pointer count: {originalPointerCount}");
 
             // Process entry pointers
             var entryMappings = ProcessEntryPointers(dialog);
@@ -52,11 +54,11 @@ namespace DialogEditor.Utils
             int deduplicatedCount = _uniquePointers.Count;
             double compressionRatio = (double)originalPointerCount / deduplicatedCount;
 
-            UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"✅ DEDUPLICATION COMPLETE:");
-            UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"   Original Pointers: {originalPointerCount}");
-            UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"   Deduplicated Structs: {deduplicatedCount}");
-            UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"   Compression Ratio: {compressionRatio:F1}:1");
-            UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"   Struct Reduction: {((originalPointerCount - deduplicatedCount) / (double)originalPointerCount * 100):F1}%");
+            UnifiedLogger.LogParser(LogLevel.INFO, $"✅ DEDUPLICATION COMPLETE:");
+            UnifiedLogger.LogParser(LogLevel.INFO, $"   Original Pointers: {originalPointerCount}");
+            UnifiedLogger.LogParser(LogLevel.INFO, $"   Deduplicated Structs: {deduplicatedCount}");
+            UnifiedLogger.LogParser(LogLevel.INFO, $"   Compression Ratio: {compressionRatio:F1}:1");
+            UnifiedLogger.LogParser(LogLevel.INFO, $"   Struct Reduction: {((originalPointerCount - deduplicatedCount) / (double)originalPointerCount * 100):F1}%");
 
             return new CompactPointerResult
             {
@@ -80,24 +82,24 @@ namespace DialogEditor.Utils
 
                 if (entry.Pointers.Count > 0)
                 {
-                    UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"🔍 COMPACT DEBUG: Entry[{entryIdx}] has {entry.Pointers.Count} pointers");
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 COMPACT DEBUG: Entry[{entryIdx}] has {entry.Pointers.Count} pointers");
                 }
 
                 for (int ptrIdx = 0; ptrIdx < entry.Pointers.Count; ptrIdx++)
                 {
                     var pointer = entry.Pointers[ptrIdx];
-                    UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"🔍 COMPACT DEBUG: Entry[{entryIdx}] pointer[{ptrIdx}] → Index={pointer.Index}, Type={pointer.Type}");
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 COMPACT DEBUG: Entry[{entryIdx}] pointer[{ptrIdx}] → Index={pointer.Index}, Type={pointer.Type}");
                     var key = new PointerKey(pointer.Index, pointer.Type, pointer.IsLink);
                     int structIndex = GetOrCreatePointerStruct(key, pointer);
                     structIndices.Add(structIndex);
-                    UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"🔍 COMPACT DEBUG: Entry[{entryIdx}] pointer[{ptrIdx}] mapped to structIndex={structIndex}");
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 COMPACT DEBUG: Entry[{entryIdx}] pointer[{ptrIdx}] mapped to structIndex={structIndex}");
                 }
 
                 entryMappings.Add(structIndices);
 
                 if (entry.Pointers.Count > 0)
                 {
-                    UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.DEBUG, $"Entry[{entryIdx}]: {entry.Pointers.Count} logical → {structIndices.Distinct().Count()} unique structs");
+                    UnifiedLogger.LogParser(LogLevel.DEBUG, $"Entry[{entryIdx}]: {entry.Pointers.Count} logical → {structIndices.Distinct().Count()} unique structs");
                 }
             }
 
@@ -113,22 +115,22 @@ namespace DialogEditor.Utils
                 var reply = dialog.Replies[replyIdx];
                 var structIndices = new List<int>();
 
-                UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"🔍 COMPACT DEBUG: Reply[{replyIdx}] has {reply.Pointers.Count} pointers");
+                UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 COMPACT DEBUG: Reply[{replyIdx}] has {reply.Pointers.Count} pointers");
                 for (int ptrIdx = 0; ptrIdx < reply.Pointers.Count; ptrIdx++)
                 {
                     var pointer = reply.Pointers[ptrIdx];
-                    UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"🔍 COMPACT DEBUG: Reply[{replyIdx}] pointer[{ptrIdx}] → Index={pointer.Index}, Type={pointer.Type}");
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 COMPACT DEBUG: Reply[{replyIdx}] pointer[{ptrIdx}] → Index={pointer.Index}, Type={pointer.Type}");
                     var key = new PointerKey(pointer.Index, pointer.Type, pointer.IsLink);
                     int structIndex = GetOrCreatePointerStruct(key, pointer);
                     structIndices.Add(structIndex);
-                    UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.INFO, $"🔍 COMPACT DEBUG: Reply[{replyIdx}] pointer[{ptrIdx}] mapped to structIndex={structIndex}");
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"🔍 COMPACT DEBUG: Reply[{replyIdx}] pointer[{ptrIdx}] mapped to structIndex={structIndex}");
                 }
 
                 replyMappings.Add(structIndices);
 
                 if (reply.Pointers.Count > 0)
                 {
-                    UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.DEBUG, $"Reply[{replyIdx}]: {reply.Pointers.Count} logical → {structIndices.Distinct().Count()} unique structs");
+                    UnifiedLogger.LogParser(LogLevel.DEBUG, $"Reply[{replyIdx}]: {reply.Pointers.Count} logical → {structIndices.Distinct().Count()} unique structs");
                 }
             }
 
@@ -140,7 +142,7 @@ namespace DialogEditor.Utils
             // Check if we already have a struct for this pointer target
             if (_structMap.TryGetValue(key, out int existingIndex))
             {
-                UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.DEBUG, $"🔗 REUSING struct[{existingIndex}] for {key.Type}[{key.Index}]");
+                UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔗 REUSING struct[{existingIndex}] for {key.Type}[{key.Index}]");
                 return existingIndex;
             }
 
@@ -158,7 +160,7 @@ namespace DialogEditor.Utils
             _uniquePointers.Add(uniquePointer);
             _structMap[key] = newIndex;
 
-            UnifiedLogger.LogParser(DialogEditor.Services.LogLevel.DEBUG, $"🆕 CREATED struct[{newIndex}] for {key.Type}[{key.Index}]");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"🆕 CREATED struct[{newIndex}] for {key.Type}[{key.Index}]");
             return newIndex;
         }
 

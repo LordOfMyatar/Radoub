@@ -5,6 +5,7 @@ using System.Linq;
 using DialogEditor.Plugins.Security;
 using DialogEditor.Plugins.Services;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 
 namespace DialogEditor.Plugins

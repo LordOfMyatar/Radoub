@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor;
 
@@ -110,6 +111,14 @@ sealed class Program
         {
             BackupConfigForSafeMode();
         }
+
+        // Initialize unified logging (must happen before any logging calls)
+        UnifiedLogger.Configure(new LoggerConfig
+        {
+            AppName = "Parley",
+            LogLevel = LogLevel.INFO,
+            RetainSessions = 10
+        });
 
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

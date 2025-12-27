@@ -3,6 +3,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using DialogEditor.Plugins.Services;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;

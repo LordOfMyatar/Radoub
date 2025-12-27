@@ -1,6 +1,7 @@
 using Avalonia;
 using Manifest.Services;
 using System;
+using Radoub.Formats.Logging;
 
 namespace Manifest;
 
@@ -21,6 +22,14 @@ sealed class Program
             CommandLineService.PrintHelp();
             return 0;
         }
+
+        // Initialize unified logging
+        UnifiedLogger.Configure(new LoggerConfig
+        {
+            AppName = "Manifest",
+            LogLevel = LogLevel.INFO,
+            RetainSessions = 10
+        });
 
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

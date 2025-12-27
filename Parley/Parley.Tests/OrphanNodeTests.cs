@@ -2,6 +2,7 @@ using DialogEditor.Models;
 using DialogEditor.Parsers;
 using DialogEditor.Services;
 using Parley.Models;
+using Radoub.Formats.Logging;
 using Xunit;
 
 namespace Parley.Tests

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Plugins.Security
 {

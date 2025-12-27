@@ -4,6 +4,7 @@ using System.Text;
 using DialogEditor.Models;
 using DialogEditor.Utils;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Handlers
 {

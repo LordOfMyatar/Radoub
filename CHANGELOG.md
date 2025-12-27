@@ -20,6 +20,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.15] - 2025-12-27
+**Branch**: `radoub/feat/unified-logger-extraction` | **PR**: #595
+
+### Feature: Extract UnifiedLogger to Shared Library (#591)
+
+Consolidates logging infrastructure across all Radoub tools.
+
+#### Added (Radoub.Formats)
+- **UnifiedLogger** - Shared logging service with session-based organization
+- **LogLevel enum** - ERROR, WARN, INFO, DEBUG, TRACE levels
+- **PrivacyHelper** - Path sanitization to prevent logging user paths
+- **LoggerConfig** - Configuration for app name, log level, session retention
+
+#### Changed (Parley)
+- Migrated to shared UnifiedLogger from Radoub.Formats
+- Removed duplicate `Parley/Parley/Services/UnifiedLogger.cs`
+
+#### Changed (Quartermaster)
+- Migrated to shared UnifiedLogger from Radoub.Formats
+- Removed duplicate `CreatureEditor/CreatureEditor/Services/UnifiedLogger.cs`
+
+#### Changed (Manifest)
+- Migrated to shared UnifiedLogger from Radoub.Formats
+- Removed duplicate `Manifest/Manifest/Services/UnifiedLogger.cs`
+
+---
+
 ## [0.9.14] - 2025-12-26
 **Branch**: `radoub/sprint/creature-editor-cleanup` | **PR**: #584
 

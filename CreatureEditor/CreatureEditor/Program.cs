@@ -1,6 +1,7 @@
 using Avalonia;
 using CreatureEditor.Services;
 using System;
+using Radoub.Formats.Logging;
 
 namespace CreatureEditor;
 
@@ -18,6 +19,14 @@ sealed class Program
             CommandLineService.PrintHelp();
             return 0;
         }
+
+        // Initialize unified logging
+        UnifiedLogger.Configure(new LoggerConfig
+        {
+            AppName = "CreatureEditor",
+            LogLevel = LogLevel.INFO,
+            RetainSessions = 10
+        });
 
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

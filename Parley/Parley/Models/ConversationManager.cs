@@ -1,4 +1,5 @@
 using System;
+using Radoub.Formats.Logging;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -201,8 +202,8 @@ namespace DialogEditor.Models
             }
             catch (Exception ex)
             {
-                DialogEditor.Services.UnifiedLogger.LogApplication(
-                    DialogEditor.Services.LogLevel.WARN,
+                UnifiedLogger.LogApplication(
+                    LogLevel.WARN,
                     $"Script evaluation failed for '{scriptName}': {ex.Message}");
                 return false;
             }
@@ -242,8 +243,8 @@ namespace DialogEditor.Models
             }
             catch (Exception ex)
             {
-                DialogEditor.Services.UnifiedLogger.LogApplication(
-                    DialogEditor.Services.LogLevel.WARN,
+                UnifiedLogger.LogApplication(
+                    LogLevel.WARN,
                     $"Script execution failed for '{scriptName}': {ex.Message}");
             }
         }

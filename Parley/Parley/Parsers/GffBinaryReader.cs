@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Parsers
 {
@@ -78,7 +79,7 @@ namespace DialogEditor.Parsers
 
         public static GffField[] ParseFields(byte[] buffer, GffHeader header)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"📖 READ GFF HEADER: {header.FieldCount} fields");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? READ GFF HEADER: {header.FieldCount} fields");
             var fields = new GffField[header.FieldCount];
             var offset = (int)header.FieldOffset;
 
@@ -267,7 +268,7 @@ namespace DialogEditor.Parsers
                     if (field.Label == "Index")
                     {
                         // UnifiedLogger.LogParser(LogLevel.DEBUG,
-                        //     $"🔍 INDEX FIELD DEBUG: Label='{field.Label}' Type={field.Type.GetTypeName()} RawData=0x{field.DataOrDataOffset:X8} Value={field.Value}");
+                        //     $"?? INDEX FIELD DEBUG: Label='{field.Label}' Type={field.Type.GetTypeName()} RawData=0x{field.DataOrDataOffset:X8} Value={field.Value}");
                     }
                 }
                 catch (Exception ex)
@@ -483,7 +484,7 @@ namespace DialogEditor.Parsers
                         if (indexField != null)
                         {
                             UnifiedLogger.LogParser(LogLevel.TRACE, 
-                                $"🔍 STARTLIST DEBUG: List element {i} → struct[{structIndex}] Type={targetStruct.Type} IndexValue={indexField.DataOrDataOffset} (0x{indexField.DataOrDataOffset:X8})");
+                                $"?? STARTLIST DEBUG: List element {i} ? struct[{structIndex}] Type={targetStruct.Type} IndexValue={indexField.DataOrDataOffset} (0x{indexField.DataOrDataOffset:X8})");
                         }
                     }
                 }
@@ -511,7 +512,7 @@ namespace DialogEditor.Parsers
             if (field.Label == "Index")
             {
                 UnifiedLogger.LogParser(LogLevel.TRACE, 
-                    $"🔍 FLOAT DEBUG: Field '{field.Label}' raw data=0x{field.DataOrDataOffset:X8}, converted float={result}");
+                    $"?? FLOAT DEBUG: Field '{field.Label}' raw data=0x{field.DataOrDataOffset:X8}, converted float={result}");
             }
             return result;
         }
@@ -530,7 +531,7 @@ namespace DialogEditor.Parsers
         {
             if (header.FieldCount == 0)
             {
-                UnifiedLogger.LogParser(LogLevel.WARN, "🔍 AURORA PATTERN: Cannot detect - FieldCount is 0");
+                UnifiedLogger.LogParser(LogLevel.WARN, "?? AURORA PATTERN: Cannot detect - FieldCount is 0");
                 return;
             }
 
@@ -538,31 +539,31 @@ namespace DialogEditor.Parsers
             
             // Determine GFF pattern type
             string patternType = "UNKNOWN";
-            string compatibility = "❓ UNKNOWN";
+            string compatibility = "? UNKNOWN";
             
             if (Math.Abs(fieldIndicesRatio - 4.0) < 0.1)
             {
                 patternType = "STANDARD_4_1";
-                compatibility = "✅ FULL SUPPORT";
+                compatibility = "? FULL SUPPORT";
             }
             else if (Math.Abs(fieldIndicesRatio - 3.5) < 0.2)  // Allow some tolerance for 3.52
             {
                 patternType = "VARIANT_3_5";
-                compatibility = "⚠️ ADAPTIVE NEEDED";
+                compatibility = "?? ADAPTIVE NEEDED";
             }
             else if (fieldIndicesRatio > 2.0 && fieldIndicesRatio < 6.0)
             {
                 patternType = "CUSTOM_RATIO";
-                compatibility = "🔄 EXPERIMENTAL";
+                compatibility = "?? EXPERIMENTAL";
             }
             else
             {
                 patternType = "NON_AURORA";
-                compatibility = "❌ UNSUPPORTED";
+                compatibility = "? UNSUPPORTED";
             }
 
             UnifiedLogger.LogParser(LogLevel.TRACE, 
-                $"🔍 AURORA PATTERN DETECTION:");
+                $"?? AURORA PATTERN DETECTION:");
             UnifiedLogger.LogParser(LogLevel.TRACE, 
                 $"   Field Count: {header.FieldCount}");
             UnifiedLogger.LogParser(LogLevel.TRACE, 

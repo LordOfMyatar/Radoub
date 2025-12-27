@@ -1,4 +1,5 @@
 using System;
+using Radoub.Formats.Logging;
 using System.IO;
 using System.Runtime.InteropServices;
 using DialogEditor.Utils;

@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Runtime.CompilerServices;
 using DialogEditor.Utils;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Services
 {

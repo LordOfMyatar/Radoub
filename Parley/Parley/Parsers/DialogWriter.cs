@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 using System.IO;
 
@@ -58,7 +59,7 @@ namespace DialogEditor.Parsers
             var map = new ListIndicesOffsetMap();
             uint currentOffset = 0;
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, "📐 Pre-calculating ListIndices offsets for all lists");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Pre-calculating ListIndices offsets for all lists");
 
             // 1. EntryList (always first in ListIndices section)
             map.EntryListOffset = currentOffset;
@@ -147,7 +148,7 @@ namespace DialogEditor.Parsers
             }
             UnifiedLogger.LogParser(LogLevel.DEBUG, $"   ActionParams: {dialog.Entries.Count + dialog.Replies.Count} lists calculated");
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"✅ ListIndices layout calculated: total size = {currentOffset} bytes");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"? ListIndices layout calculated: total size = {currentOffset} bytes");
 
             return map;
         }
@@ -167,7 +168,7 @@ namespace DialogEditor.Parsers
             {
                 Type = type,
                 LabelIndex = (uint)labelIndex,
-                Label = label, // 🎯 CRITICAL FIX: Set the Label property for FixListFieldOffsets
+                Label = label, // ?? CRITICAL FIX: Set the Label property for FixListFieldOffsets
                 DataOrDataOffset = value
             };
             allFields.Add(field);
@@ -179,10 +180,10 @@ namespace DialogEditor.Parsers
 
             // Write CExoLocString structure
             byte[] textBytes = System.Text.Encoding.UTF8.GetBytes(text);
-            // 🔧 AURORA FIX: TotalSize = StringRef(4) + StringCount(4) + StringID(4) + StringLength(4) + Text (NOT including TotalSize itself!)
+            // ?? AURORA FIX: TotalSize = StringRef(4) + StringCount(4) + StringID(4) + StringLength(4) + Text (NOT including TotalSize itself!)
             uint totalSize = (uint)(4 + 4 + 4 + 4 + textBytes.Length); // = 21 for "FuBar" (excludes TotalSize field)
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 BuildLocStringFieldData: text='{text.Substring(0, Math.Min(50, text.Length))}...', textBytes.Length={textBytes.Length}, totalSize={totalSize}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? BuildLocStringFieldData: text='{text.Substring(0, Math.Min(50, text.Length))}...', textBytes.Length={textBytes.Length}, totalSize={totalSize}");
 
             data.AddRange(BitConverter.GetBytes(totalSize)); // Total size (4 bytes)
             data.AddRange(BitConverter.GetBytes(0xFFFFFFFF)); // StrRef (4 bytes) - custom text
@@ -195,7 +196,7 @@ namespace DialogEditor.Parsers
             while (data.Count % 4 != 0)
                 data.Add(0);
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 BuildLocStringFieldData result: {data.Count} bytes total");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? BuildLocStringFieldData result: {data.Count} bytes total");
 
             return data.ToArray();
         }
@@ -214,7 +215,7 @@ namespace DialogEditor.Parsers
         
         private byte[] BuildCResRefFieldData(string resref)
         {
-            // 🎯 FIXED: CResRef format matches reader expectations - length prefix + string data
+            // ?? FIXED: CResRef format matches reader expectations - length prefix + string data
             if (string.IsNullOrEmpty(resref))
             {
                 return new byte[] { 0 }; // Zero length for empty CResRef
@@ -232,7 +233,7 @@ namespace DialogEditor.Parsers
 
         private uint GetOrCreateTextOffset(string text, List<byte> fieldData)
         {
-            // 🔧 DISABLED: Text deduplication (2025-10-22)
+            // ?? DISABLED: Text deduplication (2025-10-22)
             // Duplicated text is intentional author content, not a pattern to optimize
             // GFF only deduplicates ChildLink structures, not dialog text
 
@@ -245,7 +246,7 @@ namespace DialogEditor.Parsers
             // DISABLED: Cache check - always create new text data
             // if (_textOffsetCache.TryGetValue(text, out uint existingOffset))
             // {
-            //     UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 TEXT REUSE: '{text}' → existing offset {existingOffset}");
+            //     UnifiedLogger.LogParser(LogLevel.TRACE, $"?? TEXT REUSE: '{text}' ? existing offset {existingOffset}");
             //     return existingOffset;
             // }
 
@@ -253,20 +254,20 @@ namespace DialogEditor.Parsers
             uint newOffset = (uint)fieldData.Count;
             var locStringData = BuildLocStringFieldData(text);
 
-            // 🔍 DIAGNOSTIC: Check what we're about to add
+            // ?? DIAGNOSTIC: Check what we're about to add
             if (locStringData.Length >= 4)
             {
                 uint first4 = BitConverter.ToUInt32(locStringData, 0);
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 About to add locStringData: first 4 bytes = 0x{first4:X8} ({first4})");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? About to add locStringData: first 4 bytes = 0x{first4:X8} ({first4})");
             }
 
             fieldData.AddRange(locStringData);
 
-            // 🔍 DIAGNOSTIC: Check fieldData after adding (FIRST TEXT ONLY)
+            // ?? DIAGNOSTIC: Check fieldData after adding (FIRST TEXT ONLY)
             if (newOffset == 0 && fieldData.Count >= 4)
             {
                 uint first4AfterAdd = BitConverter.ToUInt32(fieldData.ToArray(), 0);
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 CRITICAL: After adding FIRST text to fieldData: first 4 bytes = 0x{first4AfterAdd:X8} ({first4AfterAdd}), fieldData.Count={fieldData.Count}");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CRITICAL: After adding FIRST text to fieldData: first 4 bytes = 0x{first4AfterAdd:X8} ({first4AfterAdd}), fieldData.Count={fieldData.Count}");
             }
 
             // Pad to 4-byte boundary
@@ -277,7 +278,7 @@ namespace DialogEditor.Parsers
 
             // DISABLED: Caching
             // _textOffsetCache[text] = newOffset;
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🆕 NEW TEXT: '{text}' → offset {newOffset}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? NEW TEXT: '{text}' ? offset {newOffset}");
 
             return newOffset;
         }
@@ -311,7 +312,7 @@ namespace DialogEditor.Parsers
 
         private uint CalculateLabelSize(List<string> allLabels)
         {
-            // 🎯 FIXED: GFF format uses exactly 16 bytes per label (not null-terminated variable length)
+            // ?? FIXED: GFF format uses exactly 16 bytes per label (not null-terminated variable length)
             // This must match how labels are actually written to ensure correct format detection
             return (uint)(allLabels.Count * 16); // GFF 16-byte fixed format
         }
@@ -326,10 +327,10 @@ namespace DialogEditor.Parsers
             string scriptName = pointer.ScriptAppears ?? "";
             if (!string.IsNullOrEmpty(scriptName))
             {
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 EXPORT SCRIPT: Writing script '{scriptName}' for pointer Index={pointer.Index}");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? EXPORT SCRIPT: Writing script '{scriptName}' for pointer Index={pointer.Index}");
             }
             uint activeOffset = (uint)fieldData.Count;
-            // 🔧 CRITICAL FIX: Use BuildCResRefFieldData helper for consistent format (length prefix + string)
+            // ?? CRITICAL FIX: Use BuildCResRefFieldData helper for consistent format (length prefix + string)
             if (!string.IsNullOrEmpty(scriptName))
             {
                 var resRefData = BuildCResRefFieldData(scriptName);
@@ -338,13 +339,13 @@ namespace DialogEditor.Parsers
             }
             else
             {
-                // 🔧 PADDING FIX (2025-10-24): Empty CResRef needs 4 bytes (uint32 length=0) with padding
+                // ?? PADDING FIX (2025-10-24): Empty CResRef needs 4 bytes (uint32 length=0) with padding
                 fieldData.AddRange(BitConverter.GetBytes((uint)0)); // 4 bytes: length = 0
             }
             AddLabelAndField(allFields, allLabels, "Active", GffField.CResRef, activeOffset);
 
             // Field 3: ConditionParams (List, points to parameter structs)
-            // 📐 ARCHITECTURE FIX: Use pre-calculated offset (no placeholder, no patching)
+            // ?? ARCHITECTURE FIX: Use pre-calculated offset (no placeholder, no patching)
             uint conditionParamsOffset = offsetMap.PointerConditionParamsOffsets[globalPointerIndex];
             AddLabelAndField(allFields, allLabels, "ConditionParams", GffField.List, conditionParamsOffset);
             UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Pointer[{globalPointerIndex}] ConditionParams offset: {conditionParamsOffset}");
@@ -399,10 +400,10 @@ namespace DialogEditor.Parsers
 
         private void CreateRootFields(Dialog dialog, List<GffField> allFields, List<string> allLabels, List<byte> fieldData, ListIndicesOffsetMap offsetMap)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 CreateRootFields: Using pre-calculated offsets (fields {allFields.Count} onward)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CreateRootFields: Using pre-calculated offsets (fields {allFields.Count} onward)");
 
             // Standard DLG root fields
-            // ⚠️ CRITICAL: Order must match original GFF files exactly!
+            // ?? CRITICAL: Order must match original GFF files exactly!
             // Correct order: DelayEntry, DelayReply, NumWords, EndConversation, EndConverAbort, PreventZoomIn, EntryList, ReplyList, StartingList
 
             // Field 0: DelayEntry
@@ -414,7 +415,7 @@ namespace DialogEditor.Parsers
             // Field 2: NumWords
             AddLabelAndField(allFields, allLabels, "NumWords", GffField.DWORD, dialog.NumWords);
 
-            // 🔧 CRITICAL: GFF spec reserves offset 0 as "no data" for optional fields
+            // ?? CRITICAL: GFF spec reserves offset 0 as "no data" for optional fields
             // Write 4-byte null zone at start of fieldData to prevent offset 0 collisions
             fieldData.AddRange(BitConverter.GetBytes((uint)0));
 
@@ -450,7 +451,7 @@ namespace DialogEditor.Parsers
             // Field 5: PreventZoomIn
             AddLabelAndField(allFields, allLabels, "PreventZoomIn", GffField.BYTE, dialog.PreventZoom ? (byte)1 : (byte)0);
 
-            // 📐 ARCHITECTURE FIX: Use pre-calculated offsets (no placeholders, no patching)
+            // ?? ARCHITECTURE FIX: Use pre-calculated offsets (no placeholders, no patching)
             // List fields now have correct offsets from creation
             // GFF List format: count (4 bytes) + indices (count * 4 bytes)
 
@@ -501,7 +502,7 @@ namespace DialogEditor.Parsers
             AddLabelAndField(allFields, allLabels, "Text", GffField.CExoLocString, textOffset);
 
             // 5. Script (CResRef)
-            // 🔧 BUG FIX (Oct 25): Always write CResRef data, never use offset 0 (causes cross-contamination)
+            // ?? BUG FIX (Oct 25): Always write CResRef data, never use offset 0 (causes cross-contamination)
             uint scriptOffset = (uint)fieldData.Count;
             if (!string.IsNullOrEmpty(entry.ScriptAction))
             {
@@ -517,7 +518,7 @@ namespace DialogEditor.Parsers
             AddLabelAndField(allFields, allLabels, "Script", GffField.CResRef, scriptOffset);
 
             // 6. ActionParams (List) - Each node needs its OWN empty list (not shared!)
-            // 📐 ARCHITECTURE FIX: Use pre-calculated offset (no placeholder, no patching)
+            // ?? ARCHITECTURE FIX: Use pre-calculated offset (no placeholder, no patching)
             uint actionParamsOffset = offsetMap.EntryActionParamsOffsets[entryIndex];
             AddLabelAndField(allFields, allLabels, "ActionParams", GffField.List, actionParamsOffset);
             UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Entry[{entryIndex}] ActionParams offset: {actionParamsOffset}");
@@ -540,7 +541,7 @@ namespace DialogEditor.Parsers
             }
 
             // 9. Sound (CResRef)
-            // 🔧 BUG FIX (Oct 25): Always write CResRef data, never use offset 0 (causes cross-contamination)
+            // ?? BUG FIX (Oct 25): Always write CResRef data, never use offset 0 (causes cross-contamination)
             uint soundOffset = (uint)fieldData.Count;
             if (!string.IsNullOrEmpty(entry.Sound))
             {
@@ -580,7 +581,7 @@ namespace DialogEditor.Parsers
                 // QuestEntry is NOT included when Quest is empty
             }
 
-            // 12. RepliesList (List) - 📐 ARCHITECTURE FIX: Use pre-calculated offset
+            // 12. RepliesList (List) - ?? ARCHITECTURE FIX: Use pre-calculated offset
             uint repliesListOffset = offsetMap.RepliesListOffsets[entryIndex];
             AddLabelAndField(allFields, allLabels, "RepliesList", GffField.List, repliesListOffset);
             UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Entry[{entryIndex}] RepliesList offset: {repliesListOffset}");
@@ -604,7 +605,7 @@ namespace DialogEditor.Parsers
             AddLabelAndField(allFields, allLabels, "Text", GffField.CExoLocString, textOffset);
 
             // 4. Script (CResRef)
-            // 🔧 BUG FIX (Oct 25): Always write CResRef data, never use offset 0 (causes cross-contamination)
+            // ?? BUG FIX (Oct 25): Always write CResRef data, never use offset 0 (causes cross-contamination)
             uint scriptOffset = (uint)fieldData.Count;
             if (!string.IsNullOrEmpty(reply.ScriptAction))
             {
@@ -620,7 +621,7 @@ namespace DialogEditor.Parsers
             AddLabelAndField(allFields, allLabels, "Script", GffField.CResRef, scriptOffset);
 
             // 5. ActionParams (List) - Each node needs its OWN empty list (not shared!)
-            // 📐 ARCHITECTURE FIX: Use pre-calculated offset (no placeholder, no patching)
+            // ?? ARCHITECTURE FIX: Use pre-calculated offset (no placeholder, no patching)
             uint actionParamsOffset = offsetMap.ReplyActionParamsOffsets[replyIndex];
             AddLabelAndField(allFields, allLabels, "ActionParams", GffField.List, actionParamsOffset);
             UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Reply[{replyIndex}] ActionParams offset: {actionParamsOffset}");
@@ -643,7 +644,7 @@ namespace DialogEditor.Parsers
             }
 
             // 8. Sound (CResRef)
-            // 🔧 BUG FIX (Oct 25): Always write CResRef data, never use offset 0 (causes cross-contamination)
+            // ?? BUG FIX (Oct 25): Always write CResRef data, never use offset 0 (causes cross-contamination)
             uint soundOffset = (uint)fieldData.Count;
             if (!string.IsNullOrEmpty(reply.Sound))
             {
@@ -683,7 +684,7 @@ namespace DialogEditor.Parsers
                 // QuestEntry is NOT included when Quest is empty
             }
 
-            // 11. EntriesList (List) - 📐 ARCHITECTURE FIX: Use pre-calculated offset
+            // 11. EntriesList (List) - ?? ARCHITECTURE FIX: Use pre-calculated offset
             uint entriesListOffset = offsetMap.EntriesListOffsets[replyIndex];
             AddLabelAndField(allFields, allLabels, "EntriesList", GffField.List, entriesListOffset);
             UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Reply[{replyIndex}] EntriesList offset: {entriesListOffset}");
@@ -699,7 +700,7 @@ namespace DialogEditor.Parsers
                 AddLabelAndField(allFields, allLabels, "Index", GffField.DWORD, start.Index);
 
                 // Active field contains the starting conditional script name (ScriptAppears)
-                // 🔧 CRITICAL FIX: Use BuildCResRefFieldData for GFF spec compliance (size-prefix format)
+                // ?? CRITICAL FIX: Use BuildCResRefFieldData for GFF spec compliance (size-prefix format)
                 var activeScriptOffset = (uint)fieldData.Count;
                 if (!string.IsNullOrEmpty(start.ScriptAppears))
                 {
@@ -714,7 +715,7 @@ namespace DialogEditor.Parsers
                 }
                 AddLabelAndField(allFields, allLabels, "Active", GffField.CResRef, activeScriptOffset);
 
-                // 📐 ARCHITECTURE FIX: Use pre-calculated offset (no placeholder, no patching)
+                // ?? ARCHITECTURE FIX: Use pre-calculated offset (no placeholder, no patching)
                 uint conditionParamsOffset = offsetMap.StartConditionParamsOffsets[i];
                 AddLabelAndField(allFields, allLabels, "ConditionParams", GffField.List, conditionParamsOffset);
                 UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Start[{i}] ConditionParams offset: {conditionParamsOffset}");
@@ -751,10 +752,10 @@ namespace DialogEditor.Parsers
         
         private void CreateCompactPointerFields(List<DialogEditor.Utils.UniquePointer> uniquePointers, List<GffField> allFields, List<string> allLabels, List<byte> fieldData, DialogEditor.Utils.FieldIndexTracker fieldTracker, Dialog dialog)
         {
-            // 🎯 COMPACT POINTER FIELDS: Create fields only for unique pointer structs identified by compact algorithm
+            // ?? COMPACT POINTER FIELDS: Create fields only for unique pointer structs identified by compact algorithm
 
             uint startingFieldIndex = (uint)allFields.Count;
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 CreateCompactPointerFields: Starting at field index {startingFieldIndex} (compact approach)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CreateCompactPointerFields: Starting at field index {startingFieldIndex} (compact approach)");
 
             // Validate field index alignment before creating fields
             fieldTracker.ValidateFieldIndex(startingFieldIndex, "Compact Pointer Field Start");
@@ -789,7 +790,7 @@ namespace DialogEditor.Parsers
             }
 
             uint endingFieldIndex = (uint)allFields.Count;
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 CreateCompactPointerFields: Created {endingFieldIndex - startingFieldIndex} fields for {uniquePointers.Count} unique pointers (index {startingFieldIndex}-{endingFieldIndex - 1})");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CreateCompactPointerFields: Created {endingFieldIndex - startingFieldIndex} fields for {uniquePointers.Count} unique pointers (index {startingFieldIndex}-{endingFieldIndex - 1})");
         }
 
         // Removed deprecated CreateReplyPointerFields method - replaced by CreateCompactPointerFields 2025-09-29
@@ -797,8 +798,8 @@ namespace DialogEditor.Parsers
         private void CreateStartPointerFields(Dialog dialog, List<GffField> allFields, List<string> allLabels, List<byte> fieldData)
         {
             uint startingFieldIndex = (uint)allFields.Count;
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 CreateStartPointerFields: Starting at field index {startingFieldIndex} (append-only approach)");
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 DEBUG: CreateStartPointerFields called with {dialog.Starts.Count} starts");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CreateStartPointerFields: Starting at field index {startingFieldIndex} (append-only approach)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DEBUG: CreateStartPointerFields called with {dialog.Starts.Count} starts");
 
             // Create fields for start pointer structs using append-only approach
             for (int startIdx = 0; startIdx < dialog.Starts.Count; startIdx++)
@@ -821,7 +822,7 @@ namespace DialogEditor.Parsers
             }
 
             uint endingFieldIndex = (uint)allFields.Count;
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 CreateStartPointerFields: Created {endingFieldIndex - startingFieldIndex} fields (index {startingFieldIndex}-{endingFieldIndex - 1})");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CreateStartPointerFields: Created {endingFieldIndex - startingFieldIndex} fields (index {startingFieldIndex}-{endingFieldIndex - 1})");
         }
 
         private void InsertFieldAtIndex(List<GffField> allFields, List<string> allLabels, int fieldIndex, string label, uint type, uint value)
@@ -847,11 +848,11 @@ namespace DialogEditor.Parsers
             while (allFields.Count <= fieldIndex)
             {
                 allFields.Add(null!);
-                UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔧 Added null padding at index {allFields.Count - 1}");
+                UnifiedLogger.LogParser(LogLevel.DEBUG, $"?? Added null padding at index {allFields.Count - 1}");
             }
 
             allFields[fieldIndex] = field;
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔧 Inserted field '{label}' at index {fieldIndex} with value {value}");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"?? Inserted field '{label}' at index {fieldIndex} with value {value}");
         }
 
 
@@ -861,7 +862,7 @@ namespace DialogEditor.Parsers
             List<GffStruct> allStructs,
             InterleavedTraversalState state)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, "🔀 Creating structs in ENTRY-FIRST BATCHED order (2025-10-22 discovery)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Creating structs in ENTRY-FIRST BATCHED order (2025-10-22 discovery)");
 
             // Initialize pointer tracking lists
             for (int i = 0; i < dialog.Entries.Count; i++)
@@ -873,7 +874,7 @@ namespace DialogEditor.Parsers
                 state.ReplyPointerStructIndices.Add(new List<int>());
             }
 
-            // 🎯 CRITICAL DISCOVERY (2025-10-22): GFF uses BATCHED Entry-First traversal
+            // ?? CRITICAL DISCOVERY (2025-10-22): GFF uses BATCHED Entry-First traversal
             // NOT conversation-flow, NOT depth-first, NOT breadth-first
             // Algorithm:
             //   1. Process ALL Entries (in array order) with their pointers
@@ -881,21 +882,21 @@ namespace DialogEditor.Parsers
             //   3. Finally add Start structs at end
 
             // Phase 1: Process ALL Entries (in array order)
-            UnifiedLogger.LogParser(LogLevel.TRACE, "📝 Phase 1: Creating ALL Entry structs + pointers");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Phase 1: Creating ALL Entry structs + pointers");
             for (uint i = 0; i < dialog.Entries.Count; i++)
             {
                 CreateEntryStruct(dialog, i, allStructs, state);
             }
 
             // Phase 2: Process ALL Replies (in array order)
-            UnifiedLogger.LogParser(LogLevel.TRACE, "💬 Phase 2: Creating ALL Reply structs + pointers");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Phase 2: Creating ALL Reply structs + pointers");
             for (uint i = 0; i < dialog.Replies.Count; i++)
             {
                 CreateReplyStruct(dialog, i, allStructs, state);
             }
 
             // Phase 3: Create Start wrapper structs at the END
-            UnifiedLogger.LogParser(LogLevel.TRACE, "📍 Phase 3: Creating Start structs at end (structural pattern)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Phase 3: Creating Start structs at end (structural pattern)");
             foreach (var start in dialog.Starts)
             {
                 var startStruct = new GffStruct
@@ -908,10 +909,10 @@ namespace DialogEditor.Parsers
                 state.StartStructIndices.Add(allStructs.Count - 1);
                 state.CurrentFieldIndex += 3;
 
-                UnifiedLogger.LogParser(LogLevel.DEBUG, $"  Start[{state.StartStructIndices.Count - 1}] → Struct[{allStructs.Count - 1}] → Entry[{start.Index}]");
+                UnifiedLogger.LogParser(LogLevel.DEBUG, $"  Start[{state.StartStructIndices.Count - 1}] ? Struct[{allStructs.Count - 1}] ? Entry[{start.Index}]");
             }
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"✅ Entry-First batched struct creation complete: {allStructs.Count} total structs");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"? Entry-First batched struct creation complete: {allStructs.Count} total structs");
         }
 
         /// <summary>
@@ -925,7 +926,7 @@ namespace DialogEditor.Parsers
         {
             if (entryIndex >= dialog.Entries.Count)
             {
-                UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ Invalid entry index: {entryIndex}");
+                UnifiedLogger.LogParser(LogLevel.WARN, $"?? Invalid entry index: {entryIndex}");
                 return;
             }
 
@@ -945,7 +946,7 @@ namespace DialogEditor.Parsers
             state.EntryIndexToStructIndex[entryIndex] = entryStructIndex;
             state.CurrentFieldIndex += fieldCount;
 
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"  Entry[{entryIndex}] → Struct[{entryStructIndex}] ({fieldCount} fields)");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"  Entry[{entryIndex}] ? Struct[{entryStructIndex}] ({fieldCount} fields)");
 
             // Create ALL pointer structs for this entry (pointers-first within node)
             foreach (var pointer in entry.Pointers)
@@ -963,7 +964,7 @@ namespace DialogEditor.Parsers
                 state.EntryPointerStructIndices[(int)entryIndex].Add(allStructs.Count - 1);
                 state.CurrentFieldIndex += pointerFieldCount;
 
-                UnifiedLogger.LogParser(LogLevel.DEBUG, $"    Entry[{entryIndex}].Pointer → Struct[{allStructs.Count - 1}] → Reply[{pointer.Index}] ({pointerFieldCount} fields, IsLink={pointer.IsLink})");
+                UnifiedLogger.LogParser(LogLevel.DEBUG, $"    Entry[{entryIndex}].Pointer ? Struct[{allStructs.Count - 1}] ? Reply[{pointer.Index}] ({pointerFieldCount} fields, IsLink={pointer.IsLink})");
             }
         }
 
@@ -978,7 +979,7 @@ namespace DialogEditor.Parsers
         {
             if (replyIndex >= dialog.Replies.Count)
             {
-                UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ Invalid reply index: {replyIndex}");
+                UnifiedLogger.LogParser(LogLevel.WARN, $"?? Invalid reply index: {replyIndex}");
                 return;
             }
 
@@ -998,7 +999,7 @@ namespace DialogEditor.Parsers
             state.ReplyIndexToStructIndex[replyIndex] = replyStructIndex;
             state.CurrentFieldIndex += fieldCount;
 
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"  Reply[{replyIndex}] → Struct[{replyStructIndex}] ({fieldCount} fields)");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"  Reply[{replyIndex}] ? Struct[{replyStructIndex}] ({fieldCount} fields)");
 
             // Create ALL pointer structs for this reply (pointers-first within node)
             foreach (var pointer in reply.Pointers)
@@ -1016,7 +1017,7 @@ namespace DialogEditor.Parsers
                 state.ReplyPointerStructIndices[(int)replyIndex].Add(allStructs.Count - 1);
                 state.CurrentFieldIndex += pointerFieldCount;
 
-                UnifiedLogger.LogParser(LogLevel.DEBUG, $"    Reply[{replyIndex}].Pointer → Struct[{allStructs.Count - 1}] → Entry[{pointer.Index}] ({pointerFieldCount} fields, IsLink={pointer.IsLink})");
+                UnifiedLogger.LogParser(LogLevel.DEBUG, $"    Reply[{replyIndex}].Pointer ? Struct[{allStructs.Count - 1}] ? Entry[{pointer.Index}] ({pointerFieldCount} fields, IsLink={pointer.IsLink})");
             }
         }
 
@@ -1024,7 +1025,7 @@ namespace DialogEditor.Parsers
         // ===== Parameter Struct Creation =====
         private void CreateDynamicParameterStructs(Dialog dialog, List<GffStruct> allStructs, List<GffField> allFields, List<string> allLabels, List<byte> fieldData)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, "🔧 DYNAMIC PARAMETER CREATION: Collecting all ConditionParams from parsed dialog");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? DYNAMIC PARAMETER CREATION: Collecting all ConditionParams from parsed dialog");
 
             // Collect all unique ConditionParams from the entire dialog
             var uniqueConditionParams = new Dictionary<string, string>();
@@ -1091,7 +1092,7 @@ namespace DialogEditor.Parsers
                 }
             }
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 CONDITION PARAMS ANALYSIS:");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CONDITION PARAMS ANALYSIS:");
             UnifiedLogger.LogParser(LogLevel.TRACE, $"   Total ConditionParams references: {totalConditionParamsCount}");
             UnifiedLogger.LogParser(LogLevel.TRACE, $"   Unique ConditionParams found: {uniqueConditionParams.Count}");
 
@@ -1108,7 +1109,7 @@ namespace DialogEditor.Parsers
 
                 var paramStruct = new GffStruct
                 {
-                    Type = 0, // 🔧 AURORA FIX: All structs use Type 0 (except root)
+                    Type = 0, // ?? AURORA FIX: All structs use Type 0 (except root)
                     DataOrDataOffset = currentFieldIndex * 4, // Point to where parameter fields will be created
                     FieldCount = 2 // Key + Value fields
                 };
@@ -1121,7 +1122,7 @@ namespace DialogEditor.Parsers
                 UnifiedLogger.LogParser(LogLevel.TRACE, $"   Created parameter struct[{allStructs.Count - 1}] Type={structTypeCounter - 1} for {key}={value}");
             }
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 DYNAMIC PARAMETER CREATION: Created {uniqueConditionParams.Count} parameter structs, total structs now: {allStructs.Count}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DYNAMIC PARAMETER CREATION: Created {uniqueConditionParams.Count} parameter structs, total structs now: {allStructs.Count}");
         }
 
         /// <summary>
@@ -1139,7 +1140,7 @@ namespace DialogEditor.Parsers
             uint startWrapperFieldStartIndex,
             Dictionary<int, List<int>> pointerConditionParamsMapping)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 POINTER PARAMETER CREATION: Creating parameter structs for pointer ConditionParams");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? POINTER PARAMETER CREATION: Creating parameter structs for pointer ConditionParams");
 
             uint structTypeCounter = (uint)allStructs.Count; // Continue from existing struct types
             uint currentFieldIndex = (uint)allFields.Count;
@@ -1162,7 +1163,7 @@ namespace DialogEditor.Parsers
                         // Create parameter struct
                         var paramStruct = new GffStruct
                         {
-                            Type = 0, // 🔧 AURORA FIX: All structs use Type 0 (except root)
+                            Type = 0, // ?? AURORA FIX: All structs use Type 0 (except root)
                             DataOrDataOffset = currentFieldIndex * 4,
                             FieldCount = 2 // Key + Value
                         };
@@ -1202,7 +1203,7 @@ namespace DialogEditor.Parsers
                             // Create parameter struct
                             var paramStruct = new GffStruct
                             {
-                                Type = 0, // 🔧 AURORA FIX: All structs use Type 0 (except root)
+                                Type = 0, // ?? AURORA FIX: All structs use Type 0 (except root)
                                 DataOrDataOffset = currentFieldIndex * 4,
                                 FieldCount = 2 // Key + Value
                             };
@@ -1243,7 +1244,7 @@ namespace DialogEditor.Parsers
                             // Create parameter struct
                             var paramStruct = new GffStruct
                             {
-                                Type = 0, // 🔧 AURORA FIX: All structs use Type 0 (except root)
+                                Type = 0, // ?? AURORA FIX: All structs use Type 0 (except root)
                                 DataOrDataOffset = currentFieldIndex * 4,
                                 FieldCount = 2 // Key + Value
                             };
@@ -1265,7 +1266,7 @@ namespace DialogEditor.Parsers
                 }
             }
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 POINTER PARAMETER CREATION: Created parameter structs for {pointerConditionParamsMapping.Count} pointers, total structs now: {allStructs.Count}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? POINTER PARAMETER CREATION: Created parameter structs for {pointerConditionParamsMapping.Count} pointers, total structs now: {allStructs.Count}");
         }
 
         /// <summary>
@@ -1284,7 +1285,7 @@ namespace DialogEditor.Parsers
             List<int> replyStructIndices,
             Dictionary<int, List<int>> nodeActionParamsMapping)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 NODE PARAMETER CREATION: Creating parameter structs for node ActionParams");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? NODE PARAMETER CREATION: Creating parameter structs for node ActionParams");
 
             uint structTypeCounter = (uint)allStructs.Count; // Continue from existing struct types
             uint currentFieldIndex = (uint)allFields.Count;
@@ -1307,7 +1308,7 @@ namespace DialogEditor.Parsers
                         // Create parameter struct
                         var paramStruct = new GffStruct
                         {
-                            Type = 0, // 🔧 AURORA FIX: All structs use Type 0 (except root)
+                            Type = 0, // ?? AURORA FIX: All structs use Type 0 (except root)
                             DataOrDataOffset = currentFieldIndex * 4,
                             FieldCount = 2 // Key + Value
                         };
@@ -1321,7 +1322,7 @@ namespace DialogEditor.Parsers
                         UnifiedLogger.LogParser(LogLevel.DEBUG, $"Entry[{entryIdx}] ActionParams: Created param struct[{allStructs.Count - 1}] for {kvp.Key}={kvp.Value}");
                     }
 
-                    // 🔧 KEY FIX: Use GFF struct index, not Dialog node index
+                    // ?? KEY FIX: Use GFF struct index, not Dialog node index
                     // Write loop iterates by GFF struct order, so use struct index from tracking list
                     int structIdx = entryStructIndices[entryIdx];
                     nodeActionParamsMapping[structIdx] = paramStructIndices;
@@ -1349,7 +1350,7 @@ namespace DialogEditor.Parsers
                         // Create parameter struct
                         var paramStruct = new GffStruct
                         {
-                            Type = 0, // 🔧 AURORA FIX: All structs use Type 0 (except root)
+                            Type = 0, // ?? AURORA FIX: All structs use Type 0 (except root)
                             DataOrDataOffset = currentFieldIndex * 4,
                             FieldCount = 2 // Key + Value
                         };
@@ -1363,7 +1364,7 @@ namespace DialogEditor.Parsers
                         UnifiedLogger.LogParser(LogLevel.DEBUG, $"Reply[{replyIdx}] ActionParams: Created param struct[{allStructs.Count - 1}] for {kvp.Key}={kvp.Value}");
                     }
 
-                    // 🔧 KEY FIX: Use GFF struct index, not Dialog node index
+                    // ?? KEY FIX: Use GFF struct index, not Dialog node index
                     // Write loop iterates by GFF struct order, so use struct index from tracking list
                     int structIdx = replyStructIndices[replyIdx];
                     nodeActionParamsMapping[structIdx] = paramStructIndices;
@@ -1373,14 +1374,14 @@ namespace DialogEditor.Parsers
                 replyFieldIndex += 10; // Move to next reply's fields (10 fields per reply)
             }
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 NODE PARAMETER CREATION: Created parameter structs for {nodeActionParamsMapping.Count} nodes, total structs now: {allStructs.Count}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? NODE PARAMETER CREATION: Created parameter structs for {nodeActionParamsMapping.Count} nodes, total structs now: {allStructs.Count}");
         }
 
         private void CreateParameterStructs(List<GffStruct> allStructs, List<GffField> allFields, List<string> allLabels, List<byte> fieldData)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🎯 AURORA FIX: Creating parameter STRUCTS to reach 29 total structs (current: {allStructs.Count})");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? AURORA FIX: Creating parameter STRUCTS to reach 29 total structs (current: {allStructs.Count})");
 
-            // 🎯 Create 6 additional parameter-related structs to match GFF's 29 total
+            // ?? Create 6 additional parameter-related structs to match GFF's 29 total
             // Based on GFF analysis, these are likely condition/parameter evaluation structs
 
             // Parameter struct set 1: she_gone conditions
@@ -1395,7 +1396,7 @@ namespace DialogEditor.Parsers
             CreateParameterStruct(allStructs, allFields, allLabels, fieldData, "starting_cond", "FALSE", 9);
             CreateParameterStruct(allStructs, allFields, allLabels, fieldData, "starting_cond_eval", "TRUE", 10);
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🎯 AURORA COMPATIBILITY: Added 6 parameter structs, now have {allStructs.Count} total structs (target: 29)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? AURORA COMPATIBILITY: Added 6 parameter structs, now have {allStructs.Count} total structs (target: 29)");
         }
 
         private void CreateParameterStruct(List<GffStruct> allStructs, List<GffField> allFields, List<string> allLabels, List<byte> fieldData, string key, string value, uint structType)
@@ -1412,15 +1413,15 @@ namespace DialogEditor.Parsers
             // Create parameter fields
             AddParameterKeyValueFields(allFields, allLabels, fieldData, key, value);
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🎯 Created parameter struct Type={structType} for {key}={value}, struct index {allStructs.Count - 1}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Created parameter struct Type={structType} for {key}={value}, struct index {allStructs.Count - 1}");
         }
 
         private void CreateStartStructsAtEnd(Dialog dialog, List<GffStruct> allStructs, List<int> startStructIndices)
         {
-            // 🎯 AURORA FIX: Create start structs at END to match GFF indices (26,27,28 out of 29 total)
+            // ?? AURORA FIX: Create start structs at END to match GFF indices (26,27,28 out of 29 total)
             // This ensures starts get the proper high indices Expected
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Creating start structs at end for index compatibility (current count: {allStructs.Count})");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Creating start structs at end for index compatibility (current count: {allStructs.Count})");
 
             uint startTypeCounter = 0;
 
@@ -1436,10 +1437,10 @@ namespace DialogEditor.Parsers
                 startStructIndices.Add(allStructs.Count); // Track position BEFORE adding
                 allStructs.Add(startStruct);
 
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Created start struct[{i}] at index {allStructs.Count - 1} (type {startStruct.Type})");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Created start struct[{i}] at index {allStructs.Count - 1} (type {startStruct.Type})");
             }
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Start structs created at indices: [{string.Join(", ", startStructIndices)}] (Expected 26,27,28)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Start structs created at indices: [{string.Join(", ", startStructIndices)}] (Expected 26,27,28)");
         }
         
         private void AddParameterKeyValueFields(List<GffField> allFields, List<string> allLabels, List<byte> fieldData, string key, string value)
@@ -1451,7 +1452,7 @@ namespace DialogEditor.Parsers
             var keyBytes = System.Text.Encoding.UTF8.GetBytes(key);
             fieldData.AddRange(BitConverter.GetBytes((uint)keyBytes.Length)); // Length prefix
             fieldData.AddRange(keyBytes); // String data
-            // 🔧 PADDING FIX (2025-10-24): Add 4-byte alignment padding like all other CExoString fields
+            // ?? PADDING FIX (2025-10-24): Add 4-byte alignment padding like all other CExoString fields
             while (fieldData.Count % 4 != 0) fieldData.Add(0);
             AddLabelAndField(allFields, allLabels, "Key", GffField.CExoString, keyOffset);
 
@@ -1460,12 +1461,12 @@ namespace DialogEditor.Parsers
             var valueBytes = System.Text.Encoding.UTF8.GetBytes(value);
             fieldData.AddRange(BitConverter.GetBytes((uint)valueBytes.Length)); // Length prefix
             fieldData.AddRange(valueBytes); // String data
-            // 🔧 PADDING FIX (2025-10-24): Add 4-byte alignment padding like all other CExoString fields
+            // ?? PADDING FIX (2025-10-24): Add 4-byte alignment padding like all other CExoString fields
             while (fieldData.Count % 4 != 0) fieldData.Add(0);
             AddLabelAndField(allFields, allLabels, "Value", GffField.CExoString, valueOffset);
 
             int bytesAdded = fieldData.Count - beforeSize;
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔍 AddParameterKeyValueFields: '{key}'='{value}' added {bytesAdded} bytes (before={beforeSize}, after={fieldData.Count})");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"?? AddParameterKeyValueFields: '{key}'='{value}' added {bytesAdded} bytes (before={beforeSize}, after={fieldData.Count})");
         }
 
         private uint CalculateFieldDataOffset(List<GffStruct> allStructs, List<GffField> allFields, List<string> allLabels)
@@ -1514,25 +1515,25 @@ namespace DialogEditor.Parsers
             Array.Copy(versionSrc, 0, versionBytes, 0, Math.Min(4, versionSrc.Length));
             writer.Write(versionBytes); // Exactly 4 bytes: "V3.2" padded with nulls from "V3.28"
 
-            // 🎯 GFF PATTERN IMPLEMENTATION - Calculate ALL offsets before writing header
+            // ?? GFF PATTERN IMPLEMENTATION - Calculate ALL offsets before writing header
             uint fieldIndicesOffset = fieldDataOffset + (uint)fieldData.Count;
             uint fieldCount = CalculateActualFieldIndicesCount(allFields); // Returns field count
             uint fieldIndicesBytes = fieldCount * 4; // Convert to bytes: 441 * 4 = 1764 bytes
             uint listIndicesOffset = fieldIndicesOffset + fieldIndicesBytes;
-            // 🔧 CRITICAL FIX (2025-10-22): Use actual list data size, not fantasy calculation
+            // ?? CRITICAL FIX (2025-10-22): Use actual list data size, not fantasy calculation
             // CalculateListIndicesCount was using magic numbers causing 74-byte file truncation
-            // 🔧 PARAMETER FIX (2025-10-24): Include actual parameter struct indices in calculation
+            // ?? PARAMETER FIX (2025-10-24): Include actual parameter struct indices in calculation
             uint listIndicesCount = dialog != null ? CalculateListDataSize(dialog, pointerConditionParamsMapping, nodeActionParamsMapping) : 0;
 
-            // 🎯 CRITICAL FIX: Calculate complete buffer size for validation
+            // ?? CRITICAL FIX: Calculate complete buffer size for validation
             // NOTE: Use CalculateListDataSize for accurate byte count (not CalculateListIndicesCount * 4)
-            // 🔧 PARAMETER FIX (2025-10-24): Include actual parameter mappings in size calculation
+            // ?? PARAMETER FIX (2025-10-24): Include actual parameter mappings in size calculation
             uint fieldIndicesSize = fieldIndicesBytes;
             uint listDataSize = dialog != null ? CalculateListDataSize(dialog, pointerConditionParamsMapping, nodeActionParamsMapping) : 0;
             uint totalBufferSize = fieldDataOffset + (uint)fieldData.Count + fieldIndicesSize + listDataSize;
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Complete buffer size: fieldData={fieldData.Count}, fieldIndices={fieldIndicesSize}, listData={listDataSize}, total={totalBufferSize} bytes");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Complete buffer size: fieldData={fieldData.Count}, fieldIndices={fieldIndicesSize}, listData={listDataSize}, total={totalBufferSize} bytes");
 
-            // 📐 ARCHITECTURE FIX (2025-10-24): Disabled old offset patching - we now use pre-calculated offsets
+            // ?? ARCHITECTURE FIX (2025-10-24): Disabled old offset patching - we now use pre-calculated offsets
             // All list field offsets are set correctly during field creation via offsetMap
             // FixListFieldOffsets and UpdateListFieldOffsets are obsolete with pre-calculation architecture
             // if (dialog != null)
@@ -1541,7 +1542,7 @@ namespace DialogEditor.Parsers
             //     UpdateListFieldOffsets(allFields, allLabels, listIndicesOffset, allStructs, dialog);
             // }
 
-            // 🔧 CRITICAL FIX: Write ALL 12 header values in correct GFF format
+            // ?? CRITICAL FIX: Write ALL 12 header values in correct GFF format
             writer.Write(structOffset);
             writer.Write((uint)allStructs.Count);
             writer.Write(fieldOffset);
@@ -1556,32 +1557,32 @@ namespace DialogEditor.Parsers
             writer.Write(listIndicesCount);
 
             // Write struct array
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔧 Writing {allStructs.Count} structs:");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"?? Writing {allStructs.Count} structs:");
             for (int i = 0; i < allStructs.Count; i++)
             {
                 var gffStruct = allStructs[i];
-                UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔧 Struct[{i}]: Type={gffStruct.Type}, DataOrDataOffset={gffStruct.DataOrDataOffset}, FieldCount={gffStruct.FieldCount}");
+                UnifiedLogger.LogParser(LogLevel.DEBUG, $"?? Struct[{i}]: Type={gffStruct.Type}, DataOrDataOffset={gffStruct.DataOrDataOffset}, FieldCount={gffStruct.FieldCount}");
                 writer.Write(gffStruct.Type);
                 writer.Write(gffStruct.DataOrDataOffset);
                 writer.Write(gffStruct.FieldCount);
             }
 
             // Write field array
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Writing {allFields.Count} fields to binary:");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing {allFields.Count} fields to binary:");
             for (int i = 0; i < allFields.Count; i++)
             {
                 var field = allFields[i];
                 if (i < 10) // Debug first 10 fields
                 {
-                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Field[{i}]: Label='{field.Label}', Type={field.Type}, LabelIndex={field.LabelIndex}, Offset={field.DataOrDataOffset}");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Field[{i}]: Label='{field.Label}', Type={field.Type}, LabelIndex={field.LabelIndex}, Offset={field.DataOrDataOffset}");
                 }
                 if (field.Label == "StartingList" || field.Label == "EntryList")
                 {
-                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 WRITING {field.Label} field: LabelIndex={field.LabelIndex}, DataOrDataOffset={field.DataOrDataOffset} (0x{field.DataOrDataOffset:X8})");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"?? WRITING {field.Label} field: LabelIndex={field.LabelIndex}, DataOrDataOffset={field.DataOrDataOffset} (0x{field.DataOrDataOffset:X8})");
                 }
                 if (field.Label == "Animation" && i < 20) // Log first few Animation fields
                 {
-                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 WRITE Field[{i}]: Label='Animation', Type={field.Type} (DWORD={GffField.DWORD}, FLOAT={GffField.FLOAT}), DataOrDataOffset={field.DataOrDataOffset}");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"?? WRITE Field[{i}]: Label='Animation', Type={field.Type} (DWORD={GffField.DWORD}, FLOAT={GffField.FLOAT}), DataOrDataOffset={field.DataOrDataOffset}");
                 }
                 writer.Write(field.Type);
                 writer.Write(field.LabelIndex); // Use LabelIndex directly instead of looking up Label
@@ -1589,18 +1590,18 @@ namespace DialogEditor.Parsers
 
                 if (field.Label == "StartingList" || field.Label == "EntryList")
                 {
-                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 BINARY WRITE: Field[{i}] {field.Label} wrote LabelIndex={field.LabelIndex} to binary");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"?? BINARY WRITE: Field[{i}] {field.Label} wrote LabelIndex={field.LabelIndex} to binary");
                 }
             }
             
             // Write label array (GFF format: 16-byte fixed format)
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Writing {allLabels.Count} labels:");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing {allLabels.Count} labels:");
             for (int i = 0; i < allLabels.Count; i++)
             {
                 var label = allLabels[i];
                 if (label == "EntryList" || label == "StartingList")
                 {
-                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Label[{i}]: '{label}'");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Label[{i}]: '{label}'");
                 }
                 var labelData = new byte[16]; // Always exactly 16 bytes
                 var labelBytes = System.Text.Encoding.ASCII.GetBytes(label);
@@ -1610,15 +1611,15 @@ namespace DialogEditor.Parsers
             }
             
             // Write field data
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 Writing FieldData section: {fieldData.Count} bytes");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing FieldData section: {fieldData.Count} bytes");
             if (fieldData.Count >= 4)
             {
                 uint first4Bytes = BitConverter.ToUInt32(fieldData.ToArray(), 0);
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 First 4 bytes of FieldData: 0x{first4Bytes:X8} ({first4Bytes})");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? First 4 bytes of FieldData: 0x{first4Bytes:X8} ({first4Bytes})");
             }
             writer.Write(fieldData.ToArray());
 
-            // 🎯 FIELD INDICES IMPLEMENTATION
+            // ?? FIELD INDICES IMPLEMENTATION
             WriteFieldIndices(writer, allFields);
             
             // Write the list indices section AND list data
@@ -1638,13 +1639,13 @@ namespace DialogEditor.Parsers
             uint replyListRelativeOffset = 4 + (uint)dialog.Entries.Count * 4; // After entry count + indices
             uint startListRelativeOffset = replyListRelativeOffset + 4 + (uint)dialog.Replies.Count * 4; // After reply count + indices
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 FixListFieldOffsets DEBUG: dialog.Entries.Count={dialog.Entries.Count}, dialog.Replies.Count={dialog.Replies.Count}");
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 FixListFieldOffsets calculation steps:");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? FixListFieldOffsets DEBUG: dialog.Entries.Count={dialog.Entries.Count}, dialog.Replies.Count={dialog.Replies.Count}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? FixListFieldOffsets calculation steps:");
             UnifiedLogger.LogParser(LogLevel.TRACE, $"    entryListRelativeOffset = 0");
             UnifiedLogger.LogParser(LogLevel.TRACE, $"    replyListRelativeOffset = 4 + {dialog.Entries.Count} * 4 = {replyListRelativeOffset}");
             UnifiedLogger.LogParser(LogLevel.TRACE, $"    startListRelativeOffset = {replyListRelativeOffset} + 4 + {dialog.Replies.Count} * 4 = {startListRelativeOffset}");
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔧 FixListFieldOffsets called: listIndicesOffset={listIndicesOffset}, totalFields={allFields.Count}");
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔧 Calculated RELATIVE offsets: Entry={entryListRelativeOffset}, Reply={replyListRelativeOffset}, Start={startListRelativeOffset}");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"?? FixListFieldOffsets called: listIndicesOffset={listIndicesOffset}, totalFields={allFields.Count}");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"?? Calculated RELATIVE offsets: Entry={entryListRelativeOffset}, Reply={replyListRelativeOffset}, Start={startListRelativeOffset}");
 
             // Find and update the list fields with correct RELATIVE offsets from ListIndicesOffset
             int placeholderCount = 0;
@@ -1655,31 +1656,31 @@ namespace DialogEditor.Parsers
                     placeholderCount++;
                     if (field.Label == "EntryList")
                     {
-                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 BEFORE: EntryList field DataOrDataOffset = {field.DataOrDataOffset}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"?? BEFORE: EntryList field DataOrDataOffset = {field.DataOrDataOffset}");
                         field.DataOrDataOffset = entryListRelativeOffset;
-                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 AFTER: EntryList field DataOrDataOffset = {field.DataOrDataOffset}");
-                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Fixed EntryList field offset: {entryListRelativeOffset} (relative to {listIndicesOffset}) - will read from {listIndicesOffset + entryListRelativeOffset}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"?? AFTER: EntryList field DataOrDataOffset = {field.DataOrDataOffset}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Fixed EntryList field offset: {entryListRelativeOffset} (relative to {listIndicesOffset}) - will read from {listIndicesOffset + entryListRelativeOffset}");
                     }
                     else if (field.Label == "ReplyList")
                     {
                         field.DataOrDataOffset = replyListRelativeOffset;
-                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Fixed ReplyList field offset: {replyListRelativeOffset} (relative to {listIndicesOffset}) - will read from {listIndicesOffset + replyListRelativeOffset}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Fixed ReplyList field offset: {replyListRelativeOffset} (relative to {listIndicesOffset}) - will read from {listIndicesOffset + replyListRelativeOffset}");
                     }
                     else if (field.Label == "StartingList")
                     {
-                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 BEFORE: StartingList field DataOrDataOffset = {field.DataOrDataOffset}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"?? BEFORE: StartingList field DataOrDataOffset = {field.DataOrDataOffset}");
                         field.DataOrDataOffset = startListRelativeOffset;
-                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 AFTER: StartingList field DataOrDataOffset = {field.DataOrDataOffset}");
-                        UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Fixed StartingList field offset: {startListRelativeOffset} (relative to {listIndicesOffset}) - will read from {listIndicesOffset + startListRelativeOffset}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"?? AFTER: StartingList field DataOrDataOffset = {field.DataOrDataOffset}");
+                        UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Fixed StartingList field offset: {startListRelativeOffset} (relative to {listIndicesOffset}) - will read from {listIndicesOffset + startListRelativeOffset}");
                     }
                 }
             }
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Found {placeholderCount} fields with placeholder value 0xFFFFFFFF");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Found {placeholderCount} fields with placeholder value 0xFFFFFFFF");
         }
 
         private uint CalculateListIndicesCount(List<GffStruct> allStructs, List<GffField> allFields, Dialog dialog)
         {
-            // 🎯 AURORA COMPLEX LIST CALCULATION: Based on analysis of dlg_shady_vendor.dlg (260 indices)
+            // ?? AURORA COMPLEX LIST CALCULATION: Based on analysis of dlg_shady_vendor.dlg (260 indices)
 
             // Root lists: EntryList, ReplyList, StartingList
             int entryCount = CountEntryStructs(allStructs);
@@ -1699,7 +1700,7 @@ namespace DialogEditor.Parsers
                 basicNodeLists += 1 + (uint)reply.Pointers.Count; // count + indices
             }
 
-            // 🎯 AURORA COMPLEX NESTED STRUCTURES: Based on Section[8] (Count=12) and Section[10] (Count=16)
+            // ?? AURORA COMPLEX NESTED STRUCTURES: Based on Section[8] (Count=12) and Section[10] (Count=16)
             // GFF creates complex nested pointer field arrays for conversation flow
 
             // Complex pointer field arrays (GFF creates detailed interaction mappings)
@@ -1723,7 +1724,7 @@ namespace DialogEditor.Parsers
                 }
             }
 
-            // 🎯 AURORA FIELD INDEX MAPPINGS: Complex field-to-struct mapping patterns
+            // ?? AURORA FIELD INDEX MAPPINGS: Complex field-to-struct mapping patterns
             // GFF creates extensive field index arrays (Section[8] Count=12, Section[10] Count=16)
             uint fieldMappingArrays = (uint)(allFields.Count / 2.5); // Increased GFF's field mapping ratio
 
@@ -1732,7 +1733,7 @@ namespace DialogEditor.Parsers
 
             uint totalCalculated = rootListSize + basicNodeLists + complexPointerArrays + fieldMappingArrays + auroraSpecificStructures;
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 List calculation: root={rootListSize}, basic={basicNodeLists}, complex={complexPointerArrays}, fields={fieldMappingArrays}, aurora={auroraSpecificStructures}, total={totalCalculated}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? List calculation: root={rootListSize}, basic={basicNodeLists}, complex={complexPointerArrays}, fields={fieldMappingArrays}, aurora={auroraSpecificStructures}, total={totalCalculated}");
 
             return totalCalculated;
         }
@@ -1755,7 +1756,7 @@ namespace DialogEditor.Parsers
             totalDataSize += 4 + (startCount * 4); // 4 bytes for count + 4 bytes per start
 
             // Individual pointer lists for each entry/reply - ALWAYS write count field (GFF GFF requirement)
-            // 🎯 CRITICAL FIX: Use deduplication logic matching WriteListIndices
+            // ?? CRITICAL FIX: Use deduplication logic matching WriteListIndices
             foreach (var entry in dialog.Entries)
             {
                 if (entry.Pointers.Count > 0)
@@ -1776,7 +1777,7 @@ namespace DialogEditor.Parsers
                 totalDataSize += 4 + ((uint)reply.Pointers.Count * 4); // count + indices
             }
 
-            // 🔧 PARAMETER FIX (2025-10-24): Calculate ACTUAL ActionParams list sizes using nodeActionParamsMapping
+            // ?? PARAMETER FIX (2025-10-24): Calculate ACTUAL ActionParams list sizes using nodeActionParamsMapping
             // If mapping provided, use actual parameter counts; otherwise assume empty (backward compat)
             if (nodeActionParamsMapping != null)
             {
@@ -1815,17 +1816,17 @@ namespace DialogEditor.Parsers
                 }
 
                 totalDataSize += actionParamsBytes;
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 ActionParams lists: {actionParamsBytes} bytes (with actual parameters)");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? ActionParams lists: {actionParamsBytes} bytes (with actual parameters)");
             }
             else
             {
                 // Fallback: assume all empty
                 uint actionParamsLists = entryCount + replyCount;
                 totalDataSize += actionParamsLists * 4;
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 ActionParams lists: {actionParamsLists} nodes × 4 bytes = {actionParamsLists * 4} bytes");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? ActionParams lists: {actionParamsLists} nodes � 4 bytes = {actionParamsLists * 4} bytes");
             }
 
-            // 🔧 PARAMETER FIX (2025-10-24): Calculate ACTUAL ConditionParams list sizes
+            // ?? PARAMETER FIX (2025-10-24): Calculate ACTUAL ConditionParams list sizes
             if (pointerConditionParamsMapping != null)
             {
                 uint conditionParamsBytes = 0;
@@ -1876,13 +1877,13 @@ namespace DialogEditor.Parsers
                 }
 
                 totalDataSize += conditionParamsBytes;
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 ConditionParams lists: {conditionParamsBytes} bytes (with actual parameters)");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? ConditionParams lists: {conditionParamsBytes} bytes (with actual parameters)");
             }
             else
             {
                 // Fallback: just start wrappers with empty ConditionParams
                 totalDataSize += startCount * 4;
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 ConditionParams lists (Starts): {startCount} × 4 bytes = {startCount * 4} bytes");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? ConditionParams lists (Starts): {startCount} � 4 bytes = {startCount * 4} bytes");
             }
 
             return totalDataSize;
@@ -1890,29 +1891,29 @@ namespace DialogEditor.Parsers
 
         private uint CalculateActualFieldIndicesCount(List<GffField> allFields)
         {
-            // 🔧 BUG FIX (2025-10-18): Return FIELD count, not index count. Caller multiplies by 4 for field indices.
-            // Previous bug: returned fields*4, caller multiplied by 4 again → 16:1 ratio (4x bloat)
+            // ?? BUG FIX (2025-10-18): Return FIELD count, not index count. Caller multiplies by 4 for field indices.
+            // Previous bug: returned fields*4, caller multiplied by 4 again ? 16:1 ratio (4x bloat)
             uint totalFields = (uint)allFields.Count;
 
             UnifiedLogger.LogParser(LogLevel.DEBUG,
-                $"4:1 Field Indexing: {totalFields} fields → will write {totalFields * 4} indices");
+                $"4:1 Field Indexing: {totalFields} fields ? will write {totalFields * 4} indices");
 
             return totalFields; // Caller multiplies by 4 to get byte count (fields * 4 bytes per index)
         }
         
         private void WriteFieldIndices(BinaryWriter writer, List<GffField> allFields)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, "🔧 Writing complex field index mapping pattern");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Writing complex field index mapping pattern");
 
             uint fieldCount = (uint)allFields.Count;
             uint totalIndicesWritten = 0;
 
-            // 🎯 AURORA BREAKTHROUGH: GFF uses complex field index mapping, not simple 4:1
+            // ?? AURORA BREAKTHROUGH: GFF uses complex field index mapping, not simple 4:1
             // Analysis shows pattern: [0,1,2,3,4,5,6, 83, 167, 7,8,9,10,11...]
             // Where 83 and 167 are likely EntryList and ReplyList field indices
             // This explains why GFF has 708 indices but only 242 fit in file
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Writing complex field mapping for {fieldCount} fields");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing complex field mapping for {fieldCount} fields");
 
             // Write GFF's complex root struct field mapping
             WriteAuroraRootStructIndices(writer, allFields, ref totalIndicesWritten);
@@ -1920,12 +1921,12 @@ namespace DialogEditor.Parsers
             // Write remaining field indices for other structs
             WriteRemainingStructIndices(writer, allFields, ref totalIndicesWritten);
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Field Indices: Wrote {totalIndicesWritten} field indices for {fieldCount} fields");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Field Indices: Wrote {totalIndicesWritten} field indices for {fieldCount} fields");
         }
 
         private void WriteAuroraRootStructIndices(BinaryWriter writer, List<GffField> allFields, ref uint totalIndicesWritten)
         {
-            // 🎯 AURORA PATTERN: Root struct field mapping follows specific pattern
+            // ?? AURORA PATTERN: Root struct field mapping follows specific pattern
             // [0,1,2,3,4,5,6, EntryListIndex, ReplyListIndex, 7,8,StartingListIndex]
             // Based on analysis: [0,1,2,3,4,5,6, 83, 167, 7,8,9...]
 
@@ -1934,7 +1935,7 @@ namespace DialogEditor.Parsers
             int replyListIndex = FindFieldIndex(allFields, "ReplyList");
             int startingListIndex = FindFieldIndex(allFields, "StartingList");
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 List field indices: EntryList={entryListIndex}, ReplyList={replyListIndex}, StartingList={startingListIndex}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? List field indices: EntryList={entryListIndex}, ReplyList={replyListIndex}, StartingList={startingListIndex}");
 
             // Write GFF's root struct pattern - SIMPLE SEQUENTIAL INDICES
             // Root fields: DelayEntry(0), DelayReply(1), EndConverAbort(2), EndConversation(3), EntryList(4), NumWords(5), PreventZoomIn(6), ReplyList(7), StartingList(8)
@@ -1948,7 +1949,7 @@ namespace DialogEditor.Parsers
             writer.Write((uint)7); // ReplyList
             writer.Write((uint)8); // StartingList
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Wrote Root struct indices with simple sequential mapping [0,1,2,3,4,5,6,7,8]");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Wrote Root struct indices with simple sequential mapping [0,1,2,3,4,5,6,7,8]");
 
             totalIndicesWritten += 9; // Root struct has 9 fields
         }
@@ -1964,13 +1965,13 @@ namespace DialogEditor.Parsers
                 totalIndicesWritten++;
             }
 
-            // 🔧 CRITICAL FIX (2025-10-22): GFF's FieldIndices is 1:1 ratio (1 DWORD per field), NOT 4:1!
+            // ?? CRITICAL FIX (2025-10-22): GFF's FieldIndices is 1:1 ratio (1 DWORD per field), NOT 4:1!
             // Previous code wrote fieldCount * 4 indices causing massive bloat (1000+ bytes) at EOF
             // This caused 18-second in-game load hangs as engine scanned bloated indices
             // FIX: Removed 4:1 padding loop - FieldIndices should contain exactly fieldCount indices
 
             UnifiedLogger.LogParser(LogLevel.TRACE,
-                $"🔧 Field Indices: Wrote {totalIndicesWritten} field indices for {fieldCount} fields (1:1 ratio - FIXED)");
+                $"?? Field Indices: Wrote {totalIndicesWritten} field indices for {fieldCount} fields (1:1 ratio - FIXED)");
         }
 
         private int FindFieldIndex(List<GffField> allFields, string labelName)
@@ -1987,62 +1988,62 @@ namespace DialogEditor.Parsers
 
         private void WriteListIndices(BinaryWriter writer, List<GffStruct> allStructs, List<GffField> allFields, Dialog dialog, List<int> entryStructIndices, List<int> replyStructIndices, List<int> startStructIndices, List<List<int>> entryPointerStructIndices, List<List<int>> replyPointerStructIndices, uint listIndicesOffset, Dictionary<int, List<int>> pointerConditionParamsMapping, Dictionary<int, List<int>> nodeActionParamsMapping)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, "🔧 Writing list indices pattern (conversation flow)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Writing list indices pattern (conversation flow)");
 
-            // 🔧 CRITICAL FIX: Seek to the correct ListIndicesOffset before writing list data
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 SEEKING to ListIndicesOffset {listIndicesOffset} (current position: {writer.BaseStream.Position})");
+            // ?? CRITICAL FIX: Seek to the correct ListIndicesOffset before writing list data
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? SEEKING to ListIndicesOffset {listIndicesOffset} (current position: {writer.BaseStream.Position})");
             writer.BaseStream.Seek(listIndicesOffset, SeekOrigin.Begin);
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 POSITIONED at {writer.BaseStream.Position} for list data write");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? POSITIONED at {writer.BaseStream.Position} for list data write");
 
-            // 🔍 DIAGNOSTIC: Track actual write positions vs pre-calculated offsets
+            // ?? DIAGNOSTIC: Track actual write positions vs pre-calculated offsets
             uint relativePosition = 0; // Track offset relative to ListIndices start
 
-            // 🎯 CRITICAL FIX: Use actual dialog content counts, not struct scanning which can be confused by pointer structs
+            // ?? CRITICAL FIX: Use actual dialog content counts, not struct scanning which can be confused by pointer structs
             int entryCount = dialog.Entries.Count;
             int replyCount = dialog.Replies.Count;
             int startCount = dialog.Starts.Count;
 
-            // 🎯 CRITICAL FIX: Use tracked reply struct indices instead of searching
+            // ?? CRITICAL FIX: Use tracked reply struct indices instead of searching
             UnifiedLogger.LogParser(LogLevel.TRACE, $"Using tracked reply struct indices: [{string.Join(", ", replyStructIndices)}]");
 
-            // 🎯 CRITICAL FIX: Use tracked start struct indices instead of calculating
+            // ?? CRITICAL FIX: Use tracked start struct indices instead of calculating
             UnifiedLogger.LogParser(LogLevel.TRACE, $"Using tracked start struct indices: [{string.Join(", ", startStructIndices)}]");
 
             // Write EntryList with GFF List format: count + indices
-            // 🔧 CRITICAL FIX: Use tracked Entry struct indices instead of hardcoded assumptions
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 POSITION DEBUG: About to write EntryList count at position {writer.BaseStream.Position}");
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: EntryList write starting at relative offset {relativePosition}");
+            // ?? CRITICAL FIX: Use tracked Entry struct indices instead of hardcoded assumptions
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? POSITION DEBUG: About to write EntryList count at position {writer.BaseStream.Position}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: EntryList write starting at relative offset {relativePosition}");
             writer.Write((uint)entryCount); // Count first
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 Writing EntryList: count={entryCount} (TRACKED INDICES)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing EntryList: count={entryCount} (TRACKED INDICES)");
             for (int i = 0; i < entryCount; i++)
             {
-                var structIndex = entryStructIndices[i]; // 🔧 FIXED: Use actual tracked struct index
+                var structIndex = entryStructIndices[i]; // ?? FIXED: Use actual tracked struct index
                 var entryText = dialog.Entries[i].Text?.GetDefault()?.Substring(0, Math.Min(30, dialog.Entries[i].Text?.GetDefault()?.Length ?? 0)) ?? "empty";
                 writer.Write((uint)structIndex);
-                // UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 EntryList[{i}] → struct[{structIndex}] (Entry[{i}]: '{entryText}') - TRACKED INDEX");
+                // UnifiedLogger.LogParser(LogLevel.TRACE, $"?? EntryList[{i}] ? struct[{structIndex}] (Entry[{i}]: '{entryText}') - TRACKED INDEX");
             }
             relativePosition += 4 + ((uint)entryCount * 4);
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: EntryList complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: EntryList complete, relative position now {relativePosition}");
             
             // Write ReplyList with GFF List format: count + indices
-            // 🔧 ARCHITECTURAL FIX: Only write actual reply CONTENT structures, not pointers
+            // ?? ARCHITECTURAL FIX: Only write actual reply CONTENT structures, not pointers
             int actualReplyContentCount = Math.Min(dialog.Replies.Count, replyStructIndices.Count);
             writer.Write((uint)actualReplyContentCount); // Count first
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 Writing ReplyList: count={actualReplyContentCount} (CONTENT ONLY - pointers go to individual RepliesList fields)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing ReplyList: count={actualReplyContentCount} (CONTENT ONLY - pointers go to individual RepliesList fields)");
             for (int i = 0; i < actualReplyContentCount; i++)
             {
                 var structIndex = replyStructIndices[i];
                 writer.Write((uint)structIndex);
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 ReplyList[{i}] → struct[{structIndex}] (CONTENT: '{dialog.Replies[i].Text?.GetDefault() ?? ""}')");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? ReplyList[{i}] ? struct[{structIndex}] (CONTENT: '{dialog.Replies[i].Text?.GetDefault() ?? ""}')");
             }
             relativePosition += 4 + ((uint)actualReplyContentCount * 4);
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ReplyList complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ReplyList complete, relative position now {relativePosition}");
 
             // Write StartingList with GFF List format: count + indices
-            // 🔧 CRITICAL FIX: StartingList points to Start WRAPPER structs (Type 0/1/2 with Index, Active, ConditionParams)
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 CRITICAL DEBUG: dialog.Starts.Count={dialog.Starts.Count}, startStructIndices.Count={startStructIndices.Count}, startCount={startCount}");
+            // ?? CRITICAL FIX: StartingList points to Start WRAPPER structs (Type 0/1/2 with Index, Active, ConditionParams)
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CRITICAL DEBUG: dialog.Starts.Count={dialog.Starts.Count}, startStructIndices.Count={startStructIndices.Count}, startCount={startCount}");
             writer.Write((uint)startCount); // Count first
-            UnifiedLogger.LogParser(LogLevel.DEBUG, $"🔗 Writing StartingList: count={startCount}");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, $"?? Writing StartingList: count={startCount}");
             for (int i = 0; i < startCount; i++)
             {
                 // StartingList contains references to Start wrapper structs (NOT Entry content structs, NOT Type-4 pointers)
@@ -2050,29 +2051,29 @@ namespace DialogEditor.Parsers
                 {
                     var startWrapperStructIndex = startStructIndices[i];
                     writer.Write((uint)startWrapperStructIndex);
-                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔗 StartingList[{i}] → Start wrapper struct[{startWrapperStructIndex}] (points to Entry[{dialog.Starts[i].Index}])");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"?? StartingList[{i}] ? Start wrapper struct[{startWrapperStructIndex}] (points to Entry[{dialog.Starts[i].Index}])");
                 }
                 else
                 {
-                    UnifiedLogger.LogParser(LogLevel.ERROR, $"🔗 StartingList[{i}] → MISSING start wrapper struct (tracking failed)");
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"?? StartingList[{i}] ? MISSING start wrapper struct (tracking failed)");
                     writer.Write((uint)0); // Write root struct as fallback
                 }
             }
             relativePosition += 4 + ((uint)startCount * 4);
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: StartingList complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: StartingList complete, relative position now {relativePosition}");
 
             // Write individual pointer lists for each dialog node
-            UnifiedLogger.LogParser(LogLevel.DEBUG, "🔗 Writing individual pointer lists for conversation flow");
+            UnifiedLogger.LogParser(LogLevel.DEBUG, "?? Writing individual pointer lists for conversation flow");
 
             // Write RepliesList for each entry
-            // 🔧 ARCHITECTURAL FIX: Write direct reply indices instead of pointer structure references
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: RepliesList write starting at relative offset {relativePosition}");
+            // ?? ARCHITECTURAL FIX: Write direct reply indices instead of pointer structure references
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: RepliesList write starting at relative offset {relativePosition}");
             for (int entryIdx = 0; entryIdx < dialog.Entries.Count; entryIdx++)
             {
                 var entry = dialog.Entries[entryIdx];
 
                 // Write ALL pointers - don't deduplicate (Entry may have multiple pointers to same Reply with different conditions)
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Entry[{entryIdx}] writing {entry.Pointers.Count} pointer list entries");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Entry[{entryIdx}] writing {entry.Pointers.Count} pointer list entries");
 
                 if (entry.Pointers.Count > 0)
                 {
@@ -2080,14 +2081,14 @@ namespace DialogEditor.Parsers
                     relativePosition += 4;
                     for (int ptrIdx = 0; ptrIdx < entry.Pointers.Count; ptrIdx++)
                     {
-                        // 🔧 AURORA FORMAT: Write pointer struct index (RepliesList contains pointer structs)
+                        // ?? AURORA FORMAT: Write pointer struct index (RepliesList contains pointer structs)
                         if (entryIdx < entryPointerStructIndices.Count && ptrIdx < entryPointerStructIndices[entryIdx].Count)
                         {
                             var pointerStructIndex = entryPointerStructIndices[entryIdx][ptrIdx];
                             writer.Write((uint)pointerStructIndex);
                             relativePosition += 4;
                             UnifiedLogger.LogParser(LogLevel.TRACE,
-                                $"✅ Entry[{entryIdx}] RepliesList[{ptrIdx}] → pointer struct index {pointerStructIndex}");
+                                $"? Entry[{entryIdx}] RepliesList[{ptrIdx}] ? pointer struct index {pointerStructIndex}");
                         }
                         else
                         {
@@ -2096,7 +2097,7 @@ namespace DialogEditor.Parsers
                             writer.Write((uint)targetReplyIndex);
                             relativePosition += 4;
                             UnifiedLogger.LogParser(LogLevel.WARN,
-                                $"❌ Entry[{entryIdx}] RepliesList[{ptrIdx}] → FALLBACK direct reply index {targetReplyIndex} (tracking failed)");
+                                $"? Entry[{entryIdx}] RepliesList[{ptrIdx}] ? FALLBACK direct reply index {targetReplyIndex} (tracking failed)");
                         }
                     }
                 }
@@ -2109,10 +2110,10 @@ namespace DialogEditor.Parsers
                         $"Entry[{entryIdx}] has empty RepliesList (count=0)");
                 }
             }
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: RepliesList complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: RepliesList complete, relative position now {relativePosition}");
 
             // Write EntriesList for each reply
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: EntriesList write starting at relative offset {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: EntriesList write starting at relative offset {relativePosition}");
             for (int replyIdx = 0; replyIdx < dialog.Replies.Count; replyIdx++)
             {
                 var reply = dialog.Replies[replyIdx];
@@ -2122,14 +2123,14 @@ namespace DialogEditor.Parsers
                     relativePosition += 4;
                     for (int ptrIdx = 0; ptrIdx < reply.Pointers.Count; ptrIdx++)
                     {
-                        // 🔧 AURORA FORMAT: Write pointer struct index (EntriesList contains pointer structs)
+                        // ?? AURORA FORMAT: Write pointer struct index (EntriesList contains pointer structs)
                         if (replyIdx < replyPointerStructIndices.Count && ptrIdx < replyPointerStructIndices[replyIdx].Count)
                         {
                             var pointerStructIndex = replyPointerStructIndices[replyIdx][ptrIdx];
                             writer.Write((uint)pointerStructIndex);
                             relativePosition += 4;
                             UnifiedLogger.LogParser(LogLevel.TRACE,
-                                $"Reply[{replyIdx}] EntriesList[{ptrIdx}] → pointer struct index {pointerStructIndex}");
+                                $"Reply[{replyIdx}] EntriesList[{ptrIdx}] ? pointer struct index {pointerStructIndex}");
                         }
                         else
                         {
@@ -2138,7 +2139,7 @@ namespace DialogEditor.Parsers
                             writer.Write((uint)targetEntryIndex);
                             relativePosition += 4;
                             UnifiedLogger.LogParser(LogLevel.WARN,
-                                $"Reply[{replyIdx}] EntriesList[{ptrIdx}] → FALLBACK direct entry index {targetEntryIndex}");
+                                $"Reply[{replyIdx}] EntriesList[{ptrIdx}] ? FALLBACK direct entry index {targetEntryIndex}");
                         }
                     }
                 }
@@ -2151,9 +2152,9 @@ namespace DialogEditor.Parsers
                         $"Reply[{replyIdx}] has empty EntriesList (count=0)");
                 }
             }
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: EntriesList complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: EntriesList complete, relative position now {relativePosition}");
 
-            // 📐 ARCHITECTURE FIX (2025-10-24): Write ALL ConditionParams/ActionParams in EXACT order calculated by CalculateListIndicesOffsets
+            // ?? ARCHITECTURE FIX (2025-10-24): Write ALL ConditionParams/ActionParams in EXACT order calculated by CalculateListIndicesOffsets
             // CRITICAL: Write order must match calculation order for offsets to be correct
 
             // 6. ConditionParams for ALL pointers (entries + replies + starts) - matches calculation order
@@ -2164,8 +2165,8 @@ namespace DialogEditor.Parsers
             int conditionParamsIndex = 0;
 
             // Entry pointers - write count + struct indices
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Writing ConditionParams for entry pointers");
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ConditionParams (Entry pointers) write starting at relative offset {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing ConditionParams for entry pointers");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ConditionParams (Entry pointers) write starting at relative offset {relativePosition}");
             for (int entryIdx = 0; entryIdx < dialog.Entries.Count; entryIdx++)
             {
                 foreach (var ptr in dialog.Entries[entryIdx].Pointers)
@@ -2174,7 +2175,7 @@ namespace DialogEditor.Parsers
                     writer.Write((uint)paramCount);
                     relativePosition += 4;
 
-                    // 🔧 FIX: Write the parameter struct indices if params exist
+                    // ?? FIX: Write the parameter struct indices if params exist
                     if (paramCount > 0 && conditionParamsIndex < conditionParamsList.Count)
                     {
                         var structIndices = conditionParamsList[conditionParamsIndex];
@@ -2194,10 +2195,10 @@ namespace DialogEditor.Parsers
                     globalPointerIndex++;
                 }
             }
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ConditionParams (Entry pointers) complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ConditionParams (Entry pointers) complete, relative position now {relativePosition}");
 
             // Reply pointers - write count + struct indices
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Writing ConditionParams for reply pointers");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing ConditionParams for reply pointers");
             for (int replyIdx = 0; replyIdx < dialog.Replies.Count; replyIdx++)
             {
                 foreach (var ptr in dialog.Replies[replyIdx].Pointers)
@@ -2206,7 +2207,7 @@ namespace DialogEditor.Parsers
                     writer.Write((uint)paramCount);
                     relativePosition += 4;
 
-                    // 🔧 FIX: Write the parameter struct indices if params exist
+                    // ?? FIX: Write the parameter struct indices if params exist
                     if (paramCount > 0 && conditionParamsIndex < conditionParamsList.Count)
                     {
                         var structIndices = conditionParamsList[conditionParamsIndex];
@@ -2226,10 +2227,10 @@ namespace DialogEditor.Parsers
                     globalPointerIndex++;
                 }
             }
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ConditionParams (Reply pointers) complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ConditionParams (Reply pointers) complete, relative position now {relativePosition}");
 
             // Start wrappers - write count + struct indices
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Writing ConditionParams for {dialog.Starts.Count} start wrappers");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing ConditionParams for {dialog.Starts.Count} start wrappers");
             for (int startIdx = 0; startIdx < dialog.Starts.Count; startIdx++)
             {
                 var startPtr = dialog.Starts[startIdx];
@@ -2237,7 +2238,7 @@ namespace DialogEditor.Parsers
                 writer.Write((uint)paramCount);
                 relativePosition += 4;
 
-                // 🔧 FIX: Write the parameter struct indices if params exist
+                // ?? FIX: Write the parameter struct indices if params exist
                 if (paramCount > 0 && conditionParamsIndex < conditionParamsList.Count)
                 {
                     var structIndices = conditionParamsList[conditionParamsIndex];
@@ -2255,12 +2256,12 @@ namespace DialogEditor.Parsers
                     UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Start[{startIdx}] ConditionParams: count={paramCount} (empty)");
                 }
             }
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ConditionParams (Start pointers) complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ConditionParams (Start pointers) complete, relative position now {relativePosition}");
 
             // 7. ActionParams for ALL nodes (entries + replies) - must write in DIALOG order like ConditionParams!
-            // 🔧 FIX: Write in Dialog order (Entry[0..N], Reply[0..M]), but use GFF struct indices for lookup
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Writing ActionParams for {dialog.Entries.Count} entries");
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ActionParams (Entries) write starting at relative offset {relativePosition}");
+            // ?? FIX: Write in Dialog order (Entry[0..N], Reply[0..M]), but use GFF struct indices for lookup
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing ActionParams for {dialog.Entries.Count} entries");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ActionParams (Entries) write starting at relative offset {relativePosition}");
             for (int entryIdx = 0; entryIdx < dialog.Entries.Count; entryIdx++)
             {
                 int paramCount = dialog.Entries[entryIdx].ActionParams?.Count ?? 0;
@@ -2284,10 +2285,10 @@ namespace DialogEditor.Parsers
                     UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Entry[{entryIdx}] (GFF Struct[{gffStructIdx}]) ActionParams: count={paramCount} (empty) at relative offset {writeStartPos}");
                 }
             }
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ActionParams (Entries) complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ActionParams (Entries) complete, relative position now {relativePosition}");
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 Writing ActionParams for {dialog.Replies.Count} replies");
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ActionParams (Replies) write starting at relative offset {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Writing ActionParams for {dialog.Replies.Count} replies");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ActionParams (Replies) write starting at relative offset {relativePosition}");
             for (int replyIdx = 0; replyIdx < dialog.Replies.Count; replyIdx++)
             {
                 int paramCount = dialog.Replies[replyIdx].ActionParams?.Count ?? 0;
@@ -2311,10 +2312,10 @@ namespace DialogEditor.Parsers
                     UnifiedLogger.LogParser(LogLevel.DEBUG, $"   Reply[{replyIdx}] (GFF Struct[{gffStructIdx}]) ActionParams: count={paramCount} (empty) at relative offset {writeStartPos}");
                 }
             }
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 DIAGNOSTIC: ActionParams (Replies) complete, relative position now {relativePosition}");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? DIAGNOSTIC: ActionParams (Replies) complete, relative position now {relativePosition}");
 
             UnifiedLogger.LogParser(LogLevel.TRACE,
-                $"✅ ListIndices section complete at position {writer.BaseStream.Position}");
+                $"? ListIndices section complete at position {writer.BaseStream.Position}");
         }
         private int CountEntryStructs(List<GffStruct> allStructs)
         {
@@ -2354,22 +2355,22 @@ namespace DialogEditor.Parsers
         
         public byte[] CreateFullDlgBufferManual(Dialog dialog)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, "🔧 GFF WRITER: Building DLG buffer with reverse-engineered patterns");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? GFF WRITER: Building DLG buffer with reverse-engineered patterns");
             UnifiedLogger.LogParser(LogLevel.TRACE, "ENTERING CreateFullDlgBufferManual method");
             
             // Convert dialog to GFF structures and use GFF writer
-            UnifiedLogger.LogParser(LogLevel.TRACE, "🔥 ABOUT TO CALL ConvertDialogToGff");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? ABOUT TO CALL ConvertDialogToGff");
             (List<GffStruct> allStructs, List<GffField> allFields, List<string> allLabels, List<byte> fieldData, List<int> entryStructIndices, List<int> replyStructIndices, List<int> startStructIndices, List<List<int>> entryPointerStructIndices, List<List<int>> replyPointerStructIndices, Dictionary<int, List<int>> pointerConditionParamsMapping, Dictionary<int, List<int>> nodeActionParamsMapping) result;
             try
             {
                 result = ConvertDialogToGff(dialog);
-                UnifiedLogger.LogParser(LogLevel.TRACE, "🔥 ConvertDialogToGff COMPLETED SUCCESSFULLY");
+                UnifiedLogger.LogParser(LogLevel.TRACE, "?? ConvertDialogToGff COMPLETED SUCCESSFULLY");
             }
             catch (Exception ex)
             {
-                UnifiedLogger.LogParser(LogLevel.ERROR, $"🔥 ConvertDialogToGff FAILED: {ex.Message}");
-                UnifiedLogger.LogParser(LogLevel.ERROR, $"🔥 Exception Type: {ex.GetType().Name}");
-                UnifiedLogger.LogParser(LogLevel.ERROR, $"🔥 Stack trace: {ex.StackTrace}");
+                UnifiedLogger.LogParser(LogLevel.ERROR, $"?? ConvertDialogToGff FAILED: {ex.Message}");
+                UnifiedLogger.LogParser(LogLevel.ERROR, $"?? Exception Type: {ex.GetType().Name}");
+                UnifiedLogger.LogParser(LogLevel.ERROR, $"?? Stack trace: {ex.StackTrace}");
                 throw; // Re-throw to see the full error chain
             }
             var (allStructs, allFields, allLabels, fieldData, entryStructIndices, replyStructIndices, startStructIndices, entryPointerStructIndices, replyPointerStructIndices, pointerConditionParamsMapping, nodeActionParamsMapping) = result;
@@ -2382,12 +2383,12 @@ namespace DialogEditor.Parsers
         
         public (List<GffStruct>, List<GffField>, List<string>, List<byte>, List<int>, List<int>, List<int>, List<List<int>>, List<List<int>>, Dictionary<int, List<int>>, Dictionary<int, List<int>>) ConvertDialogToGff(Dialog dialog)
         {
-            UnifiedLogger.LogParser(LogLevel.TRACE, "🔥 ENTERING ConvertDialogToGff - This should show up in logs!");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? ENTERING ConvertDialogToGff - This should show up in logs!");
 
             // Initialize FieldIndexTracker for robust field index management in complex files
             var mockLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
             var fieldTracker = new DialogEditor.Utils.FieldIndexTracker(0, mockLogger);
-            UnifiedLogger.LogParser(LogLevel.TRACE, "🎯 FIELD INDEX TRACKER: Initialized for complex file field management");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? FIELD INDEX TRACKER: Initialized for complex file field management");
 
             // Pre-calculate field counts needed for both struct creation and field creation
             uint totalEntryFields = 0;
@@ -2401,7 +2402,7 @@ namespace DialogEditor.Parsers
                 entryPointerFieldsCount += (uint)(entry.Pointers.Count * 4); // 4 fields per pointer
             }
 
-            // 🔧 CORRUPTION PREVENTION: Clean dialog.Starts FIRST before any struct creation
+            // ?? CORRUPTION PREVENTION: Clean dialog.Starts FIRST before any struct creation
             uint entryCount = (uint)dialog.Entries.Count;
             uint replyCount = (uint)dialog.Replies.Count;
             
@@ -2415,19 +2416,19 @@ namespace DialogEditor.Parsers
                 {
                     originalStarts.Add(start);
                     seenIndices.Add(start.Index);
-                    UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 ORIGINAL START: Preserving unique start with Index={start.Index}");
+                    UnifiedLogger.LogParser(LogLevel.TRACE, $"?? ORIGINAL START: Preserving unique start with Index={start.Index}");
                 }
                 else if (start.Index == uint.MaxValue)
                 {
-                    UnifiedLogger.LogParser(LogLevel.ERROR, $"🔧 CORRUPTION CLEANUP: Removing invalid start with Index={start.Index} (MaxValue)");
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"?? CORRUPTION CLEANUP: Removing invalid start with Index={start.Index} (MaxValue)");
                 }
                 else if (start.Index >= entryCount)
                 {
-                    UnifiedLogger.LogParser(LogLevel.ERROR, $"🔧 CORRUPTION CLEANUP: Removing out-of-range start with Index={start.Index} (>= {entryCount})");
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"?? CORRUPTION CLEANUP: Removing out-of-range start with Index={start.Index} (>= {entryCount})");
                 }
                 else if (seenIndices.Contains(start.Index))
                 {
-                    UnifiedLogger.LogParser(LogLevel.ERROR, $"🔧 DUPLICATE CLEANUP: Removing duplicate start with Index={start.Index}");
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"?? DUPLICATE CLEANUP: Removing duplicate start with Index={start.Index}");
                 }
             }
             
@@ -2439,14 +2440,14 @@ namespace DialogEditor.Parsers
             }
             
             uint startCount = (uint)dialog.Starts.Count;
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔧 EXPORT READY: Cleaned starts collection - now has {startCount} valid entries BEFORE struct creation");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? EXPORT READY: Cleaned starts collection - now has {startCount} valid entries BEFORE struct creation");
             
             var allStructs = new List<GffStruct>();
             var allFields = new List<GffField>();
             var allLabels = new List<string>();
             var fieldData = new List<byte>();
 
-            // 📐 PRE-CALCULATE: All ListIndices offsets BEFORE creating fields
+            // ?? PRE-CALCULATE: All ListIndices offsets BEFORE creating fields
             // This ensures fields are created with correct offsets from the start (no patching needed)
             var offsetMap = CalculateListIndicesOffsets(dialog);
 
@@ -2458,7 +2459,7 @@ namespace DialogEditor.Parsers
             var conflicts = fieldTracker.DetectConflicts();
             if (conflicts.Count > 0)
             {
-                UnifiedLogger.LogParser(LogLevel.WARN, $"⚠️ FIELD ALLOCATION CONFLICTS DETECTED: {conflicts.Count} conflicts");
+                UnifiedLogger.LogParser(LogLevel.WARN, $"?? FIELD ALLOCATION CONFLICTS DETECTED: {conflicts.Count} conflicts");
                 foreach (var conflict in conflicts)
                 {
                     UnifiedLogger.LogParser(LogLevel.WARN, $"   {conflict}");
@@ -2466,7 +2467,7 @@ namespace DialogEditor.Parsers
             }
             else
             {
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"✅ FIELD ALLOCATION: No conflicts detected - all field ranges properly allocated");
+                UnifiedLogger.LogParser(LogLevel.TRACE, $"? FIELD ALLOCATION: No conflicts detected - all field ranges properly allocated");
             }
 
             return (allStructs, allFields, allLabels, fieldData, entryStructIndices, replyStructIndices, startStructIndices, entryPointerStructIndices, replyPointerStructIndices, pointerConditionParamsMapping, nodeActionParamsMapping);
@@ -2488,8 +2489,8 @@ namespace DialogEditor.Parsers
             {
                 // 2025-10-21: Preserve original root type (always 0xFFFFFFFF per GFF spec)
                 Type = dialog.OriginalRootGffStruct?.Type ?? 0xFFFFFFFF,
-                DataOrDataOffset = 0, // 🎯 Root struct starts at field index 0
-                FieldCount = 9 // 🎯 AURORA FIX: All 9 BioWare-required fields per spec
+                DataOrDataOffset = 0, // ?? Root struct starts at field index 0
+                FieldCount = 9 // ?? AURORA FIX: All 9 BioWare-required fields per spec
             };
             allStructs.Add(rootStruct);
 
@@ -2503,9 +2504,9 @@ namespace DialogEditor.Parsers
             var entryPointerStructIndices = state.EntryPointerStructIndices;
             var replyPointerStructIndices = state.ReplyPointerStructIndices;
 
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"📊 Interleaved struct stats: {allStructs.Count} structs, {entryStructIndices.Count} entries, {replyStructIndices.Count} replies, {startStructIndices.Count} starts");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Interleaved struct stats: {allStructs.Count} structs, {entryStructIndices.Count} entries, {replyStructIndices.Count} replies, {startStructIndices.Count} starts");
 
-            // 🎯 CRITICAL (2025-10-22): Fields MUST be created in SAME ORDER as structs (Entry-First batched)
+            // ?? CRITICAL (2025-10-22): Fields MUST be created in SAME ORDER as structs (Entry-First batched)
             // Expected field indices to match struct DataOrDataOffset values exactly
 
             // 1. Root fields FIRST (fields 0-8) - use pre-calculated offsets
@@ -2515,7 +2516,7 @@ namespace DialogEditor.Parsers
             _textOffsetCache.Clear();
 
             // 2. Entry-First batched field creation (matches struct order)
-            UnifiedLogger.LogParser(LogLevel.TRACE, "📝 Creating Entry fields (batched with pointers)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Creating Entry fields (batched with pointers)");
             uint entryPointerFieldStartIndex = (uint)allFields.Count; // Track for param mapping
 
             int globalPointerIndex = 0; // Track global pointer index across all nodes
@@ -2536,7 +2537,7 @@ namespace DialogEditor.Parsers
             }
 
             // 3. Reply-batched field creation (matches struct order)
-            UnifiedLogger.LogParser(LogLevel.TRACE, "💬 Creating Reply fields (batched with pointers)");
+            UnifiedLogger.LogParser(LogLevel.TRACE, "?? Creating Reply fields (batched with pointers)");
             uint replyPointerFieldStartIndex = (uint)allFields.Count; // Track for param mapping
 
             for (int replyIdx = 0; replyIdx < dialog.Replies.Count; replyIdx++)
@@ -2562,7 +2563,7 @@ namespace DialogEditor.Parsers
             int fieldDataBeforeCondParams = fieldData.Count;
             var pointerConditionParamsMapping = new Dictionary<int, List<int>>();
             CreatePointerParameterStructs(dialog, allStructs, allFields, allLabels, fieldData, entryPointerFieldStartIndex, replyPointerFieldStartIndex, startWrapperFieldStartIndex, pointerConditionParamsMapping);
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 ConditionParams added {fieldData.Count - fieldDataBeforeCondParams} bytes to fieldData (before={fieldDataBeforeCondParams}, after={fieldData.Count})");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? ConditionParams added {fieldData.Count - fieldDataBeforeCondParams} bytes to fieldData (before={fieldDataBeforeCondParams}, after={fieldData.Count})");
 
             // Create parameter structs for each node's ActionParams and track mappings
             int fieldDataBeforeActionParams = fieldData.Count;
@@ -2571,12 +2572,12 @@ namespace DialogEditor.Parsers
             uint entryFieldStartIndex = 9; // Entries start at field 9 (after root fields 0-8)
             uint replyFieldStartIndex = entryPointerFieldStartIndex; // Replies start after all entry/pointer fields
             CreateNodeActionParameterStructs(dialog, allStructs, allFields, allLabels, fieldData, entryFieldStartIndex, replyFieldStartIndex, entryStructIndices, replyStructIndices, nodeActionParamsMapping);
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"🔍 ActionParams added {fieldData.Count - fieldDataBeforeActionParams} bytes to fieldData (before={fieldDataBeforeActionParams}, after={fieldData.Count})");
+            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? ActionParams added {fieldData.Count - fieldDataBeforeActionParams} bytes to fieldData (before={fieldDataBeforeActionParams}, after={fieldData.Count})");
 
-            // 🚫 STRUCTURAL FIX: Keep parameter structs disabled to avoid duplicates with manual creation above
+            // ?? STRUCTURAL FIX: Keep parameter structs disabled to avoid duplicates with manual creation above
             // CreateParameterStructs(allStructs, allFields, allLabels, fieldData);
 
-            // 🚫 STRUCTURAL FIX: Disable start struct creation at end - causes structure mismatch
+            // ?? STRUCTURAL FIX: Disable start struct creation at end - causes structure mismatch
             // CreateStartStructsAtEnd(dialog, allStructs, startStructIndices);
 
             // 12. Reply pointer fields now created as Bioware-spec Sync Structs (above)
