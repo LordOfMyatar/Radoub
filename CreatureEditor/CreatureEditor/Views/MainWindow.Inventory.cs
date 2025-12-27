@@ -5,7 +5,11 @@ using Radoub.Formats.Uti;
 using Radoub.UI.Controls;
 using Radoub.UI.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CreatureEditor.Views;
 
@@ -15,6 +19,10 @@ namespace CreatureEditor.Views;
 /// </summary>
 public partial class MainWindow
 {
+    // Cancellation token for background palette loading
+    private CancellationTokenSource? _paletteLoadCts;
+    private const int PaletteBatchSize = 50;
+
     #region Inventory UI
 
     private void PopulateInventoryUI()
@@ -25,15 +33,21 @@ public partial class MainWindow
         ClearInventoryUI();
 
         // Populate equipment slots from EquipItemList
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Processing {_currentCreature.EquipItemList.Count} equipped items, have {_equipmentSlots.Count} slots");
         foreach (var equippedItem in _currentCreature.EquipItemList)
         {
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Looking for slot with flag {equippedItem.Slot} (0x{equippedItem.Slot:X}) for {equippedItem.EquipRes}");
             var slot = EquipmentSlotFactory.GetSlotByFlag(_equipmentSlots, equippedItem.Slot);
             if (slot != null && !string.IsNullOrEmpty(equippedItem.EquipRes))
             {
                 // Create placeholder item from ResRef (full resolution requires game data)
                 var itemVm = CreatePlaceholderItem(equippedItem.EquipRes);
                 slot.EquippedItem = itemVm;
-                UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Equipped {equippedItem.EquipRes} to {slot.Name}");
+                UnifiedLogger.LogInventory(LogLevel.INFO, $"Equipped {equippedItem.EquipRes} to {slot.Name}");
+            }
+            else if (slot == null)
+            {
+                UnifiedLogger.LogInventory(LogLevel.WARN, $"No slot found for flag {equippedItem.Slot} (0x{equippedItem.Slot:X})");
             }
         }
 
@@ -47,6 +61,9 @@ public partial class MainWindow
                 UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Added to backpack: {invItem.InventoryRes}");
             }
         }
+
+        // Populate item palette from module directory
+        PopulateItemPalette();
 
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {_backpackItems.Count} in backpack");
     }
@@ -138,9 +155,172 @@ public partial class MainWindow
         // Clear backpack
         _backpackItems.Clear();
 
+        // Clear palette
+        _paletteItems.Clear();
+
         // Update selection state
         HasSelection = false;
         HasBackpackSelection = false;
+        HasPaletteSelection = false;
+    }
+
+    #endregion
+
+    #region Item Palette
+
+    /// <summary>
+    /// Starts loading game items (BIF) in background. Called on app startup.
+    /// </summary>
+    public void StartGameItemsLoad()
+    {
+        if (!_gameDataService.IsConfigured)
+            return;
+
+        // Cancel any ongoing background load
+        _paletteLoadCts?.Cancel();
+        _paletteLoadCts = new CancellationTokenSource();
+
+        UnifiedLogger.LogInventory(LogLevel.INFO, "Starting background load for game items...");
+        _ = LoadGameItemsAsync(_paletteLoadCts.Token);
+    }
+
+    /// <summary>
+    /// Populates the item palette from multiple sources:
+    /// 1. Module directory (loose UTI files) - loaded synchronously
+    /// 2. Base game BIF archives - continues loading in background if not already done
+    /// </summary>
+    private void PopulateItemPalette()
+    {
+        var moduleItemCount = 0;
+
+        // 1. Load UTI files from module directory synchronously (fast, small number)
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            var moduleDir = Path.GetDirectoryName(_currentFilePath);
+            if (!string.IsNullOrEmpty(moduleDir) && Directory.Exists(moduleDir))
+            {
+                var utiFiles = Directory.GetFiles(moduleDir, "*.uti", SearchOption.TopDirectoryOnly);
+                foreach (var utiPath in utiFiles)
+                {
+                    try
+                    {
+                        var item = UtiReader.Read(utiPath);
+                        var viewModel = _itemViewModelFactory.Create(item, GameResourceSource.Module);
+
+                        // Only add if not already in palette (from game data)
+                        if (!_paletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            _paletteItems.Add(viewModel);
+                            moduleItemCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        var fileName = Path.GetFileName(utiPath);
+                        UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        if (moduleItemCount > 0)
+        {
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Added {moduleItemCount} module items to palette");
+        }
+    }
+
+    /// <summary>
+    /// Loads game items (Override + BIF) in batches to avoid blocking UI.
+    /// </summary>
+    private async Task LoadGameItemsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Get list of all game resources on background thread
+            var gameResources = await Task.Run(() =>
+                _gameDataService.ListResources(ResourceTypes.Uti).ToList(),
+                cancellationToken);
+
+            // Get existing resrefs to skip duplicates
+            var existingResRefs = new HashSet<string>(
+                _paletteItems.Select(p => p.ResRef),
+                StringComparer.OrdinalIgnoreCase);
+
+            var batch = new List<ItemViewModel>();
+            var gameItemCount = 0;
+            var totalResources = gameResources.Count;
+
+            foreach (var resourceInfo in gameResources)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                // Skip if we already loaded this from module directory
+                if (existingResRefs.Contains(resourceInfo.ResRef))
+                    continue;
+
+                try
+                {
+                    // Load UTI data on background thread
+                    var utiData = await Task.Run(() =>
+                        _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti),
+                        cancellationToken);
+
+                    if (utiData != null)
+                    {
+                        var item = UtiReader.Read(utiData);
+                        var viewModel = _itemViewModelFactory.Create(item, resourceInfo.Source);
+                        batch.Add(viewModel);
+                        existingResRefs.Add(resourceInfo.ResRef);
+                        gameItemCount++;
+
+                        // Add batch to UI when full
+                        if (batch.Count >= PaletteBatchSize)
+                        {
+                            await AddBatchToUIAsync(batch);
+                            batch.Clear();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to load UTI {resourceInfo.ResRef}: {ex.Message}");
+                }
+            }
+
+            // Add remaining items
+            if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
+            {
+                await AddBatchToUIAsync(batch);
+            }
+
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                UnifiedLogger.LogInventory(LogLevel.INFO, $"Background load complete: {gameItemCount} game items added to palette");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Palette loading cancelled");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogInventory(LogLevel.ERROR, $"Error loading game items: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Adds a batch of items to the palette on the UI thread.
+    /// </summary>
+    private async Task AddBatchToUIAsync(List<ItemViewModel> batch)
+    {
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            foreach (var item in batch)
+            {
+                _paletteItems.Add(item);
+            }
+        });
     }
 
     #endregion

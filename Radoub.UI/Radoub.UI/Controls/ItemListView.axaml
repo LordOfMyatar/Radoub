@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Radoub.UI.ViewModels"
+             xmlns:svg="using:Avalonia.Svg.Skia"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="Radoub.UI.Controls.ItemListView">
 
@@ -60,11 +61,15 @@
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>
 
-        <!-- Icon column placeholder -->
+        <!-- Icon column -->
         <DataGridTemplateColumn Header="" Width="32" CanUserResize="False" CanUserSort="False">
           <DataGridTemplateColumn.CellTemplate>
             <DataTemplate>
-              <Border Width="24" Height="24" Background="#E0E0E0" CornerRadius="2"/>
+              <svg:Svg Path="{Binding IconPath}"
+                       Width="20"
+                       Height="20"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>

@@ -83,14 +83,14 @@ public static class DialogHelper
     }
 
     /// <summary>
-    /// Shows the About dialog for Creature Editor.
+    /// Shows the About dialog for Quartermaster.
     /// Uses Show() instead of ShowDialog() for non-blocking behavior.
     /// </summary>
     public static void ShowAboutDialog(Window parent)
     {
         var dialog = new Window
         {
-            Title = "About Creature Editor",
+            Title = "About Quartermaster",
             Width = 350,
             Height = 220,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -106,13 +106,13 @@ public static class DialogHelper
 
         panel.Children.Add(new TextBlock
         {
-            Text = "Creature Editor",
+            Text = "Quartermaster",
             FontSize = 24,
             FontWeight = Avalonia.Media.FontWeight.Bold
         });
         panel.Children.Add(new TextBlock { Text = "Creature and Inventory Editor" });
         panel.Children.Add(new TextBlock { Text = "for Neverwinter Nights" });
-        panel.Children.Add(new TextBlock { Text = "Version 0.1.0-alpha" });
+        panel.Children.Add(new TextBlock { Text = "Version 0.1.3-alpha" });
         panel.Children.Add(new TextBlock
         {
             Text = "Part of the Radoub Toolset",

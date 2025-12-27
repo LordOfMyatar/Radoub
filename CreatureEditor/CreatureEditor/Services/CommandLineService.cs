@@ -50,18 +50,18 @@ public static class CommandLineService
 
     public static void PrintHelp()
     {
-        Console.WriteLine("CreatureEditor - Creature and Inventory Editor for Neverwinter Nights");
+        Console.WriteLine("Quartermaster - Creature and Inventory Editor for Neverwinter Nights");
         Console.WriteLine();
-        Console.WriteLine("Usage: CreatureEditor [options] [file]");
+        Console.WriteLine("Usage: Quartermaster [options] [file]");
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --file, -f <path>  Open the specified UTC/BIC file");
         Console.WriteLine("  --help, -h         Show this help message");
         Console.WriteLine();
         Console.WriteLine("Examples:");
-        Console.WriteLine("  CreatureEditor                     Start with empty editor");
-        Console.WriteLine("  CreatureEditor creature.utc        Open creature.utc");
-        Console.WriteLine("  CreatureEditor --file player.bic   Open player.bic");
+        Console.WriteLine("  Quartermaster                     Start with empty editor");
+        Console.WriteLine("  Quartermaster creature.utc        Open creature.utc");
+        Console.WriteLine("  Quartermaster --file player.bic   Open player.bic");
     }
 }
 

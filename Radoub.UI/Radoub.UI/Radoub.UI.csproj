@@ -19,10 +19,16 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.10" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.10" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Avalonia.Svg.Skia" Version="11.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Radoub.Formats\Radoub.Formats\Radoub.Formats.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Equipment slot placeholder icons from game-icons.net (CC BY 3.0) -->
+    <AvaloniaResource Include="Assets\Icons\*.svg" />
   </ItemGroup>
 
 </Project>

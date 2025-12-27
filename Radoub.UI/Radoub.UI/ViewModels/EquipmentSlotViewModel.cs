@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Radoub.UI.Services;
 
 namespace Radoub.UI.ViewModels;
 
@@ -41,6 +42,11 @@ public partial class EquipmentSlotViewModel : ObservableObject
     /// True if this is a natural equipment slot (creature-only: Claws, Skin).
     /// </summary>
     public bool IsNatural { get; }
+
+    /// <summary>
+    /// Path to the slot's placeholder icon resource.
+    /// </summary>
+    public string IconPath => ItemIconHelper.GetSlotIconPath(SlotFlag);
 
     /// <summary>
     /// True if this is a standard equipment slot (Head, Chest, etc.).

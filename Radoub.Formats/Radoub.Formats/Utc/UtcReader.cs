@@ -254,7 +254,9 @@ public static class UtcReader
 
         foreach (var equipStruct in equipList.Elements)
         {
-            // The StructID (Type) is the equipment slot bit flag
+            // UTC blueprint files use EquipRes field containing the item template ResRef.
+            // Per BioWare Aurora Creature Format doc, Table 2.2:
+            // EquipRes (CResRef) - ResRef of the Equipped Item.
             var item = new EquippedItem
             {
                 Slot = (int)equipStruct.Type,

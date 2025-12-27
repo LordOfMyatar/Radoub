@@ -146,6 +146,49 @@ public class BicReaderTests
     }
 
     [Fact]
+    public void Read_BillyWanderers_ParsesInventory()
+    {
+        var filePath = Path.Combine(TestDataPath, "billywanderers.bic");
+        if (!File.Exists(filePath)) return;
+
+        var bic = BicReader.Read(filePath);
+
+        // Log inventory for debugging
+        System.Diagnostics.Debug.WriteLine($"ItemList count: {bic.ItemList.Count}");
+        foreach (var item in bic.ItemList)
+        {
+            System.Diagnostics.Debug.WriteLine($"  Item: {item.InventoryRes}");
+        }
+
+        // Players typically have some items
+        // Note: BIC stores embedded item structs, ResRef comes from TemplateResRef field
+    }
+
+    [Fact]
+    public void Read_BillyWanderers_ParsesEquippedItems()
+    {
+        var filePath = Path.Combine(TestDataPath, "billywanderers.bic");
+        if (!File.Exists(filePath)) return;
+
+        var bic = BicReader.Read(filePath);
+
+        // Output for debugging
+        Console.WriteLine($"EquipItemList count: {bic.EquipItemList.Count}");
+        foreach (var item in bic.EquipItemList)
+        {
+            Console.WriteLine($"  Slot 0x{item.Slot:X4}: '{item.EquipRes}'");
+        }
+
+        // Verify equipped items are parsed with TemplateResRef
+        // BIC files store embedded item structs, not ResRef references like UTC blueprints
+        Assert.True(bic.EquipItemList.Count > 0, "Player should have at least one equipped item");
+
+        // At least one equipped item should have a valid ResRef
+        var hasValidResRef = bic.EquipItemList.Any(e => !string.IsNullOrEmpty(e.EquipRes));
+        Assert.True(hasValidResRef, "At least one equipped item should have a TemplateResRef");
+    }
+
+    [Fact]
     public void RoundTrip_BillyWanderers_PreservesData()
     {
         var filePath = Path.Combine(TestDataPath, "billywanderers.bic");

@@ -241,9 +241,19 @@ public static class BicReader
 
         foreach (var itemStruct in itemList.Elements)
         {
+            // BIC files can store items in two formats:
+            // 1. Simple ResRef format: "InventoryRes" field (like blueprints)
+            // 2. Embedded item format: Full item struct with "TemplateResRef" field
+            // Try InventoryRes first, fall back to TemplateResRef for embedded items
+            var resRef = itemStruct.GetFieldValue<string>("InventoryRes", string.Empty);
+            if (string.IsNullOrEmpty(resRef))
+            {
+                resRef = itemStruct.GetFieldValue<string>("TemplateResRef", string.Empty);
+            }
+
             var item = new InventoryItem
             {
-                InventoryRes = itemStruct.GetFieldValue<string>("InventoryRes", string.Empty),
+                InventoryRes = resRef,
                 Repos_PosX = itemStruct.GetFieldValue<ushort>("Repos_PosX", 0),
                 Repos_PosY = itemStruct.GetFieldValue<ushort>("Repos_PosY", 0),
                 Dropable = itemStruct.GetFieldValue<byte>("Dropable", 1) != 0,
@@ -261,10 +271,20 @@ public static class BicReader
 
         foreach (var equipStruct in equipList.Elements)
         {
+            // BIC files can store equipped items in two formats:
+            // 1. Simple ResRef format: "EquippedRes" field (toolset-created BIC)
+            // 2. Embedded item format: Full item struct with "TemplateResRef" field (saved game)
+            // Try EquippedRes first, fall back to TemplateResRef for embedded items
+            var resRef = equipStruct.GetFieldValue<string>("EquippedRes", string.Empty);
+            if (string.IsNullOrEmpty(resRef))
+            {
+                resRef = equipStruct.GetFieldValue<string>("TemplateResRef", string.Empty);
+            }
+
             var item = new EquippedItem
             {
                 Slot = (int)equipStruct.Type,
-                EquipRes = equipStruct.GetFieldValue<string>("EquipRes", string.Empty)
+                EquipRes = resRef
             };
             bic.EquipItemList.Add(item);
         }
