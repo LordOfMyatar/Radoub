@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.97-alpha] - 2025-12-27
-**Branch**: `parley/refactor/mainviewmodel-size` | **PR**: #TBD
+**Branch**: `parley/refactor/mainviewmodel-size` | **PR**: #596
 
 ### Refactor: Reduce MainViewModel.cs Size (#536)
 
