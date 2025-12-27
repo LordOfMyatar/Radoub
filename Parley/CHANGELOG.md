@@ -26,10 +26,12 @@ Migrate Parley's DLG parser to the shared Radoub.Formats library.
 - [x] Add 17 comprehensive unit tests with round-trip validation
 
 #### Phase 2: Update Parley
-- [ ] Remove Parley's internal DLG parser
-- [ ] Reference `Radoub.Formats.Dlg`
-- [ ] Update any Parley-specific DLG handling
-- [ ] Verify all existing Parley tests pass
+- [x] Create `DlgAdapter` for model conversion (ToDialog/ToDlgFile)
+- [x] Update `DialogFileService` with `UseNewParser` feature flag
+- [x] Wire up new parser with logging integration
+- [x] Verify all 492 Parley tests pass
+- [ ] Enable new parser by default after validation
+- [ ] Remove legacy parser code (future cleanup)
 
 ---
 
