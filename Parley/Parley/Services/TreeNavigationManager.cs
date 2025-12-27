@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Services
 {

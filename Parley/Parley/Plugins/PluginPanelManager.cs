@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Threading;
 using DialogEditor.Plugins.Services;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Views;
 
 namespace DialogEditor.Plugins

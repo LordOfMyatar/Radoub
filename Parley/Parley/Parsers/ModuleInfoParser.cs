@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Parsers
 {

@@ -2,6 +2,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using DialogEditor.Utils;
 using System;
+using Radoub.Formats.Logging;
 using System.Collections.Generic;
 
 namespace DialogEditor.Services

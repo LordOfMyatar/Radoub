@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using DialogEditor.Utils;
 using System;
+using Radoub.Formats.Logging;
 using System.Diagnostics;
 
 namespace DialogEditor.Views
@@ -33,8 +34,8 @@ namespace DialogEditor.Views
             }
             catch (Exception ex)
             {
-                DialogEditor.Services.UnifiedLogger.LogApplication(
-                    DialogEditor.Services.LogLevel.WARN,
+                UnifiedLogger.LogApplication(
+                    LogLevel.WARN,
                     $"Failed to open browser for GitHub link: {ex.Message}");
             }
         }

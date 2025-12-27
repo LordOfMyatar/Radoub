@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Services
 {
@@ -122,7 +123,7 @@ Examples:
         public static async Task<int> ExportScreenplayAsync(string filePath, string? outputFile)
         {
             // Suppress logging for CLI mode - only show errors
-            DialogEditor.Services.UnifiedLogger.SetLogLevel(DialogEditor.Services.LogLevel.ERROR);
+            UnifiedLogger.SetLogLevel(LogLevel.ERROR);
 
             try
             {

@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using DialogEditor.Utils;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Models
 {
@@ -96,7 +97,7 @@ namespace DialogEditor.Models
                         }
                         catch (Exception ex)
                         {
-                            DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.ERROR,
+                            UnifiedLogger.LogApplication(LogLevel.ERROR,
                                 $"🌳 TreeView: Exception during lazy load of '{_originalNode?.DisplayText ?? "null"}': {ex.Message}");
                             // Don't re-throw - allow UI to continue functioning
                         }
@@ -318,7 +319,7 @@ namespace DialogEditor.Models
             // Null safety check for _originalNode (#375 stability)
             if (_originalNode == null)
             {
-                DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.WARN, "🌳 TreeView: _originalNode is null in PopulateChildrenInternal");
+                UnifiedLogger.LogApplication(LogLevel.WARN, "🌳 TreeView: _originalNode is null in PopulateChildrenInternal");
                 return;
             }
 
@@ -327,18 +328,18 @@ namespace DialogEditor.Models
             // (Each Entry→Reply pair counts as 2 depth levels in TreeView)
             if (_depth >= 250)
             {
-                DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.WARN, $"🌳 TreeView: Hit max depth {_depth} for node '{_originalNode.DisplayText}' - dialog may be extremely deep");
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"🌳 TreeView: Hit max depth {_depth} for node '{_originalNode.DisplayText}' - dialog may be extremely deep");
                 return;
             }
 
             // Null safety check for Pointers (#375 stability)
             if (_originalNode.Pointers == null)
             {
-                DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Node '{_originalNode.DisplayText}' has null Pointers");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Node '{_originalNode.DisplayText}' has null Pointers");
                 return;
             }
 
-            DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Populating children for '{_originalNode.DisplayText}' at depth {_depth}, has {_originalNode.Pointers.Count} pointers");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Populating children for '{_originalNode.DisplayText}' at depth {_depth}, has {_originalNode.Pointers.Count} pointers");
 
             // Track nodes already added to this parent to prevent duplicates (same as copy tree)
             var addedNodes = new HashSet<DialogNode>();
@@ -353,12 +354,12 @@ namespace DialogEditor.Models
             {
                 if (pointer.Node != null)
                 {
-                    DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Processing pointer to '{pointer.Node.DisplayText}' (Type: {pointer.Type}, Index: {pointer.Index}, IsLink: {pointer.IsLink})");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Processing pointer to '{pointer.Node.DisplayText}' (Type: {pointer.Type}, Index: {pointer.Index}, IsLink: {pointer.IsLink})");
 
                     // Skip if we already added this node to this parent (same as copy tree)
                     if (addedNodes.Contains(pointer.Node))
                     {
-                        DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Skipping duplicate node '{pointer.Node.DisplayText}'");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Skipping duplicate node '{pointer.Node.DisplayText}'");
                         continue;
                     }
 
@@ -368,21 +369,21 @@ namespace DialogEditor.Models
                     // Links are ALWAYS shown as link nodes (gray, IsChild marked) - don't expand them
                     if (pointer.IsLink)
                     {
-                        DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating link node for '{pointer.Node.DisplayText}' (IsLink=true)");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Creating link node for '{pointer.Node.DisplayText}' (IsLink=true)");
                         var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Link", pointer, _originalNode);
                         _children.Add(linkNode);
                     }
                     // Check if node is in our ancestor chain (circular reference within this path)
                     else if (_ancestorNodes.Contains(pointer.Node))
                     {
-                        DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating circular link for '{pointer.Node.DisplayText}' (ancestor chain protection)");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Creating circular link for '{pointer.Node.DisplayText}' (ancestor chain protection)");
                         var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Circular", null, _originalNode);
                         _children.Add(linkNode);
                     }
                     else
                     {
                         // This is a real child node - expand it with updated ancestor chain
-                        DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Creating full child node for '{pointer.Node.DisplayText}'");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Creating full child node for '{pointer.Node.DisplayText}'");
 
                         // Pass down ancestor chain for circular detection AND the source pointer for properties display
                         var newAncestors = new HashSet<DialogNode>(_ancestorNodes) { _originalNode };
@@ -396,12 +397,12 @@ namespace DialogEditor.Models
                 }
                 else
                 {
-                    DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.WARN, $"🌳 TreeView: Pointer to Index {pointer.Index} has null Node!");
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"🌳 TreeView: Pointer to Index {pointer.Index} has null Node!");
                 }
                 pointerIndex++;
             }
 
-            DialogEditor.Services.UnifiedLogger.LogApplication(DialogEditor.Services.LogLevel.DEBUG, $"🌳 TreeView: Finished populating '{_originalNode.DisplayText}', added {_children.Count} children");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Finished populating '{_originalNode.DisplayText}', added {_children.Count} children");
         }
 
         /// <summary>

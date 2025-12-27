@@ -3,6 +3,7 @@ using DialogEditor.Models;
 using DialogEditor.Utils;
 using DialogEditor.ViewModels;
 using System;
+using Radoub.Formats.Logging;
 using System.Linq;
 using System.Threading.Tasks;
 

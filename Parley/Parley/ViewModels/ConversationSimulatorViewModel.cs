@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 
 namespace DialogEditor.ViewModels

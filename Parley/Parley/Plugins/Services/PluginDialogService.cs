@@ -4,6 +4,7 @@ using Grpc.Core;
 using DialogEditor.Plugins.Proto;
 using DialogEditor.Plugins.Security;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Plugins.Services
 {

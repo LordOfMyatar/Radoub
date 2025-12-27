@@ -18,6 +18,7 @@ using Avalonia.Styling;
 using DialogEditor.Models;
 using DialogEditor.Plugins;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using Radoub.Dictionary;
 using Radoub.Dictionary.Models;
 

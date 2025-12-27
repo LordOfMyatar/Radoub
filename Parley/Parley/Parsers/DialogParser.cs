@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 using Newtonsoft.Json;
 

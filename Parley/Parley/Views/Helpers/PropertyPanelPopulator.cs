@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Threading;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 using Parley.Models;
 

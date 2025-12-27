@@ -1,4 +1,5 @@
 using System;
+using Radoub.Formats.Logging;
 using DialogEditor.Models;
 
 namespace DialogEditor.Services
