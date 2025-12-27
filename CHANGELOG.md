@@ -21,15 +21,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Part of Epic #544 (Creature Editor Tool).
 
+Pre-emptive refactoring before CreatureEditor grows. Lessons from Parley's 2,400+ line MainWindow.
+
 #### Refactoring (#582)
-- TBD: Extract FileOperationsController from MainWindow
-- TBD: Extract DialogHelper utility class
-- TBD: Extract InventoryController (partial class or controller)
+- **MainWindow.FileOps.cs** - Extracted file operations (Open/Save/Recent files, 221 lines)
+- **MainWindow.Inventory.cs** - Extracted inventory population and item resolution (130 lines)
+- **DialogHelper.cs** - Static helper for common dialogs (Unsaved/Error/About)
+- MainWindow.axaml.cs reduced from 892 to 466 lines (48% reduction)
 
 #### Testing (#583)
-- TBD: Add CreatureEditor.Tests project structure
-- TBD: Add SettingsService and CommandLineService unit tests
-- TBD: Add FlaUI integration tests
+- **CreatureEditor.Tests project** - New xUnit test project
+- **CommandLineServiceTests** - 9 tests for argument parsing
+- **SettingsServiceTests** - 12 tests for property constraints and defaults
+- **Quartermaster FlaUI tests** - 5 smoke tests in Radoub.IntegrationTests
+
+#### Changed (Radoub.IntegrationTests)
+- TestPaths.cs updated with CreatureEditor paths
+- FlaUITestBase.cs supports CreatureEditor settings isolation
+- run-tests.ps1 includes CreatureEditor.Tests in test suite
 
 ---
 
