@@ -15,14 +15,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactor: Extract GffFieldFactory from DialogWriter (#534)
 
-Extract field creation helpers from DialogWriter.cs into dedicated factory class.
+Extracted field creation methods from DialogWriter.cs into new GffFieldFactory class.
 
-**Target Methods:**
-- `BuildLocStringFieldData()`
-- `BuildCExoStringFieldData()`
-- `BuildCResRefFieldData()`
-- `AddLabelAndField()`
-- `CreatePointerFields()`
+| File | Before | After | Change |
+|------|--------|-------|--------|
+| DialogWriter.cs | 1,915 | 1,767 | -148 lines (8%) |
+| GffFieldFactory.cs | - | 201 | New file |
+
+**Extracted Methods:**
+- `BuildLocStringFieldData()` - CExoLocString binary data builder
+- `BuildCExoStringFieldData()` - CExoString binary data builder
+- `BuildCResRefFieldData()` - CResRef binary data builder
+- `AddLabelAndField()` - Label/field collection helper
+- `GetOrCreateTextOffset()` - Text data creation with offset tracking
+- `CalculateEntryFieldCount()` / `CalculateReplyFieldCount()` - Field count calculations
+
+All 500 tests pass.
 
 ---
 

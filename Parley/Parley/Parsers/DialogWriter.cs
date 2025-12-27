@@ -28,9 +28,7 @@ namespace DialogEditor.Parsers
     {
         private readonly GffIndexFixer _indexFixer = new();
         private readonly GffBinaryWriter _binaryWriter = new();
-
-        // Text deduplication cache: text content -> offset
-        private static readonly Dictionary<string, uint> _textOffsetCache = new Dictionary<string, uint>();
+        private readonly GffFieldFactory _fieldFactory = new();
 
         /// <summary>
         /// Traversal state for interleaved struct creation.
@@ -153,170 +151,27 @@ namespace DialogEditor.Parsers
 
             return map;
         }
-        // ===== Field Data Builders =====
+        // ===== Field Creation Helpers (delegated to GffFieldFactory) =====
         private void AddLabelAndField(List<GffField> allFields, List<string> allLabels, string label, uint type, uint value)
-        {
-            // Get or create label index
-            int labelIndex = allLabels.IndexOf(label);
-            if (labelIndex == -1)
-            {
-                labelIndex = allLabels.Count;
-                allLabels.Add(label);
-            }
+            => _fieldFactory.AddLabelAndField(allFields, allLabels, label, type, value);
 
-            // Create field
-            var field = new GffField
-            {
-                Type = type,
-                LabelIndex = (uint)labelIndex,
-                Label = label, // ?? CRITICAL FIX: Set the Label property for FixListFieldOffsets
-                DataOrDataOffset = value
-            };
-            allFields.Add(field);
-        }
-
-        private byte[] BuildLocStringFieldData(string text)
-        {
-            var data = new List<byte>();
-
-            // Write CExoLocString structure
-            byte[] textBytes = System.Text.Encoding.UTF8.GetBytes(text);
-            // ?? AURORA FIX: TotalSize = StringRef(4) + StringCount(4) + StringID(4) + StringLength(4) + Text (NOT including TotalSize itself!)
-            uint totalSize = (uint)(4 + 4 + 4 + 4 + textBytes.Length); // = 21 for "FuBar" (excludes TotalSize field)
-
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? BuildLocStringFieldData: text='{text.Substring(0, Math.Min(50, text.Length))}...', textBytes.Length={textBytes.Length}, totalSize={totalSize}");
-
-            data.AddRange(BitConverter.GetBytes(totalSize)); // Total size (4 bytes)
-            data.AddRange(BitConverter.GetBytes(0xFFFFFFFF)); // StrRef (4 bytes) - custom text
-            data.AddRange(BitConverter.GetBytes((uint)1)); // SubString count (4 bytes)
-            data.AddRange(BitConverter.GetBytes((uint)0)); // Language ID (4 bytes) - English
-            data.AddRange(BitConverter.GetBytes((uint)textBytes.Length)); // Text length (4 bytes)
-            data.AddRange(textBytes); // Text data
-
-            // Pad to 4-byte boundary
-            while (data.Count % 4 != 0)
-                data.Add(0);
-
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? BuildLocStringFieldData result: {data.Count} bytes total");
-
-            return data.ToArray();
-        }
-        
         private byte[] BuildCExoStringFieldData(string text)
-        {
-            var data = new List<byte>();
-            
-            // Write CExoString structure - just length + text
-            byte[] textBytes = System.Text.Encoding.UTF8.GetBytes(text);
-            data.AddRange(BitConverter.GetBytes((uint)textBytes.Length)); // Length (4 bytes)
-            data.AddRange(textBytes); // Text data
-            
-            return data.ToArray();
-        }
-        
+            => _fieldFactory.BuildCExoStringFieldData(text);
+
         private byte[] BuildCResRefFieldData(string resref)
-        {
-            // ?? FIXED: CResRef format matches reader expectations - length prefix + string data
-            if (string.IsNullOrEmpty(resref))
-            {
-                return new byte[] { 0 }; // Zero length for empty CResRef
-            }
-
-            var resrefBytes = System.Text.Encoding.ASCII.GetBytes(resref);
-            var length = Math.Min(resrefBytes.Length, 16); // Max 16 characters
-
-            var data = new byte[length + 1]; // Length prefix + string data
-            data[0] = (byte)length; // Length prefix byte
-            Array.Copy(resrefBytes, 0, data, 1, length); // String data
-
-            return data;
-        }
+            => _fieldFactory.BuildCResRefFieldData(resref);
 
         private uint GetOrCreateTextOffset(string text, List<byte> fieldData)
-        {
-            // ?? DISABLED: Text deduplication (2025-10-22)
-            // Duplicated text is intentional author content, not a pattern to optimize
-            // GFF only deduplicates ChildLink structures, not dialog text
+            => _fieldFactory.GetOrCreateTextOffset(text, fieldData);
 
-            // Handle empty text
-            if (string.IsNullOrEmpty(text))
-            {
-                text = ""; // Normalize null to empty string
-            }
-
-            // DISABLED: Cache check - always create new text data
-            // if (_textOffsetCache.TryGetValue(text, out uint existingOffset))
-            // {
-            //     UnifiedLogger.LogParser(LogLevel.TRACE, $"?? TEXT REUSE: '{text}' ? existing offset {existingOffset}");
-            //     return existingOffset;
-            // }
-
-            // Create new text data
-            uint newOffset = (uint)fieldData.Count;
-            var locStringData = BuildLocStringFieldData(text);
-
-            // ?? DIAGNOSTIC: Check what we're about to add
-            if (locStringData.Length >= 4)
-            {
-                uint first4 = BitConverter.ToUInt32(locStringData, 0);
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? About to add locStringData: first 4 bytes = 0x{first4:X8} ({first4})");
-            }
-
-            fieldData.AddRange(locStringData);
-
-            // ?? DIAGNOSTIC: Check fieldData after adding (FIRST TEXT ONLY)
-            if (newOffset == 0 && fieldData.Count >= 4)
-            {
-                uint first4AfterAdd = BitConverter.ToUInt32(fieldData.ToArray(), 0);
-                UnifiedLogger.LogParser(LogLevel.TRACE, $"?? CRITICAL: After adding FIRST text to fieldData: first 4 bytes = 0x{first4AfterAdd:X8} ({first4AfterAdd}), fieldData.Count={fieldData.Count}");
-            }
-
-            // Pad to 4-byte boundary
-            while (fieldData.Count % 4 != 0)
-            {
-                fieldData.Add(0);
-            }
-
-            // DISABLED: Caching
-            // _textOffsetCache[text] = newOffset;
-            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? NEW TEXT: '{text}' ? offset {newOffset}");
-
-            return newOffset;
-        }
-
-        // ===== Field Count Calculations =====
         private uint CalculateEntryFieldCount(DialogNode entry)
-        {
-            // 2025-10-21: GFF format has conditional QuestEntry field
-            // Base fields: Speaker, Animation, AnimLoop, Text, Script, ActionParams, Delay, Comment, Sound, Quest, RepliesList = 11 fields
-            // QuestEntry is ONLY present when Quest is non-empty (per BioWare docs)
-            uint count = 11; // Base fields
-            if (!string.IsNullOrEmpty(entry.Quest))
-            {
-                count++; // Add QuestEntry field
-            }
-            return count;
-        }
+            => _fieldFactory.CalculateEntryFieldCount(entry);
 
         private uint CalculateReplyFieldCount(DialogNode reply)
-        {
-            // 2025-10-21: GFF format has conditional QuestEntry field
-            // Base fields: Animation, AnimLoop, Text, Script, ActionParams, Delay, Comment, Sound, Quest, EntriesList = 10 fields
-            // QuestEntry is ONLY present when Quest is non-empty (per BioWare docs)
-            uint count = 10; // Base fields
-            if (!string.IsNullOrEmpty(reply.Quest))
-            {
-                count++; // Add QuestEntry field
-            }
-            return count;
-        }
+            => _fieldFactory.CalculateReplyFieldCount(reply);
 
         private uint CalculateLabelSize(List<string> allLabels)
-        {
-            // ?? FIXED: GFF format uses exactly 16 bytes per label (not null-terminated variable length)
-            // This must match how labels are actually written to ensure correct format detection
-            return (uint)(allLabels.Count * 16); // GFF 16-byte fixed format
-        }
+            => _fieldFactory.CalculateLabelSize(allLabels);
 
         // ===== Field Creation Methods =====
         private void CreatePointerFields(DialogPtr pointer, List<GffField> allFields, List<string> allLabels, List<byte> fieldData, Dialog dialog, ListIndicesOffsetMap offsetMap, int globalPointerIndex)
@@ -1833,9 +1688,6 @@ namespace DialogEditor.Parsers
 
             // 1. Root fields FIRST (fields 0-8) - use pre-calculated offsets
             CreateRootFields(dialog, allFields, allLabels, fieldData, offsetMap);
-
-            // Clear text offset cache for new export
-            _textOffsetCache.Clear();
 
             // 2. Entry-First batched field creation (matches struct order)
             UnifiedLogger.LogParser(LogLevel.TRACE, "?? Creating Entry fields (batched with pointers)");
