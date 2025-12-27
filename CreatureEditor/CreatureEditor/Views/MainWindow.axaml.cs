@@ -105,13 +105,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Bind to EquipmentPanel
         EquipmentPanel.Slots = _equipmentSlots;
 
-        // Bind backpack and palette lists
+        // Bind backpack list directly
         BackpackList.Items = _backpackItems;
-        PaletteList.Items = _paletteItems;
 
-        // Wire up filter to palette list
+        // Wire up filter to palette - filter takes source items, outputs to FilteredItems
+        var filteredPaletteItems = new ObservableCollection<ItemViewModel>();
         PaletteFilter.Items = _paletteItems;
-        PaletteFilter.FilteredItems = new ObservableCollection<ItemViewModel>();
+        PaletteFilter.FilteredItems = filteredPaletteItems;
+        PaletteFilter.GameDataService = _gameDataService;
+
+        // PaletteList displays filtered items (not raw _paletteItems)
+        PaletteList.Items = filteredPaletteItems;
 
         UnifiedLogger.LogUI(LogLevel.DEBUG, $"Initialized {_equipmentSlots.Count} equipment slots");
     }
@@ -350,7 +354,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var displayPath = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "Untitled";
         var dirty = _isDirty ? "*" : "";
         var fileType = _isBicFile ? " (Player)" : "";
-        Title = $"Creature Editor - {displayPath}{fileType}{dirty}";
+        Title = $"Quartermaster - {displayPath}{fileType}{dirty}";
     }
 
     private void UpdateStatus(string message)

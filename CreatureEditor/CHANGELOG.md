@@ -16,11 +16,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Feature: Wire up Inventory Display and File Search (#580)
 
 #### Added
-- GitHub workflows for Quartermaster (build + tests)
-- External branding as "Quartermaster" (internal namespace remains CreatureEditor)
+- **Item palette population** - Scans module directory for UTI files on creature load
+- **Item filtering** - Filter panel wired to GameDataService for item type dropdown
+- **GitHub workflows** - `quartermaster-pr-build.yml` and `quartermaster-pr-tests.yml`
+- **External branding** - Window title, About dialog, CLI help, menus use "Quartermaster"
+
+#### Changed
+- PaletteList now displays filtered items from ItemFilterPanel
+- ClearInventoryUI clears palette items and selection state
 
 #### Infrastructure
 - Workflow parity with Parley for PR checks and CI
+- Internal namespace remains `CreatureEditor` (like Parley/DialogEditor pattern)
 
 ---
 
@@ -51,17 +58,6 @@ Pre-emptive refactoring before codebase grows. Lessons from Parley's 2,400+ line
 ### Feature: Load UTI Items from BIF Archives (#579)
 
 #### Added
-- **GameDataService integration** - Enables BIF/Override/TLK lookups for base game items
-- **UTI loading from BIF archives** - Base game items (e.g., `nw_it_torch001`) now load full data
-- **ItemViewModelFactory usage** - Proper name resolution via baseitems.2da and TLK strings
-- **Resource resolution order**: Module directory → Override → HAK → BIF archives
-
-#### Changed
-- `CreatePlaceholderItem` now uses GameDataService for BIF lookups when module file not found
-- Item display names resolved via TLK instead of showing ResRef placeholders
-- Base item types resolved via baseitems.2da lookups
-
----
 
 ## [0.1.0-alpha] - 2025-12-26
 **Branch**: `radoub/sprint/creature-editor-mvp` | **PR**: #578
@@ -71,18 +67,3 @@ Pre-emptive refactoring before codebase grows. Lessons from Parley's 2,400+ line
 Initial release of Quartermaster (Creature Editor).
 
 #### Added
-- **Project scaffold** - Avalonia UI application with theming and logging
-- **MainWindow** - 3-panel layout with Equipment, Backpack, and Palette sections
-- **File operations** - Open/Save/Recent Files for UTC and BIC files
-- **Inventory display** - DataGrid shows backpack items from creature
-- **UTI loading** - Loads item data from module directory
-- **Equipment slots panel** - Visual display of 14 standard + 4 natural equipment slots
-- **Command line support** - `--file` argument for opening files at startup
-- **Settings persistence** - Window position, recent files, theme preferences
-
-#### Known Limitations
-- Equipment slots not visually populated from creature data
-- Item palette not populated
-- No item editing (view-only)
-
----

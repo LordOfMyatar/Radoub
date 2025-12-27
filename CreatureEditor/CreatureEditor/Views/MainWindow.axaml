@@ -37,7 +37,7 @@
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="_About Creature Editor" Click="OnAboutClick"/>
+                <MenuItem Header="_About Quartermaster" Click="OnAboutClick"/>
             </MenuItem>
         </Menu>
 
