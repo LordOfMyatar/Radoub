@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.96-alpha] - 2025-12-27
-**Branch**: `parley/feat/dlg-parser-migration` | **PR**: #TBD
+**Branch**: `parley/feat/dlg-parser-migration` | **PR**: #590
 
 ### Feat: Migrate DLG Parser to Radoub.Formats (#560)
 
