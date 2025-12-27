@@ -10,6 +10,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.97-alpha] - 2025-12-27
+**Branch**: `parley/refactor/mainviewmodel-size` | **PR**: #596
+
+### Refactor: Reduce MainViewModel.cs Size (#536)
+
+Split MainViewModel (1,786 lines) into partial classes for maintainability:
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| MainViewModel.cs | 337 | Core properties, constructor, debug messaging |
+| MainViewModel.FileOperations.cs | 199 | Load, Save, New, Close, Reload |
+| MainViewModel.EditOperations.cs | 377 | Undo, Redo, Copy, Cut, Paste |
+| MainViewModel.NodeOperations.cs | 271 | Add, Delete, Move nodes |
+| MainViewModel.TreeOperations.cs | 593 | Tree population, refresh, navigation |
+| MainViewModel.ScrapOperations.cs | 91 | Scrap restore and management |
+
+Core file reduced from 1,786 → 337 lines (81% reduction).
+All 500 tests pass.
+
+---
+
 ## [0.1.96-alpha] - 2025-12-27
 **Branch**: `parley/feat/dlg-parser-migration` | **PR**: #590
 
