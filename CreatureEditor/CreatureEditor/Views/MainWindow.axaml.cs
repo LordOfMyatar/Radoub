@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using CreatureEditor.Services;
+using CreatureEditor.Views.Helpers;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
@@ -185,7 +186,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_isDirty)
         {
             e.Cancel = true;
-            var result = await ShowUnsavedChangesDialog();
+            var result = await DialogHelper.ShowUnsavedChangesDialog(this);
             if (result == "Save")
             {
                 await SaveFile();
@@ -202,44 +203,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             SaveWindowPosition();
             _gameDataService.Dispose();
         }
-    }
-
-    private async Task<string> ShowUnsavedChangesDialog()
-    {
-        var dialog = new Window
-        {
-            Title = "Unsaved Changes",
-            Width = 350,
-            Height = 150,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
-
-        var result = "Cancel";
-
-        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
-        panel.Children.Add(new TextBlock { Text = "You have unsaved changes. What would you like to do?" });
-
-        var buttonPanel = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
-
-        var saveButton = new Button { Content = "Save" };
-        saveButton.Click += (s, e) => { result = "Save"; dialog.Close(); };
-
-        var discardButton = new Button { Content = "Discard" };
-        discardButton.Click += (s, e) => { result = "Discard"; dialog.Close(); };
-
-        var cancelButton = new Button { Content = "Cancel" };
-        cancelButton.Click += (s, e) => { result = "Cancel"; dialog.Close(); };
-
-        buttonPanel.Children.Add(saveButton);
-        buttonPanel.Children.Add(discardButton);
-        buttonPanel.Children.Add(cancelButton);
-        panel.Children.Add(buttonPanel);
-
-        dialog.Content = panel;
-        await dialog.ShowDialog(this);
-
-        return result;
     }
 
     #region Inventory UI
@@ -606,7 +569,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #endregion
 
-    #region Dialogs
+    #region Menu Handlers - Dialogs
 
     private void OnSettingsClick(object? sender, RoutedEventArgs e)
     {
@@ -616,50 +579,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
-        var dialog = new Window
-        {
-            Title = "About Creature Editor",
-            Width = 350,
-            Height = 220,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
-
-        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
-        panel.Children.Add(new TextBlock { Text = "Creature Editor", FontSize = 24, FontWeight = Avalonia.Media.FontWeight.Bold });
-        panel.Children.Add(new TextBlock { Text = "Creature and Inventory Editor" });
-        panel.Children.Add(new TextBlock { Text = "for Neverwinter Nights" });
-        panel.Children.Add(new TextBlock { Text = "Version 0.1.0-alpha" });
-        panel.Children.Add(new TextBlock { Text = "Part of the Radoub Toolset", Margin = new Avalonia.Thickness(0, 10, 0, 0) });
-
-        var button = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center, Margin = new Avalonia.Thickness(0, 10, 0, 0) };
-        button.Click += (s, e) => dialog.Close();
-        panel.Children.Add(button);
-
-        dialog.Content = panel;
-        dialog.Show(this);
+        DialogHelper.ShowAboutDialog(this);
     }
 
     private async Task ShowErrorDialog(string title, string message)
     {
-        var dialog = new Window
-        {
-            Title = title,
-            Width = 400,
-            Height = 150,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
-
-        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
-        panel.Children.Add(new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
-
-        var button = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
-        button.Click += (s, e) => dialog.Close();
-        panel.Children.Add(button);
-
-        dialog.Content = panel;
-        await dialog.ShowDialog(this);
+        await DialogHelper.ShowErrorDialog(this, title, message);
     }
 
     #endregion
