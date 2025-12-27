@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.101-alpha] - 2025-12-27
-**Branch**: `parley/fix/add-node-entry-entry` | **PR**: #TBD
+**Branch**: `parley/fix/add-node-entry-entry` | **PR**: #604
 
 ### Fix: Add Node creates Entry under Entry (invalid structure) (#603)
 
