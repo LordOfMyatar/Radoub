@@ -6,7 +6,7 @@
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="CreatureEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
-        Title="Creature Editor"
+        Title="Quartermaster"
         Width="1200" Height="800"
         MinWidth="800" MinHeight="600"
         KeyDown="OnWindowKeyDown">

@@ -1,11 +1,11 @@
 {
   "manifest_version": "1.0",
   "plugin": {
-    "id": "org.creatureeditor.theme.light",
+    "id": "org.quartermaster.theme.light",
     "name": "Light Theme",
     "version": "1.0.0",
     "author": "Radoub Team",
-    "description": "Default light theme for CreatureEditor",
+    "description": "Default light theme for Quartermaster",
     "type": "theme",
     "tags": ["light", "default"]
   },

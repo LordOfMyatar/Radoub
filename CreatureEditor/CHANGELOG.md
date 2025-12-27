@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.3-alpha] - 2025-12-26
+**Branch**: `quartermaster/feat/inventory-display-580` | **PR**: #TBD
+
+### Feature: Wire up Inventory Display and File Search (#580)
+
+#### Added
+- GitHub workflows for Quartermaster (build + tests)
+- External branding as "Quartermaster" (internal namespace remains CreatureEditor)
+
+#### Infrastructure
+- Workflow parity with Parley for PR checks and CI
+
+---
+
 ## [0.1.2-alpha] - 2025-12-26
 **Branch**: `radoub/sprint/creature-editor-cleanup` | **PR**: #584
 

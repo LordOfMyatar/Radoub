@@ -1,0 +1,41 @@
+name: Quartermaster PR Build Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'CreatureEditor/**'
+      - 'Radoub.Formats/**'
+      - 'Radoub.UI/**'
+      - '.github/workflows/quartermaster-pr-build.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore CreatureEditor/CreatureEditor/CreatureEditor.csproj
+
+    - name: Build Quartermaster
+      id: build
+      run: dotnet build CreatureEditor/CreatureEditor/CreatureEditor.csproj --configuration Release --no-restore
+      continue-on-error: true
+
+    - name: Report status
+      if: always()
+      run: |
+        if ("${{ steps.build.outcome }}" -eq "success") {
+          Write-Host "✅ Quartermaster build successful"
+        } else {
+          Write-Host "❌ Quartermaster build failed"
+          exit 1
+        }

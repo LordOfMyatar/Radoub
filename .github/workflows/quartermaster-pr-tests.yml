@@ -1,0 +1,56 @@
+name: Quartermaster PR Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'CreatureEditor/**'
+      - 'Radoub.Formats/**'
+      - 'Radoub.UI/**'
+      - '.github/workflows/quartermaster-pr-tests.yml'
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore CreatureEditor.Tests
+      run: dotnet restore CreatureEditor/CreatureEditor.Tests/CreatureEditor.Tests.csproj
+
+    - name: Build CreatureEditor.Tests
+      run: dotnet build CreatureEditor/CreatureEditor.Tests/CreatureEditor.Tests.csproj --configuration Release --no-restore
+
+    - name: Run CreatureEditor.Tests
+      id: creature-tests
+      run: dotnet test CreatureEditor/CreatureEditor.Tests/CreatureEditor.Tests.csproj --configuration Release --no-build --verbosity normal
+      continue-on-error: true
+
+    - name: Run Radoub.Formats.Tests
+      id: formats-tests
+      run: dotnet test Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj --configuration Release --verbosity normal
+      continue-on-error: true
+
+    - name: Report test results
+      if: always()
+      run: |
+        $creatureResult = "${{ steps.creature-tests.outcome }}"
+        $formatsResult = "${{ steps.formats-tests.outcome }}"
+
+        Write-Host "Test Results:"
+        Write-Host "  CreatureEditor.Tests: $creatureResult"
+        Write-Host "  Radoub.Formats.Tests: $formatsResult"
+
+        if ($creatureResult -eq "success" -and $formatsResult -eq "success") {
+          Write-Host "✅ All tests passed"
+        } else {
+          Write-Host "❌ Some tests failed"
+          exit 1
+        }

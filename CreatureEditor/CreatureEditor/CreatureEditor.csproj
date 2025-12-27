@@ -12,7 +12,7 @@
     <FileVersion>1.0.0.0</FileVersion>
 
     <!-- Product Information -->
-    <Product>CreatureEditor - Creature and Inventory Editor for Neverwinter Nights</Product>
+    <Product>Quartermaster - Creature and Inventory Editor for Neverwinter Nights</Product>
     <Company>LNS Development</Company>
     <Copyright>Copyright 2025</Copyright>
     <AssemblyName>CreatureEditor</AssemblyName>
