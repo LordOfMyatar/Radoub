@@ -18,10 +18,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Migrate Parley's DLG parser to the shared Radoub.Formats library.
 
 #### Phase 1: Extract & Refactor
-- [ ] Create `Radoub.Formats/Dlg/` directory
-- [ ] Extract `DlgFile`, `DlgReader`, `DlgWriter` from Parley
-- [ ] Migrate to use shared `CExoLocString`
-- [ ] Add comprehensive unit tests
+- [x] Create `Radoub.Formats/Dlg/` directory
+- [x] Create `DlgFile` domain model (entries, replies, links, params)
+- [x] Create `DlgReader` using GffReader infrastructure
+- [x] Create `DlgWriter` using GffFieldBuilder helpers
+- [x] Migrate to use shared `CExoLocString`
+- [x] Add 17 comprehensive unit tests with round-trip validation
 
 #### Phase 2: Update Parley
 - [ ] Remove Parley's internal DLG parser
