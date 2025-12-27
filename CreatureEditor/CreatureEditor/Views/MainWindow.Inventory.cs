@@ -6,6 +6,7 @@ using Radoub.UI.Controls;
 using Radoub.UI.ViewModels;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace CreatureEditor.Views;
 
@@ -155,46 +156,72 @@ public partial class MainWindow
     #region Item Palette
 
     /// <summary>
-    /// Populates the item palette by scanning the module directory for UTI files.
-    /// Items are loaded and added to _paletteItems for display in the palette list.
+    /// Populates the item palette from multiple sources:
+    /// 1. Module directory (loose UTI files)
+    /// 2. Override folder
+    /// 3. Base game BIF archives
     /// </summary>
     private void PopulateItemPalette()
     {
         _paletteItems.Clear();
 
-        if (string.IsNullOrEmpty(_currentFilePath))
-        {
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, "No file path - palette empty");
-            return;
-        }
+        var moduleItemCount = 0;
+        var gameItemCount = 0;
 
-        var moduleDir = Path.GetDirectoryName(_currentFilePath);
-        if (string.IsNullOrEmpty(moduleDir) || !Directory.Exists(moduleDir))
+        // 1. Load UTI files from module directory (if we have a file open)
+        if (!string.IsNullOrEmpty(_currentFilePath))
         {
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Module directory not found - palette empty");
-            return;
-        }
-
-        // Scan for UTI files in module directory
-        var utiFiles = Directory.GetFiles(moduleDir, "*.uti", SearchOption.TopDirectoryOnly);
-        UnifiedLogger.LogInventory(LogLevel.INFO, $"Found {utiFiles.Length} UTI files in module directory");
-
-        foreach (var utiPath in utiFiles)
-        {
-            try
+            var moduleDir = Path.GetDirectoryName(_currentFilePath);
+            if (!string.IsNullOrEmpty(moduleDir) && Directory.Exists(moduleDir))
             {
-                var item = UtiReader.Read(utiPath);
-                var viewModel = _itemViewModelFactory.Create(item, GameResourceSource.Module);
-                _paletteItems.Add(viewModel);
-            }
-            catch (Exception ex)
-            {
-                var fileName = Path.GetFileName(utiPath);
-                UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
+                var utiFiles = Directory.GetFiles(moduleDir, "*.uti", SearchOption.TopDirectoryOnly);
+                foreach (var utiPath in utiFiles)
+                {
+                    try
+                    {
+                        var item = UtiReader.Read(utiPath);
+                        var viewModel = _itemViewModelFactory.Create(item, GameResourceSource.Module);
+                        _paletteItems.Add(viewModel);
+                        moduleItemCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        var fileName = Path.GetFileName(utiPath);
+                        UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
+                    }
+                }
             }
         }
 
-        UnifiedLogger.LogInventory(LogLevel.INFO, $"Loaded {_paletteItems.Count} items into palette");
+        // 2. Load items from game data (Override + BIF)
+        if (_gameDataService.IsConfigured)
+        {
+            var gameResources = _gameDataService.ListResources(ResourceTypes.Uti);
+            foreach (var resourceInfo in gameResources)
+            {
+                // Skip if we already loaded this from module directory
+                if (_paletteItems.Any(p => p.ResRef.Equals(resourceInfo.ResRef, StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                try
+                {
+                    var utiData = _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti);
+                    if (utiData != null)
+                    {
+                        var item = UtiReader.Read(utiData);
+                        var viewModel = _itemViewModelFactory.Create(item, resourceInfo.Source);
+                        _paletteItems.Add(viewModel);
+                        gameItemCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to load UTI {resourceInfo.ResRef}: {ex.Message}");
+                }
+            }
+        }
+
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Loaded {_paletteItems.Count} items into palette ({moduleItemCount} module, {gameItemCount} game)");
     }
 
     #endregion

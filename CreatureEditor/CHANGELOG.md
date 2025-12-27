@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Feature: Wire up Inventory Display and File Search (#580)
 
 #### Added
-- **Item palette population** - Scans module directory for UTI files on creature load
+- **Item palette population** - Loads items from module directory, Override folder, and BIF archives
 - **Item filtering** - Filter panel wired to GameDataService for item type dropdown
 - **GitHub workflows** - `quartermaster-pr-build.yml` and `quartermaster-pr-tests.yml`
 - **External branding** - Window title, About dialog, CLI help, menus use "Quartermaster"
