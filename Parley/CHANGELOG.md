@@ -10,6 +10,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.96-alpha] - 2025-12-27
+**Branch**: `parley/feat/dlg-parser-migration` | **PR**: #TBD
+
+### Feat: Migrate DLG Parser to Radoub.Formats (#560)
+
+Migrate Parley's DLG parser to the shared Radoub.Formats library.
+
+#### Phase 1: Extract & Refactor
+- [ ] Create `Radoub.Formats/Dlg/` directory
+- [ ] Extract `DlgFile`, `DlgReader`, `DlgWriter` from Parley
+- [ ] Migrate to use shared `CExoLocString`
+- [ ] Add comprehensive unit tests
+
+#### Phase 2: Update Parley
+- [ ] Remove Parley's internal DLG parser
+- [ ] Reference `Radoub.Formats.Dlg`
+- [ ] Update any Parley-specific DLG handling
+- [ ] Verify all existing Parley tests pass
+
+---
+
 ## [0.1.95-alpha] - 2025-12-26
 **Branch**: `parley/refactor/mainwindow-size` | **PR**: #569
 
