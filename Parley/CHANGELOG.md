@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.100-alpha] - 2025-12-27
+**Branch**: `parley/refactor/remove-gffbinaryreader` | **PR**: #TBD
+
+### Refactor: Remove legacy GffBinaryReader.cs (#598)
+
+Remove legacy GffBinaryReader.cs (582 lines) in favor of Radoub.Formats.Gff.GffReader.
+
+---
+
 ## [0.1.99-alpha] - 2025-12-27
 **Branch**: `parley/refactor/gff-field-factory` | **PR**: #601
 
