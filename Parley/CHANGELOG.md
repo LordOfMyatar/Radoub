@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.98-alpha] - 2025-12-27
-**Branch**: `parley/refactor/gff-binary-writer` | **PR**: #TBD
+**Branch**: `parley/refactor/gff-binary-writer` | **PR**: #600
 
 ### Refactor: Extract GffBinaryWriter from DialogWriter (#533)
 
