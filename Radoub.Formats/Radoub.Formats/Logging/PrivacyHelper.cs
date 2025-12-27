@@ -80,7 +80,7 @@ public static class PrivacyHelper
         // Check if the entire message looks like a path
         if (LooksLikePath(message))
         {
-            return SanitizePath(message);
+            return SanitizePath(message) ?? string.Empty;
         }
 
         // For messages with potential embedded paths
@@ -110,11 +110,11 @@ public static class PrivacyHelper
             }
 
             var fullPath = result.Substring(startIndex, endIndex - startIndex);
-            var sanitized = SanitizePath(fullPath);
+            var sanitized = SanitizePath(fullPath) ?? fullPath;
             result = result.Substring(0, startIndex) + sanitized + result.Substring(endIndex);
 
             // Look for next occurrence
-            startIndex = result.IndexOf(UserProfile, startIndex + sanitized.Length, StringComparison.OrdinalIgnoreCase);
+            startIndex = result.IndexOf(UserProfile!, startIndex + sanitized.Length, StringComparison.OrdinalIgnoreCase);
         }
 
         return result;
