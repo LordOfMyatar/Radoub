@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Parsers;
+using Radoub.Formats.Dlg;
 
 namespace DialogEditor.Services
 {
@@ -10,14 +11,21 @@ namespace DialogEditor.Services
     /// Service facade for dialog file I/O operations.
     /// Provides clean public API and encapsulates DialogParser implementation details.
     /// Phase 4 of parser refactoring - Oct 28, 2025
+    /// Phase 5: Migration to Radoub.Formats.Dlg - Dec 27, 2025
     /// </summary>
     public class DialogFileService
     {
-        private readonly DialogParser _parser;
+        private readonly DialogParser _legacyParser;
+
+        /// <summary>
+        /// If true, uses new Radoub.Formats.Dlg parser. If false, uses legacy Parley parser.
+        /// Set to false by default for safe rollout.
+        /// </summary>
+        public bool UseNewParser { get; set; } = false;
 
         public DialogFileService()
         {
-            _parser = new DialogParser();
+            _legacyParser = new DialogParser();
         }
 
         /// <summary>
@@ -33,7 +41,17 @@ namespace DialogEditor.Services
             if (!File.Exists(filePath))
                 throw new FileNotFoundException("Dialog file not found", filePath);
 
-            return await _parser.ParseFromFileAsync(filePath);
+            if (UseNewParser)
+            {
+                return await Task.Run(() =>
+                {
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"[NEW PARSER] Loading: {Path.GetFileName(filePath)}");
+                    var dlgFile = DlgReader.Read(filePath);
+                    return DlgAdapter.ToDialog(dlgFile);
+                });
+            }
+
+            return await _legacyParser.ParseFromFileAsync(filePath);
         }
 
         /// <summary>
@@ -46,7 +64,17 @@ namespace DialogEditor.Services
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            return await _parser.ParseFromStreamAsync(stream);
+            if (UseNewParser)
+            {
+                return await Task.Run(() =>
+                {
+                    UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Loading from stream");
+                    var dlgFile = DlgReader.Read(stream);
+                    return DlgAdapter.ToDialog(dlgFile);
+                });
+            }
+
+            return await _legacyParser.ParseFromStreamAsync(stream);
         }
 
         /// <summary>
@@ -59,11 +87,22 @@ namespace DialogEditor.Services
             if (buffer == null || buffer.Length == 0)
                 throw new ArgumentNullException(nameof(buffer));
 
-            return await _parser.ParseFromBufferAsync(buffer);
+            if (UseNewParser)
+            {
+                return await Task.Run(() =>
+                {
+                    UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Loading from buffer");
+                    var dlgFile = DlgReader.Read(buffer);
+                    return DlgAdapter.ToDialog(dlgFile);
+                });
+            }
+
+            return await _legacyParser.ParseFromBufferAsync(buffer);
         }
 
         /// <summary>
         /// Loads a dialog from JSON representation.
+        /// JSON parsing always uses legacy parser (no change needed).
         /// </summary>
         /// <param name="json">JSON string containing dialog data</param>
         /// <returns>Dialog object if successful, null otherwise</returns>
@@ -72,7 +111,8 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(json))
                 throw new ArgumentNullException(nameof(json));
 
-            return await _parser.ParseFromJsonAsync(json);
+            // JSON parsing stays with legacy parser - it's Parley-specific
+            return await _legacyParser.ParseFromJsonAsync(json);
         }
 
         /// <summary>
@@ -89,7 +129,26 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(filePath))
                 throw new ArgumentNullException(nameof(filePath));
 
-            return await _parser.WriteToFileAsync(dialog, filePath);
+            if (UseNewParser)
+            {
+                return await Task.Run(() =>
+                {
+                    try
+                    {
+                        UnifiedLogger.LogParser(LogLevel.INFO, $"[NEW PARSER] Saving: {Path.GetFileName(filePath)}");
+                        var dlgFile = DlgAdapter.ToDlgFile(dialog);
+                        DlgWriter.Write(dlgFile, filePath);
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Save failed: {ex.Message}");
+                        return false;
+                    }
+                });
+            }
+
+            return await _legacyParser.WriteToFileAsync(dialog, filePath);
         }
 
         /// <summary>
@@ -106,11 +165,31 @@ namespace DialogEditor.Services
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            return await _parser.WriteToStreamAsync(dialog, stream);
+            if (UseNewParser)
+            {
+                return await Task.Run(() =>
+                {
+                    try
+                    {
+                        UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Saving to stream");
+                        var dlgFile = DlgAdapter.ToDlgFile(dialog);
+                        DlgWriter.Write(dlgFile, stream);
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Save to stream failed: {ex.Message}");
+                        return false;
+                    }
+                });
+            }
+
+            return await _legacyParser.WriteToStreamAsync(dialog, stream);
         }
 
         /// <summary>
         /// Converts a dialog to JSON representation.
+        /// JSON export always uses legacy parser (no change needed).
         /// </summary>
         /// <param name="dialog">Dialog to convert</param>
         /// <returns>JSON string</returns>
@@ -119,7 +198,8 @@ namespace DialogEditor.Services
             if (dialog == null)
                 throw new ArgumentNullException(nameof(dialog));
 
-            return await _parser.WriteToJsonAsync(dialog);
+            // JSON export stays with legacy parser - it's Parley-specific
+            return await _legacyParser.WriteToJsonAsync(dialog);
         }
 
         /// <summary>
@@ -132,11 +212,25 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(filePath))
                 return false;
 
-            return _parser.IsValidDlgFile(filePath);
+            if (UseNewParser)
+            {
+                try
+                {
+                    var dlgFile = DlgReader.Read(filePath);
+                    return dlgFile != null;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            return _legacyParser.IsValidDlgFile(filePath);
         }
 
         /// <summary>
         /// Validates the structure of a dialog object.
+        /// Validation always uses legacy parser (has validation logic).
         /// </summary>
         /// <param name="dialog">Dialog to validate</param>
         /// <returns>ParserResult with validation details</returns>
@@ -145,7 +239,8 @@ namespace DialogEditor.Services
             if (dialog == null)
                 throw new ArgumentNullException(nameof(dialog));
 
-            return _parser.ValidateStructure(dialog);
+            // Validation stays with legacy parser - it has the validation logic
+            return _legacyParser.ValidateStructure(dialog);
         }
     }
 }
