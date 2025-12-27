@@ -31,11 +31,25 @@ namespace DialogEditor.ViewModels
             DialogNode? parentNode = null;
             DialogPtr? parentPtr = null;
 
+            // Issue #603: Log extraction for debugging
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"🎯 AddNodeWithUndoAndRefresh: selectedNode={selectedNode?.GetType().Name ?? "null"}, " +
+                $"isTreeViewRootNode={selectedNode is TreeViewRootNode}");
+
             if (selectedNode != null && !(selectedNode is TreeViewRootNode))
             {
                 parentNode = selectedNode.OriginalNode;
                 // Expand parent in tree view
                 selectedNode.IsExpanded = true;
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"🎯 AddNodeWithUndoAndRefresh: Extracted parentNode Type={parentNode?.Type}, " +
+                    $"DisplayText='{parentNode?.DisplayText}'");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    "🎯 AddNodeWithUndoAndRefresh: No parent extracted (ROOT or null selection)");
             }
 
             // Create node via delegate

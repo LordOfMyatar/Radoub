@@ -1350,6 +1350,11 @@ namespace DialogEditor.Views
         private async void OnAddSmartNodeClick(object? sender, RoutedEventArgs e)
         {
             var selectedNode = GetSelectedTreeNode();
+            // Issue #603: Log selection state for debugging
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"🎯 OnAddSmartNodeClick: selectedNode={selectedNode?.GetType().Name ?? "null"}, " +
+                $"DisplayText='{selectedNode?.DisplayText ?? "null"}', " +
+                $"OriginalNodeType={selectedNode?.OriginalNode?.Type}");
             await _services.NodeCreation.CreateSmartNodeAsync(selectedNode);
         }
 
