@@ -29,9 +29,13 @@ Migrate Parley's DLG parser to the shared Radoub.Formats library.
 - [x] Create `DlgAdapter` for model conversion (ToDialog/ToDlgFile)
 - [x] Update `DialogFileService` with `UseNewParser` feature flag
 - [x] Wire up new parser with logging integration
-- [x] Verify all 492 Parley tests pass
-- [ ] Enable new parser by default after validation
-- [ ] Remove legacy parser code (future cleanup)
+- [x] Verify all 500+ Parley tests pass
+- [x] Enable new parser by default (`UseNewParser = true`)
+- [ ] Remove legacy parser code (see #592)
+
+#### Notes
+- **Legacy Parser**: `DialogFileService.UseNewParser` flag allows fallback to legacy parser if issues arise. Set to `false` to use legacy Parley parser.
+- **DlgWriter**: Updated to write all required GFF fields per BioWare spec (Aurora Engine expects all fields present, even when empty)
 
 ---
 

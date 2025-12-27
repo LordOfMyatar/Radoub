@@ -19,9 +19,9 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// If true, uses new Radoub.Formats.Dlg parser. If false, uses legacy Parley parser.
-        /// Set to false by default for safe rollout.
+        /// Enabled by default as of Dec 27, 2025 (#560).
         /// </summary>
-        public bool UseNewParser { get; set; } = false;
+        public bool UseNewParser { get; set; } = true;
 
         public DialogFileService()
         {
@@ -45,9 +45,17 @@ namespace DialogEditor.Services
             {
                 return await Task.Run(() =>
                 {
-                    UnifiedLogger.LogParser(LogLevel.INFO, $"[NEW PARSER] Loading: {Path.GetFileName(filePath)}");
-                    var dlgFile = DlgReader.Read(filePath);
-                    return DlgAdapter.ToDialog(dlgFile);
+                    try
+                    {
+                        UnifiedLogger.LogParser(LogLevel.INFO, $"[NEW PARSER] Loading: {Path.GetFileName(filePath)}");
+                        var dlgFile = DlgReader.Read(filePath);
+                        return DlgAdapter.ToDialog(dlgFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Load failed: {ex.Message}");
+                        return null;
+                    }
                 });
             }
 
@@ -68,9 +76,17 @@ namespace DialogEditor.Services
             {
                 return await Task.Run(() =>
                 {
-                    UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Loading from stream");
-                    var dlgFile = DlgReader.Read(stream);
-                    return DlgAdapter.ToDialog(dlgFile);
+                    try
+                    {
+                        UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Loading from stream");
+                        var dlgFile = DlgReader.Read(stream);
+                        return DlgAdapter.ToDialog(dlgFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Load from stream failed: {ex.Message}");
+                        return null;
+                    }
                 });
             }
 
@@ -91,9 +107,17 @@ namespace DialogEditor.Services
             {
                 return await Task.Run(() =>
                 {
-                    UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Loading from buffer");
-                    var dlgFile = DlgReader.Read(buffer);
-                    return DlgAdapter.ToDialog(dlgFile);
+                    try
+                    {
+                        UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Loading from buffer");
+                        var dlgFile = DlgReader.Read(buffer);
+                        return DlgAdapter.ToDialog(dlgFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Load from buffer failed: {ex.Message}");
+                        return null;
+                    }
                 });
             }
 

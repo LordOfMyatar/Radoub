@@ -53,17 +53,12 @@ public static class DlgWriter
     {
         var root = new GffStruct { Type = 0xFFFFFFFF };
 
-        // Root level fields
+        // Root level fields - all are required per BioWare spec
         AddDwordField(root, "DelayEntry", dlg.DelayEntry);
         AddDwordField(root, "DelayReply", dlg.DelayReply);
+        AddCResRefField(root, "EndConverAbort", dlg.EndConverAbort ?? "");
+        AddCResRefField(root, "EndConversation", dlg.EndConversation ?? "");
         AddDwordField(root, "NumWords", dlg.NumWords);
-
-        if (!string.IsNullOrEmpty(dlg.EndConversation))
-            AddCResRefField(root, "EndConversation", dlg.EndConversation);
-
-        if (!string.IsNullOrEmpty(dlg.EndConverAbort))
-            AddCResRefField(root, "EndConverAbort", dlg.EndConverAbort);
-
         AddByteField(root, "PreventZoomIn", (byte)(dlg.PreventZoomIn ? 1 : 0));
 
         // EntryList
@@ -91,40 +86,29 @@ public static class DlgWriter
     {
         var entryStruct = new GffStruct { Type = 0 };
 
-        // Entry fields
-        if (!string.IsNullOrEmpty(entry.Speaker))
-            AddCExoStringField(entryStruct, "Speaker", entry.Speaker);
-
+        // Entry fields - all are required per BioWare DLG spec (Table 2.2.1)
+        // Aurora Engine expects all fields to be present, even when empty
+        AddCExoStringField(entryStruct, "Speaker", entry.Speaker ?? "");
         AddDwordField(entryStruct, "Animation", entry.Animation);
         AddByteField(entryStruct, "AnimLoop", (byte)(entry.AnimLoop ? 1 : 0));
         AddLocStringField(entryStruct, "Text", entry.Text);
+        AddCResRefField(entryStruct, "Script", entry.Script ?? "");
 
-        if (!string.IsNullOrEmpty(entry.Script))
-            AddCResRefField(entryStruct, "Script", entry.Script);
+        // ActionParams - always write (empty list if no params)
+        var actionParamsList = new GffList();
+        foreach (var param in entry.ActionParams)
+            actionParamsList.Elements.Add(BuildParamStruct(param));
+        AddListField(entryStruct, "ActionParams", actionParamsList);
 
-        // ActionParams
-        if (entry.ActionParams.Count > 0)
-        {
-            var paramList = new GffList();
-            foreach (var param in entry.ActionParams)
-                paramList.Elements.Add(BuildParamStruct(param));
-            AddListField(entryStruct, "ActionParams", paramList);
-        }
+        AddDwordField(entryStruct, "Delay", entry.Delay);
+        AddCExoStringField(entryStruct, "Comment", entry.Comment ?? "");
+        AddCResRefField(entryStruct, "Sound", entry.Sound ?? "");
 
-        if (entry.Delay != 0xFFFFFFFF)
-            AddDwordField(entryStruct, "Delay", entry.Delay);
-
-        if (!string.IsNullOrEmpty(entry.Comment))
-            AddCExoStringField(entryStruct, "Comment", entry.Comment);
-
-        if (!string.IsNullOrEmpty(entry.Sound))
-            AddCResRefField(entryStruct, "Sound", entry.Sound);
-
+        // Quest - always write (QuestEntry only when Quest is non-empty per spec)
+        AddCExoStringField(entryStruct, "Quest", entry.Quest ?? "");
         if (!string.IsNullOrEmpty(entry.Quest))
         {
-            AddCExoStringField(entryStruct, "Quest", entry.Quest);
-            if (entry.QuestEntry != 0xFFFFFFFF)
-                AddDwordField(entryStruct, "QuestEntry", entry.QuestEntry);
+            AddDwordField(entryStruct, "QuestEntry", entry.QuestEntry);
         }
 
         // RepliesList
@@ -140,37 +124,28 @@ public static class DlgWriter
     {
         var replyStruct = new GffStruct { Type = 0 };
 
-        // Reply fields
+        // Reply fields - all are required per BioWare DLG spec (Table 2.2.1)
+        // Aurora Engine expects all fields to be present, even when empty
         AddDwordField(replyStruct, "Animation", reply.Animation);
         AddByteField(replyStruct, "AnimLoop", (byte)(reply.AnimLoop ? 1 : 0));
         AddLocStringField(replyStruct, "Text", reply.Text);
+        AddCResRefField(replyStruct, "Script", reply.Script ?? "");
 
-        if (!string.IsNullOrEmpty(reply.Script))
-            AddCResRefField(replyStruct, "Script", reply.Script);
+        // ActionParams - always write (empty list if no params)
+        var actionParamsList = new GffList();
+        foreach (var param in reply.ActionParams)
+            actionParamsList.Elements.Add(BuildParamStruct(param));
+        AddListField(replyStruct, "ActionParams", actionParamsList);
 
-        // ActionParams
-        if (reply.ActionParams.Count > 0)
-        {
-            var paramList = new GffList();
-            foreach (var param in reply.ActionParams)
-                paramList.Elements.Add(BuildParamStruct(param));
-            AddListField(replyStruct, "ActionParams", paramList);
-        }
+        AddDwordField(replyStruct, "Delay", reply.Delay);
+        AddCExoStringField(replyStruct, "Comment", reply.Comment ?? "");
+        AddCResRefField(replyStruct, "Sound", reply.Sound ?? "");
 
-        if (reply.Delay != 0xFFFFFFFF)
-            AddDwordField(replyStruct, "Delay", reply.Delay);
-
-        if (!string.IsNullOrEmpty(reply.Comment))
-            AddCExoStringField(replyStruct, "Comment", reply.Comment);
-
-        if (!string.IsNullOrEmpty(reply.Sound))
-            AddCResRefField(replyStruct, "Sound", reply.Sound);
-
+        // Quest - always write (QuestEntry only when Quest is non-empty per spec)
+        AddCExoStringField(replyStruct, "Quest", reply.Quest ?? "");
         if (!string.IsNullOrEmpty(reply.Quest))
         {
-            AddCExoStringField(replyStruct, "Quest", reply.Quest);
-            if (reply.QuestEntry != 0xFFFFFFFF)
-                AddDwordField(replyStruct, "QuestEntry", reply.QuestEntry);
+            AddDwordField(replyStruct, "QuestEntry", reply.QuestEntry);
         }
 
         // EntriesList
@@ -186,24 +161,21 @@ public static class DlgWriter
     {
         var linkStruct = new GffStruct { Type = 0 };
 
+        // Sync struct fields - Active and Index are required per DLG spec (Table 2.3.x)
+        AddCResRefField(linkStruct, "Active", link.Active ?? "");
+
+        // ConditionParams - always write (empty list if no params)
+        var condParamsList = new GffList();
+        foreach (var param in link.ConditionParams)
+            condParamsList.Elements.Add(BuildParamStruct(param));
+        AddListField(linkStruct, "ConditionParams", condParamsList);
+
         AddDwordField(linkStruct, "Index", link.Index);
-
-        if (!string.IsNullOrEmpty(link.Active))
-            AddCResRefField(linkStruct, "Active", link.Active);
-
-        // ConditionParams
-        if (link.ConditionParams.Count > 0)
-        {
-            var paramList = new GffList();
-            foreach (var param in link.ConditionParams)
-                paramList.Elements.Add(BuildParamStruct(param));
-            AddListField(linkStruct, "ConditionParams", paramList);
-        }
-
         AddByteField(linkStruct, "IsChild", (byte)(link.IsChild ? 1 : 0));
 
-        if (link.IsChild && !string.IsNullOrEmpty(link.LinkComment))
-            AddCExoStringField(linkStruct, "LinkComment", link.LinkComment);
+        // LinkComment - only present when IsChild=1 per spec
+        if (link.IsChild)
+            AddCExoStringField(linkStruct, "LinkComment", link.LinkComment ?? "");
 
         return linkStruct;
     }

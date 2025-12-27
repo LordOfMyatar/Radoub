@@ -31,8 +31,8 @@ public class SmokeTests : QuartermasterTestBase
         // Act
         var title = MainWindow!.Title;
 
-        // Assert - Window title should contain "Creature Editor"
-        Assert.Contains("Creature Editor", title, StringComparison.OrdinalIgnoreCase);
+        // Assert - Window title should contain "Quartermaster"
+        Assert.Contains("Quartermaster", title, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
