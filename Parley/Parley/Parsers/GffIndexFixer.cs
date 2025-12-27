@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 

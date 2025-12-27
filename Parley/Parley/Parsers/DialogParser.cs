@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DialogEditor.Models;
 using DialogEditor.Services;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 using Newtonsoft.Json;
@@ -254,32 +255,16 @@ namespace DialogEditor.Parsers
 
                     UnifiedLogger.LogParser(LogLevel.DEBUG, $"Parsing GFF buffer of {buffer.Length} bytes");
 
-                    // Parse GFF structure
-                    var header = GffBinaryReader.ParseGffHeader(buffer);
+                    // Parse GFF structure using Radoub.Formats.Gff.GffReader
+                    var gffFile = GffReader.Read(buffer);
 
-                    if (header.FileType != "DLG " || header.FileVersion != "V3.2")
+                    if (gffFile.FileType != "DLG ")
                     {
-                        throw new InvalidDataException($"Invalid DLG format: {header.FileType} {header.FileVersion}");
+                        throw new InvalidDataException($"Invalid DLG format: {gffFile.FileType} {gffFile.FileVersion}");
                     }
-
-                    var structs = GffBinaryReader.ParseStructs(buffer, header);
-                    var fields = GffBinaryReader.ParseFields(buffer, header);
-                    var labels = GffBinaryReader.ParseLabels(buffer, header);
-
-                    // Resolve field labels and values
-                    GffBinaryReader.ResolveFieldLabels(fields, labels, buffer, header);
-                    GffBinaryReader.ResolveFieldValues(fields, structs, buffer, header);
-
-                    // Assign fields to their parent structs
-                    AssignFieldsToStructs(structs, fields, header, buffer);
 
                     // Convert GFF root struct to Dialog
-                    if (structs.Length == 0)
-                    {
-                        throw new InvalidDataException("No root struct found in GFF file");
-                    }
-
-                    var dialog = _dialogBuilder.BuildDialogFromGffStruct(structs[0]);
+                    var dialog = _dialogBuilder.BuildDialogFromGffStruct(gffFile.RootStruct);
 
                     UnifiedLogger.LogParser(LogLevel.INFO,
                         $"Successfully parsed dialog with {dialog.Entries.Count} entries and {dialog.Replies.Count} replies");
@@ -292,78 +277,6 @@ namespace DialogEditor.Parsers
                     return null;
                 }
             });
-        }
-
-        private void AssignFieldsToStructs(GffStruct[] structs, GffField[] fields, GffHeader header, byte[] buffer)
-        {
-            for (int structIdx = 0; structIdx < structs.Length; structIdx++)
-            {
-                var gffStruct = structs[structIdx];
-                if (gffStruct.FieldCount == 0)
-                {
-                    // No fields
-                    continue;
-                }
-                else if (gffStruct.FieldCount == 1)
-                {
-                    // Single field - DataOrDataOffset is the field index
-                    var fieldIndex = gffStruct.DataOrDataOffset;
-                    if (fieldIndex < fields.Length)
-                    {
-                        gffStruct.Fields.Add(fields[fieldIndex]);
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogParser(LogLevel.WARN,
-                            $"Invalid field index {fieldIndex} for single-field struct, max: {fields.Length - 1}");
-                    }
-                }
-                else
-                {
-                    // Multiple fields - DataOrDataOffset is a byte offset from FieldIndicesOffset
-                    var indicesOffset = (int)(header.FieldIndicesOffset + gffStruct.DataOrDataOffset);
-
-                    // Check if the base offset is reasonable
-                    if (indicesOffset >= buffer.Length)
-                    {
-                        UnifiedLogger.LogParser(LogLevel.DEBUG,
-                            $"Struct with {gffStruct.FieldCount} fields has invalid indices offset {indicesOffset}, skipping");
-                        continue;
-                    }
-
-                    for (uint fieldIdx = 0; fieldIdx < gffStruct.FieldCount; fieldIdx++)
-                    {
-                        var indexPos = indicesOffset + (int)(fieldIdx * 4);
-                        if (indexPos + 4 <= buffer.Length)
-                        {
-                            var fieldIndex = BitConverter.ToUInt32(buffer, indexPos);
-                            if (fieldIndex < fields.Length)
-                            {
-                                var assignedField = fields[fieldIndex];
-                                gffStruct.Fields.Add(assignedField);
-
-                                // Debug first struct's fields (Entry or Reply struct 0)
-                                if (structIdx < 3 && fieldIdx < 3)
-                                {
-                                    UnifiedLogger.LogParser(LogLevel.TRACE,
-                                        $"🔧 Struct[{structIdx}].Field[{fieldIdx}]: Retrieved fields[{fieldIndex}] - Type={assignedField.Type}, Label={assignedField.Label ?? "unlabeled"}, DataOrDataOffset={assignedField.DataOrDataOffset}");
-                                }
-                            }
-                            else
-                            {
-                                UnifiedLogger.LogParser(LogLevel.DEBUG,
-                                    $"Invalid field index {fieldIndex} for multi-field struct field {fieldIdx}, max: {fields.Length - 1}");
-                            }
-                        }
-                        else
-                        {
-                            UnifiedLogger.LogParser(LogLevel.DEBUG,
-                                $"Buffer boundary reached at offset {indexPos}, stopping field assignment for this struct");
-                            break; // Stop processing this struct's fields
-                        }
-                    }
-                }
-            }
         }
 
         private byte[] CreateDlgBuffer(Dialog dialog)

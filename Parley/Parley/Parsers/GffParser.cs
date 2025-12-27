@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using DialogEditor.Services;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Parsers
@@ -12,9 +13,7 @@ namespace DialogEditor.Parsers
     /// Provides common functionality for reading and writing GFF binary format.
     /// Specific file types (DLG, UTC, JRL, etc.) should inherit from this class.
     ///
-    /// Note: This parser uses DialogEditor's own GFF types (GffStructures.cs) for
-    /// DialogEditor-specific features. JournalService uses Radoub.Formats.Jrl
-    /// for JRL parsing (Sprint #398).
+    /// Uses Radoub.Formats.Gff for GFF parsing and type definitions.
     /// </summary>
     public abstract class GffParser
     {
@@ -23,70 +22,24 @@ namespace DialogEditor.Parsers
         #region GFF Binary Reading
 
         /// <summary>
-        /// Parse GFF file from binary buffer using GffBinaryReader.
+        /// Parse GFF file from binary buffer using Radoub.Formats.Gff.GffReader.
         /// Subclasses should call this to get the root struct, then build their specific data model.
         /// </summary>
         protected GffStruct? ParseGffFromBuffer(byte[] buffer)
         {
             try
             {
-                var header = GffBinaryReader.ParseGffHeader(buffer);
-                var structs = GffBinaryReader.ParseStructs(buffer, header);
-                var fields = GffBinaryReader.ParseFields(buffer, header);
-                var labels = GffBinaryReader.ParseLabels(buffer, header);
-
-                GffBinaryReader.ResolveFieldLabels(fields, labels, buffer, header);
-                GffBinaryReader.ResolveFieldValues(fields, structs, buffer, header);
-                AssignFieldsToStructs(structs, fields, header, buffer);
+                var gffFile = GffReader.Read(buffer);
 
                 UnifiedLogger.LogParser(LogLevel.DEBUG,
-                    $"📖 READ GFF: {structs.Length} structs, {fields.Length} fields, {labels.Length} labels");
+                    $"📖 READ GFF: {gffFile.Structs.Count} structs, {gffFile.Fields.Count} fields, {gffFile.Labels.Count} labels");
 
-                return structs.Length > 0 ? structs[0] : null;
+                return gffFile.RootStruct;
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogParser(LogLevel.ERROR, $"Failed to parse GFF: {ex.Message}");
                 return null;
-            }
-        }
-
-        /// <summary>
-        /// Assign fields to their parent structs based on GFF spec.
-        /// </summary>
-        private void AssignFieldsToStructs(GffStruct[] structs, GffField[] fields, GffHeader header, byte[] buffer)
-        {
-            for (int structIdx = 0; structIdx < structs.Length; structIdx++)
-            {
-                var gffStruct = structs[structIdx];
-                if (gffStruct.FieldCount == 0)
-                    continue;
-
-                if (gffStruct.FieldCount == 1)
-                {
-                    // Single field - DataOrDataOffset is the field index
-                    var fieldIndex = gffStruct.DataOrDataOffset;
-                    if (fieldIndex < fields.Length)
-                        gffStruct.Fields.Add(fields[fieldIndex]);
-                }
-                else
-                {
-                    // Multiple fields - DataOrDataOffset is a byte offset from FieldIndicesOffset
-                    var indicesOffset = (int)(header.FieldIndicesOffset + gffStruct.DataOrDataOffset);
-                    if (indicesOffset >= buffer.Length)
-                        continue;
-
-                    for (uint fieldIdx = 0; fieldIdx < gffStruct.FieldCount; fieldIdx++)
-                    {
-                        var indexPos = indicesOffset + (int)(fieldIdx * 4);
-                        if (indexPos + 4 <= buffer.Length)
-                        {
-                            var fieldIndex = BitConverter.ToUInt32(buffer, indexPos);
-                            if (fieldIndex < fields.Length)
-                                gffStruct.Fields.Add(fields[fieldIndex]);
-                        }
-                    }
-                }
             }
         }
 
