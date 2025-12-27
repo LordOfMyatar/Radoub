@@ -10,6 +10,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.100-alpha] - 2025-12-27
+**Branch**: `parley/refactor/remove-gffbinaryreader` | **PR**: #602
+
+### Refactor: Remove legacy GffBinaryReader.cs (#598)
+
+Full migration to Radoub.Formats.Gff types, removing duplicate GFF parsing code.
+
+**Removed Files:**
+- `GffBinaryReader.cs` (582 lines) - replaced by `Radoub.Formats.Gff.GffReader`
+- `GffStructures.cs` (183 lines) - replaced by `Radoub.Formats.Gff` types
+
+**Updated Files:**
+- `DialogParser.cs` - now uses `GffReader.Read()` instead of manual parsing
+- `DialogBuilder.cs` - uses `Radoub.Formats.Gff.GffStruct`
+- `GffParser.cs` - simplified to use `GffReader`
+- `DialogWriter.cs`, `GffBinaryWriter.cs`, `GffFieldFactory.cs`, `GffIndexFixer.cs`, `CreatureParser.cs`, `ModuleInfoParser.cs` - updated imports
+- `DialogStructures.cs` - `OriginalGffStruct` now uses `Radoub.Formats.Gff.GffStruct`
+
+**Impact:** -765 lines of duplicate code removed. All GFF parsing now uses the shared `Radoub.Formats` library.
+
+All 500 tests pass.
+
+---
+
 ## [0.1.99-alpha] - 2025-12-27
 **Branch**: `parley/refactor/gff-field-factory` | **PR**: #601
 

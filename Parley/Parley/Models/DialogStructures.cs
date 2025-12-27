@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Radoub.Formats.Gff;
 
 namespace DialogEditor.Models
 {
@@ -90,7 +91,7 @@ namespace DialogEditor.Models
         // 2025-10-21: Preserve original GFF struct type for round-trip editing
         // GFF uses frequency-based type assignment (Type-0 = most common pattern)
         [JsonIgnore]
-        public DialogEditor.Parsers.GffStruct? OriginalGffStruct { get; set; }
+        public GffStruct? OriginalGffStruct { get; set; }
         
         public bool IsStart { get; set; }
         public bool IsLink { get; set; }
@@ -225,7 +226,7 @@ namespace DialogEditor.Models
         // 2025-10-21: Preserve original GFF struct type for round-trip editing
         // GFF uses frequency-based type assignment (Type-0 = most common pattern)
         [JsonIgnore]
-        public DialogEditor.Parsers.GffStruct? OriginalGffStruct { get; set; }
+        public GffStruct? OriginalGffStruct { get; set; }
 
         // Display properties for UI binding
         [JsonIgnore]
@@ -348,7 +349,7 @@ namespace DialogEditor.Models
         // 2025-10-21: Preserve root GFF struct for round-trip editing
         // GFF uses frequency-based type assignment (Type-0 = most common pattern)
         [JsonIgnore]
-        public DialogEditor.Parsers.GffStruct? OriginalRootGffStruct { get; set; }
+        public GffStruct? OriginalRootGffStruct { get; set; }
 
         /// <summary>
         /// Link registry for tracking all node references (Issue #6 fix)

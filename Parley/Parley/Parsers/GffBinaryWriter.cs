@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DialogEditor.Models;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Parsers

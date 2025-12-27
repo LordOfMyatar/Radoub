@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using DialogEditor.Models;
+using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Parsers
