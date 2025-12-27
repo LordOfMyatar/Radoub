@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.3-alpha] - 2025-12-26
-**Branch**: `quartermaster/feat/inventory-display-580` | **PR**: #TBD
+**Branch**: `quartermaster/feat/inventory-display-580` | **PR**: #585
 
 ### Feature: Wire up Inventory Display and File Search (#580)
 
