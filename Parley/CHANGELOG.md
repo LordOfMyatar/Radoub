@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.97-alpha] - 2025-12-27
+**Branch**: `parley/refactor/mainviewmodel-size` | **PR**: #TBD
+
+### Refactor: Reduce MainViewModel.cs Size (#536)
+
+Extract command groups from MainViewModel to improve maintainability.
+
+---
+
 ## [0.1.96-alpha] - 2025-12-27
 **Branch**: `parley/feat/dlg-parser-migration` | **PR**: #590
 
