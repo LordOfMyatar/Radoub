@@ -4,6 +4,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Manifest.Models;
 using Manifest.Services;
+using Radoub.Formats.Logging;
 using Radoub.Dictionary;
 using Radoub.Formats.Settings;
 using System;

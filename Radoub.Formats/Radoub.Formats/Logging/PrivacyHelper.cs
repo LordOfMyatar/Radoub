@@ -11,10 +11,12 @@ public static class PrivacyHelper
     /// <summary>
     /// Sanitize a file path for logging - replaces home directory with ~
     /// </summary>
-    public static string SanitizePath(string? path)
+    public static string? SanitizePath(string? path)
     {
-        if (string.IsNullOrEmpty(path))
-            return path ?? string.Empty;
+        if (path == null)
+            return null;
+        if (path.Length == 0)
+            return string.Empty;
 
         if (!string.IsNullOrEmpty(UserProfile) &&
             path.StartsWith(UserProfile, StringComparison.OrdinalIgnoreCase))

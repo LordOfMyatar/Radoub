@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using CreatureEditor.Services;
+using Radoub.Formats.Logging;
 using CreatureEditor.Views;
 
 namespace CreatureEditor;

@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using Avalonia.Markup.Xaml;
 using Manifest.Services;
+using Radoub.Formats.Logging;
 using Manifest.Views;
 
 namespace Manifest;

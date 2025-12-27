@@ -245,7 +245,7 @@ public static class UnifiedLogger
     /// <summary>
     /// Sanitize a file path for logging - replaces home directory with ~
     /// </summary>
-    public static string SanitizePath(string path) => PrivacyHelper.SanitizePath(path);
+    public static string? SanitizePath(string? path) => PrivacyHelper.SanitizePath(path);
 
     // ========================================================================
     // Internal
