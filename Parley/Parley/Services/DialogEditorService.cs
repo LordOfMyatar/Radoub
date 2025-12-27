@@ -23,20 +23,27 @@ namespace DialogEditor.Services
 
             DialogNode newNode;
 
+            // Log parent details for debugging (Issue #603)
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"AddSmartNode: parentNode={parentNode != null}, parentType={parentNode?.Type}");
+
             // Determine node type based on parent
             if (parentNode == null)
             {
                 // No parent selected, add at root level
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "AddSmartNode: No parent, creating Entry at root");
                 newNode = AddEntryNode(dialog, null, null);
             }
             else if (parentNode.Type == DialogNodeType.Entry)
             {
                 // Parent is NPC, add PC Reply
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "AddSmartNode: Parent is Entry, creating Reply");
                 newNode = AddPCReplyNode(dialog, parentNode, parentPtr);
             }
             else
             {
                 // Parent is PC, add NPC Entry
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "AddSmartNode: Parent is Reply, creating Entry");
                 newNode = AddEntryNode(dialog, parentNode, parentPtr);
             }
 
@@ -53,6 +60,18 @@ namespace DialogEditor.Services
         {
             if (dialog == null)
                 throw new ArgumentNullException(nameof(dialog));
+
+            // Issue #603: Validate parent type - Entry can only be child of Reply (or root)
+            if (parentNode != null && parentNode.Type == DialogNodeType.Entry)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"⚠️ INVALID: Attempted to add Entry under Entry (parent text: '{parentNode.DisplayText}'). " +
+                    "This violates NWN dialog structure. Entry should be under Reply or at root.");
+                // Don't throw - let it continue for now to avoid breaking existing behavior
+                // But log the stack trace for debugging
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Stack trace: {System.Environment.StackTrace}");
+            }
 
             var newNode = new DialogNode
             {
@@ -110,6 +129,18 @@ namespace DialogEditor.Services
                 throw new ArgumentNullException(nameof(dialog));
             if (parentNode == null)
                 throw new ArgumentNullException(nameof(parentNode));
+
+            // Issue #603: Validate parent type - Reply can only be child of Entry
+            if (parentNode.Type == DialogNodeType.Reply)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"⚠️ INVALID: Attempted to add Reply under Reply (parent text: '{parentNode.DisplayText}'). " +
+                    "This violates NWN dialog structure. Reply should be under Entry.");
+                // Don't throw - let it continue for now to avoid breaking existing behavior
+                // But log the stack trace for debugging
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"Stack trace: {System.Environment.StackTrace}");
+            }
 
             var newNode = new DialogNode
             {
