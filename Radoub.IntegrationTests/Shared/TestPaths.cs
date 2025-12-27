@@ -58,6 +58,25 @@ public static class TestPaths
     public static string GetManifestTestFile(string filename) => Path.Combine(ManifestTestFiles, filename);
 
     /// <summary>
+    /// Gets the path to a built CreatureEditor (Quartermaster) executable.
+    /// </summary>
+    /// <param name="configuration">Build configuration (Debug or Release)</param>
+    public static string GetCreatureEditorExePath(string configuration = "Debug")
+    {
+        return Path.Combine(RepoRoot, "CreatureEditor", "CreatureEditor", "bin", configuration, "net9.0", "CreatureEditor.exe");
+    }
+
+    /// <summary>
+    /// Gets path to CreatureEditor test files directory.
+    /// </summary>
+    public static string CreatureEditorTestFiles => Path.Combine(RepoRoot, "CreatureEditor", "CreatureEditor.Tests", "TestData");
+
+    /// <summary>
+    /// Gets a specific CreatureEditor test file path.
+    /// </summary>
+    public static string GetCreatureEditorTestFile(string filename) => Path.Combine(CreatureEditorTestFiles, filename);
+
+    /// <summary>
     /// Creates a temporary directory for test output.
     /// Call Cleanup() when done.
     /// </summary>

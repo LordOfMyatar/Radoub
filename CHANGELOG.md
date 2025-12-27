@@ -5,12 +5,41 @@ All notable changes to Radoub (repository-level) will be documented in this file
 For tool-specific changes, see the individual tool changelogs:
 - [Parley CHANGELOG](Parley/CHANGELOG.md)
 - [Manifest CHANGELOG](Manifest/CHANGELOG.md)
+- [Quartermaster CHANGELOG](CreatureEditor/CHANGELOG.md)
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
 ## [Unreleased]
+
+---
+
+## [0.9.14] - 2025-12-26
+**Branch**: `radoub/sprint/creature-editor-cleanup` | **PR**: #584
+
+### Sprint: CreatureEditor Cleanup (#582, #583)
+
+Part of Epic #544 (Creature Editor Tool).
+
+Pre-emptive refactoring before CreatureEditor grows. Lessons from Parley's 2,400+ line MainWindow.
+
+#### Refactoring (#582)
+- **MainWindow.FileOps.cs** - Extracted file operations (Open/Save/Recent files, 221 lines)
+- **MainWindow.Inventory.cs** - Extracted inventory population and item resolution (130 lines)
+- **DialogHelper.cs** - Static helper for common dialogs (Unsaved/Error/About)
+- MainWindow.axaml.cs reduced from 892 to 466 lines (48% reduction)
+
+#### Testing (#583)
+- **CreatureEditor.Tests project** - New xUnit test project
+- **CommandLineServiceTests** - 9 tests for argument parsing
+- **SettingsServiceTests** - 12 tests for property constraints and defaults
+- **Quartermaster FlaUI tests** - 5 smoke tests in Radoub.IntegrationTests
+
+#### Changed (Radoub.IntegrationTests)
+- TestPaths.cs updated with CreatureEditor paths
+- FlaUITestBase.cs supports CreatureEditor settings isolation
+- run-tests.ps1 includes CreatureEditor.Tests in test suite
 
 ---
 

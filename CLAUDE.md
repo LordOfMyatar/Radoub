@@ -11,6 +11,7 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 ### Current Tools
 
 - **Parley**: Dialog editor (`.dlg` files) - See `Parley/CLAUDE.md` for tool-specific guidance
+- **Quartermaster**: Creature/inventory editor (`.utc`, `.bic` files) - See `CreatureEditor/CLAUDE.md` for tool-specific guidance
 
 ### Shared Libraries
 
@@ -46,6 +47,11 @@ Radoub/
 │   ├── TestingTools/
 │   ├── Documentation/ (Approved Parley-specific docs)
 │   ├── NonPublic/ (To be approved documents)
+├── CreatureEditor/ (creature/inventory editor - public name: Quartermaster)
+│   ├── CLAUDE.md (Quartermaster-specific guidance)
+│   ├── CHANGELOG.md (Quartermaster-specific changes)
+│   ├── CreatureEditor/ (source code)
+│   └── CreatureEditor.Tests/ (unit tests)
 ├── Radoub.Formats/ (shared library)
 │   ├── Radoub.Formats.sln
 │   ├── Radoub.Formats/ (source code)
