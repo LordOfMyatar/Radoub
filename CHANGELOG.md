@@ -13,6 +13,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed (Radoub.IntegrationTests)
+- Test scripts support `-ParleyOnly` / `--parley-only` flag to run only Parley + shared tests
+- Test scripts support `-QuartermasterOnly` / `--quartermaster-only` flag to run only Quartermaster + shared tests
+- UI integration tests now filtered by namespace for tool-specific runs
+
 ---
 
 ## [0.9.14] - 2025-12-26

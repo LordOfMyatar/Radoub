@@ -1,10 +1,12 @@
 # Run all Radoub test projects
-# Usage: .\run-tests.ps1 [-UIOnly] [-UnitOnly] [-SkipPrivacy]
+# Usage: .\run-tests.ps1 [-UIOnly] [-UnitOnly] [-SkipPrivacy] [-ParleyOnly] [-QuartermasterOnly]
 
 param(
     [switch]$UIOnly,
     [switch]$UnitOnly,
-    [switch]$SkipPrivacy
+    [switch]$SkipPrivacy,
+    [switch]$ParleyOnly,
+    [switch]$QuartermasterOnly
 )
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
@@ -71,30 +73,52 @@ function Invoke-PrivacyScan {
 }
 
 # Unit/Headless Tests (fast, no UI required)
-$unitTests = @(
-    @{ Name = "Radoub.Formats.Tests"; Path = "Radoub.Formats\Radoub.Formats.Tests" },
-    @{ Name = "Radoub.UI.Tests"; Path = "Radoub.UI\Radoub.UI.Tests" },
-    @{ Name = "Radoub.Dictionary.Tests"; Path = "Radoub.Dictionary\Radoub.Dictionary.Tests" },
-    @{ Name = "Parley.Tests"; Path = "Parley\Parley.Tests" },
-    @{ Name = "Manifest.Tests"; Path = "Manifest\Manifest.Tests" },
-    @{ Name = "CreatureEditor.Tests"; Path = "CreatureEditor\CreatureEditor.Tests" }
+$allUnitTests = @(
+    @{ Name = "Radoub.Formats.Tests"; Path = "Radoub.Formats\Radoub.Formats.Tests"; Tool = "Shared" },
+    @{ Name = "Radoub.UI.Tests"; Path = "Radoub.UI\Radoub.UI.Tests"; Tool = "Shared" },
+    @{ Name = "Radoub.Dictionary.Tests"; Path = "Radoub.Dictionary\Radoub.Dictionary.Tests"; Tool = "Shared" },
+    @{ Name = "Parley.Tests"; Path = "Parley\Parley.Tests"; Tool = "Parley" },
+    @{ Name = "Manifest.Tests"; Path = "Manifest\Manifest.Tests"; Tool = "Shared" },
+    @{ Name = "CreatureEditor.Tests"; Path = "CreatureEditor\CreatureEditor.Tests"; Tool = "Quartermaster" }
 )
 
 # UI Tests (slower, requires display)
-$uiTests = @(
-    @{ Name = "Radoub.IntegrationTests"; Path = "Radoub.IntegrationTests" }
+$allUiTests = @(
+    @{ Name = "Radoub.IntegrationTests.Parley"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Parley"; Tool = "Parley" },
+    @{ Name = "Radoub.IntegrationTests.Quartermaster"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Quartermaster"; Tool = "Quartermaster" }
 )
+
+# Filter tests based on tool flags
+function Get-FilteredTests {
+    param($AllTests)
+
+    if ($ParleyOnly) {
+        return $AllTests | Where-Object { $_.Tool -eq "Parley" -or $_.Tool -eq "Shared" }
+    }
+    elseif ($QuartermasterOnly) {
+        return $AllTests | Where-Object { $_.Tool -eq "Quartermaster" -or $_.Tool -eq "Shared" }
+    }
+    return $AllTests
+}
+
+$unitTests = Get-FilteredTests $allUnitTests
+$uiTests = Get-FilteredTests $allUiTests
 
 function Invoke-TestProject {
     param($TestInfo)
 
     $name = $TestInfo.Name
     $path = $TestInfo.Path
+    $filter = $TestInfo.Filter
     $outputFile = "$outputDir\${name}_$timestamp.output"
 
     Write-Host "`n--- $name ---" -ForegroundColor Yellow
 
-    $output = dotnet test $path --logger "console;verbosity=normal" 2>&1
+    if ($filter) {
+        $output = dotnet test $path --filter $filter --logger "console;verbosity=normal" 2>&1
+    } else {
+        $output = dotnet test $path --logger "console;verbosity=normal" 2>&1
+    }
     $output | Out-File -FilePath $outputFile
 
     # Parse results - dotnet test outputs "Total tests: N" and "Passed: N" on separate lines

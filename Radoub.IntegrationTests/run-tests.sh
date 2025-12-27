@@ -1,11 +1,13 @@
 #!/bin/bash
 # Run all Radoub test projects
-# Usage: ./run-tests.sh [--ui-only] [--unit-only]
+# Usage: ./run-tests.sh [--ui-only] [--unit-only] [--parley-only] [--quartermaster-only]
 
 set -e
 
 UI_ONLY=false
 UNIT_ONLY=false
+PARLEY_ONLY=false
+QUARTERMASTER_ONLY=false
 
 # Parse arguments
 for arg in "$@"; do
@@ -16,6 +18,14 @@ for arg in "$@"; do
             ;;
         --unit-only)
             UNIT_ONLY=true
+            shift
+            ;;
+        --parley-only)
+            PARLEY_ONLY=true
+            shift
+            ;;
+        --quartermaster-only)
+            QUARTERMASTER_ONLY=true
             shift
             ;;
     esac
@@ -35,17 +45,39 @@ TOTAL_FAILED=0
 declare -a RESULTS
 
 # Unit/Headless Tests (fast, no UI required)
-UNIT_TESTS=(
-    "Radoub.Formats.Tests:Radoub.Formats/Radoub.Formats.Tests"
-    "Radoub.UI.Tests:Radoub.UI/Radoub.UI.Tests"
-    "Radoub.Dictionary.Tests:Radoub.Dictionary/Radoub.Dictionary.Tests"
-    "Parley.Tests:Parley/Parley.Tests"
-    "Manifest.Tests:Manifest/Manifest.Tests"
+# Format: "Name:Path:Tool" where Tool is Parley, Quartermaster, or Shared
+ALL_UNIT_TESTS=(
+    "Radoub.Formats.Tests:Radoub.Formats/Radoub.Formats.Tests:Shared"
+    "Radoub.UI.Tests:Radoub.UI/Radoub.UI.Tests:Shared"
+    "Radoub.Dictionary.Tests:Radoub.Dictionary/Radoub.Dictionary.Tests:Shared"
+    "Parley.Tests:Parley/Parley.Tests:Parley"
+    "Manifest.Tests:Manifest/Manifest.Tests:Shared"
+    "CreatureEditor.Tests:CreatureEditor/CreatureEditor.Tests:Quartermaster"
 )
 
 # UI Tests (Windows-only, FlaUI requires Windows)
 # Note: Radoub.IntegrationTests uses FlaUI which is Windows-only
 # On Linux/macOS, only unit/headless tests are available
+ALL_UI_TESTS=()
+
+# Filter tests based on tool flags
+UNIT_TESTS=()
+for test in "${ALL_UNIT_TESTS[@]}"; do
+    tool="${test##*:}"
+    if [ "$PARLEY_ONLY" = true ]; then
+        if [ "$tool" = "Parley" ] || [ "$tool" = "Shared" ]; then
+            # Strip the tool suffix for compatibility with invoke_test_project
+            UNIT_TESTS+=("${test%:*}")
+        fi
+    elif [ "$QUARTERMASTER_ONLY" = true ]; then
+        if [ "$tool" = "Quartermaster" ] || [ "$tool" = "Shared" ]; then
+            UNIT_TESTS+=("${test%:*}")
+        fi
+    else
+        UNIT_TESTS+=("${test%:*}")
+    fi
+done
+
 UI_TESTS=()
 
 invoke_test_project() {

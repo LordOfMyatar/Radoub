@@ -10,6 +10,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.96-alpha] - 2025-12-27
+**Branch**: `parley/feat/dlg-parser-migration` | **PR**: #590
+
+### Feat: Migrate DLG Parser to Radoub.Formats (#560)
+
+Migrate Parley's DLG parser to the shared Radoub.Formats library.
+
+#### Phase 1: Extract & Refactor
+- [x] Create `Radoub.Formats/Dlg/` directory
+- [x] Create `DlgFile` domain model (entries, replies, links, params)
+- [x] Create `DlgReader` using GffReader infrastructure
+- [x] Create `DlgWriter` using GffFieldBuilder helpers
+- [x] Migrate to use shared `CExoLocString`
+- [x] Add 17 comprehensive unit tests with round-trip validation
+
+#### Phase 2: Update Parley
+- [x] Create `DlgAdapter` for model conversion (ToDialog/ToDlgFile)
+- [x] Update `DialogFileService` with `UseNewParser` feature flag
+- [x] Wire up new parser with logging integration
+- [x] Verify all 500+ Parley tests pass
+- [x] Enable new parser by default (`UseNewParser = true`)
+- [ ] Remove legacy parser code (see #592)
+
+#### Notes
+- **Legacy Parser**: `DialogFileService.UseNewParser` flag allows fallback to legacy parser if issues arise. Set to `false` to use legacy Parley parser.
+- **DlgWriter**: Updated to write all required GFF fields per BioWare spec (Aurora Engine expects all fields present, even when empty)
+
+---
+
 ## [0.1.95-alpha] - 2025-12-26
 **Branch**: `parley/refactor/mainwindow-size` | **PR**: #569
 
