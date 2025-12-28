@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.7-alpha] - 2025-12-28
+**Branch**: `quartermaster/sprint/classes-levels-panel` | **PR**: #TBD
+
+### Sprint: Classes & Levels Panel (#613)
+
+Add the Classes & Levels panel displaying character class progression and alignment.
+
+#### Added
+- TBD
+
+---
+
 ## [0.1.6-alpha] - 2025-12-28
 **Branch**: `quartermaster/sprint/stats-identity-panel` | **PR**: #622
 
