@@ -147,16 +147,21 @@ Document all findings in the checklist output.
 
 ### Step 6: Documentation Check
 
-Scan for:
-- New public APIs without XML docs
-- README updates needed for new features
-- User-facing changes that need wiki documentation
-- Claude file updates
-- **CODE_PATH_MAP updates** (see below)
+**Run the documentation skill:**
+
+```
+/documentation
+```
+
+This handles:
+- Developer docs (architecture, data flows) - Claude-authored, pushed after confirmation
+- User docs (guides, features) - staged in NonPublic for human review
+- Freshness date validation (30-day rule)
+- Mermaid diagrams for data flows
+
+See `/documentation --help` for details.
 
 **README Currency Check**:
-
-Verify that README files reflect the current state:
 
 | Check | How to Verify |
 |-------|---------------|
@@ -170,8 +175,6 @@ Files to check:
 - `Manifest/README.md` (if exists) - Check version and feature list
 
 **CLAUDE.md Currency Check**:
-
-If the PR includes architectural changes, verify CLAUDE.md files are updated:
 
 | Change Type | CLAUDE.md Update Needed |
 |-------------|------------------------|
@@ -188,45 +191,11 @@ Files to check:
 - `Parley/CLAUDE.md`
 - Tool-specific CLAUDE.md files if applicable
 
-**Wiki Updates** (https://github.com/LordOfMyatar/Radoub/wiki):
+**Wiki Updates**:
 
-**❌ WIKI UPDATES ARE BLOCKING.** Developer documentation rots fast. If the code changed, the docs probably need to change too. We're shipping features quickly - that means wiki pages go stale quickly.
-
-**Rule**: If wiki updates are needed, they MUST be completed before the PR can merge. This is not a suggestion - it's a blocking requirement. The pre-merge checklist will show ❌ BLOCKING if wiki work is outstanding.
-
-If changes affect user-facing features, check if wiki pages need updates:
-
-| Change Type | Wiki Pages to Review |
-|-------------|---------------------|
-| UI/Settings | [Settings](Settings), [Themes](Themes) |
-| Dialog editing | [Editing-Dialogs](Editing-Dialogs), [Properties-Panel](Properties-Panel) |
-| Scripts | [Script-Browser](Script-Browser) |
-| Sound | [Sound-Browser](Sound-Browser) |
-| Plugins | [Using-Plugins](Using-Plugins), [Plugin-Development](Plugin-Development) |
-| Keyboard shortcuts | [Keyboard-Shortcuts](Keyboard-Shortcuts) |
-| Installation | [Getting-Started](Getting-Started) |
-| New features | [Home](Home), [Index](Index) |
-| Parley architecture | [Parley-Developer-Architecture](Parley-Developer-Architecture) |
-| Manifest architecture | [Manifest-Developer-Architecture](Manifest-Developer-Architecture) |
-| Testing changes | [Parley-Developer-Testing](Parley-Developer-Testing) |
-| Delete behavior | [Parley-Developer-Delete-Behavior](Parley-Developer-Delete-Behavior) |
-| Copy/Paste | [Parley-Developer-CopyPaste](Parley-Developer-CopyPaste) |
-| Scrap/Orphan system | [Parley-Developer-Scrap-System](Parley-Developer-Scrap-System) |
-| Radoub.Formats | [Radoub-Formats](Radoub-Formats) and format-specific pages |
-
-Wiki repo location: `d:\LOM\workspace\Radoub.wiki\`
-
-**Wiki Freshness Dates**:
-
-Developer wiki pages have a freshness date at the bottom. **A page older than 30 days with related code changes is STALE.**
-
-When reviewing wiki pages:
-1. Check the `*Page freshness: YYYY-MM-DD*` at the bottom
-2. If the page is stale AND code in that area changed, UPDATE IT
-3. If you update a page, set freshness to today's date
-4. Commit and push wiki changes before merge
-
-**New Code = New Docs**: If you're adding a new parser, controller, or major feature, create or update the corresponding wiki page. Future Claude sessions and human developers need to understand the architecture.
+**❌ WIKI UPDATES ARE BLOCKING.** The `/documentation` skill enforces this:
+- Developer docs: Updated and pushed (after confirmation)
+- User docs: Staged in NonPublic for review before publishing
 
 ### Step 7: Generate Checklist
 
@@ -288,16 +257,12 @@ Output format:
   - [ ] PR number filled in
   - [ ] Date is today or earlier (not TBD, not future)
 - [x/⚠️] README current: [✅ Up to date / ⚠️ Needs update]
-  - [ ] Version matches CHANGELOG
-  - [ ] Feature list reflects current state
 - [x/⚠️] CLAUDE.md current: [✅ Up to date / ⚠️ Needs update / N/A]
-  - [ ] Architectural changes documented
-  - [ ] New workflows documented
-- [x/⚠️/❌] Wiki updates: [✅ Completed / ⚠️ Needed - IN PROGRESS / ❌ BLOCKING - must complete before merge]
-  - [ ] Pages reviewed: [list affected pages]
-  - [ ] Freshness dates checked (30-day rule)
-  - [ ] New features have corresponding wiki pages
-  - **BLOCKING**: If wiki updates needed and not done, PR cannot merge until addressed
+- [x/⚠️/❌] `/documentation` completed:
+  - [ ] Developer docs: [✅ Updated / ⚠️ Pending / N/A]
+  - [ ] User docs: [✅ Staged for review / ⚠️ Pending / N/A]
+  - [ ] Freshness dates checked
+  - **BLOCKING**: If wiki updates needed and not done, PR cannot merge
 
 ---
 

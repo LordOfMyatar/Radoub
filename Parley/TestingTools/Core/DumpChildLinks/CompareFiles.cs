@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using DialogEditor.Services;
 
 namespace DumpChildLinks
 {
@@ -7,10 +8,10 @@ namespace DumpChildLinks
     {
         public static async System.Threading.Tasks.Task CompareDialogs()
         {
-            var parser = new ArcReactor.Parsers.DialogParser();
+            var service = new DialogFileService();
             
-            var original = await parser.ParseFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\act1_g_ashera.dlg");
-            var exported = await parser.ParseFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\ashera01.dlg");
+            var original = await service.LoadFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\act1_g_ashera.dlg");
+            var exported = await service.LoadFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\ashera01.dlg");
             
             Console.WriteLine("=== ORIGINAL FILE ===");
             Console.WriteLine($"Entries: {original.Entries.Count}, Replies: {original.Replies.Count}");

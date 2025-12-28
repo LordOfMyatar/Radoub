@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 using DialogEditor.Services;
 using TestingTools.TestFiles;
 
@@ -10,14 +10,14 @@ class Program
     {
         Console.WriteLine("=== Testing Exported File Parsing ===");
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
 
         // Test original file
         string originalFile = TestPathHelper.GetTestFilePath("chef.dlg");
         Console.WriteLine($"\n--- Testing Original File: {UnifiedLogger.SanitizePath(originalFile)} ---");
         try
         {
-            var originalDialog = await parser.ParseFromFileAsync(originalFile);
+            var originalDialog = await service.LoadFromFileAsync(originalFile);
             if (originalDialog != null)
             {
                 Console.WriteLine($"✅ Original parsed successfully:");
@@ -46,7 +46,7 @@ class Program
         Console.WriteLine($"\n--- Testing Exported File: {UnifiedLogger.SanitizePath(exportedFile)} ---");
         try
         {
-            var exportedDialog = await parser.ParseFromFileAsync(exportedFile);
+            var exportedDialog = await service.LoadFromFileAsync(exportedFile);
             if (exportedDialog != null)
             {
                 Console.WriteLine($"✅ Exported parsed successfully:");

@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
-var parser = new DialogParser();
-var dlg = await parser.ParseFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\chef.dlg");
+var service = new DialogFileService();
+var dlg = await service.LoadFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\chef.dlg");
 
 int totalActionParams = 0;
 foreach (var entry in dlg.Entries) {

@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
 class ExportForGameTest
 {
@@ -17,7 +17,7 @@ class ExportForGameTest
             ("myra_james.dlg", "__myra.dlg")
         };
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
         int successCount = 0;
 
         Console.WriteLine("=== Exporting Files for In-Game Testing ===\n");
@@ -37,7 +37,7 @@ class ExportForGameTest
                     continue;
                 }
 
-                var dialog = await parser.ParseFromFileAsync(sourcePath);
+                var dialog = await service.LoadFromFileAsync(sourcePath);
                 if (dialog == null)
                 {
                     Console.WriteLine($"  ❌ Parse returned null");
@@ -47,13 +47,13 @@ class ExportForGameTest
                 Console.WriteLine($"  Loaded: {dialog.Entries.Count} entries, {dialog.Replies.Count} replies");
 
                 Console.WriteLine($"  Exporting to: {targetFile}");
-                await parser.WriteToFileAsync(dialog, targetPath);
+                await service.SaveToFileAsync(dialog, targetPath);
 
                 var fileInfo = new FileInfo(targetPath);
                 Console.WriteLine($"  ✅ Exported: {fileInfo.Length} bytes");
 
                 // Verify it loads back
-                var reloaded = await parser.ParseFromFileAsync(targetPath);
+                var reloaded = await service.LoadFromFileAsync(targetPath);
                 if (reloaded != null)
                 {
                     Console.WriteLine($"  ✅ Verified: {reloaded.Entries.Count} entries, {reloaded.Replies.Count} replies");

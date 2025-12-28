@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 using DialogEditor.Services;
 using SharedTestUtils;
 
@@ -86,11 +86,11 @@ namespace RoundTripTest
 
             try
             {
-                var parser = new DialogParser();
+                var service = new DialogFileService();
 
                 Console.WriteLine("=== STEP 1: PARSE ORIGINAL FILE ===");
                 Console.WriteLine($"File: {UnifiedLogger.SanitizePath(inputFile)}");
-                var originalDialog = await parser.ParseFromFileAsync(inputFile);
+                var originalDialog = await service.LoadFromFileAsync(inputFile);
 
                 if (originalDialog == null)
                 {
@@ -122,11 +122,11 @@ namespace RoundTripTest
                 }
 
                 Console.WriteLine("\n=== STEP 2: EXPORT WITH AURORA GLOBAL INDICES ===");
-                await parser.WriteToFileAsync(originalDialog, exportPath);
+                await service.SaveToFileAsync(originalDialog, exportPath);
                 Console.WriteLine($"Exported to: {UnifiedLogger.SanitizePath(exportPath)}");
 
                 Console.WriteLine("\n=== STEP 3: RE-IMPORT AND TEST ROUND-TRIP ===");
-                var importedDialog = await parser.ParseFromFileAsync(exportPath);
+                var importedDialog = await service.LoadFromFileAsync(exportPath);
 
                 if (importedDialog == null)
                 {

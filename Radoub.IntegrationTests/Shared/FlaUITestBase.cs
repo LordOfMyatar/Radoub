@@ -104,6 +104,14 @@ public abstract class FlaUITestBase : IDisposable
 
         // Wait for main window to appear
         MainWindow = App.GetMainWindow(Automation, DefaultTimeout);
+
+        // Explicitly focus the main window to prevent keyboard input going to other apps
+        // This fixes issues where VSCode or other apps steal focus during test startup
+        if (MainWindow != null)
+        {
+            MainWindow.Focus();
+            Thread.Sleep(100); // Brief delay to ensure focus is established
+        }
     }
 
     /// <summary>

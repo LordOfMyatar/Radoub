@@ -1,5 +1,4 @@
 using DialogEditor.Models;
-using DialogEditor.Parsers;
 using DialogEditor.Services;
 using Parley.Models;
 using Radoub.Formats.Logging;
@@ -551,8 +550,8 @@ namespace Parley.Tests
             }
 
             // Act
-            var parser = new DialogParser();
-            var dialog = await parser.ParseFromFileAsync(foxPath);
+            var service = new DialogFileService();
+            var dialog = await service.LoadFromFileAsync(foxPath);
 
             // Assert
             Assert.NotNull(dialog);
@@ -600,8 +599,8 @@ namespace Parley.Tests
             }
 
             // Act
-            var parser = new DialogParser();
-            var dialog = await parser.ParseFromFileAsync(chefPath);
+            var service = new DialogFileService();
+            var dialog = await service.LoadFromFileAsync(chefPath);
 
             // Assert
             Assert.NotNull(dialog);
@@ -639,8 +638,8 @@ namespace Parley.Tests
             }
 
             // Act
-            var parser = new DialogParser();
-            var dialog = await parser.ParseFromFileAsync(shadyPath);
+            var service = new DialogFileService();
+            var dialog = await service.LoadFromFileAsync(shadyPath);
 
             // Assert
             Assert.NotNull(dialog);
@@ -678,8 +677,8 @@ namespace Parley.Tests
             }
 
             // Act
-            var parser = new DialogParser();
-            var dialog = await parser.ParseFromFileAsync(henchPath);
+            var service = new DialogFileService();
+            var dialog = await service.LoadFromFileAsync(henchPath);
 
             // Assert
             Assert.NotNull(dialog);

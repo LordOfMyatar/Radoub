@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 using DialogEditor.Services;
 using TestingTools.TestFiles;
 
@@ -13,14 +13,14 @@ class DirectExportTest
         // Set log level to see field count details
         UnifiedLogger.SetLogLevel(LogLevel.DEBUG);
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
 
         // Load chef.dlg using workspace-relative paths
         string originalFile = TestPathHelper.GetTestFilePath("chef.dlg");
         string testFilesDir = TestPathHelper.GetTestFilesDir();
         Console.WriteLine($"Loading: {UnifiedLogger.SanitizePath(originalFile)}");
 
-        var dialog = await parser.ParseFromFileAsync(originalFile);
+        var dialog = await service.LoadFromFileAsync(originalFile);
         if (dialog == null)
         {
             Console.WriteLine("❌ Failed to load original file");
@@ -34,14 +34,14 @@ class DirectExportTest
         string exportFile = Path.Combine(testFilesDir, $"chef_test_{timestamp}.dlg");
         Console.WriteLine($"Exporting to: {UnifiedLogger.SanitizePath(exportFile)}");
 
-        bool success = await parser.WriteToFileAsync(dialog, exportFile);
+        bool success = await service.SaveToFileAsync(dialog, exportFile);
         Console.WriteLine($"Export result: {(success ? "SUCCESS" : "FAILED")}");
 
         if (success)
         {
             // Test parsing the exported file
             Console.WriteLine("\n--- Testing exported file ---");
-            var exportedDialog = await parser.ParseFromFileAsync(exportFile);
+            var exportedDialog = await service.LoadFromFileAsync(exportFile);
             if (exportedDialog != null)
             {
                 Console.WriteLine($"✅ Exported file parsed: {exportedDialog.Entries.Count} entries, {exportedDialog.Replies.Count} replies, {exportedDialog.Starts.Count} starts");

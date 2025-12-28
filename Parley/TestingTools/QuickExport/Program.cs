@@ -1,5 +1,5 @@
 using System;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
 class Program
 {
@@ -11,7 +11,7 @@ class Program
             return;
         }
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
         Console.WriteLine($"Loading {args[0]}...");
         var dialog = parser.LoadFrom(args[0]);
 

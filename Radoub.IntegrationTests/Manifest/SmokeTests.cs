@@ -42,8 +42,19 @@ public class SmokeTests : ManifestTestBase
         // Arrange
         StartApplication();
 
-        // Act - Try to find the File menu by name
-        var fileMenu = MainWindow!.FindFirstDescendant(cf => cf.ByName("File"));
+        // Wait for window to be fully ready (prevents flaky null reference)
+        var ready = WaitForTitleContains("Manifest", DefaultTimeout);
+        Assert.True(ready, "Window should be ready with 'Manifest' in title");
+
+        // Act - Try to find the File menu by name (with retry for UI stability)
+        FlaUI.Core.AutomationElements.AutomationElement? fileMenu = null;
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            fileMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("File"));
+            if (fileMenu != null) break;
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
 
         // Assert
         Assert.NotNull(fileMenu);
@@ -56,8 +67,19 @@ public class SmokeTests : ManifestTestBase
         // Arrange
         StartApplication();
 
-        // Act - Try to find the Edit menu
-        var editMenu = MainWindow!.FindFirstDescendant(cf => cf.ByName("Edit"));
+        // Wait for window to be fully ready (prevents flaky null reference)
+        var ready = WaitForTitleContains("Manifest", DefaultTimeout);
+        Assert.True(ready, "Window should be ready with 'Manifest' in title");
+
+        // Act - Try to find the Edit menu (with retry for UI stability)
+        FlaUI.Core.AutomationElements.AutomationElement? editMenu = null;
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            editMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("Edit"));
+            if (editMenu != null) break;
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
 
         // Assert
         Assert.NotNull(editMenu);
@@ -70,8 +92,19 @@ public class SmokeTests : ManifestTestBase
         // Arrange
         StartApplication();
 
-        // Act - Try to find the Help menu
-        var helpMenu = MainWindow!.FindFirstDescendant(cf => cf.ByName("Help"));
+        // Wait for window to be fully ready (prevents flaky null reference)
+        var ready = WaitForTitleContains("Manifest", DefaultTimeout);
+        Assert.True(ready, "Window should be ready with 'Manifest' in title");
+
+        // Act - Try to find the Help menu (with retry for UI stability)
+        FlaUI.Core.AutomationElements.AutomationElement? helpMenu = null;
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            helpMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("Help"));
+            if (helpMenu != null) break;
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
 
         // Assert
         Assert.NotNull(helpMenu);

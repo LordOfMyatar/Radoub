@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 using DialogEditor.Services;
 
 class Program
@@ -14,10 +14,10 @@ class Program
         string originalFile = @"~\Documents\Neverwinter Nights\modules\LNS_DLG\chef.dlg";
         string exportFile = @"~\Documents\Neverwinter Nights\modules\LNS_DLG\__chef.dlg";
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
 
         Console.WriteLine($"Loading: {originalFile}");
-        var dialog = await parser.ParseFromFileAsync(originalFile);
+        var dialog = await service.LoadFromFileAsync(originalFile);
 
         if (dialog == null)
         {
@@ -28,7 +28,7 @@ class Program
         Console.WriteLine($"Loaded: {dialog.Entries.Count} entries, {dialog.Replies.Count} replies");
         Console.WriteLine($"Exporting to: {exportFile}");
 
-        await parser.WriteToFileAsync(dialog, exportFile);
+        await service.SaveToFileAsync(dialog, exportFile);
 
         Console.WriteLine($"\n✅ Export complete!");
         Console.WriteLine($"Check logs at: {UnifiedLogger.GetSessionDirectory()}");

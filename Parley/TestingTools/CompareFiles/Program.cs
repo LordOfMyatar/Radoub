@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 using DialogEditor.Models;
 
 string origPath = @"~\Documents\Neverwinter Nights\modules\LNS_DLG\lista_orig.dlg";
@@ -18,8 +18,8 @@ await AnalyzeFile(researchPath);
 
 static async Task AnalyzeFile(string path)
 {
-    var parser = new DialogParser();
-    var dialog = await parser.ParseFromFileAsync(path);
+    var service = new DialogFileService();
+    var dialog = await service.LoadFromFileAsync(path);
 
     if (dialog != null)
     {

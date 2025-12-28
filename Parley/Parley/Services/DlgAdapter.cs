@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Linq;
 using DialogEditor.Models;
 using Radoub.Formats.Dlg;
 using Radoub.Formats.Gff;
+using Radoub.Formats.Logging;
 
 namespace DialogEditor.Services
 {
@@ -9,6 +11,10 @@ namespace DialogEditor.Services
     /// Converts between Radoub.Formats.Dlg models and Parley's Dialog models.
     /// Parley's models have UI-specific features (LinkRegistry, node pooling, bidirectional refs)
     /// while Radoub.Formats models are simple POCOs for file I/O.
+    ///
+    /// TLK Resolution: Uses GameResourceService.Instance to resolve StrRef values to
+    /// actual text from the game's TLK files. This is essential for displaying dialog
+    /// text that references the TLK rather than containing inline text.
     /// </summary>
     public static class DlgAdapter
     {
@@ -16,6 +22,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Convert a Radoub.Formats DlgFile to Parley's Dialog model.
+        /// Automatically resolves TLK StrRef values to display text.
         /// </summary>
         public static Dialog ToDialog(DlgFile dlgFile)
         {
@@ -187,16 +194,80 @@ namespace DialogEditor.Services
                 StrRef = cexo.StrRef
             };
 
-            foreach (var kvp in cexo.LocalizedStrings)
+            // Check if text needs TLK resolution
+            if (cexo.LocalizedStrings.Count == 0 && cexo.StrRef != 0xFFFFFFFF)
             {
-                locString.Strings[(int)kvp.Key] = kvp.Value;
+                // No inline text but valid StrRef - resolve from TLK
+                var tlkText = GameResourceService.Instance.GetTlkString(cexo.StrRef);
+                if (tlkText != null)
+                {
+                    locString.Strings[0] = tlkText;
+                    locString.DefaultText = tlkText;
+                    UnifiedLogger.LogParser(LogLevel.DEBUG,
+                        $"TLK resolved: StrRef={cexo.StrRef} → '{(tlkText.Length > 50 ? tlkText.Substring(0, 50) + "..." : tlkText)}'");
+                }
+                else
+                {
+                    // TLK lookup failed - show placeholder
+                    var placeholder = $"<StrRef:{cexo.StrRef}>";
+                    locString.Strings[0] = placeholder;
+                    locString.DefaultText = placeholder;
+                    UnifiedLogger.LogParser(LogLevel.WARN,
+                        $"TLK lookup failed: StrRef={cexo.StrRef} (TLK may not be loaded)");
+                }
             }
+            else if (cexo.LocalizedStrings.Count > 0)
+            {
+                // Check for embedded StrRef placeholders (from files saved with unresolved StrRefs)
+                var firstText = cexo.LocalizedStrings.Values.FirstOrDefault();
+                if (firstText != null && firstText.StartsWith("<StrRef:") && firstText.EndsWith(">"))
+                {
+                    // Parse and resolve the embedded StrRef
+                    var strRefText = firstText.Substring(8, firstText.Length - 9);
+                    if (uint.TryParse(strRefText, out var embeddedStrRef))
+                    {
+                        var tlkText = GameResourceService.Instance.GetTlkString(embeddedStrRef);
+                        if (tlkText != null)
+                        {
+                            locString.Strings[0] = tlkText;
+                            locString.DefaultText = tlkText;
+                            UnifiedLogger.LogParser(LogLevel.DEBUG,
+                                $"TLK resolved embedded: StrRef={embeddedStrRef} → '{(tlkText.Length > 50 ? tlkText.Substring(0, 50) + "..." : tlkText)}'");
+                        }
+                        else
+                        {
+                            // Keep original placeholder
+                            foreach (var kvp in cexo.LocalizedStrings)
+                            {
+                                locString.Strings[(int)kvp.Key] = kvp.Value;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Not a valid StrRef number, keep original
+                        foreach (var kvp in cexo.LocalizedStrings)
+                        {
+                            locString.Strings[(int)kvp.Key] = kvp.Value;
+                        }
+                    }
+                }
+                else
+                {
+                    // Normal inline text - copy as-is
+                    foreach (var kvp in cexo.LocalizedStrings)
+                    {
+                        locString.Strings[(int)kvp.Key] = kvp.Value;
+                    }
 
-            // Set DefaultText from English (0) if available
-            if (cexo.LocalizedStrings.TryGetValue(0, out var english))
-            {
-                locString.DefaultText = english;
+                    // Set DefaultText from English (0) if available
+                    if (cexo.LocalizedStrings.TryGetValue(0, out var english))
+                    {
+                        locString.DefaultText = english;
+                    }
+                }
             }
+            // else: Empty text is valid - "[CONTINUE]" nodes have no text
 
             return locString;
         }

@@ -1,33 +1,22 @@
 using System;
 using Radoub.Formats.Logging;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using DialogEditor.Models;
-using DialogEditor.Parsers;
+using Newtonsoft.Json;
 using Radoub.Formats.Dlg;
 
 namespace DialogEditor.Services
 {
     /// <summary>
     /// Service facade for dialog file I/O operations.
-    /// Provides clean public API and encapsulates DialogParser implementation details.
-    /// Phase 4 of parser refactoring - Oct 28, 2025
-    /// Phase 5: Migration to Radoub.Formats.Dlg - Dec 27, 2025
+    /// Uses Radoub.Formats.Dlg for DLG file parsing/writing and
+    /// DlgAdapter for converting to/from Parley's Dialog model.
     /// </summary>
     public class DialogFileService
     {
-        private readonly DialogParser _legacyParser;
-
-        /// <summary>
-        /// If true, uses new Radoub.Formats.Dlg parser. If false, uses legacy Parley parser.
-        /// Enabled by default as of Dec 27, 2025 (#560).
-        /// </summary>
-        public bool UseNewParser { get; set; } = true;
-
-        public DialogFileService()
-        {
-            _legacyParser = new DialogParser();
-        }
+        private readonly DialogValidator _validator = new();
 
         /// <summary>
         /// Loads a dialog from a DLG file.
@@ -42,25 +31,20 @@ namespace DialogEditor.Services
             if (!File.Exists(filePath))
                 throw new FileNotFoundException("Dialog file not found", filePath);
 
-            if (UseNewParser)
+            return await Task.Run(() =>
             {
-                return await Task.Run(() =>
+                try
                 {
-                    try
-                    {
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"[NEW PARSER] Loading: {Path.GetFileName(filePath)}");
-                        var dlgFile = DlgReader.Read(filePath);
-                        return DlgAdapter.ToDialog(dlgFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Load failed: {ex.Message}");
-                        return null;
-                    }
-                });
-            }
-
-            return await _legacyParser.ParseFromFileAsync(filePath);
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"Loading: {Path.GetFileName(filePath)}");
+                    var dlgFile = DlgReader.Read(filePath);
+                    return DlgAdapter.ToDialog(dlgFile);
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"Load failed: {ex.Message}");
+                    return null;
+                }
+            });
         }
 
         /// <summary>
@@ -73,25 +57,20 @@ namespace DialogEditor.Services
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            if (UseNewParser)
+            return await Task.Run(() =>
             {
-                return await Task.Run(() =>
+                try
                 {
-                    try
-                    {
-                        UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Loading from stream");
-                        var dlgFile = DlgReader.Read(stream);
-                        return DlgAdapter.ToDialog(dlgFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Load from stream failed: {ex.Message}");
-                        return null;
-                    }
-                });
-            }
-
-            return await _legacyParser.ParseFromStreamAsync(stream);
+                    UnifiedLogger.LogParser(LogLevel.INFO, "Loading from stream");
+                    var dlgFile = DlgReader.Read(stream);
+                    return DlgAdapter.ToDialog(dlgFile);
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"Load from stream failed: {ex.Message}");
+                    return null;
+                }
+            });
         }
 
         /// <summary>
@@ -104,30 +83,24 @@ namespace DialogEditor.Services
             if (buffer == null || buffer.Length == 0)
                 throw new ArgumentNullException(nameof(buffer));
 
-            if (UseNewParser)
+            return await Task.Run(() =>
             {
-                return await Task.Run(() =>
+                try
                 {
-                    try
-                    {
-                        UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Loading from buffer");
-                        var dlgFile = DlgReader.Read(buffer);
-                        return DlgAdapter.ToDialog(dlgFile);
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Load from buffer failed: {ex.Message}");
-                        return null;
-                    }
-                });
-            }
-
-            return await _legacyParser.ParseFromBufferAsync(buffer);
+                    UnifiedLogger.LogParser(LogLevel.INFO, "Loading from buffer");
+                    var dlgFile = DlgReader.Read(buffer);
+                    return DlgAdapter.ToDialog(dlgFile);
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"Load from buffer failed: {ex.Message}");
+                    return null;
+                }
+            });
         }
 
         /// <summary>
         /// Loads a dialog from JSON representation.
-        /// JSON parsing always uses legacy parser (no change needed).
         /// </summary>
         /// <param name="json">JSON string containing dialog data</param>
         /// <returns>Dialog object if successful, null otherwise</returns>
@@ -136,8 +109,24 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(json))
                 throw new ArgumentNullException(nameof(json));
 
-            // JSON parsing stays with legacy parser - it's Parley-specific
-            return await _legacyParser.ParseFromJsonAsync(json);
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    UnifiedLogger.LogParser(LogLevel.DEBUG, "Parsing dialog from JSON");
+                    var dialog = JsonConvert.DeserializeObject<Dialog>(json);
+                    if (dialog != null)
+                    {
+                        UnifiedLogger.LogParser(LogLevel.DEBUG, "Successfully parsed dialog from JSON");
+                    }
+                    return dialog;
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"Failed to parse dialog from JSON: {ex.Message}");
+                    return null;
+                }
+            });
         }
 
         /// <summary>
@@ -154,26 +143,21 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(filePath))
                 throw new ArgumentNullException(nameof(filePath));
 
-            if (UseNewParser)
+            return await Task.Run(() =>
             {
-                return await Task.Run(() =>
+                try
                 {
-                    try
-                    {
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"[NEW PARSER] Saving: {Path.GetFileName(filePath)}");
-                        var dlgFile = DlgAdapter.ToDlgFile(dialog);
-                        DlgWriter.Write(dlgFile, filePath);
-                        return true;
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Save failed: {ex.Message}");
-                        return false;
-                    }
-                });
-            }
-
-            return await _legacyParser.WriteToFileAsync(dialog, filePath);
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"Saving: {Path.GetFileName(filePath)}");
+                    var dlgFile = DlgAdapter.ToDlgFile(dialog);
+                    DlgWriter.Write(dlgFile, filePath);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"Save failed: {ex.Message}");
+                    return false;
+                }
+            });
         }
 
         /// <summary>
@@ -190,31 +174,25 @@ namespace DialogEditor.Services
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            if (UseNewParser)
+            return await Task.Run(() =>
             {
-                return await Task.Run(() =>
+                try
                 {
-                    try
-                    {
-                        UnifiedLogger.LogParser(LogLevel.INFO, "[NEW PARSER] Saving to stream");
-                        var dlgFile = DlgAdapter.ToDlgFile(dialog);
-                        DlgWriter.Write(dlgFile, stream);
-                        return true;
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogParser(LogLevel.ERROR, $"[NEW PARSER] Save to stream failed: {ex.Message}");
-                        return false;
-                    }
-                });
-            }
-
-            return await _legacyParser.WriteToStreamAsync(dialog, stream);
+                    UnifiedLogger.LogParser(LogLevel.INFO, "Saving to stream");
+                    var dlgFile = DlgAdapter.ToDlgFile(dialog);
+                    DlgWriter.Write(dlgFile, stream);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"Save to stream failed: {ex.Message}");
+                    return false;
+                }
+            });
         }
 
         /// <summary>
         /// Converts a dialog to JSON representation.
-        /// JSON export always uses legacy parser (no change needed).
         /// </summary>
         /// <param name="dialog">Dialog to convert</param>
         /// <returns>JSON string</returns>
@@ -223,8 +201,21 @@ namespace DialogEditor.Services
             if (dialog == null)
                 throw new ArgumentNullException(nameof(dialog));
 
-            // JSON export stays with legacy parser - it's Parley-specific
-            return await _legacyParser.WriteToJsonAsync(dialog);
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    UnifiedLogger.LogParser(LogLevel.DEBUG, "Converting dialog to JSON");
+                    var json = JsonConvert.SerializeObject(dialog, Formatting.Indented);
+                    UnifiedLogger.LogParser(LogLevel.DEBUG, "Successfully converted dialog to JSON");
+                    return json;
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogParser(LogLevel.ERROR, $"Failed to convert dialog to JSON: {ex.Message}");
+                    return string.Empty;
+                }
+            });
         }
 
         /// <summary>
@@ -237,25 +228,35 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(filePath))
                 return false;
 
-            if (UseNewParser)
-            {
-                try
-                {
-                    var dlgFile = DlgReader.Read(filePath);
-                    return dlgFile != null;
-                }
-                catch
-                {
-                    return false;
-                }
-            }
+            if (!File.Exists(filePath))
+                return false;
 
-            return _legacyParser.IsValidDlgFile(filePath);
+            var extension = Path.GetExtension(filePath);
+            if (!extension.Equals(".dlg", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            try
+            {
+                // Quick check for GFF/DLG signature
+                using var stream = File.OpenRead(filePath);
+                var buffer = new byte[8];
+                if (stream.Read(buffer, 0, 8) != 8)
+                    return false;
+
+                var signature = Encoding.ASCII.GetString(buffer, 0, 4);
+                var version = Encoding.ASCII.GetString(buffer, 4, 4);
+
+                // DLG files use "DLG " signature with GFF v3.2 format
+                return signature == "DLG " && version == "V3.2";
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
         /// Validates the structure of a dialog object.
-        /// Validation always uses legacy parser (has validation logic).
         /// </summary>
         /// <param name="dialog">Dialog to validate</param>
         /// <returns>ParserResult with validation details</returns>
@@ -264,8 +265,7 @@ namespace DialogEditor.Services
             if (dialog == null)
                 throw new ArgumentNullException(nameof(dialog));
 
-            // Validation stays with legacy parser - it has the validation logic
-            return _legacyParser.ValidateStructure(dialog);
+            return _validator.ValidateStructure(dialog);
         }
     }
 }
