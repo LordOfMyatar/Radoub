@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.6-alpha] - 2025-12-28
+**Branch**: `quartermaster/sprint/stats-identity-panel` | **PR**: #TBD
+
+### Sprint: Character Stats & Identity Panel (#612)
+
+Add the Stats & Identity panel displaying character name, portrait, and core statistics.
+
+#### Added
+- TBD
+
+---
+
 ## [0.1.5-alpha] - 2025-12-28
 **Branch**: `quartermaster/sprint/app-shell-layout` | **PR**: #619
 
