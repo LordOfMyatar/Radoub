@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.102-alpha] - 2025-12-28
-**Branch**: `parley/refactor/remove-legacy-parser` | **PR**: #TBD
+**Branch**: `parley/refactor/remove-legacy-parser` | **PR**: #608
 
 ### Refactor: Remove legacy DLG parser code (#592)
 
