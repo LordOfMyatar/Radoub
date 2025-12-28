@@ -16,7 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fix: FlaUI tests close VSCode instead of just the app (#593)
 
 #### Fixed
-- TBD - Investigation in progress
+- **StopApplication() window targeting** - Changed from `Alt+F4` keystroke to `App.Close()` method
+  - Alt+F4 sends to focused window, which could be VSCode if test app lost focus
+  - `App.Close()` sends WM_CLOSE directly to test process, ensuring correct targeting
+  - Kept 200ms delay before close to prevent SkiaSharp render crashes
 
 ---
 
