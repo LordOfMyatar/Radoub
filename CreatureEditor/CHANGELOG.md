@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.5-alpha] - 2025-12-28
-**Branch**: `quartermaster/sprint/app-shell-layout` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/app-shell-layout` | **PR**: #619
 
 ### Sprint: Application Shell & Layout Foundation (#618)
 
