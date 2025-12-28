@@ -18,7 +18,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Add the Stats & Identity panel displaying character name, portrait, and core statistics.
 
 #### Added
-- TBD
+- **CreatureDisplayService** - Centralized service for resolving creature names from 2DA/TLK
+  - Race name lookup from `racialtypes.2da` with TLK resolution
+  - Gender name lookup from `gender.2da` with TLK resolution
+  - Class name lookup from `classes.2da` with TLK resolution
+  - Racial ability modifier lookup (StrAdjust, DexAdjust, etc.)
+  - Hardcoded fallbacks for common races/genders/classes when 2DA not available
+- **Enhanced StatsPanel** - Complete overhaul with detailed stat breakdown
+  - Ability scores: Base | Racial Modifier | Total | Bonus columns
+  - Hit points: Base HP (dice rolls) | Max HP (with Con) | Current HP (with %)
+  - Combat stats: Natural AC | Base Attack | Speed | Challenge Rating
+  - Saving throws: Base | Ability Modifier | Total columns
+- **Sidebar character header** - Now shows resolved race/gender/class names via 2DA/TLK lookup
+
+#### Changed
+- MainWindow now uses `CreatureDisplayService` for character summary in sidebar
+- StatsPanel receives display service via `SetDisplayService()` method
 
 ---
 
