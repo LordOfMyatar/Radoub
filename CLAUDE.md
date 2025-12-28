@@ -11,6 +11,7 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 ### Current Tools
 
 - **Parley**: Dialog editor (`.dlg` files) - See `Parley/CLAUDE.md` for tool-specific guidance
+- **Manifest**: Journal editor (`.jrl` files) - See `Manifest/CLAUDE.md` for tool-specific guidance
 - **Quartermaster**: Creature/inventory editor (`.utc`, `.bic` files) - See `CreatureEditor/CLAUDE.md` for tool-specific guidance
 
 ### Shared Libraries
@@ -47,6 +48,11 @@ Radoub/
 │   ├── TestingTools/
 │   ├── Documentation/ (Approved Parley-specific docs)
 │   ├── NonPublic/ (To be approved documents)
+├── Manifest/ (journal editor)
+│   ├── CLAUDE.md (Manifest-specific guidance)
+│   ├── CHANGELOG.md (Manifest-specific changes)
+│   ├── Manifest/ (source code)
+│   └── Manifest.Tests/ (unit tests)
 ├── CreatureEditor/ (creature/inventory editor - public name: Quartermaster)
 │   ├── CLAUDE.md (Quartermaster-specific guidance)
 │   ├── CHANGELOG.md (Quartermaster-specific changes)
@@ -118,6 +124,14 @@ Use tool prefixes in commit messages:
 - `refactor:` - Code organization without feature changes
 - `test:` - Test additions or improvements
 - `chore:` - Maintenance tasks
+
+### Tool-Specific Standards
+
+Tool-specific CLAUDE.md files may add enforcement rules:
+- **Parley**: PR length limits (15 sentences max), Claude enforcement role for workflow discipline
+- **Binary format tools**: Stricter pre-commit testing requirements
+
+Tool-specific standards take precedence over repository-wide standards when they conflict.
 
 ---
 
@@ -284,9 +298,10 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 | CHANGELOG | Location | Contents |
 |-----------|----------|----------|
-| **Radoub** | `CHANGELOG.md` | Repository-level changes: shared documentation, slash commands, cross-tool features |
+| **Radoub** | `CHANGELOG.md` | Repository-level changes: shared documentation, slash commands, cross-tool features, Radoub.Formats |
 | **Parley** | `Parley/CHANGELOG.md` | Parley-specific changes: features, fixes, UI updates |
-| **Formats** | N/A (use Radoub) | Radoub.Formats is a shared library; changes go in Radoub CHANGELOG |
+| **Manifest** | `Manifest/CHANGELOG.md` | Manifest-specific changes: features, fixes, UI updates |
+| **Quartermaster** | `CreatureEditor/CHANGELOG.md` | Quartermaster-specific changes |
 
 **Rules**:
 - Tool-specific changes go in tool CHANGELOG only
@@ -343,6 +358,26 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ---
 
+## Code Quality Standards
+
+**Path Handling**:
+- Use `Environment.GetFolderPath()` with `SpecialFolder` constants
+- Validate paths with `Path.GetFullPath()` for traversal prevention
+- Use `ProcessStartInfo.ArgumentList` instead of string concatenation
+
+**Exception Handling**:
+- Never use bare `catch` blocks - catch specific types
+- Always log exceptions (at minimum `LogLevel.WARN`)
+- Never silently swallow exceptions
+
+**Code Hygiene**:
+- No commented-out code blocks - use git history
+- TODOs must reference GitHub issues: `// TODO (#123): description`
+- Keep methods under 100 lines
+- Remove debug/test code before committing
+
+---
+
 ## UI/UX Guidelines
 
 **Dialog and Window Behavior**:
@@ -396,10 +431,6 @@ ShowToastNotification("Plugin started", 3000);
 **Reference Strategy** for implementing Aurora Engine file parsers (GFF, ERF, KEY, BIF, TLK, 2DA, SSF):
 
 **PRIMARY Reference**: [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT License)
-- Official NWN:EE tooling, maintained by Beamdog developer
-- Battle-tested with 20+ years of real-world edge cases
-- Fuzz-validated against malformed files
-- Community-used and trusted
 
 **SECONDARY Reference**: BioWare Aurora Specifications (`Documentation/`)
 - Use for understanding structure and design intent
@@ -409,23 +440,12 @@ ShowToastNotification("Plugin started", 3000);
 **Implementation Approach**:
 1. Write parsers in C# (native to Radoub toolset)
 2. Follow neverwinter.nim's edge case handling and validation patterns
-3. Use BioWare specs to understand field purposes and structure
-4. Test against same edge cases Nim handles
-
-**Attribution Requirement**:
-- Must credit `niv/neverwinter.nim` in code comments and documentation
-- MIT license requires copyright notice preservation
-
-**Why This Matters**:
-- BioWare specs describe "ideal" format, not real-world variations
-- Community tools have discovered undocumented quirks over 20 years
-- Nim's fuzz testing caught issues specs never anticipated
-- Implementing purely from specs leads to mysterious failures
 
 ---
 
 ## Resources
 
+- **Wiki**: `d:\LOM\workspace\Radoub.wiki\` (local clone of https://github.com/LordOfMyatar/Radoub/wiki)
 - **BioWare Aurora Specs**: `Documentation/`
 - **neverwinter.nim Reference**: https://github.com/niv/neverwinter.nim
 - **Project History**: `About/CLAUDE_DEVELOPMENT_TIMELINE.md`

@@ -36,16 +36,9 @@ git checkout main
 git pull origin main
 ```
 
-### Step 3: Clean Up Feature Branch
+### Step 3: Clean Up Local Feature Branch
 
-Check if feature branch should be deleted:
-```bash
-# List merged branches
-git branch --merged main
-
-# Check if remote branch was deleted
-git fetch --prune
-```
+Remote branches are auto-pruned. Only local cleanup needed.
 
 **Ask user before deleting:**
 > "The feature branch `[branch-name]` has been merged. Would you like me to delete the local branch?"
@@ -210,7 +203,6 @@ Output format:
 ### Cleanup Completed
 
 - [x/⏭️] Local branch: `[branch-name]` [deleted / kept per user request]
-- [x] Remote branch pruned
 - [x] CHANGELOG verified
 - [x] Related issues closed
 - [x] Parent epic updated (if applicable)

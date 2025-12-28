@@ -13,6 +13,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.9.16] - 2025-12-27
+**Branch**: `radoub/docs/ui-wiki-page` | **PR**: #607
+
+### Docs: Wiki Updates and CLAUDE.md Optimization (#575)
+
+#### Added (Wiki)
+- Radoub-UI-Developer.md - Shared UI components documentation
+- Quartermaster-Developer-Architecture.md - CreatureEditor architecture
+- Radoub-Formats.md updates (ItemPropertyResolver, UnifiedLogger sections)
+- Updated _Sidebar.md and Index.md with new pages
+
+#### Changed (CLAUDE.md Files)
+- **Parley/CLAUDE.md** - Major rewrite (543→174 lines, 68% reduction)
+  - Removed duplicated standards (now in Radoub CLAUDE.md)
+  - Kept: MainViewModel closed rule, orphan handling, Aurora compatibility
+- **Manifest/CLAUDE.md** - Cleanup (146→118 lines)
+  - Removed stale sprint plan and duplicated path handling
+- **CLAUDE.md** (Radoub) - Added sections:
+  - Manifest in Current Tools
+  - Code Quality Standards (path handling, exceptions, hygiene)
+  - Wiki local path in Resources
+
+#### Changed (Slash Commands)
+- **pre-merge.md** - Wiki enforcement now BLOCKING (not advisory)
+- **post-merge.md** - Simplified branch cleanup (remote auto-prune)
+- **sprint-planning.md** - Saves output to NonPublic/sprintplanning.md
+- **grooming.md** - Saves output to NonPublic/grooming.md
+
+---
+
+## [Unreleased - IntegrationTests]
+
 ### Changed (Radoub.IntegrationTests)
 - Test scripts support `-ParleyOnly` / `--parley-only` flag to run only Parley + shared tests
 - Test scripts support `-QuartermasterOnly` / `--quartermaster-only` flag to run only Quartermaster + shared tests

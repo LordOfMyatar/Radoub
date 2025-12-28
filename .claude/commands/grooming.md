@@ -246,6 +246,8 @@ Apply recommendations? [y/n/manual]
 ### Tool Labels
 - `parley` - Dialog editor
 - `radoub` - Cross-tool infrastructure
+- `manifest` - Journal Editor
+- `quartermaster` - Character Editor
 
 ### Type Labels
 - `bug` - Something isn't working
@@ -339,6 +341,18 @@ gh auth refresh -s project  # Add if missing
 ```
 
 See `.claude/github-projects-reference.md` for project IDs and field details.
+
+## Save to File
+
+**IMPORTANT**: After generating the grooming output, save it to:
+
+```
+NonPublic/grooming.md
+```
+
+This file is clobbered each time grooming runs. It serves as a snapshot for reference between grooming sessions.
+
+---
 
 ## Notes
 
