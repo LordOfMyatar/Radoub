@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
+using Radoub.Formats.Uti;
 using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Panels;
@@ -9,6 +11,8 @@ namespace Quartermaster.Views.Panels;
 public partial class StatsPanel : UserControl
 {
     private CreatureDisplayService? _displayService;
+    private UtcFile? _currentCreature;
+    private IEnumerable<UtiFile?>? _equippedItems;
 
     // Ability score controls
     private TextBlock? _strBase, _strRacial, _strTotal, _strBonus;
@@ -24,7 +28,7 @@ public partial class StatsPanel : UserControl
     private TextBlock? _currentHpValue, _hpPercent;
 
     // Combat stats controls
-    private TextBlock? _naturalAcValue, _babValue, _speedValue, _crValue;
+    private TextBlock? _naturalAcValue, _babValue, _babBreakdown, _speedValue, _crValue;
 
     // Saving throws controls
     private TextBlock? _fortBase, _fortAbility, _fortTotal;
@@ -82,6 +86,7 @@ public partial class StatsPanel : UserControl
         // Combat stats
         _naturalAcValue = this.FindControl<TextBlock>("NaturalAcValue");
         _babValue = this.FindControl<TextBlock>("BabValue");
+        _babBreakdown = this.FindControl<TextBlock>("BabBreakdown");
         _speedValue = this.FindControl<TextBlock>("SpeedValue");
         _crValue = this.FindControl<TextBlock>("CrValue");
 
@@ -109,6 +114,8 @@ public partial class StatsPanel : UserControl
 
     public void LoadCreature(UtcFile? creature)
     {
+        _currentCreature = creature;
+
         if (creature == null)
         {
             ClearStats();
@@ -147,7 +154,9 @@ public partial class StatsPanel : UserControl
         // Load combat stats
         SetText(_naturalAcValue, creature.NaturalAC.ToString());
         SetText(_crValue, creature.ChallengeRating.ToString("F1"));
-        SetText(_babValue, "+0"); // TODO: Calculate from class levels
+
+        // Calculate BAB from class levels + equipment
+        UpdateBabDisplay();
 
         // Speed from WalkRate
         var speedName = GetSpeedName(creature.WalkRate);
@@ -163,6 +172,41 @@ public partial class StatsPanel : UserControl
         LoadSavingThrow(_fortBase, _fortAbility, _fortTotal, creature.FortBonus, conBonus);
         LoadSavingThrow(_refBase, _refAbility, _refTotal, creature.RefBonus, dexBonus);
         LoadSavingThrow(_willBase, _willAbility, _willTotal, creature.WillBonus, wisBonus);
+    }
+
+    /// <summary>
+    /// Sets the equipped items for combat stat calculations.
+    /// Call this after loading creature and populating inventory.
+    /// </summary>
+    public void SetEquippedItems(IEnumerable<UtiFile?> items)
+    {
+        _equippedItems = items;
+        UpdateBabDisplay();
+    }
+
+    private void UpdateBabDisplay()
+    {
+        if (_currentCreature == null || _displayService == null)
+        {
+            SetText(_babValue, "+0");
+            SetText(_babBreakdown, "");
+            return;
+        }
+
+        var combatStats = _displayService.CalculateCombatStats(_currentCreature, _equippedItems);
+
+        // Display total BAB
+        SetText(_babValue, CreatureDisplayService.FormatBonus(combatStats.TotalBab));
+
+        // Display breakdown if equipment bonus present
+        if (combatStats.EquipmentBonus > 0)
+        {
+            SetText(_babBreakdown, $"({combatStats.BaseBab} base + {combatStats.EquipmentBonus} equip)");
+        }
+        else
+        {
+            SetText(_babBreakdown, $"(from class levels)");
+        }
     }
 
     private void LoadAbilityScore(TextBlock? baseCtrl, TextBlock? racialCtrl, TextBlock? totalCtrl, TextBlock? bonusCtrl,
@@ -224,6 +268,7 @@ public partial class StatsPanel : UserControl
         // Clear combat stats
         SetText(_naturalAcValue, "0");
         SetText(_babValue, "+0");
+        SetText(_babBreakdown, "");
         SetText(_speedValue, "Normal");
         SetText(_crValue, "0");
 

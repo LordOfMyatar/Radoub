@@ -148,6 +148,8 @@
                             <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="BabDisplay">
                                 <TextBlock Text="Base Attack" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="BabValue" Text="+0" FontSize="16" FontWeight="Bold"/>
+                                <TextBlock x:Name="BabBreakdown" Text="" FontSize="10"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Margin="0,0,10,0" AutomationProperties.AutomationId="SpeedDisplay">
                                 <TextBlock Text="Speed" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>

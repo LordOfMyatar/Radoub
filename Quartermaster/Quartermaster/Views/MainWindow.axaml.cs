@@ -376,6 +376,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void LoadAllPanels(UtcFile? creature)
     {
         StatsPanelContent.LoadCreature(creature);
+
+        // Pass equipped items to StatsPanel for BAB calculation
+        var equippedItems = _equipmentSlots
+            .Where(s => s.HasItem && s.EquippedItem?.Item != null)
+            .Select(s => s.EquippedItem!.Item);
+        StatsPanelContent.SetEquippedItems(equippedItems);
+
         ClassesPanelContent.LoadCreature(creature);
         SkillsPanelContent.LoadCreature(creature);
         FeatsPanelContent.LoadCreature(creature);
