@@ -249,20 +249,19 @@ public abstract class FlaUITestBase : IDisposable
                 // Give Avalonia time to finish any pending renders before closing
                 Thread.Sleep(200);
 
-                // Use graceful close via Alt+F4 to let Avalonia shutdown properly
-                // This avoids SkiaSharp canvas flush crashes during mid-render close
+                // Close the application gracefully
+                // Previously used Alt+F4 keystroke, but that could close the wrong window
+                // if our window wasn't properly focused (e.g., VSCode instead of the test app)
+                // See #593: FlaUI tests close VSCode instead of just the app
                 try
                 {
-                    MainWindow?.Focus();
-                    Thread.Sleep(100);
-                    FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                        FlaUI.Core.WindowsAPI.VirtualKeyShort.ALT,
-                        FlaUI.Core.WindowsAPI.VirtualKeyShort.F4);
+                    // Use WM_CLOSE via App.Close() - targets our specific process
+                    // This is safer than keyboard shortcuts which go to focused window
+                    App.Close();
                 }
                 catch
                 {
-                    // Fallback to programmatic close
-                    App.Close();
+                    // Ignore close errors - may already be closing
                 }
 
                 // Wait for process to fully exit (prevents resource conflicts between tests)

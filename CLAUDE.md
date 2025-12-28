@@ -226,7 +226,7 @@ When adding a new tool to Radoub:
 
 **UI Test Stability (FlaUI + Avalonia)**:
 - Avalonia apps can crash with `SkiaSharp.SKCanvas.Flush()` errors if closed during mid-render
-- Use graceful shutdown (Alt+F4) instead of programmatic `App.Close()` in FlaUI tests
+- Use `App.Close()` to target the specific test process (not Alt+F4, which goes to focused window)
 - Add delays before closing to let Avalonia's compositor finish pending renders
 - Wait for process to fully exit between tests to prevent resource conflicts
 - See `FlaUITestBase.StopApplication()` for reference implementation
