@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.6-alpha] - 2025-12-28
-**Branch**: `quartermaster/sprint/stats-identity-panel` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/stats-identity-panel` | **PR**: #622
 
 ### Sprint: Character Stats & Identity Panel (#612)
 
