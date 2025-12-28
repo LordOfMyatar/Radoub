@@ -1,5 +1,4 @@
 using DialogEditor.Models;
-using DialogEditor.Parsers;
 using DialogEditor.Services;
 using Parley.Models;
 using Radoub.Formats.Logging;
@@ -38,8 +37,8 @@ namespace Parley.Tests
             // Copy to test output path
             File.Copy(testFilePath, outputPath, overwrite: true);
 
-            var parser = new DialogParser();
-            var dialog = await parser.ParseFromFileAsync(outputPath);
+            var service = new DialogFileService();
+            var dialog = await service.LoadFromFileAsync(outputPath);
 
             Assert.NotNull(dialog);
             dialog.RebuildLinkRegistry();
@@ -123,10 +122,10 @@ namespace Parley.Tests
             }
 
             // Save the file
-            await parser.WriteToFileAsync(dialog, outputPath);
+            await service.SaveToFileAsync(dialog, outputPath);
 
             // Assert: Reload the file and verify orphan container exists
-            var reloadedDialog = await parser.ParseFromFileAsync(outputPath);
+            var reloadedDialog = await service.LoadFromFileAsync(outputPath);
             Assert.NotNull(reloadedDialog);
 
             var orphanContainer = reloadedDialog.Entries

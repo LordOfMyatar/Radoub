@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
 class Program
 {
@@ -12,7 +12,7 @@ class Program
         string basePath = @"~\Documents\Neverwinter Nights\modules\LNS_DLG";
         string[] testFiles = { "lista_fresh.dlg", "chef_fresh.dlg", "myra_fresh.dlg", "hench_fresh.dlg" };
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
 
         foreach (var file in testFiles)
         {
@@ -22,7 +22,7 @@ class Program
             Console.WriteLine($"Loading {file}...");
             try
             {
-                var dialog = await parser.ParseFromFileAsync(path);
+                var dialog = await service.LoadFromFileAsync(path);
                 if (dialog != null)
                 {
                     Console.WriteLine($"✅ {file}: {dialog.Entries.Count} entries, {dialog.Replies.Count} replies\n");

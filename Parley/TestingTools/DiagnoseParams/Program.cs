@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
 class Program
 {
@@ -11,10 +11,10 @@ class Program
 
         string filePath = @"~\Documents\Neverwinter Nights\modules\LNS_DLG\__chef.dlg";
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
 
         Console.WriteLine($"Loading: {filePath}");
-        var dialog = await parser.ParseFromFileAsync(filePath);
+        var dialog = await service.LoadFromFileAsync(filePath);
 
         if (dialog == null)
         {

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
 
 class Program
@@ -9,16 +9,16 @@ class Program
     static async Task Main(string[] args)
     {
         
-        var parser = new DialogParser();
+        var service = new DialogFileService();
         
         var chefPath = @"~\Documents\Neverwinter Nights\modules\LNS_DLG\chef.dlg";
         var exportedPath = @"~\Documents\Neverwinter Nights\modules\LNS_DLG\__chef.dlg";
         
         Console.WriteLine("Loading chef.dlg (original)...");
-        var chefDialog = await parser.ParseFromFileAsync(chefPath);
+        var chefDialog = await service.LoadFromFileAsync(chefPath);
         
         Console.WriteLine("Loading __chef.dlg (exported)...");
-        var exportedDialog = await parser.ParseFromFileAsync(exportedPath);
+        var exportedDialog = await service.LoadFromFileAsync(exportedPath);
         
         Console.WriteLine("\n=== ORIGINAL chef.dlg ===");
         Console.WriteLine($"EndConversation (ScriptEnd): '{chefDialog.ScriptEnd}'");

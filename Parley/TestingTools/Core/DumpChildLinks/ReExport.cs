@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using DialogEditor.Services;
 
 namespace DumpChildLinks
 {
@@ -7,10 +8,10 @@ namespace DumpChildLinks
     {
         public static async Task ExportFile()
         {
-            var parser = new ArcReactor.Parsers.DialogParser();
+            var service = new DialogFileService();
 
             Console.WriteLine("Loading original file...");
-            var dialog = await parser.ParseFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\act1_g_ashera.dlg");
+            var dialog = await service.LoadFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\act1_g_ashera.dlg");
 
             if (dialog == null)
             {
@@ -26,7 +27,7 @@ namespace DumpChildLinks
             }
 
             Console.WriteLine("\nExporting to ashera01_new.dlg...");
-            bool success = await parser.WriteToFileAsync(dialog, @"~\Documents\Neverwinter Nights\modules\LNS_DLG\ashera01_new.dlg");
+            bool success = await service.SaveToFileAsync(dialog, @"~\Documents\Neverwinter Nights\modules\LNS_DLG\ashera01_new.dlg");
 
             if (!success)
             {
@@ -37,7 +38,7 @@ namespace DumpChildLinks
             Console.WriteLine("Export successful!");
 
             Console.WriteLine("\nReloading exported file...");
-            var exported = await parser.ParseFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\ashera01_new.dlg");
+            var exported = await service.LoadFromFileAsync(@"~\Documents\Neverwinter Nights\modules\LNS_DLG\ashera01_new.dlg");
 
             if (exported == null)
             {

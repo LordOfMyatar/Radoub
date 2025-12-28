@@ -1,4 +1,4 @@
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 using System;
 using System.IO;
 
@@ -10,8 +10,8 @@ Console.WriteLine("║   TESTING CONDITIONAL QUESTENTRY FIELD FIX               
 Console.WriteLine("╚═══════════════════════════════════════════════════════════╝\n");
 
 Console.WriteLine($"Loading: {origPath}");
-var parser = new DialogParser();
-var dialog = await parser.ParseFromFileAsync(origPath);
+var service = new DialogFileService();
+var dialog = await service.LoadFromFileAsync(origPath);
 
 if (dialog == null)
 {
@@ -22,7 +22,7 @@ if (dialog == null)
 Console.WriteLine($"✓ Loaded dialog with {dialog.Entries.Count} entries, {dialog.Replies.Count} replies");
 
 Console.WriteLine($"\nExporting: {exportPath}");
-await parser.WriteToFileAsync(dialog, exportPath);
+await service.SaveToFileAsync(dialog, exportPath);
 
 var origInfo = new FileInfo(origPath);
 var exportInfo = new FileInfo(exportPath);

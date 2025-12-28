@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 using DialogEditor.Models;
 
 namespace DeepStructAnalyzer;
@@ -17,9 +17,9 @@ class Program
         Console.WriteLine("=== DEEP STRUCT ORDERING ANALYSIS ===\n");
 
         // Parse both files
-        var parser = new DialogParser();
-        var originalDialog = await parser.ParseFromFileAsync(origPath);
-        var exportedDialog = await parser.ParseFromFileAsync(exportPath);
+        var service = new DialogFileService();
+        var originalDialog = await service.LoadFromFileAsync(origPath);
+        var exportedDialog = await service.LoadFromFileAsync(exportPath);
 
         Console.WriteLine($"Original Conversation Structure:");
         Console.WriteLine($"  Entries: {originalDialog.Entries.Count}");

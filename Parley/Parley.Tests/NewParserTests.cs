@@ -252,10 +252,10 @@ namespace Parley.Tests
         }
 
         [Fact]
-        public void DialogFileService_NewParser_LoadsAndSaves()
+        public void DialogFileService_LoadsAndSaves()
         {
             // Arrange
-            var service = new DialogFileService { UseNewParser = true };
+            var service = new DialogFileService();
 
             // Create a simple dialog
             var dialog = new Dialog();
@@ -292,10 +292,10 @@ namespace Parley.Tests
         }
 
         [Fact]
-        public void DialogFileService_NewParser_IsValidDlgFile()
+        public void DialogFileService_IsValidDlgFile()
         {
             // Arrange
-            var service = new DialogFileService { UseNewParser = true };
+            var service = new DialogFileService();
 
             // Create a valid DLG file
             var dlgFile = new DlgFile();

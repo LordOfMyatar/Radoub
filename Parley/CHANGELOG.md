@@ -15,6 +15,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactor: Remove legacy DLG parser code (#592)
 
+Complete migration to `Radoub.Formats.Dlg` parser. Removed ~3,800 lines of legacy parsing code.
+
+**Removed Files** (3,782 lines):
+| File | Lines | Purpose |
+|------|-------|---------|
+| `DialogParser.cs` | 287 | Legacy parser facade |
+| `DialogBuilder.cs` | 638 | GFF → Dialog model conversion |
+| `DialogWriter.cs` | 1,768 | Dialog → GFF binary writing |
+| `GffBinaryWriter.cs` | 660 | Low-level GFF serialization |
+| `GffFieldFactory.cs` | 202 | GFF field creation helpers |
+| `GffIndexFixer.cs` | 178 | Struct index patching |
+| `IDialogParser.cs` | 49 | Parser interface + ParserResult class |
+
+**Added/Updated:**
+- `DlgAdapter.cs`: Added TLK resolution (StrRef → text lookup via GameResourceService)
+- `ParserResult.cs`: Moved to Models/ namespace
+- `DialogFileService.cs`: Simplified - removed `UseNewParser` flag, always uses Radoub.Formats
+
+**Architecture:**
+- `Radoub.Formats.Dlg.DlgReader/DlgWriter` → Raw DLG binary I/O
+- `DlgAdapter` → Bidirectional conversion between DlgFile and Parley's Dialog model
+- `DialogFileService` → High-level async API for dialog file operations
+
 ---
 
 ## [0.1.101-alpha] - 2025-12-27

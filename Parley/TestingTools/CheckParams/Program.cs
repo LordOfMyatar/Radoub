@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
 class Program
 {
@@ -9,12 +9,12 @@ class Program
         string basePath = @"~\Documents\Neverwinter Nights\modules\LNS_DLG";
         string[] files = { "chef_fresh.dlg", "myra_fresh.dlg" };
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
 
         foreach (var file in files)
         {
             Console.WriteLine($"\n=== Checking {file} ===");
-            var dlg = await parser.ParseFromFileAsync($@"{basePath}\{file}");
+            var dlg = await service.LoadFromFileAsync($@"{basePath}\{file}");
 
             // Check ActionParams in entries
             int entriesWithParams = 0;

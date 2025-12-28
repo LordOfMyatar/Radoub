@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 using DialogEditor.Models;
 
 namespace TraversalPatternTest;
@@ -13,8 +13,8 @@ class Program
     {
         string origPath = @"~\Documents\Neverwinter Nights\modules\LNS_DLG\lista_orig.dlg";
 
-        var parser = new DialogParser();
-        var dialog = await parser.ParseFromFileAsync(origPath);
+        var service = new DialogFileService();
+        var dialog = await service.LoadFromFileAsync(origPath);
 
         Console.WriteLine("=== CONVERSATION STRUCTURE ===\n");
         Console.WriteLine($"Entries: {dialog.Entries.Count}");

@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
 class PointerDump
 {
@@ -14,8 +14,8 @@ class PointerDump
             return;
         }
 
-        var parser = new DialogParser();
-        var dialog = await parser.ParseFromFileAsync(args[0]);
+        var service = new DialogFileService();
+        var dialog = await service.LoadFromFileAsync(args[0]);
 
         if (dialog == null)
         {

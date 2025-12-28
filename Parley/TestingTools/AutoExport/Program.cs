@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using DialogEditor.Parsers;
+using DialogEditor.Services;
 
 class Program
 {
@@ -18,7 +18,7 @@ class Program
             new { Original = "generic_hench.dlg", Export = "__hench.dlg" }
         };
 
-        var parser = new DialogParser();
+        var service = new DialogFileService();
 
         foreach (var file in testFiles)
         {
@@ -36,7 +36,7 @@ class Program
             try
             {
                 // Load original
-                var dialog = await parser.ParseFromFileAsync(origPath);
+                var dialog = await service.LoadFromFileAsync(origPath);
 
                 if (dialog == null)
                 {
@@ -47,7 +47,7 @@ class Program
                 Console.WriteLine($"  Loaded: {dialog.Entries.Count} entries, {dialog.Replies.Count} replies");
 
                 // Export
-                bool success = await parser.WriteToFileAsync(dialog, exportPath);
+                bool success = await service.SaveToFileAsync(dialog, exportPath);
 
                 if (success)
                 {

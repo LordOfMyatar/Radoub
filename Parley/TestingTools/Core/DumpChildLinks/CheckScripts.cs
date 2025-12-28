@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using DialogEditor.Services;
 
 namespace DumpChildLinks
 {
@@ -8,8 +9,8 @@ namespace DumpChildLinks
     {
         public static void DumpScriptNames(string filePath)
         {
-            var parser = new ArcReactor.Parsers.DialogParser();
-            var dialog = parser.ParseFromFileAsync(filePath).Result;
+            var service = new DialogFileService();
+            var dialog = service.LoadFromFileAsync(filePath).Result;
 
             if (dialog == null)
             {

@@ -1,5 +1,4 @@
-﻿using DialogEditor.Models;
-using DialogEditor.Parsers;
+using DialogEditor.Models;
 using DialogEditor.Services;
 
 namespace ComprehensiveParserStressTest
@@ -34,8 +33,8 @@ namespace ComprehensiveParserStressTest
                 var dialog = BuildComprehensiveTestDialog();
 
                 // Save to disk
-                var parser = new DialogParser();
-                var success = await parser.WriteToFileAsync(dialog, outputPath);
+                var service = new DialogFileService();
+                var success = await service.SaveToFileAsync(dialog, outputPath);
 
                 if (!success)
                 {
@@ -47,7 +46,7 @@ namespace ComprehensiveParserStressTest
 
                 // Validate round-trip
                 Console.WriteLine("Testing round-trip integrity...");
-                var reloaded = await parser.ParseFromFileAsync(outputPath);
+                var reloaded = await service.LoadFromFileAsync(outputPath);
 
                 if (reloaded == null)
                 {
