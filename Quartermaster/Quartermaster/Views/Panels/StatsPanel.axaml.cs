@@ -236,14 +236,15 @@ public partial class StatsPanel : UserControl
         // Walk rates from creaturespeed.2da
         return walkRate switch
         {
-            0 => "Immobile",
-            1 => "Very Slow",
-            2 => "Slow",
-            3 => "Normal",
-            4 => "Fast",
-            5 => "Very Fast",
-            6 => "Default",
-            7 => "DM Fast",
+            0 => "PC",
+            1 => "Immobile",
+            2 => "Very Slow",
+            3 => "Slow",
+            4 => "Normal",
+            5 => "Fast",
+            6 => "Very Fast",
+            7 => "Default",
+            8 => "DM Fast",
             _ => $"Rate {walkRate}"
         };
     }
