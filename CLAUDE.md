@@ -119,6 +119,14 @@ Use tool prefixes in commit messages:
 - `test:` - Test additions or improvements
 - `chore:` - Maintenance tasks
 
+### Tool-Specific Standards
+
+Tool-specific CLAUDE.md files may add enforcement rules:
+- **Parley**: PR length limits (15 sentences max), Claude enforcement role for workflow discipline
+- **Binary format tools**: Stricter pre-commit testing requirements
+
+Tool-specific standards take precedence over repository-wide standards when they conflict.
+
 ---
 
 ## Branch Workflow

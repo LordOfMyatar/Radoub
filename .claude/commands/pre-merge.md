@@ -190,7 +190,9 @@ Files to check:
 
 **Wiki Updates** (https://github.com/LordOfMyatar/Radoub/wiki):
 
-**⚠️ WIKI UPDATES ARE NOT OPTIONAL.** Developer documentation rots fast. If the code changed, the docs probably need to change too. We're shipping features quickly - that means wiki pages go stale quickly. Check them.
+**❌ WIKI UPDATES ARE BLOCKING.** Developer documentation rots fast. If the code changed, the docs probably need to change too. We're shipping features quickly - that means wiki pages go stale quickly.
+
+**Rule**: If wiki updates are needed, they MUST be completed before the PR can merge. This is not a suggestion - it's a blocking requirement. The pre-merge checklist will show ❌ BLOCKING if wiki work is outstanding.
 
 If changes affect user-facing features, check if wiki pages need updates:
 
@@ -291,10 +293,11 @@ Output format:
 - [x/⚠️] CLAUDE.md current: [✅ Up to date / ⚠️ Needs update / N/A]
   - [ ] Architectural changes documented
   - [ ] New workflows documented
-- [x/⚠️] Wiki updates: [Needed/Not needed]
+- [x/⚠️/❌] Wiki updates: [✅ Completed / ⚠️ Needed - IN PROGRESS / ❌ BLOCKING - must complete before merge]
   - [ ] Pages reviewed: [list affected pages]
   - [ ] Freshness dates checked (30-day rule)
   - [ ] New features have corresponding wiki pages
+  - **BLOCKING**: If wiki updates needed and not done, PR cannot merge until addressed
 
 ---
 
@@ -321,7 +324,13 @@ Output format:
 
 ### Ready to Merge?
 
-[✅ All checks pass - ready for review / ⚠️ [N] items need attention]
+| Status | Meaning |
+|--------|---------|
+| ✅ Ready | All checks pass, no blockers |
+| ⚠️ Attention | [N] items need review but not blocking |
+| ❌ BLOCKED | Cannot merge - wiki/docs incomplete, tests failing, or critical issues |
+
+**Current**: [✅ Ready / ⚠️ [N] items / ❌ BLOCKED: [reason]]
 ```
 
 ### Step 8: Update PR and Epic Content
