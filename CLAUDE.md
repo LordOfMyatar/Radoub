@@ -351,6 +351,26 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ---
 
+## Code Quality Standards
+
+**Path Handling**:
+- Use `Environment.GetFolderPath()` with `SpecialFolder` constants
+- Validate paths with `Path.GetFullPath()` for traversal prevention
+- Use `ProcessStartInfo.ArgumentList` instead of string concatenation
+
+**Exception Handling**:
+- Never use bare `catch` blocks - catch specific types
+- Always log exceptions (at minimum `LogLevel.WARN`)
+- Never silently swallow exceptions
+
+**Code Hygiene**:
+- No commented-out code blocks - use git history
+- TODOs must reference GitHub issues: `// TODO (#123): description`
+- Keep methods under 100 lines
+- Remove debug/test code before committing
+
+---
+
 ## UI/UX Guidelines
 
 **Dialog and Window Behavior**:
