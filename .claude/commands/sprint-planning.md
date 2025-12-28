@@ -61,46 +61,100 @@ Help plan the next sprint by reviewing open issues, PRs, and current work.
 
 ## Output Format
 
+The sprint planning output should be displayed to the user AND saved to `NonPublic/sprintplanning.md` (clobber/rebuild each time).
+
+```markdown
+# Sprint Planning Summary
+
+**Date**: [YYYY-MM-DD]
+
+## Current State
+- **Branch**: [current branch]
+- **Status**: [Clean/Dirty]
+- **Last commit**: `[hash]` - [message]
+
+## In Progress
+- [PR #X - [title] - [status] | No open PRs]
+
+---
+
+## By Epic
+
+### Epic #N: [Name] - Priority: [High/Medium/Low]
+
+| Issue | Title | Days | Priority |
+|-------|-------|------|----------|
+| #X | [title] | N | [priority] |
+
+### [Category Name] - Priority: [priority]
+
+| Issue | Title | Days |
+|-------|-------|------|
+| #X | [title] | N |
+
+---
+
+## Blocked Items
+
+| Issue | Title | Blocked By |
+|-------|-------|------------|
+| #X | [title] | [reason] |
+
+---
+
+## Stale Issues (15+ days)
+
+| Issue | Title | Days |
+|-------|-------|------|
+| #X | [title] | N |
+
+[Commentary on backlog freshness]
+
+---
+
+## Sprint Options
+
+### Option A: [Theme]
+
+- #X - [title]
+- #Y - [title]
+
+**Rationale**: [why these fit together]
+
+**Complexity**: [Small/Medium/Large]
+
+---
+
+### Option B: [Theme]
+
+- #X - [title]
+- #Y - [title]
+
+**Rationale**: [why these fit together]
+
+**Complexity**: [Small/Medium/Large]
+
+---
+
+## Recommendation
+
+**Option [X]: [Theme]** is the recommended next step:
+
+1. [Reason 1]
+2. [Reason 2]
+
+[Alternative recommendation if applicable]
 ```
-## Sprint Planning Summary
 
-### Current State
-- Branch: [current branch]
-- Status: [clean/dirty]
-- Last commit: [summary]
+## Save to File
 
-### In Progress
-- [ ] PR #X - [title] - [status]
+**IMPORTANT**: After generating the sprint planning output, save it to:
 
-### By Epic
-**Epic N: [Name]**
-- #X - [title] - [N days] - [blocked?]
-- #X - [title] - [N days]
-
-**Standalone/Tech Debt**
-- #X - [title] - [N days]
-
-### Stale Issues (15+ days)
-- #X - [title] - [N days] - May need attention or closure
-
-### Blocked Items
-- #X - [title] - Blocked by: #Y or [reason]
-
-### Sprint Options
-
-**Option A: [Theme]**
-- #X, #Y, #Z
-- Rationale: [why these fit together]
-- Complexity: [small/medium/large]
-
-**Option B: [Theme]**
-- #X, #Y
-- Rationale: [why these fit together]
-- Complexity: [small/medium/large]
-
-### Recommendation
-[Which option and why]
 ```
+NonPublic/sprintplanning.md
+```
+
+This file is clobbered each time sprint planning runs. It serves as a snapshot for reference between planning sessions, so the user doesn't need to run sprint planning as often.
 
 ## Creating Sprint Issues
 
