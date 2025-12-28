@@ -540,70 +540,7 @@ namespace DialogEditor.Parsers
             }
         }
 
-        public uint ConvertGlobalToLocalIndex(uint globalIndex, DialogNodeType? expectedTargetType, Dialog? dialog)
-        {
-            // If no dialog context or no target type, assume it's already a local index
-            if (dialog == null || expectedTargetType == null)
-            {
-                return globalIndex;
-            }
-
-            try
-            {
-                // Calculate the base struct indices based on GFF struct layout:
-                // Root(0) ? All Entries(1+) ? All Replies(E+1+) ? All Starts(E+R+1+) ? All Pointers(E+R+S+1+)
-
-                uint entryBaseIndex = 1; // Entries start at struct 1
-                uint replyBaseIndex = 1 + (uint)dialog.Entries.Count; // Replies start after entries
-                uint startBaseIndex = 1 + (uint)dialog.Entries.Count + (uint)dialog.Replies.Count; // Starts after replies
-
-                switch (expectedTargetType)
-                {
-                    case DialogNodeType.Entry:
-                        // Check if this is a global struct index first (in the expected Entry global range)
-                        if (globalIndex >= entryBaseIndex && globalIndex < replyBaseIndex)
-                        {
-                            uint localIndex = globalIndex - entryBaseIndex;
-                            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Entry conversion: global {globalIndex} ? local {localIndex} (base: {entryBaseIndex})");
-                            return localIndex;
-                        }
-
-                        // Special case: If globalIndex is within the Entry count, it might be a local index already
-                        if (globalIndex < dialog.Entries.Count)
-                        {
-                            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Entry index {globalIndex} appears to be local (< {dialog.Entries.Count}), using as-is");
-                            return globalIndex;
-                        }
-                        break;
-
-                    case DialogNodeType.Reply:
-                        // Check if this is a global struct index first (in the expected Reply global range)
-                        if (globalIndex >= replyBaseIndex && globalIndex < startBaseIndex)
-                        {
-                            uint localIndex = globalIndex - replyBaseIndex;
-                            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Reply conversion: global {globalIndex} ? local {localIndex} (base: {replyBaseIndex})");
-                            return localIndex;
-                        }
-
-                        // Special case: If globalIndex is within the Reply count, it might be a local index already
-                        if (globalIndex < dialog.Replies.Count)
-                        {
-                            UnifiedLogger.LogParser(LogLevel.TRACE, $"?? Reply index {globalIndex} appears to be local (< {dialog.Replies.Count}), using as-is");
-                            return globalIndex;
-                        }
-                        break;
-                }
-
-                // If conversion doesn't apply or is out of range, log a warning and return as-is
-                UnifiedLogger.LogParser(LogLevel.WARN, $"?? Index conversion failed: global {globalIndex} for {expectedTargetType} (Entry base: {entryBaseIndex}, Reply base: {replyBaseIndex})");
-                return globalIndex;
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogParser(LogLevel.ERROR, $"?? Index conversion error: {ex.Message}");
-                return globalIndex;
-            }
-        }
+        // 2025-12-27: Removed ConvertGlobalToLocalIndex (60 lines) - dead code, never called (#599)
 
         public DialogPtr? BuildDialogPtrFromStruct(GffStruct ptrStruct, Dialog? parentDialog, DialogNodeType? expectedTargetType = null)
         {
