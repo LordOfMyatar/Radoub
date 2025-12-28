@@ -10,6 +10,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.6-alpha] - 2025-12-28
+**Branch**: `quartermaster/sprint/stats-identity-panel` | **PR**: #622
+
+### Sprint: Character Stats & Identity Panel (#612)
+
+Add the Stats & Identity panel displaying character name, portrait, and core statistics.
+
+#### Added
+- **CreatureDisplayService** - Centralized service for resolving creature names from 2DA/TLK
+  - Race name lookup from `racialtypes.2da` with TLK resolution
+  - Gender name lookup from `gender.2da` with TLK resolution
+  - Class name lookup from `classes.2da` with TLK resolution
+  - Racial ability modifier lookup (StrAdjust, DexAdjust, etc.)
+  - Hardcoded fallbacks for common races/genders/classes when 2DA not available
+- **Base Attack Bonus calculation** from class levels
+  - Reads `AttackBonusTable` from `classes.2da` for each class
+  - Looks up BAB from `cls_atk_*.2da` at appropriate level
+  - Sums BAB across multiclass levels
+  - Falls back to estimated progression (full/3/4/half) when 2DA unavailable
+- **Equipment attack bonus** from equipped items
+  - Scans item properties for Enhancement Bonus (PropertyName 6) and Attack Bonus (PropertyName 56)
+  - Enhancement bonuses don't stack (highest wins)
+  - Attack bonuses stack
+- **Feat name resolution** - FeatsPanel now uses `feat.2da` + TLK for feat names
+  - High feat IDs (e.g., 1089) now resolve correctly instead of showing "Feat 1089"
+  - Spell names for special abilities resolved via `spells.2da` + TLK
+- **Navigation FlaUI tests** - Sidebar nav button tests for all 8 panels
+- **Enhanced StatsPanel** - Complete overhaul with detailed stat breakdown
+  - Ability scores: Base | Racial Modifier | Total | Bonus columns
+  - Hit points: Base HP (dice rolls) | Max HP (with Con) | Current HP (with %)
+  - Combat stats: Natural AC | Base Attack (with breakdown) | Speed | Challenge Rating
+  - Saving throws: Base | Ability Modifier | Total columns
+- **Sidebar character header** - Now shows resolved race/gender/class names via 2DA/TLK lookup
+
+#### Fixed
+- **Walk rate display** - Fixed creaturespeed.2da mapping (was off-by-one)
+  - Row 0 = PC, Row 4 = Normal, etc. (not Row 0 = Immobile)
+
+#### Changed
+- MainWindow now uses `CreatureDisplayService` for character summary in sidebar
+- MainWindow passes equipped items to StatsPanel for BAB calculation
+- StatsPanel receives display service via `SetDisplayService()` method
+- StatsPanel shows BAB breakdown: "(X base + Y equip)" when equipment contributes
+
+---
+
 ## [0.1.5-alpha] - 2025-12-28
 **Branch**: `quartermaster/sprint/app-shell-layout` | **PR**: #619
 

@@ -30,6 +30,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Game data service for BIF/TLK lookups
     private readonly IGameDataService _gameDataService;
+    private readonly CreatureDisplayService _creatureDisplayService;
     private readonly ItemViewModelFactory _itemViewModelFactory;
 
     // Equipment slots collection (shared with InventoryPanel)
@@ -54,6 +55,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Initialize game data service for BIF/TLK lookups
         _gameDataService = new GameDataService();
+        _creatureDisplayService = new CreatureDisplayService(_gameDataService);
         _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
 
         if (_gameDataService.IsConfigured)
@@ -92,6 +94,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void InitializePanels()
     {
+        // Initialize stats panel with display service
+        StatsPanelContent.SetDisplayService(_creatureDisplayService);
+
+        // Initialize feats panel with display service for 2DA/TLK lookups
+        FeatsPanelContent.SetDisplayService(_creatureDisplayService);
+
         // Initialize inventory panel with shared equipment slots and game data
         InventoryPanelContent.InitializeSlots(_equipmentSlots);
         InventoryPanelContent.SetGameDataService(_gameDataService);
@@ -338,30 +346,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        // Get character name
-        var firstName = _currentCreature.FirstName?.GetString(0) ?? "";
-        var lastName = _currentCreature.LastName?.GetString(0) ?? "";
-        var fullName = $"{firstName} {lastName}".Trim();
+        // Get character name using display service
+        CharacterNameText.Text = CreatureDisplayService.GetCreatureFullName(_currentCreature);
 
-        if (string.IsNullOrEmpty(fullName))
-        {
-            fullName = _currentCreature.Tag ?? "Unknown";
-        }
-
-        CharacterNameText.Text = fullName;
-
-        // Build race/class summary
-        // TODO: Resolve race and class names from 2DA/TLK
-        var raceId = _currentCreature.Race;
-        var summary = $"Race {raceId}";
-
-        if (_currentCreature.ClassList.Count > 0)
-        {
-            var primaryClass = _currentCreature.ClassList[0];
-            summary += $" • Class {primaryClass.Class} Lv{primaryClass.ClassLevel}";
-        }
-
-        CharacterSummaryText.Text = summary;
+        // Build race/class summary using display service
+        CharacterSummaryText.Text = _creatureDisplayService.GetCreatureSummary(_currentCreature);
     }
 
     private void UpdateInventoryCounts()
@@ -390,6 +379,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void LoadAllPanels(UtcFile? creature)
     {
         StatsPanelContent.LoadCreature(creature);
+
+        // Pass equipped items to StatsPanel for BAB calculation
+        var equippedItems = _equipmentSlots
+            .Where(s => s.HasItem && s.EquippedItem?.Item != null)
+            .Select(s => s.EquippedItem!.Item);
+        StatsPanelContent.SetEquippedItems(equippedItems);
+
         ClassesPanelContent.LoadCreature(creature);
         SkillsPanelContent.LoadCreature(creature);
         FeatsPanelContent.LoadCreature(creature);

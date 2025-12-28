@@ -1,17 +1,22 @@
-# Copy DLG Files Script
-# Copies .dlg files from Lord Myatar module to LNS_DLG module
+# Copy DLG and UTC Files Script
+# Copies .dlg and .utc files from Lord Myatar module to LNS_DLG module
 # Preserves timestamps and overwrites existing files
 
-$SourcePath = "~\Documents\Neverwinter Nights\modules\Lord Of Myatar\*.dlg"
+$SourceBase = "~\Documents\Neverwinter Nights\modules\Lord Of Myatar\"
 $DestinationPath = "~\Documents\Neverwinter Nights\modules\LNS_DLG\"
 
-Write-Host "Copying .dlg files from Lord Myatar to LNS_DLG..." -ForegroundColor Green
+Write-Host "Copying .dlg and .utc files from Lord Myatar to LNS_DLG..." -ForegroundColor Green
 
 try {
-    $CopiedFiles = Copy-Item -Path $SourcePath -Destination $DestinationPath -Force -PassThru -ErrorAction Stop
+    $DlgFiles = Copy-Item -Path "$SourceBase*.dlg" -Destination $DestinationPath -Force -PassThru -ErrorAction Stop
+    $UtcFiles = Copy-Item -Path "$SourceBase*.utc" -Destination $DestinationPath -Force -PassThru -ErrorAction Stop
 
-    Write-Host "`nSuccessfully copied $($CopiedFiles.Count) files:" -ForegroundColor Green
-    foreach ($File in $CopiedFiles) {
+    $AllFiles = @($DlgFiles) + @($UtcFiles)
+
+    Write-Host "`nSuccessfully copied $($AllFiles.Count) files:" -ForegroundColor Green
+    Write-Host "  DLG: $($DlgFiles.Count) files" -ForegroundColor Cyan
+    Write-Host "  UTC: $($UtcFiles.Count) files" -ForegroundColor Cyan
+    foreach ($File in $AllFiles) {
         Write-Host "  • $($File.Name) - Modified: $($File.LastWriteTime)" -ForegroundColor Cyan
     }
 }
