@@ -116,6 +116,56 @@ public class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets the display name for a feat ID.
+    /// </summary>
+    public string GetFeatName(int featId)
+    {
+        // Try 2DA/TLK lookup first
+        var strRef = _gameDataService.Get2DAValue("feat", featId, "FEAT");
+        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+        {
+            var tlkName = _gameDataService.GetString(strRef);
+            if (!string.IsNullOrEmpty(tlkName))
+                return tlkName;
+        }
+
+        // Fallback to hardcoded common feats
+        return featId switch
+        {
+            0 => "Alertness",
+            1 => "Ambidexterity",
+            2 => "Armor Proficiency (Heavy)",
+            3 => "Armor Proficiency (Light)",
+            4 => "Armor Proficiency (Medium)",
+            5 => "Blind-Fight",
+            6 => "Called Shot",
+            7 => "Cleave",
+            8 => "Combat Casting",
+            9 => "Deflect Arrows",
+            10 => "Disarm",
+            11 => "Dodge",
+            _ => $"Feat {featId}"
+        };
+    }
+
+    /// <summary>
+    /// Gets the display name for a spell ID.
+    /// </summary>
+    public string GetSpellName(int spellId)
+    {
+        // Try 2DA/TLK lookup first
+        var strRef = _gameDataService.Get2DAValue("spells", spellId, "Name");
+        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+        {
+            var tlkName = _gameDataService.GetString(strRef);
+            if (!string.IsNullOrEmpty(tlkName))
+                return tlkName;
+        }
+
+        return $"Spell {spellId}";
+    }
+
+    /// <summary>
     /// Gets the racial ability modifier for a specific ability.
     /// </summary>
     public int GetRacialModifier(byte raceId, string ability)
