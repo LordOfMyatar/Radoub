@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.4-alpha] - 2025-12-27
+**Branch**: `quartermaster/fix/flaui-closes-vscode` | **PR**: #TBD
+
+### Fix: FlaUI tests close VSCode instead of just the app (#593)
+
+#### Fixed
+- TBD - Investigation in progress
+
+---
+
 ## [0.1.3-alpha] - 2025-12-26
 **Branch**: `quartermaster/feat/inventory-display-580` | **PR**: #585
 
