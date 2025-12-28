@@ -10,6 +10,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.101-alpha] - 2025-12-27
+**Branch**: `parley/refactor/remove-dialogbuilder` | **PR**: #605
+
+### Refactor: DialogBuilder.cs Investigation (#599)
+
+**Outcome:** DialogBuilder.cs is NOT a duplicate of DlgWriter - they serve different architectural layers.
+
+| Component | Purpose |
+|-----------|---------|
+| `DlgReader/DlgWriter` (Radoub.Formats) | Raw DLG format I/O |
+| `DialogBuilder` (Parley) | Converts GFF → Parley domain model with TLK resolution, pointer linking, link registry |
+
+**Why DialogBuilder is needed:**
+- Preserves `OriginalGffStruct.Type` for byte-perfect round-trip editing
+- Resolves TLK StrRef values to display text
+- Links `DialogPtr.Node` references for tree traversal
+- Integrates with Parley's `LinkRegistry` for reference tracking
+
+**Removed:**
+- `ConvertGlobalToLocalIndex()` (60 lines) - dead code, never called
+
+---
+
 ## [0.1.100-alpha] - 2025-12-27
 **Branch**: `parley/refactor/remove-gffbinaryreader` | **PR**: #602
 
