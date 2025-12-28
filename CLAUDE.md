@@ -12,7 +12,7 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 
 - **Parley**: Dialog editor (`.dlg` files) - See `Parley/CLAUDE.md` for tool-specific guidance
 - **Manifest**: Journal editor (`.jrl` files) - See `Manifest/CLAUDE.md` for tool-specific guidance
-- **Quartermaster**: Creature/inventory editor (`.utc`, `.bic` files) - See `CreatureEditor/CLAUDE.md` for tool-specific guidance
+- **Quartermaster**: Creature/inventory editor (`.utc`, `.bic` files) - See `Quartermaster/CLAUDE.md` for tool-specific guidance
 
 ### Shared Libraries
 
@@ -53,11 +53,11 @@ Radoub/
 │   ├── CHANGELOG.md (Manifest-specific changes)
 │   ├── Manifest/ (source code)
 │   └── Manifest.Tests/ (unit tests)
-├── CreatureEditor/ (creature/inventory editor - public name: Quartermaster)
+├── Quartermaster/ (creature/inventory editor)
 │   ├── CLAUDE.md (Quartermaster-specific guidance)
 │   ├── CHANGELOG.md (Quartermaster-specific changes)
-│   ├── CreatureEditor/ (source code)
-│   └── CreatureEditor.Tests/ (unit tests)
+│   ├── Quartermaster/ (source code)
+│   └── Quartermaster.Tests/ (unit tests)
 ├── Radoub.Formats/ (shared library)
 │   ├── Radoub.Formats.sln
 │   ├── Radoub.Formats/ (source code)
@@ -301,7 +301,7 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 | **Radoub** | `CHANGELOG.md` | Repository-level changes: shared documentation, slash commands, cross-tool features, Radoub.Formats |
 | **Parley** | `Parley/CHANGELOG.md` | Parley-specific changes: features, fixes, UI updates |
 | **Manifest** | `Manifest/CHANGELOG.md` | Manifest-specific changes: features, fixes, UI updates |
-| **Quartermaster** | `CreatureEditor/CHANGELOG.md` | Quartermaster-specific changes |
+| **Quartermaster** | `Quartermaster/CHANGELOG.md` | Quartermaster-specific changes |
 
 **Rules**:
 - Tool-specific changes go in tool CHANGELOG only

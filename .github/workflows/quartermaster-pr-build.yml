@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
     paths:
-      - 'CreatureEditor/**'
+      - 'Quartermaster/**'
       - 'Radoub.Formats/**'
       - 'Radoub.UI/**'
       - '.github/workflows/quartermaster-pr-build.yml'
@@ -23,11 +23,11 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore CreatureEditor/CreatureEditor/CreatureEditor.csproj
+      run: dotnet restore Quartermaster/Quartermaster/Quartermaster.csproj
 
     - name: Build Quartermaster
       id: build
-      run: dotnet build CreatureEditor/CreatureEditor/CreatureEditor.csproj --configuration Release --no-restore
+      run: dotnet build Quartermaster/Quartermaster/Quartermaster.csproj --configuration Release --no-restore
       continue-on-error: true
 
     - name: Report status

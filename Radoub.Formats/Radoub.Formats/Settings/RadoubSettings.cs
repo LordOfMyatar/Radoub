@@ -71,7 +71,7 @@ public class RadoubSettings : INotifyPropertyChanged
     // Tool paths - auto-populated when tools run, used for cross-tool integration
     private string _parleyPath = "";
     private string _manifestPath = "";
-    private string _creatureEditorPath = "";
+    private string _quartermasterPath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -184,12 +184,12 @@ public class RadoubSettings : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Path to CreatureEditor.exe. Auto-set when CreatureEditor runs.
+    /// Path to Quartermaster.exe. Auto-set when Quartermaster runs.
     /// </summary>
-    public string CreatureEditorPath
+    public string QuartermasterPath
     {
-        get => _creatureEditorPath;
-        set { if (SetProperty(ref _creatureEditorPath, value ?? "")) SaveSettings(); }
+        get => _quartermasterPath;
+        set { if (SetProperty(ref _quartermasterPath, value ?? "")) SaveSettings(); }
     }
 
     /// <summary>
@@ -336,7 +336,7 @@ public class RadoubSettings : INotifyPropertyChanged
                     // Tool paths
                     _parleyPath = ExpandPath(data.ParleyPath ?? "");
                     _manifestPath = ExpandPath(data.ManifestPath ?? "");
-                    _creatureEditorPath = ExpandPath(data.CreatureEditorPath ?? "");
+                    _quartermasterPath = ExpandPath(data.QuartermasterPath ?? "");
                 }
             }
         }
@@ -367,7 +367,7 @@ public class RadoubSettings : INotifyPropertyChanged
                 // Tool paths
                 ParleyPath = ContractPath(_parleyPath),
                 ManifestPath = ContractPath(_manifestPath),
-                CreatureEditorPath = ContractPath(_creatureEditorPath)
+                QuartermasterPath = ContractPath(_quartermasterPath)
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -440,6 +440,6 @@ public class RadoubSettings : INotifyPropertyChanged
         // Tool paths for cross-tool discovery
         public string? ParleyPath { get; set; }
         public string? ManifestPath { get; set; }
-        public string? CreatureEditorPath { get; set; }
+        public string? QuartermasterPath { get; set; }
     }
 }
