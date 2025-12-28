@@ -431,10 +431,6 @@ ShowToastNotification("Plugin started", 3000);
 **Reference Strategy** for implementing Aurora Engine file parsers (GFF, ERF, KEY, BIF, TLK, 2DA, SSF):
 
 **PRIMARY Reference**: [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT License)
-- Official NWN:EE tooling, maintained by Beamdog developer
-- Battle-tested with 20+ years of real-world edge cases
-- Fuzz-validated against malformed files
-- Community-used and trusted
 
 **SECONDARY Reference**: BioWare Aurora Specifications (`Documentation/`)
 - Use for understanding structure and design intent
@@ -444,23 +440,12 @@ ShowToastNotification("Plugin started", 3000);
 **Implementation Approach**:
 1. Write parsers in C# (native to Radoub toolset)
 2. Follow neverwinter.nim's edge case handling and validation patterns
-3. Use BioWare specs to understand field purposes and structure
-4. Test against same edge cases Nim handles
-
-**Attribution Requirement**:
-- Must credit `niv/neverwinter.nim` in code comments and documentation
-- MIT license requires copyright notice preservation
-
-**Why This Matters**:
-- BioWare specs describe "ideal" format, not real-world variations
-- Community tools have discovered undocumented quirks over 20 years
-- Nim's fuzz testing caught issues specs never anticipated
-- Implementing purely from specs leads to mysterious failures
 
 ---
 
 ## Resources
 
+- **Wiki**: `d:\LOM\workspace\Radoub.wiki\` (local clone of https://github.com/LordOfMyatar/Radoub/wiki)
 - **BioWare Aurora Specs**: `Documentation/`
 - **neverwinter.nim Reference**: https://github.com/niv/neverwinter.nim
 - **Project History**: `About/CLAUDE_DEVELOPMENT_TIMELINE.md`
