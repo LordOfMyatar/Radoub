@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.16] - 2025-12-27
-**Branch**: `radoub/docs/ui-wiki-page` | **PR**: #TBD
+**Branch**: `radoub/docs/ui-wiki-page` | **PR**: #607
 
 ### Docs: Wiki Updates and CLAUDE.md Optimization (#575)
 
