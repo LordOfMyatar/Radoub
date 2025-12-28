@@ -32,9 +32,14 @@ Quartermaster/
 │   │   ├── Helpers/
 │   │   │   └── DialogHelper.cs - Common dialog helper
 │   │   └── Panels/
-│   │       ├── StatsPanel.axaml(.cs) - Character stats display
+│   │       ├── StatsPanel.axaml(.cs) - Ability scores, combat, saves
+│   │       ├── ClassesPanel.axaml(.cs) - Class levels, alignment, identity
+│   │       ├── SkillsPanel.axaml(.cs) - Skill ranks
+│   │       ├── FeatsPanel.axaml(.cs) - Feats and special abilities
+│   │       ├── ScriptsPanel.axaml(.cs) - Event scripts
+│   │       ├── AdvancedPanel.axaml(.cs) - Flags, behavior, appearance
 │   │       ├── InventoryPanel.axaml(.cs) - Equipment and backpack
-│   │       └── PlaceholderPanel.axaml(.cs) - Coming soon placeholders
+│   │       └── PlaceholderPanel.axaml(.cs) - Coming soon (Spells)
 │   └── Services/
 │       ├── CommandLineService.cs - CLI argument parsing
 │       ├── SettingsService.cs - User preferences
@@ -66,9 +71,14 @@ Each section in the sidebar has its own UserControl in `Views/Panels/`:
 
 | Panel | Status |
 |-------|--------|
-| StatsPanel | Basic display (read-only) |
+| StatsPanel | Basic display (read-only) - ability scores, combat stats, saves |
+| ClassesPanel | Class levels, alignment, identity (race, gender, deity) |
+| SkillsPanel | Skill ranks with progress bars |
+| FeatsPanel | Feats and special abilities |
+| ScriptsPanel | Event scripts and conversation resref |
+| AdvancedPanel | Flags, behavior, appearance, blueprint info |
 | InventoryPanel | Functional (equipment + backpack + palette) |
-| PlaceholderPanel | "Coming Soon" for unimplemented sections |
+| PlaceholderPanel | "Coming Soon" for Spells section |
 
 To add a new panel:
 1. Create UserControl in `Views/Panels/`
@@ -194,10 +204,11 @@ Navigation buttons are NOT tabs - they're styled buttons with `.NavButton` class
 
 Current alpha state:
 
-- Stats panel is read-only
-- Most panels show "Coming Soon" placeholder
+- All panels are read-only (no editing yet)
+- Spells panel shows "Coming Soon" placeholder
 - Item editing not implemented (view-only for inventory)
 - No drag-drop between equipment and backpack
+- 2DA/TLK name resolution uses hardcoded fallbacks for common values
 
 See Epic #544 for roadmap.
 
