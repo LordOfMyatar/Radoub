@@ -42,8 +42,19 @@ public class SmokeTests : ParleyTestBase
         // Arrange
         StartApplication();
 
-        // Act - Try to find the File menu by name
-        var fileMenu = MainWindow!.FindFirstDescendant(cf => cf.ByName("File"));
+        // Wait for window to be fully ready (prevents flaky null reference)
+        var ready = WaitForTitleContains("Parley", DefaultTimeout);
+        Assert.True(ready, "Window should be ready with 'Parley' in title");
+
+        // Act - Try to find the File menu by name (with retry like ClickMenu does)
+        FlaUI.Core.AutomationElements.AutomationElement? fileMenu = null;
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            fileMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("File"));
+            if (fileMenu != null) break;
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
 
         // Assert
         Assert.NotNull(fileMenu);
