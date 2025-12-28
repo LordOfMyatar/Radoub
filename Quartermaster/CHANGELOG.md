@@ -33,12 +33,20 @@ Add the Stats & Identity panel displaying character name, portrait, and core sta
   - Scans item properties for Enhancement Bonus (PropertyName 6) and Attack Bonus (PropertyName 56)
   - Enhancement bonuses don't stack (highest wins)
   - Attack bonuses stack
+- **Feat name resolution** - FeatsPanel now uses `feat.2da` + TLK for feat names
+  - High feat IDs (e.g., 1089) now resolve correctly instead of showing "Feat 1089"
+  - Spell names for special abilities resolved via `spells.2da` + TLK
+- **Navigation FlaUI tests** - Sidebar nav button tests for all 8 panels
 - **Enhanced StatsPanel** - Complete overhaul with detailed stat breakdown
   - Ability scores: Base | Racial Modifier | Total | Bonus columns
   - Hit points: Base HP (dice rolls) | Max HP (with Con) | Current HP (with %)
   - Combat stats: Natural AC | Base Attack (with breakdown) | Speed | Challenge Rating
   - Saving throws: Base | Ability Modifier | Total columns
 - **Sidebar character header** - Now shows resolved race/gender/class names via 2DA/TLK lookup
+
+#### Fixed
+- **Walk rate display** - Fixed creaturespeed.2da mapping (was off-by-one)
+  - Row 0 = PC, Row 4 = Normal, etc. (not Row 0 = Immobile)
 
 #### Changed
 - MainWindow now uses `CreatureDisplayService` for character summary in sidebar
