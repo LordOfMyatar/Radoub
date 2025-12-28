@@ -13,6 +13,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.9.16] - 2025-12-27
+**Branch**: `radoub/docs/ui-wiki-page` | **PR**: #TBD
+
+### Docs: Wiki Updates and CLAUDE.md Optimization (#575)
+
+#### Added
+- Radoub.UI wiki documentation (ItemListView, ItemFilterPanel, EquipmentSlotsPanel)
+- Wiki updates for recent CHANGELOG entries (0.9.9-0.9.15)
+
+#### Changed
+- CLAUDE.md files reviewed for context optimization
+
+---
+
+## [Unreleased - IntegrationTests]
+
 ### Changed (Radoub.IntegrationTests)
 - Test scripts support `-ParleyOnly` / `--parley-only` flag to run only Parley + shared tests
 - Test scripts support `-QuartermasterOnly` / `--quartermaster-only` flag to run only Quartermaster + shared tests
