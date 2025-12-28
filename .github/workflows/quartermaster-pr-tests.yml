@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
     paths:
-      - 'CreatureEditor/**'
+      - 'Quartermaster/**'
       - 'Radoub.Formats/**'
       - 'Radoub.UI/**'
       - '.github/workflows/quartermaster-pr-tests.yml'
@@ -22,15 +22,15 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
-    - name: Restore CreatureEditor.Tests
-      run: dotnet restore CreatureEditor/CreatureEditor.Tests/CreatureEditor.Tests.csproj
+    - name: Restore Quartermaster.Tests
+      run: dotnet restore Quartermaster/Quartermaster.Tests/Quartermaster.Tests.csproj
 
-    - name: Build CreatureEditor.Tests
-      run: dotnet build CreatureEditor/CreatureEditor.Tests/CreatureEditor.Tests.csproj --configuration Release --no-restore
+    - name: Build Quartermaster.Tests
+      run: dotnet build Quartermaster/Quartermaster.Tests/Quartermaster.Tests.csproj --configuration Release --no-restore
 
-    - name: Run CreatureEditor.Tests
-      id: creature-tests
-      run: dotnet test CreatureEditor/CreatureEditor.Tests/CreatureEditor.Tests.csproj --configuration Release --no-build --verbosity normal
+    - name: Run Quartermaster.Tests
+      id: quartermaster-tests
+      run: dotnet test Quartermaster/Quartermaster.Tests/Quartermaster.Tests.csproj --configuration Release --no-build --verbosity normal
       continue-on-error: true
 
     - name: Run Radoub.Formats.Tests
@@ -41,14 +41,14 @@ jobs:
     - name: Report test results
       if: always()
       run: |
-        $creatureResult = "${{ steps.creature-tests.outcome }}"
+        $quartermasterResult = "${{ steps.quartermaster-tests.outcome }}"
         $formatsResult = "${{ steps.formats-tests.outcome }}"
 
         Write-Host "Test Results:"
-        Write-Host "  CreatureEditor.Tests: $creatureResult"
+        Write-Host "  Quartermaster.Tests: $quartermasterResult"
         Write-Host "  Radoub.Formats.Tests: $formatsResult"
 
-        if ($creatureResult -eq "success" -and $formatsResult -eq "success") {
+        if ($quartermasterResult -eq "success" -and $formatsResult -eq "success") {
           Write-Host "✅ All tests passed"
         } else {
           Write-Host "❌ Some tests failed"

@@ -52,7 +52,7 @@ ALL_UNIT_TESTS=(
     "Radoub.Dictionary.Tests:Radoub.Dictionary/Radoub.Dictionary.Tests:Shared"
     "Parley.Tests:Parley/Parley.Tests:Parley"
     "Manifest.Tests:Manifest/Manifest.Tests:Shared"
-    "CreatureEditor.Tests:CreatureEditor/CreatureEditor.Tests:Quartermaster"
+    "Quartermaster.Tests:Quartermaster/Quartermaster.Tests:Quartermaster"
 )
 
 # UI Tests (Windows-only, FlaUI requires Windows)

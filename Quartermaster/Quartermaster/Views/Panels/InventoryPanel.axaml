@@ -1,0 +1,105 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Radoub.UI.Controls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Quartermaster.Views.Panels.InventoryPanel"
+             x:Name="InventoryPanelInstance">
+
+    <Grid x:Name="InventoryGrid">
+        <Grid.ColumnDefinitions>
+            <!-- Left: Equipment + Backpack -->
+            <ColumnDefinition Width="350" MinWidth="250"/>
+            <ColumnDefinition Width="5"/>
+            <!-- Right: Item Palette -->
+            <ColumnDefinition Width="*" MinWidth="300"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Panel: Equipment Slots + Backpack -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Equipment Slots Panel -->
+            <Border Grid.Row="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Equipment" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <controls:EquipmentSlotsPanel x:Name="EquipmentPanel"
+                                                   ShowNaturalSlots="True"
+                                                   AutomationProperties.AutomationId="EquipmentSlotsPanel"/>
+                </DockPanel>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
+                          Background="{DynamicResource SystemBaseMediumLowColor}"
+                          AutomationProperties.AutomationId="EquipmentBackpackSplitter"/>
+
+            <!-- Backpack List -->
+            <Border Grid.Row="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Backpack" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                    <!-- Bulk Operations -->
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                        <CheckBox x:Name="BulkDropableCheck" Content="Dropable"
+                                  IsEnabled="{Binding HasBackpackSelection, ElementName=InventoryPanelInstance}"
+                                  AutomationProperties.AutomationId="BulkDropableCheck"/>
+                        <CheckBox x:Name="BulkPickpocketCheck" Content="Pickpocketable"
+                                  IsEnabled="{Binding HasBackpackSelection, ElementName=InventoryPanelInstance}"
+                                  AutomationProperties.AutomationId="BulkPickpocketCheck"/>
+                        <Button Content="Delete Selected" Click="OnDeleteSelectedClick"
+                                IsEnabled="{Binding HasBackpackSelection, ElementName=InventoryPanelInstance}"
+                                Padding="6,2"
+                                AutomationProperties.AutomationId="DeleteSelectedButton"/>
+                    </StackPanel>
+
+                    <!-- Backpack Items List -->
+                    <controls:ItemListView x:Name="BackpackList"
+                                            ContextKey="Backpack"
+                                            AutomationProperties.AutomationId="BackpackList"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                      Background="{DynamicResource SystemBaseMediumLowColor}"
+                      AutomationProperties.AutomationId="InventoryPaletteSplitter"/>
+
+        <!-- Right Panel: Item Palette -->
+        <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Item Palette" FontWeight="Bold" Margin="0,0,0,5"/>
+
+                <!-- Filter Panel -->
+                <controls:ItemFilterPanel x:Name="PaletteFilter"
+                                           DockPanel.Dock="Top"
+                                           ContextKey="Palette"
+                                           Margin="0,0,0,5"
+                                           AutomationProperties.AutomationId="PaletteFilter"/>
+
+                <!-- Add to Inventory Buttons -->
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                    <Button Content="Add to Backpack" Click="OnAddToBackpackClick"
+                            IsEnabled="{Binding HasPaletteSelection, ElementName=InventoryPanelInstance}"
+                            Padding="8,4"
+                            AutomationProperties.AutomationId="AddToBackpackButton"/>
+                    <Button Content="Equip Selected" Click="OnEquipSelectedClick"
+                            IsEnabled="{Binding HasPaletteSelection, ElementName=InventoryPanelInstance}"
+                            Padding="8,4"
+                            AutomationProperties.AutomationId="EquipSelectedButton"/>
+                </StackPanel>
+
+                <!-- Item List -->
+                <controls:ItemListView x:Name="PaletteList"
+                                        ContextKey="Palette"
+                                        AutomationProperties.AutomationId="PaletteList"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

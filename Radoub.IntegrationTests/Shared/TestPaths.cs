@@ -58,23 +58,23 @@ public static class TestPaths
     public static string GetManifestTestFile(string filename) => Path.Combine(ManifestTestFiles, filename);
 
     /// <summary>
-    /// Gets the path to a built CreatureEditor (Quartermaster) executable.
+    /// Gets the path to a built Quartermaster executable.
     /// </summary>
     /// <param name="configuration">Build configuration (Debug or Release)</param>
-    public static string GetCreatureEditorExePath(string configuration = "Debug")
+    public static string GetQuartermasterExePath(string configuration = "Debug")
     {
-        return Path.Combine(RepoRoot, "CreatureEditor", "CreatureEditor", "bin", configuration, "net9.0", "CreatureEditor.exe");
+        return Path.Combine(RepoRoot, "Quartermaster", "Quartermaster", "bin", configuration, "net9.0", "Quartermaster.exe");
     }
 
     /// <summary>
-    /// Gets path to CreatureEditor test files directory.
+    /// Gets path to Quartermaster test files directory.
     /// </summary>
-    public static string CreatureEditorTestFiles => Path.Combine(RepoRoot, "CreatureEditor", "CreatureEditor.Tests", "TestData");
+    public static string QuartermasterTestFiles => Path.Combine(RepoRoot, "Quartermaster", "Quartermaster.Tests", "TestData");
 
     /// <summary>
-    /// Gets a specific CreatureEditor test file path.
+    /// Gets a specific Quartermaster test file path.
     /// </summary>
-    public static string GetCreatureEditorTestFile(string filename) => Path.Combine(CreatureEditorTestFiles, filename);
+    public static string GetQuartermasterTestFile(string filename) => Path.Combine(QuartermasterTestFiles, filename);
 
     /// <summary>
     /// Creates a temporary directory for test output.

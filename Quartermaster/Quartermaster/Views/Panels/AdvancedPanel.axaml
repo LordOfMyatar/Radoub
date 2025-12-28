@@ -1,0 +1,204 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             x:Class="Quartermaster.Views.Panels.AdvancedPanel">
+
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="20">
+                <!-- Header -->
+                <TextBlock Text="Advanced Properties"
+                           FontSize="20"
+                           FontWeight="Bold"/>
+
+                <!-- Flags Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Flags" FontWeight="SemiBold" FontSize="14"/>
+
+                        <WrapPanel Orientation="Horizontal">
+                            <Border Margin="0,0,8,8" Padding="8,4"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    CornerRadius="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock x:Name="PlotIcon" Text="[  ]" FontFamily="Consolas"/>
+                                    <TextBlock Text="Plot"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="0,0,8,8" Padding="8,4"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    CornerRadius="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock x:Name="ImmortalIcon" Text="[  ]" FontFamily="Consolas"/>
+                                    <TextBlock Text="Immortal"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="0,0,8,8" Padding="8,4"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    CornerRadius="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock x:Name="NoPermDeathIcon" Text="[  ]" FontFamily="Consolas"/>
+                                    <TextBlock Text="No Perm Death"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="0,0,8,8" Padding="8,4"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    CornerRadius="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock x:Name="IsPCIcon" Text="[  ]" FontFamily="Consolas"/>
+                                    <TextBlock Text="Is PC"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="0,0,8,8" Padding="8,4"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    CornerRadius="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock x:Name="DisarmableIcon" Text="[  ]" FontFamily="Consolas"/>
+                                    <TextBlock Text="Disarmable"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="0,0,8,8" Padding="8,4"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    CornerRadius="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock x:Name="LootableIcon" Text="[  ]" FontFamily="Consolas"/>
+                                    <TextBlock Text="Lootable"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Margin="0,0,8,8" Padding="8,4"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                    CornerRadius="4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock x:Name="InterruptableIcon" Text="[  ]" FontFamily="Consolas"/>
+                                    <TextBlock Text="Interruptable"/>
+                                </StackPanel>
+                            </Border>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Behavior Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Behavior" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction ID:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="FactionText" Text="0" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Perception Range:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="PerceptionText" Text="11" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Walk Rate:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="WalkRateText" Text="0" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Sound Set:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="SoundSetText" Text="0" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Decay Time:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="DecayTimeText" Text="5000 ms" VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Appearance Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Appearance" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Appearance Type:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="AppearanceText" Text="0" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Phenotype:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="PhenotypeText" Text="Normal" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Portrait ID:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="PortraitText" Text="0" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Tail:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TailText" Text="None" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Wings:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="WingsText" Text="None" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Body Bag:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="5" Grid.Column="1" x:Name="BodyBagText" Text="0" VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Blueprint Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Blueprint" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Template ResRef:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TemplateResRefText" Text="-"
+                                       FontFamily="Consolas, Courier New, monospace" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Tag:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TagText" Text="-"
+                                       FontFamily="Consolas, Courier New, monospace" VerticalAlignment="Center"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Comment:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Top"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="CommentText" Text="-"
+                                       TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Placeholder message -->
+                <TextBlock Text="Advanced property editing will be implemented in a future sprint."
+                           FontSize="12"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,10,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

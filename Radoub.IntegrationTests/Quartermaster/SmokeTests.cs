@@ -4,7 +4,7 @@ using Xunit;
 namespace Radoub.IntegrationTests.Quartermaster;
 
 /// <summary>
-/// Basic smoke tests to verify Quartermaster (CreatureEditor) launches and responds.
+/// Basic smoke tests to verify Quartermaster launches and responds.
 /// </summary>
 [Collection("QuartermasterSequential")]
 public class SmokeTests : QuartermasterTestBase

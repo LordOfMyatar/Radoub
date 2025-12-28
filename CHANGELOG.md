@@ -5,7 +5,7 @@ All notable changes to Radoub (repository-level) will be documented in this file
 For tool-specific changes, see the individual tool changelogs:
 - [Parley CHANGELOG](Parley/CHANGELOG.md)
 - [Manifest CHANGELOG](Manifest/CHANGELOG.md)
-- [Quartermaster CHANGELOG](CreatureEditor/CHANGELOG.md)
+- [Quartermaster CHANGELOG](Quartermaster/CHANGELOG.md)
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 

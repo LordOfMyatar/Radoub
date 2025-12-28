@@ -45,7 +45,7 @@ git diff main...HEAD --name-only
 Categorize by tool:
 - `Parley/**` → Parley wiki pages
 - `Manifest/**` → Manifest wiki pages
-- `CreatureEditor/**` → Quartermaster wiki pages
+- `Quartermaster/**` → Quartermaster wiki pages
 - `Radoub.Formats/**` → Radoub-Formats wiki pages
 
 ### Step 2: Map Changes to Wiki Pages
@@ -56,7 +56,7 @@ Categorize by tool:
 | `Parley/Parley/ViewModels/` | Parley-Developer-Architecture |
 | `Parley/Parley/Views/` | Parley-Developer-Architecture (UI section) |
 | `Manifest/Manifest/Services/` | Manifest-Developer-Architecture |
-| `CreatureEditor/CreatureEditor/` | Quartermaster-Developer-Architecture |
+| `Quartermaster/Quartermaster/` | Quartermaster-Developer-Architecture |
 | `Radoub.Formats/Radoub.Formats/` | Radoub-Formats |
 | Copy/paste logic | Parley-Developer-CopyPaste |
 | Delete behavior | Parley-Developer-Delete-Behavior |
