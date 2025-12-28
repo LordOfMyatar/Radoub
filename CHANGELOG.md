@@ -20,12 +20,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Docs: Wiki Updates and CLAUDE.md Optimization (#575)
 
-#### Added
-- Radoub.UI wiki documentation (ItemListView, ItemFilterPanel, EquipmentSlotsPanel)
-- Wiki updates for recent CHANGELOG entries (0.9.9-0.9.15)
+#### Added (Wiki)
+- Radoub-UI-Developer.md - Shared UI components documentation
+- Quartermaster-Developer-Architecture.md - CreatureEditor architecture
+- Radoub-Formats.md updates (ItemPropertyResolver, UnifiedLogger sections)
+- Updated _Sidebar.md and Index.md with new pages
 
-#### Changed
-- CLAUDE.md files reviewed for context optimization
+#### Changed (CLAUDE.md Files)
+- **Parley/CLAUDE.md** - Major rewrite (543→174 lines, 68% reduction)
+  - Removed duplicated standards (now in Radoub CLAUDE.md)
+  - Kept: MainViewModel closed rule, orphan handling, Aurora compatibility
+- **Manifest/CLAUDE.md** - Cleanup (146→118 lines)
+  - Removed stale sprint plan and duplicated path handling
+- **CLAUDE.md** (Radoub) - Added sections:
+  - Manifest in Current Tools
+  - Code Quality Standards (path handling, exceptions, hygiene)
+  - Wiki local path in Resources
+
+#### Changed (Slash Commands)
+- **pre-merge.md** - Wiki enforcement now BLOCKING (not advisory)
+- **post-merge.md** - Simplified branch cleanup (remote auto-prune)
+- **sprint-planning.md** - Saves output to NonPublic/sprintplanning.md
+- **grooming.md** - Saves output to NonPublic/grooming.md
 
 ---
 
