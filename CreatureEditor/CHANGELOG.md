@@ -18,7 +18,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Establishes the Quartermaster application shell with a FlaUI-friendly sidebar + content layout that avoids tab controls.
 
 #### Added
-- (Sprint items will be added as completed)
+- **Sidebar navigation layout** - Replaced tab-based layout with sidebar + content pattern for FlaUI compatibility
+- **Character header** - Portrait placeholder, character name, and race/class summary in sidebar
+- **Navigation buttons** - Stats, Classes, Skills, Feats, Spells, Inventory, Advanced, Scripts sections
+- **Content panel switching** - Single content area that swaps UserControls based on navigation selection
+- **StatsPanel** - Basic stats display showing ability scores, combat stats, and saving throws
+- **InventoryPanel** - Extracted inventory UI into standalone UserControl with equipment slots, backpack, and palette
+- **PlaceholderPanel** - "Coming Soon" panels for unimplemented sections
+- **AutomationIds** - FlaUI-friendly identifiers on all interactive elements (NavButton_*, ContentArea, CharacterName, etc.)
+- **SidebarWidth setting** - Persisted sidebar width preference
+
+#### Changed
+- MainWindow layout refactored from 3-panel inventory view to sidebar + content pattern
+- Settings now saves sidebar width instead of left panel width
 
 ---
 

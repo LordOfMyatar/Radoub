@@ -163,11 +163,12 @@ public partial class MainWindow
             _isDirty = false;
 
             PopulateInventoryUI();
+            UpdateCharacterHeader();
+            StatsPanelContent.LoadCreature(_currentCreature);
             UpdateTitle();
             UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
             UpdateInventoryCounts();
             OnPropertyChanged(nameof(HasFile));
-            OnPropertyChanged(nameof(CanAddItem));
 
             SettingsService.Instance.AddRecentFile(filePath);
             UpdateRecentFilesMenu();
@@ -243,11 +244,12 @@ public partial class MainWindow
         _isBicFile = false;
 
         ClearInventoryUI();
+        UpdateCharacterHeader();
+        StatsPanelContent.ClearStats();
         UpdateTitle();
         UpdateStatus("Ready");
         UpdateInventoryCounts();
         OnPropertyChanged(nameof(HasFile));
-        OnPropertyChanged(nameof(CanAddItem));
     }
 
     #endregion

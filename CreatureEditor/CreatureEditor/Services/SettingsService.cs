@@ -56,6 +56,7 @@ public class SettingsService : INotifyPropertyChanged
     private bool _windowMaximized = false;
     private double _leftPanelWidth = 350;
     private double _rightPanelWidth = 400;
+    private double _sidebarWidth = 200;
 
     // UI settings
     private double _fontSize = 14;
@@ -120,6 +121,12 @@ public class SettingsService : INotifyPropertyChanged
     {
         get => _rightPanelWidth;
         set { if (SetProperty(ref _rightPanelWidth, Math.Max(250, Math.Min(800, value)))) SaveSettings(); }
+    }
+
+    public double SidebarWidth
+    {
+        get => _sidebarWidth;
+        set { if (SetProperty(ref _sidebarWidth, Math.Max(150, Math.Min(300, value)))) SaveSettings(); }
     }
 
     // UI properties
@@ -245,6 +252,7 @@ public class SettingsService : INotifyPropertyChanged
                     _windowMaximized = settings.WindowMaximized;
                     _leftPanelWidth = Math.Max(200, Math.Min(600, settings.LeftPanelWidth));
                     _rightPanelWidth = Math.Max(250, Math.Min(800, settings.RightPanelWidth));
+                    _sidebarWidth = Math.Max(150, Math.Min(300, settings.SidebarWidth));
 
                     _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
                     _fontFamily = settings.FontFamily ?? "";
@@ -286,6 +294,7 @@ public class SettingsService : INotifyPropertyChanged
                 WindowMaximized = WindowMaximized,
                 LeftPanelWidth = LeftPanelWidth,
                 RightPanelWidth = RightPanelWidth,
+                SidebarWidth = SidebarWidth,
                 FontSize = FontSize,
                 FontFamily = FontFamily,
                 CurrentThemeId = CurrentThemeId,
@@ -333,6 +342,7 @@ public class SettingsService : INotifyPropertyChanged
         public bool WindowMaximized { get; set; } = false;
         public double LeftPanelWidth { get; set; } = 350;
         public double RightPanelWidth { get; set; } = 400;
+        public double SidebarWidth { get; set; } = 200;
 
         public double FontSize { get; set; } = 14;
         public string FontFamily { get; set; } = "";

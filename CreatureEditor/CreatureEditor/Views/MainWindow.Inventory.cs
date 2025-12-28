@@ -1,4 +1,5 @@
 using CreatureEditor.Services;
+using CreatureEditor.Views.Panels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
@@ -58,7 +59,7 @@ public partial class MainWindow
             if (!string.IsNullOrEmpty(invItem.InventoryRes))
             {
                 var itemVm = CreatePlaceholderItem(invItem.InventoryRes, invItem.Dropable, invItem.Pickpocketable);
-                _backpackItems.Add(itemVm);
+                InventoryPanelContent.BackpackItems.Add(itemVm);
                 UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Added to backpack: {invItem.InventoryRes}");
             }
         }
@@ -66,7 +67,7 @@ public partial class MainWindow
         // Populate item palette from module directory
         PopulateItemPalette();
 
-        UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {_backpackItems.Count} in backpack");
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {InventoryPanelContent.BackpackItems.Count} in backpack");
     }
 
     /// <summary>
@@ -150,19 +151,11 @@ public partial class MainWindow
 
     private void ClearInventoryUI()
     {
-        // Clear equipment slots
-        EquipmentPanel.ClearAllSlots();
-
-        // Clear backpack
-        _backpackItems.Clear();
-
-        // Clear palette
-        _paletteItems.Clear();
+        // Clear inventory panel
+        InventoryPanelContent.ClearAll();
 
         // Update selection state
         HasSelection = false;
-        HasBackpackSelection = false;
-        HasPaletteSelection = false;
     }
 
     #endregion
@@ -209,9 +202,9 @@ public partial class MainWindow
                         var viewModel = _itemViewModelFactory.Create(item, GameResourceSource.Module);
 
                         // Only add if not already in palette (from game data)
-                        if (!_paletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
+                        if (!InventoryPanelContent.PaletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
                         {
-                            _paletteItems.Add(viewModel);
+                            InventoryPanelContent.PaletteItems.Add(viewModel);
                             moduleItemCount++;
                         }
                     }
@@ -244,7 +237,7 @@ public partial class MainWindow
 
             // Get existing resrefs to skip duplicates
             var existingResRefs = new HashSet<string>(
-                _paletteItems.Select(p => p.ResRef),
+                InventoryPanelContent.PaletteItems.Select(p => p.ResRef),
                 StringComparer.OrdinalIgnoreCase);
 
             var batch = new List<ItemViewModel>();
@@ -319,7 +312,7 @@ public partial class MainWindow
         {
             foreach (var item in batch)
             {
-                _paletteItems.Add(item);
+                InventoryPanelContent.PaletteItems.Add(item);
             }
         });
     }
