@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.101-alpha] - 2025-12-27
+**Branch**: `parley/refactor/remove-dialogbuilder` | **PR**: #TBD
+
+### Refactor: Remove legacy DialogBuilder.cs (#599)
+
+Investigation and potential removal of DialogBuilder.cs (700 lines) in favor of Radoub.Formats.Dlg.DlgWriter.
+
+---
+
 ## [0.1.100-alpha] - 2025-12-27
 **Branch**: `parley/refactor/remove-gffbinaryreader` | **PR**: #602
 
