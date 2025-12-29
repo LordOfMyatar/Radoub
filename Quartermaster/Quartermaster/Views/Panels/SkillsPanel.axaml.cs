@@ -23,6 +23,7 @@ public partial class SkillsPanel : UserControl
     private ObservableCollection<SkillViewModel> _skills = new();
     private List<SkillViewModel> _allSkills = new(); // Unfiltered list
     private HashSet<int> _classSkillIds = new();
+    private HashSet<int> _unavailableSkillIds = new();
     private UtcFile? _currentCreature;
 
     public SkillsPanel()
@@ -68,6 +69,7 @@ public partial class SkillsPanel : UserControl
         _skills.Clear();
         _allSkills.Clear();
         _classSkillIds.Clear();
+        _unavailableSkillIds.Clear();
         _currentCreature = creature;
 
         if (creature == null || creature.SkillList.Count == 0)
@@ -76,10 +78,11 @@ public partial class SkillsPanel : UserControl
             return;
         }
 
-        // Get combined class skills from all character classes
+        // Get combined class skills and unavailable skills from all character classes
         if (_displayService != null)
         {
             _classSkillIds = _displayService.GetCombinedClassSkillIds(creature);
+            _unavailableSkillIds = _displayService.GetUnavailableSkillIds(creature, creature.SkillList.Count);
         }
 
         // Load all skills
@@ -89,10 +92,30 @@ public partial class SkillsPanel : UserControl
             var skillName = GetSkillName(i);
             var keyAbility = GetSkillKeyAbility(i);
             var isClassSkill = _classSkillIds.Contains(i);
+            var isUnavailable = _unavailableSkillIds.Contains(i);
 
             // Calculate ability modifier for total
             var abilityModifier = GetAbilityModifier(creature, keyAbility);
             var total = ranks + abilityModifier;
+
+            // Determine row background and text opacity
+            IBrush rowBackground;
+            double textOpacity;
+            if (isUnavailable)
+            {
+                rowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128)); // Gray for unavailable
+                textOpacity = 0.5;
+            }
+            else if (isClassSkill)
+            {
+                rowBackground = new SolidColorBrush(Color.FromArgb(30, 100, 149, 237)); // Light blue for class skills
+                textOpacity = 1.0;
+            }
+            else
+            {
+                rowBackground = Brushes.Transparent;
+                textOpacity = 1.0;
+            }
 
             _allSkills.Add(new SkillViewModel
             {
@@ -105,10 +128,10 @@ public partial class SkillsPanel : UserControl
                 Total = total,
                 TotalDisplay = FormatTotal(total, abilityModifier),
                 IsClassSkill = isClassSkill,
-                ClassSkillIndicator = isClassSkill ? "●" : "○",
-                RowBackground = isClassSkill
-                    ? new SolidColorBrush(Color.FromArgb(30, 100, 149, 237)) // Light blue for class skills
-                    : Brushes.Transparent
+                IsUnavailable = isUnavailable,
+                ClassSkillIndicator = isUnavailable ? "✗" : (isClassSkill ? "●" : "○"),
+                RowBackground = rowBackground,
+                TextOpacity = textOpacity
             });
         }
 
@@ -152,6 +175,7 @@ public partial class SkillsPanel : UserControl
         _skills.Clear();
         _allSkills.Clear();
         _classSkillIds.Clear();
+        _unavailableSkillIds.Clear();
         _currentCreature = null;
         SetText(_skillsSummaryText, "0 skills with ranks");
         if (_noSkillsText != null)
@@ -303,6 +327,8 @@ public class SkillViewModel
     public int Total { get; set; }
     public string TotalDisplay { get; set; } = "0";
     public bool IsClassSkill { get; set; }
+    public bool IsUnavailable { get; set; }
     public string ClassSkillIndicator { get; set; } = "○";
     public IBrush RowBackground { get; set; } = Brushes.Transparent;
+    public double TextOpacity { get; set; } = 1.0;
 }

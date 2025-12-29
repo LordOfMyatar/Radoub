@@ -343,6 +343,74 @@ public class CreatureDisplayService
     }
 
     /// <summary>
+    /// Checks if a skill can be used by all classes (AllClassesCanUse column in skills.2da).
+    /// </summary>
+    public bool IsSkillUniversal(int skillId)
+    {
+        var allClassesCanUse = _gameDataService.Get2DAValue("skills", skillId, "AllClassesCanUse");
+        return allClassesCanUse == "1";
+    }
+
+    /// <summary>
+    /// Checks if a skill appears in any of the character's class skill tables.
+    /// If AllClassesCanUse is 0, and the skill doesn't appear in any cls_skill_*.2da for
+    /// the character's classes, it's completely unavailable to them.
+    /// </summary>
+    public bool IsSkillAvailable(UtcFile creature, int skillId)
+    {
+        // Check if all classes can use this skill
+        if (IsSkillUniversal(skillId))
+            return true;
+
+        // Check each class's skill table to see if the skill appears at all
+        foreach (var creatureClass in creature.ClassList)
+        {
+            if (IsSkillInClassTable(creatureClass.Class, skillId))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a skill appears in a class's skill table at all (regardless of ClassSkill value).
+    /// </summary>
+    private bool IsSkillInClassTable(int classId, int skillId)
+    {
+        var skillsTable = GetClassSkillsTable(classId);
+        if (skillsTable == null)
+            return false;
+
+        for (int row = 0; row < 50; row++)
+        {
+            var skillIndexStr = _gameDataService.Get2DAValue(skillsTable, row, "SkillIndex");
+            if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
+                break;
+
+            if (int.TryParse(skillIndexStr, out int tableSkillId) && tableSkillId == skillId)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the set of unavailable skill IDs for a creature (skills they cannot take at all).
+    /// </summary>
+    public HashSet<int> GetUnavailableSkillIds(UtcFile creature, int totalSkillCount)
+    {
+        var result = new HashSet<int>();
+        for (int skillId = 0; skillId < totalSkillCount; skillId++)
+        {
+            if (!IsSkillAvailable(creature, skillId))
+            {
+                result.Add(skillId);
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Gets the racial ability modifier for a specific ability.
     /// </summary>
     public int GetRacialModifier(byte raceId, string ability)

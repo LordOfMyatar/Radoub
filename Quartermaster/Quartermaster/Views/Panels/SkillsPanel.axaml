@@ -45,12 +45,17 @@
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="20,0,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="3">
                         <TextBlock Text="●" Foreground="CornflowerBlue" FontSize="12" VerticalAlignment="Center"/>
-                        <TextBlock Text="Class Skill" FontSize="11" VerticalAlignment="Center"
+                        <TextBlock Text="Class" FontSize="11" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="3">
                         <TextBlock Text="○" FontSize="12" VerticalAlignment="Center"/>
                         <TextBlock Text="Cross-class" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                        <TextBlock Text="✗" Foreground="CornflowerBlue" FontSize="12" VerticalAlignment="Center" Opacity="0.5"/>
+                        <TextBlock Text="Unavailable" FontSize="11" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </StackPanel>
@@ -83,7 +88,8 @@
                                     <Border Background="{Binding RowBackground}"
                                             Padding="10,6,25,6"
                                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                            BorderThickness="0,0,0,1">
+                                            BorderThickness="0,0,0,1"
+                                            Opacity="{Binding TextOpacity}">
                                         <Grid ColumnDefinitions="25,*,50,50,50,70">
                                             <!-- Class Skill Indicator -->
                                             <TextBlock Grid.Column="0"

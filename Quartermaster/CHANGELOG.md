@@ -34,6 +34,10 @@ Add the Skills panel displaying all skill ranks for the character.
   - Class Skills First
 - **Filtering** - "Trained Only" checkbox to show only skills with ranks > 0
 - **Summary Display** - Shows count of trained skills, total ranks, and class skill count
+- **Unavailable Skill Detection** - Grays out skills the character cannot take
+  - Checks `AllClassesCanUse` column in skills.2da
+  - Cross-references cls_skill_*.2da for class-restricted skills
+  - Shows ✗ indicator for unavailable skills
 - **CreatureDisplayService Integration** - Added skill name resolution via 2DA/TLK:
   - `GetSkillName()` - Skill name from skills.2da with TLK lookup
   - `GetSkillKeyAbility()` - Key ability from skills.2da
@@ -41,6 +45,9 @@ Add the Skills panel displaying all skill ranks for the character.
   - `IsClassSkill()` - Check if skill is class skill for a class
   - `GetClassSkillIds()` - Get set of class skill IDs for a class
   - `GetCombinedClassSkillIds()` - Combined class skills for multiclass
+  - `IsSkillUniversal()` - Check if all classes can use a skill
+  - `IsSkillAvailable()` - Check if skill is available to creature
+  - `GetUnavailableSkillIds()` - Get set of unavailable skill IDs
 
 ---
 
