@@ -1226,6 +1226,55 @@ public class CreatureDisplayService
         };
     }
 
+    /// <summary>
+    /// Gets the maximum spell level a class can cast at a given class level.
+    /// Uses the cls_spgn_*.2da tables referenced from classes.2da SpellGainTable column.
+    /// </summary>
+    /// <param name="classId">The class ID</param>
+    /// <param name="classLevel">The level in that class</param>
+    /// <returns>Maximum spell level (0-9), or -1 if not a caster class</returns>
+    public int GetMaxSpellLevel(int classId, int classLevel)
+    {
+        // Get the spell gain table name from classes.2da
+        var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
+        if (string.IsNullOrEmpty(spellGainTable) || spellGainTable == "****")
+            return -1; // Not a caster class
+
+        // cls_spgn_*.2da has rows for class levels (0-indexed, so level 1 = row 0)
+        // and columns for spell levels (NumSpellLevels0, NumSpellLevels1, etc.)
+        // A value > 0 means the class can cast spells of that level at that class level
+        int rowIndex = classLevel - 1;
+        if (rowIndex < 0) return -1;
+
+        int maxSpellLevel = -1;
+
+        // Check spell levels 0-9
+        for (int spellLevel = 0; spellLevel <= 9; spellLevel++)
+        {
+            var columnName = $"NumSpellLevels{spellLevel}";
+            var slotsStr = _gameDataService.Get2DAValue(spellGainTable, rowIndex, columnName);
+
+            if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" && slotsStr != "-")
+            {
+                if (int.TryParse(slotsStr, out int slots) && slots > 0)
+                {
+                    maxSpellLevel = spellLevel;
+                }
+            }
+        }
+
+        return maxSpellLevel;
+    }
+
+    /// <summary>
+    /// Checks if a class is a spellcasting class.
+    /// </summary>
+    public bool IsCasterClass(int classId)
+    {
+        var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
+        return !string.IsNullOrEmpty(spellGainTable) && spellGainTable != "****";
+    }
+
     #endregion
 }
 

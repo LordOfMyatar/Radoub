@@ -29,8 +29,9 @@ Add the Spells panel to Quartermaster with search and filtering - addressing Aur
 - **Status Filter** - Filter by spell status:
   - All Spells / Known Only / Memorized Only / Available / Blocked
 - **Class Selection** - 8 class radio buttons (Class 1-8)
-  - Shows spells for selected caster class
+  - Shows class name, level, and max spell level (e.g., "Wizard (10) - Lvl 5")
   - Non-caster classes disabled
+  - Low-level casters without spells yet show "No spells"
 - **Detailed Spell List** - Columns:
   - Checkbox (known/memorized status, read-only)
   - Spell Name
@@ -45,6 +46,8 @@ Add the Spells panel to Quartermaster with search and filtering - addressing Aur
   - `GetAllSpellIds()` - Gets all spells from spells.2da
   - `GetSpellInfo()` - Gets detailed spell info (school, levels by class)
   - `GetSpellSchoolName()` - Converts school enum to display name
+  - `GetMaxSpellLevel()` - Gets max spell level for class at given level
+  - `IsCasterClass()` - Checks if class has SpellGainTable in classes.2da
 
 #### Note
 - Spell lists (known/memorized) are not yet parsed from creature files

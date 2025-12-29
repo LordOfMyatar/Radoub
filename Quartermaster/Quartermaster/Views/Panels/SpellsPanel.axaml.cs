@@ -172,6 +172,8 @@ public partial class SpellsPanel : UserControl
     private void UpdateClassRadioButtons(UtcFile creature)
     {
         // Reset all radio buttons
+        bool foundCaster = false;
+
         for (int i = 0; i < _classRadios.Length; i++)
         {
             var radio = _classRadios[i];
@@ -182,21 +184,34 @@ public partial class SpellsPanel : UserControl
                 var classEntry = creature.ClassList[i];
                 var className = _displayService?.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
 
-                // Check if this class can cast spells
-                bool isCaster = IsCasterClass(classEntry.Class);
+                // Check if this class can cast spells using the display service
+                bool isCaster = _displayService?.IsCasterClass(classEntry.Class) ?? false;
+                int maxSpellLevel = isCaster ? (_displayService?.GetMaxSpellLevel(classEntry.Class, classEntry.ClassLevel) ?? -1) : -1;
 
-                radio.Content = $"{className} ({classEntry.ClassLevel})";
-                radio.IsEnabled = isCaster;
+                // Format: "Wizard (10) - Lvl 5" or "Fighter (5)" for non-casters
+                if (isCaster && maxSpellLevel >= 0)
+                {
+                    radio.Content = $"{className} ({classEntry.ClassLevel}) - Lvl {maxSpellLevel}";
+                }
+                else if (isCaster)
+                {
+                    // Caster but no spells yet (e.g., Paladin 1-3, Ranger 1-3)
+                    radio.Content = $"{className} ({classEntry.ClassLevel}) - No spells";
+                }
+                else
+                {
+                    radio.Content = $"{className} ({classEntry.ClassLevel})";
+                }
+
+                radio.IsEnabled = isCaster && maxSpellLevel >= 0;
                 radio.IsVisible = true;
 
                 // Select first enabled caster class by default
-                if (i == 0 || (_selectedClassIndex == 0 && !IsCasterClass(creature.ClassList[0].Class) && isCaster))
+                if (!foundCaster && isCaster && maxSpellLevel >= 0)
                 {
-                    if (isCaster)
-                    {
-                        radio.IsChecked = true;
-                        _selectedClassIndex = i;
-                    }
+                    radio.IsChecked = true;
+                    _selectedClassIndex = i;
+                    foundCaster = true;
                 }
             }
             else
@@ -207,30 +222,9 @@ public partial class SpellsPanel : UserControl
             }
         }
 
-        // If no caster class, select first anyway
-        if (_classRadios[0] != null)
+        // If no caster class found, select first anyway (even if disabled)
+        if (!foundCaster && _classRadios[0] != null)
             _classRadios[0].IsChecked = true;
-    }
-
-    private static bool IsCasterClass(int classId)
-    {
-        // Caster classes in NWN
-        // Full casters: Bard(1), Cleric(2), Druid(3), Sorcerer(9), Wizard(10)
-        // Partial casters: Paladin(6), Ranger(7)
-        // Prestige casters: Pale Master(18), etc.
-        return classId switch
-        {
-            1 => true,   // Bard
-            2 => true,   // Cleric
-            3 => true,   // Druid
-            6 => true,   // Paladin
-            7 => true,   // Ranger
-            9 => true,   // Sorcerer
-            10 => true,  // Wizard
-            18 => true,  // Pale Master
-            21 => true,  // Dragon Disciple
-            _ => false
-        };
     }
 
     private void LoadSpellsForClass(int classIndex)
