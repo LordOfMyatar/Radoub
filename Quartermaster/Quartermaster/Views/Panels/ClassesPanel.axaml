@@ -43,14 +43,19 @@
                                                        VerticalAlignment="Center"
                                                        Width="20"/>
 
-                                            <!-- Class Name -->
+                                            <!-- Class Name and Info -->
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding ClassName}"
                                                            FontWeight="SemiBold"
                                                            FontSize="14"/>
-                                                <TextBlock Text="{Binding HitDieDisplay}"
+                                                <TextBlock Text="{Binding ClassInfoDisplay}"
                                                            FontSize="11"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <TextBlock Text="{Binding ClassFeatures}"
+                                                           FontSize="10"
+                                                           FontStyle="Italic"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                           TextWrapping="Wrap"/>
                                             </StackPanel>
 
                                             <!-- Level Display -->

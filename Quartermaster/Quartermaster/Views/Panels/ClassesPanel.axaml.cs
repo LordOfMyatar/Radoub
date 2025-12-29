@@ -88,7 +88,9 @@ public partial class ClassesPanel : UserControl
                 ClassId = creatureClass.Class,
                 ClassName = GetClassName(creatureClass.Class),
                 Level = creatureClass.ClassLevel,
-                HitDie = GetClassHitDie(creatureClass.Class)
+                HitDie = GetClassHitDie(creatureClass.Class),
+                SkillPoints = GetClassSkillPoints(creatureClass.Class),
+                ClassFeatures = GetClassFeatures(creatureClass.Class)
             });
             totalLevel += creatureClass.ClassLevel;
         }
@@ -238,6 +240,70 @@ public partial class ClassesPanel : UserControl
         };
     }
 
+    private int GetClassSkillPoints(int classId)
+    {
+        // SkillPointBase from classes.2da (before Int modifier)
+        return classId switch
+        {
+            0 => 4,   // Barbarian
+            1 => 4,   // Bard
+            2 => 2,   // Cleric
+            3 => 4,   // Druid
+            4 => 2,   // Fighter
+            5 => 4,   // Monk
+            6 => 2,   // Paladin
+            7 => 4,   // Ranger
+            8 => 8,   // Rogue
+            9 => 2,   // Sorcerer
+            10 => 2,  // Wizard
+            11 => 6,  // Shadowdancer
+            12 => 4,  // Harper Scout
+            13 => 4,  // Arcane Archer
+            14 => 4,  // Assassin
+            15 => 2,  // Blackguard
+            16 => 2,  // Champion of Torm
+            17 => 2,  // Weapon Master
+            18 => 2,  // Pale Master
+            19 => 4,  // Shifter
+            20 => 2,  // Dwarven Defender
+            21 => 2,  // Dragon Disciple
+            27 => 2,  // Purple Dragon Knight
+            _ => 2    // Default
+        };
+    }
+
+    private string GetClassFeatures(int classId)
+    {
+        // Key class features - abbreviated for display
+        return classId switch
+        {
+            0 => "Rage, Fast Movement",
+            1 => "Bardic Music, Spells",
+            2 => "Divine Spells, Turn Undead",
+            3 => "Nature Spells, Wild Shape",
+            4 => "Bonus Feats",
+            5 => "Flurry, Unarmed Strike",
+            6 => "Lay on Hands, Smite Evil",
+            7 => "Dual Wield, Animal Companion",
+            8 => "Sneak Attack, Evasion",
+            9 => "Arcane Spells (Cha)",
+            10 => "Arcane Spells (Int)",
+            11 => "Hide in Plain Sight",
+            12 => "Favored Enemy, Spells",
+            13 => "Enchant Arrow",
+            14 => "Death Attack, Sneak Attack",
+            15 => "Sneak Attack, Dark Blessing",
+            16 => "Lay on Hands, Divine Wrath",
+            17 => "Weapon of Choice",
+            18 => "Undead Graft",
+            19 => "Greater Wild Shape",
+            20 => "Defensive Stance",
+            21 => "Dragon Abilities",
+            27 => "Inspire Courage",
+            _ => ""
+        };
+    }
+
     private string GetRaceName(byte raceId)
     {
         // Use display service if available
@@ -338,5 +404,22 @@ public class ClassSlotViewModel
     public int Level { get; set; }
     public string LevelDisplay => $"Lv {Level}";
     public string HitDie { get; set; } = "";
-    public string HitDieDisplay => string.IsNullOrEmpty(HitDie) ? "" : $"Hit Die: {HitDie}";
+    public int SkillPoints { get; set; }
+    public string ClassFeatures { get; set; } = "";
+
+    /// <summary>
+    /// Combined display of hit die and skill points.
+    /// </summary>
+    public string ClassInfoDisplay
+    {
+        get
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            if (!string.IsNullOrEmpty(HitDie))
+                parts.Add(HitDie);
+            if (SkillPoints > 0)
+                parts.Add($"{SkillPoints} skill pts/lvl");
+            return string.Join(" | ", parts);
+        }
+    }
 }

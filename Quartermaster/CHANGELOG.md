@@ -19,7 +19,8 @@ Add the Classes & Levels panel displaying character class progression and alignm
 
 #### Added
 - **Class Slots Display** - Shows active classes only (up to 8 per Beamdog EE)
-  - Each class shows name, level, and hit die
+  - Each class shows name, level, hit die, and skill points per level
+  - Key class features displayed (e.g., "Rage, Fast Movement" for Barbarian)
   - "Add Class" placeholder button for future editing
   - Level +/- buttons as disabled placeholders for future editing
   - Total level calculation displayed
