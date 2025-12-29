@@ -17,6 +17,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Add the Feats panel with robust search and filtering - addressing Aurora Toolset's major pain point.
 
+#### Added
+- **Search Box** - Real-time text search filtering by feat name
+  - Clear button to reset search
+  - Filters as you type
+- **Category Filter Dropdown** - Filter by feat type:
+  - All Feats (default)
+  - Combat / Active Combat / Defensive / Magical / Class/Racial / Other
+  - Assigned Only (show only character's feats)
+  - Unassigned Only (for future feat selection)
+- **All Feats List** - Shows ALL feats from feat.2da, not just assigned
+  - Columns: Status | Feat Name | Category | Status Text
+  - Tooltip shows feat description
+- **Visual Status Distinction**:
+  - ✓ Green checkmark + "Assigned" for chosen feats
+  - ★ Gold star + "Granted" for class-granted feats
+  - Unassigned feats shown at 60% opacity
+  - Row highlighting: green for assigned, gold for granted
+- **Special Abilities Section** - Collapsible expander showing spell-like abilities
+- **Summary Line** - Shows assigned count, granted count, and filter status
+- **CreatureDisplayService Integration** - Added feat-related methods:
+  - `GetFeatCategory()` - Feat category from TOOLSCATEGORIES column
+  - `GetFeatDescription()` - Feat description from TLK
+  - `IsFeatUniversal()` - Check ALLCLASSESCANUSE column
+  - `GetAllFeatIds()` - Get all valid feat IDs from feat.2da
+  - `GetFeatInfo()` - Get complete feat information
+  - `GetClassGrantedFeatIds()` - Get feats granted by a class
+  - `GetCombinedGrantedFeatIds()` - Combined granted feats for multiclass
+
 ---
 
 ## [0.1.8-alpha] - 2025-12-28
