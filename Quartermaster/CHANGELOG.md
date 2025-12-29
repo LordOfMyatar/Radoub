@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.8-alpha] - 2025-12-28
-**Branch**: `quartermaster/sprint/skills-panel` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/skills-panel` | **PR**: #628
 
 ### Sprint: Skills Panel (#614)
 
