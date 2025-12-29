@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.10-alpha] - 2025-12-28
-**Branch**: `quartermaster/sprint/spells-panel` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/spells-panel` | **PR**: #633
 
 ### Sprint: Spells Panel with Search & Filter (#616)
 
