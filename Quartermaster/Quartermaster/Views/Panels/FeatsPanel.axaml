@@ -59,6 +59,7 @@
                         <ComboBoxItem Content="Unavailable Only"/>
                         <ComboBoxItem Content="Prereqs Met"/>
                         <ComboBoxItem Content="Prereqs Unmet"/>
+                        <ComboBoxItem Content="Has Prereqs"/>
                     </ComboBox>
                 </StackPanel>
 
@@ -76,7 +77,7 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="2">
                         <TextBlock Text="⚠" Foreground="Orange" FontSize="11" VerticalAlignment="Center"/>
-                        <TextBlock Text="Prereqs" FontSize="10" VerticalAlignment="Center"
+                        <TextBlock Text="Unmet" FontSize="10" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="2">
@@ -97,11 +98,12 @@
                         <!-- Header Row -->
                         <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                 Padding="10,8,25,8">
-                            <Grid ColumnDefinitions="30,*,120,80">
+                            <Grid ColumnDefinitions="30,*,120,80,60">
                                 <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
                                 <TextBlock Grid.Column="1" Text="Feat Name" FontWeight="SemiBold" FontSize="11"/>
                                 <TextBlock Grid.Column="2" Text="Category" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
                                 <TextBlock Grid.Column="3" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
                             </Grid>
                         </Border>
 
@@ -114,7 +116,7 @@
                                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                             BorderThickness="0,0,0,1"
                                             ToolTip.Tip="{Binding Description}">
-                                        <Grid ColumnDefinitions="30,*,120,80">
+                                        <Grid ColumnDefinitions="30,*,120,80,60">
                                             <!-- Status Indicator -->
                                             <TextBlock Grid.Column="0"
                                                        Text="{Binding StatusIndicator}"
@@ -146,6 +148,26 @@
                                                        Foreground="{Binding StatusColor}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
+
+                                            <!-- Add/Remove Buttons -->
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                                <Button Content="+"
+                                                        Width="24" Height="24"
+                                                        FontSize="14" FontWeight="Bold"
+                                                        Padding="0"
+                                                        IsVisible="{Binding CanAdd}"
+                                                        Tag="{Binding FeatId}"
+                                                        ToolTip.Tip="Add feat"
+                                                        AutomationProperties.AutomationId="AddFeatButton"/>
+                                                <Button Content="−"
+                                                        Width="24" Height="24"
+                                                        FontSize="14" FontWeight="Bold"
+                                                        Padding="0"
+                                                        IsVisible="{Binding CanRemove}"
+                                                        Tag="{Binding FeatId}"
+                                                        ToolTip.Tip="Remove feat"
+                                                        AutomationProperties.AutomationId="RemoveFeatButton"/>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

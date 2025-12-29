@@ -26,7 +26,7 @@ Add the Feats panel with robust search and filtering - addressing Aurora Toolset
   - Combat / Active Combat / Defensive / Magical / Class/Racial / Other
   - Assigned Only / Granted Only (class-granted feats)
   - Unassigned Only / Available Only / Unavailable Only
-  - Prereqs Met / Prereqs Unmet (filter by prerequisite status)
+  - Prereqs Met / Prereqs Unmet / Has Prereqs (filter by prerequisite status)
 - **All Feats List** - Shows ALL feats from feat.2da, not just assigned
   - Columns: Status | Feat Name | Category | Status Text
   - Tooltip shows feat description
@@ -39,6 +39,11 @@ Add the Feats panel with robust search and filtering - addressing Aurora Toolset
   - Row highlighting: green for assigned, gold for granted, gray for unavailable
 - **Special Abilities Section** - Collapsible expander showing spell-like abilities
 - **Summary Line** - Shows assigned count, granted count, and filter status
+- **Feat Add/Remove** - +/- buttons on each feat row
+  - Add any feat not currently assigned
+  - Remove user-assigned feats (class-granted feats cannot be removed)
+  - Updates creature's feat list in real-time
+  - `FeatsChanged` event for dirty state tracking
 - **Prerequisite Checking** - Full prerequisite validation with tooltip display:
   - Required feats (AND logic)
   - Or-required feats (OR logic - need at least one)

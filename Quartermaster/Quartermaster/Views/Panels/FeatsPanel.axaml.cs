@@ -15,6 +15,11 @@ public partial class FeatsPanel : UserControl
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
 
+    /// <summary>
+    /// Raised when the creature's feat list is modified (feat added or removed).
+    /// </summary>
+    public event EventHandler? FeatsChanged;
+
     private TextBlock? _featsSummaryText;
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
@@ -54,7 +59,10 @@ public partial class FeatsPanel : UserControl
         _noAbilitiesText = this.FindControl<TextBlock>("NoAbilitiesText");
 
         if (_featsList != null)
+        {
             _featsList.ItemsSource = _displayedFeats;
+            _featsList.AddHandler(Button.ClickEvent, OnFeatButtonClick);
+        }
         if (_specialAbilitiesList != null)
             _specialAbilitiesList.ItemsSource = _abilities;
 
@@ -351,6 +359,7 @@ public partial class FeatsPanel : UserControl
             11 => filtered.Where(f => f.IsUnavailable), // Unavailable Only
             12 => filtered.Where(f => f.HasPrerequisites && f.PrerequisitesMet && !f.IsAssigned), // Prereqs Met
             13 => filtered.Where(f => f.HasPrerequisites && !f.PrerequisitesMet), // Prereqs Unmet
+            14 => filtered.Where(f => f.HasPrerequisites), // Has Prereqs
             _ => filtered
         };
 
@@ -406,6 +415,92 @@ public partial class FeatsPanel : UserControl
             _categoryFilterComboBox.SelectedIndex = 0;
     }
 
+    private void OnFeatButtonClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (e.Source is not Button button)
+            return;
+
+        if (button.Tag is not ushort featId)
+            return;
+
+        if (_currentCreature == null)
+            return;
+
+        var automationId = button.GetValue(Avalonia.Automation.AutomationProperties.AutomationIdProperty);
+
+        if (automationId == "AddFeatButton")
+        {
+            AddFeat(featId);
+        }
+        else if (automationId == "RemoveFeatButton")
+        {
+            RemoveFeat(featId);
+        }
+    }
+
+    private void AddFeat(ushort featId)
+    {
+        if (_currentCreature == null)
+            return;
+
+        // Don't add if already assigned
+        if (_currentCreature.FeatList.Contains(featId))
+            return;
+
+        // Add to creature's feat list
+        _currentCreature.FeatList.Add(featId);
+        _assignedFeatIds.Add(featId);
+
+        // Refresh the display
+        RefreshFeatDisplay(featId);
+
+        // Notify listeners
+        FeatsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RemoveFeat(ushort featId)
+    {
+        if (_currentCreature == null)
+            return;
+
+        // Don't remove if not assigned
+        if (!_currentCreature.FeatList.Contains(featId))
+            return;
+
+        // Don't remove granted feats
+        if (_grantedFeatIds.Contains(featId))
+            return;
+
+        // Remove from creature's feat list
+        _currentCreature.FeatList.Remove(featId);
+        _assignedFeatIds.Remove(featId);
+
+        // Refresh the display
+        RefreshFeatDisplay(featId);
+
+        // Notify listeners
+        FeatsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RefreshFeatDisplay(ushort featId)
+    {
+        if (_currentCreature == null)
+            return;
+
+        // Find and update the feat in _allFeats
+        var index = _allFeats.FindIndex(f => f.FeatId == featId);
+        if (index >= 0)
+        {
+            _allFeats[index] = CreateFeatViewModel(featId, _currentCreature);
+        }
+
+        // Re-apply filter to update displayed list
+        ApplySearchAndFilter();
+
+        // Update summary
+        UpdateSummary();
+    }
+
     private string GetFeatNameInternal(ushort featId)
     {
         if (_displayService != null)
@@ -444,6 +539,16 @@ public class FeatListViewModel
     public IBrush StatusColor { get; set; } = Brushes.Transparent;
     public IBrush RowBackground { get; set; } = Brushes.Transparent;
     public double TextOpacity { get; set; } = 1.0;
+
+    /// <summary>
+    /// Can this feat be added? (Not assigned and not granted)
+    /// </summary>
+    public bool CanAdd => !IsAssigned && !IsGranted;
+
+    /// <summary>
+    /// Can this feat be removed? (Assigned but not granted - can't remove class-granted feats)
+    /// </summary>
+    public bool CanRemove => IsAssigned && !IsGranted;
 }
 
 public class SpecialAbilityViewModel
