@@ -33,7 +33,7 @@ Add the Feats panel with robust search and filtering - addressing Aurora Toolset
 - **Visual Status Distinction**:
   - ✓ Green checkmark + "Assigned" for chosen feats
   - ★ Gold star + "Granted" for class-granted feats
-  - ⚠ Orange warning + "Prereqs" for feats with unmet prerequisites
+  - ⚠ Orange warning + "Unmet" for feats with unmet prerequisites
   - ○ Blue circle + "Available" for feats with all prerequisites met
   - ✗ Gray X + "Unavailable" for feats not available to class/race
   - Row highlighting: green for assigned, gold for granted, gray for unavailable
