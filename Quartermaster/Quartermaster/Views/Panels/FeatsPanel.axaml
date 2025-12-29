@@ -2,99 +2,197 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="600"
              x:Class="Quartermaster.Views.Panels.FeatsPanel">
 
-    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="20">
-                <!-- Header -->
-                <TextBlock Text="Feats"
-                           FontSize="20"
-                           FontWeight="Bold"/>
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,20,20">
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="Feats"
+                       FontSize="20"
+                       FontWeight="Bold"/>
 
-                <!-- Feats Summary -->
-                <TextBlock x:Name="FeatsSummaryText"
-                           Text="0 feats"
-                           FontSize="12"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            <!-- Feats Summary -->
+            <TextBlock Grid.Row="1"
+                       x:Name="FeatsSummaryText"
+                       Text="0 feats assigned"
+                       FontSize="12"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       Margin="0,5,0,10"/>
 
-                <!-- Feats List -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        Padding="15">
-                    <StackPanel Spacing="5">
+            <!-- Search and Filter Controls -->
+            <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,10">
+                <!-- Search Box -->
+                <Grid Grid.Column="0" ColumnDefinitions="*,Auto">
+                    <TextBox x:Name="SearchTextBox"
+                             Watermark="Search feats..."
+                             MinWidth="200"
+                             AutomationProperties.AutomationId="FeatsSearchBox"/>
+                    <Button Grid.Column="1"
+                            x:Name="ClearSearchButton"
+                            Content="✕"
+                            Width="28" Height="28"
+                            Margin="5,0,0,0"
+                            ToolTip.Tip="Clear search"
+                            AutomationProperties.AutomationId="FeatsClearSearch"/>
+                </Grid>
+
+                <!-- Category Filter -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
+                    <TextBlock Text="Filter:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="CategoryFilterComboBox"
+                              SelectedIndex="0"
+                              MinWidth="150"
+                              AutomationProperties.AutomationId="FeatsCategoryFilter">
+                        <ComboBoxItem Content="All Feats"/>
+                        <ComboBoxItem Content="Combat"/>
+                        <ComboBoxItem Content="Active Combat"/>
+                        <ComboBoxItem Content="Defensive"/>
+                        <ComboBoxItem Content="Magical"/>
+                        <ComboBoxItem Content="Class/Racial"/>
+                        <ComboBoxItem Content="Other"/>
+                        <ComboBoxItem Content="Assigned Only"/>
+                        <ComboBoxItem Content="Unassigned Only"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Legend -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                        <TextBlock Text="✓" Foreground="Green" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="Assigned" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                        <TextBlock Text="★" Foreground="Gold" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="Granted" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- Feats List -->
+            <Border Grid.Row="3"
+                    BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Header Row -->
+                        <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Padding="10,8,25,8">
+                            <Grid ColumnDefinitions="30,*,120,80">
+                                <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="Feat Name" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="Category" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Feats Items -->
                         <ItemsControl x:Name="FeatsList">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,0,8,8"
-                                            Padding="8,4"
-                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            CornerRadius="4"
-                                            ToolTip.Tip="{Binding FeatDescription}">
-                                        <TextBlock Text="{Binding FeatName}" FontSize="12"/>
+                                    <Border Background="{Binding RowBackground}"
+                                            Padding="10,6,25,6"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            ToolTip.Tip="{Binding Description}">
+                                        <Grid ColumnDefinitions="30,*,120,80">
+                                            <!-- Status Indicator -->
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding StatusIndicator}"
+                                                       Foreground="{Binding StatusColor}"
+                                                       FontSize="12"
+                                                       FontWeight="Bold"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"/>
+
+                                            <!-- Feat Name -->
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding FeatName}"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="13"
+                                                       Opacity="{Binding TextOpacity}"/>
+
+                                            <!-- Category -->
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding CategoryName}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Assigned/Granted Status -->
+                                            <TextBlock Grid.Column="3"
+                                                       Text="{Binding StatusText}"
+                                                       FontSize="11"
+                                                       Foreground="{Binding StatusColor}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
                         <TextBlock x:Name="NoFeatsText"
-                                   Text="No feats assigned"
+                                   Text="No feats match the current filter"
                                    FontStyle="Italic"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                    IsVisible="False"
-                                   Margin="0,10"/>
-                    </StackPanel>
-                </Border>
+                                   Margin="15,15"/>
 
-                <!-- Special Abilities Section -->
+                        <TextBlock x:Name="LoadingText"
+                                   Text="Loading feats..."
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   IsVisible="False"
+                                   Margin="15,15"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Footer with Special Abilities -->
+            <Expander Grid.Row="4"
+                      Header="Special Abilities"
+                      Margin="0,10,0,0"
+                      IsExpanded="False"
+                      x:Name="SpecialAbilitiesExpander">
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"
-                        x:Name="SpecialAbilitiesSection">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Special Abilities" FontWeight="SemiBold" FontSize="14"/>
+                        MaxHeight="150">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <ItemsControl x:Name="SpecialAbilitiesList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding AbilityName}"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding CasterLevelDisplay}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
 
-                        <ItemsControl x:Name="SpecialAbilitiesList">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid ColumnDefinitions="*,Auto" Margin="0,3">
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{Binding AbilityName}"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding CasterLevelDisplay}"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                   VerticalAlignment="Center"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <TextBlock x:Name="NoAbilitiesText"
-                                   Text="No special abilities"
-                                   FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                   IsVisible="True"/>
-                    </StackPanel>
+                            <TextBlock x:Name="NoAbilitiesText"
+                                       Text="No special abilities"
+                                       FontStyle="Italic"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       IsVisible="True"/>
+                        </StackPanel>
+                    </ScrollViewer>
                 </Border>
-
-                <!-- Placeholder message -->
-                <TextBlock Text="Feat editing will be implemented in a future sprint."
-                           FontSize="12"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,10,0,0"/>
-            </StackPanel>
-        </ScrollViewer>
+            </Expander>
+        </Grid>
     </Border>
 </UserControl>

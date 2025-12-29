@@ -647,6 +647,155 @@ public class CreatureDisplayService
 
         return stats;
     }
+
+    #region Feat Methods
+
+    /// <summary>
+    /// Gets the toolset category for a feat (TOOLSCATEGORIES column).
+    /// Returns: 1=Combat, 2=Active Combat, 3=Defensive, 4=Magical, 5=Class/Racial, 6=Other
+    /// </summary>
+    public FeatCategory GetFeatCategory(int featId)
+    {
+        var category = _gameDataService.Get2DAValue("feat", featId, "TOOLSCATEGORIES");
+        if (!string.IsNullOrEmpty(category) && category != "****" && int.TryParse(category, out int catId))
+        {
+            return catId switch
+            {
+                1 => FeatCategory.Combat,
+                2 => FeatCategory.ActiveCombat,
+                3 => FeatCategory.Defensive,
+                4 => FeatCategory.Magical,
+                5 => FeatCategory.ClassRacial,
+                6 => FeatCategory.Other,
+                _ => FeatCategory.Other
+            };
+        }
+        return FeatCategory.Other;
+    }
+
+    /// <summary>
+    /// Gets the description StrRef for a feat.
+    /// </summary>
+    public string GetFeatDescription(int featId)
+    {
+        var strRef = _gameDataService.Get2DAValue("feat", featId, "DESCRIPTION");
+        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+        {
+            var desc = _gameDataService.GetString(strRef);
+            if (!string.IsNullOrEmpty(desc))
+                return desc;
+        }
+        return "";
+    }
+
+    /// <summary>
+    /// Checks if a feat can be used by all classes (ALLCLASSESCANUSE column).
+    /// </summary>
+    public bool IsFeatUniversal(int featId)
+    {
+        var allClassesCanUse = _gameDataService.Get2DAValue("feat", featId, "ALLCLASSESCANUSE");
+        return allClassesCanUse == "1";
+    }
+
+    /// <summary>
+    /// Gets all valid feat IDs from feat.2da.
+    /// Iterates until finding an empty/invalid row.
+    /// </summary>
+    public List<int> GetAllFeatIds()
+    {
+        var featIds = new List<int>();
+
+        // feat.2da can have 1000+ rows, iterate until we find empty
+        for (int i = 0; i < 2000; i++)
+        {
+            var label = _gameDataService.Get2DAValue("feat", i, "LABEL");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                // Check if we've found any feats - if yes, we've hit the end
+                // If no, keep looking (some 2DAs have gaps)
+                if (featIds.Count > 100)
+                    break;
+                continue;
+            }
+
+            var featName = _gameDataService.Get2DAValue("feat", i, "FEAT");
+            // Skip feats with no name (internal/unused)
+            if (string.IsNullOrEmpty(featName) || featName == "****")
+                continue;
+
+            featIds.Add(i);
+        }
+
+        return featIds;
+    }
+
+    /// <summary>
+    /// Gets detailed feat information for display.
+    /// </summary>
+    public FeatInfo GetFeatInfo(int featId)
+    {
+        return new FeatInfo
+        {
+            FeatId = featId,
+            Name = GetFeatName(featId),
+            Description = GetFeatDescription(featId),
+            Category = GetFeatCategory(featId),
+            IsUniversal = IsFeatUniversal(featId)
+        };
+    }
+
+    /// <summary>
+    /// Gets the set of feat IDs granted by a class at all levels.
+    /// Reads from cls_feat_*.2da files.
+    /// </summary>
+    public HashSet<int> GetClassGrantedFeatIds(int classId)
+    {
+        var result = new HashSet<int>();
+
+        // Get the feat table name from classes.2da
+        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return result;
+
+        // Iterate through cls_feat_*.2da rows
+        for (int row = 0; row < 200; row++)
+        {
+            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (int.TryParse(featIndexStr, out int featId))
+            {
+                // Check if it's granted (List column = 3 means automatic)
+                var listType = _gameDataService.Get2DAValue(featTable, row, "List");
+                if (listType == "3") // Automatic/granted feat
+                {
+                    result.Add(featId);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Gets combined granted feats from all of a creature's classes.
+    /// </summary>
+    public HashSet<int> GetCombinedGrantedFeatIds(UtcFile creature)
+    {
+        var result = new HashSet<int>();
+        foreach (var creatureClass in creature.ClassList)
+        {
+            var classFeats = GetClassGrantedFeatIds(creatureClass.Class);
+            foreach (var featId in classFeats)
+            {
+                result.Add(featId);
+            }
+        }
+        return result;
+    }
+
+    #endregion
 }
 
 /// <summary>
@@ -670,4 +819,29 @@ public class RacialModifiers
     public int Int { get; set; }
     public int Wis { get; set; }
     public int Cha { get; set; }
+}
+
+/// <summary>
+/// Feat category from TOOLSCATEGORIES column in feat.2da.
+/// </summary>
+public enum FeatCategory
+{
+    Combat = 1,
+    ActiveCombat = 2,
+    Defensive = 3,
+    Magical = 4,
+    ClassRacial = 5,
+    Other = 6
+}
+
+/// <summary>
+/// Detailed feat information for display.
+/// </summary>
+public class FeatInfo
+{
+    public int FeatId { get; set; }
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public FeatCategory Category { get; set; }
+    public bool IsUniversal { get; set; }
 }
