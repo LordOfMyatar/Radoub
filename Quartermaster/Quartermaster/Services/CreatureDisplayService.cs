@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 
@@ -795,6 +796,308 @@ public class CreatureDisplayService
         return result;
     }
 
+    /// <summary>
+    /// Checks if a feat is available to a creature (can be selected).
+    /// A feat is available if it's universal OR appears in any of the creature's class feat tables.
+    /// </summary>
+    public bool IsFeatAvailable(UtcFile creature, int featId)
+    {
+        // Universal feats are available to all
+        if (IsFeatUniversal(featId))
+            return true;
+
+        // Check each class's feat table
+        foreach (var creatureClass in creature.ClassList)
+        {
+            if (IsFeatInClassTable(creatureClass.Class, featId))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a feat appears in a class's feat table (regardless of List type).
+    /// </summary>
+    private bool IsFeatInClassTable(int classId, int featId)
+    {
+        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return false;
+
+        for (int row = 0; row < 300; row++)
+        {
+            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (int.TryParse(featIndexStr, out int tableFeatId) && tableFeatId == featId)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the set of unavailable feat IDs for a creature.
+    /// </summary>
+    public HashSet<int> GetUnavailableFeatIds(UtcFile creature, IEnumerable<int> allFeatIds)
+    {
+        var result = new HashSet<int>();
+        foreach (var featId in allFeatIds)
+        {
+            if (!IsFeatAvailable(creature, featId))
+            {
+                result.Add(featId);
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Gets the prerequisites for a feat.
+    /// </summary>
+    public FeatPrerequisites GetFeatPrerequisites(int featId)
+    {
+        var prereqs = new FeatPrerequisites { FeatId = featId };
+
+        // Required feats (AND - must have all)
+        var prereq1 = _gameDataService.Get2DAValue("feat", featId, "PREREQFEAT1");
+        if (!string.IsNullOrEmpty(prereq1) && prereq1 != "****" && int.TryParse(prereq1, out int feat1))
+            prereqs.RequiredFeats.Add(feat1);
+
+        var prereq2 = _gameDataService.Get2DAValue("feat", featId, "PREREQFEAT2");
+        if (!string.IsNullOrEmpty(prereq2) && prereq2 != "****" && int.TryParse(prereq2, out int feat2))
+            prereqs.RequiredFeats.Add(feat2);
+
+        // Or-required feats (OR - must have at least one)
+        for (int i = 0; i <= 4; i++)
+        {
+            var orReq = _gameDataService.Get2DAValue("feat", featId, $"OrReqFeat{i}");
+            if (!string.IsNullOrEmpty(orReq) && orReq != "****" && int.TryParse(orReq, out int orFeatId))
+                prereqs.OrRequiredFeats.Add(orFeatId);
+        }
+
+        // Minimum ability scores
+        var minStr = _gameDataService.Get2DAValue("feat", featId, "MINSTR");
+        if (!string.IsNullOrEmpty(minStr) && minStr != "****" && int.TryParse(minStr, out int str))
+            prereqs.MinStr = str;
+
+        var minDex = _gameDataService.Get2DAValue("feat", featId, "MINDEX");
+        if (!string.IsNullOrEmpty(minDex) && minDex != "****" && int.TryParse(minDex, out int dex))
+            prereqs.MinDex = dex;
+
+        var minInt = _gameDataService.Get2DAValue("feat", featId, "MININT");
+        if (!string.IsNullOrEmpty(minInt) && minInt != "****" && int.TryParse(minInt, out int intel))
+            prereqs.MinInt = intel;
+
+        var minWis = _gameDataService.Get2DAValue("feat", featId, "MINWIS");
+        if (!string.IsNullOrEmpty(minWis) && minWis != "****" && int.TryParse(minWis, out int wis))
+            prereqs.MinWis = wis;
+
+        var minCon = _gameDataService.Get2DAValue("feat", featId, "MINCON");
+        if (!string.IsNullOrEmpty(minCon) && minCon != "****" && int.TryParse(minCon, out int con))
+            prereqs.MinCon = con;
+
+        var minCha = _gameDataService.Get2DAValue("feat", featId, "MINCHA");
+        if (!string.IsNullOrEmpty(minCha) && minCha != "****" && int.TryParse(minCha, out int cha))
+            prereqs.MinCha = cha;
+
+        // Minimum BAB
+        var minBab = _gameDataService.Get2DAValue("feat", featId, "MINATTACKBONUS");
+        if (!string.IsNullOrEmpty(minBab) && minBab != "****" && int.TryParse(minBab, out int bab))
+            prereqs.MinBab = bab;
+
+        // Minimum spell level
+        var minSpell = _gameDataService.Get2DAValue("feat", featId, "MINSPELLLVL");
+        if (!string.IsNullOrEmpty(minSpell) && minSpell != "****" && int.TryParse(minSpell, out int spell))
+            prereqs.MinSpellLevel = spell;
+
+        // Required skills
+        var reqSkill = _gameDataService.Get2DAValue("feat", featId, "REQSKILL");
+        var reqSkillRanks = _gameDataService.Get2DAValue("feat", featId, "ReqSkillMinRanks");
+        if (!string.IsNullOrEmpty(reqSkill) && reqSkill != "****" && int.TryParse(reqSkill, out int skillId) &&
+            !string.IsNullOrEmpty(reqSkillRanks) && int.TryParse(reqSkillRanks, out int ranks))
+        {
+            prereqs.RequiredSkills.Add((skillId, ranks));
+        }
+
+        var reqSkill2 = _gameDataService.Get2DAValue("feat", featId, "REQSKILL2");
+        var reqSkillRanks2 = _gameDataService.Get2DAValue("feat", featId, "ReqSkillMinRanks2");
+        if (!string.IsNullOrEmpty(reqSkill2) && reqSkill2 != "****" && int.TryParse(reqSkill2, out int skillId2) &&
+            !string.IsNullOrEmpty(reqSkillRanks2) && int.TryParse(reqSkillRanks2, out int ranks2))
+        {
+            prereqs.RequiredSkills.Add((skillId2, ranks2));
+        }
+
+        // Level requirements
+        var minLevel = _gameDataService.Get2DAValue("feat", featId, "MinLevel");
+        var minLevelClass = _gameDataService.Get2DAValue("feat", featId, "MinLevelClass");
+        if (!string.IsNullOrEmpty(minLevel) && minLevel != "****" && int.TryParse(minLevel, out int lvl))
+        {
+            prereqs.MinLevel = lvl;
+            if (!string.IsNullOrEmpty(minLevelClass) && minLevelClass != "****" && int.TryParse(minLevelClass, out int classId))
+                prereqs.MinLevelClass = classId;
+        }
+
+        var maxLevel = _gameDataService.Get2DAValue("feat", featId, "MaxLevel");
+        if (!string.IsNullOrEmpty(maxLevel) && maxLevel != "****" && int.TryParse(maxLevel, out int max))
+            prereqs.MaxLevel = max;
+
+        // Epic requirement
+        var preReqEpic = _gameDataService.Get2DAValue("feat", featId, "PreReqEpic");
+        prereqs.RequiresEpic = preReqEpic == "1";
+
+        return prereqs;
+    }
+
+    /// <summary>
+    /// Checks if a creature meets the prerequisites for a feat.
+    /// Returns a result with details about what is/isn't met.
+    /// </summary>
+    public FeatPrereqResult CheckFeatPrerequisites(UtcFile creature, int featId, HashSet<ushort> creatureFeats)
+    {
+        var prereqs = GetFeatPrerequisites(featId);
+        var result = new FeatPrereqResult { FeatId = featId };
+
+        // Check required feats (AND)
+        foreach (var reqFeat in prereqs.RequiredFeats)
+        {
+            var met = creatureFeats.Contains((ushort)reqFeat);
+            result.RequiredFeatsMet.Add((reqFeat, GetFeatName(reqFeat), met));
+            if (!met) result.AllMet = false;
+        }
+
+        // Check or-required feats (OR - at least one)
+        if (prereqs.OrRequiredFeats.Count > 0)
+        {
+            bool anyMet = false;
+            foreach (var orFeat in prereqs.OrRequiredFeats)
+            {
+                var met = creatureFeats.Contains((ushort)orFeat);
+                result.OrRequiredFeatsMet.Add((orFeat, GetFeatName(orFeat), met));
+                if (met) anyMet = true;
+            }
+            if (!anyMet) result.AllMet = false;
+        }
+
+        // Check ability scores
+        if (prereqs.MinStr > 0)
+        {
+            var met = creature.Str >= prereqs.MinStr;
+            result.AbilityRequirements.Add(($"STR {prereqs.MinStr}+", met));
+            if (!met) result.AllMet = false;
+        }
+        if (prereqs.MinDex > 0)
+        {
+            var met = creature.Dex >= prereqs.MinDex;
+            result.AbilityRequirements.Add(($"DEX {prereqs.MinDex}+", met));
+            if (!met) result.AllMet = false;
+        }
+        if (prereqs.MinInt > 0)
+        {
+            var met = creature.Int >= prereqs.MinInt;
+            result.AbilityRequirements.Add(($"INT {prereqs.MinInt}+", met));
+            if (!met) result.AllMet = false;
+        }
+        if (prereqs.MinWis > 0)
+        {
+            var met = creature.Wis >= prereqs.MinWis;
+            result.AbilityRequirements.Add(($"WIS {prereqs.MinWis}+", met));
+            if (!met) result.AllMet = false;
+        }
+        if (prereqs.MinCon > 0)
+        {
+            var met = creature.Con >= prereqs.MinCon;
+            result.AbilityRequirements.Add(($"CON {prereqs.MinCon}+", met));
+            if (!met) result.AllMet = false;
+        }
+        if (prereqs.MinCha > 0)
+        {
+            var met = creature.Cha >= prereqs.MinCha;
+            result.AbilityRequirements.Add(($"CHA {prereqs.MinCha}+", met));
+            if (!met) result.AllMet = false;
+        }
+
+        // Check BAB
+        if (prereqs.MinBab > 0)
+        {
+            var bab = CalculateBaseAttackBonus(creature);
+            var met = bab >= prereqs.MinBab;
+            result.OtherRequirements.Add(($"BAB {prereqs.MinBab}+", met));
+            if (!met) result.AllMet = false;
+        }
+
+        // Check spell level (simplified - just note requirement)
+        if (prereqs.MinSpellLevel > 0)
+        {
+            // Can't easily check this without spell slot analysis
+            result.OtherRequirements.Add(($"Cast level {prereqs.MinSpellLevel} spells", null));
+        }
+
+        // Check skills
+        foreach (var (skillId, minRanks) in prereqs.RequiredSkills)
+        {
+            var skillName = GetSkillName(skillId);
+            var ranks = skillId < creature.SkillList.Count ? creature.SkillList[skillId] : 0;
+            var met = ranks >= minRanks;
+            result.SkillRequirements.Add(($"{skillName} {minRanks}+", met));
+            if (!met) result.AllMet = false;
+        }
+
+        // Check level
+        if (prereqs.MinLevel > 0)
+        {
+            if (prereqs.MinLevelClass.HasValue)
+            {
+                var className = GetClassName(prereqs.MinLevelClass.Value);
+                var classLevel = creature.ClassList
+                    .Where(c => c.Class == prereqs.MinLevelClass.Value)
+                    .Select(c => (int)c.ClassLevel)
+                    .FirstOrDefault();
+                var met = classLevel >= prereqs.MinLevel;
+                result.OtherRequirements.Add(($"{className} level {prereqs.MinLevel}+", met));
+                if (!met) result.AllMet = false;
+            }
+            else
+            {
+                var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
+                var met = totalLevel >= prereqs.MinLevel;
+                result.OtherRequirements.Add(($"Character level {prereqs.MinLevel}+", met));
+                if (!met) result.AllMet = false;
+            }
+        }
+
+        if (prereqs.MaxLevel > 0)
+        {
+            var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
+            var met = totalLevel <= prereqs.MaxLevel;
+            result.OtherRequirements.Add(($"Max level {prereqs.MaxLevel}", met));
+            if (!met) result.AllMet = false;
+        }
+
+        // Epic requirement
+        if (prereqs.RequiresEpic)
+        {
+            var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
+            var met = totalLevel >= 21;
+            result.OtherRequirements.Add(("Epic (level 21+)", met));
+            if (!met) result.AllMet = false;
+        }
+
+        result.HasPrerequisites = prereqs.RequiredFeats.Count > 0 ||
+                                   prereqs.OrRequiredFeats.Count > 0 ||
+                                   prereqs.MinStr > 0 || prereqs.MinDex > 0 ||
+                                   prereqs.MinInt > 0 || prereqs.MinWis > 0 ||
+                                   prereqs.MinCon > 0 || prereqs.MinCha > 0 ||
+                                   prereqs.MinBab > 0 || prereqs.MinSpellLevel > 0 ||
+                                   prereqs.RequiredSkills.Count > 0 ||
+                                   prereqs.MinLevel > 0 || prereqs.MaxLevel > 0 ||
+                                   prereqs.RequiresEpic;
+
+        return result;
+    }
+
     #endregion
 }
 
@@ -844,4 +1147,86 @@ public class FeatInfo
     public string Description { get; set; } = "";
     public FeatCategory Category { get; set; }
     public bool IsUniversal { get; set; }
+}
+
+/// <summary>
+/// Raw prerequisites data from feat.2da.
+/// </summary>
+public class FeatPrerequisites
+{
+    public int FeatId { get; set; }
+    public List<int> RequiredFeats { get; set; } = new();
+    public List<int> OrRequiredFeats { get; set; } = new();
+    public int MinStr { get; set; }
+    public int MinDex { get; set; }
+    public int MinInt { get; set; }
+    public int MinWis { get; set; }
+    public int MinCon { get; set; }
+    public int MinCha { get; set; }
+    public int MinBab { get; set; }
+    public int MinSpellLevel { get; set; }
+    public List<(int SkillId, int MinRanks)> RequiredSkills { get; set; } = new();
+    public int MinLevel { get; set; }
+    public int? MinLevelClass { get; set; }
+    public int MaxLevel { get; set; }
+    public bool RequiresEpic { get; set; }
+}
+
+/// <summary>
+/// Result of checking feat prerequisites against a creature.
+/// </summary>
+public class FeatPrereqResult
+{
+    public int FeatId { get; set; }
+    public bool AllMet { get; set; } = true;
+    public bool HasPrerequisites { get; set; }
+
+    /// <summary>Required feats (AND): (FeatId, FeatName, Met)</summary>
+    public List<(int FeatId, string Name, bool Met)> RequiredFeatsMet { get; set; } = new();
+
+    /// <summary>Or-required feats (OR - need at least one): (FeatId, FeatName, Met)</summary>
+    public List<(int FeatId, string Name, bool Met)> OrRequiredFeatsMet { get; set; } = new();
+
+    /// <summary>Ability requirements: (Description, Met)</summary>
+    public List<(string Description, bool Met)> AbilityRequirements { get; set; } = new();
+
+    /// <summary>Skill requirements: (Description, Met)</summary>
+    public List<(string Description, bool Met)> SkillRequirements { get; set; } = new();
+
+    /// <summary>Other requirements: (Description, Met or null if unknown)</summary>
+    public List<(string Description, bool? Met)> OtherRequirements { get; set; } = new();
+
+    /// <summary>
+    /// Builds a tooltip string showing all prerequisites and their status.
+    /// </summary>
+    public string GetTooltip()
+    {
+        if (!HasPrerequisites)
+            return "No prerequisites";
+
+        var lines = new List<string>();
+        lines.Add("Prerequisites:");
+
+        foreach (var (_, name, met) in RequiredFeatsMet)
+            lines.Add($"  {(met ? "✓" : "✗")} {name}");
+
+        if (OrRequiredFeatsMet.Count > 0)
+        {
+            var anyMet = OrRequiredFeatsMet.Any(o => o.Met);
+            lines.Add($"  {(anyMet ? "✓" : "✗")} One of:");
+            foreach (var (_, name, met) in OrRequiredFeatsMet)
+                lines.Add($"    {(met ? "✓" : "○")} {name}");
+        }
+
+        foreach (var (desc, met) in AbilityRequirements)
+            lines.Add($"  {(met ? "✓" : "✗")} {desc}");
+
+        foreach (var (desc, met) in SkillRequirements)
+            lines.Add($"  {(met ? "✓" : "✗")} {desc}");
+
+        foreach (var (desc, met) in OtherRequirements)
+            lines.Add($"  {(met.HasValue ? (met.Value ? "✓" : "✗") : "?")} {desc}");
+
+        return string.Join("\n", lines);
+    }
 }

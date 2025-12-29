@@ -26,16 +26,33 @@ Add the Feats panel with robust search and filtering - addressing Aurora Toolset
   - Combat / Active Combat / Defensive / Magical / Class/Racial / Other
   - Assigned Only (show only character's feats)
   - Unassigned Only (for future feat selection)
+  - Available Only (feats available to this class/race)
+  - Unavailable Only (feats not available to this class/race)
 - **All Feats List** - Shows ALL feats from feat.2da, not just assigned
   - Columns: Status | Feat Name | Category | Status Text
   - Tooltip shows feat description
 - **Visual Status Distinction**:
   - ✓ Green checkmark + "Assigned" for chosen feats
   - ★ Gold star + "Granted" for class-granted feats
-  - Unassigned feats shown at 60% opacity
-  - Row highlighting: green for assigned, gold for granted
+  - ⚠ Orange warning + "Prereqs" for feats with unmet prerequisites
+  - ○ Blue circle + "Available" for feats with all prerequisites met
+  - ✗ Gray X + "Unavailable" for feats not available to class/race
+  - Row highlighting: green for assigned, gold for granted, gray for unavailable
 - **Special Abilities Section** - Collapsible expander showing spell-like abilities
 - **Summary Line** - Shows assigned count, granted count, and filter status
+- **Prerequisite Checking** - Full prerequisite validation with tooltip display:
+  - Required feats (AND logic)
+  - Or-required feats (OR logic - need at least one)
+  - Ability score requirements (STR, DEX, INT, WIS, CON, CHA)
+  - Base Attack Bonus requirements
+  - Spell level requirements
+  - Skill rank requirements
+  - Level requirements (character or class-specific)
+  - Epic requirement (level 21+)
+  - Tooltip shows ✓/✗ for each prerequisite
+- **Availability Checking** - Feat availability based on class/race:
+  - Universal feats available to all
+  - Class-specific feats checked against cls_feat_*.2da tables
 - **CreatureDisplayService Integration** - Added feat-related methods:
   - `GetFeatCategory()` - Feat category from TOOLSCATEGORIES column
   - `GetFeatDescription()` - Feat description from TLK
@@ -44,6 +61,10 @@ Add the Feats panel with robust search and filtering - addressing Aurora Toolset
   - `GetFeatInfo()` - Get complete feat information
   - `GetClassGrantedFeatIds()` - Get feats granted by a class
   - `GetCombinedGrantedFeatIds()` - Combined granted feats for multiclass
+  - `IsFeatAvailable()` - Check if feat is available to creature
+  - `GetUnavailableFeatIds()` - Get set of unavailable feats
+  - `GetFeatPrerequisites()` - Get prerequisite data for a feat
+  - `CheckFeatPrerequisites()` - Check prerequisites against creature
 
 ---
 

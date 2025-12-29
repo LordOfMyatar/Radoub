@@ -13,6 +13,7 @@ namespace Quartermaster.Views.Panels;
 public partial class FeatsPanel : UserControl
 {
     private CreatureDisplayService? _displayService;
+    private UtcFile? _currentCreature;
 
     private TextBlock? _featsSummaryText;
     private TextBox? _searchTextBox;
@@ -29,6 +30,7 @@ public partial class FeatsPanel : UserControl
     private List<FeatListViewModel> _allFeats = new();
     private HashSet<ushort> _assignedFeatIds = new();
     private HashSet<int> _grantedFeatIds = new();
+    private HashSet<int> _unavailableFeatIds = new();
     private ObservableCollection<SpecialAbilityViewModel> _abilities = new();
 
     public FeatsPanel()
@@ -91,7 +93,9 @@ public partial class FeatsPanel : UserControl
         _allFeats.Clear();
         _assignedFeatIds.Clear();
         _grantedFeatIds.Clear();
+        _unavailableFeatIds.Clear();
         _abilities.Clear();
+        _currentCreature = creature;
 
         if (creature == null)
         {
@@ -113,7 +117,7 @@ public partial class FeatsPanel : UserControl
         }
 
         // Load ALL feats from feat.2da
-        LoadAllFeats();
+        LoadAllFeats(creature);
 
         // Load special abilities
         LoadSpecialAbilities(creature);
@@ -129,14 +133,14 @@ public partial class FeatsPanel : UserControl
             _loadingText.IsVisible = false;
     }
 
-    private void LoadAllFeats()
+    private void LoadAllFeats(UtcFile creature)
     {
         if (_displayService == null)
         {
             // Fallback: just show assigned feats
             foreach (var featId in _assignedFeatIds.OrderBy(f => GetFeatNameInternal(f)))
             {
-                _allFeats.Add(CreateFeatViewModel(featId));
+                _allFeats.Add(CreateFeatViewModel(featId, creature));
             }
             return;
         }
@@ -144,21 +148,35 @@ public partial class FeatsPanel : UserControl
         // Get all feat IDs from feat.2da
         var allFeatIds = _displayService.GetAllFeatIds();
 
+        // Get unavailable feats for this creature
+        _unavailableFeatIds = _displayService.GetUnavailableFeatIds(creature, allFeatIds);
+
         foreach (var featId in allFeatIds)
         {
-            _allFeats.Add(CreateFeatViewModel((ushort)featId));
+            _allFeats.Add(CreateFeatViewModel((ushort)featId, creature));
         }
 
         // Sort by name
         _allFeats = _allFeats.OrderBy(f => f.FeatName).ToList();
     }
 
-    private FeatListViewModel CreateFeatViewModel(ushort featId)
+    private FeatListViewModel CreateFeatViewModel(ushort featId, UtcFile creature)
     {
         var isAssigned = _assignedFeatIds.Contains(featId);
         var isGranted = _grantedFeatIds.Contains(featId);
+        var isUnavailable = _unavailableFeatIds.Contains(featId);
         var category = _displayService?.GetFeatCategory(featId) ?? FeatCategory.Other;
         var description = _displayService?.GetFeatDescription(featId) ?? "";
+
+        // Check prerequisites
+        FeatPrereqResult? prereqResult = null;
+        if (_displayService != null)
+        {
+            prereqResult = _displayService.CheckFeatPrerequisites(creature, featId, _assignedFeatIds);
+        }
+
+        // Build tooltip with description and prerequisites
+        var tooltip = BuildTooltip(description, prereqResult, isUnavailable);
 
         // Determine status display
         string statusIndicator;
@@ -167,12 +185,21 @@ public partial class FeatsPanel : UserControl
         IBrush rowBackground;
         double textOpacity;
 
-        if (isAssigned && isGranted)
+        if (isUnavailable && !isAssigned)
+        {
+            // Unavailable to this class/race
+            statusIndicator = "✗";
+            statusText = "Unavailable";
+            statusColor = new SolidColorBrush(Colors.Gray);
+            rowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128));
+            textOpacity = 0.5;
+        }
+        else if (isAssigned && isGranted)
         {
             statusIndicator = "★";
             statusText = "Granted";
             statusColor = new SolidColorBrush(Colors.Gold);
-            rowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0)); // Light gold
+            rowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0));
             textOpacity = 1.0;
         }
         else if (isAssigned)
@@ -180,11 +207,30 @@ public partial class FeatsPanel : UserControl
             statusIndicator = "✓";
             statusText = "Assigned";
             statusColor = new SolidColorBrush(Colors.Green);
-            rowBackground = new SolidColorBrush(Color.FromArgb(30, 0, 128, 0)); // Light green
+            rowBackground = new SolidColorBrush(Color.FromArgb(30, 0, 128, 0));
             textOpacity = 1.0;
+        }
+        else if (prereqResult != null && prereqResult.HasPrerequisites && !prereqResult.AllMet)
+        {
+            // Has unmet prerequisites
+            statusIndicator = "⚠";
+            statusText = "Prereqs";
+            statusColor = new SolidColorBrush(Colors.Orange);
+            rowBackground = Brushes.Transparent;
+            textOpacity = 0.7;
+        }
+        else if (prereqResult != null && prereqResult.HasPrerequisites && prereqResult.AllMet)
+        {
+            // All prerequisites met - available to select
+            statusIndicator = "○";
+            statusText = "Available";
+            statusColor = new SolidColorBrush(Colors.CornflowerBlue);
+            rowBackground = Brushes.Transparent;
+            textOpacity = 0.8;
         }
         else
         {
+            // No prerequisites
             statusIndicator = "";
             statusText = "";
             statusColor = Brushes.Transparent;
@@ -196,17 +242,44 @@ public partial class FeatsPanel : UserControl
         {
             FeatId = featId,
             FeatName = GetFeatNameInternal(featId),
-            Description = description,
+            Description = tooltip,
             Category = category,
             CategoryName = GetCategoryName(category),
             IsAssigned = isAssigned,
             IsGranted = isGranted,
+            IsUnavailable = isUnavailable,
+            HasPrerequisites = prereqResult?.HasPrerequisites ?? false,
+            PrerequisitesMet = prereqResult?.AllMet ?? true,
             StatusIndicator = statusIndicator,
             StatusText = statusText,
             StatusColor = statusColor,
             RowBackground = rowBackground,
             TextOpacity = textOpacity
         };
+    }
+
+    private static string BuildTooltip(string description, FeatPrereqResult? prereqResult, bool isUnavailable)
+    {
+        var lines = new List<string>();
+
+        if (!string.IsNullOrEmpty(description))
+        {
+            lines.Add(description);
+        }
+
+        if (isUnavailable)
+        {
+            lines.Add("");
+            lines.Add("⚠ Not available to this class/race");
+        }
+
+        if (prereqResult != null && prereqResult.HasPrerequisites)
+        {
+            lines.Add("");
+            lines.Add(prereqResult.GetTooltip());
+        }
+
+        return string.Join("\n", lines);
     }
 
     private static string GetCategoryName(FeatCategory category)
@@ -273,6 +346,8 @@ public partial class FeatsPanel : UserControl
             6 => filtered.Where(f => f.Category == FeatCategory.Other),
             7 => filtered.Where(f => f.IsAssigned), // Assigned Only
             8 => filtered.Where(f => !f.IsAssigned), // Unassigned Only
+            9 => filtered.Where(f => !f.IsUnavailable && !f.IsAssigned), // Available Only
+            10 => filtered.Where(f => f.IsUnavailable), // Unavailable Only
             _ => filtered
         };
 
@@ -295,6 +370,7 @@ public partial class FeatsPanel : UserControl
     {
         var assignedCount = _assignedFeatIds.Count;
         var grantedCount = _grantedFeatIds.Count(g => _assignedFeatIds.Contains((ushort)g));
+        var unavailableCount = _unavailableFeatIds.Count;
         var totalAvailable = _allFeats.Count;
         var displayedCount = _displayedFeats.Count;
 
@@ -303,7 +379,7 @@ public partial class FeatsPanel : UserControl
             : "";
 
         SetText(_featsSummaryText,
-            $"{assignedCount} feats assigned ({grantedCount} granted by class){filterNote}");
+            $"{assignedCount} assigned ({grantedCount} granted) | {unavailableCount} unavailable{filterNote}");
     }
 
     public void ClearPanel()
@@ -312,7 +388,9 @@ public partial class FeatsPanel : UserControl
         _allFeats.Clear();
         _assignedFeatIds.Clear();
         _grantedFeatIds.Clear();
+        _unavailableFeatIds.Clear();
         _abilities.Clear();
+        _currentCreature = null;
 
         SetText(_featsSummaryText, "0 feats assigned");
         if (_noFeatsText != null)
@@ -355,6 +433,9 @@ public class FeatListViewModel
     public string CategoryName { get; set; } = "";
     public bool IsAssigned { get; set; }
     public bool IsGranted { get; set; }
+    public bool IsUnavailable { get; set; }
+    public bool HasPrerequisites { get; set; }
+    public bool PrerequisitesMet { get; set; }
     public string StatusIndicator { get; set; } = "";
     public string StatusText { get; set; } = "";
     public IBrush StatusColor { get; set; } = Brushes.Transparent;
