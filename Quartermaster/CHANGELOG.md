@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.7-alpha] - 2025-12-28
-**Branch**: `quartermaster/sprint/classes-levels-panel` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/classes-levels-panel` | **PR**: #625
 
 ### Sprint: Classes & Levels Panel (#613)
 
