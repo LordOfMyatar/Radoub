@@ -553,14 +553,4 @@ public class SpellListViewModel
     public IBrush StatusColor { get; set; } = Brushes.Transparent;
     public IBrush RowBackground { get; set; } = Brushes.Transparent;
     public double TextOpacity { get; set; } = 1.0;
-
-    /// <summary>
-    /// Can this spell be added? (Not known and not blocked)
-    /// </summary>
-    public bool CanAdd => !IsKnown && !IsBlocked;
-
-    /// <summary>
-    /// Can this spell be removed? (Known)
-    /// </summary>
-    public bool CanRemove => IsKnown;
 }

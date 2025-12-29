@@ -145,7 +145,7 @@
                         <!-- Header Row -->
                         <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                 Padding="10,8,25,8">
-                            <Grid ColumnDefinitions="35,*,60,100,80,80,60">
+                            <Grid ColumnDefinitions="35,*,60,100,80,80">
                                 <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="Spell Name" FontWeight="SemiBold" FontSize="11"/>
                                 <TextBlock Grid.Column="2" Text="Level" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
@@ -153,7 +153,6 @@
                                 <TextBlock Grid.Column="4" Text="Innate" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
                                            ToolTip.Tip="Innate Spell Level"/>
                                 <TextBlock Grid.Column="5" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="6" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
                             </Grid>
                         </Border>
 
@@ -167,7 +166,7 @@
                                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                             BorderThickness="0,0,0,1"
                                             ToolTip.Tip="{Binding Description}">
-                                        <Grid ColumnDefinitions="35,*,60,100,80,80,60">
+                                        <Grid ColumnDefinitions="35,*,60,100,80,80">
                                             <!-- Checkbox for known/memorized -->
                                             <CheckBox Grid.Column="0"
                                                       IsChecked="{Binding IsKnown}"
@@ -214,26 +213,6 @@
                                                        Foreground="{Binding StatusColor}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
-
-                                            <!-- Add/Remove Buttons (placeholder) -->
-                                            <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
-                                                <Button Content="+"
-                                                        Width="24" Height="24"
-                                                        FontSize="14" FontWeight="Bold"
-                                                        Padding="0"
-                                                        IsEnabled="False"
-                                                        IsVisible="{Binding CanAdd}"
-                                                        ToolTip.Tip="Add spell (editing not yet implemented)"
-                                                        AutomationProperties.AutomationId="AddSpellButton"/>
-                                                <Button Content="−"
-                                                        Width="24" Height="24"
-                                                        FontSize="14" FontWeight="Bold"
-                                                        Padding="0"
-                                                        IsEnabled="False"
-                                                        IsVisible="{Binding CanRemove}"
-                                                        ToolTip.Tip="Remove spell (editing not yet implemented)"
-                                                        AutomationProperties.AutomationId="RemoveSpellButton"/>
-                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
