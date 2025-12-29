@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.9-alpha] - 2025-12-28
-**Branch**: `quartermaster/sprint/feats-panel` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/feats-panel` | **PR**: #629
 
 ### Sprint: Feats Panel with Search & Filter (#615)
 
