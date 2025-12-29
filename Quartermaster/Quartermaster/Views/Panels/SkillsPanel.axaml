@@ -65,7 +65,7 @@
                     <StackPanel>
                         <!-- Header Row -->
                         <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                Padding="10,8,20,8">
+                                Padding="10,8,25,8">
                             <Grid ColumnDefinitions="25,*,50,50,50,70">
                                 <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
                                 <TextBlock Grid.Column="1" Text="Skill" FontWeight="SemiBold" FontSize="11"/>
@@ -81,7 +81,7 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="{Binding RowBackground}"
-                                            Padding="10,6,20,6"
+                                            Padding="10,6,25,6"
                                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                             BorderThickness="0,0,0,1">
                                         <Grid ColumnDefinitions="25,*,50,50,50,70">
