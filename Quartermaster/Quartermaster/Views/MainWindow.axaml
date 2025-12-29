@@ -230,10 +230,9 @@
                     <panels:FeatsPanel x:Name="FeatsPanelContent" IsVisible="False"
                                        AutomationProperties.AutomationId="FeatsPanel"/>
 
-                    <!-- Spells Panel (placeholder) -->
-                    <panels:PlaceholderPanel x:Name="SpellsPanelContent" IsVisible="False"
-                                             SectionName="Spells"
-                                             AutomationProperties.AutomationId="SpellsPanel"/>
+                    <!-- Spells Panel -->
+                    <panels:SpellsPanel x:Name="SpellsPanelContent" IsVisible="False"
+                                        AutomationProperties.AutomationId="SpellsPanel"/>
 
                     <!-- Inventory Panel -->
                     <panels:InventoryPanel x:Name="InventoryPanelContent" IsVisible="False"

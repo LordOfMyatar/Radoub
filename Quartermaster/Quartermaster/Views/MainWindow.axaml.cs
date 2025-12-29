@@ -106,6 +106,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize skills panel with display service for 2DA/TLK lookups
         SkillsPanelContent.SetDisplayService(_creatureDisplayService);
 
+        // Initialize spells panel with display service for 2DA/TLK lookups
+        SpellsPanelContent.SetDisplayService(_creatureDisplayService);
+
         // Initialize inventory panel with shared equipment slots and game data
         InventoryPanelContent.InitializeSlots(_equipmentSlots);
         InventoryPanelContent.SetGameDataService(_gameDataService);
@@ -395,6 +398,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ClassesPanelContent.LoadCreature(creature);
         SkillsPanelContent.LoadCreature(creature);
         FeatsPanelContent.LoadCreature(creature);
+        SpellsPanelContent.LoadCreature(creature);
         ScriptsPanelContent.LoadCreature(creature);
         AdvancedPanelContent.LoadCreature(creature);
     }
@@ -405,6 +409,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ClassesPanelContent.ClearPanel();
         SkillsPanelContent.ClearPanel();
         FeatsPanelContent.ClearPanel();
+        SpellsPanelContent.ClearPanel();
         ScriptsPanelContent.ClearPanel();
         AdvancedPanelContent.ClearPanel();
     }
