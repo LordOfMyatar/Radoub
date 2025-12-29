@@ -90,13 +90,20 @@ public partial class SkillsPanel : UserControl
             var keyAbility = GetSkillKeyAbility(i);
             var isClassSkill = _classSkillIds.Contains(i);
 
+            // Calculate ability modifier for total
+            var abilityModifier = GetAbilityModifier(creature, keyAbility);
+            var total = ranks + abilityModifier;
+
             _allSkills.Add(new SkillViewModel
             {
                 SkillId = i,
                 SkillName = skillName,
                 KeyAbility = keyAbility,
                 Ranks = ranks,
-                RanksDisplay = ranks > 0 ? ranks.ToString() : "-",
+                RanksDisplay = ranks.ToString(),
+                AbilityModifier = abilityModifier,
+                Total = total,
+                TotalDisplay = FormatTotal(total, abilityModifier),
                 IsClassSkill = isClassSkill,
                 ClassSkillIndicator = isClassSkill ? "●" : "○",
                 RowBackground = isClassSkill
@@ -113,6 +120,31 @@ public partial class SkillsPanel : UserControl
 
         if (_noSkillsText != null)
             _noSkillsText.IsVisible = false;
+    }
+
+    private int GetAbilityModifier(UtcFile creature, string keyAbility)
+    {
+        // Get the base ability score + racial modifier, then calculate modifier
+        int abilityScore = keyAbility.ToUpperInvariant() switch
+        {
+            "STR" => creature.Str,
+            "DEX" => creature.Dex,
+            "CON" => creature.Con,
+            "INT" => creature.Int,
+            "WIS" => creature.Wis,
+            "CHA" => creature.Cha,
+            _ => 10
+        };
+
+        // Standard D&D formula: (score - 10) / 2
+        return CreatureDisplayService.CalculateAbilityBonus(abilityScore);
+    }
+
+    private static string FormatTotal(int total, int abilityModifier)
+    {
+        // Show total with modifier breakdown in tooltip-friendly format
+        var sign = abilityModifier >= 0 ? "+" : "";
+        return $"{total}";
     }
 
     public void ClearPanel()
@@ -266,7 +298,10 @@ public class SkillViewModel
     public string SkillName { get; set; } = "";
     public string KeyAbility { get; set; } = "";
     public int Ranks { get; set; }
-    public string RanksDisplay { get; set; } = "-";
+    public string RanksDisplay { get; set; } = "0";
+    public int AbilityModifier { get; set; }
+    public int Total { get; set; }
+    public string TotalDisplay { get; set; } = "0";
     public bool IsClassSkill { get; set; }
     public string ClassSkillIndicator { get; set; } = "○";
     public IBrush RowBackground { get; set; } = Brushes.Transparent;

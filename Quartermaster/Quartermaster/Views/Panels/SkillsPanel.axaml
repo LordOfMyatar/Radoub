@@ -5,7 +5,7 @@
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
              x:Class="Quartermaster.Views.Panels.SkillsPanel">
 
-    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,20,20">
         <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
             <!-- Header -->
             <TextBlock Grid.Row="0"
@@ -65,13 +65,13 @@
                     <StackPanel>
                         <!-- Header Row -->
                         <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                Padding="10,8">
-                            <Grid ColumnDefinitions="25,*,50,80,50,70">
+                                Padding="10,8,20,8">
+                            <Grid ColumnDefinitions="25,*,50,50,50,70">
                                 <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
                                 <TextBlock Grid.Column="1" Text="Skill" FontWeight="SemiBold" FontSize="11"/>
                                 <TextBlock Grid.Column="2" Text="Ability" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="Progress" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="Rank" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="Rank" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="Total" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
                                 <TextBlock Grid.Column="5" Text="" FontWeight="SemiBold" FontSize="11"/>
                             </Grid>
                         </Border>
@@ -81,10 +81,10 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="{Binding RowBackground}"
-                                            Padding="10,6"
+                                            Padding="10,6,20,6"
                                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                             BorderThickness="0,0,0,1">
-                                        <Grid ColumnDefinitions="25,*,50,80,50,70">
+                                        <Grid ColumnDefinitions="25,*,50,50,50,70">
                                             <!-- Class Skill Indicator -->
                                             <TextBlock Grid.Column="0"
                                                        Text="{Binding ClassSkillIndicator}"
@@ -107,21 +107,19 @@
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
 
-                                            <!-- Progress Bar -->
-                                            <ProgressBar Grid.Column="3"
-                                                         Minimum="0"
-                                                         Maximum="40"
-                                                         Value="{Binding Ranks}"
-                                                         Height="6"
-                                                         CornerRadius="3"
-                                                         VerticalAlignment="Center"/>
-
                                             <!-- Rank Value -->
-                                            <TextBlock Grid.Column="4"
+                                            <TextBlock Grid.Column="3"
                                                        Text="{Binding RanksDisplay}"
+                                                       FontSize="13"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Total (Rank + Ability Modifier) -->
+                                            <TextBlock Grid.Column="4"
+                                                       Text="{Binding TotalDisplay}"
                                                        FontWeight="SemiBold"
                                                        FontSize="13"
-                                                       HorizontalAlignment="Right"
+                                                       HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
 
                                             <!-- Placeholder for +/- buttons (future editing) -->
