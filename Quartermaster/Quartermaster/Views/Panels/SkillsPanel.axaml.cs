@@ -1,6 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
+using Quartermaster.Services;
 using Radoub.Formats.Utc;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -8,44 +12,18 @@ namespace Quartermaster.Views.Panels;
 
 public partial class SkillsPanel : UserControl
 {
+    private CreatureDisplayService? _displayService;
+
     private TextBlock? _skillsSummaryText;
     private ItemsControl? _skillsList;
     private TextBlock? _noSkillsText;
+    private ComboBox? _sortComboBox;
+    private CheckBox? _trainedOnlyCheckBox;
 
     private ObservableCollection<SkillViewModel> _skills = new();
-
-    // Standard NWN skill names (indexes into skills.2da)
-    private static readonly string[] SkillNames = new[]
-    {
-        "Animal Empathy",    // 0
-        "Concentration",     // 1
-        "Disable Trap",      // 2
-        "Discipline",        // 3
-        "Heal",              // 4
-        "Hide",              // 5
-        "Listen",            // 6
-        "Lore",              // 7
-        "Move Silently",     // 8
-        "Open Lock",         // 9
-        "Parry",             // 10
-        "Perform",           // 11
-        "Persuade",          // 12 (Diplomacy in some versions)
-        "Pick Pocket",       // 13
-        "Search",            // 14
-        "Set Trap",          // 15
-        "Spellcraft",        // 16
-        "Spot",              // 17
-        "Taunt",             // 18
-        "Use Magic Device",  // 19
-        "Appraise",          // 20
-        "Tumble",            // 21
-        "Craft Trap",        // 22
-        "Bluff",             // 23
-        "Intimidate",        // 24
-        "Craft Armor",       // 25
-        "Craft Weapon",      // 26
-        "Ride"               // 27
-    };
+    private List<SkillViewModel> _allSkills = new(); // Unfiltered list
+    private HashSet<int> _classSkillIds = new();
+    private UtcFile? _currentCreature;
 
     public SkillsPanel()
     {
@@ -59,14 +37,38 @@ public partial class SkillsPanel : UserControl
         _skillsSummaryText = this.FindControl<TextBlock>("SkillsSummaryText");
         _skillsList = this.FindControl<ItemsControl>("SkillsList");
         _noSkillsText = this.FindControl<TextBlock>("NoSkillsText");
+        _sortComboBox = this.FindControl<ComboBox>("SortComboBox");
+        _trainedOnlyCheckBox = this.FindControl<CheckBox>("TrainedOnlyCheckBox");
 
         if (_skillsList != null)
             _skillsList.ItemsSource = _skills;
+
+        // Wire up sort/filter controls
+        if (_sortComboBox != null)
+        {
+            _sortComboBox.SelectionChanged += (s, e) => ApplySortAndFilter();
+        }
+
+        if (_trainedOnlyCheckBox != null)
+        {
+            _trainedOnlyCheckBox.IsCheckedChanged += (s, e) => ApplySortAndFilter();
+        }
+    }
+
+    /// <summary>
+    /// Sets the display service for 2DA/TLK lookups.
+    /// </summary>
+    public void SetDisplayService(CreatureDisplayService displayService)
+    {
+        _displayService = displayService;
     }
 
     public void LoadCreature(UtcFile? creature)
     {
         _skills.Clear();
+        _allSkills.Clear();
+        _classSkillIds.Clear();
+        _currentCreature = creature;
 
         if (creature == null || creature.SkillList.Count == 0)
         {
@@ -74,29 +76,40 @@ public partial class SkillsPanel : UserControl
             return;
         }
 
-        // Load all skills (show all, even those with 0 ranks)
-        for (int i = 0; i < creature.SkillList.Count && i < SkillNames.Length; i++)
+        // Get combined class skills from all character classes
+        if (_displayService != null)
+        {
+            _classSkillIds = _displayService.GetCombinedClassSkillIds(creature);
+        }
+
+        // Load all skills
+        for (int i = 0; i < creature.SkillList.Count; i++)
         {
             var ranks = creature.SkillList[i];
-            _skills.Add(new SkillViewModel
+            var skillName = GetSkillName(i);
+            var keyAbility = GetSkillKeyAbility(i);
+            var isClassSkill = _classSkillIds.Contains(i);
+
+            _allSkills.Add(new SkillViewModel
             {
                 SkillId = i,
-                SkillName = SkillNames[i],
+                SkillName = skillName,
+                KeyAbility = keyAbility,
                 Ranks = ranks,
-                RanksDisplay = ranks > 0 ? ranks.ToString() : "-"
+                RanksDisplay = ranks > 0 ? ranks.ToString() : "-",
+                IsClassSkill = isClassSkill,
+                ClassSkillIndicator = isClassSkill ? "●" : "○",
+                RowBackground = isClassSkill
+                    ? new SolidColorBrush(Color.FromArgb(30, 100, 149, 237)) // Light blue for class skills
+                    : Brushes.Transparent
             });
         }
 
-        // Sort by ranks (highest first), then by name
-        var sorted = _skills.OrderByDescending(s => s.Ranks).ThenBy(s => s.SkillName).ToList();
-        _skills.Clear();
-        foreach (var skill in sorted)
-            _skills.Add(skill);
+        // Apply initial sort and filter
+        ApplySortAndFilter();
 
         // Update summary
-        var skillsWithRanks = _skills.Count(s => s.Ranks > 0);
-        var totalRanks = _skills.Sum(s => s.Ranks);
-        SetText(_skillsSummaryText, $"{skillsWithRanks} skills with ranks ({totalRanks} total ranks)");
+        UpdateSummary();
 
         if (_noSkillsText != null)
             _noSkillsText.IsVisible = false;
@@ -105,9 +118,139 @@ public partial class SkillsPanel : UserControl
     public void ClearPanel()
     {
         _skills.Clear();
+        _allSkills.Clear();
+        _classSkillIds.Clear();
+        _currentCreature = null;
         SetText(_skillsSummaryText, "0 skills with ranks");
         if (_noSkillsText != null)
             _noSkillsText.IsVisible = true;
+    }
+
+    private void ApplySortAndFilter()
+    {
+        if (_allSkills.Count == 0)
+            return;
+
+        var filtered = _allSkills.AsEnumerable();
+
+        // Apply "trained only" filter
+        bool trainedOnly = _trainedOnlyCheckBox?.IsChecked ?? false;
+        if (trainedOnly)
+        {
+            filtered = filtered.Where(s => s.Ranks > 0);
+        }
+
+        // Apply sort
+        int sortIndex = _sortComboBox?.SelectedIndex ?? 0;
+        filtered = sortIndex switch
+        {
+            0 => filtered.OrderBy(s => s.SkillName),                          // Alphabetical
+            1 => filtered.OrderByDescending(s => s.Ranks).ThenBy(s => s.SkillName), // By Rank (descending)
+            2 => filtered.OrderByDescending(s => s.IsClassSkill).ThenBy(s => s.SkillName), // Class skills first
+            _ => filtered.OrderBy(s => s.SkillName)
+        };
+
+        // Update display
+        _skills.Clear();
+        foreach (var skill in filtered)
+        {
+            _skills.Add(skill);
+        }
+
+        UpdateSummary();
+    }
+
+    private void UpdateSummary()
+    {
+        var skillsWithRanks = _allSkills.Count(s => s.Ranks > 0);
+        var totalRanks = _allSkills.Sum(s => s.Ranks);
+        var classSkillCount = _classSkillIds.Count;
+
+        var displayedCount = _skills.Count;
+        var filterNote = displayedCount < _allSkills.Count ? $" (showing {displayedCount})" : "";
+
+        SetText(_skillsSummaryText,
+            $"{skillsWithRanks} skills with ranks ({totalRanks} total) | {classSkillCount} class skills{filterNote}");
+    }
+
+    private string GetSkillName(int skillId)
+    {
+        if (_displayService != null)
+            return _displayService.GetSkillName(skillId);
+
+        // Fallback to hardcoded names
+        return skillId switch
+        {
+            0 => "Animal Empathy",
+            1 => "Concentration",
+            2 => "Disable Trap",
+            3 => "Discipline",
+            4 => "Heal",
+            5 => "Hide",
+            6 => "Listen",
+            7 => "Lore",
+            8 => "Move Silently",
+            9 => "Open Lock",
+            10 => "Parry",
+            11 => "Perform",
+            12 => "Persuade",
+            13 => "Pick Pocket",
+            14 => "Search",
+            15 => "Set Trap",
+            16 => "Spellcraft",
+            17 => "Spot",
+            18 => "Taunt",
+            19 => "Use Magic Device",
+            20 => "Appraise",
+            21 => "Tumble",
+            22 => "Craft Trap",
+            23 => "Bluff",
+            24 => "Intimidate",
+            25 => "Craft Armor",
+            26 => "Craft Weapon",
+            27 => "Ride",
+            _ => $"Skill {skillId}"
+        };
+    }
+
+    private string GetSkillKeyAbility(int skillId)
+    {
+        if (_displayService != null)
+            return _displayService.GetSkillKeyAbility(skillId);
+
+        // Fallback to hardcoded values
+        return skillId switch
+        {
+            0 => "CHA",  // Animal Empathy
+            1 => "CON",  // Concentration
+            2 => "INT",  // Disable Trap
+            3 => "STR",  // Discipline
+            4 => "WIS",  // Heal
+            5 => "DEX",  // Hide
+            6 => "WIS",  // Listen
+            7 => "INT",  // Lore
+            8 => "DEX",  // Move Silently
+            9 => "DEX",  // Open Lock
+            10 => "DEX", // Parry
+            11 => "CHA", // Perform
+            12 => "CHA", // Persuade
+            13 => "DEX", // Pick Pocket
+            14 => "INT", // Search
+            15 => "DEX", // Set Trap
+            16 => "INT", // Spellcraft
+            17 => "WIS", // Spot
+            18 => "CHA", // Taunt
+            19 => "CHA", // Use Magic Device
+            20 => "INT", // Appraise
+            21 => "DEX", // Tumble
+            22 => "INT", // Craft Trap
+            23 => "CHA", // Bluff
+            24 => "CHA", // Intimidate
+            25 => "INT", // Craft Armor
+            26 => "INT", // Craft Weapon
+            27 => "DEX", // Ride
+            _ => "INT"
+        };
     }
 
     private static void SetText(TextBlock? block, string text)
@@ -121,6 +264,10 @@ public class SkillViewModel
 {
     public int SkillId { get; set; }
     public string SkillName { get; set; } = "";
+    public string KeyAbility { get; set; } = "";
     public int Ranks { get; set; }
     public string RanksDisplay { get; set; } = "-";
+    public bool IsClassSkill { get; set; }
+    public string ClassSkillIndicator { get; set; } = "○";
+    public IBrush RowBackground { get; set; } = Brushes.Transparent;
 }

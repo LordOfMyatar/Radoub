@@ -2,50 +2,147 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
              x:Class="Quartermaster.Views.Panels.SkillsPanel">
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="20">
-                <!-- Header -->
-                <TextBlock Text="Skills"
-                           FontSize="20"
-                           FontWeight="Bold"/>
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="Skills"
+                       FontSize="20"
+                       FontWeight="Bold"/>
 
-                <!-- Skills Summary -->
-                <TextBlock x:Name="SkillsSummaryText"
-                           Text="0 skills with ranks"
-                           FontSize="12"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            <!-- Skills Summary -->
+            <TextBlock Grid.Row="1"
+                       x:Name="SkillsSummaryText"
+                       Text="0 skills with ranks"
+                       FontSize="12"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       Margin="0,5,0,10"/>
 
-                <!-- Skills List -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        Padding="15">
-                    <StackPanel Spacing="5">
+            <!-- Sort and Filter Controls -->
+            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,10">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="Sort by:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="SortComboBox"
+                              SelectedIndex="0"
+                              MinWidth="150"
+                              AutomationProperties.AutomationId="SkillsSortCombo">
+                        <ComboBoxItem Content="Alphabetical"/>
+                        <ComboBoxItem Content="By Rank"/>
+                        <ComboBoxItem Content="Class Skills First"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <CheckBox Grid.Column="2"
+                          x:Name="TrainedOnlyCheckBox"
+                          Content="Trained Only"
+                          VerticalAlignment="Center"
+                          AutomationProperties.AutomationId="SkillsTrainedOnlyCheck"/>
+
+                <!-- Legend -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="20,0,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                        <TextBlock Text="●" Foreground="CornflowerBlue" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="Class Skill" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="3">
+                        <TextBlock Text="○" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="Cross-class" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- Skills List -->
+            <Border Grid.Row="3"
+                    BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Header Row -->
+                        <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Padding="10,8">
+                            <Grid ColumnDefinitions="25,*,50,80,50,70">
+                                <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="Skill" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="Ability" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="Progress" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="Rank" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="5" Text="" FontWeight="SemiBold" FontSize="11"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Skills Items -->
                         <ItemsControl x:Name="SkillsList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid ColumnDefinitions="*,Auto,60" Margin="0,3">
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{Binding SkillName}"
-                                                   VerticalAlignment="Center"/>
-                                        <ProgressBar Grid.Column="1"
-                                                     Minimum="0"
-                                                     Maximum="40"
-                                                     Value="{Binding Ranks}"
-                                                     Width="100"
-                                                     Height="6"
-                                                     CornerRadius="3"
-                                                     Margin="10,0"/>
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{Binding RanksDisplay}"
-                                                   FontWeight="SemiBold"
-                                                   HorizontalAlignment="Right"
-                                                   VerticalAlignment="Center"/>
-                                    </Grid>
+                                    <Border Background="{Binding RowBackground}"
+                                            Padding="10,6"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                            BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="25,*,50,80,50,70">
+                                            <!-- Class Skill Indicator -->
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding ClassSkillIndicator}"
+                                                       Foreground="CornflowerBlue"
+                                                       FontSize="10"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"/>
+
+                                            <!-- Skill Name -->
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SkillName}"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="13"/>
+
+                                            <!-- Key Ability -->
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding KeyAbility}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Progress Bar -->
+                                            <ProgressBar Grid.Column="3"
+                                                         Minimum="0"
+                                                         Maximum="40"
+                                                         Value="{Binding Ranks}"
+                                                         Height="6"
+                                                         CornerRadius="3"
+                                                         VerticalAlignment="Center"/>
+
+                                            <!-- Rank Value -->
+                                            <TextBlock Grid.Column="4"
+                                                       Text="{Binding RanksDisplay}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="13"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Placeholder for +/- buttons (future editing) -->
+                                            <StackPanel Grid.Column="5"
+                                                        Orientation="Horizontal"
+                                                        Spacing="2"
+                                                        HorizontalAlignment="Right"
+                                                        VerticalAlignment="Center">
+                                                <Button Content="-"
+                                                        Width="24" Height="24"
+                                                        FontSize="12"
+                                                        IsEnabled="False"
+                                                        ToolTip.Tip="Decrease rank (editing not yet implemented)"/>
+                                                <Button Content="+"
+                                                        Width="24" Height="24"
+                                                        FontSize="12"
+                                                        IsEnabled="False"
+                                                        ToolTip.Tip="Increase rank (editing not yet implemented)"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -55,18 +152,19 @@
                                    FontStyle="Italic"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                    IsVisible="False"
-                                   Margin="0,10"/>
+                                   Margin="15,15"/>
                     </StackPanel>
-                </Border>
+                </ScrollViewer>
+            </Border>
 
-                <!-- Placeholder message -->
-                <TextBlock Text="Skill editing will be implemented in a future sprint."
-                           FontSize="12"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,10,0,0"/>
-            </StackPanel>
-        </ScrollViewer>
+            <!-- Footer -->
+            <TextBlock Grid.Row="4"
+                       Text="Skill editing will be implemented in a future sprint."
+                       FontSize="12"
+                       FontStyle="Italic"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,10,0,0"/>
+        </Grid>
     </Border>
 </UserControl>

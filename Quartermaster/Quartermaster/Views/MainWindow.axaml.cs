@@ -103,6 +103,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize feats panel with display service for 2DA/TLK lookups
         FeatsPanelContent.SetDisplayService(_creatureDisplayService);
 
+        // Initialize skills panel with display service for 2DA/TLK lookups
+        SkillsPanelContent.SetDisplayService(_creatureDisplayService);
+
         // Initialize inventory panel with shared equipment slots and game data
         InventoryPanelContent.InitializeSlots(_equipmentSlots);
         InventoryPanelContent.SetGameDataService(_gameDataService);

@@ -18,7 +18,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Add the Skills panel displaying all skill ranks for the character.
 
 #### Added
-- *Sprint work items will be added here*
+- **Skills List Display** - Shows all skills from skills.2da with columns:
+  - Skill Name with key ability indicator (STR, DEX, INT, WIS, CHA, CON)
+  - Progress bar showing rank (max 40)
+  - Numeric rank value (0 = "-")
+  - +/- buttons as disabled placeholders for future editing
+- **Class Skill Highlighting** - Distinguishes class skills from cross-class skills
+  - Visual indicator (● for class skill, ○ for cross-class)
+  - Light blue background highlight for class skills
+  - Uses cls_skill_*.2da for each of character's classes
+  - Combined class skills from multiclass characters
+- **Sorting Options** - Dropdown to sort skills:
+  - Alphabetical (default)
+  - By Rank (highest first)
+  - Class Skills First
+- **Filtering** - "Trained Only" checkbox to show only skills with ranks > 0
+- **Summary Display** - Shows count of trained skills, total ranks, and class skill count
+- **CreatureDisplayService Integration** - Added skill name resolution via 2DA/TLK:
+  - `GetSkillName()` - Skill name from skills.2da with TLK lookup
+  - `GetSkillKeyAbility()` - Key ability from skills.2da
+  - `GetClassSkillsTable()` - Class skills table name from classes.2da
+  - `IsClassSkill()` - Check if skill is class skill for a class
+  - `GetClassSkillIds()` - Get set of class skill IDs for a class
+  - `GetCombinedClassSkillIds()` - Combined class skills for multiclass
 
 ---
 
