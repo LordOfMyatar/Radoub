@@ -24,10 +24,9 @@ Add the Feats panel with robust search and filtering - addressing Aurora Toolset
 - **Category Filter Dropdown** - Filter by feat type:
   - All Feats (default)
   - Combat / Active Combat / Defensive / Magical / Class/Racial / Other
-  - Assigned Only (show only character's feats)
-  - Unassigned Only (for future feat selection)
-  - Available Only (feats available to this class/race)
-  - Unavailable Only (feats not available to this class/race)
+  - Assigned Only / Granted Only (class-granted feats)
+  - Unassigned Only / Available Only / Unavailable Only
+  - Prereqs Met / Prereqs Unmet (filter by prerequisite status)
 - **All Feats List** - Shows ALL feats from feat.2da, not just assigned
   - Columns: Status | Feat Name | Category | Status Text
   - Tooltip shows feat description

@@ -53,9 +53,12 @@
                         <ComboBoxItem Content="Class/Racial"/>
                         <ComboBoxItem Content="Other"/>
                         <ComboBoxItem Content="Assigned Only"/>
+                        <ComboBoxItem Content="Granted Only"/>
                         <ComboBoxItem Content="Unassigned Only"/>
                         <ComboBoxItem Content="Available Only"/>
                         <ComboBoxItem Content="Unavailable Only"/>
+                        <ComboBoxItem Content="Prereqs Met"/>
+                        <ComboBoxItem Content="Prereqs Unmet"/>
                     </ComboBox>
                 </StackPanel>
 

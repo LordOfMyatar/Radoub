@@ -345,9 +345,12 @@ public partial class FeatsPanel : UserControl
             5 => filtered.Where(f => f.Category == FeatCategory.ClassRacial),
             6 => filtered.Where(f => f.Category == FeatCategory.Other),
             7 => filtered.Where(f => f.IsAssigned), // Assigned Only
-            8 => filtered.Where(f => !f.IsAssigned), // Unassigned Only
-            9 => filtered.Where(f => !f.IsUnavailable && !f.IsAssigned), // Available Only
-            10 => filtered.Where(f => f.IsUnavailable), // Unavailable Only
+            8 => filtered.Where(f => f.IsGranted), // Granted Only
+            9 => filtered.Where(f => !f.IsAssigned), // Unassigned Only
+            10 => filtered.Where(f => !f.IsUnavailable && !f.IsAssigned), // Available Only
+            11 => filtered.Where(f => f.IsUnavailable), // Unavailable Only
+            12 => filtered.Where(f => f.HasPrerequisites && f.PrerequisitesMet && !f.IsAssigned), // Prereqs Met
+            13 => filtered.Where(f => f.HasPrerequisites && !f.PrerequisitesMet), // Prereqs Unmet
             _ => filtered
         };
 
