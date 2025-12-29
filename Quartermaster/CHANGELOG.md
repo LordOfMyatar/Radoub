@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.8-alpha] - 2025-12-28
+**Branch**: `quartermaster/sprint/skills-panel` | **PR**: #TBD
+
+### Sprint: Skills Panel (#614)
+
+Add the Skills panel displaying all skill ranks for the character.
+
+#### Added
+- *Sprint work items will be added here*
+
+---
+
 ## [0.1.7-alpha] - 2025-12-28
 **Branch**: `quartermaster/sprint/classes-levels-panel` | **PR**: #625
 
