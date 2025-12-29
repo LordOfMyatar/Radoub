@@ -2,59 +2,107 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="600"
              x:Class="Quartermaster.Views.Panels.ClassesPanel">
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="20">
                 <!-- Header -->
-                <TextBlock Text="Classes &amp; Alignment"
+                <TextBlock Text="Classes &amp; Levels"
                            FontSize="20"
                            FontWeight="Bold"/>
 
-                <!-- Classes Section -->
+                <!-- Classes Section - 8 slots per Beamdog EE -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Character Classes" FontWeight="SemiBold" FontSize="14"/>
-                        <TextBlock x:Name="TotalLevelText"
-                                   Text="Total Level: 0"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="Character Classes" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Grid.Column="1" x:Name="TotalLevelText"
+                                       Text="Total Level: 0"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </Grid>
 
-                        <ItemsControl x:Name="ClassesList">
+                        <!-- Active Classes Only -->
+                        <ItemsControl x:Name="ClassSlotsList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,5" Padding="10"
+                                    <Border Margin="0,3" Padding="10"
                                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                             CornerRadius="4">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="{Binding ClassName}" FontWeight="SemiBold" FontSize="14"/>
-                                                <TextBlock Text="{Binding ClassDescription}"
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <!-- Slot Number -->
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding SlotNumber}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                       VerticalAlignment="Center"
+                                                       Width="20"/>
+
+                                            <!-- Class Name and Info -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ClassName}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="14"/>
+                                                <TextBlock Text="{Binding ClassInfoDisplay}"
                                                            FontSize="11"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <TextBlock Text="{Binding ClassFeatures}"
+                                                           FontSize="10"
+                                                           FontStyle="Italic"
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                                           TextWrapping="Wrap"/>
                                             </StackPanel>
-                                            <TextBlock Grid.Column="1"
+
+                                            <!-- Level Display -->
+                                            <TextBlock Grid.Column="2"
                                                        Text="{Binding LevelDisplay}"
                                                        FontSize="18"
                                                        FontWeight="Bold"
                                                        VerticalAlignment="Center"
-                                                       Margin="10,0,0,0"/>
+                                                       Margin="10,0"/>
+
+                                            <!-- +/- Placeholder (disabled) -->
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal"
+                                                        VerticalAlignment="Center">
+                                                <Button Content="-" Width="24" Height="24"
+                                                        FontSize="12" IsEnabled="False"
+                                                        ToolTip.Tip="Level editing coming soon"/>
+                                                <Button Content="+" Width="24" Height="24"
+                                                        FontSize="12" IsEnabled="False" Margin="2,0,0,0"
+                                                        ToolTip.Tip="Level editing coming soon"/>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
+                        <!-- Add Class Placeholder -->
+                        <Button x:Name="AddClassButton"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                IsEnabled="False"
+                                Margin="0,3"
+                                Padding="10"
+                                ToolTip.Tip="Class editing coming in a future sprint">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="+" FontSize="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="Add Class" FontSize="14" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- No classes message -->
                         <TextBlock x:Name="NoClassesText"
                                    Text="No classes assigned"
                                    FontStyle="Italic"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                   IsVisible="False"/>
+                                   IsVisible="False"
+                                   Margin="0,5,0,0"/>
                     </StackPanel>
                 </Border>
 
@@ -66,7 +114,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Alignment" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
                             <!-- Alignment Name -->
                             <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,15">
                                 <TextBlock x:Name="AlignmentName"
@@ -111,6 +159,33 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Auto-Levelup Package Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Levelup Settings" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Default Package:"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="PackageText"
+                                       Text="None"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Levelup Wizard Button -->
+                        <Button x:Name="LevelupWizardButton"
+                                Content="Levelup Wizard..."
+                                HorizontalAlignment="Left"
+                                IsEnabled="False"
+                                Margin="0,10,0,0"
+                                ToolTip.Tip="Full levelup wizard coming in a future sprint"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Identity Section -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
                         BorderThickness="1"
@@ -138,14 +213,6 @@
                         </Grid>
                     </StackPanel>
                 </Border>
-
-                <!-- Placeholder message -->
-                <TextBlock Text="Class editing will be implemented in a future sprint."
-                           FontSize="12"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,10,0,0"/>
             </StackPanel>
         </ScrollViewer>
     </Border>

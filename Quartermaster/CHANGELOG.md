@@ -10,6 +10,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.7-alpha] - 2025-12-28
+**Branch**: `quartermaster/sprint/classes-levels-panel` | **PR**: #625
+
+### Sprint: Classes & Levels Panel (#613)
+
+Add the Classes & Levels panel displaying character class progression and alignment.
+
+#### Added
+- **Class Slots Display** - Shows active classes only (up to 8 per Beamdog EE)
+  - Each class shows name, level, hit die, and skill points per level
+  - Key class features displayed (e.g., "Rage, Fast Movement" for Barbarian)
+  - "Add Class" placeholder button for future editing
+  - Level +/- buttons as disabled placeholders for future editing
+  - Total level calculation displayed
+- **Alignment Display** - Shows character alignment with visual progress bars
+  - Good-Evil axis with numeric value (0-100)
+  - Lawful-Chaotic axis with numeric value (0-100)
+  - Alignment name calculated from axis values (e.g., "Lawful Good", "True Neutral")
+- **Auto-Levelup Package Display** - Shows the creature's StartingPackage
+  - Package name resolved from packages.2da (hardcoded fallbacks)
+- **Levelup Wizard Placeholder** - Disabled button for future levelup wizard sprint
+- **Identity Section** - Race, gender, subrace, and deity display
+- **CreatureDisplayService Integration** - ClassesPanel now uses 2DA/TLK lookups when available
+
+#### Changed
+- ClassesPanel uses CreatureDisplayService for class/race/gender name resolution
+- Hit die display per class (d4-d12 based on class type)
+
+---
+
 ## [0.1.6-alpha] - 2025-12-28
 **Branch**: `quartermaster/sprint/stats-identity-panel` | **PR**: #622
 
