@@ -27,14 +27,13 @@
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </Grid>
 
-                        <!-- 8 Class Slots -->
+                        <!-- Active Classes Only -->
                         <ItemsControl x:Name="ClassSlotsList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Margin="0,3" Padding="10"
                                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            CornerRadius="4"
-                                            Opacity="{Binding Opacity}">
+                                            CornerRadius="4">
                                         <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                                             <!-- Slot Number -->
                                             <TextBlock Grid.Column="0"
@@ -48,17 +47,10 @@
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding ClassName}"
                                                            FontWeight="SemiBold"
-                                                           FontSize="14"
-                                                           IsVisible="{Binding HasClass}"/>
-                                                <TextBlock Text="(Empty)"
-                                                           FontStyle="Italic"
-                                                           FontSize="12"
-                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                                           IsVisible="{Binding !HasClass}"/>
+                                                           FontSize="14"/>
                                                 <TextBlock Text="{Binding HitDieDisplay}"
                                                            FontSize="11"
-                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                           IsVisible="{Binding HasClass}"/>
+                                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                             </StackPanel>
 
                                             <!-- Level Display -->
@@ -67,13 +59,11 @@
                                                        FontSize="18"
                                                        FontWeight="Bold"
                                                        VerticalAlignment="Center"
-                                                       Margin="10,0"
-                                                       IsVisible="{Binding HasClass}"/>
+                                                       Margin="10,0"/>
 
                                             <!-- +/- Placeholder (disabled) -->
                                             <StackPanel Grid.Column="3" Orientation="Horizontal"
-                                                        VerticalAlignment="Center"
-                                                        IsVisible="{Binding HasClass}">
+                                                        VerticalAlignment="Center">
                                                 <Button Content="-" Width="24" Height="24"
                                                         FontSize="12" IsEnabled="False"
                                                         ToolTip.Tip="Level editing coming soon"/>
@@ -86,6 +76,28 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <!-- Add Class Placeholder -->
+                        <Button x:Name="AddClassButton"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                IsEnabled="False"
+                                Margin="0,3"
+                                Padding="10"
+                                ToolTip.Tip="Class editing coming in a future sprint">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="+" FontSize="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="Add Class" FontSize="14" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- No classes message -->
+                        <TextBlock x:Name="NoClassesText"
+                                   Text="No classes assigned"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   IsVisible="False"
+                                   Margin="0,5,0,0"/>
                     </StackPanel>
                 </Border>
 

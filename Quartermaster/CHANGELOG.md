@@ -18,9 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Add the Classes & Levels panel displaying character class progression and alignment.
 
 #### Added
-- **8 Class Slots Display** - Shows all 8 class slots per Beamdog EE standard
-  - Filled slots show class name, level, and hit die
-  - Empty slots shown dimmed with "(Empty)" placeholder
+- **Class Slots Display** - Shows active classes only (up to 8 per Beamdog EE)
+  - Each class shows name, level, and hit die
+  - "Add Class" placeholder button for future editing
   - Level +/- buttons as disabled placeholders for future editing
   - Total level calculation displayed
 - **Alignment Display** - Shows character alignment with visual progress bars

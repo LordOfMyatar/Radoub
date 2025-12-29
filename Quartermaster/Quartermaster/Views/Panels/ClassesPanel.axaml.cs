@@ -14,6 +14,8 @@ public partial class ClassesPanel : UserControl
 
     private TextBlock? _totalLevelText;
     private ItemsControl? _classSlotsList;
+    private Button? _addClassButton;
+    private TextBlock? _noClassesText;
     private TextBlock? _alignmentName;
     private ProgressBar? _goodEvilBar;
     private TextBlock? _goodEvilValue;
@@ -31,7 +33,6 @@ public partial class ClassesPanel : UserControl
     public ClassesPanel()
     {
         InitializeComponent();
-        InitializeClassSlots();
     }
 
     private void InitializeComponent()
@@ -40,6 +41,8 @@ public partial class ClassesPanel : UserControl
 
         _totalLevelText = this.FindControl<TextBlock>("TotalLevelText");
         _classSlotsList = this.FindControl<ItemsControl>("ClassSlotsList");
+        _addClassButton = this.FindControl<Button>("AddClassButton");
+        _noClassesText = this.FindControl<TextBlock>("NoClassesText");
         _alignmentName = this.FindControl<TextBlock>("AlignmentName");
         _goodEvilBar = this.FindControl<ProgressBar>("GoodEvilBar");
         _goodEvilValue = this.FindControl<TextBlock>("GoodEvilValue");
@@ -54,15 +57,6 @@ public partial class ClassesPanel : UserControl
 
         if (_classSlotsList != null)
             _classSlotsList.ItemsSource = _classSlots;
-    }
-
-    private void InitializeClassSlots()
-    {
-        _classSlots.Clear();
-        for (int i = 0; i < MaxClassSlots; i++)
-        {
-            _classSlots.Add(new ClassSlotViewModel { SlotIndex = i });
-        }
     }
 
     /// <summary>
@@ -81,28 +75,33 @@ public partial class ClassesPanel : UserControl
             return;
         }
 
-        // Load classes into 8 slots
+        // Load only active classes (not empty slots)
+        _classSlots.Clear();
         int totalLevel = 0;
-        for (int i = 0; i < MaxClassSlots; i++)
+
+        for (int i = 0; i < creature.ClassList.Count && i < MaxClassSlots; i++)
         {
-            var slot = _classSlots[i];
-            if (i < creature.ClassList.Count)
+            var creatureClass = creature.ClassList[i];
+            _classSlots.Add(new ClassSlotViewModel
             {
-                var creatureClass = creature.ClassList[i];
-                slot.ClassId = creatureClass.Class;
-                slot.ClassName = GetClassName(creatureClass.Class);
-                slot.Level = creatureClass.ClassLevel;
-                slot.HitDie = GetClassHitDie(creatureClass.Class);
-                slot.HasClass = true;
-                totalLevel += creatureClass.ClassLevel;
-            }
-            else
-            {
-                slot.ClearClass();
-            }
+                SlotIndex = i,
+                ClassId = creatureClass.Class,
+                ClassName = GetClassName(creatureClass.Class),
+                Level = creatureClass.ClassLevel,
+                HitDie = GetClassHitDie(creatureClass.Class)
+            });
+            totalLevel += creatureClass.ClassLevel;
         }
 
         SetText(_totalLevelText, $"Total Level: {totalLevel}");
+
+        // Show/hide "Add Class" button based on whether more classes can be added
+        if (_addClassButton != null)
+            _addClassButton.IsVisible = creature.ClassList.Count < MaxClassSlots;
+
+        // Show "No classes" message if empty
+        if (_noClassesText != null)
+            _noClassesText.IsVisible = creature.ClassList.Count == 0;
 
         // Load alignment
         LoadAlignment(creature.GoodEvil, creature.LawfulChaotic);
@@ -119,13 +118,16 @@ public partial class ClassesPanel : UserControl
 
     public void ClearPanel()
     {
-        // Reset all class slots to empty
-        foreach (var slot in _classSlots)
-        {
-            slot.ClearClass();
-        }
+        _classSlots.Clear();
 
         SetText(_totalLevelText, "Total Level: 0");
+
+        if (_addClassButton != null)
+            _addClassButton.IsVisible = true;
+
+        if (_noClassesText != null)
+            _noClassesText.IsVisible = true;
+
         LoadAlignment(50, 50);
         SetText(_raceText, "Unknown");
         SetText(_genderText, "Unknown");
@@ -325,74 +327,16 @@ public partial class ClassesPanel : UserControl
 }
 
 /// <summary>
-/// ViewModel for a class slot in the 8-slot class display.
+/// ViewModel for an active class slot.
 /// </summary>
-public class ClassSlotViewModel : System.ComponentModel.INotifyPropertyChanged
+public class ClassSlotViewModel
 {
-    private int _slotIndex;
-    private int _classId;
-    private string _className = "";
-    private int _level;
-    private string _hitDie = "";
-    private bool _hasClass;
-
-    public int SlotIndex
-    {
-        get => _slotIndex;
-        set { _slotIndex = value; OnPropertyChanged(nameof(SlotIndex)); OnPropertyChanged(nameof(SlotNumber)); }
-    }
-
+    public int SlotIndex { get; set; }
     public string SlotNumber => $"{SlotIndex + 1}.";
-
-    public int ClassId
-    {
-        get => _classId;
-        set { _classId = value; OnPropertyChanged(nameof(ClassId)); }
-    }
-
-    public string ClassName
-    {
-        get => _className;
-        set { _className = value; OnPropertyChanged(nameof(ClassName)); }
-    }
-
-    public int Level
-    {
-        get => _level;
-        set { _level = value; OnPropertyChanged(nameof(Level)); OnPropertyChanged(nameof(LevelDisplay)); }
-    }
-
+    public int ClassId { get; set; }
+    public string ClassName { get; set; } = "";
+    public int Level { get; set; }
     public string LevelDisplay => $"Lv {Level}";
-
-    public string HitDie
-    {
-        get => _hitDie;
-        set { _hitDie = value; OnPropertyChanged(nameof(HitDie)); OnPropertyChanged(nameof(HitDieDisplay)); }
-    }
-
+    public string HitDie { get; set; } = "";
     public string HitDieDisplay => string.IsNullOrEmpty(HitDie) ? "" : $"Hit Die: {HitDie}";
-
-    public bool HasClass
-    {
-        get => _hasClass;
-        set { _hasClass = value; OnPropertyChanged(nameof(HasClass)); OnPropertyChanged(nameof(Opacity)); }
-    }
-
-    public double Opacity => HasClass ? 1.0 : 0.5;
-
-    public void ClearClass()
-    {
-        ClassId = 0;
-        ClassName = "";
-        Level = 0;
-        HitDie = "";
-        HasClass = false;
-    }
-
-    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
-
-    protected void OnPropertyChanged(string propertyName)
-    {
-        PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
-    }
 }
