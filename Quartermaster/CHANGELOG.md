@@ -18,7 +18,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Add the Classes & Levels panel displaying character class progression and alignment.
 
 #### Added
-- TBD
+- **8 Class Slots Display** - Shows all 8 class slots per Beamdog EE standard
+  - Filled slots show class name, level, and hit die
+  - Empty slots shown dimmed with "(Empty)" placeholder
+  - Level +/- buttons as disabled placeholders for future editing
+  - Total level calculation displayed
+- **Alignment Display** - Shows character alignment with visual progress bars
+  - Good-Evil axis with numeric value (0-100)
+  - Lawful-Chaotic axis with numeric value (0-100)
+  - Alignment name calculated from axis values (e.g., "Lawful Good", "True Neutral")
+- **Auto-Levelup Package Display** - Shows the creature's StartingPackage
+  - Package name resolved from packages.2da (hardcoded fallbacks)
+- **Levelup Wizard Placeholder** - Disabled button for future levelup wizard sprint
+- **Identity Section** - Race, gender, subrace, and deity display
+- **CreatureDisplayService Integration** - ClassesPanel now uses 2DA/TLK lookups when available
+
+#### Changed
+- ClassesPanel uses CreatureDisplayService for class/race/gender name resolution
+- Hit die display per class (d4-d12 based on class type)
 
 ---
 

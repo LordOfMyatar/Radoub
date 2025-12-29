@@ -97,6 +97,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize stats panel with display service
         StatsPanelContent.SetDisplayService(_creatureDisplayService);
 
+        // Initialize classes panel with display service for 2DA/TLK lookups
+        ClassesPanelContent.SetDisplayService(_creatureDisplayService);
+
         // Initialize feats panel with display service for 2DA/TLK lookups
         FeatsPanelContent.SetDisplayService(_creatureDisplayService);
 
