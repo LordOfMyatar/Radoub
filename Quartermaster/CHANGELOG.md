@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.9-alpha] - 2025-12-28
+**Branch**: `quartermaster/sprint/feats-panel` | **PR**: #TBD
+
+### Sprint: Feats Panel with Search & Filter (#615)
+
+Add the Feats panel with robust search and filtering - addressing Aurora Toolset's major pain point.
+
+---
+
 ## [0.1.8-alpha] - 2025-12-28
 **Branch**: `quartermaster/sprint/skills-panel` | **PR**: #628
 
