@@ -20,8 +20,8 @@ Add the Skills panel displaying all skill ranks for the character.
 #### Added
 - **Skills List Display** - Shows all skills from skills.2da with columns:
   - Skill Name with key ability indicator (STR, DEX, INT, WIS, CHA, CON)
-  - Progress bar showing rank (max 40)
-  - Numeric rank value (0 = "-")
+  - Rank value (base skill points invested)
+  - Total value (Rank + Ability Modifier)
   - +/- buttons as disabled placeholders for future editing
 - **Class Skill Highlighting** - Distinguishes class skills from cross-class skills
   - Visual indicator (● for class skill, ○ for cross-class)
