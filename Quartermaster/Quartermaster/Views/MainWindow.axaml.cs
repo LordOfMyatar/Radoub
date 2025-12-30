@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
 using Quartermaster.Views.Panels;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Quartermaster.Views.Helpers;
 using Radoub.Formats.Services;
@@ -111,6 +112,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Initialize advanced panel with display service for appearance lookups
         AdvancedPanelContent.SetDisplayService(_creatureDisplayService);
+
+        // Initialize scripts panel with conversation resolver
+        ScriptsPanelContent.SetConversationResolver(ResolveConversationPath);
 
         // Initialize inventory panel with shared equipment slots and game data
         InventoryPanelContent.InitializeSlots(_equipmentSlots);
@@ -498,4 +502,45 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    #region Resource Resolution
+
+    /// <summary>
+    /// Resolve a conversation resref to a file path.
+    /// Checks Override folder first, then module directory where creature was loaded.
+    /// </summary>
+    private string? ResolveConversationPath(string resRef)
+    {
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        var dlgFilename = resRef + ".dlg";
+
+        // Try to find in same directory as the loaded creature file
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            var creatureDir = Path.GetDirectoryName(_currentFilePath);
+            if (!string.IsNullOrEmpty(creatureDir))
+            {
+                var localPath = Path.Combine(creatureDir, dlgFilename);
+                if (File.Exists(localPath))
+                    return localPath;
+            }
+        }
+
+        // Try Override folder via game data service
+        if (_gameDataService.IsConfigured)
+        {
+            var resourceInfo = _gameDataService.ListResources(ResourceTypes.Dlg)
+                .FirstOrDefault(r => r.ResRef.Equals(resRef, StringComparison.OrdinalIgnoreCase)
+                                     && r.Source == GameResourceSource.Override);
+
+            if (resourceInfo?.SourcePath != null && File.Exists(resourceInfo.SourcePath))
+                return resourceInfo.SourcePath;
+        }
+
+        return null;
+    }
+
+    #endregion
 }
