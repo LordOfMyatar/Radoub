@@ -2,10 +2,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="800"
+             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="900"
              x:Class="Quartermaster.Views.Panels.AdvancedPanel">
 
-    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,45,20">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="20">
                 <!-- Header -->
@@ -69,7 +69,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Appearance" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
                             <!-- Appearance Type Dropdown -->
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Appearance:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
@@ -96,142 +96,172 @@
                                 <TextBlock x:Name="PortraitIdText" Text="(ID: 0)" VerticalAlignment="Center"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             </StackPanel>
-
-                            <!-- Tail -->
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Tail:"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="TailText" Text="None" VerticalAlignment="Center"/>
-
-                            <!-- Wings -->
-                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Wings:"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="WingsText" Text="None" VerticalAlignment="Center"/>
                         </Grid>
                     </StackPanel>
                 </Border>
 
-                <!-- Body Parts Section (visible only for part-based appearances) -->
+                <!-- Body Parts Section (always visible, grayed when static appearance) -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"
-                        x:Name="BodyPartsSection"
-                        IsVisible="False">
+                        x:Name="BodyPartsSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Body Parts (Dynamic Appearance)" FontWeight="SemiBold" FontSize="14"/>
-                        <TextBlock Text="Part-based appearance allows customization of individual body components."
-                                   FontSize="11"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                   Margin="0,0,0,5"/>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Body Parts" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock x:Name="BodyPartsStatusText" Text="(Dynamic Appearance)"
+                                       FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
 
-                        <!-- Body part grid - 3 columns -->
-                        <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                              RowSpacing="8" ColumnSpacing="20">
+                        <!-- Body parts content - disabled for static appearances -->
+                        <StackPanel x:Name="BodyPartsContent" Spacing="10">
+                            <!-- Main body part grid - simplified 2-column layout -->
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                                  RowSpacing="6" ColumnSpacing="15">
 
-                            <!-- Row 0: Head (centered) -->
-                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
-                                <TextBlock Text="Head" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="HeadText" Text="pMo0_HEAD007" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
+                                <!-- Row 0: Head -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Head:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="HeadComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
 
-                            <!-- Row 1: Neck (centered) -->
-                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
-                                <TextBlock Text="Neck" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="NeckText" Text="pMo0_NECK001" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
+                                <!-- Row 1: Neck -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Neck:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="NeckComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
 
-                            <!-- Row 2: Shoulders -->
-                            <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
-                                <TextBlock Text="Left Shoulder" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="LShoulText" Text="0" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
-                            <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
-                                <TextBlock Text="Torso" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="TorsoText" Text="pMo0_CHEST00" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
-                            <StackPanel Grid.Row="2" Grid.Column="2" Spacing="2">
-                                <TextBlock Text="Right Shoulder" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="RShoulText" Text="0" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
+                                <!-- Row 2: Torso -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Torso:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="TorsoComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
 
-                            <!-- Row 3: Biceps -->
-                            <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
-                                <TextBlock Text="Left Bicep" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="LBicepText" Text="pMo0_BICEPL00" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
-                            <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
-                                <TextBlock Text="Pelvis" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="PelvisText" Text="pMo0_PELVIS00" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
-                            <StackPanel Grid.Row="3" Grid.Column="2" Spacing="2">
-                                <TextBlock Text="Right Bicep" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="RBicepText" Text="pMo0_BICEPR01" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
+                                <!-- Row 3: Pelvis -->
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Pelvis:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PelvisComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
 
-                            <!-- Row 4: Forearms -->
-                            <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
-                                <TextBlock Text="Left Forearm" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="LFArmText" Text="pMo0_FOREL00" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
-                            <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
-                                <TextBlock Text="Belt" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="BeltText" Text="0" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
-                            <StackPanel Grid.Row="4" Grid.Column="2" Spacing="2">
-                                <TextBlock Text="Right Forearm" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="RFArmText" Text="pMo0_FORER00" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
+                                <!-- Row 4: Belt -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Belt:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="4" Grid.Column="1" x:Name="BeltComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
 
-                            <!-- Row 5: Hands and Thighs -->
-                            <StackPanel Grid.Row="5" Grid.Column="0" Spacing="2">
-                                <TextBlock Text="Left Hand" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="LHandText" Text="pMo0_HANDL00" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
-                            <StackPanel Grid.Row="5" Grid.Column="1">
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                                    <StackPanel Grid.Column="0" Spacing="2">
-                                        <TextBlock Text="Left Thigh" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock x:Name="LThighText" Text="pMo0_LEGL001" FontFamily="Consolas" FontSize="11"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Spacing="2">
-                                        <TextBlock Text="Right Thigh" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock x:Name="RThighText" Text="pMo0_LEGR001" FontFamily="Consolas" FontSize="11"/>
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                            <StackPanel Grid.Row="5" Grid.Column="2" Spacing="2">
-                                <TextBlock Text="Right Hand" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="RHandText" Text="pMo0_HANDR01" FontFamily="Consolas" FontSize="11"/>
-                            </StackPanel>
+                                <!-- Row 5: Tail -->
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Tail:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="5" Grid.Column="1" x:Name="TailComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
 
-                            <!-- Row 6: Shins and Feet -->
-                            <StackPanel Grid.Row="6" Grid.Column="0">
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                                    <StackPanel Grid.Column="0" Spacing="2">
-                                        <TextBlock Text="Left Shin" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock x:Name="LShinText" Text="pMo0_SHINL00" FontFamily="Consolas" FontSize="11"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Spacing="2">
-                                        <TextBlock Text="Left Foot" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock x:Name="LFootText" Text="pMo0_FOOTL00" FontFamily="Consolas" FontSize="11"/>
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                            <StackPanel Grid.Row="6" Grid.Column="2">
-                                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                                    <StackPanel Grid.Column="0" Spacing="2">
-                                        <TextBlock Text="Right Shin" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock x:Name="RShinText" Text="pMo0_SHINR00" FontFamily="Consolas" FontSize="11"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Spacing="2">
-                                        <TextBlock Text="Right Foot" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock x:Name="RFootText" Text="pMo0_FOOTR00" FontFamily="Consolas" FontSize="11"/>
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Grid>
+                                <!-- Row 6: Wings -->
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Wings:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="6" Grid.Column="1" x:Name="WingsComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                            </Grid>
+
+                            <!-- Paired body parts (Left/Right) -->
+                            <TextBlock Text="Limbs" FontWeight="SemiBold" FontSize="12" Margin="0,10,0,5"/>
+                            <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                                  RowSpacing="6" ColumnSpacing="10">
+
+                                <!-- Row 0: Shoulders -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="L Shoulder:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="LShoulComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="R Shoulder:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="0" Grid.Column="3" x:Name="RShoulComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+
+                                <!-- Row 1: Biceps -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="L Bicep:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="LBicepComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="R Bicep:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="1" Grid.Column="3" x:Name="RBicepComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+
+                                <!-- Row 2: Forearms -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="L Forearm:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="LFArmComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="R Forearm:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="2" Grid.Column="3" x:Name="RFArmComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+
+                                <!-- Row 3: Hands -->
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="L Hand:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="1" x:Name="LHandComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                <TextBlock Grid.Row="3" Grid.Column="2" Text="R Hand:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="3" Grid.Column="3" x:Name="RHandComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+
+                                <!-- Row 4: Thighs -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="L Thigh:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="4" Grid.Column="1" x:Name="LThighComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                <TextBlock Grid.Row="4" Grid.Column="2" Text="R Thigh:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="4" Grid.Column="3" x:Name="RThighComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+
+                                <!-- Row 5: Shins -->
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="L Shin:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="5" Grid.Column="1" x:Name="LShinComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                <TextBlock Grid.Row="5" Grid.Column="2" Text="R Shin:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Row="5" Grid.Column="3" x:Name="RShinComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                            </Grid>
+
+                            <!-- Feet row -->
+                            <Grid ColumnDefinitions="Auto,*,Auto,*" RowSpacing="6" ColumnSpacing="10">
+                                <TextBlock Grid.Column="0" Text="L Foot:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Column="1" x:Name="LFootComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="R Foot:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <ComboBox Grid.Column="3" x:Name="RFootComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -244,62 +274,13 @@
                         <TextBlock Text="Flags" FontWeight="SemiBold" FontSize="14"/>
 
                         <WrapPanel Orientation="Horizontal">
-                            <Border Margin="0,0,8,8" Padding="8,4"
-                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    CornerRadius="4">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock x:Name="PlotIcon" Text="[  ]" FontFamily="Consolas"/>
-                                    <TextBlock Text="Plot"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="0,0,8,8" Padding="8,4"
-                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    CornerRadius="4">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock x:Name="ImmortalIcon" Text="[  ]" FontFamily="Consolas"/>
-                                    <TextBlock Text="Immortal"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="0,0,8,8" Padding="8,4"
-                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    CornerRadius="4">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock x:Name="NoPermDeathIcon" Text="[  ]" FontFamily="Consolas"/>
-                                    <TextBlock Text="No Perm Death"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="0,0,8,8" Padding="8,4"
-                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    CornerRadius="4">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock x:Name="IsPCIcon" Text="[  ]" FontFamily="Consolas"/>
-                                    <TextBlock Text="Is PC"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="0,0,8,8" Padding="8,4"
-                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    CornerRadius="4">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock x:Name="DisarmableIcon" Text="[  ]" FontFamily="Consolas"/>
-                                    <TextBlock Text="Disarmable"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="0,0,8,8" Padding="8,4"
-                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    CornerRadius="4">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock x:Name="LootableIcon" Text="[  ]" FontFamily="Consolas"/>
-                                    <TextBlock Text="Lootable"/>
-                                </StackPanel>
-                            </Border>
-                            <Border Margin="0,0,8,8" Padding="8,4"
-                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    CornerRadius="4">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock x:Name="InterruptableIcon" Text="[  ]" FontFamily="Consolas"/>
-                                    <TextBlock Text="Interruptable"/>
-                                </StackPanel>
-                            </Border>
+                            <CheckBox x:Name="PlotCheckBox" Content="Plot" Margin="0,0,15,8"/>
+                            <CheckBox x:Name="ImmortalCheckBox" Content="Immortal" Margin="0,0,15,8"/>
+                            <CheckBox x:Name="NoPermDeathCheckBox" Content="No Perm Death" Margin="0,0,15,8"/>
+                            <CheckBox x:Name="IsPCCheckBox" Content="Is PC" Margin="0,0,15,8"/>
+                            <CheckBox x:Name="DisarmableCheckBox" Content="Disarmable" Margin="0,0,15,8"/>
+                            <CheckBox x:Name="LootableCheckBox" Content="Lootable" Margin="0,0,15,8"/>
+                            <CheckBox x:Name="InterruptableCheckBox" Content="Interruptable" Margin="0,0,15,8"/>
                         </WrapPanel>
                     </StackPanel>
                 </Border>

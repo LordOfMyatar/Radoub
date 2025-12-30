@@ -23,39 +23,45 @@ public partial class AdvancedPanel : UserControl
     private ComboBox? _phenotypeComboBox;
     private TextBlock? _portraitText;
     private TextBlock? _portraitIdText;
-    private TextBlock? _tailText;
-    private TextBlock? _wingsText;
 
     // Body parts section
     private Border? _bodyPartsSection;
-    private TextBlock? _headText;
-    private TextBlock? _neckText;
-    private TextBlock? _torsoText;
-    private TextBlock? _pelvisText;
-    private TextBlock? _beltText;
-    private TextBlock? _lShoulText;
-    private TextBlock? _rShoulText;
-    private TextBlock? _lBicepText;
-    private TextBlock? _rBicepText;
-    private TextBlock? _lFArmText;
-    private TextBlock? _rFArmText;
-    private TextBlock? _lHandText;
-    private TextBlock? _rHandText;
-    private TextBlock? _lThighText;
-    private TextBlock? _rThighText;
-    private TextBlock? _lShinText;
-    private TextBlock? _rShinText;
-    private TextBlock? _lFootText;
-    private TextBlock? _rFootText;
+    private StackPanel? _bodyPartsContent;
+    private TextBlock? _bodyPartsStatusText;
 
-    // Flag icons
-    private TextBlock? _plotIcon;
-    private TextBlock? _immortalIcon;
-    private TextBlock? _noPermDeathIcon;
-    private TextBlock? _isPCIcon;
-    private TextBlock? _disarmableIcon;
-    private TextBlock? _lootableIcon;
-    private TextBlock? _interruptableIcon;
+    // Body part combos - central
+    private ComboBox? _headComboBox;
+    private ComboBox? _neckComboBox;
+    private ComboBox? _torsoComboBox;
+    private ComboBox? _pelvisComboBox;
+    private ComboBox? _beltComboBox;
+    private ComboBox? _tailComboBox;
+    private ComboBox? _wingsComboBox;
+
+    // Body part combos - limbs
+    private ComboBox? _lShoulComboBox;
+    private ComboBox? _rShoulComboBox;
+    private ComboBox? _lBicepComboBox;
+    private ComboBox? _rBicepComboBox;
+    private ComboBox? _lFArmComboBox;
+    private ComboBox? _rFArmComboBox;
+    private ComboBox? _lHandComboBox;
+    private ComboBox? _rHandComboBox;
+    private ComboBox? _lThighComboBox;
+    private ComboBox? _rThighComboBox;
+    private ComboBox? _lShinComboBox;
+    private ComboBox? _rShinComboBox;
+    private ComboBox? _lFootComboBox;
+    private ComboBox? _rFootComboBox;
+
+    // Flag checkboxes
+    private CheckBox? _plotCheckBox;
+    private CheckBox? _immortalCheckBox;
+    private CheckBox? _noPermDeathCheckBox;
+    private CheckBox? _isPCCheckBox;
+    private CheckBox? _disarmableCheckBox;
+    private CheckBox? _lootableCheckBox;
+    private CheckBox? _interruptableCheckBox;
 
     // Behavior
     private TextBlock? _factionText;
@@ -65,9 +71,6 @@ public partial class AdvancedPanel : UserControl
     private TextBlock? _decayTimeText;
     private TextBlock? _bodyBagText;
 
-    private const string CheckedIcon = "[X]";
-    private const string UncheckedIcon = "[  ]";
-
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
     private List<AppearanceInfo>? _appearances;
@@ -75,6 +78,7 @@ public partial class AdvancedPanel : UserControl
     private bool _isLoading;
 
     public event EventHandler? CommentChanged;
+    public event EventHandler? FlagsChanged;
 
     public AdvancedPanel()
     {
@@ -97,39 +101,45 @@ public partial class AdvancedPanel : UserControl
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox");
         _portraitText = this.FindControl<TextBlock>("PortraitText");
         _portraitIdText = this.FindControl<TextBlock>("PortraitIdText");
-        _tailText = this.FindControl<TextBlock>("TailText");
-        _wingsText = this.FindControl<TextBlock>("WingsText");
 
         // Body parts section
         _bodyPartsSection = this.FindControl<Border>("BodyPartsSection");
-        _headText = this.FindControl<TextBlock>("HeadText");
-        _neckText = this.FindControl<TextBlock>("NeckText");
-        _torsoText = this.FindControl<TextBlock>("TorsoText");
-        _pelvisText = this.FindControl<TextBlock>("PelvisText");
-        _beltText = this.FindControl<TextBlock>("BeltText");
-        _lShoulText = this.FindControl<TextBlock>("LShoulText");
-        _rShoulText = this.FindControl<TextBlock>("RShoulText");
-        _lBicepText = this.FindControl<TextBlock>("LBicepText");
-        _rBicepText = this.FindControl<TextBlock>("RBicepText");
-        _lFArmText = this.FindControl<TextBlock>("LFArmText");
-        _rFArmText = this.FindControl<TextBlock>("RFArmText");
-        _lHandText = this.FindControl<TextBlock>("LHandText");
-        _rHandText = this.FindControl<TextBlock>("RHandText");
-        _lThighText = this.FindControl<TextBlock>("LThighText");
-        _rThighText = this.FindControl<TextBlock>("RThighText");
-        _lShinText = this.FindControl<TextBlock>("LShinText");
-        _rShinText = this.FindControl<TextBlock>("RShinText");
-        _lFootText = this.FindControl<TextBlock>("LFootText");
-        _rFootText = this.FindControl<TextBlock>("RFootText");
+        _bodyPartsContent = this.FindControl<StackPanel>("BodyPartsContent");
+        _bodyPartsStatusText = this.FindControl<TextBlock>("BodyPartsStatusText");
 
-        // Flag icons
-        _plotIcon = this.FindControl<TextBlock>("PlotIcon");
-        _immortalIcon = this.FindControl<TextBlock>("ImmortalIcon");
-        _noPermDeathIcon = this.FindControl<TextBlock>("NoPermDeathIcon");
-        _isPCIcon = this.FindControl<TextBlock>("IsPCIcon");
-        _disarmableIcon = this.FindControl<TextBlock>("DisarmableIcon");
-        _lootableIcon = this.FindControl<TextBlock>("LootableIcon");
-        _interruptableIcon = this.FindControl<TextBlock>("InterruptableIcon");
+        // Body part combos - central
+        _headComboBox = this.FindControl<ComboBox>("HeadComboBox");
+        _neckComboBox = this.FindControl<ComboBox>("NeckComboBox");
+        _torsoComboBox = this.FindControl<ComboBox>("TorsoComboBox");
+        _pelvisComboBox = this.FindControl<ComboBox>("PelvisComboBox");
+        _beltComboBox = this.FindControl<ComboBox>("BeltComboBox");
+        _tailComboBox = this.FindControl<ComboBox>("TailComboBox");
+        _wingsComboBox = this.FindControl<ComboBox>("WingsComboBox");
+
+        // Body part combos - limbs
+        _lShoulComboBox = this.FindControl<ComboBox>("LShoulComboBox");
+        _rShoulComboBox = this.FindControl<ComboBox>("RShoulComboBox");
+        _lBicepComboBox = this.FindControl<ComboBox>("LBicepComboBox");
+        _rBicepComboBox = this.FindControl<ComboBox>("RBicepComboBox");
+        _lFArmComboBox = this.FindControl<ComboBox>("LFArmComboBox");
+        _rFArmComboBox = this.FindControl<ComboBox>("RFArmComboBox");
+        _lHandComboBox = this.FindControl<ComboBox>("LHandComboBox");
+        _rHandComboBox = this.FindControl<ComboBox>("RHandComboBox");
+        _lThighComboBox = this.FindControl<ComboBox>("LThighComboBox");
+        _rThighComboBox = this.FindControl<ComboBox>("RThighComboBox");
+        _lShinComboBox = this.FindControl<ComboBox>("LShinComboBox");
+        _rShinComboBox = this.FindControl<ComboBox>("RShinComboBox");
+        _lFootComboBox = this.FindControl<ComboBox>("LFootComboBox");
+        _rFootComboBox = this.FindControl<ComboBox>("RFootComboBox");
+
+        // Flag checkboxes
+        _plotCheckBox = this.FindControl<CheckBox>("PlotCheckBox");
+        _immortalCheckBox = this.FindControl<CheckBox>("ImmortalCheckBox");
+        _noPermDeathCheckBox = this.FindControl<CheckBox>("NoPermDeathCheckBox");
+        _isPCCheckBox = this.FindControl<CheckBox>("IsPCCheckBox");
+        _disarmableCheckBox = this.FindControl<CheckBox>("DisarmableCheckBox");
+        _lootableCheckBox = this.FindControl<CheckBox>("LootableCheckBox");
+        _interruptableCheckBox = this.FindControl<CheckBox>("InterruptableCheckBox");
 
         // Behavior
         _factionText = this.FindControl<TextBlock>("FactionText");
@@ -148,12 +158,42 @@ public partial class AdvancedPanel : UserControl
             _commentTextBox.TextChanged += OnCommentTextChanged;
         if (_appearanceComboBox != null)
             _appearanceComboBox.SelectionChanged += OnAppearanceSelectionChanged;
+
+        // Wire up flag checkbox events
+        WireUpFlagCheckboxes();
+    }
+
+    private void WireUpFlagCheckboxes()
+    {
+        void WireFlag(CheckBox? cb, Action<bool> setter)
+        {
+            if (cb != null)
+            {
+                cb.IsCheckedChanged += (s, e) =>
+                {
+                    if (!_isLoading && _currentCreature != null)
+                    {
+                        setter(cb.IsChecked ?? false);
+                        FlagsChanged?.Invoke(this, EventArgs.Empty);
+                    }
+                };
+            }
+        }
+
+        WireFlag(_plotCheckBox, v => { if (_currentCreature != null) _currentCreature.Plot = v; });
+        WireFlag(_immortalCheckBox, v => { if (_currentCreature != null) _currentCreature.IsImmortal = v; });
+        WireFlag(_noPermDeathCheckBox, v => { if (_currentCreature != null) _currentCreature.NoPermDeath = v; });
+        WireFlag(_isPCCheckBox, v => { if (_currentCreature != null) _currentCreature.IsPC = v; });
+        WireFlag(_disarmableCheckBox, v => { if (_currentCreature != null) _currentCreature.Disarmable = v; });
+        WireFlag(_lootableCheckBox, v => { if (_currentCreature != null) _currentCreature.Lootable = v; });
+        WireFlag(_interruptableCheckBox, v => { if (_currentCreature != null) _currentCreature.Interruptable = v; });
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
         LoadAppearanceData();
+        LoadBodyPartData();
     }
 
     private void LoadAppearanceData()
@@ -198,6 +238,75 @@ public partial class AdvancedPanel : UserControl
         _isLoading = false;
     }
 
+    private void LoadBodyPartData()
+    {
+        if (_displayService == null) return;
+
+        // For now, populate with numeric values 0-20
+        // TODO: Load from model_*.2da files when available
+        void PopulateBodyPartCombo(ComboBox? combo, int max = 20)
+        {
+            if (combo == null) return;
+            combo.Items.Clear();
+            for (int i = 0; i <= max; i++)
+            {
+                combo.Items.Add(new ComboBoxItem { Content = i.ToString(), Tag = (byte)i });
+            }
+        }
+
+        PopulateBodyPartCombo(_headComboBox, 30);
+        PopulateBodyPartCombo(_neckComboBox);
+        PopulateBodyPartCombo(_torsoComboBox);
+        PopulateBodyPartCombo(_pelvisComboBox);
+        PopulateBodyPartCombo(_beltComboBox);
+
+        // Tail/Wings from 2DA
+        LoadTailWingsData();
+
+        // Limbs
+        PopulateBodyPartCombo(_lShoulComboBox);
+        PopulateBodyPartCombo(_rShoulComboBox);
+        PopulateBodyPartCombo(_lBicepComboBox);
+        PopulateBodyPartCombo(_rBicepComboBox);
+        PopulateBodyPartCombo(_lFArmComboBox);
+        PopulateBodyPartCombo(_rFArmComboBox);
+        PopulateBodyPartCombo(_lHandComboBox);
+        PopulateBodyPartCombo(_rHandComboBox);
+        PopulateBodyPartCombo(_lThighComboBox);
+        PopulateBodyPartCombo(_rThighComboBox);
+        PopulateBodyPartCombo(_lShinComboBox);
+        PopulateBodyPartCombo(_rShinComboBox);
+        PopulateBodyPartCombo(_lFootComboBox);
+        PopulateBodyPartCombo(_rFootComboBox);
+    }
+
+    private void LoadTailWingsData()
+    {
+        if (_displayService == null) return;
+
+        // Load tails
+        if (_tailComboBox != null)
+        {
+            _tailComboBox.Items.Clear();
+            var tails = _displayService.GetAllTails();
+            foreach (var (id, name) in tails)
+            {
+                _tailComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
+            }
+        }
+
+        // Load wings
+        if (_wingsComboBox != null)
+        {
+            _wingsComboBox.Items.Clear();
+            var wings = _displayService.GetAllWings();
+            foreach (var (id, name) in wings)
+            {
+                _wingsComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
+            }
+        }
+    }
+
     public void LoadCreature(UtcFile? creature)
     {
         _isLoading = true;
@@ -226,35 +335,26 @@ public partial class AdvancedPanel : UserControl
             var portraitResRef = _displayService.GetPortraitResRef(creature.PortraitId);
             SetText(_portraitText, portraitResRef ?? $"Portrait {creature.PortraitId}");
             SetText(_portraitIdText, $"(ID: {creature.PortraitId})");
-            SetText(_tailText, _displayService.GetTailName(creature.Tail));
-            SetText(_wingsText, _displayService.GetWingName(creature.Wings));
         }
         else
         {
             SetText(_portraitText, $"Portrait {creature.PortraitId}");
             SetText(_portraitIdText, $"(ID: {creature.PortraitId})");
-            SetText(_tailText, creature.Tail == 0 ? "None" : creature.Tail.ToString());
-            SetText(_wingsText, creature.Wings == 0 ? "None" : creature.Wings.ToString());
         }
 
-        // Body parts (show section if part-based)
+        // Body parts - update enabled state and values
         var isPartBased = _displayService?.IsPartBasedAppearance(creature.AppearanceType) ?? false;
-        if (_bodyPartsSection != null)
-            _bodyPartsSection.IsVisible = isPartBased;
-
-        if (isPartBased)
-        {
-            LoadBodyParts(creature);
-        }
+        UpdateBodyPartsEnabledState(isPartBased);
+        LoadBodyPartValues(creature);
 
         // Flags
-        SetFlag(_plotIcon, creature.Plot);
-        SetFlag(_immortalIcon, creature.IsImmortal);
-        SetFlag(_noPermDeathIcon, creature.NoPermDeath);
-        SetFlag(_isPCIcon, creature.IsPC);
-        SetFlag(_disarmableIcon, creature.Disarmable);
-        SetFlag(_lootableIcon, creature.Lootable);
-        SetFlag(_interruptableIcon, creature.Interruptable);
+        SetCheckBox(_plotCheckBox, creature.Plot);
+        SetCheckBox(_immortalCheckBox, creature.IsImmortal);
+        SetCheckBox(_noPermDeathCheckBox, creature.NoPermDeath);
+        SetCheckBox(_isPCCheckBox, creature.IsPC);
+        SetCheckBox(_disarmableCheckBox, creature.Disarmable);
+        SetCheckBox(_lootableCheckBox, creature.Lootable);
+        SetCheckBox(_interruptableCheckBox, creature.Interruptable);
 
         // Behavior
         SetText(_factionText, creature.FactionID.ToString());
@@ -267,27 +367,65 @@ public partial class AdvancedPanel : UserControl
         _isLoading = false;
     }
 
-    private void LoadBodyParts(UtcFile creature)
+    private void UpdateBodyPartsEnabledState(bool isPartBased)
     {
-        SetText(_headText, creature.AppearanceHead.ToString());
-        SetText(_neckText, creature.BodyPart_Neck.ToString());
-        SetText(_torsoText, creature.BodyPart_Torso.ToString());
-        SetText(_pelvisText, creature.BodyPart_Pelvis.ToString());
-        SetText(_beltText, creature.BodyPart_Belt.ToString());
-        SetText(_lShoulText, creature.BodyPart_LShoul.ToString());
-        SetText(_rShoulText, creature.BodyPart_RShoul.ToString());
-        SetText(_lBicepText, creature.BodyPart_LBicep.ToString());
-        SetText(_rBicepText, creature.BodyPart_RBicep.ToString());
-        SetText(_lFArmText, creature.BodyPart_LFArm.ToString());
-        SetText(_rFArmText, creature.BodyPart_RFArm.ToString());
-        SetText(_lHandText, creature.BodyPart_LHand.ToString());
-        SetText(_rHandText, creature.BodyPart_RHand.ToString());
-        SetText(_lThighText, creature.BodyPart_LThigh.ToString());
-        SetText(_rThighText, creature.BodyPart_RThigh.ToString());
-        SetText(_lShinText, creature.BodyPart_LShin.ToString());
-        SetText(_rShinText, creature.BodyPart_RShin.ToString());
-        SetText(_lFootText, creature.BodyPart_LFoot.ToString());
-        SetText(_rFootText, creature.BodyPart_RFoot.ToString());
+        if (_bodyPartsContent != null)
+            _bodyPartsContent.IsEnabled = isPartBased;
+
+        if (_bodyPartsStatusText != null)
+        {
+            _bodyPartsStatusText.Text = isPartBased
+                ? "(Dynamic Appearance)"
+                : "(Static Appearance - body parts not editable)";
+        }
+
+        // Set opacity for visual feedback
+        if (_bodyPartsContent != null)
+            _bodyPartsContent.Opacity = isPartBased ? 1.0 : 0.5;
+    }
+
+    private void LoadBodyPartValues(UtcFile creature)
+    {
+        SelectComboByTag(_headComboBox, creature.AppearanceHead);
+        SelectComboByTag(_neckComboBox, creature.BodyPart_Neck);
+        SelectComboByTag(_torsoComboBox, creature.BodyPart_Torso);
+        SelectComboByTag(_pelvisComboBox, creature.BodyPart_Pelvis);
+        SelectComboByTag(_beltComboBox, creature.BodyPart_Belt);
+        SelectComboByTag(_tailComboBox, creature.Tail);
+        SelectComboByTag(_wingsComboBox, creature.Wings);
+
+        SelectComboByTag(_lShoulComboBox, creature.BodyPart_LShoul);
+        SelectComboByTag(_rShoulComboBox, creature.BodyPart_RShoul);
+        SelectComboByTag(_lBicepComboBox, creature.BodyPart_LBicep);
+        SelectComboByTag(_rBicepComboBox, creature.BodyPart_RBicep);
+        SelectComboByTag(_lFArmComboBox, creature.BodyPart_LFArm);
+        SelectComboByTag(_rFArmComboBox, creature.BodyPart_RFArm);
+        SelectComboByTag(_lHandComboBox, creature.BodyPart_LHand);
+        SelectComboByTag(_rHandComboBox, creature.BodyPart_RHand);
+        SelectComboByTag(_lThighComboBox, creature.BodyPart_LThigh);
+        SelectComboByTag(_rThighComboBox, creature.BodyPart_RThigh);
+        SelectComboByTag(_lShinComboBox, creature.BodyPart_LShin);
+        SelectComboByTag(_rShinComboBox, creature.BodyPart_RShin);
+        SelectComboByTag(_lFootComboBox, creature.BodyPart_LFoot);
+        SelectComboByTag(_rFootComboBox, creature.BodyPart_RFoot);
+    }
+
+    private void SelectComboByTag(ComboBox? combo, byte value)
+    {
+        if (combo == null) return;
+
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            if (combo.Items[i] is ComboBoxItem item && item.Tag is byte id && id == value)
+            {
+                combo.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // If not found, add it
+        combo.Items.Add(new ComboBoxItem { Content = value.ToString(), Tag = value });
+        combo.SelectedIndex = combo.Items.Count - 1;
     }
 
     private void SelectAppearance(ushort appearanceId)
@@ -343,8 +481,7 @@ public partial class AdvancedPanel : UserControl
         if (item.Tag is ushort appearanceId)
         {
             var isPartBased = _displayService?.IsPartBasedAppearance(appearanceId) ?? false;
-            if (_bodyPartsSection != null)
-                _bodyPartsSection.IsVisible = isPartBased;
+            UpdateBodyPartsEnabledState(isPartBased);
         }
     }
 
@@ -363,21 +500,18 @@ public partial class AdvancedPanel : UserControl
             _phenotypeComboBox.SelectedIndex = -1;
         SetText(_portraitText, "-");
         SetText(_portraitIdText, "");
-        SetText(_tailText, "None");
-        SetText(_wingsText, "None");
 
-        // Hide body parts section
-        if (_bodyPartsSection != null)
-            _bodyPartsSection.IsVisible = false;
+        // Disable body parts section
+        UpdateBodyPartsEnabledState(false);
 
         // Clear all flags
-        SetFlag(_plotIcon, false);
-        SetFlag(_immortalIcon, false);
-        SetFlag(_noPermDeathIcon, false);
-        SetFlag(_isPCIcon, false);
-        SetFlag(_disarmableIcon, false);
-        SetFlag(_lootableIcon, false);
-        SetFlag(_interruptableIcon, true); // Default
+        SetCheckBox(_plotCheckBox, false);
+        SetCheckBox(_immortalCheckBox, false);
+        SetCheckBox(_noPermDeathCheckBox, false);
+        SetCheckBox(_isPCCheckBox, false);
+        SetCheckBox(_disarmableCheckBox, false);
+        SetCheckBox(_lootableCheckBox, false);
+        SetCheckBox(_interruptableCheckBox, true); // Default
 
         // Clear behavior
         SetText(_factionText, "0");
@@ -449,10 +583,10 @@ public partial class AdvancedPanel : UserControl
         };
     }
 
-    private void SetFlag(TextBlock? icon, bool value)
+    private static void SetCheckBox(CheckBox? cb, bool value)
     {
-        if (icon != null)
-            icon.Text = value ? CheckedIcon : UncheckedIcon;
+        if (cb != null)
+            cb.IsChecked = value;
     }
 
     private static void SetText(TextBlock? block, string text)
