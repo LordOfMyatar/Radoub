@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.11-alpha] - 2025-12-29
-**Branch**: `quartermaster/feat/appearance-identity` | **PR**: #TBD
+**Branch**: `quartermaster/feat/appearance-identity` | **PR**: #644
 
 ### Feature: Advanced Properties - Appearance & Identity Fields (#641)
 
