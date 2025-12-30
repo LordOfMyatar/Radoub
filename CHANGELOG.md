@@ -15,6 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.18] - 2025-12-30
+**Branch**: `radoub/sprint/shared-infra-optimization` | **PR**: #TBD
+
+### Sprint: Shared Infrastructure Optimization (#627, #543)
+
+- Consolidate ThemeManager to shared library (#627)
+- Optimize bundle to share .NET runtime between tools (#543)
+
+---
+
 ## [0.9.17] - 2025-12-30
 **Branch**: `radoub/feat/flaui-focus-verification` | **PR**: #655
 
