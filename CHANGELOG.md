@@ -15,6 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.17] - 2025-12-30
+**Branch**: `radoub/feat/flaui-focus-verification` | **PR**: #TBD
+
+### Test: Verify Window Focus in All FlaUI Tests (#623)
+
+Add focus verification to FlaUI test base to prevent tests from interacting with wrong windows.
+
+---
+
 ## [0.9.16] - 2025-12-27
 **Branch**: `radoub/docs/ui-wiki-page` | **PR**: #607
 
