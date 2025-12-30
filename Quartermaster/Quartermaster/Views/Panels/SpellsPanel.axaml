@@ -1,0 +1,285 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Quartermaster.Views.Panels.SpellsPanel">
+
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,20,20">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="Spells"
+                       FontSize="20"
+                       FontWeight="Bold"/>
+
+            <!-- Spells Summary -->
+            <TextBlock Grid.Row="1"
+                       x:Name="SpellsSummaryText"
+                       Text="No spells loaded"
+                       FontSize="12"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       Margin="0,5,0,10"
+                       AutomationProperties.AutomationId="SpellsSummary"/>
+
+            <!-- Class Radio Buttons (Class 1-8) -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="4"
+                    Padding="10"
+                    Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="Caster Class"
+                               FontWeight="SemiBold"
+                               FontSize="12"
+                               Margin="0,0,0,8"/>
+                    <StackPanel x:Name="ClassRadioPanel" Orientation="Horizontal" Spacing="5">
+                        <RadioButton x:Name="ClassRadio1" GroupName="CasterClass" Content="Class 1"
+                                     IsChecked="True" IsEnabled="False"
+                                     AutomationProperties.AutomationId="SpellsClass1"/>
+                        <RadioButton x:Name="ClassRadio2" GroupName="CasterClass" Content="Class 2"
+                                     IsEnabled="False"
+                                     AutomationProperties.AutomationId="SpellsClass2"/>
+                        <RadioButton x:Name="ClassRadio3" GroupName="CasterClass" Content="Class 3"
+                                     IsEnabled="False"
+                                     AutomationProperties.AutomationId="SpellsClass3"/>
+                        <RadioButton x:Name="ClassRadio4" GroupName="CasterClass" Content="Class 4"
+                                     IsEnabled="False"
+                                     AutomationProperties.AutomationId="SpellsClass4"/>
+                        <RadioButton x:Name="ClassRadio5" GroupName="CasterClass" Content="Class 5"
+                                     IsEnabled="False"
+                                     AutomationProperties.AutomationId="SpellsClass5"/>
+                        <RadioButton x:Name="ClassRadio6" GroupName="CasterClass" Content="Class 6"
+                                     IsEnabled="False"
+                                     AutomationProperties.AutomationId="SpellsClass6"/>
+                        <RadioButton x:Name="ClassRadio7" GroupName="CasterClass" Content="Class 7"
+                                     IsEnabled="False"
+                                     AutomationProperties.AutomationId="SpellsClass7"/>
+                        <RadioButton x:Name="ClassRadio8" GroupName="CasterClass" Content="Class 8"
+                                     IsEnabled="False"
+                                     AutomationProperties.AutomationId="SpellsClass8"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Filter Toolbar -->
+            <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,10">
+                <!-- Search Box -->
+                <Grid Grid.Column="0" ColumnDefinitions="*,Auto">
+                    <TextBox x:Name="SearchTextBox"
+                             Watermark="Search spells..."
+                             MinWidth="200"
+                             AutomationProperties.AutomationId="SpellsSearchBox"/>
+                    <Button Grid.Column="1"
+                            x:Name="ClearSearchButton"
+                            Content="✕"
+                            Width="28" Height="28"
+                            Margin="5,0,0,0"
+                            ToolTip.Tip="Clear search"
+                            AutomationProperties.AutomationId="SpellsClearSearch"/>
+                </Grid>
+
+                <!-- Spell Level Filter -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
+                    <TextBlock Text="Level:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="LevelFilterComboBox"
+                              SelectedIndex="0"
+                              MinWidth="100"
+                              AutomationProperties.AutomationId="SpellsLevelFilter">
+                        <ComboBoxItem Content="All Levels"/>
+                        <ComboBoxItem Content="Level 0"/>
+                        <ComboBoxItem Content="Level 1"/>
+                        <ComboBoxItem Content="Level 2"/>
+                        <ComboBoxItem Content="Level 3"/>
+                        <ComboBoxItem Content="Level 4"/>
+                        <ComboBoxItem Content="Level 5"/>
+                        <ComboBoxItem Content="Level 6"/>
+                        <ComboBoxItem Content="Level 7"/>
+                        <ComboBoxItem Content="Level 8"/>
+                        <ComboBoxItem Content="Level 9"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Spell School Filter -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
+                    <TextBlock Text="School:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="SchoolFilterComboBox"
+                              SelectedIndex="0"
+                              MinWidth="140"
+                              AutomationProperties.AutomationId="SpellsSchoolFilter">
+                        <ComboBoxItem Content="All Schools"/>
+                        <ComboBoxItem Content="Abjuration"/>
+                        <ComboBoxItem Content="Conjuration"/>
+                        <ComboBoxItem Content="Divination"/>
+                        <ComboBoxItem Content="Enchantment"/>
+                        <ComboBoxItem Content="Evocation"/>
+                        <ComboBoxItem Content="Illusion"/>
+                        <ComboBoxItem Content="Necromancy"/>
+                        <ComboBoxItem Content="Transmutation"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Status Filter -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
+                    <TextBlock Text="Status:" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="StatusFilterComboBox"
+                              SelectedIndex="0"
+                              MinWidth="120"
+                              AutomationProperties.AutomationId="SpellsStatusFilter">
+                        <ComboBoxItem Content="All Spells"/>
+                        <ComboBoxItem Content="Known Only"/>
+                        <ComboBoxItem Content="Memorized Only"/>
+                        <ComboBoxItem Content="Available"/>
+                        <ComboBoxItem Content="Blocked"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <!-- Spells List -->
+            <Border Grid.Row="4"
+                    BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <!-- Header Row -->
+                        <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                Padding="10,8,25,8">
+                            <Grid ColumnDefinitions="35,*,60,100,80,80">
+                                <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="Spell Name" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="Level" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="School" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="Innate" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                                           ToolTip.Tip="Innate Spell Level"/>
+                                <TextBlock Grid.Column="5" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Spell Items -->
+                        <ItemsControl x:Name="SpellsList"
+                                      AutomationProperties.AutomationId="SpellsListItems">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{Binding RowBackground}"
+                                            Padding="10,6,25,6"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                            BorderThickness="0,0,0,1"
+                                            ToolTip.Tip="{Binding Description}">
+                                        <Grid ColumnDefinitions="35,*,60,100,80,80">
+                                            <!-- Checkbox for known/memorized -->
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsKnown}"
+                                                      IsEnabled="False"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      ToolTip.Tip="Known/Memorized (editing not yet implemented)"
+                                                      AutomationProperties.AutomationId="SpellCheckbox"/>
+
+                                            <!-- Spell Name -->
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding SpellName}"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="13"
+                                                       Opacity="{Binding TextOpacity}"/>
+
+                                            <!-- Spell Level -->
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding SpellLevelDisplay}"
+                                                       FontSize="12"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- School -->
+                                            <TextBlock Grid.Column="3"
+                                                       Text="{Binding SchoolName}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Innate Level -->
+                                            <TextBlock Grid.Column="4"
+                                                       Text="{Binding InnateLevelDisplay}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Status -->
+                                            <TextBlock Grid.Column="5"
+                                                       Text="{Binding StatusText}"
+                                                       FontSize="11"
+                                                       Foreground="{Binding StatusColor}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock x:Name="NoSpellsText"
+                                   Text="No spells match the current filter"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   IsVisible="False"
+                                   Margin="15,15"
+                                   AutomationProperties.AutomationId="NoSpellsText"/>
+
+                        <TextBlock x:Name="LoadingText"
+                                   Text="Loading spells..."
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                   IsVisible="False"
+                                   Margin="15,15"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Footer with Meta-Magic and Actions -->
+            <Grid Grid.Row="5" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+                <!-- Meta-Magic Expander (placeholder) -->
+                <Expander Grid.Column="0"
+                          Header="Meta-Magic Feats"
+                          IsExpanded="False"
+                          x:Name="MetaMagicExpander"
+                          AutomationProperties.AutomationId="MetaMagicExpander">
+                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="15"
+                            MaxHeight="120">
+                        <StackPanel>
+                            <TextBlock Text="Meta-magic display will show applied feats that modify spell slots."
+                                       FontStyle="Italic"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="(Read-only in this version)"
+                                       FontStyle="Italic"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Expander>
+
+                <!-- Spell Actions (placeholder buttons) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                    <Button Content="Clear List"
+                            IsEnabled="False"
+                            ToolTip.Tip="Clear class spell list (not yet implemented)"
+                            AutomationProperties.AutomationId="ClearSpellListButton"/>
+                    <Button Content="Save List"
+                            IsEnabled="False"
+                            ToolTip.Tip="Save class spell list (not yet implemented)"
+                            AutomationProperties.AutomationId="SaveSpellListButton"/>
+                    <Button Content="Load List"
+                            IsEnabled="False"
+                            ToolTip.Tip="Load class spell list (not yet implemented)"
+                            AutomationProperties.AutomationId="LoadSpellListButton"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

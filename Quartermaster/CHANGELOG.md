@@ -10,6 +10,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.10-alpha] - 2025-12-28
+**Branch**: `quartermaster/sprint/spells-panel` | **PR**: #633
+
+### Sprint: Spells Panel with Search & Filter (#616)
+
+Add the Spells panel to Quartermaster with search and filtering - addressing Aurora Toolset's spell selection pain points.
+
+#### Added
+- **Spells Panel** - Full spell browsing with search and filtering
+  - Real-time text search filtering by spell name
+  - Clear button to reset search
+- **Spell Level Filter** - Filter by spell level (0-9)
+- **Spell School Filter** - Filter by school:
+  - All Schools (default)
+  - Abjuration / Conjuration / Divination / Enchantment
+  - Evocation / Illusion / Necromancy / Transmutation
+- **Status Filter** - Filter by spell status:
+  - All Spells / Known Only / Memorized Only / Available / Blocked
+- **Class Selection** - 8 class radio buttons (Class 1-8)
+  - Shows class name, level, and max spell level (e.g., "Wizard (10) - Lvl 5")
+  - Non-caster classes disabled
+  - Low-level casters without spells yet show "No spells"
+- **Detailed Spell List** - Columns:
+  - Checkbox (known/memorized status, read-only)
+  - Spell Name
+  - Spell Level (for selected class)
+  - School
+  - Innate Level
+  - Status (Known/Memorized/Blocked)
+- **Meta-Magic Expander** - Placeholder for future metamagic display
+- **Spell Actions** - Placeholder buttons for Clear/Save/Load spell lists
+- **FlaUI Automation IDs** - Full test coverage for UI elements
+- **CreatureDisplayService** - Added spell data methods:
+  - `GetAllSpellIds()` - Gets all spells from spells.2da
+  - `GetSpellInfo()` - Gets detailed spell info (school, levels by class)
+  - `GetSpellSchoolName()` - Converts school enum to display name
+  - `GetMaxSpellLevel()` - Gets max spell level for class at given level
+  - `IsCasterClass()` - Checks if class has SpellGainTable in classes.2da
+
+#### Note
+- Spell lists (known/memorized) are not yet parsed from creature files
+- Panel is read-only in this version
+- Editing features planned for future sprint
+
+---
+
 ## [0.1.9-alpha] - 2025-12-28
 **Branch**: `quartermaster/sprint/feats-panel` | **PR**: #629
 
