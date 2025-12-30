@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.18.3] - 2025-12-30
+**Branch**: `radoub/fix/skiasharp-version-mismatch` | **PR**: #660 | **Issue**: #661
+
+### Fix: SkiaSharp Version Mismatch
+
+- Fix runtime crashes on Linux: "libSkiaSharp library (88.1) is incompatible"
+- Add explicit `Avalonia.Skia 11.3.10` reference to all three tools
+- Add explicit `SkiaSharp.NativeAssets.Linux 3.116.1` reference to all three tools
+- Create root-level `Radoub.sln` for easier builds
+  - Includes all projects except Windows-only integration tests
+  - Build all tools with: `dotnet build Radoub.sln`
+
+---
+
 ## [0.9.18.2] - 2025-12-30
 **Branch**: `radoub/fix/release-version-info` | **PR**: #659
 
