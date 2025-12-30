@@ -68,7 +68,7 @@ jobs:
       shell: bash
       run: |
         echo "Bundle contents:"
-        ls -la ./publish/Radoub/ | head -30
+        ls -la ./publish/Radoub/ | head -30 || true
         echo ""
         echo "Total size:"
         du -sh ./publish/Radoub/ || dir ./publish/Radoub/
