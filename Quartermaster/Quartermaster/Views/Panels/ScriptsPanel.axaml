@@ -61,7 +61,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Conversation" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
                             <TextBlock Grid.Column="0" Text="Dialog File:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
@@ -69,6 +69,12 @@
                                        Text="-"
                                        FontFamily="Consolas, Courier New, monospace"
                                        VerticalAlignment="Center"/>
+                            <Button Grid.Column="2"
+                                    x:Name="OpenInParleyButton"
+                                    Content="Open in Parley"
+                                    Padding="10,5"
+                                    IsVisible="False"
+                                    AutomationProperties.AutomationId="OpenInParleyButton"/>
                         </Grid>
                     </StackPanel>
                 </Border>
