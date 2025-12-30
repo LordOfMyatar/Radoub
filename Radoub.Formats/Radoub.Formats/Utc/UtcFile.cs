@@ -112,6 +112,106 @@ public class UtcFile
     /// </summary>
     public byte BodyBag { get; set; }
 
+    // Body part fields (for dynamic/part-based appearances)
+    // These are only meaningful when appearance.2da MODELTYPE is "P" (part-based)
+    // Values index into model_*.2da files (e.g., model_heads, model_torso, etc.)
+    // CEP/PRC can add custom parts, so don't hardcode limits
+
+    /// <summary>
+    /// Head appearance index (Appearance_Head field)
+    /// </summary>
+    public byte AppearanceHead { get; set; }
+
+    /// <summary>
+    /// Body part: Belt
+    /// </summary>
+    public byte BodyPart_Belt { get; set; }
+
+    /// <summary>
+    /// Body part: Left Bicep
+    /// </summary>
+    public byte BodyPart_LBicep { get; set; }
+
+    /// <summary>
+    /// Body part: Right Bicep
+    /// </summary>
+    public byte BodyPart_RBicep { get; set; }
+
+    /// <summary>
+    /// Body part: Left Forearm
+    /// </summary>
+    public byte BodyPart_LFArm { get; set; }
+
+    /// <summary>
+    /// Body part: Right Forearm
+    /// </summary>
+    public byte BodyPart_RFArm { get; set; }
+
+    /// <summary>
+    /// Body part: Left Foot
+    /// </summary>
+    public byte BodyPart_LFoot { get; set; }
+
+    /// <summary>
+    /// Body part: Right Foot
+    /// </summary>
+    public byte BodyPart_RFoot { get; set; }
+
+    /// <summary>
+    /// Body part: Left Hand
+    /// </summary>
+    public byte BodyPart_LHand { get; set; }
+
+    /// <summary>
+    /// Body part: Right Hand
+    /// </summary>
+    public byte BodyPart_RHand { get; set; }
+
+    /// <summary>
+    /// Body part: Left Shin
+    /// </summary>
+    public byte BodyPart_LShin { get; set; }
+
+    /// <summary>
+    /// Body part: Right Shin
+    /// </summary>
+    public byte BodyPart_RShin { get; set; }
+
+    /// <summary>
+    /// Body part: Left Shoulder
+    /// </summary>
+    public byte BodyPart_LShoul { get; set; }
+
+    /// <summary>
+    /// Body part: Right Shoulder
+    /// </summary>
+    public byte BodyPart_RShoul { get; set; }
+
+    /// <summary>
+    /// Body part: Left Thigh
+    /// </summary>
+    public byte BodyPart_LThigh { get; set; }
+
+    /// <summary>
+    /// Body part: Right Thigh
+    /// </summary>
+    public byte BodyPart_RThigh { get; set; }
+
+    /// <summary>
+    /// Body part: Neck
+    /// </summary>
+    public byte BodyPart_Neck { get; set; }
+
+    /// <summary>
+    /// Body part: Pelvis
+    /// </summary>
+    public byte BodyPart_Pelvis { get; set; }
+
+    /// <summary>
+    /// Body part: Torso
+    /// </summary>
+    public byte BodyPart_Torso { get; set; }
+
     // Ability scores
 
     /// <summary>

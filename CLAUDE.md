@@ -360,6 +360,14 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ## Code Quality Standards
 
+**Game Data Sourcing (MANDATORY)**:
+- **NEVER hardcode game data** (races, classes, feats, skills, appearances, etc.)
+- **ALWAYS populate from 2DA files and TLK strings** via IGameDataService
+- Support custom content (CEP, PRC, etc.) that adds/modifies 2DA entries
+- Hardcoded fallbacks are acceptable ONLY when 2DA/TLK lookup fails
+- If the data exists in a game file, load it from the game file
+- This ensures compatibility with all modules, custom content packs, and community expansions
+
 **Path Handling**:
 - Use `Environment.GetFolderPath()` with `SpecialFolder` constants
 - Validate paths with `Path.GetFullPath()` for traversal prevention

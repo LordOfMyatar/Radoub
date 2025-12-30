@@ -109,6 +109,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize spells panel with display service for 2DA/TLK lookups
         SpellsPanelContent.SetDisplayService(_creatureDisplayService);
 
+        // Initialize advanced panel with display service for appearance lookups
+        AdvancedPanelContent.SetDisplayService(_creatureDisplayService);
+
         // Initialize inventory panel with shared equipment slots and game data
         InventoryPanelContent.InitializeSlots(_equipmentSlots);
         InventoryPanelContent.SetGameDataService(_gameDataService);
