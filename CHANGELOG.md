@@ -15,6 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.18] - 2025-12-30
+**Branch**: `radoub/sprint/shared-infra-optimization` | **PR**: #657
+
+### Sprint: Shared Infrastructure Optimization (#627, #543)
+
+- Consolidate ThemeManager to shared Radoub.UI library (#627)
+- Optimize bundle workflow to share .NET runtime (#543)
+  - Both tools now publish to single `Radoub/` folder
+  - Eliminates duplicate DLLs (~33% bundle size reduction)
+  - Simplified workflow: single build job instead of separate Parley/Manifest jobs
+
+---
+
 ## [0.9.17] - 2025-12-30
 **Branch**: `radoub/feat/flaui-focus-verification` | **PR**: #655
 

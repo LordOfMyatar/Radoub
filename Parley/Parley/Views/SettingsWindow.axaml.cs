@@ -19,6 +19,8 @@ using DialogEditor.Models;
 using DialogEditor.Plugins;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using ThemeManager = Radoub.UI.Services.ThemeManager;
+using ThemeManifest = Radoub.UI.Models.ThemeManifest;
 using Radoub.Dictionary;
 using Radoub.Dictionary.Models;
 

@@ -19,6 +19,7 @@ using DialogEditor.Models;
 using DialogEditor.Utils;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using ThemeManager = Radoub.UI.Services.ThemeManager;
 using DialogEditor.Parsers;
 using DialogEditor.Plugins;
 using Parley.Services;
