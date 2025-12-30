@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.18.2] - 2025-12-30
-**Branch**: `radoub/fix/release-version-info` | **PR**: #TBD
+**Branch**: `radoub/fix/release-version-info` | **PR**: #659
 
 ### Fix: Release Version Display
 
