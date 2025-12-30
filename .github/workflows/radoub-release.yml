@@ -56,8 +56,9 @@ jobs:
 
     # Publish both tools to the SAME output folder - DLLs are automatically shared
     # Parley first (larger, has more dependencies including CEF)
+    # IncludePlugins=false excludes plugin SDK files from bundle (plugins not ready for release)
     - name: Publish Parley to shared folder
-      run: dotnet publish Parley/Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/Radoub
+      run: dotnet publish Parley/Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:IncludePlugins=false -p:Version=${{ steps.version.outputs.version }} -o ./publish/Radoub
 
     # Manifest second - only adds Manifest.exe and Manifest-specific files, DLLs already present
     - name: Publish Manifest to shared folder

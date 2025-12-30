@@ -22,6 +22,8 @@
     <AssemblyName>Parley</AssemblyName>
     <RootNamespace>DialogEditor</RootNamespace>
 
+    <!-- Plugin deployment - set to false for bundle releases without plugin support -->
+    <IncludePlugins Condition="'$(IncludePlugins)' == ''">true</IncludePlugins>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,15 +38,15 @@
     </None>
   </ItemGroup>
 
-  <!-- Copy Official Plugins to output directory -->
-  <ItemGroup>
+  <!-- Copy Official Plugins to output directory (only when IncludePlugins=true) -->
+  <ItemGroup Condition="'$(IncludePlugins)' == 'true'">
     <None Include="Plugins\Official\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
-  <!-- Copy Python plugin SDK to output directory (required for plugins to run) -->
-  <ItemGroup>
+  <!-- Copy Python plugin SDK to output directory (only when IncludePlugins=true) -->
+  <ItemGroup Condition="'$(IncludePlugins)' == 'true'">
     <None Include="..\Python\parley_plugin\**\*" Exclude="..\Python\parley_plugin\**\__pycache__\**">
       <Link>Python\parley_plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
