@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.18] - 2025-12-30
-**Branch**: `radoub/sprint/shared-infra-optimization` | **PR**: #TBD
+**Branch**: `radoub/sprint/shared-infra-optimization` | **PR**: #657
 
 ### Sprint: Shared Infrastructure Optimization (#627, #543)
 
