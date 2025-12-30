@@ -15,6 +15,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.18.2] - 2025-12-30
+**Branch**: `radoub/fix/release-version-info` | **PR**: #659
+
+### Fix: Release Version Display
+
+- Fix bundle release showing wrong version in title bar
+  - Version showed "v18.1.0" instead of correct "v0.9.18.1"
+  - Build showed "dev" instead of actual commit hash
+- Add `-p:InformationalVersion` to publish commands to override GitInfo
+- Update VersionHelper to extract commit from InformationalVersion suffix
+- Format: `version+commit` (e.g., `0.9.18.2+abc1234`)
+
+---
+
+## [0.9.18.1] - 2025-12-30
+**Branch**: `radoub/fix/release-workflow-pipe` | **PR**: #658
+
+### Fix: macOS Release Workflow
+
+- Fix broken pipe error on macOS in release workflow
+- `ls -la | head -30` returns exit code 1 when pipe closes early
+- Added `|| true` to ignore harmless pipe errors
+
+---
+
 ## [0.9.18] - 2025-12-30
 **Branch**: `radoub/sprint/shared-infra-optimization` | **PR**: #657
 

@@ -45,8 +45,10 @@ jobs:
       run: |
         TAG="${GITHUB_REF#refs/tags/}"
         VERSION="${TAG#radoub-v}"
+        COMMIT=$(git rev-parse --short=7 HEAD)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "commit=$COMMIT" >> $GITHUB_OUTPUT
 
     - name: Restore Parley dependencies
       run: dotnet restore Parley/Parley/Parley.csproj -r ${{ matrix.runtime }}
@@ -57,12 +59,13 @@ jobs:
     # Publish both tools to the SAME output folder - DLLs are automatically shared
     # Parley first (larger, has more dependencies including CEF)
     # IncludePlugins=false excludes plugin SDK files from bundle (plugins not ready for release)
+    # InformationalVersion overrides GitInfo's auto-generated version with version+commit
     - name: Publish Parley to shared folder
-      run: dotnet publish Parley/Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:IncludePlugins=false -p:Version=${{ steps.version.outputs.version }} -o ./publish/Radoub
+      run: dotnet publish Parley/Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:IncludePlugins=false -p:Version=${{ steps.version.outputs.version }} -p:InformationalVersion=${{ steps.version.outputs.version }}+${{ steps.version.outputs.commit }} -o ./publish/Radoub
 
     # Manifest second - only adds Manifest.exe and Manifest-specific files, DLLs already present
     - name: Publish Manifest to shared folder
-      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/Radoub
+      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -p:InformationalVersion=${{ steps.version.outputs.version }}+${{ steps.version.outputs.commit }} -o ./publish/Radoub
 
     - name: Display bundle structure
       shell: bash
