@@ -97,11 +97,8 @@ public class TreeEditingTests : ParleyTestBase
             firstItem?.Click();
             Thread.Sleep(200);
 
-            // Act - Press Ctrl+D to add node
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            // Act - Press Ctrl+D to add node (focus-safe)
+            SendCtrlD();
 
             Thread.Sleep(500);
 

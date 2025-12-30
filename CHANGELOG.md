@@ -22,6 +22,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Add focus verification to FlaUI test base to prevent tests from interacting with wrong windows.
 
+#### Added (FlaUITestBase)
+- `EnsureFocused()` - Verify and restore window focus before keyboard input
+- `SendKeyboardShortcut()` - Focus-safe keyboard shortcut helper
+- Common shortcuts: `SendCtrlS()`, `SendCtrlZ()`, `SendCtrlY()`, `SendCtrlD()`, etc.
+
+#### Changed (Integration Tests)
+- All Parley keyboard shortcuts now use focus-safe helpers
+- All Manifest keyboard shortcuts now use focus-safe helpers
+- Deprecated direct `Keyboard.TypeSimultaneously()` calls
+
+#### Changed (CLAUDE.md)
+- Added "FlaUI Window Focus (CRITICAL)" section with mandatory focus patterns
+
 ---
 
 ## [0.9.16] - 2025-12-27

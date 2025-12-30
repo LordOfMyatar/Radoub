@@ -58,11 +58,8 @@ public class FileOperationTests : ManifestTestBase
             StartApplication($"--file \"{tempFile}\"");
             WaitForTitleContains(TestFileName, FileOperationTimeout);
 
-            // Act - Save via keyboard shortcut
-            MainWindow!.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+            // Act - Save via keyboard shortcut (focus-safe)
+            SendCtrlS();
 
             Thread.Sleep(500);
 
@@ -118,11 +115,8 @@ public class FileOperationTests : ManifestTestBase
             // Wait a moment to ensure file is fully loaded
             Thread.Sleep(500);
 
-            // Save via Ctrl+S
-            MainWindow!.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+            // Save via Ctrl+S (focus-safe)
+            SendCtrlS();
 
             // Wait for save to complete
             Thread.Sleep(1000);

@@ -245,6 +245,15 @@ When adding a new tool to Radoub:
 - Wait for process to fully exit between tests to prevent resource conflicts
 - See `FlaUITestBase.StopApplication()` for reference implementation
 
+**FlaUI Window Focus (CRITICAL)**:
+- **NEVER use direct `Keyboard.TypeSimultaneously()` calls** - keystrokes go to focused window, not necessarily test app
+- **ALWAYS use focus-safe helpers** from `FlaUITestBase`:
+  - `SendCtrlS()`, `SendCtrlZ()`, `SendCtrlY()`, `SendCtrlD()` etc.
+  - `SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_X)` for custom shortcuts
+  - `EnsureFocused()` before any keyboard input if not using helpers
+- **Why**: During test runs, VSCode or other apps can steal focus. Keyboard shortcuts like Ctrl+Shift+E open VSCode's file explorer instead of triggering test app actions.
+- See `FlaUITestBase.EnsureFocused()` for focus verification pattern
+
 **Before PRs to Main**:
 - All tools must build
 - All tool tests must pass
