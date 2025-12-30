@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.17] - 2025-12-30
-**Branch**: `radoub/feat/flaui-focus-verification` | **PR**: #TBD
+**Branch**: `radoub/feat/flaui-focus-verification` | **PR**: #655
 
 ### Test: Verify Window Focus in All FlaUI Tests (#623)
 
