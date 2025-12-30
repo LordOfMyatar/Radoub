@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.11-alpha] - 2025-12-29
+**Branch**: `quartermaster/feat/appearance-identity` | **PR**: #TBD
+
+### Feature: Advanced Properties - Appearance & Identity Fields (#641)
+
+Implement the Advanced Properties page with appearance customization and identity field management.
+
+#### Added
+- **Appearance Section**
+  - Preset appearance dropdown (populated from appearance.2da)
+  - Custom appearance component selection (Head, Body, Tail, Wings)
+  - Phenotype selection
+  - Portrait selection/preview
+- **Identity Fields**
+  - Blueprint ResRef with copy button
+  - Tag with copy button
+  - Editable Comment field
+
+---
+
 ## [0.1.10-alpha] - 2025-12-28
 **Branch**: `quartermaster/sprint/spells-panel` | **PR**: #633
 
