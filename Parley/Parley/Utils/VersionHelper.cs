@@ -36,7 +36,7 @@ namespace DialogEditor.Utils
 
         /// <summary>
         /// Gets the Git commit hash (short form, e.g., "a1b2c3d")
-        /// Uses git command as fallback since GitInfo package not generating code
+        /// Checks InformationalVersion suffix first (CI builds), then GitInfo, then git command
         /// </summary>
         public static string Commit
         {
@@ -44,7 +44,22 @@ namespace DialogEditor.Utils
             {
                 try
                 {
-                    // Try GitInfo first
+                    // Try InformationalVersion suffix first (format: "version+commit" from CI)
+                    var informationalVersion = _assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+                    if (!string.IsNullOrEmpty(informationalVersion))
+                    {
+                        var plusIndex = informationalVersion.IndexOf('+');
+                        if (plusIndex >= 0 && plusIndex < informationalVersion.Length - 1)
+                        {
+                            var commit = informationalVersion.Substring(plusIndex + 1);
+                            if (!string.IsNullOrEmpty(commit) && commit.Length >= 7)
+                            {
+                                return commit.Length > 7 ? commit.Substring(0, 7) : commit;
+                            }
+                        }
+                    }
+
+                    // Try GitInfo second
                     var commitField = Type.GetType("ThisAssembly.Git, Parley")?
                         .GetField("Commit", BindingFlags.Public | BindingFlags.Static);
 
