@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.13-alpha] - 2025-12-30
-**Branch**: `quartermaster/fix/flaky-spells-navigation-test` | **PR**: #TBD
+**Branch**: `quartermaster/fix/flaky-spells-navigation-test` | **PR**: #656
 
 ### Fix: Flaky FlaUI Navigation Test for Spells Panel (#654)
 
