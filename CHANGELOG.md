@@ -20,8 +20,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Shared Infrastructure Optimization (#627, #543)
 
-- Consolidate ThemeManager to shared library (#627)
-- Optimize bundle to share .NET runtime between tools (#543)
+- Consolidate ThemeManager to shared Radoub.UI library (#627)
+- Optimize bundle workflow to share .NET runtime (#543)
+  - Both tools now publish to single `Radoub/` folder
+  - Eliminates duplicate DLLs (~33% bundle size reduction)
+  - Simplified workflow: single build job instead of separate Parley/Manifest jobs
 
 ---
 

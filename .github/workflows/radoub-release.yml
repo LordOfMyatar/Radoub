@@ -9,127 +9,7 @@ permissions:
   contents: write  # Required to create releases
 
 jobs:
-  build-parley:
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            runtime: win-x64
-            artifact-name: Parley-win-x64
-            self-contained: true
-          - os: macos-latest
-            runtime: osx-arm64
-            artifact-name: Parley-osx-arm64
-            self-contained: true
-          - os: ubuntu-latest
-            runtime: linux-x64
-            artifact-name: Parley-linux-x64
-            self-contained: true
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '9.0.x'
-
-    - name: Extract Version from Tag
-      id: version
-      shell: bash
-      run: |
-        TAG="${GITHUB_REF#refs/tags/}"
-        VERSION="${TAG#radoub-v}"
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-    - name: Restore dependencies
-      run: dotnet restore Parley/Parley.csproj -r ${{ matrix.runtime }}
-      working-directory: ./Parley
-
-    - name: Build project
-      run: dotnet build Parley/Parley.csproj --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.version.outputs.version }}
-      working-directory: ./Parley
-
-    # Windows: PublishSingleFile disabled because CEF subprocess requires separate DLLs
-    - name: Publish (Windows)
-      if: matrix.os == 'windows-latest'
-      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/Parley
-      working-directory: ./Parley
-
-    # macOS/Linux: Use PublishSingleFile
-    - name: Publish (macOS/Linux)
-      if: matrix.os != 'windows-latest'
-      run: dotnet publish Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/Parley
-      working-directory: ./Parley
-
-    - name: Upload Parley artifact
-      uses: actions/upload-artifact@v6
-      with:
-        name: parley-${{ matrix.runtime }}
-        path: Parley/publish/Parley
-
-  build-manifest:
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            runtime: win-x64
-            artifact-name: Manifest-win-x64
-            self-contained: true
-          - os: macos-latest
-            runtime: osx-arm64
-            artifact-name: Manifest-osx-arm64
-            self-contained: true
-          - os: ubuntu-latest
-            runtime: linux-x64
-            artifact-name: Manifest-linux-x64
-            self-contained: true
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '9.0.x'
-
-    - name: Extract Version from Tag
-      id: version
-      shell: bash
-      run: |
-        TAG="${GITHUB_REF#refs/tags/}"
-        VERSION="${TAG#radoub-v}"
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
-        echo "tag=$TAG" >> $GITHUB_OUTPUT
-
-    - name: Restore dependencies
-      run: dotnet restore Manifest/Manifest/Manifest.csproj -r ${{ matrix.runtime }}
-
-    - name: Build project
-      run: dotnet build Manifest/Manifest/Manifest.csproj --configuration Release --no-restore -r ${{ matrix.runtime }} -p:Version=${{ steps.version.outputs.version }}
-
-    - name: Publish
-      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/Manifest
-
-    - name: Upload Manifest artifact
-      uses: actions/upload-artifact@v6
-      with:
-        name: manifest-${{ matrix.runtime }}
-        path: ./publish/Manifest
-
-  bundle-and-release:
-    needs: [build-parley, build-manifest]
+  build-bundle:
     strategy:
       matrix:
         include:
@@ -151,6 +31,13 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
 
     - name: Extract Version from Tag
       id: version
@@ -161,34 +48,42 @@ jobs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-    - name: Download Parley artifact
-      uses: actions/download-artifact@v7
-      with:
-        name: parley-${{ matrix.runtime }}
-        path: ./bundle/Parley
+    - name: Restore Parley dependencies
+      run: dotnet restore Parley/Parley/Parley.csproj -r ${{ matrix.runtime }}
 
-    - name: Download Manifest artifact
-      uses: actions/download-artifact@v7
-      with:
-        name: manifest-${{ matrix.runtime }}
-        path: ./bundle/Manifest
+    - name: Restore Manifest dependencies
+      run: dotnet restore Manifest/Manifest/Manifest.csproj -r ${{ matrix.runtime }}
+
+    # Publish both tools to the SAME output folder - DLLs are automatically shared
+    # Parley first (larger, has more dependencies including CEF)
+    - name: Publish Parley to shared folder
+      run: dotnet publish Parley/Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/Radoub
+
+    # Manifest second - only adds Manifest.exe and Manifest-specific files, DLLs already present
+    - name: Publish Manifest to shared folder
+      run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -o ./publish/Radoub
 
     - name: Display bundle structure
       shell: bash
       run: |
         echo "Bundle contents:"
-        find ./bundle -type f 2>/dev/null | head -50 || true
+        ls -la ./publish/Radoub/ | head -30
+        echo ""
+        echo "Total size:"
+        du -sh ./publish/Radoub/ || dir ./publish/Radoub/
 
-    # macOS: Create .app bundles
+    # macOS: Create .app bundles in a Radoub folder
     - name: Create macOS App Bundles
       if: matrix.os == 'macos-latest'
       shell: bash
       run: |
-        # Parley.app
+        mkdir -p ./bundle
+
+        # Parley.app - copy from shared folder
         mkdir -p "./bundle/Parley.app/Contents/MacOS"
         mkdir -p "./bundle/Parley.app/Contents/Resources"
-        mv ./bundle/Parley/Parley "./bundle/Parley.app/Contents/MacOS/"
-        mv ./bundle/Parley/*.dylib "./bundle/Parley.app/Contents/MacOS/" 2>/dev/null || true
+        cp ./publish/Radoub/Parley "./bundle/Parley.app/Contents/MacOS/"
+        cp ./publish/Radoub/*.dylib "./bundle/Parley.app/Contents/MacOS/" 2>/dev/null || true
         cat > "./bundle/Parley.app/Contents/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -212,13 +107,12 @@ jobs:
         </plist>
         EOF
         chmod +x "./bundle/Parley.app/Contents/MacOS/Parley"
-        rm -rf ./bundle/Parley
 
-        # Manifest.app
+        # Manifest.app - copy from shared folder
         mkdir -p "./bundle/Manifest.app/Contents/MacOS"
         mkdir -p "./bundle/Manifest.app/Contents/Resources"
-        mv ./bundle/Manifest/Manifest "./bundle/Manifest.app/Contents/MacOS/"
-        mv ./bundle/Manifest/*.dylib "./bundle/Manifest.app/Contents/MacOS/" 2>/dev/null || true
+        cp ./publish/Radoub/Manifest "./bundle/Manifest.app/Contents/MacOS/"
+        cp ./publish/Radoub/*.dylib "./bundle/Manifest.app/Contents/MacOS/" 2>/dev/null || true
         cat > "./bundle/Manifest.app/Contents/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -242,23 +136,22 @@ jobs:
         </plist>
         EOF
         chmod +x "./bundle/Manifest.app/Contents/MacOS/Manifest"
-        rm -rf ./bundle/Manifest
 
     # Linux: Make executables
     - name: Set Linux permissions
       if: matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
-        chmod +x ./bundle/Parley/Parley
-        chmod +x ./bundle/Manifest/Manifest
+        chmod +x ./publish/Radoub/Parley
+        chmod +x ./publish/Radoub/Manifest
 
-    # Package bundle
+    # Package bundle - Windows/Linux use the shared folder directly
     - name: Package Windows Bundle
       if: matrix.os == 'windows-latest'
       shell: pwsh
       run: |
-        cd ./bundle
-        Compress-Archive -Path "*" -DestinationPath "../${{ matrix.bundle-name }}.zip"
+        cd ./publish
+        Compress-Archive -Path "Radoub" -DestinationPath "../${{ matrix.bundle-name }}.zip"
         Write-Host "Created: ${{ matrix.bundle-name }}.zip"
 
     - name: Package macOS Bundle
@@ -273,8 +166,8 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       shell: bash
       run: |
-        cd ./bundle
-        tar -czf ../${{ matrix.bundle-name }}.tar.gz .
+        cd ./publish
+        tar -czf ../${{ matrix.bundle-name }}.tar.gz Radoub
         echo "Created: ${{ matrix.bundle-name }}.tar.gz"
 
     - name: Upload bundle artifact
@@ -287,7 +180,7 @@ jobs:
         if-no-files-found: ignore
 
   create-release:
-    needs: bundle-and-release
+    needs: build-bundle
     runs-on: ubuntu-latest
 
     steps:
@@ -324,7 +217,7 @@ jobs:
         body: |
           # Radoub ${{ steps.version.outputs.version }}
 
-          Bundled release containing Parley and Manifest editors.
+          Bundled release containing Parley and Manifest editors with shared runtime.
 
           ## Downloads
 
@@ -332,13 +225,13 @@ jobs:
 
           These bundles include everything needed - just download and run!
 
-          - **Windows**: `Radoub-win-x64.zip` (~150MB)
-            - Extract and run `Parley/Parley.exe` or `Manifest/Manifest.exe`
-          - **macOS**: `Radoub-osx-arm64.zip` (~160MB)
+          - **Windows**: `Radoub-win-x64.zip` (~100MB)
+            - Extract and run `Radoub/Parley.exe` or `Radoub/Manifest.exe`
+          - **macOS**: `Radoub-osx-arm64.zip` (~110MB)
             - Extract and open `Parley.app` or `Manifest.app`
             - Apple Silicon (M1/M2/M3) Macs
-          - **Linux**: `Radoub-linux-x64.tar.gz` (~145MB)
-            - Extract and run `./Parley/Parley` or `./Manifest/Manifest`
+          - **Linux**: `Radoub-linux-x64.tar.gz` (~95MB)
+            - Extract and run `./Radoub/Parley` or `./Radoub/Manifest`
 
           ## What's Included
 
@@ -349,10 +242,11 @@ jobs:
 
           ## Shared Infrastructure
 
-          Both tools share:
-          - .NET 9 runtime
+          Both tools share a single folder with common dependencies:
+          - .NET 9 runtime (shared, not duplicated)
           - Avalonia UI framework
           - Radoub.Formats library
+          - Radoub.UI shared components
           - Cross-tool discovery (launch Manifest from Parley's Quest Browser)
 
           ## Standalone Downloads
@@ -371,7 +265,7 @@ jobs:
 
           **macOS**: You may need to allow the apps in System Preferences → Security & Privacy after first launch.
 
-          **Linux**: Make binaries executable: `chmod +x Parley/Parley Manifest/Manifest`
+          **Linux**: Make binaries executable: `chmod +x Radoub/Parley Radoub/Manifest`
 
           ---
           🤖 Generated with [Claude Code](https://claude.com/claude-code)
