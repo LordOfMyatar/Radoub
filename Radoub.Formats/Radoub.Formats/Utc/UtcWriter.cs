@@ -81,6 +81,47 @@ public static class UtcWriter
         AddByteField(root, "Wings", utc.Wings);
         AddByteField(root, "BodyBag", utc.BodyBag);
 
+        // Body parts (for part-based appearances)
+        // Only write if non-zero to preserve file compatibility
+        if (utc.AppearanceHead != 0)
+            AddByteField(root, "Appearance_Head", utc.AppearanceHead);
+        if (utc.BodyPart_Belt != 0)
+            AddByteField(root, "BodyPart_Belt", utc.BodyPart_Belt);
+        if (utc.BodyPart_LBicep != 0)
+            AddByteField(root, "BodyPart_LBicep", utc.BodyPart_LBicep);
+        if (utc.BodyPart_RBicep != 0)
+            AddByteField(root, "BodyPart_RBicep", utc.BodyPart_RBicep);
+        if (utc.BodyPart_LFArm != 0)
+            AddByteField(root, "BodyPart_LFArm", utc.BodyPart_LFArm);
+        if (utc.BodyPart_RFArm != 0)
+            AddByteField(root, "BodyPart_RFArm", utc.BodyPart_RFArm);
+        if (utc.BodyPart_LFoot != 0)
+            AddByteField(root, "BodyPart_LFoot", utc.BodyPart_LFoot);
+        if (utc.BodyPart_RFoot != 0)
+            AddByteField(root, "BodyPart_RFoot", utc.BodyPart_RFoot);
+        if (utc.BodyPart_LHand != 0)
+            AddByteField(root, "BodyPart_LHand", utc.BodyPart_LHand);
+        if (utc.BodyPart_RHand != 0)
+            AddByteField(root, "BodyPart_RHand", utc.BodyPart_RHand);
+        if (utc.BodyPart_LShin != 0)
+            AddByteField(root, "BodyPart_LShin", utc.BodyPart_LShin);
+        if (utc.BodyPart_RShin != 0)
+            AddByteField(root, "BodyPart_RShin", utc.BodyPart_RShin);
+        if (utc.BodyPart_LShoul != 0)
+            AddByteField(root, "BodyPart_LShoul", utc.BodyPart_LShoul);
+        if (utc.BodyPart_RShoul != 0)
+            AddByteField(root, "BodyPart_RShoul", utc.BodyPart_RShoul);
+        if (utc.BodyPart_LThigh != 0)
+            AddByteField(root, "BodyPart_LThigh", utc.BodyPart_LThigh);
+        if (utc.BodyPart_RThigh != 0)
+            AddByteField(root, "BodyPart_RThigh", utc.BodyPart_RThigh);
+        if (utc.BodyPart_Neck != 0)
+            AddByteField(root, "BodyPart_Neck", utc.BodyPart_Neck);
+        if (utc.BodyPart_Pelvis != 0)
+            AddByteField(root, "BodyPart_Pelvis", utc.BodyPart_Pelvis);
+        if (utc.BodyPart_Torso != 0)
+            AddByteField(root, "BodyPart_Torso", utc.BodyPart_Torso);
+
         // Ability scores
         AddByteField(root, "Str", utc.Str);
         AddByteField(root, "Dex", utc.Dex);

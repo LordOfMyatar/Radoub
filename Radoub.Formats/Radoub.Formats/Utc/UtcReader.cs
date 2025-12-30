@@ -77,6 +77,27 @@ public static class UtcReader
             Wings = root.GetFieldValue<byte>("Wings", 0),
             BodyBag = root.GetFieldValue<byte>("BodyBag", 0),
 
+            // Body parts (for dynamic/part-based appearances)
+            AppearanceHead = root.GetFieldValue<byte>("Appearance_Head", 0),
+            BodyPart_Belt = root.GetFieldValue<byte>("BodyPart_Belt", 0),
+            BodyPart_LBicep = root.GetFieldValue<byte>("BodyPart_LBicep", 0),
+            BodyPart_RBicep = root.GetFieldValue<byte>("BodyPart_RBicep", 0),
+            BodyPart_LFArm = root.GetFieldValue<byte>("BodyPart_LFArm", 0),
+            BodyPart_RFArm = root.GetFieldValue<byte>("BodyPart_RFArm", 0),
+            BodyPart_LFoot = root.GetFieldValue<byte>("BodyPart_LFoot", 0),
+            BodyPart_RFoot = root.GetFieldValue<byte>("BodyPart_RFoot", 0),
+            BodyPart_LHand = root.GetFieldValue<byte>("BodyPart_LHand", 0),
+            BodyPart_RHand = root.GetFieldValue<byte>("BodyPart_RHand", 0),
+            BodyPart_LShin = root.GetFieldValue<byte>("BodyPart_LShin", 0),
+            BodyPart_RShin = root.GetFieldValue<byte>("BodyPart_RShin", 0),
+            BodyPart_LShoul = root.GetFieldValue<byte>("BodyPart_LShoul", 0),
+            BodyPart_RShoul = root.GetFieldValue<byte>("BodyPart_RShoul", 0),
+            BodyPart_LThigh = root.GetFieldValue<byte>("BodyPart_LThigh", 0),
+            BodyPart_RThigh = root.GetFieldValue<byte>("BodyPart_RThigh", 0),
+            BodyPart_Neck = root.GetFieldValue<byte>("BodyPart_Neck", 0),
+            BodyPart_Pelvis = root.GetFieldValue<byte>("BodyPart_Pelvis", 0),
+            BodyPart_Torso = root.GetFieldValue<byte>("BodyPart_Torso", 0),
+
             // Ability scores
             Str = root.GetFieldValue<byte>("Str", 10),
             Dex = root.GetFieldValue<byte>("Dex", 10),
