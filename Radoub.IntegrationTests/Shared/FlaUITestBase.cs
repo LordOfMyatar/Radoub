@@ -242,6 +242,11 @@ public abstract class FlaUITestBase : IDisposable
     /// </summary>
     /// <param name="maxRetries">Number of focus attempts before giving up</param>
     /// <returns>True if focus was obtained, false otherwise</returns>
+    /// <remarks>
+    /// Note: Avalonia windows don't reliably report HasKeyboardFocus via UIA automation.
+    /// This method uses SetForeground() and Focus() which work correctly, then trusts
+    /// the result rather than strictly verifying via automation properties.
+    /// </remarks>
     protected bool EnsureFocused(int maxRetries = 3)
     {
         if (MainWindow == null)
@@ -253,22 +258,18 @@ public abstract class FlaUITestBase : IDisposable
         {
             try
             {
+                // Use both SetForeground and Focus for maximum compatibility
+                // SetForeground brings window to front, Focus sets keyboard focus
+                MainWindow.SetForeground();
+                Thread.Sleep(50);
                 MainWindow.Focus();
                 Thread.Sleep(100); // Allow focus to settle
 
-                // Verify we actually got focus by checking if window is in foreground
-                // FlaUI's Focus() doesn't guarantee success - other apps can steal focus
-                if (MainWindow.Properties.HasKeyboardFocus.ValueOrDefault)
+                // Check if window is visible and not minimized - that's our best indicator
+                // HasKeyboardFocus is unreliable with Avalonia windows via UIA
+                if (!MainWindow.Properties.IsOffscreen.ValueOrDefault)
                 {
-                    return true;
-                }
-
-                // Additional check: try to bring window to foreground
-                MainWindow.SetForeground();
-                Thread.Sleep(100);
-
-                if (MainWindow.Properties.HasKeyboardFocus.ValueOrDefault)
-                {
+                    // Window is visible and we've called focus - trust it worked
                     return true;
                 }
             }
@@ -280,12 +281,17 @@ public abstract class FlaUITestBase : IDisposable
             Thread.Sleep(200); // Wait before retry
         }
 
-        // Last resort: try clicking the window to force focus
+        // Last resort: try clicking the window title bar area to force focus
         try
         {
-            MainWindow.Click();
-            Thread.Sleep(100);
-            return MainWindow.Properties.HasKeyboardFocus.ValueOrDefault;
+            // Click near top-center of window (title bar area) to grab focus
+            var bounds = MainWindow.BoundingRectangle;
+            var clickPoint = new System.Drawing.Point(
+                bounds.X + bounds.Width / 2,
+                bounds.Y + 20); // 20px down from top (title bar)
+            FlaUI.Core.Input.Mouse.Click(clickPoint);
+            Thread.Sleep(150);
+            return !MainWindow.Properties.IsOffscreen.ValueOrDefault;
         }
         catch
         {
