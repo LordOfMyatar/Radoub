@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.WindowsAPI;
 using FlaUI.UIA3;
 
 namespace Radoub.IntegrationTests.Shared;
@@ -236,10 +237,128 @@ public abstract class FlaUITestBase : IDisposable
     }
 
     /// <summary>
-    /// Sends keyboard shortcut to the application.
+    /// Ensures the main window has keyboard focus before performing actions.
+    /// Call this before any keyboard input to prevent keystrokes going to other apps (like VSCode).
     /// </summary>
+    /// <param name="maxRetries">Number of focus attempts before giving up</param>
+    /// <returns>True if focus was obtained, false otherwise</returns>
+    /// <remarks>
+    /// Note: Avalonia windows don't reliably report HasKeyboardFocus via UIA automation.
+    /// This method uses SetForeground() and Focus() which work correctly, then trusts
+    /// the result rather than strictly verifying via automation properties.
+    /// </remarks>
+    protected bool EnsureFocused(int maxRetries = 3)
+    {
+        if (MainWindow == null)
+        {
+            return false;
+        }
+
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                // Use both SetForeground and Focus for maximum compatibility
+                // SetForeground brings window to front, Focus sets keyboard focus
+                MainWindow.SetForeground();
+                Thread.Sleep(50);
+                MainWindow.Focus();
+                Thread.Sleep(100); // Allow focus to settle
+
+                // Check if window is visible and not minimized - that's our best indicator
+                // HasKeyboardFocus is unreliable with Avalonia windows via UIA
+                if (!MainWindow.Properties.IsOffscreen.ValueOrDefault)
+                {
+                    // Window is visible and we've called focus - trust it worked
+                    return true;
+                }
+            }
+            catch
+            {
+                // Window may have closed or become invalid
+            }
+
+            Thread.Sleep(200); // Wait before retry
+        }
+
+        // Last resort: try clicking the window title bar area to force focus
+        try
+        {
+            // Click near top-center of window (title bar area) to grab focus
+            var bounds = MainWindow.BoundingRectangle;
+            var clickPoint = new System.Drawing.Point(
+                bounds.X + bounds.Width / 2,
+                bounds.Y + 20); // 20px down from top (title bar)
+            FlaUI.Core.Input.Mouse.Click(clickPoint);
+            Thread.Sleep(150);
+            return !MainWindow.Properties.IsOffscreen.ValueOrDefault;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Sends a keyboard shortcut (e.g., Ctrl+S, Ctrl+Z) with automatic focus verification.
+    /// ALWAYS use this instead of direct Keyboard.TypeSimultaneously calls.
+    /// </summary>
+    /// <param name="keys">Virtual key codes to press simultaneously</param>
+    /// <exception cref="InvalidOperationException">Thrown if focus cannot be obtained</exception>
+    protected void SendKeyboardShortcut(params VirtualKeyShort[] keys)
+    {
+        if (!EnsureFocused())
+        {
+            throw new InvalidOperationException(
+                "Failed to focus main window before keyboard input. " +
+                "This prevents keystrokes from going to the wrong application.");
+        }
+
+        FlaUI.Core.Input.Keyboard.TypeSimultaneously(keys);
+    }
+
+    #region Common Keyboard Shortcuts
+    // These methods provide focus-safe wrappers for common keyboard shortcuts.
+    // Always use these instead of direct Keyboard.TypeSimultaneously calls.
+
+    /// <summary>Sends Ctrl+S (Save) with focus verification.</summary>
+    protected void SendCtrlS() => SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_S);
+
+    /// <summary>Sends Ctrl+Z (Undo) with focus verification.</summary>
+    protected void SendCtrlZ() => SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_Z);
+
+    /// <summary>Sends Ctrl+Y (Redo) with focus verification.</summary>
+    protected void SendCtrlY() => SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_Y);
+
+    /// <summary>Sends Ctrl+D (Duplicate/Add) with focus verification.</summary>
+    protected void SendCtrlD() => SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_D);
+
+    /// <summary>Sends Ctrl+N (New) with focus verification.</summary>
+    protected void SendCtrlN() => SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_N);
+
+    /// <summary>Sends Ctrl+O (Open) with focus verification.</summary>
+    protected void SendCtrlO() => SendKeyboardShortcut(VirtualKeyShort.CONTROL, VirtualKeyShort.KEY_O);
+
+    /// <summary>Sends Delete key with focus verification.</summary>
+    protected void SendDelete() => SendKeyboardShortcut(VirtualKeyShort.DELETE);
+
+    /// <summary>Sends Escape key with focus verification.</summary>
+    protected void SendEscape() => SendKeyboardShortcut(VirtualKeyShort.ESCAPE);
+
+    #endregion
+
+    /// <summary>
+    /// Sends keyboard shortcut to the application.
+    /// DEPRECATED: Use SendKeyboardShortcut() instead for focus-safe keyboard input.
+    /// </summary>
+    [Obsolete("Use SendKeyboardShortcut() for focus-safe keyboard input")]
     protected void SendKeys(string keys)
     {
+        if (!EnsureFocused())
+        {
+            throw new InvalidOperationException(
+                "Failed to focus main window before keyboard input.");
+        }
         FlaUI.Core.Input.Keyboard.Type(keys);
     }
 

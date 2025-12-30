@@ -77,17 +77,12 @@ public class UndoRedoTests : ParleyTestBase
             // Capture original file size as baseline (dialog model state)
             var originalFileSize = new FileInfo(tempFile).Length;
 
-            // Add node via Ctrl+D
-            MainWindow!.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            // Add node via Ctrl+D (focus-safe)
+            SendCtrlD();
             Thread.Sleep(1000);
 
-            // Save file to capture modified state
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+            // Save file to capture modified state (focus-safe)
+            SendCtrlS();
             Thread.Sleep(1000);
 
             // Verify file size increased (node was added)
@@ -107,11 +102,8 @@ public class UndoRedoTests : ParleyTestBase
                 ClickMenu("Edit", "Undo");
                 Thread.Sleep(500);
 
-                // Save to check current file size
-                MainWindow!.Focus();
-                FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+                // Save to check current file size (focus-safe)
+                SendCtrlS();
                 Thread.Sleep(1000);
 
                 currentFileSize = new FileInfo(tempFile).Length;
@@ -206,17 +198,12 @@ public class UndoRedoTests : ParleyTestBase
             // Capture original file size as baseline
             var originalFileSize = new FileInfo(tempFile).Length;
 
-            // Add node via Ctrl+D
-            MainWindow!.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            // Add node via Ctrl+D (focus-safe)
+            SendCtrlD();
             Thread.Sleep(1000);
 
-            // Save to capture modified state
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+            // Save to capture modified state (focus-safe)
+            SendCtrlS();
             Thread.Sleep(1000);
             var afterAddFileSize = new FileInfo(tempFile).Length;
             Assert.True(afterAddFileSize > originalFileSize, "Node should have been added");
@@ -228,10 +215,7 @@ public class UndoRedoTests : ParleyTestBase
             {
                 ClickMenu("Edit", "Undo");
                 Thread.Sleep(500);
-                MainWindow!.Focus();
-                FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+                SendCtrlS();
                 Thread.Sleep(1000);
                 currentFileSize = new FileInfo(tempFile).Length;
             }
@@ -246,15 +230,10 @@ public class UndoRedoTests : ParleyTestBase
             int maxRedoAttempts = 5;
             for (int i = 0; i < maxRedoAttempts && currentFileSize < afterAddFileSize - 10; i++)
             {
-                MainWindow!.Focus();
                 Thread.Sleep(300);
-                FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Y);
+                SendCtrlY();
                 Thread.Sleep(1000); // Give time for redo to process
-                FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+                SendCtrlS();
                 Thread.Sleep(1500); // Wait for save to complete
                 currentFileSize = new FileInfo(tempFile).Length;
             }
@@ -299,17 +278,12 @@ public class UndoRedoTests : ParleyTestBase
             // Capture original file size as baseline
             var originalFileSize = new FileInfo(tempFile).Length;
 
-            // Add first node via Ctrl+D
-            MainWindow!.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            // Add first node via Ctrl+D (focus-safe)
+            SendCtrlD();
             Thread.Sleep(1000);
 
-            // Save to capture first add state
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+            // Save to capture first add state (focus-safe)
+            SendCtrlS();
             Thread.Sleep(1000);
             var afterFirstAddSize = new FileInfo(tempFile).Length;
             Assert.True(afterFirstAddSize > originalFileSize, "First node should have been added");
@@ -320,18 +294,12 @@ public class UndoRedoTests : ParleyTestBase
             firstItem?.Click();
             Thread.Sleep(500);
 
-            // Add second node via Ctrl+D
-            MainWindow!.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            // Add second node via Ctrl+D (focus-safe)
+            SendCtrlD();
             Thread.Sleep(1500); // Longer wait for second add
 
-            // Save to capture second add state
-            MainWindow!.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+            // Save to capture second add state (focus-safe)
+            SendCtrlS();
             Thread.Sleep(1500);
             var afterSecondAddSize = new FileInfo(tempFile).Length;
             // Second add may or may not increase size if same node is selected
@@ -347,10 +315,7 @@ public class UndoRedoTests : ParleyTestBase
             {
                 ClickMenu("Edit", "Undo");
                 Thread.Sleep(500);
-                MainWindow!.Focus();
-                FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                    FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_S);
+                SendCtrlS();
                 Thread.Sleep(1000);
                 currentFileSize = new FileInfo(tempFile).Length;
             }
@@ -422,18 +387,12 @@ public class UndoRedoTests : ParleyTestBase
             targetItem.Click();
             Thread.Sleep(500);
 
-            // Add node via Ctrl+D
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            // Add node via Ctrl+D (focus-safe)
+            SendCtrlD();
             Thread.Sleep(1000);
 
-            // Act - Undo via Ctrl+Z
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
+            // Act - Undo via Ctrl+Z (focus-safe)
+            SendCtrlZ();
             Thread.Sleep(500);
 
             // Assert - Check if a TreeItem has focus or appears selected
@@ -453,11 +412,8 @@ public class UndoRedoTests : ParleyTestBase
                 Assert.NotEmpty(selectedAfterUndo);
             }
 
-            // Redo via Ctrl+Y
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Y);
+            // Redo via Ctrl+Y (focus-safe)
+            SendCtrlY();
             Thread.Sleep(500);
 
             // Assert - App should still be responsive
@@ -516,18 +472,12 @@ public class UndoRedoTests : ParleyTestBase
             targetItem.Click();
             Thread.Sleep(300);
 
-            // Add a node
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_D);
+            // Add a node (focus-safe)
+            SendCtrlD();
             Thread.Sleep(1000);
 
-            // Undo
-            MainWindow.Focus();
-            FlaUI.Core.Input.Keyboard.TypeSimultaneously(
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL,
-                FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_Z);
+            // Undo (focus-safe)
+            SendCtrlZ();
             Thread.Sleep(500);
 
             // Check selection after undo (diagnostic, not hard assertion)
