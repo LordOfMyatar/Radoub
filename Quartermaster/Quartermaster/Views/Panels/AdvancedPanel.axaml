@@ -5,7 +5,7 @@
              mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="900"
              x:Class="Quartermaster.Views.Panels.AdvancedPanel">
 
-    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,45,20">
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,50,20">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="20">
                 <!-- Header -->
