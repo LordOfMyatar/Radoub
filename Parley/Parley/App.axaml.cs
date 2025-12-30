@@ -13,6 +13,7 @@ using DialogEditor.Services;
 using DialogEditor.Plugins;
 using System.ComponentModel;
 using Radoub.Formats.Logging;
+using ThemeManager = Radoub.UI.Services.ThemeManager;
 
 namespace DialogEditor;
 
@@ -42,7 +43,8 @@ public partial class App : Application
         // Initialize spell-checking (async, non-blocking)
         _ = SpellCheckService.Instance.InitializeAsync();
 
-        // Discover and apply themes
+        // Initialize and discover themes
+        ThemeManager.Initialize("Parley");
         ThemeManager.Instance.DiscoverThemes();
 
         var themeId = SettingsService.Instance.CurrentThemeId;

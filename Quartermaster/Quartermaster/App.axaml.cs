@@ -10,6 +10,7 @@ using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Quartermaster.Views;
+using ThemeManager = Radoub.UI.Services.ThemeManager;
 
 namespace Quartermaster;
 
@@ -22,7 +23,8 @@ public partial class App : Application
         // Register this tool's path in shared Radoub settings
         RegisterToolPath();
 
-        // Discover and apply theme
+        // Initialize and discover themes
+        ThemeManager.Initialize("Quartermaster");
         ThemeManager.Instance.DiscoverThemes();
         var themeId = SettingsService.Instance.CurrentThemeId;
         if (!ThemeManager.Instance.ApplyTheme(themeId))

@@ -10,6 +10,7 @@ using Avalonia.VisualTree;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using ThemeManager = Radoub.UI.Services.ThemeManager;
 using DialogEditor.ViewModels;
 
 namespace DialogEditor.Views

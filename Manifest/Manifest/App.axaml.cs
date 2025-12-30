@@ -10,6 +10,7 @@ using Avalonia.Markup.Xaml;
 using Manifest.Services;
 using Radoub.Formats.Logging;
 using Manifest.Views;
+using ThemeManager = Radoub.UI.Services.ThemeManager;
 
 namespace Manifest;
 
@@ -22,7 +23,8 @@ public partial class App : Application
         // Register this tool's path in shared Radoub settings for cross-tool discovery
         RegisterToolPath();
 
-        // Discover and apply theme
+        // Initialize and discover themes
+        ThemeManager.Initialize("Manifest");
         ThemeManager.Instance.DiscoverThemes();
         var themeId = SettingsService.Instance.CurrentThemeId;
         if (!ThemeManager.Instance.ApplyTheme(themeId))
