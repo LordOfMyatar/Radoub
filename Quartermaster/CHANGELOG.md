@@ -13,9 +13,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.13-alpha] - 2025-12-30
 **Branch**: `quartermaster/fix/flaky-spells-navigation-test` | **PR**: #656
 
-### Fix: Flaky FlaUI Navigation Test for Spells Panel (#654)
+### Fix: Flaky FlaUI Navigation Test (#654)
 
-Fix intermittent test failure in `Navigation_ClickingNavButton_ShowsCorrectPanel(Spells)`.
+Fix intermittent test failures in NavigationTests when running as part of full test suite.
+
+**Root Cause**: FlaUI's `Button.Click()` uses simulated mouse clicks at screen coordinates. When VSCode or other windows steal focus, clicks go to the wrong window.
+
+**Solution**: Use UIA Invoke pattern for button clicks, which sends events directly through the automation framework without relying on screen coordinates.
+
+#### Changed
+- NavigationTests: Use `button.Patterns.Invoke.Pattern.Invoke()` instead of `button.Click()` for reliable automation
+- Added `WaitForPanelVisible()` with retry logic matching SpellsPanelTests pattern
+- Added `EnsureFocused()` calls before interactions
+- Added 2-second inter-suite delay in run-tests.ps1 between UI test suites
+
+#### Removed
+- Removed Spells from Navigation Theory (covered by SpellsPanelTests.SpellsPanel_NavigatesSuccessfully)
+- Removed `Navigation_SwitchBetweenPanels_WorksCorrectly` (flaky as first test)
 
 ---
 

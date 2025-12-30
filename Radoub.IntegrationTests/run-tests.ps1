@@ -168,7 +168,15 @@ if (-not $UIOnly) {
 # Run UI tests unless UnitOnly specified
 if (-not $UnitOnly) {
     Write-Host "`n=== UI Integration Tests ===" -ForegroundColor Magenta
+    $firstUiTest = $true
     foreach ($test in $uiTests) {
+        if (-not $firstUiTest) {
+            # Brief pause between UI test suites to let system settle
+            # This helps prevent focus issues when transitioning between app tests
+            Write-Host "  [Waiting 2s for system to settle...]" -ForegroundColor Gray
+            Start-Sleep -Seconds 2
+        }
+        $firstUiTest = $false
         Invoke-TestProject $test
     }
 }
