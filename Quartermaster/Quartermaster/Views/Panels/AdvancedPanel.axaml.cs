@@ -12,8 +12,8 @@ namespace Quartermaster.Views.Panels;
 public partial class AdvancedPanel : UserControl
 {
     // Identity section
-    private TextBlock? _templateResRefText;
-    private TextBlock? _tagText;
+    private TextBox? _templateResRefTextBox;
+    private TextBox? _tagTextBox;
     private TextBox? _commentTextBox;
     private Button? _copyResRefButton;
     private Button? _copyTagButton;
@@ -21,8 +21,7 @@ public partial class AdvancedPanel : UserControl
     // Appearance section
     private ComboBox? _appearanceComboBox;
     private ComboBox? _phenotypeComboBox;
-    private TextBlock? _portraitText;
-    private TextBlock? _portraitIdText;
+    private ComboBox? _portraitComboBox;
 
     // Body parts section
     private Border? _bodyPartsSection;
@@ -64,12 +63,12 @@ public partial class AdvancedPanel : UserControl
     private CheckBox? _interruptableCheckBox;
 
     // Behavior
-    private TextBlock? _factionText;
-    private TextBlock? _perceptionText;
-    private TextBlock? _walkRateText;
-    private TextBlock? _soundSetText;
-    private TextBlock? _decayTimeText;
-    private TextBlock? _bodyBagText;
+    private ComboBox? _factionComboBox;
+    private ComboBox? _perceptionComboBox;
+    private ComboBox? _walkRateComboBox;
+    private ComboBox? _soundSetComboBox;
+    private ComboBox? _decayTimeComboBox;
+    private ComboBox? _bodyBagComboBox;
 
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
@@ -78,6 +77,7 @@ public partial class AdvancedPanel : UserControl
     private bool _isLoading;
 
     public event EventHandler? CommentChanged;
+    public event EventHandler? TagChanged;
     public event EventHandler? FlagsChanged;
 
     public AdvancedPanel()
@@ -90,8 +90,8 @@ public partial class AdvancedPanel : UserControl
         AvaloniaXamlLoader.Load(this);
 
         // Identity section
-        _templateResRefText = this.FindControl<TextBlock>("TemplateResRefText");
-        _tagText = this.FindControl<TextBlock>("TagText");
+        _templateResRefTextBox = this.FindControl<TextBox>("TemplateResRefTextBox");
+        _tagTextBox = this.FindControl<TextBox>("TagTextBox");
         _commentTextBox = this.FindControl<TextBox>("CommentTextBox");
         _copyResRefButton = this.FindControl<Button>("CopyResRefButton");
         _copyTagButton = this.FindControl<Button>("CopyTagButton");
@@ -99,8 +99,7 @@ public partial class AdvancedPanel : UserControl
         // Appearance section
         _appearanceComboBox = this.FindControl<ComboBox>("AppearanceComboBox");
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox");
-        _portraitText = this.FindControl<TextBlock>("PortraitText");
-        _portraitIdText = this.FindControl<TextBlock>("PortraitIdText");
+        _portraitComboBox = this.FindControl<ComboBox>("PortraitComboBox");
 
         // Body parts section
         _bodyPartsSection = this.FindControl<Border>("BodyPartsSection");
@@ -142,18 +141,20 @@ public partial class AdvancedPanel : UserControl
         _interruptableCheckBox = this.FindControl<CheckBox>("InterruptableCheckBox");
 
         // Behavior
-        _factionText = this.FindControl<TextBlock>("FactionText");
-        _perceptionText = this.FindControl<TextBlock>("PerceptionText");
-        _walkRateText = this.FindControl<TextBlock>("WalkRateText");
-        _soundSetText = this.FindControl<TextBlock>("SoundSetText");
-        _decayTimeText = this.FindControl<TextBlock>("DecayTimeText");
-        _bodyBagText = this.FindControl<TextBlock>("BodyBagText");
+        _factionComboBox = this.FindControl<ComboBox>("FactionComboBox");
+        _perceptionComboBox = this.FindControl<ComboBox>("PerceptionComboBox");
+        _walkRateComboBox = this.FindControl<ComboBox>("WalkRateComboBox");
+        _soundSetComboBox = this.FindControl<ComboBox>("SoundSetComboBox");
+        _decayTimeComboBox = this.FindControl<ComboBox>("DecayTimeComboBox");
+        _bodyBagComboBox = this.FindControl<ComboBox>("BodyBagComboBox");
 
         // Wire up events
         if (_copyResRefButton != null)
             _copyResRefButton.Click += OnCopyResRefClick;
         if (_copyTagButton != null)
             _copyTagButton.Click += OnCopyTagClick;
+        if (_tagTextBox != null)
+            _tagTextBox.TextChanged += OnTagTextChanged;
         if (_commentTextBox != null)
             _commentTextBox.TextChanged += OnCommentTextChanged;
         if (_appearanceComboBox != null)
@@ -194,6 +195,7 @@ public partial class AdvancedPanel : UserControl
         _displayService = displayService;
         LoadAppearanceData();
         LoadBodyPartData();
+        LoadBehaviorData();
     }
 
     private void LoadAppearanceData()
@@ -235,7 +237,26 @@ public partial class AdvancedPanel : UserControl
             }
         }
 
+        // Load portraits from 2DA
+        LoadPortraitData();
+
         _isLoading = false;
+    }
+
+    private void LoadPortraitData()
+    {
+        if (_displayService == null || _portraitComboBox == null) return;
+
+        _portraitComboBox.Items.Clear();
+        var portraits = _displayService.GetAllPortraits();
+        foreach (var (id, name) in portraits)
+        {
+            _portraitComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = name,
+                Tag = id
+            });
+        }
     }
 
     private void LoadBodyPartData()
@@ -307,6 +328,80 @@ public partial class AdvancedPanel : UserControl
         }
     }
 
+    private void LoadBehaviorData()
+    {
+        // Perception Range dropdown
+        if (_perceptionComboBox != null)
+        {
+            _perceptionComboBox.Items.Clear();
+            _perceptionComboBox.Items.Add(new ComboBoxItem { Content = "Short (9)", Tag = (byte)9 });
+            _perceptionComboBox.Items.Add(new ComboBoxItem { Content = "Medium (10)", Tag = (byte)10 });
+            _perceptionComboBox.Items.Add(new ComboBoxItem { Content = "Normal (11)", Tag = (byte)11 });
+            _perceptionComboBox.Items.Add(new ComboBoxItem { Content = "Long (12)", Tag = (byte)12 });
+            _perceptionComboBox.Items.Add(new ComboBoxItem { Content = "Maximum (13)", Tag = (byte)13 });
+        }
+
+        // Walk Rate dropdown
+        if (_walkRateComboBox != null)
+        {
+            _walkRateComboBox.Items.Clear();
+            _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "PC (0)", Tag = 0 });
+            _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "Immobile (1)", Tag = 1 });
+            _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "Very Slow (2)", Tag = 2 });
+            _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "Slow (3)", Tag = 3 });
+            _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "Normal (4)", Tag = 4 });
+            _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "Fast (5)", Tag = 5 });
+            _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "Very Fast (6)", Tag = 6 });
+            _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "Default (7)", Tag = 7 });
+        }
+
+        // Decay Time dropdown - common presets
+        if (_decayTimeComboBox != null)
+        {
+            _decayTimeComboBox.Items.Clear();
+            _decayTimeComboBox.Items.Add(new ComboBoxItem { Content = "Instant (0 ms)", Tag = 0u });
+            _decayTimeComboBox.Items.Add(new ComboBoxItem { Content = "1 second", Tag = 1000u });
+            _decayTimeComboBox.Items.Add(new ComboBoxItem { Content = "5 seconds (Default)", Tag = 5000u });
+            _decayTimeComboBox.Items.Add(new ComboBoxItem { Content = "10 seconds", Tag = 10000u });
+            _decayTimeComboBox.Items.Add(new ComboBoxItem { Content = "30 seconds", Tag = 30000u });
+            _decayTimeComboBox.Items.Add(new ComboBoxItem { Content = "1 minute", Tag = 60000u });
+            _decayTimeComboBox.Items.Add(new ComboBoxItem { Content = "5 minutes", Tag = 300000u });
+        }
+
+        // Body Bag dropdown - from bodybag.2da
+        if (_bodyBagComboBox != null)
+        {
+            _bodyBagComboBox.Items.Clear();
+            _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "Default (0)", Tag = (byte)0 });
+            _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "Body Bag (1)", Tag = (byte)1 });
+            _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "Pouch (2)", Tag = (byte)2 });
+            _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "Treasure Pile (3)", Tag = (byte)3 });
+            _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "No Body (4)", Tag = (byte)4 });
+        }
+
+        // Sound Set - will load from 2DA
+        if (_soundSetComboBox != null && _displayService != null)
+        {
+            _soundSetComboBox.Items.Clear();
+            var soundSets = _displayService.GetAllSoundSets();
+            foreach (var (id, name) in soundSets)
+            {
+                _soundSetComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
+            }
+        }
+
+        // Faction - will load from 2DA or repute.fac
+        if (_factionComboBox != null && _displayService != null)
+        {
+            _factionComboBox.Items.Clear();
+            var factions = _displayService.GetAllFactions();
+            foreach (var (id, name) in factions)
+            {
+                _factionComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
+            }
+        }
+    }
+
     public void LoadCreature(UtcFile? creature)
     {
         _isLoading = true;
@@ -320,27 +415,17 @@ public partial class AdvancedPanel : UserControl
         }
 
         // Identity
-        SetText(_templateResRefText, string.IsNullOrEmpty(creature.TemplateResRef) ? "-" : creature.TemplateResRef);
-        SetText(_tagText, string.IsNullOrEmpty(creature.Tag) ? "-" : creature.Tag);
+        if (_templateResRefTextBox != null)
+            _templateResRefTextBox.Text = creature.TemplateResRef ?? "";
+        if (_tagTextBox != null)
+            _tagTextBox.Text = creature.Tag ?? "";
         if (_commentTextBox != null)
             _commentTextBox.Text = creature.Comment ?? "";
 
         // Appearance - select in combo
         SelectAppearance(creature.AppearanceType);
         SelectPhenotype(creature.Phenotype);
-
-        // Portrait
-        if (_displayService != null)
-        {
-            var portraitResRef = _displayService.GetPortraitResRef(creature.PortraitId);
-            SetText(_portraitText, portraitResRef ?? $"Portrait {creature.PortraitId}");
-            SetText(_portraitIdText, $"(ID: {creature.PortraitId})");
-        }
-        else
-        {
-            SetText(_portraitText, $"Portrait {creature.PortraitId}");
-            SetText(_portraitIdText, $"(ID: {creature.PortraitId})");
-        }
+        SelectPortrait(creature.PortraitId);
 
         // Body parts - update enabled state and values
         var isPartBased = _displayService?.IsPartBasedAppearance(creature.AppearanceType) ?? false;
@@ -356,13 +441,13 @@ public partial class AdvancedPanel : UserControl
         SetCheckBox(_lootableCheckBox, creature.Lootable);
         SetCheckBox(_interruptableCheckBox, creature.Interruptable);
 
-        // Behavior
-        SetText(_factionText, creature.FactionID.ToString());
-        SetText(_perceptionText, GetPerceptionRangeName(creature.PerceptionRange));
-        SetText(_walkRateText, GetWalkRateName(creature.WalkRate));
-        SetText(_soundSetText, creature.SoundSetFile.ToString());
-        SetText(_decayTimeText, $"{creature.DecayTime} ms");
-        SetText(_bodyBagText, creature.BodyBag.ToString());
+        // Behavior - select in combos
+        SelectComboByTag(_factionComboBox, creature.FactionID);
+        SelectComboByTag(_perceptionComboBox, creature.PerceptionRange);
+        SelectComboByTag(_walkRateComboBox, creature.WalkRate);
+        SelectComboByTag(_soundSetComboBox, creature.SoundSetFile);
+        SelectComboByTag(_decayTimeComboBox, creature.DecayTime);
+        SelectComboByTag(_bodyBagComboBox, creature.BodyBag);
 
         _isLoading = false;
     }
@@ -428,6 +513,60 @@ public partial class AdvancedPanel : UserControl
         combo.SelectedIndex = combo.Items.Count - 1;
     }
 
+    private void SelectComboByTag(ComboBox? combo, ushort value)
+    {
+        if (combo == null) return;
+
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            if (combo.Items[i] is ComboBoxItem item && item.Tag is ushort id && id == value)
+            {
+                combo.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // If not found, add it
+        combo.Items.Add(new ComboBoxItem { Content = value.ToString(), Tag = value });
+        combo.SelectedIndex = combo.Items.Count - 1;
+    }
+
+    private void SelectComboByTag(ComboBox? combo, int value)
+    {
+        if (combo == null) return;
+
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            if (combo.Items[i] is ComboBoxItem item && item.Tag is int id && id == value)
+            {
+                combo.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // If not found, add it
+        combo.Items.Add(new ComboBoxItem { Content = value.ToString(), Tag = value });
+        combo.SelectedIndex = combo.Items.Count - 1;
+    }
+
+    private void SelectComboByTag(ComboBox? combo, uint value)
+    {
+        if (combo == null) return;
+
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            if (combo.Items[i] is ComboBoxItem item && item.Tag is uint id && id == value)
+            {
+                combo.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // If not found, add it
+        combo.Items.Add(new ComboBoxItem { Content = $"{value} ms", Tag = value });
+        combo.SelectedIndex = combo.Items.Count - 1;
+    }
+
     private void SelectAppearance(ushort appearanceId)
     {
         if (_appearanceComboBox == null || _appearances == null) return;
@@ -474,6 +613,30 @@ public partial class AdvancedPanel : UserControl
         _phenotypeComboBox.SelectedIndex = _phenotypeComboBox.Items.Count - 1;
     }
 
+    private void SelectPortrait(ushort portraitId)
+    {
+        if (_portraitComboBox == null) return;
+
+        for (int i = 0; i < _portraitComboBox.Items.Count; i++)
+        {
+            if (_portraitComboBox.Items[i] is ComboBoxItem item &&
+                item.Tag is ushort id && id == portraitId)
+            {
+                _portraitComboBox.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // If not found, add it
+        var name = _displayService?.GetPortraitName(portraitId) ?? $"Portrait {portraitId}";
+        _portraitComboBox.Items.Add(new ComboBoxItem
+        {
+            Content = name,
+            Tag = portraitId
+        });
+        _portraitComboBox.SelectedIndex = _portraitComboBox.Items.Count - 1;
+    }
+
     private void OnAppearanceSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_isLoading || _appearanceComboBox?.SelectedItem is not ComboBoxItem item) return;
@@ -488,8 +651,10 @@ public partial class AdvancedPanel : UserControl
     public void ClearPanel()
     {
         // Clear identity
-        SetText(_templateResRefText, "-");
-        SetText(_tagText, "-");
+        if (_templateResRefTextBox != null)
+            _templateResRefTextBox.Text = "";
+        if (_tagTextBox != null)
+            _tagTextBox.Text = "";
         if (_commentTextBox != null)
             _commentTextBox.Text = "";
 
@@ -498,8 +663,8 @@ public partial class AdvancedPanel : UserControl
             _appearanceComboBox.SelectedIndex = -1;
         if (_phenotypeComboBox != null)
             _phenotypeComboBox.SelectedIndex = -1;
-        SetText(_portraitText, "-");
-        SetText(_portraitIdText, "");
+        if (_portraitComboBox != null)
+            _portraitComboBox.SelectedIndex = -1;
 
         // Disable body parts section
         UpdateBodyPartsEnabledState(false);
@@ -513,19 +678,25 @@ public partial class AdvancedPanel : UserControl
         SetCheckBox(_lootableCheckBox, false);
         SetCheckBox(_interruptableCheckBox, true); // Default
 
-        // Clear behavior
-        SetText(_factionText, "0");
-        SetText(_perceptionText, "Normal");
-        SetText(_walkRateText, "Normal");
-        SetText(_soundSetText, "0");
-        SetText(_decayTimeText, "5000 ms");
-        SetText(_bodyBagText, "0");
+        // Clear behavior combos
+        if (_factionComboBox != null)
+            _factionComboBox.SelectedIndex = -1;
+        if (_perceptionComboBox != null)
+            _perceptionComboBox.SelectedIndex = 2; // Normal (11)
+        if (_walkRateComboBox != null)
+            _walkRateComboBox.SelectedIndex = 0;
+        if (_soundSetComboBox != null)
+            _soundSetComboBox.SelectedIndex = -1;
+        if (_decayTimeComboBox != null)
+            _decayTimeComboBox.SelectedIndex = 2; // 5 seconds default
+        if (_bodyBagComboBox != null)
+            _bodyBagComboBox.SelectedIndex = 0;
     }
 
     private async void OnCopyResRefClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        var text = _templateResRefText?.Text;
-        if (!string.IsNullOrEmpty(text) && text != "-")
+        var text = _templateResRefTextBox?.Text;
+        if (!string.IsNullOrEmpty(text))
         {
             var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
             if (clipboard != null)
@@ -535,13 +706,21 @@ public partial class AdvancedPanel : UserControl
 
     private async void OnCopyTagClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        var text = _tagText?.Text;
-        if (!string.IsNullOrEmpty(text) && text != "-")
+        var text = _tagTextBox?.Text;
+        if (!string.IsNullOrEmpty(text))
         {
             var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
             if (clipboard != null)
                 await clipboard.SetTextAsync(text);
         }
+    }
+
+    private void OnTagTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.Tag = _tagTextBox?.Text ?? "";
+        TagChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnCommentTextChanged(object? sender, TextChangedEventArgs e)
@@ -553,35 +732,7 @@ public partial class AdvancedPanel : UserControl
     }
 
     public string GetComment() => _commentTextBox?.Text ?? "";
-
-    private static string GetPerceptionRangeName(byte range)
-    {
-        return range switch
-        {
-            9 => "Short",
-            10 => "Medium",
-            11 => "Normal",
-            12 => "Long",
-            13 => "Maximum",
-            _ => $"{range}"
-        };
-    }
-
-    private static string GetWalkRateName(int rate)
-    {
-        return rate switch
-        {
-            0 => "PC",
-            1 => "Immobile",
-            2 => "Very Slow",
-            3 => "Slow",
-            4 => "Normal",
-            5 => "Fast",
-            6 => "Very Fast",
-            7 => "Default",
-            _ => $"{rate}"
-        };
-    }
+    public string GetTag() => _tagTextBox?.Text ?? "";
 
     private static void SetCheckBox(CheckBox? cb, bool value)
     {

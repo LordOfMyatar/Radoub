@@ -23,23 +23,27 @@
                         <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="14"/>
 
                         <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
-                            <!-- Template ResRef with Copy -->
+                            <!-- Blueprint ResRef (read-only - file rename to change) -->
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Blueprint ResRef:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TemplateResRefText" Text="-"
-                                       FontFamily="Consolas, Courier New, monospace" VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="TemplateResRefTextBox"
+                                     FontFamily="Consolas, Courier New, monospace"
+                                     IsReadOnly="True"
+                                     AutomationProperties.AutomationId="TemplateResRefTextBox"
+                                     ToolTip.Tip="Read-only. Use File > Rename to change."/>
                             <Button Grid.Row="0" Grid.Column="2" x:Name="CopyResRefButton"
                                     Content="Copy" Padding="8,2" FontSize="11"
                                     AutomationProperties.AutomationId="CopyResRefButton"
                                     ToolTip.Tip="Copy ResRef to clipboard"/>
 
-                            <!-- Tag with Copy -->
+                            <!-- Tag (editable) -->
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Tag:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TagText" Text="-"
-                                       FontFamily="Consolas, Courier New, monospace" VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="TagTextBox"
+                                     FontFamily="Consolas, Courier New, monospace"
+                                     AutomationProperties.AutomationId="TagTextBox"/>
                             <Button Grid.Row="1" Grid.Column="2" x:Name="CopyTagButton"
                                     Content="Copy" Padding="8,2" FontSize="11"
                                     AutomationProperties.AutomationId="CopyTagButton"
@@ -90,12 +94,9 @@
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="Portrait:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                                <TextBlock x:Name="PortraitText" Text="po_hu_m_01" VerticalAlignment="Center"
-                                           FontFamily="Consolas, Courier New, monospace"/>
-                                <TextBlock x:Name="PortraitIdText" Text="(ID: 0)" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            </StackPanel>
+                            <ComboBox Grid.Row="2" Grid.Column="1" x:Name="PortraitComboBox"
+                                      HorizontalAlignment="Stretch"
+                                      AutomationProperties.AutomationId="PortraitComboBox"/>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -116,63 +117,63 @@
 
                         <!-- Body parts content - disabled for static appearances -->
                         <StackPanel x:Name="BodyPartsContent" Spacing="10">
-                            <!-- Main body part grid - simplified 2-column layout -->
-                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                                  RowSpacing="6" ColumnSpacing="15">
+                            <!-- Main body part grid - label column fixed, dropdown left-aligned -->
+                            <Grid ColumnDefinitions="80,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                                  RowSpacing="6" ColumnSpacing="10">
 
                                 <!-- Row 0: Head -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Head:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
                                 <ComboBox Grid.Row="0" Grid.Column="1" x:Name="HeadComboBox"
-                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                          HorizontalAlignment="Left" MinWidth="120" FontSize="11"/>
 
                                 <!-- Row 1: Neck -->
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Neck:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
                                 <ComboBox Grid.Row="1" Grid.Column="1" x:Name="NeckComboBox"
-                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                          HorizontalAlignment="Left" MinWidth="120" FontSize="11"/>
 
                                 <!-- Row 2: Torso -->
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Torso:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
                                 <ComboBox Grid.Row="2" Grid.Column="1" x:Name="TorsoComboBox"
-                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                          HorizontalAlignment="Left" MinWidth="120" FontSize="11"/>
 
                                 <!-- Row 3: Pelvis -->
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Pelvis:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
                                 <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PelvisComboBox"
-                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                          HorizontalAlignment="Left" MinWidth="120" FontSize="11"/>
 
                                 <!-- Row 4: Belt -->
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="Belt:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
                                 <ComboBox Grid.Row="4" Grid.Column="1" x:Name="BeltComboBox"
-                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                          HorizontalAlignment="Left" MinWidth="120" FontSize="11"/>
 
                                 <!-- Row 5: Tail -->
                                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Tail:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
                                 <ComboBox Grid.Row="5" Grid.Column="1" x:Name="TailComboBox"
-                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                          HorizontalAlignment="Left" MinWidth="120" FontSize="11"/>
 
                                 <!-- Row 6: Wings -->
                                 <TextBlock Grid.Row="6" Grid.Column="0" Text="Wings:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
                                 <ComboBox Grid.Row="6" Grid.Column="1" x:Name="WingsComboBox"
-                                          HorizontalAlignment="Stretch" FontSize="11"/>
+                                          HorizontalAlignment="Left" MinWidth="120" FontSize="11"/>
                             </Grid>
 
                             <!-- Paired body parts (Left/Right) -->
                             <TextBlock Text="Limbs" FontWeight="SemiBold" FontSize="12" Margin="0,10,0,5"/>
-                            <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                            <Grid ColumnDefinitions="75,*,75,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                                   RowSpacing="6" ColumnSpacing="10">
 
                                 <!-- Row 0: Shoulders -->
@@ -293,36 +294,48 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Behavior" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction ID:"
+                        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="FactionText" Text="0" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="FactionComboBox"
+                                      HorizontalAlignment="Left" MinWidth="180"
+                                      AutomationProperties.AutomationId="FactionComboBox"/>
 
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Perception Range:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="PerceptionText" Text="11" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="1" Grid.Column="1" x:Name="PerceptionComboBox"
+                                      HorizontalAlignment="Left" MinWidth="180"
+                                      AutomationProperties.AutomationId="PerceptionComboBox"/>
 
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="Walk Rate:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="WalkRateText" Text="0" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="2" Grid.Column="1" x:Name="WalkRateComboBox"
+                                      HorizontalAlignment="Left" MinWidth="180"
+                                      AutomationProperties.AutomationId="WalkRateComboBox"/>
 
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="Sound Set:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="SoundSetText" Text="0" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="3" Grid.Column="1" x:Name="SoundSetComboBox"
+                                      HorizontalAlignment="Left" MinWidth="180"
+                                      AutomationProperties.AutomationId="SoundSetComboBox"/>
 
                             <TextBlock Grid.Row="4" Grid.Column="0" Text="Decay Time:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="4" Grid.Column="1" x:Name="DecayTimeText" Text="5000 ms" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="4" Grid.Column="1" x:Name="DecayTimeComboBox"
+                                      HorizontalAlignment="Left" MinWidth="180"
+                                      AutomationProperties.AutomationId="DecayTimeComboBox"/>
 
                             <TextBlock Grid.Row="5" Grid.Column="0" Text="Body Bag:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Row="5" Grid.Column="1" x:Name="BodyBagText" Text="0" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="5" Grid.Column="1" x:Name="BodyBagComboBox"
+                                      HorizontalAlignment="Left" MinWidth="180"
+                                      AutomationProperties.AutomationId="BodyBagComboBox"/>
                         </Grid>
                     </StackPanel>
                 </Border>

@@ -1327,6 +1327,85 @@ public class CreatureDisplayService
         return tails;
     }
 
+    /// <summary>
+    /// Gets all portraits from portraits.2da.
+    /// </summary>
+    public List<(ushort Id, string Name)> GetAllPortraits()
+    {
+        var portraits = new List<(ushort Id, string Name)>();
+
+        // portraits.2da typically has 100+ rows
+        for (int i = 0; i < 500; i++)
+        {
+            var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");
+            if (string.IsNullOrEmpty(baseResRef) || baseResRef == "****")
+            {
+                if (portraits.Count > 50)
+                    break;
+                continue;
+            }
+
+            portraits.Add(((ushort)i, baseResRef));
+        }
+
+        return portraits;
+    }
+
+    /// <summary>
+    /// Gets all sound sets from soundset.2da.
+    /// </summary>
+    public List<(ushort Id, string Name)> GetAllSoundSets()
+    {
+        var soundSets = new List<(ushort Id, string Name)>();
+
+        // soundset.2da can have many rows
+        for (int i = 0; i < 500; i++)
+        {
+            var label = _gameDataService.Get2DAValue("soundset", i, "LABEL");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                if (soundSets.Count > 50)
+                    break;
+                continue;
+            }
+
+            // Try to get STRREF for localized name
+            var strRef = _gameDataService.Get2DAValue("soundset", i, "STRREF");
+            string displayName;
+            if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+            {
+                var tlkName = _gameDataService.GetString(strRef);
+                displayName = !string.IsNullOrEmpty(tlkName) ? tlkName : label;
+            }
+            else
+            {
+                displayName = label;
+            }
+
+            soundSets.Add(((ushort)i, displayName));
+        }
+
+        return soundSets;
+    }
+
+    /// <summary>
+    /// Gets all factions. Returns common NWN factions.
+    /// Faction data is typically stored in repute.fac, not a 2DA.
+    /// </summary>
+    public List<(ushort Id, string Name)> GetAllFactions()
+    {
+        // Standard NWN factions from repute.fac
+        // These are the default factions in a new module
+        return new List<(ushort Id, string Name)>
+        {
+            (0, "PC"),
+            (1, "Hostile"),
+            (2, "Commoner"),
+            (3, "Merchant"),
+            (4, "Defender")
+        };
+    }
+
     #endregion
 
     #region Spell Methods
