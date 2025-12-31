@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.18-alpha] - 2025-12-31
-**Branch**: `quartermaster/sprint/tech-debt-devex` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/tech-debt-devex` | **PR**: #698
 
 ### Sprint: Tech Debt & DevEx (#697)
 
