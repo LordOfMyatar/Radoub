@@ -43,6 +43,19 @@ Cross-platform journal editor for Neverwinter Nights JRL files.
 
 **Learn more**: [Manifest Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Manifest)
 
+### Quartermaster - Creature & Inventory Editor
+
+Cross-platform creature and inventory editor for Neverwinter Nights UTC and BIC files.
+
+**Status**: Coming Soon
+**Platforms**: Windows, Linux, macOS
+**Planned Features**:
+- Edit creature blueprints (.utc) and player characters (.bic)
+- Visual equipment slots panel
+- Inventory management with drag-and-drop
+- Creature properties (abilities, feats, skills)
+- Class and level configuration
+
 ### Radoub.Formats - Shared Library
 
 Aurora Engine file format parsers used by Parley and Manifest.
