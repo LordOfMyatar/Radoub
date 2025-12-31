@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.103-alpha] - 2025-12-30
+**Branch**: `parley/sprint/script-browser-fixes` | **PR**: #682
+
+### Sprint: Script Browser Fixes (#681)
+
+#### Fixed
+- Script browse dialog no longer sets script when cancelled with X button (#571)
+- Conditional script preview now shows built-in game scripts from BIF archives (#570)
+  - ScriptService falls back to GameResourceService when script not found in filesystem
+
+---
+
 ## [0.1.102-alpha] - 2025-12-28
 **Branch**: `parley/refactor/remove-legacy-parser` | **PR**: #608
 

@@ -1,8 +1,10 @@
 using System;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using DialogEditor.Utils;
 using DialogEditor.Models;
@@ -175,8 +177,68 @@ namespace DialogEditor.Services
                 }
             }
 
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Script '{scriptName}' not found in any configured path");
+            // Script not found in filesystem - try built-in game scripts
+            var builtInContent = await LoadBuiltInScriptAsync(scriptName);
+            if (builtInContent != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found built-in script '{scriptName}' in game BIF files");
+                return builtInContent;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Script '{scriptName}' not found in any configured path or game files");
             return null;
+        }
+
+        /// <summary>
+        /// Attempts to load a script from the game's built-in BIF files.
+        /// </summary>
+        private async Task<string?> LoadBuiltInScriptAsync(string scriptName)
+        {
+            try
+            {
+                // Check if GameResourceService is available
+                if (!GameResourceService.Instance.IsAvailable)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"LoadBuiltInScriptAsync: GameResourceService not available for '{scriptName}'");
+                    return null;
+                }
+
+                // Extract script name without extension
+                var resRef = scriptName.EndsWith(".nss", StringComparison.OrdinalIgnoreCase)
+                    ? Path.GetFileNameWithoutExtension(scriptName)
+                    : scriptName;
+
+                // Try to find the .nss source file in game BIFs
+                var scriptData = await Task.Run(() =>
+                    GameResourceService.Instance.FindResource(resRef, ResourceTypes.Nss));
+
+                if (scriptData == null || scriptData.Length == 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"LoadBuiltInScriptAsync: No .nss source found for '{scriptName}' in game files");
+                    return null;
+                }
+
+                // NWScript source files are plain text
+                var content = Encoding.UTF8.GetString(scriptData);
+
+                // Add header for context
+                var header = $"// Built-in game script: {resRef}\n" +
+                            "// Source: NWN game files (BIF archive)\n" +
+                            "//\n";
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"LoadBuiltInScriptAsync: Extracted '{scriptName}' from game BIF ({scriptData.Length} bytes)");
+
+                return header + content;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"LoadBuiltInScriptAsync: Error loading built-in script '{scriptName}': {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>

@@ -47,11 +47,15 @@ public partial class DialogBrowserWindow : Window
     private string? _overridePath;
     private bool _showHakDialogs;
     private bool _hakDialogsLoaded;
+    private bool _confirmed;
 
     // Static cache for HAK file contents - persists across window instances
     private static readonly Dictionary<string, DialogHakCacheEntry> _hakCache = new();
 
-    public string? SelectedDialog => _selectedDialog;
+    /// <summary>
+    /// Gets the selected dialog name. Only valid if confirmed (OK or double-click).
+    /// </summary>
+    public string? SelectedDialog => _confirmed ? _selectedDialog : null;
 
     // Parameterless constructor for XAML designer/runtime loader
     public DialogBrowserWindow() : this(null)
@@ -453,17 +457,20 @@ public partial class DialogBrowserWindow : Window
     {
         if (_selectedDialog != null)
         {
+            _confirmed = true;
             Close(_selectedDialog);
         }
     }
 
     private void OnOkClick(object? sender, RoutedEventArgs e)
     {
+        _confirmed = true;
         Close(_selectedDialog);
     }
 
     private void OnCancelClick(object? sender, RoutedEventArgs e)
     {
+        // Don't set _confirmed - SelectedDialog will return null
         Close(null);
     }
 }
