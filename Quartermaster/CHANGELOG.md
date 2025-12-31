@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.14-alpha] - 2025-12-30
+**Branch**: `quartermaster/sprint/scripts-advanced-props` | **PR**: #TBD
+
+### Sprint: Scripts & Advanced Properties (#668)
+
+Complete Quartermaster's core creature editing functionality with Scripts panel and remaining Advanced Properties fields.
+
+#### Scope
+- #646 - Scripts Panel (All 14 Script Slots)
+- #647 - Subrace & Deity Fields
+- #648 - Challenge Rating Display
+
+---
+
 ## [0.1.13-alpha] - 2025-12-30
 **Branch**: `quartermaster/fix/flaky-spells-navigation-test` | **PR**: #656
 
