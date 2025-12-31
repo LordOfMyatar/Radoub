@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.17-alpha] - 2025-12-31
-**Branch**: `quartermaster/sprint/inventory-sync` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/inventory-sync` | **PR**: #695
 
 ### Sprint: Inventory Sync & Item Operations (#694)
 
