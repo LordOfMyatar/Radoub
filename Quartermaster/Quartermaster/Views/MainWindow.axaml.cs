@@ -427,6 +427,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             .Select(s => s.EquippedItem!.Item);
         StatsPanelContent.SetEquippedItems(equippedItems);
 
+        // Pass file type to CharacterPanel for BIC-specific fields
+        CharacterPanelContent.SetFileType(_isBicFile);
         CharacterPanelContent.LoadCreature(creature);
         ClassesPanelContent.LoadCreature(creature);
         SkillsPanelContent.LoadCreature(creature);
@@ -435,11 +437,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ScriptsPanelContent.LoadCreature(creature);
         AppearancePanelContent.LoadCreature(creature);
         AdvancedPanelContent.LoadCreature(creature);
+
+        // Update UI visibility based on file type
+        UpdateFileTypeVisibility();
+    }
+
+    /// <summary>
+    /// Update UI element visibility based on whether loaded file is BIC or UTC.
+    /// BIC files (player characters) don't have scripts, conversation, or some advanced properties.
+    /// </summary>
+    private void UpdateFileTypeVisibility()
+    {
+        // Hide Scripts nav button for BIC files (player characters don't have scripts)
+        NavScripts.IsVisible = !_isBicFile;
+
+        // If currently on Scripts section and loading a BIC, navigate away
+        if (_isBicFile && _currentSection == "Scripts")
+        {
+            NavigateToSection("Character", NavCharacter);
+        }
     }
 
     private void ClearAllPanels()
     {
         StatsPanelContent.ClearStats();
+        CharacterPanelContent.SetFileType(false); // Reset to UTC mode
         CharacterPanelContent.ClearPanel();
         ClassesPanelContent.ClearPanel();
         SkillsPanelContent.ClearPanel();
@@ -448,6 +470,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ScriptsPanelContent.ClearPanel();
         AppearancePanelContent.ClearPanel();
         AdvancedPanelContent.ClearPanel();
+
+        // Restore Scripts nav button visibility (show by default)
+        NavScripts.IsVisible = true;
     }
 
     #endregion

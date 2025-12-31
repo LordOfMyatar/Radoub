@@ -19,8 +19,18 @@ Enable Quartermaster to properly edit BIC files (player characters) with appropr
 
 #### Added
 
-- #672 - Character Tab (prerequisite for BIC)
-- #676 - BIC-specific tabs and UI handling
+**BIC-Specific Character Fields (#676)**
+- Player Character section with Experience, Gold, and Age fields
+- Biography section for character description (shown when examined)
+- File type detection automatically shows/hides appropriate sections
+
+#### Changed
+
+**File Type Handling (#676)**
+- Scripts nav button hidden for BIC files (player characters don't have scripts)
+- Conversation field hidden for BIC files (not used for player characters)
+- Title bar shows "(Player)" indicator when editing BIC files
+- Automatically navigates away from Scripts if loading BIC while on Scripts panel
 
 ---
 
