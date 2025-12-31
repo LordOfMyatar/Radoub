@@ -213,6 +213,31 @@ public partial class MainWindow
     #region Inventory Operations
 
     /// <summary>
+    /// Handles item dropped on backpack list.
+    /// Supports drops from equipment slots (unequip to backpack).
+    /// </summary>
+    private void OnBackpackItemDropped(object? sender, Radoub.UI.Controls.ItemDropEventArgs e)
+    {
+        // Check for equipped item drag (from equipment slot)
+        if (e.DataObject.Contains("EquippedItem"))
+        {
+            var data = e.DataObject.Get("EquippedItem");
+            if (data is ItemViewModel equippedItem)
+            {
+                // Find the slot this item is in and unequip it
+                var slot = _equipmentSlots.FirstOrDefault(s => s.EquippedItem == equippedItem);
+                if (slot != null)
+                {
+                    UnequipToBackpack(slot);
+                    UnifiedLogger.LogInventory(LogLevel.INFO,
+                        $"Dropped {equippedItem.Name} from {slot.Name} to backpack");
+                }
+            }
+        }
+        // Could add more drop types here (e.g., from palette)
+    }
+
+    /// <summary>
     /// Handles add to backpack request from palette.
     /// Creates new ItemViewModels with proper inventory metadata.
     /// </summary>

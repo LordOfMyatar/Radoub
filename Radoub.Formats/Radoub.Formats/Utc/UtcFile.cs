@@ -212,6 +212,126 @@ public class UtcFile
     /// </summary>
     public byte BodyPart_Torso { get; set; }
 
+    // Colors (for part-based appearances)
+
+    /// <summary>
+    /// Skin color index into pal_skin01.tga palette.
+    /// </summary>
+    public byte Color_Skin { get; set; }
+
+    /// <summary>
+    /// Hair color index into pal_hair01.tga palette.
+    /// </summary>
+    public byte Color_Hair { get; set; }
+
+    /// <summary>
+    /// Tattoo 1 color index into pal_tattoo01.tga palette.
+    /// </summary>
+    public byte Color_Tattoo1 { get; set; }
+
+    /// <summary>
+    /// Tattoo 2 color index into pal_tattoo01.tga palette.
+    /// </summary>
+    public byte Color_Tattoo2 { get; set; }
+
+    // Armor Part Appearance (game instance fields - copied from equipped armor)
+    // These override BodyPart fields when armor is equipped
+
+    /// <summary>
+    /// Armor appearance: Belt (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_Belt { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Left Bicep (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_LBicep { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Right Bicep (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_RBicep { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Left Forearm (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_LFArm { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Right Forearm (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_RFArm { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Left Foot (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_LFoot { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Right Foot (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_RFoot { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Left Hand (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_LHand { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Right Hand (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_RHand { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Left Shin (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_LShin { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Right Shin (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_RShin { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Left Shoulder (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_LShoul { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Right Shoulder (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_RShoul { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Left Thigh (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_LThigh { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Right Thigh (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_RThigh { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Neck (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_Neck { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Pelvis (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_Pelvis { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Torso (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_Torso { get; set; }
+
+    /// <summary>
+    /// Armor appearance: Robe (from equipped armor)
+    /// </summary>
+    public byte ArmorPart_Robe { get; set; }
+
     // Ability scores
 
     /// <summary>

@@ -76,6 +76,54 @@ public static class BicReader
             Wings = root.GetFieldValue<byte>("Wings", 0),
             BodyBag = root.GetFieldValue<byte>("BodyBag", 0),
 
+            // Body parts (for dynamic/part-based appearances)
+            AppearanceHead = root.GetFieldValue<byte>("Appearance_Head", 0),
+            BodyPart_Belt = root.GetFieldValue<byte>("BodyPart_Belt", 0),
+            BodyPart_LBicep = root.GetFieldValue<byte>("BodyPart_LBicep", 0),
+            BodyPart_RBicep = root.GetFieldValue<byte>("BodyPart_RBicep", 0),
+            BodyPart_LFArm = root.GetFieldValue<byte>("BodyPart_LFArm", 0),
+            BodyPart_RFArm = root.GetFieldValue<byte>("BodyPart_RFArm", 0),
+            BodyPart_LFoot = root.GetFieldValue<byte>("BodyPart_LFoot", 0),
+            BodyPart_RFoot = root.GetFieldValue<byte>("BodyPart_RFoot", 0),
+            BodyPart_LHand = root.GetFieldValue<byte>("BodyPart_LHand", 0),
+            BodyPart_RHand = root.GetFieldValue<byte>("BodyPart_RHand", 0),
+            BodyPart_LShin = root.GetFieldValue<byte>("BodyPart_LShin", 0),
+            BodyPart_RShin = root.GetFieldValue<byte>("BodyPart_RShin", 0),
+            BodyPart_LShoul = root.GetFieldValue<byte>("BodyPart_LShoul", 0),
+            BodyPart_RShoul = root.GetFieldValue<byte>("BodyPart_RShoul", 0),
+            BodyPart_LThigh = root.GetFieldValue<byte>("BodyPart_LThigh", 0),
+            BodyPart_RThigh = root.GetFieldValue<byte>("BodyPart_RThigh", 0),
+            BodyPart_Neck = root.GetFieldValue<byte>("BodyPart_Neck", 0),
+            BodyPart_Pelvis = root.GetFieldValue<byte>("BodyPart_Pelvis", 0),
+            BodyPart_Torso = root.GetFieldValue<byte>("BodyPart_Torso", 0),
+
+            // Colors (for part-based appearances)
+            Color_Skin = root.GetFieldValue<byte>("Color_Skin", 0),
+            Color_Hair = root.GetFieldValue<byte>("Color_Hair", 0),
+            Color_Tattoo1 = root.GetFieldValue<byte>("Color_Tattoo1", 0),
+            Color_Tattoo2 = root.GetFieldValue<byte>("Color_Tattoo2", 0),
+
+            // Armor part appearance (game instance fields - from equipped armor)
+            ArmorPart_Belt = root.GetFieldValue<byte>("ArmorPart_Belt", 0),
+            ArmorPart_LBicep = root.GetFieldValue<byte>("ArmorPart_LBicep", 0),
+            ArmorPart_RBicep = root.GetFieldValue<byte>("ArmorPart_RBicep", 0),
+            ArmorPart_LFArm = root.GetFieldValue<byte>("ArmorPart_LFArm", 0),
+            ArmorPart_RFArm = root.GetFieldValue<byte>("ArmorPart_RFArm", 0),
+            ArmorPart_LFoot = root.GetFieldValue<byte>("ArmorPart_LFoot", 0),
+            ArmorPart_RFoot = root.GetFieldValue<byte>("ArmorPart_RFoot", 0),
+            ArmorPart_LHand = root.GetFieldValue<byte>("ArmorPart_LHand", 0),
+            ArmorPart_RHand = root.GetFieldValue<byte>("ArmorPart_RHand", 0),
+            ArmorPart_LShin = root.GetFieldValue<byte>("ArmorPart_LShin", 0),
+            ArmorPart_RShin = root.GetFieldValue<byte>("ArmorPart_RShin", 0),
+            ArmorPart_LShoul = root.GetFieldValue<byte>("ArmorPart_LShoul", 0),
+            ArmorPart_RShoul = root.GetFieldValue<byte>("ArmorPart_RShoul", 0),
+            ArmorPart_LThigh = root.GetFieldValue<byte>("ArmorPart_LThigh", 0),
+            ArmorPart_RThigh = root.GetFieldValue<byte>("ArmorPart_RThigh", 0),
+            ArmorPart_Neck = root.GetFieldValue<byte>("ArmorPart_Neck", 0),
+            ArmorPart_Pelvis = root.GetFieldValue<byte>("ArmorPart_Pelvis", 0),
+            ArmorPart_Torso = root.GetFieldValue<byte>("ArmorPart_Torso", 0),
+            ArmorPart_Robe = root.GetFieldValue<byte>("ArmorPart_Robe", 0),
+
             // Ability scores
             Str = root.GetFieldValue<byte>("Str", 10),
             Dex = root.GetFieldValue<byte>("Dex", 10),
@@ -271,11 +319,16 @@ public static class BicReader
 
         foreach (var equipStruct in equipList.Elements)
         {
-            // BIC files can store equipped items in two formats:
-            // 1. Simple ResRef format: "EquippedRes" field (toolset-created BIC)
-            // 2. Embedded item format: Full item struct with "TemplateResRef" field (saved game)
-            // Try EquippedRes first, fall back to TemplateResRef for embedded items
+            // BIC files can store equipped items in multiple formats:
+            // 1. "EquippedRes" field (standard BIC format from toolset)
+            // 2. "TemplateResRef" field (saved game with embedded item data)
+            // 3. "EquipRes" field (legacy/compatibility - UTC format field name)
+            // Try EquippedRes first (correct BIC format), then fallbacks
             var resRef = equipStruct.GetFieldValue<string>("EquippedRes", string.Empty);
+            if (string.IsNullOrEmpty(resRef))
+            {
+                resRef = equipStruct.GetFieldValue<string>("EquipRes", string.Empty);
+            }
             if (string.IsNullOrEmpty(resRef))
             {
                 resRef = equipStruct.GetFieldValue<string>("TemplateResRef", string.Empty);
