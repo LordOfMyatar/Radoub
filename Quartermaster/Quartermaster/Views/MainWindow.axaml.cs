@@ -136,7 +136,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InventoryPanelContent.SetGameDataService(_gameDataService);
 
         // Subscribe to inventory panel events
-        InventoryPanelContent.InventoryChanged += (s, e) => MarkDirty();
+        InventoryPanelContent.InventoryChanged += (s, e) => { _inventoryModified = true; MarkDirty(); };
         InventoryPanelContent.EquipmentSlotClicked += (s, slot) =>
         {
             HasSelection = slot.HasItem;

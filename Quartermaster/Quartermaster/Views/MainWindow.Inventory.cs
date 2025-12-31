@@ -25,6 +25,9 @@ public partial class MainWindow
     private CancellationTokenSource? _paletteLoadCts;
     private const int PaletteBatchSize = 50;
 
+    // Track if inventory was modified (only sync if true)
+    private bool _inventoryModified = false;
+
     #region Inventory UI
 
     private void PopulateInventoryUI()
@@ -66,6 +69,9 @@ public partial class MainWindow
 
         // Populate item palette from module directory
         PopulateItemPalette();
+
+        // Reset modification flag after loading
+        _inventoryModified = false;
 
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {InventoryPanelContent.BackpackItems.Count} in backpack");
     }
@@ -228,6 +234,7 @@ public partial class MainWindow
             InventoryPanelContent.AddToBackpack(backpackItem);
         }
 
+        _inventoryModified = true;
         MarkDirty();
     }
 
@@ -293,6 +300,7 @@ public partial class MainWindow
             }
         }
 
+        _inventoryModified = true;
         MarkDirty();
     }
 
@@ -319,6 +327,7 @@ public partial class MainWindow
 
         // Add to backpack
         InventoryPanelContent.AddToBackpack(backpackItem);
+        _inventoryModified = true;
         MarkDirty();
 
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Unequipped {item.Name} from {slot.Name} to backpack");
@@ -331,10 +340,17 @@ public partial class MainWindow
     /// <summary>
     /// Syncs all inventory UI state back to the creature data model.
     /// Call this before saving to ensure UI changes are persisted.
+    /// Only syncs if inventory was actually modified to prevent data loss.
     /// </summary>
     public void SyncInventoryToCreature()
     {
         if (_currentCreature == null) return;
+
+        if (!_inventoryModified)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Inventory not modified, skipping sync");
+            return;
+        }
 
         SyncBackpackToCreature();
         SyncEquipmentToCreature();
