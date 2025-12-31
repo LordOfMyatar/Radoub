@@ -25,6 +25,9 @@ public partial class MainWindow
     private CancellationTokenSource? _paletteLoadCts;
     private const int PaletteBatchSize = 50;
 
+    // Track if inventory was modified (only sync if true)
+    private bool _inventoryModified = false;
+
     #region Inventory UI
 
     private void PopulateInventoryUI()
@@ -58,7 +61,7 @@ public partial class MainWindow
         {
             if (!string.IsNullOrEmpty(invItem.InventoryRes))
             {
-                var itemVm = CreatePlaceholderItem(invItem.InventoryRes, invItem.Dropable, invItem.Pickpocketable);
+                var itemVm = CreateBackpackItem(invItem);
                 InventoryPanelContent.BackpackItems.Add(itemVm);
                 UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Added to backpack: {invItem.InventoryRes}");
             }
@@ -67,15 +70,86 @@ public partial class MainWindow
         // Populate item palette from module directory
         PopulateItemPalette();
 
+        // Reset modification flag after loading
+        _inventoryModified = false;
+
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {InventoryPanelContent.BackpackItems.Count} in backpack");
     }
 
     /// <summary>
-    /// Creates an ItemViewModel from a ResRef, attempting to load the actual UTI file.
+    /// Creates an ItemViewModel for a backpack item with full inventory metadata.
     /// Resolution order: Module directory → Override → HAK → BIF archives.
     /// Falls back to placeholder data if UTI file not found anywhere.
     /// </summary>
-    private ItemViewModel CreatePlaceholderItem(string resRef, bool dropable = true, bool pickpocketable = false)
+    private ItemViewModel CreateBackpackItem(Radoub.Formats.Utc.InventoryItem invItem)
+    {
+        var (item, source) = ResolveUtiFile(invItem.InventoryRes);
+
+        if (item == null)
+        {
+            // Create placeholder for missing UTI
+            item = new UtiFile
+            {
+                TemplateResRef = invItem.InventoryRes,
+                Tag = invItem.InventoryRes
+            };
+            item.LocalizedName.SetString(0, invItem.InventoryRes);
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Created placeholder for UTI: {invItem.InventoryRes}");
+
+            return new ItemViewModel(
+                item,
+                resolvedName: invItem.InventoryRes,
+                baseItemName: "(unknown)",
+                propertiesDisplay: "",
+                invItem.Repos_PosX, invItem.Repos_PosY,
+                invItem.Dropable, invItem.Pickpocketable,
+                source: source
+            );
+        }
+
+        // Use factory for proper name resolution via 2DA/TLK
+        return _itemViewModelFactory.CreateBackpackItem(
+            item,
+            invItem.Repos_PosX, invItem.Repos_PosY,
+            invItem.Dropable, invItem.Pickpocketable,
+            source);
+    }
+
+    /// <summary>
+    /// Creates an ItemViewModel from a ResRef for equipped items (no grid position needed).
+    /// Resolution order: Module directory → Override → HAK → BIF archives.
+    /// Falls back to placeholder data if UTI file not found anywhere.
+    /// </summary>
+    private ItemViewModel CreatePlaceholderItem(string resRef)
+    {
+        var (item, source) = ResolveUtiFile(resRef);
+
+        if (item == null)
+        {
+            item = new UtiFile
+            {
+                TemplateResRef = resRef,
+                Tag = resRef
+            };
+            item.LocalizedName.SetString(0, resRef);
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Created placeholder for UTI: {resRef}");
+
+            return new ItemViewModel(
+                item,
+                resolvedName: resRef,
+                baseItemName: "(unknown)",
+                propertiesDisplay: "",
+                source: source
+            );
+        }
+
+        return _itemViewModelFactory.Create(item, source);
+    }
+
+    /// <summary>
+    /// Resolves a UTI file from ResRef, checking module directory first, then game data.
+    /// </summary>
+    private (UtiFile? item, GameResourceSource source) ResolveUtiFile(string resRef)
     {
         UtiFile? item = null;
         var source = GameResourceSource.Bif;
@@ -112,8 +186,6 @@ public partial class MainWindow
                 if (utiData != null)
                 {
                     item = UtiReader.Read(utiData);
-                    // GameDataService searches Override first, then HAK, then BIF
-                    // For now, mark as Bif source (could enhance to track actual source)
                     source = GameResourceSource.Bif;
                     UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Loaded UTI from game data: {resRef}");
                 }
@@ -124,29 +196,7 @@ public partial class MainWindow
             }
         }
 
-        // 3. Fall back to placeholder if UTI not found anywhere
-        if (item == null)
-        {
-            item = new UtiFile
-            {
-                TemplateResRef = resRef,
-                Tag = resRef
-            };
-            item.LocalizedName.SetString(0, resRef);
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Created placeholder for UTI: {resRef}");
-
-            // Return basic placeholder without factory resolution
-            return new ItemViewModel(
-                item,
-                resolvedName: resRef,
-                baseItemName: "(unknown)",
-                propertiesDisplay: "",
-                source: source
-            );
-        }
-
-        // Use factory for proper name resolution via 2DA/TLK
-        return _itemViewModelFactory.Create(item, source);
+        return (item, source);
     }
 
     private void ClearInventoryUI()
@@ -156,6 +206,228 @@ public partial class MainWindow
 
         // Update selection state
         HasSelection = false;
+    }
+
+    #endregion
+
+    #region Inventory Operations
+
+    /// <summary>
+    /// Handles item dropped on backpack list.
+    /// Supports drops from equipment slots (unequip to backpack).
+    /// </summary>
+    private void OnBackpackItemDropped(object? sender, Radoub.UI.Controls.ItemDropEventArgs e)
+    {
+        // Check for equipped item drag (from equipment slot)
+        if (e.DataObject.Contains("EquippedItem"))
+        {
+            var data = e.DataObject.Get("EquippedItem");
+            if (data is ItemViewModel equippedItem)
+            {
+                // Find the slot this item is in and unequip it
+                var slot = _equipmentSlots.FirstOrDefault(s => s.EquippedItem == equippedItem);
+                if (slot != null)
+                {
+                    UnequipToBackpack(slot);
+                    UnifiedLogger.LogInventory(LogLevel.INFO,
+                        $"Dropped {equippedItem.Name} from {slot.Name} to backpack");
+                }
+            }
+        }
+        // Could add more drop types here (e.g., from palette)
+    }
+
+    /// <summary>
+    /// Handles add to backpack request from palette.
+    /// Creates new ItemViewModels with proper inventory metadata.
+    /// </summary>
+    private void OnAddToBackpackRequested(object? sender, ItemViewModel[] items)
+    {
+        foreach (var paletteItem in items)
+        {
+            // Assign next available grid position (simple sequential assignment)
+            var nextPos = GetNextBackpackPosition();
+
+            // Create a new ItemViewModel with inventory metadata
+            var backpackItem = _itemViewModelFactory.CreateBackpackItem(
+                paletteItem.Item,
+                nextPos.x, nextPos.y,
+                isDropable: true,
+                isPickpocketable: false,
+                paletteItem.Source);
+
+            InventoryPanelContent.AddToBackpack(backpackItem);
+        }
+
+        _inventoryModified = true;
+        MarkDirty();
+    }
+
+    /// <summary>
+    /// Gets the next available grid position for a backpack item.
+    /// Simple algorithm: place items sequentially in a 6-column grid.
+    /// </summary>
+    private (ushort x, ushort y) GetNextBackpackPosition()
+    {
+        const int GridWidth = 6;
+        var count = InventoryPanelContent.BackpackItems.Count;
+        return ((ushort)(count % GridWidth), (ushort)(count / GridWidth));
+    }
+
+    /// <summary>
+    /// Handles equip items request from palette.
+    /// Tries to equip items to appropriate slots based on base item type.
+    /// </summary>
+    private void OnEquipItemsRequested(object? sender, ItemViewModel[] items)
+    {
+        var validator = new Radoub.UI.Services.EquipmentSlotValidator(_gameDataService);
+
+        foreach (var item in items)
+        {
+            // Find valid slots for this item (bitmask)
+            var validSlotsBitmask = validator.GetEquipableSlots(item.BaseItem);
+
+            if (validSlotsBitmask == null || validSlotsBitmask == 0)
+            {
+                UnifiedLogger.LogInventory(LogLevel.WARN,
+                    $"Cannot equip {item.Name}: no valid equipment slots for base item {item.BaseItem}");
+                continue;
+            }
+
+            // Find first empty valid slot
+            EquipmentSlotViewModel? targetSlot = null;
+            foreach (var slot in _equipmentSlots)
+            {
+                if ((validSlotsBitmask.Value & slot.SlotFlag) != 0 && !slot.HasItem)
+                {
+                    targetSlot = slot;
+                    break;
+                }
+            }
+
+            if (targetSlot == null)
+            {
+                // No empty slot, try to use first valid slot (will replace)
+                foreach (var slot in _equipmentSlots)
+                {
+                    if ((validSlotsBitmask.Value & slot.SlotFlag) != 0)
+                    {
+                        targetSlot = slot;
+                        break;
+                    }
+                }
+            }
+
+            if (targetSlot != null)
+            {
+                targetSlot.EquippedItem = item;
+                UnifiedLogger.LogInventory(LogLevel.INFO, $"Equipped {item.Name} to {targetSlot.Name}");
+            }
+        }
+
+        _inventoryModified = true;
+        MarkDirty();
+    }
+
+    /// <summary>
+    /// Unequips an item from a slot and adds it to backpack.
+    /// </summary>
+    public void UnequipToBackpack(EquipmentSlotViewModel slot)
+    {
+        if (!slot.HasItem || slot.EquippedItem == null) return;
+
+        var item = slot.EquippedItem;
+
+        // Create backpack item with inventory metadata
+        var nextPos = GetNextBackpackPosition();
+        var backpackItem = _itemViewModelFactory.CreateBackpackItem(
+            item.Item,
+            nextPos.x, nextPos.y,
+            isDropable: true,
+            isPickpocketable: false,
+            item.Source);
+
+        // Clear the slot
+        slot.EquippedItem = null;
+
+        // Add to backpack
+        InventoryPanelContent.AddToBackpack(backpackItem);
+        _inventoryModified = true;
+        MarkDirty();
+
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Unequipped {item.Name} from {slot.Name} to backpack");
+    }
+
+    #endregion
+
+    #region Inventory Sync
+
+    /// <summary>
+    /// Syncs all inventory UI state back to the creature data model.
+    /// Call this before saving to ensure UI changes are persisted.
+    /// Only syncs if inventory was actually modified to prevent data loss.
+    /// </summary>
+    public void SyncInventoryToCreature()
+    {
+        if (_currentCreature == null) return;
+
+        if (!_inventoryModified)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Inventory not modified, skipping sync");
+            return;
+        }
+
+        SyncBackpackToCreature();
+        SyncEquipmentToCreature();
+
+        UnifiedLogger.LogInventory(LogLevel.INFO,
+            $"Synced inventory: {_currentCreature.ItemList.Count} backpack, {_currentCreature.EquipItemList.Count} equipped");
+    }
+
+    /// <summary>
+    /// Syncs backpack items from UI to creature's ItemList.
+    /// </summary>
+    private void SyncBackpackToCreature()
+    {
+        if (_currentCreature == null) return;
+
+        _currentCreature.ItemList.Clear();
+
+        foreach (var itemVm in InventoryPanelContent.BackpackItems)
+        {
+            var invItem = new Radoub.Formats.Utc.InventoryItem
+            {
+                InventoryRes = itemVm.ResRef,
+                Repos_PosX = itemVm.GridPositionX,
+                Repos_PosY = itemVm.GridPositionY,
+                Dropable = itemVm.IsDropable,
+                Pickpocketable = itemVm.IsPickpocketable
+            };
+            _currentCreature.ItemList.Add(invItem);
+        }
+    }
+
+    /// <summary>
+    /// Syncs equipped items from UI to creature's EquipItemList.
+    /// </summary>
+    private void SyncEquipmentToCreature()
+    {
+        if (_currentCreature == null) return;
+
+        _currentCreature.EquipItemList.Clear();
+
+        foreach (var slot in _equipmentSlots)
+        {
+            if (slot.HasItem && slot.EquippedItem != null)
+            {
+                var equipItem = new Radoub.Formats.Utc.EquippedItem
+                {
+                    Slot = slot.SlotFlag,
+                    EquipRes = slot.EquippedItem.ResRef
+                };
+                _currentCreature.EquipItemList.Add(equipItem);
+            }
+        }
     }
 
     #endregion

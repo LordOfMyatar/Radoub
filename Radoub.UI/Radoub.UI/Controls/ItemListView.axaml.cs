@@ -75,6 +75,12 @@ public partial class ItemListView : UserControl
     /// </summary>
     public event EventHandler<ItemDragEventArgs>? DragStarting;
 
+    /// <summary>
+    /// Event raised when items are dropped onto this list.
+    /// Handler should process the dropped data.
+    /// </summary>
+    public event EventHandler<ItemDropEventArgs>? ItemDropped;
+
     // Column keys for persistence
     private static readonly string[] ColumnKeys = { "Check", "Icon", "Name", "ResRef", "Tag", "Type", "Value", "Properties" };
 
@@ -93,6 +99,11 @@ public partial class ItemListView : UserControl
         ItemsGrid.PointerPressed += OnGridPointerPressed;
         ItemsGrid.PointerMoved += OnGridPointerMoved;
         ItemsGrid.PointerReleased += OnGridPointerReleased;
+
+        // Enable drop support
+        DragDrop.SetAllowDrop(ItemsGrid, true);
+        ItemsGrid.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        ItemsGrid.AddHandler(DragDrop.DropEvent, OnDrop);
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -444,6 +455,33 @@ public partial class ItemListView : UserControl
     }
 
     #endregion
+
+    #region Drop Handling
+
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        // Accept drops if we have a handler
+        if (ItemDropped != null)
+        {
+            e.DragEffects = DragDropEffects.Copy | DragDropEffects.Move;
+        }
+        else
+        {
+            e.DragEffects = DragDropEffects.None;
+        }
+    }
+
+    private void OnDrop(object? sender, DragEventArgs e)
+    {
+        if (ItemDropped == null) return;
+
+#pragma warning disable CS0618 // e.Data is obsolete but we need IDataObject.Get/Contains methods
+        var args = new ItemDropEventArgs(e.Data);
+#pragma warning restore CS0618
+        ItemDropped.Invoke(this, args);
+    }
+
+    #endregion
 }
 
 /// <summary>
@@ -470,4 +508,22 @@ public class ItemDragEventArgs : EventArgs
     {
         Items = items;
     }
+}
+
+/// <summary>
+/// Event args for drop operations on ItemListView.
+/// </summary>
+public class ItemDropEventArgs : EventArgs
+{
+    /// <summary>
+    /// The drag data transfer object (uses deprecated IDataObject for compatibility with DragDrop.Set).
+    /// </summary>
+#pragma warning disable CS0618 // IDataObject is obsolete
+    public IDataObject DataObject { get; }
+
+    public ItemDropEventArgs(IDataObject dataObject)
+    {
+        DataObject = dataObject;
+    }
+#pragma warning restore CS0618
 }

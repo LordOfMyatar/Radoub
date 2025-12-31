@@ -26,6 +26,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string? _currentFilePath;
     private bool _isDirty;
     private bool _isBicFile;
+    private bool _isLoading;
     private string _currentSection = "Character";
     private Button? _selectedNavButton;
 
@@ -136,7 +137,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InventoryPanelContent.SetGameDataService(_gameDataService);
 
         // Subscribe to inventory panel events
-        InventoryPanelContent.InventoryChanged += (s, e) => MarkDirty();
+        InventoryPanelContent.InventoryChanged += (s, e) => { _inventoryModified = true; MarkDirty(); };
         InventoryPanelContent.EquipmentSlotClicked += (s, slot) =>
         {
             HasSelection = slot.HasItem;
@@ -154,6 +155,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UnifiedLogger.LogUI(LogLevel.DEBUG, $"Item dropped on slot: {e.TargetSlot.Name}");
             MarkDirty();
         };
+        InventoryPanelContent.BackpackItemDropped += OnBackpackItemDropped;
+        InventoryPanelContent.AddToBackpackRequested += OnAddToBackpackRequested;
+        InventoryPanelContent.EquipItemsRequested += OnEquipItemsRequested;
     }
 
     #region Navigation
@@ -410,6 +414,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void MarkDirty()
     {
+        // Don't mark dirty during file loading - panels may fire change events
+        if (_isLoading) return;
+
         if (!_isDirty)
         {
             _isDirty = true;

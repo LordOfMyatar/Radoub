@@ -158,9 +158,20 @@ public class UtcReaderTests
         var utc = UtcReader.Read(buffer);
 
         Assert.Equal(2, utc.ItemList.Count);
+
+        // Gold - dropable, not pickpocketable
         Assert.Equal("nw_it_gold001", utc.ItemList[0].InventoryRes);
+        Assert.Equal((ushort)0, utc.ItemList[0].Repos_PosX);
+        Assert.Equal((ushort)0, utc.ItemList[0].Repos_PosY);
         Assert.True(utc.ItemList[0].Dropable);
+        Assert.False(utc.ItemList[0].Pickpocketable);
+
+        // Sword - not dropable, pickpocketable
         Assert.Equal("nw_wswss001", utc.ItemList[1].InventoryRes);
+        Assert.Equal((ushort)1, utc.ItemList[1].Repos_PosX);
+        Assert.Equal((ushort)2, utc.ItemList[1].Repos_PosY);
+        Assert.False(utc.ItemList[1].Dropable);
+        Assert.True(utc.ItemList[1].Pickpocketable);
     }
 
     [Fact]
@@ -315,7 +326,10 @@ public class UtcReaderTests
         for (int i = 0; i < utc.ItemList.Count; i++)
         {
             Assert.Equal(utc.ItemList[i].InventoryRes, utc2.ItemList[i].InventoryRes);
+            Assert.Equal(utc.ItemList[i].Repos_PosX, utc2.ItemList[i].Repos_PosX);
+            Assert.Equal(utc.ItemList[i].Repos_PosY, utc2.ItemList[i].Repos_PosY);
             Assert.Equal(utc.ItemList[i].Dropable, utc2.ItemList[i].Dropable);
+            Assert.Equal(utc.ItemList[i].Pickpocketable, utc2.ItemList[i].Pickpocketable);
         }
     }
 
@@ -634,13 +648,13 @@ public class UtcReaderTests
         AddByteField(goldStruct, "Pickpocketable", 0);
         itemList.Elements.Add(goldStruct);
 
-        // Sword
+        // Sword (pickpocketable)
         var swordStruct = new GffStruct { Type = 0 };
         AddCResRefField(swordStruct, "InventoryRes", "nw_wswss001");
         AddWordField(swordStruct, "Repos_PosX", 1);
-        AddWordField(swordStruct, "Repos_PosY", 0);
-        AddByteField(swordStruct, "Dropable", 1);
-        AddByteField(swordStruct, "Pickpocketable", 0);
+        AddWordField(swordStruct, "Repos_PosY", 2);
+        AddByteField(swordStruct, "Dropable", 0);
+        AddByteField(swordStruct, "Pickpocketable", 1);
         itemList.Elements.Add(swordStruct);
 
         itemList.Count = 2;

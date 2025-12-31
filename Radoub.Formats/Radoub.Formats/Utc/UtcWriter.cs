@@ -122,6 +122,58 @@ public static class UtcWriter
         if (utc.BodyPart_Torso != 0)
             AddByteField(root, "BodyPart_Torso", utc.BodyPart_Torso);
 
+        // Colors (for part-based appearances)
+        // Only write if non-zero to preserve file compatibility
+        if (utc.Color_Skin != 0)
+            AddByteField(root, "Color_Skin", utc.Color_Skin);
+        if (utc.Color_Hair != 0)
+            AddByteField(root, "Color_Hair", utc.Color_Hair);
+        if (utc.Color_Tattoo1 != 0)
+            AddByteField(root, "Color_Tattoo1", utc.Color_Tattoo1);
+        if (utc.Color_Tattoo2 != 0)
+            AddByteField(root, "Color_Tattoo2", utc.Color_Tattoo2);
+
+        // Armor part appearance (game instance fields - from equipped armor)
+        // Only write if non-zero to preserve file compatibility
+        if (utc.ArmorPart_Belt != 0)
+            AddByteField(root, "ArmorPart_Belt", utc.ArmorPart_Belt);
+        if (utc.ArmorPart_LBicep != 0)
+            AddByteField(root, "ArmorPart_LBicep", utc.ArmorPart_LBicep);
+        if (utc.ArmorPart_RBicep != 0)
+            AddByteField(root, "ArmorPart_RBicep", utc.ArmorPart_RBicep);
+        if (utc.ArmorPart_LFArm != 0)
+            AddByteField(root, "ArmorPart_LFArm", utc.ArmorPart_LFArm);
+        if (utc.ArmorPart_RFArm != 0)
+            AddByteField(root, "ArmorPart_RFArm", utc.ArmorPart_RFArm);
+        if (utc.ArmorPart_LFoot != 0)
+            AddByteField(root, "ArmorPart_LFoot", utc.ArmorPart_LFoot);
+        if (utc.ArmorPart_RFoot != 0)
+            AddByteField(root, "ArmorPart_RFoot", utc.ArmorPart_RFoot);
+        if (utc.ArmorPart_LHand != 0)
+            AddByteField(root, "ArmorPart_LHand", utc.ArmorPart_LHand);
+        if (utc.ArmorPart_RHand != 0)
+            AddByteField(root, "ArmorPart_RHand", utc.ArmorPart_RHand);
+        if (utc.ArmorPart_LShin != 0)
+            AddByteField(root, "ArmorPart_LShin", utc.ArmorPart_LShin);
+        if (utc.ArmorPart_RShin != 0)
+            AddByteField(root, "ArmorPart_RShin", utc.ArmorPart_RShin);
+        if (utc.ArmorPart_LShoul != 0)
+            AddByteField(root, "ArmorPart_LShoul", utc.ArmorPart_LShoul);
+        if (utc.ArmorPart_RShoul != 0)
+            AddByteField(root, "ArmorPart_RShoul", utc.ArmorPart_RShoul);
+        if (utc.ArmorPart_LThigh != 0)
+            AddByteField(root, "ArmorPart_LThigh", utc.ArmorPart_LThigh);
+        if (utc.ArmorPart_RThigh != 0)
+            AddByteField(root, "ArmorPart_RThigh", utc.ArmorPart_RThigh);
+        if (utc.ArmorPart_Neck != 0)
+            AddByteField(root, "ArmorPart_Neck", utc.ArmorPart_Neck);
+        if (utc.ArmorPart_Pelvis != 0)
+            AddByteField(root, "ArmorPart_Pelvis", utc.ArmorPart_Pelvis);
+        if (utc.ArmorPart_Torso != 0)
+            AddByteField(root, "ArmorPart_Torso", utc.ArmorPart_Torso);
+        if (utc.ArmorPart_Robe != 0)
+            AddByteField(root, "ArmorPart_Robe", utc.ArmorPart_Robe);
+
         // Ability scores
         AddByteField(root, "Str", utc.Str);
         AddByteField(root, "Dex", utc.Dex);
@@ -277,7 +329,8 @@ public static class UtcWriter
         {
             // StructID is the equipment slot bit flag
             var equipStruct = new GffStruct { Type = (uint)item.Slot };
-            AddCResRefField(equipStruct, "EquipRes", item.EquipRes);
+            // UTC files use "EquippedRes" (same as BIC files, verified against Aurora Toolset output)
+            AddCResRefField(equipStruct, "EquippedRes", item.EquipRes);
             list.Elements.Add(equipStruct);
         }
         AddListField(root, "Equip_ItemList", list);

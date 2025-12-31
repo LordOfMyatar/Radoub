@@ -98,6 +98,33 @@ public static class UtcReader
             BodyPart_Pelvis = root.GetFieldValue<byte>("BodyPart_Pelvis", 0),
             BodyPart_Torso = root.GetFieldValue<byte>("BodyPart_Torso", 0),
 
+            // Colors (for part-based appearances)
+            Color_Skin = root.GetFieldValue<byte>("Color_Skin", 0),
+            Color_Hair = root.GetFieldValue<byte>("Color_Hair", 0),
+            Color_Tattoo1 = root.GetFieldValue<byte>("Color_Tattoo1", 0),
+            Color_Tattoo2 = root.GetFieldValue<byte>("Color_Tattoo2", 0),
+
+            // Armor part appearance (game instance fields - from equipped armor)
+            ArmorPart_Belt = root.GetFieldValue<byte>("ArmorPart_Belt", 0),
+            ArmorPart_LBicep = root.GetFieldValue<byte>("ArmorPart_LBicep", 0),
+            ArmorPart_RBicep = root.GetFieldValue<byte>("ArmorPart_RBicep", 0),
+            ArmorPart_LFArm = root.GetFieldValue<byte>("ArmorPart_LFArm", 0),
+            ArmorPart_RFArm = root.GetFieldValue<byte>("ArmorPart_RFArm", 0),
+            ArmorPart_LFoot = root.GetFieldValue<byte>("ArmorPart_LFoot", 0),
+            ArmorPart_RFoot = root.GetFieldValue<byte>("ArmorPart_RFoot", 0),
+            ArmorPart_LHand = root.GetFieldValue<byte>("ArmorPart_LHand", 0),
+            ArmorPart_RHand = root.GetFieldValue<byte>("ArmorPart_RHand", 0),
+            ArmorPart_LShin = root.GetFieldValue<byte>("ArmorPart_LShin", 0),
+            ArmorPart_RShin = root.GetFieldValue<byte>("ArmorPart_RShin", 0),
+            ArmorPart_LShoul = root.GetFieldValue<byte>("ArmorPart_LShoul", 0),
+            ArmorPart_RShoul = root.GetFieldValue<byte>("ArmorPart_RShoul", 0),
+            ArmorPart_LThigh = root.GetFieldValue<byte>("ArmorPart_LThigh", 0),
+            ArmorPart_RThigh = root.GetFieldValue<byte>("ArmorPart_RThigh", 0),
+            ArmorPart_Neck = root.GetFieldValue<byte>("ArmorPart_Neck", 0),
+            ArmorPart_Pelvis = root.GetFieldValue<byte>("ArmorPart_Pelvis", 0),
+            ArmorPart_Torso = root.GetFieldValue<byte>("ArmorPart_Torso", 0),
+            ArmorPart_Robe = root.GetFieldValue<byte>("ArmorPart_Robe", 0),
+
             // Ability scores
             Str = root.GetFieldValue<byte>("Str", 10),
             Dex = root.GetFieldValue<byte>("Dex", 10),
@@ -275,13 +302,19 @@ public static class UtcReader
 
         foreach (var equipStruct in equipList.Elements)
         {
-            // UTC blueprint files use EquipRes field containing the item template ResRef.
-            // Per BioWare Aurora Creature Format doc, Table 2.2:
-            // EquipRes (CResRef) - ResRef of the Equipped Item.
+            // Aurora Toolset uses "EquippedRes" field for equipment (verified against clean UTC files).
+            // The BioWare documentation mentions "EquipRes" but actual toolset output uses "EquippedRes".
+            // Try EquippedRes first (correct), then EquipRes as fallback for compatibility.
+            var resRef = equipStruct.GetFieldValue<string>("EquippedRes", string.Empty);
+            if (string.IsNullOrEmpty(resRef))
+            {
+                resRef = equipStruct.GetFieldValue<string>("EquipRes", string.Empty);
+            }
+
             var item = new EquippedItem
             {
                 Slot = (int)equipStruct.Type,
-                EquipRes = equipStruct.GetFieldValue<string>("EquipRes", string.Empty)
+                EquipRes = resRef
             };
             utc.EquipItemList.Add(item);
         }

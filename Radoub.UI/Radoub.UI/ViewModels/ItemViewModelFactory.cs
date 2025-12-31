@@ -36,6 +36,32 @@ public class ItemViewModelFactory
     }
 
     /// <summary>
+    /// Create an ItemViewModel for a backpack item with inventory metadata.
+    /// </summary>
+    /// <param name="item">The item to wrap.</param>
+    /// <param name="gridPositionX">X position in inventory grid.</param>
+    /// <param name="gridPositionY">Y position in inventory grid.</param>
+    /// <param name="isDropable">True if item drops on creature death.</param>
+    /// <param name="isPickpocketable">True if item can be pickpocketed.</param>
+    /// <param name="source">Source of the item resource.</param>
+    public ItemViewModel CreateBackpackItem(
+        UtiFile item,
+        ushort gridPositionX,
+        ushort gridPositionY,
+        bool isDropable,
+        bool isPickpocketable,
+        GameResourceSource source = GameResourceSource.Bif)
+    {
+        var displayName = ResolveDisplayName(item);
+        var baseItemName = ResolveBaseItemName(item.BaseItem);
+        var propertiesDisplay = ResolvePropertiesDisplay(item.Properties);
+
+        return new ItemViewModel(
+            item, displayName, baseItemName, propertiesDisplay,
+            gridPositionX, gridPositionY, isDropable, isPickpocketable, source);
+    }
+
+    /// <summary>
     /// Create ItemViewModels for a collection of items (all assumed to be from same source).
     /// </summary>
     /// <param name="items">Items to wrap.</param>

@@ -28,6 +28,8 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     private ItemListView? _backpackList;
     private ItemFilterPanel? _paletteFilter;
     private ItemListView? _paletteList;
+    private CheckBox? _bulkDropableCheck;
+    private CheckBox? _bulkPickpocketCheck;
 
     public new event PropertyChangedEventHandler? PropertyChanged;
 
@@ -35,7 +37,11 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     public event EventHandler? InventoryChanged;
     public event EventHandler<EquipmentSlotViewModel>? EquipmentSlotClicked;
     public event EventHandler<EquipmentSlotViewModel>? EquipmentSlotDoubleClicked;
+    public event EventHandler<EquipmentSlotDragEventArgs>? EquipmentSlotDragStarting;
     public event EventHandler<EquipmentSlotDropEventArgs>? EquipmentSlotItemDropped;
+    public event EventHandler<ItemDropEventArgs>? BackpackItemDropped;
+    public event EventHandler<ItemViewModel[]>? AddToBackpackRequested;
+    public event EventHandler<ItemViewModel[]>? EquipItemsRequested;
 
     public bool HasBackpackSelection
     {
@@ -67,6 +73,8 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         _backpackList = this.FindControl<ItemListView>("BackpackList");
         _paletteFilter = this.FindControl<ItemFilterPanel>("PaletteFilter");
         _paletteList = this.FindControl<ItemListView>("PaletteList");
+        _bulkDropableCheck = this.FindControl<CheckBox>("BulkDropableCheck");
+        _bulkPickpocketCheck = this.FindControl<CheckBox>("BulkPickpocketCheck");
     }
 
     protected override void OnInitialized()
@@ -79,6 +87,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _equipmentPanel.Slots = _equipmentSlots;
             _equipmentPanel.SlotClicked += OnEquipmentSlotClicked;
             _equipmentPanel.SlotDoubleClicked += OnEquipmentSlotDoubleClicked;
+            _equipmentPanel.DragStarting += OnEquipmentDragStarting;
             _equipmentPanel.ItemDropped += OnEquipmentSlotItemDropped;
         }
 
@@ -88,6 +97,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _backpackList.Items = _backpackItems;
             _backpackList.SelectionChanged += OnBackpackSelectionChanged;
             _backpackList.DragStarting += OnBackpackDragStarting;
+            _backpackList.ItemDropped += OnBackpackItemDropped;
         }
 
         // Set up palette filter and list
@@ -102,6 +112,12 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             _paletteList.SelectionChanged += OnPaletteSelectionChanged;
             _paletteList.DragStarting += OnPaletteDragStarting;
         }
+
+        // Wire up bulk property checkboxes
+        if (_bulkDropableCheck != null)
+            _bulkDropableCheck.IsCheckedChanged += OnBulkDropableChanged;
+        if (_bulkPickpocketCheck != null)
+            _bulkPickpocketCheck.IsCheckedChanged += OnBulkPickpocketChanged;
     }
 
     public void SetGameDataService(IGameDataService gameDataService)
@@ -144,6 +160,17 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         EquipmentSlotDoubleClicked?.Invoke(this, slot);
     }
 
+    private void OnEquipmentDragStarting(object? sender, EquipmentSlotDragEventArgs e)
+    {
+        if (e.Slot.HasItem && e.Slot.EquippedItem != null)
+        {
+            e.Data = e.Slot.EquippedItem;
+            e.DataFormat = "EquippedItem";
+            EquipmentSlotDragStarting?.Invoke(this, e);
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"Equipment drag starting: {e.Slot.EquippedItem.Name} from {e.Slot.Name}");
+        }
+    }
+
     private void OnEquipmentSlotItemDropped(object? sender, EquipmentSlotDropEventArgs e)
     {
         EquipmentSlotItemDropped?.Invoke(this, e);
@@ -156,7 +183,28 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     private void OnBackpackSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         HasBackpackSelection = _backpackList?.SelectedItems.Count > 0;
+        UpdateBulkCheckboxStates();
         UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack selection changed: {_backpackList?.SelectedItems.Count ?? 0} items");
+    }
+
+    private void UpdateBulkCheckboxStates()
+    {
+        if (_backpackList == null) return;
+
+        var selectedItems = _backpackList.SelectedItems;
+        if (selectedItems.Count == 0)
+        {
+            // No selection - reset checkboxes
+            if (_bulkDropableCheck != null) _bulkDropableCheck.IsChecked = false;
+            if (_bulkPickpocketCheck != null) _bulkPickpocketCheck.IsChecked = false;
+            return;
+        }
+
+        // Set checkbox to reflect if ALL selected items have the property
+        if (_bulkDropableCheck != null)
+            _bulkDropableCheck.IsChecked = selectedItems.All(i => i.IsDropable);
+        if (_bulkPickpocketCheck != null)
+            _bulkPickpocketCheck.IsChecked = selectedItems.All(i => i.IsPickpocketable);
     }
 
     private void OnBackpackDragStarting(object? sender, ItemDragEventArgs e)
@@ -164,6 +212,12 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         e.Data = e.Items;
         e.DataFormat = "BackpackItem";
         UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack drag starting: {e.Items.Count} items");
+    }
+
+    private void OnBackpackItemDropped(object? sender, ItemDropEventArgs e)
+    {
+        BackpackItemDropped?.Invoke(this, e);
+        UnifiedLogger.LogUI(LogLevel.DEBUG, "Item dropped on backpack");
     }
 
     private void OnDeleteSelectedClick(object? sender, RoutedEventArgs e)
@@ -183,6 +237,42 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
 
         InventoryChanged?.Invoke(this, EventArgs.Empty);
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Deleted {toDelete.Count} items from backpack");
+    }
+
+    private void OnBulkDropableChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_backpackList == null || _bulkDropableCheck == null) return;
+
+        var isChecked = _bulkDropableCheck.IsChecked ?? false;
+        var selectedItems = _backpackList.SelectedItems;
+
+        if (selectedItems.Count == 0) return;
+
+        foreach (var item in selectedItems)
+        {
+            item.IsDropable = isChecked;
+        }
+
+        InventoryChanged?.Invoke(this, EventArgs.Empty);
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Set Dropable={isChecked} for {selectedItems.Count} items");
+    }
+
+    private void OnBulkPickpocketChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_backpackList == null || _bulkPickpocketCheck == null) return;
+
+        var isChecked = _bulkPickpocketCheck.IsChecked ?? false;
+        var selectedItems = _backpackList.SelectedItems;
+
+        if (selectedItems.Count == 0) return;
+
+        foreach (var item in selectedItems)
+        {
+            item.IsPickpocketable = isChecked;
+        }
+
+        InventoryChanged?.Invoke(this, EventArgs.Empty);
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Set Pickpocketable={isChecked} for {selectedItems.Count} items");
     }
 
     #endregion
@@ -206,21 +296,46 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     {
         if (!HasPaletteSelection || _paletteList == null) return;
 
-        foreach (var item in _paletteList.SelectedItems)
+        var selectedItems = _paletteList.SelectedItems.ToArray();
+        if (selectedItems.Length > 0)
         {
-            // TODO: Clone the item and add to backpack
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Would add to backpack: {item.Name}");
+            AddToBackpackRequested?.Invoke(this, selectedItems);
         }
-
-        InventoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnEquipSelectedClick(object? sender, RoutedEventArgs e)
     {
-        if (!HasPaletteSelection) return;
+        if (!HasPaletteSelection || _paletteList == null) return;
 
-        // TODO: Determine appropriate slot and equip item
-        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Equip selected clicked");
+        var selectedItems = _paletteList.SelectedItems.ToArray();
+        if (selectedItems.Length > 0)
+        {
+            EquipItemsRequested?.Invoke(this, selectedItems);
+        }
+    }
+
+    /// <summary>
+    /// Adds an item to the backpack. Called by MainWindow after creating the item.
+    /// </summary>
+    public void AddToBackpack(ItemViewModel item)
+    {
+        _backpackItems.Add(item);
+        InventoryChanged?.Invoke(this, EventArgs.Empty);
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Added to backpack: {item.Name}");
+    }
+
+    /// <summary>
+    /// Removes an item from the backpack by ResRef.
+    /// </summary>
+    public bool RemoveFromBackpack(ItemViewModel item)
+    {
+        var removed = _backpackItems.Remove(item);
+        if (removed)
+        {
+            InventoryChanged?.Invoke(this, EventArgs.Empty);
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Removed from backpack: {item.Name}");
+        }
+        return removed;
     }
 
     #endregion

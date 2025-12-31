@@ -81,6 +81,99 @@ public static class BicWriter
         AddByteField(root, "Wings", bic.Wings);
         AddByteField(root, "BodyBag", bic.BodyBag);
 
+        // Body parts (for part-based appearances)
+        // Only write if non-zero to preserve file compatibility
+        if (bic.AppearanceHead != 0)
+            AddByteField(root, "Appearance_Head", bic.AppearanceHead);
+        if (bic.BodyPart_Belt != 0)
+            AddByteField(root, "BodyPart_Belt", bic.BodyPart_Belt);
+        if (bic.BodyPart_LBicep != 0)
+            AddByteField(root, "BodyPart_LBicep", bic.BodyPart_LBicep);
+        if (bic.BodyPart_RBicep != 0)
+            AddByteField(root, "BodyPart_RBicep", bic.BodyPart_RBicep);
+        if (bic.BodyPart_LFArm != 0)
+            AddByteField(root, "BodyPart_LFArm", bic.BodyPart_LFArm);
+        if (bic.BodyPart_RFArm != 0)
+            AddByteField(root, "BodyPart_RFArm", bic.BodyPart_RFArm);
+        if (bic.BodyPart_LFoot != 0)
+            AddByteField(root, "BodyPart_LFoot", bic.BodyPart_LFoot);
+        if (bic.BodyPart_RFoot != 0)
+            AddByteField(root, "BodyPart_RFoot", bic.BodyPart_RFoot);
+        if (bic.BodyPart_LHand != 0)
+            AddByteField(root, "BodyPart_LHand", bic.BodyPart_LHand);
+        if (bic.BodyPart_RHand != 0)
+            AddByteField(root, "BodyPart_RHand", bic.BodyPart_RHand);
+        if (bic.BodyPart_LShin != 0)
+            AddByteField(root, "BodyPart_LShin", bic.BodyPart_LShin);
+        if (bic.BodyPart_RShin != 0)
+            AddByteField(root, "BodyPart_RShin", bic.BodyPart_RShin);
+        if (bic.BodyPart_LShoul != 0)
+            AddByteField(root, "BodyPart_LShoul", bic.BodyPart_LShoul);
+        if (bic.BodyPart_RShoul != 0)
+            AddByteField(root, "BodyPart_RShoul", bic.BodyPart_RShoul);
+        if (bic.BodyPart_LThigh != 0)
+            AddByteField(root, "BodyPart_LThigh", bic.BodyPart_LThigh);
+        if (bic.BodyPart_RThigh != 0)
+            AddByteField(root, "BodyPart_RThigh", bic.BodyPart_RThigh);
+        if (bic.BodyPart_Neck != 0)
+            AddByteField(root, "BodyPart_Neck", bic.BodyPart_Neck);
+        if (bic.BodyPart_Pelvis != 0)
+            AddByteField(root, "BodyPart_Pelvis", bic.BodyPart_Pelvis);
+        if (bic.BodyPart_Torso != 0)
+            AddByteField(root, "BodyPart_Torso", bic.BodyPart_Torso);
+
+        // Colors (for part-based appearances)
+        // Only write if non-zero to preserve file compatibility
+        if (bic.Color_Skin != 0)
+            AddByteField(root, "Color_Skin", bic.Color_Skin);
+        if (bic.Color_Hair != 0)
+            AddByteField(root, "Color_Hair", bic.Color_Hair);
+        if (bic.Color_Tattoo1 != 0)
+            AddByteField(root, "Color_Tattoo1", bic.Color_Tattoo1);
+        if (bic.Color_Tattoo2 != 0)
+            AddByteField(root, "Color_Tattoo2", bic.Color_Tattoo2);
+
+        // Armor part appearance (game instance fields - from equipped armor)
+        // Only write if non-zero to preserve file compatibility
+        if (bic.ArmorPart_Belt != 0)
+            AddByteField(root, "ArmorPart_Belt", bic.ArmorPart_Belt);
+        if (bic.ArmorPart_LBicep != 0)
+            AddByteField(root, "ArmorPart_LBicep", bic.ArmorPart_LBicep);
+        if (bic.ArmorPart_RBicep != 0)
+            AddByteField(root, "ArmorPart_RBicep", bic.ArmorPart_RBicep);
+        if (bic.ArmorPart_LFArm != 0)
+            AddByteField(root, "ArmorPart_LFArm", bic.ArmorPart_LFArm);
+        if (bic.ArmorPart_RFArm != 0)
+            AddByteField(root, "ArmorPart_RFArm", bic.ArmorPart_RFArm);
+        if (bic.ArmorPart_LFoot != 0)
+            AddByteField(root, "ArmorPart_LFoot", bic.ArmorPart_LFoot);
+        if (bic.ArmorPart_RFoot != 0)
+            AddByteField(root, "ArmorPart_RFoot", bic.ArmorPart_RFoot);
+        if (bic.ArmorPart_LHand != 0)
+            AddByteField(root, "ArmorPart_LHand", bic.ArmorPart_LHand);
+        if (bic.ArmorPart_RHand != 0)
+            AddByteField(root, "ArmorPart_RHand", bic.ArmorPart_RHand);
+        if (bic.ArmorPart_LShin != 0)
+            AddByteField(root, "ArmorPart_LShin", bic.ArmorPart_LShin);
+        if (bic.ArmorPart_RShin != 0)
+            AddByteField(root, "ArmorPart_RShin", bic.ArmorPart_RShin);
+        if (bic.ArmorPart_LShoul != 0)
+            AddByteField(root, "ArmorPart_LShoul", bic.ArmorPart_LShoul);
+        if (bic.ArmorPart_RShoul != 0)
+            AddByteField(root, "ArmorPart_RShoul", bic.ArmorPart_RShoul);
+        if (bic.ArmorPart_LThigh != 0)
+            AddByteField(root, "ArmorPart_LThigh", bic.ArmorPart_LThigh);
+        if (bic.ArmorPart_RThigh != 0)
+            AddByteField(root, "ArmorPart_RThigh", bic.ArmorPart_RThigh);
+        if (bic.ArmorPart_Neck != 0)
+            AddByteField(root, "ArmorPart_Neck", bic.ArmorPart_Neck);
+        if (bic.ArmorPart_Pelvis != 0)
+            AddByteField(root, "ArmorPart_Pelvis", bic.ArmorPart_Pelvis);
+        if (bic.ArmorPart_Torso != 0)
+            AddByteField(root, "ArmorPart_Torso", bic.ArmorPart_Torso);
+        if (bic.ArmorPart_Robe != 0)
+            AddByteField(root, "ArmorPart_Robe", bic.ArmorPart_Robe);
+
         // Ability scores
         AddByteField(root, "Str", bic.Str);
         AddByteField(root, "Dex", bic.Dex);
@@ -241,7 +334,8 @@ public static class BicWriter
         foreach (var item in items)
         {
             var equipStruct = new GffStruct { Type = (uint)item.Slot };
-            AddCResRefField(equipStruct, "EquipRes", item.EquipRes);
+            // BIC files use "EquippedRes" not "EquipRes" (which is used in UTC files)
+            AddCResRefField(equipStruct, "EquippedRes", item.EquipRes);
             list.Elements.Add(equipStruct);
         }
         AddListField(root, "Equip_ItemList", list);

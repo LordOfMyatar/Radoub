@@ -145,6 +145,9 @@ public partial class MainWindow
     {
         try
         {
+            // Set loading flag to prevent MarkDirty() from firing during panel population
+            _isLoading = true;
+
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             _isBicFile = extension == ".bic";
 
@@ -160,7 +163,6 @@ public partial class MainWindow
             }
 
             _currentFilePath = filePath;
-            _isDirty = false;
 
             // Update scripts panel with current file context for script browsing
             ScriptsPanelContent.SetCurrentFilePath(_currentFilePath);
@@ -168,16 +170,21 @@ public partial class MainWindow
             PopulateInventoryUI();
             UpdateCharacterHeader();
             LoadAllPanels(_currentCreature);
-            UpdateTitle();
-            UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
             UpdateInventoryCounts();
             OnPropertyChanged(nameof(HasFile));
+
+            // Clear loading flag and reset dirty state
+            _isLoading = false;
+            _isDirty = false;
+            UpdateTitle();
+            UpdateStatus($"Loaded: {Path.GetFileName(filePath)}");
 
             SettingsService.Instance.AddRecentFile(filePath);
             UpdateRecentFilesMenu();
         }
         catch (Exception ex)
         {
+            _isLoading = false;
             UnifiedLogger.LogCreature(LogLevel.ERROR, $"Failed to load creature: {ex.Message}");
             UpdateStatus($"Error loading file: {ex.Message}");
             await ShowErrorDialog("Load Error", $"Failed to load creature file:\n{ex.Message}");
@@ -190,6 +197,9 @@ public partial class MainWindow
 
         try
         {
+            // Sync UI state to creature model before saving
+            SyncInventoryToCreature();
+
             if (_isBicFile && _currentCreature is BicFile bicFile)
             {
                 BicWriter.Write(bicFile, _currentFilePath);
