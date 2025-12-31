@@ -158,6 +158,19 @@
                             <StackPanel Grid.Column="3" AutomationProperties.AutomationId="CrDisplay">
                                 <TextBlock Text="Challenge Rating" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="CrValue" Text="0" FontSize="16" FontWeight="Bold"/>
+                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
+                                    <TextBlock Text="Adjust:" FontSize="10" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <NumericUpDown x:Name="CRAdjustNumeric"
+                                                   Minimum="-100"
+                                                   Maximum="100"
+                                                   Increment="1"
+                                                   FormatString="0"
+                                                   MinWidth="70"
+                                                   FontSize="11"
+                                                   AutomationProperties.AutomationId="CRAdjustNumeric"
+                                                   ToolTip.Tip="Manual adjustment to Challenge Rating"/>
+                                </StackPanel>
                             </StackPanel>
                         </Grid>
                     </StackPanel>

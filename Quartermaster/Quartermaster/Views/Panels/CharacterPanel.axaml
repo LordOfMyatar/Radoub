@@ -1,0 +1,112 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="600"
+             x:Class="Quartermaster.Views.Panels.CharacterPanel">
+
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="20" Margin="20,20,50,20">
+                <!-- Header -->
+                <TextBlock Text="Character"
+                           FontSize="20"
+                           FontWeight="Bold"/>
+
+                <!-- Name Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Name" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="First Name:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="FirstNameTextBox"
+                                     AutomationProperties.AutomationId="FirstNameTextBox"
+                                     Watermark="Character's first name"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Last Name:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="LastNameTextBox"
+                                     AutomationProperties.AutomationId="LastNameTextBox"
+                                     Watermark="Character's last name (optional)"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Identity Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Subrace:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="SubraceTextBox"
+                                     AutomationProperties.AutomationId="SubraceTextBox"
+                                     Watermark="e.g., Gold Elf, Shield Dwarf"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Deity:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="DeityTextBox"
+                                     AutomationProperties.AutomationId="DeityTextBox"
+                                     Watermark="e.g., Mystra, Torm"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Voice & Dialog Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Voice &amp; Dialog" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Sound Set:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="SoundSetComboBox"
+                                      HorizontalAlignment="Stretch"
+                                      AutomationProperties.AutomationId="SoundSetComboBox"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Conversation:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="5">
+                                <TextBox Grid.Column="0" x:Name="ConversationTextBox"
+                                         FontFamily="Consolas, Courier New, monospace"
+                                         MaxLength="16"
+                                         Watermark="(none)"
+                                         AutomationProperties.AutomationId="ConversationTextBox"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                    <Button x:Name="BrowseConversationButton"
+                                            Content="..."
+                                            Padding="8,4"
+                                            ToolTip.Tip="Browse dialogs"
+                                            AutomationProperties.AutomationId="BrowseConversationButton"/>
+                                    <Button x:Name="ClearConversationButton"
+                                            Content="✕"
+                                            Padding="8,4"
+                                            ToolTip.Tip="Clear conversation"
+                                            AutomationProperties.AutomationId="ClearConversationButton"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
@@ -13,6 +14,9 @@ public partial class StatsPanel : UserControl
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
     private IEnumerable<UtiFile?>? _equippedItems;
+    private bool _isLoading;
+
+    public event EventHandler? CRAdjustChanged;
 
     // Ability score controls
     private TextBlock? _strBase, _strRacial, _strTotal, _strBonus;
@@ -29,6 +33,7 @@ public partial class StatsPanel : UserControl
 
     // Combat stats controls
     private TextBlock? _naturalAcValue, _babValue, _babBreakdown, _speedValue, _crValue;
+    private NumericUpDown? _crAdjustNumeric;
 
     // Saving throws controls
     private TextBlock? _fortBase, _fortAbility, _fortTotal;
@@ -89,6 +94,11 @@ public partial class StatsPanel : UserControl
         _babBreakdown = this.FindControl<TextBlock>("BabBreakdown");
         _speedValue = this.FindControl<TextBlock>("SpeedValue");
         _crValue = this.FindControl<TextBlock>("CrValue");
+        _crAdjustNumeric = this.FindControl<NumericUpDown>("CRAdjustNumeric");
+
+        // Wire up events
+        if (_crAdjustNumeric != null)
+            _crAdjustNumeric.ValueChanged += OnCRAdjustValueChanged;
 
         // Saving throws
         _fortBase = this.FindControl<TextBlock>("FortBase");
@@ -114,11 +124,13 @@ public partial class StatsPanel : UserControl
 
     public void LoadCreature(UtcFile? creature)
     {
+        _isLoading = true;
         _currentCreature = creature;
 
         if (creature == null)
         {
             ClearStats();
+            _isLoading = false;
             return;
         }
 
@@ -154,6 +166,8 @@ public partial class StatsPanel : UserControl
         // Load combat stats
         SetText(_naturalAcValue, creature.NaturalAC.ToString());
         SetText(_crValue, creature.ChallengeRating.ToString("F1"));
+        if (_crAdjustNumeric != null)
+            _crAdjustNumeric.Value = creature.CRAdjust;
 
         // Calculate BAB from class levels + equipment
         UpdateBabDisplay();
@@ -172,6 +186,16 @@ public partial class StatsPanel : UserControl
         LoadSavingThrow(_fortBase, _fortAbility, _fortTotal, creature.FortBonus, conBonus);
         LoadSavingThrow(_refBase, _refAbility, _refTotal, creature.RefBonus, dexBonus);
         LoadSavingThrow(_willBase, _willAbility, _willTotal, creature.WillBonus, wisBonus);
+
+        _isLoading = false;
+    }
+
+    private void OnCRAdjustValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.CRAdjust = (int)(e.NewValue ?? 0);
+        CRAdjustChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -272,6 +296,8 @@ public partial class StatsPanel : UserControl
         SetText(_babBreakdown, "");
         SetText(_speedValue, "Normal");
         SetText(_crValue, "0");
+        if (_crAdjustNumeric != null)
+            _crAdjustNumeric.Value = 0;
 
         // Clear saving throws
         LoadSavingThrow(_fortBase, _fortAbility, _fortTotal, 0, 0);
