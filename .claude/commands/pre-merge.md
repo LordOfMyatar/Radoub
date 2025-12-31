@@ -111,6 +111,13 @@ Before running tests, display this warning to the user:
 
 #### 5a. Technical Debt Scan
 
+**First, check for pre-existing technical debt issues**:
+```bash
+gh issue list --label "tech-debt" --state open
+```
+
+This shows any tracked debt that may be relevant to files you're touching.
+
 Review **all files touched by this PR** (not just new code) looking for:
 
 | Issue | Action Required |
@@ -133,7 +140,7 @@ Review **all files touched by this PR** (not just new code) looking for:
 **When creating technical debt issues**:
 - Title format: `[Tool] refactor: [Brief description]`
 - Include current line count and threshold exceeded
-- Label with `technical-debt` and tool label
+- Label with `tech-debt` and tool label
 - Reference the PR that discovered it
 
 **Do not silently ignore technical debt.** Either fix it or document it with an issue.
