@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.103-alpha] - 2025-12-30
-**Branch**: `parley/sprint/script-browser-fixes` | **PR**: #TBD
+**Branch**: `parley/sprint/script-browser-fixes` | **PR**: #682
 
 ### Sprint: Script Browser Fixes (#681)
 
