@@ -264,10 +264,19 @@ public class SettingsService : INotifyPropertyChanged
                     _logLevel = settings.LogLevel;
 
                     _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
-                    _maxRecentFiles = Math.Max(1, Math.Min(20, settings.MaxRecentFiles));
-                    _recentFiles.RemoveAll(f => !File.Exists(f));
+                    // Use default if MaxRecentFiles is 0 (corrupt/old file) or out of range
+                    _maxRecentFiles = settings.MaxRecentFiles > 0 && settings.MaxRecentFiles <= 20
+                        ? settings.MaxRecentFiles
+                        : DefaultMaxRecentFiles;
 
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files");
+                    // Remove files that no longer exist (with logging)
+                    var removedCount = _recentFiles.RemoveAll(f => !File.Exists(f));
+                    if (removedCount > 0)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {removedCount} missing files from recent files list");
+                    }
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}");
                 }
             }
             else
