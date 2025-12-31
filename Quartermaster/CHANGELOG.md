@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.18-alpha] - 2025-12-31
+**Branch**: `quartermaster/sprint/tech-debt-devex` | **PR**: #TBD
+
+### Sprint: Tech Debt & DevEx (#697)
+
+Improve developer experience and code reliability.
+
+- #652 - Command-line arguments to open BIC/UTC files
+- #685 - Navigation triggers dirty flag without user changes
+- #687 - Settings file being overwritten unexpectedly
+- #692 - Fix flaky Navigation_StatsPanel_IsVisibleByDefault test
+
+---
+
 ## [0.1.17-alpha] - 2025-12-31
 **Branch**: `quartermaster/sprint/inventory-sync` | **PR**: #695
 
