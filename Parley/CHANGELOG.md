@@ -15,8 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Script Browser Fixes (#681)
 
-- [ ] #571 - Script browse dialog sets script on cancel (X)
-- [ ] #570 - Conditional script preview not showing built-in scripts
+#### Fixed
+- Script browse dialog no longer sets script when cancelled with X button (#571)
+- Conditional script preview now shows built-in game scripts from BIF archives (#570)
+  - ScriptService falls back to GameResourceService when script not found in filesystem
 
 ---
 
