@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="400"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
              x:Class="Quartermaster.Views.Panels.ScriptsPanel">
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
@@ -24,21 +24,37 @@
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
-                    <StackPanel Spacing="5">
-                        <ItemsControl x:Name="ScriptsList">
+                    <StackPanel Spacing="8">
+                        <ItemsControl x:Name="ScriptsList"
+                                      AutomationProperties.AutomationId="ScriptsList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid ColumnDefinitions="150,*" Margin="0,4">
+                                    <Grid ColumnDefinitions="140,*,Auto" Margin="0,2">
+                                        <!-- Event Name Label -->
                                         <TextBlock Grid.Column="0"
                                                    Text="{Binding EventName}"
                                                    FontSize="12"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                    VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding ScriptResRef}"
-                                                   FontFamily="Consolas, Courier New, monospace"
-                                                   FontSize="12"
-                                                   VerticalAlignment="Center"/>
+
+                                        <!-- Editable ResRef TextBox -->
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding ScriptResRef, Mode=TwoWay}"
+                                                 FontFamily="Consolas, Courier New, monospace"
+                                                 FontSize="12"
+                                                 Padding="6,4"
+                                                 MaxLength="16"
+                                                 Watermark="(none)"
+                                                 AutomationProperties.AutomationId="{Binding AutomationId}"/>
+
+                                        <!-- Clear Button -->
+                                        <Button Grid.Column="2"
+                                                Content="✕"
+                                                Padding="8,4"
+                                                Margin="5,0,0,0"
+                                                ToolTip.Tip="Clear script"
+                                                Tag="{Binding FieldName}"
+                                                AutomationProperties.AutomationId="{Binding ClearButtonId}"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -61,31 +77,39 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Conversation" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
+                        <Grid ColumnDefinitions="140,*,Auto" ColumnSpacing="10">
                             <TextBlock Grid.Column="0" Text="Dialog File:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" x:Name="ConversationText"
-                                       Text="-"
-                                       FontFamily="Consolas, Courier New, monospace"
-                                       VerticalAlignment="Center"/>
-                            <Button Grid.Column="2"
-                                    x:Name="OpenInParleyButton"
-                                    Content="Open in Parley"
-                                    Padding="10,5"
-                                    IsVisible="False"
-                                    AutomationProperties.AutomationId="OpenInParleyButton"/>
+                            <TextBox Grid.Column="1" x:Name="ConversationTextBox"
+                                     Text=""
+                                     FontFamily="Consolas, Courier New, monospace"
+                                     MaxLength="16"
+                                     Watermark="(none)"
+                                     AutomationProperties.AutomationId="ConversationTextBox"/>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
+                                <Button x:Name="ClearConversationButton"
+                                        Content="✕"
+                                        Padding="8,4"
+                                        ToolTip.Tip="Clear conversation"
+                                        AutomationProperties.AutomationId="ClearConversationButton"/>
+                                <Button x:Name="OpenInParleyButton"
+                                        Content="Open in Parley"
+                                        Padding="10,5"
+                                        IsVisible="False"
+                                        AutomationProperties.AutomationId="OpenInParleyButton"/>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>
 
-                <!-- Placeholder message -->
-                <TextBlock Text="Script editing will be implemented in a future sprint."
-                           FontSize="12"
+                <!-- Info text -->
+                <TextBlock Text="Script names are limited to 16 characters (Aurora Engine constraint)."
+                           FontSize="11"
                            FontStyle="Italic"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            HorizontalAlignment="Center"
-                           Margin="0,10,0,0"/>
+                           Margin="0,5,0,0"/>
             </StackPanel>
         </ScrollViewer>
     </Border>

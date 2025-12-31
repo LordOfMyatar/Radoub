@@ -22,7 +22,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
                             <!-- Blueprint ResRef (read-only - file rename to change) -->
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Blueprint ResRef:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
@@ -49,11 +49,29 @@
                                     AutomationProperties.AutomationId="CopyTagButton"
                                     ToolTip.Tip="Copy Tag to clipboard"/>
 
+                            <!-- Subrace (editable) -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Subrace:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                     x:Name="SubraceTextBox"
+                                     AutomationProperties.AutomationId="SubraceTextBox"
+                                     Watermark="e.g., Gold Elf, Shield Dwarf"/>
+
+                            <!-- Deity (editable) -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Deity:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                     x:Name="DeityTextBox"
+                                     AutomationProperties.AutomationId="DeityTextBox"
+                                     Watermark="e.g., Mystra, Torm"/>
+
                             <!-- Comment (editable) -->
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Comment:"
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Comment:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Top" Margin="0,5,0,0"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                            <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                                      x:Name="CommentTextBox"
                                      AcceptsReturn="True"
                                      TextWrapping="Wrap"
@@ -61,6 +79,52 @@
                                      MaxHeight="120"
                                      AutomationProperties.AutomationId="CommentTextBox"
                                      Watermark="Developer notes..."/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Challenge Rating Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Challenge Rating" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
+                            <!-- CR Display (read-only) -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Challenge Rating:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="ChallengeRatingText"
+                                       Text="0.0"
+                                       FontWeight="SemiBold"
+                                       FontSize="16"
+                                       VerticalAlignment="Center"
+                                       AutomationProperties.AutomationId="ChallengeRatingText"/>
+
+                            <!-- CR Adjustment (editable) -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="CR Adjustment:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <NumericUpDown Grid.Row="1" Grid.Column="1"
+                                           x:Name="CRAdjustNumeric"
+                                           Minimum="-100"
+                                           Maximum="100"
+                                           Increment="1"
+                                           FormatString="0"
+                                           HorizontalAlignment="Left"
+                                           MinWidth="100"
+                                           AutomationProperties.AutomationId="CRAdjustNumeric"
+                                           ToolTip.Tip="Manual adjustment to Challenge Rating"/>
+
+                            <!-- Note -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="CR is stored in the UTC file. Calculated CR based on stats is not implemented."
+                                       FontSize="11"
+                                       FontStyle="Italic"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                         </Grid>
                     </StackPanel>
                 </Border>

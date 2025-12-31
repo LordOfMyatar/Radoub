@@ -17,10 +17,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Complete Quartermaster's core creature editing functionality with Scripts panel and remaining Advanced Properties fields.
 
-#### Scope
-- #646 - Scripts Panel (All 14 Script Slots)
-- #647 - Subrace & Deity Fields
-- #648 - Challenge Rating Display
+#### Added
+
+**Scripts Panel (#646)**
+- Editable script ResRef fields for all 13 event scripts
+- Clear button per script slot to remove assignment
+- Real-time summary showing assigned script count
+- Editable Conversation field with "Open in Parley" integration
+- ScriptsChanged event for dirty state tracking
+- MaxLength=16 enforced per Aurora Engine constraint
+
+**Subrace & Deity Fields (#647)**
+- Editable Subrace text field in Identity section
+- Editable Deity text field in Identity section
+- Changes persist to UTC file
+
+**Challenge Rating Display (#648)**
+- CR display showing stored ChallengeRating value
+- Editable CR Adjustment spinner (-100 to +100)
+- Changes persist to UTC file
 
 ---
 
