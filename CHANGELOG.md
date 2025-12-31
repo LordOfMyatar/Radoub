@@ -15,6 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.18.4] - 2025-12-30
+**Branch**: `radoub/fix/skia-version-mismatch` | **PR**: #TBD | **Issue**: #666
+
+### Fix: SkiaSharp Transitive Version Mismatch
+
+- Add explicit `Avalonia.Skia 11.3.10` reference to prevent older SkiaSharp versions from coming in transitively
+- Remove Quartermaster from `Radoub.sln` (not preview-ready)
+
+---
+
 ## [0.9.18.3] - 2025-12-30
 **Branch**: `radoub/fix/skiasharp-version-mismatch` | **PR**: #660 | **Issue**: #661
 
