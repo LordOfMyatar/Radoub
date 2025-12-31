@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.16-alpha] - 2025-12-31
+**Branch**: `quartermaster/sprint/bic-file-support` | **PR**: #TBD
+
+### Sprint: BIC File Support (#680)
+
+Enable Quartermaster to properly edit BIC files (player characters) with appropriate UI differences from UTC files (creature blueprints).
+
+#### Added
+
+- #672 - Character Tab (prerequisite for BIC)
+- #676 - BIC-specific tabs and UI handling
+
+---
+
 ## [0.1.15-alpha] - 2025-12-30
 **Branch**: `quartermaster/sprint/ui-polish-panel-reorg` | **PR**: #684
 
