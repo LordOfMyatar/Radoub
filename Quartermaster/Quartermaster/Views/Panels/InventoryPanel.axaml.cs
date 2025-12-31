@@ -36,6 +36,8 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     public event EventHandler<EquipmentSlotViewModel>? EquipmentSlotClicked;
     public event EventHandler<EquipmentSlotViewModel>? EquipmentSlotDoubleClicked;
     public event EventHandler<EquipmentSlotDropEventArgs>? EquipmentSlotItemDropped;
+    public event EventHandler<ItemViewModel[]>? AddToBackpackRequested;
+    public event EventHandler<ItemViewModel[]>? EquipItemsRequested;
 
     public bool HasBackpackSelection
     {
@@ -206,21 +208,46 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     {
         if (!HasPaletteSelection || _paletteList == null) return;
 
-        foreach (var item in _paletteList.SelectedItems)
+        var selectedItems = _paletteList.SelectedItems.ToArray();
+        if (selectedItems.Length > 0)
         {
-            // TODO: Clone the item and add to backpack
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Would add to backpack: {item.Name}");
+            AddToBackpackRequested?.Invoke(this, selectedItems);
         }
-
-        InventoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnEquipSelectedClick(object? sender, RoutedEventArgs e)
     {
-        if (!HasPaletteSelection) return;
+        if (!HasPaletteSelection || _paletteList == null) return;
 
-        // TODO: Determine appropriate slot and equip item
-        UnifiedLogger.LogInventory(LogLevel.DEBUG, "Equip selected clicked");
+        var selectedItems = _paletteList.SelectedItems.ToArray();
+        if (selectedItems.Length > 0)
+        {
+            EquipItemsRequested?.Invoke(this, selectedItems);
+        }
+    }
+
+    /// <summary>
+    /// Adds an item to the backpack. Called by MainWindow after creating the item.
+    /// </summary>
+    public void AddToBackpack(ItemViewModel item)
+    {
+        _backpackItems.Add(item);
+        InventoryChanged?.Invoke(this, EventArgs.Empty);
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"Added to backpack: {item.Name}");
+    }
+
+    /// <summary>
+    /// Removes an item from the backpack by ResRef.
+    /// </summary>
+    public bool RemoveFromBackpack(ItemViewModel item)
+    {
+        var removed = _backpackItems.Remove(item);
+        if (removed)
+        {
+            InventoryChanged?.Invoke(this, EventArgs.Empty);
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Removed from backpack: {item.Name}");
+        }
+        return removed;
     }
 
     #endregion

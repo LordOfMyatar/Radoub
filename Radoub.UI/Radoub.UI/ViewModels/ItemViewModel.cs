@@ -36,6 +36,27 @@ public partial class ItemViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Creates a new ItemViewModel for a backpack item with inventory metadata.
+    /// </summary>
+    public ItemViewModel(
+        UtiFile item,
+        string resolvedName,
+        string baseItemName,
+        string propertiesDisplay,
+        ushort gridPositionX,
+        ushort gridPositionY,
+        bool isDropable,
+        bool isPickpocketable,
+        GameResourceSource source = GameResourceSource.Bif)
+        : this(item, resolvedName, baseItemName, propertiesDisplay, source)
+    {
+        _gridPositionX = gridPositionX;
+        _gridPositionY = gridPositionY;
+        _isDropable = isDropable;
+        _isPickpocketable = isPickpocketable;
+    }
+
+    /// <summary>
     /// The underlying item data.
     /// </summary>
     public UtiFile Item => _item;
@@ -121,4 +142,32 @@ public partial class ItemViewModel : ObservableObject
     /// Icons from game-icons.net (CC BY 3.0).
     /// </summary>
     public string IconPath => ItemIconHelper.GetIconPath(BaseItem);
+
+    #region Inventory Metadata (for backpack items)
+
+    /// <summary>
+    /// X position in inventory grid (0-based). Used for backpack items.
+    /// </summary>
+    [ObservableProperty]
+    private ushort _gridPositionX;
+
+    /// <summary>
+    /// Y position in inventory grid (0-based). Used for backpack items.
+    /// </summary>
+    [ObservableProperty]
+    private ushort _gridPositionY;
+
+    /// <summary>
+    /// If true, creature drops this item on death. Default true.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isDropable = true;
+
+    /// <summary>
+    /// If true, item can be pickpocketed from creature.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isPickpocketable;
+
+    #endregion
 }

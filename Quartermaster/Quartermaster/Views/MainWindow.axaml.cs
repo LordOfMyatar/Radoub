@@ -154,6 +154,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UnifiedLogger.LogUI(LogLevel.DEBUG, $"Item dropped on slot: {e.TargetSlot.Name}");
             MarkDirty();
         };
+        InventoryPanelContent.AddToBackpackRequested += OnAddToBackpackRequested;
+        InventoryPanelContent.EquipItemsRequested += OnEquipItemsRequested;
     }
 
     #region Navigation

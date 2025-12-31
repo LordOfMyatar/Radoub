@@ -190,6 +190,9 @@ public partial class MainWindow
 
         try
         {
+            // Sync UI state to creature model before saving
+            SyncInventoryToCreature();
+
             if (_isBicFile && _currentCreature is BicFile bicFile)
             {
                 BicWriter.Write(bicFile, _currentFilePath);
