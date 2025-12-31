@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.14-alpha] - 2025-12-30
-**Branch**: `quartermaster/sprint/scripts-advanced-props` | **PR**: #TBD
+**Branch**: `quartermaster/sprint/scripts-advanced-props` | **PR**: #669
 
 ### Sprint: Scripts & Advanced Properties (#668)
 
