@@ -24,6 +24,9 @@ Enable Quartermaster to properly edit BIC files (player characters) with appropr
 - Biography section for character description (shown when examined)
 - File type detection automatically shows/hides appropriate sections
 
+**Application Branding**
+- Application icon (Quartermaster.ico) displayed in title bar and taskbar
+
 #### Changed
 
 **File Type Handling (#676)**
