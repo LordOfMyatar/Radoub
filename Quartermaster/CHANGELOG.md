@@ -10,6 +10,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.14-alpha] - 2025-12-30
+**Branch**: `quartermaster/sprint/scripts-advanced-props` | **PR**: #669
+
+### Sprint: Scripts & Advanced Properties (#668)
+
+Complete Quartermaster's core creature editing functionality with Scripts panel and remaining Advanced Properties fields.
+
+#### Added
+
+**Scripts Panel (#646)**
+- Editable script ResRef fields for all 13 event scripts
+- Browse button per script to open ScriptBrowserWindow
+- Clear button per script slot to remove assignment
+- Browse button for Conversation to open DialogBrowserWindow
+- Real-time summary showing assigned script count
+- Editable Conversation field with "Open in Parley" integration
+- ScriptsChanged event for dirty state tracking
+- MaxLength=16 enforced per Aurora Engine constraint
+
+**Shared Browser Windows**
+- Moved ScriptBrowserWindow to Radoub.UI shared library
+- Created DialogBrowserWindow for dialog file browsing
+- Created IScriptBrowserContext interface for tool-specific implementations
+- ParleyScriptBrowserContext and QuartermasterScriptBrowserContext implementations
+
+#### Fixed
+
+**Aurora Toolset Compatibility**
+- UtcWriter/BicWriter: Always write all 13 script fields (even empty ones)
+- Fixed typo: ScriptuserDefine → ScriptUserDefine
+
+**Subrace & Deity Fields (#647)**
+- Editable Subrace text field in Identity section
+- Editable Deity text field in Identity section
+- Changes persist to UTC file
+
+**Challenge Rating Display (#648)**
+- CR display showing stored ChallengeRating value
+- Editable CR Adjustment spinner (-100 to +100)
+- Changes persist to UTC file
+
+---
+
 ## [0.1.13-alpha] - 2025-12-30
 **Branch**: `quartermaster/fix/flaky-spells-navigation-test` | **PR**: #656
 

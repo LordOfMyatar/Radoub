@@ -151,32 +151,21 @@ public static class BicWriter
 
     private static void AddScriptFields(GffStruct root, BicFile bic)
     {
-        if (!string.IsNullOrEmpty(bic.ScriptAttacked))
-            AddCResRefField(root, "ScriptAttacked", bic.ScriptAttacked);
-        if (!string.IsNullOrEmpty(bic.ScriptDamaged))
-            AddCResRefField(root, "ScriptDamaged", bic.ScriptDamaged);
-        if (!string.IsNullOrEmpty(bic.ScriptDeath))
-            AddCResRefField(root, "ScriptDeath", bic.ScriptDeath);
-        if (!string.IsNullOrEmpty(bic.ScriptDialogue))
-            AddCResRefField(root, "ScriptDialogue", bic.ScriptDialogue);
-        if (!string.IsNullOrEmpty(bic.ScriptDisturbed))
-            AddCResRefField(root, "ScriptDisturbed", bic.ScriptDisturbed);
-        if (!string.IsNullOrEmpty(bic.ScriptEndRound))
-            AddCResRefField(root, "ScriptEndRound", bic.ScriptEndRound);
-        if (!string.IsNullOrEmpty(bic.ScriptHeartbeat))
-            AddCResRefField(root, "ScriptHeartbeat", bic.ScriptHeartbeat);
-        if (!string.IsNullOrEmpty(bic.ScriptOnBlocked))
-            AddCResRefField(root, "ScriptOnBlocked", bic.ScriptOnBlocked);
-        if (!string.IsNullOrEmpty(bic.ScriptOnNotice))
-            AddCResRefField(root, "ScriptOnNotice", bic.ScriptOnNotice);
-        if (!string.IsNullOrEmpty(bic.ScriptRested))
-            AddCResRefField(root, "ScriptRested", bic.ScriptRested);
-        if (!string.IsNullOrEmpty(bic.ScriptSpawn))
-            AddCResRefField(root, "ScriptSpawn", bic.ScriptSpawn);
-        if (!string.IsNullOrEmpty(bic.ScriptSpellAt))
-            AddCResRefField(root, "ScriptSpellAt", bic.ScriptSpellAt);
-        if (!string.IsNullOrEmpty(bic.ScriptUserDefine))
-            AddCResRefField(root, "ScriptuserDefine", bic.ScriptUserDefine);
+        // Always write script fields (even if empty) for Aurora Toolset compatibility
+        // Empty scripts are written with length 0
+        AddCResRefField(root, "ScriptAttacked", bic.ScriptAttacked ?? "");
+        AddCResRefField(root, "ScriptDamaged", bic.ScriptDamaged ?? "");
+        AddCResRefField(root, "ScriptDeath", bic.ScriptDeath ?? "");
+        AddCResRefField(root, "ScriptDialogue", bic.ScriptDialogue ?? "");
+        AddCResRefField(root, "ScriptDisturbed", bic.ScriptDisturbed ?? "");
+        AddCResRefField(root, "ScriptEndRound", bic.ScriptEndRound ?? "");
+        AddCResRefField(root, "ScriptHeartbeat", bic.ScriptHeartbeat ?? "");
+        AddCResRefField(root, "ScriptOnBlocked", bic.ScriptOnBlocked ?? "");
+        AddCResRefField(root, "ScriptOnNotice", bic.ScriptOnNotice ?? "");
+        AddCResRefField(root, "ScriptRested", bic.ScriptRested ?? "");
+        AddCResRefField(root, "ScriptSpawn", bic.ScriptSpawn ?? "");
+        AddCResRefField(root, "ScriptSpellAt", bic.ScriptSpellAt ?? "");
+        AddCResRefField(root, "ScriptUserDefine", bic.ScriptUserDefine ?? "");
     }
 
     private static void AddClassList(GffStruct root, List<CreatureClass> classes)

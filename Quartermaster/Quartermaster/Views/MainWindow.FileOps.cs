@@ -162,6 +162,9 @@ public partial class MainWindow
             _currentFilePath = filePath;
             _isDirty = false;
 
+            // Update scripts panel with current file context for script browsing
+            ScriptsPanelContent.SetCurrentFilePath(_currentFilePath);
+
             PopulateInventoryUI();
             UpdateCharacterHeader();
             LoadAllPanels(_currentCreature);
@@ -242,6 +245,9 @@ public partial class MainWindow
         _currentFilePath = null;
         _isDirty = false;
         _isBicFile = false;
+
+        // Clear scripts panel context
+        ScriptsPanelContent.SetCurrentFilePath(null);
 
         ClearInventoryUI();
         UpdateCharacterHeader();

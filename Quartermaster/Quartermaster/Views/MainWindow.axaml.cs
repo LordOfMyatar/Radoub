@@ -112,9 +112,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Initialize advanced panel with display service for appearance lookups
         AdvancedPanelContent.SetDisplayService(_creatureDisplayService);
+        AdvancedPanelContent.TagChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.SubraceChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.DeityChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.CRAdjustChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.CommentChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.FlagsChanged += (s, e) => MarkDirty();
 
-        // Initialize scripts panel with conversation resolver
+        // Initialize scripts panel with conversation resolver and game data service
         ScriptsPanelContent.SetConversationResolver(ResolveConversationPath);
+        ScriptsPanelContent.SetGameDataService(_gameDataService);
+        ScriptsPanelContent.ScriptsChanged += (s, e) => MarkDirty();
 
         // Initialize inventory panel with shared equipment slots and game data
         InventoryPanelContent.InitializeSlots(_equipmentSlots);

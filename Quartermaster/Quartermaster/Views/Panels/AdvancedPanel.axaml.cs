@@ -14,9 +14,15 @@ public partial class AdvancedPanel : UserControl
     // Identity section
     private TextBox? _templateResRefTextBox;
     private TextBox? _tagTextBox;
+    private TextBox? _subraceTextBox;
+    private TextBox? _deityTextBox;
     private TextBox? _commentTextBox;
     private Button? _copyResRefButton;
     private Button? _copyTagButton;
+
+    // Challenge Rating section
+    private TextBlock? _challengeRatingText;
+    private NumericUpDown? _crAdjustNumeric;
 
     // Appearance section
     private ComboBox? _appearanceComboBox;
@@ -78,6 +84,9 @@ public partial class AdvancedPanel : UserControl
 
     public event EventHandler? CommentChanged;
     public event EventHandler? TagChanged;
+    public event EventHandler? SubraceChanged;
+    public event EventHandler? DeityChanged;
+    public event EventHandler? CRAdjustChanged;
     public event EventHandler? FlagsChanged;
 
     public AdvancedPanel()
@@ -92,9 +101,15 @@ public partial class AdvancedPanel : UserControl
         // Identity section
         _templateResRefTextBox = this.FindControl<TextBox>("TemplateResRefTextBox");
         _tagTextBox = this.FindControl<TextBox>("TagTextBox");
+        _subraceTextBox = this.FindControl<TextBox>("SubraceTextBox");
+        _deityTextBox = this.FindControl<TextBox>("DeityTextBox");
         _commentTextBox = this.FindControl<TextBox>("CommentTextBox");
         _copyResRefButton = this.FindControl<Button>("CopyResRefButton");
         _copyTagButton = this.FindControl<Button>("CopyTagButton");
+
+        // Challenge Rating section
+        _challengeRatingText = this.FindControl<TextBlock>("ChallengeRatingText");
+        _crAdjustNumeric = this.FindControl<NumericUpDown>("CRAdjustNumeric");
 
         // Appearance section
         _appearanceComboBox = this.FindControl<ComboBox>("AppearanceComboBox");
@@ -155,8 +170,14 @@ public partial class AdvancedPanel : UserControl
             _copyTagButton.Click += OnCopyTagClick;
         if (_tagTextBox != null)
             _tagTextBox.TextChanged += OnTagTextChanged;
+        if (_subraceTextBox != null)
+            _subraceTextBox.TextChanged += OnSubraceTextChanged;
+        if (_deityTextBox != null)
+            _deityTextBox.TextChanged += OnDeityTextChanged;
         if (_commentTextBox != null)
             _commentTextBox.TextChanged += OnCommentTextChanged;
+        if (_crAdjustNumeric != null)
+            _crAdjustNumeric.ValueChanged += OnCRAdjustValueChanged;
         if (_appearanceComboBox != null)
             _appearanceComboBox.SelectionChanged += OnAppearanceSelectionChanged;
 
@@ -419,8 +440,18 @@ public partial class AdvancedPanel : UserControl
             _templateResRefTextBox.Text = creature.TemplateResRef ?? "";
         if (_tagTextBox != null)
             _tagTextBox.Text = creature.Tag ?? "";
+        if (_subraceTextBox != null)
+            _subraceTextBox.Text = creature.Subrace ?? "";
+        if (_deityTextBox != null)
+            _deityTextBox.Text = creature.Deity ?? "";
         if (_commentTextBox != null)
             _commentTextBox.Text = creature.Comment ?? "";
+
+        // Challenge Rating
+        if (_challengeRatingText != null)
+            _challengeRatingText.Text = creature.ChallengeRating.ToString("F1");
+        if (_crAdjustNumeric != null)
+            _crAdjustNumeric.Value = creature.CRAdjust;
 
         // Appearance - select in combo
         SelectAppearance(creature.AppearanceType);
@@ -655,8 +686,18 @@ public partial class AdvancedPanel : UserControl
             _templateResRefTextBox.Text = "";
         if (_tagTextBox != null)
             _tagTextBox.Text = "";
+        if (_subraceTextBox != null)
+            _subraceTextBox.Text = "";
+        if (_deityTextBox != null)
+            _deityTextBox.Text = "";
         if (_commentTextBox != null)
             _commentTextBox.Text = "";
+
+        // Clear Challenge Rating
+        if (_challengeRatingText != null)
+            _challengeRatingText.Text = "0.0";
+        if (_crAdjustNumeric != null)
+            _crAdjustNumeric.Value = 0;
 
         // Clear appearance
         if (_appearanceComboBox != null)
@@ -721,6 +762,30 @@ public partial class AdvancedPanel : UserControl
 
         _currentCreature.Tag = _tagTextBox?.Text ?? "";
         TagChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnSubraceTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.Subrace = _subraceTextBox?.Text ?? "";
+        SubraceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnDeityTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.Deity = _deityTextBox?.Text ?? "";
+        DeityChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnCRAdjustValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.CRAdjust = (int)(e.NewValue ?? 0);
+        CRAdjustChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnCommentTextChanged(object? sender, TextChangedEventArgs e)
