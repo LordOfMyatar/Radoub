@@ -133,12 +133,20 @@
                     <!-- Navigation Buttons -->
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Spacing="2" Margin="8">
-                            <Button x:Name="NavStats" Classes="NavButton Selected"
-                                    Click="OnNavButtonClick" Tag="Stats"
-                                    AutomationProperties.AutomationId="NavButton_Stats">
+                            <Button x:Name="NavCharacter" Classes="NavButton Selected"
+                                    Click="OnNavButtonClick" Tag="Character"
+                                    AutomationProperties.AutomationId="NavButton_Character">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="📊" FontSize="14"/>
-                                    <TextBlock Text="Stats" VerticalAlignment="Center"/>
+                                    <TextBlock Text="🧑" FontSize="14"/>
+                                    <TextBlock Text="Character" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="NavAppearance" Classes="NavButton"
+                                    Click="OnNavButtonClick" Tag="Appearance"
+                                    AutomationProperties.AutomationId="NavButton_Appearance">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="👤" FontSize="14"/>
+                                    <TextBlock Text="Appearance" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                             <Button x:Name="NavClasses" Classes="NavButton"
@@ -149,12 +157,12 @@
                                     <TextBlock Text="Classes" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="NavSkills" Classes="NavButton"
-                                    Click="OnNavButtonClick" Tag="Skills"
-                                    AutomationProperties.AutomationId="NavButton_Skills">
+                            <Button x:Name="NavStats" Classes="NavButton"
+                                    Click="OnNavButtonClick" Tag="Stats"
+                                    AutomationProperties.AutomationId="NavButton_Stats">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="🎯" FontSize="14"/>
-                                    <TextBlock Text="Skills" VerticalAlignment="Center"/>
+                                    <TextBlock Text="📊" FontSize="14"/>
+                                    <TextBlock Text="Stats" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                             <Button x:Name="NavFeats" Classes="NavButton"
@@ -163,6 +171,14 @@
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="⭐" FontSize="14"/>
                                     <TextBlock Text="Feats" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="NavSkills" Classes="NavButton"
+                                    Click="OnNavButtonClick" Tag="Skills"
+                                    AutomationProperties.AutomationId="NavButton_Skills">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="🎯" FontSize="14"/>
+                                    <TextBlock Text="Skills" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                             <Button x:Name="NavSpells" Classes="NavButton"
@@ -181,10 +197,6 @@
                                     <TextBlock Text="Inventory" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
-
-                            <!-- Separator -->
-                            <Separator Margin="0,8"/>
-
                             <Button x:Name="NavAdvanced" Classes="NavButton"
                                     Click="OnNavButtonClick" Tag="Advanced"
                                     AutomationProperties.AutomationId="NavButton_Advanced">
@@ -214,8 +226,12 @@
             <!-- Content Area -->
             <Border Grid.Column="2" AutomationProperties.AutomationId="ContentArea">
                 <Grid x:Name="ContentPanel">
-                    <!-- Stats Panel (placeholder) -->
-                    <panels:StatsPanel x:Name="StatsPanelContent" IsVisible="True"
+                    <!-- Character Panel -->
+                    <panels:CharacterPanel x:Name="CharacterPanelContent" IsVisible="True"
+                                           AutomationProperties.AutomationId="CharacterPanel"/>
+
+                    <!-- Stats Panel -->
+                    <panels:StatsPanel x:Name="StatsPanelContent" IsVisible="False"
                                        AutomationProperties.AutomationId="StatsPanel"/>
 
                     <!-- Classes Panel -->
@@ -237,6 +253,10 @@
                     <!-- Inventory Panel -->
                     <panels:InventoryPanel x:Name="InventoryPanelContent" IsVisible="False"
                                            AutomationProperties.AutomationId="InventoryPanel"/>
+
+                    <!-- Appearance Panel -->
+                    <panels:AppearancePanel x:Name="AppearancePanelContent" IsVisible="False"
+                                            AutomationProperties.AutomationId="AppearancePanel"/>
 
                     <!-- Advanced Panel -->
                     <panels:AdvancedPanel x:Name="AdvancedPanelContent" IsVisible="False"

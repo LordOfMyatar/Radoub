@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.15-alpha] - 2025-12-30
+**Branch**: `quartermaster/sprint/ui-polish-panel-reorg` | **PR**: #684
+
+### Sprint: UI Polish & Panel Reorganization (#678)
+
+Reorganize Quartermaster's panel structure for improved usability.
+
+#### Added
+
+**Appearance Panel (#671)**
+- New dedicated panel for creature visual configuration
+- Appearance Type dropdown with dynamic/static indicator
+- Phenotype and Portrait dropdowns
+- Body Parts section with all 14 body part controls
+- Automatically enables/disables body parts based on appearance type
+
+**Character Panel (#672)**
+- New dedicated panel for character identity and roleplay info
+- First Name and Last Name text fields with CExoLocString support
+- Subrace and Deity text fields (moved from Advanced panel)
+- Sound Set dropdown (moved from Advanced panel)
+- Conversation field with browse and clear buttons
+
+**Stats Panel Enhancement (#670)**
+- Added Challenge Rating adjustment control
+- Moved CR Adjust from Advanced panel to Stats panel
+
+#### Changed
+- Removed duplicate Identity section from Classes panel (#674)
+- Removed separator between Inventory and Advanced navigation buttons (#673)
+- Streamlined Advanced panel to focus on blueprint/tag, flags, and behavior settings
+
+---
+
 ## [0.1.14-alpha] - 2025-12-30
 **Branch**: `quartermaster/sprint/scripts-advanced-props` | **PR**: #669
 

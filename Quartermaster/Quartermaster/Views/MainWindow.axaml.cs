@@ -26,7 +26,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string? _currentFilePath;
     private bool _isDirty;
     private bool _isBicFile;
-    private string _currentSection = "Stats";
+    private string _currentSection = "Character";
     private Button? _selectedNavButton;
 
     // Game data service for BIF/TLK lookups
@@ -73,7 +73,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         RestoreWindowPosition();
 
         // Set initial nav button selection
-        _selectedNavButton = NavStats;
+        _selectedNavButton = NavCharacter;
 
         Closing += OnWindowClosing;
         Opened += OnWindowOpened;
@@ -97,6 +97,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         // Initialize stats panel with display service
         StatsPanelContent.SetDisplayService(_creatureDisplayService);
+        StatsPanelContent.CRAdjustChanged += (s, e) => MarkDirty();
+
+        // Initialize character panel with display service
+        CharacterPanelContent.SetDisplayService(_creatureDisplayService);
+        CharacterPanelContent.SetConversationResolver(ResolveConversationPath);
+        CharacterPanelContent.CharacterChanged += (s, e) => MarkDirty();
 
         // Initialize classes panel with display service for 2DA/TLK lookups
         ClassesPanelContent.SetDisplayService(_creatureDisplayService);
@@ -110,12 +116,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize spells panel with display service for 2DA/TLK lookups
         SpellsPanelContent.SetDisplayService(_creatureDisplayService);
 
-        // Initialize advanced panel with display service for appearance lookups
+        // Initialize appearance panel with display service
+        AppearancePanelContent.SetDisplayService(_creatureDisplayService);
+        AppearancePanelContent.AppearanceChanged += (s, e) => MarkDirty();
+
+        // Initialize advanced panel with display service
         AdvancedPanelContent.SetDisplayService(_creatureDisplayService);
         AdvancedPanelContent.TagChanged += (s, e) => MarkDirty();
-        AdvancedPanelContent.SubraceChanged += (s, e) => MarkDirty();
-        AdvancedPanelContent.DeityChanged += (s, e) => MarkDirty();
-        AdvancedPanelContent.CRAdjustChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.CommentChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.FlagsChanged += (s, e) => MarkDirty();
 
@@ -174,11 +181,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         navButton ??= section switch
         {
             "Stats" => NavStats,
+            "Character" => NavCharacter,
             "Classes" => NavClasses,
             "Skills" => NavSkills,
             "Feats" => NavFeats,
             "Spells" => NavSpells,
             "Inventory" => NavInventory,
+            "Appearance" => NavAppearance,
             "Advanced" => NavAdvanced,
             "Scripts" => NavScripts,
             _ => null
@@ -192,11 +201,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Hide all panels
         StatsPanelContent.IsVisible = false;
+        CharacterPanelContent.IsVisible = false;
         ClassesPanelContent.IsVisible = false;
         SkillsPanelContent.IsVisible = false;
         FeatsPanelContent.IsVisible = false;
         SpellsPanelContent.IsVisible = false;
         InventoryPanelContent.IsVisible = false;
+        AppearancePanelContent.IsVisible = false;
         AdvancedPanelContent.IsVisible = false;
         ScriptsPanelContent.IsVisible = false;
 
@@ -205,6 +216,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             case "Stats":
                 StatsPanelContent.IsVisible = true;
+                break;
+            case "Character":
+                CharacterPanelContent.IsVisible = true;
                 break;
             case "Classes":
                 ClassesPanelContent.IsVisible = true;
@@ -220,6 +234,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 break;
             case "Inventory":
                 InventoryPanelContent.IsVisible = true;
+                break;
+            case "Appearance":
+                AppearancePanelContent.IsVisible = true;
                 break;
             case "Advanced":
                 AdvancedPanelContent.IsVisible = true;
@@ -410,22 +427,26 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             .Select(s => s.EquippedItem!.Item);
         StatsPanelContent.SetEquippedItems(equippedItems);
 
+        CharacterPanelContent.LoadCreature(creature);
         ClassesPanelContent.LoadCreature(creature);
         SkillsPanelContent.LoadCreature(creature);
         FeatsPanelContent.LoadCreature(creature);
         SpellsPanelContent.LoadCreature(creature);
         ScriptsPanelContent.LoadCreature(creature);
+        AppearancePanelContent.LoadCreature(creature);
         AdvancedPanelContent.LoadCreature(creature);
     }
 
     private void ClearAllPanels()
     {
         StatsPanelContent.ClearStats();
+        CharacterPanelContent.ClearPanel();
         ClassesPanelContent.ClearPanel();
         SkillsPanelContent.ClearPanel();
         FeatsPanelContent.ClearPanel();
         SpellsPanelContent.ClearPanel();
         ScriptsPanelContent.ClearPanel();
+        AppearancePanelContent.ClearPanel();
         AdvancedPanelContent.ClearPanel();
     }
 

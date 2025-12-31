@@ -21,10 +21,6 @@ public partial class ClassesPanel : UserControl
     private TextBlock? _goodEvilValue;
     private ProgressBar? _lawChaosBar;
     private TextBlock? _lawChaosValue;
-    private TextBlock? _raceText;
-    private TextBlock? _genderText;
-    private TextBlock? _subraceText;
-    private TextBlock? _deityText;
     private TextBlock? _packageText;
     private Button? _levelupWizardButton;
 
@@ -48,10 +44,6 @@ public partial class ClassesPanel : UserControl
         _goodEvilValue = this.FindControl<TextBlock>("GoodEvilValue");
         _lawChaosBar = this.FindControl<ProgressBar>("LawChaosBar");
         _lawChaosValue = this.FindControl<TextBlock>("LawChaosValue");
-        _raceText = this.FindControl<TextBlock>("RaceText");
-        _genderText = this.FindControl<TextBlock>("GenderText");
-        _subraceText = this.FindControl<TextBlock>("SubraceText");
-        _deityText = this.FindControl<TextBlock>("DeityText");
         _packageText = this.FindControl<TextBlock>("PackageText");
         _levelupWizardButton = this.FindControl<Button>("LevelupWizardButton");
 
@@ -108,12 +100,6 @@ public partial class ClassesPanel : UserControl
         // Load alignment
         LoadAlignment(creature.GoodEvil, creature.LawfulChaotic);
 
-        // Load identity using display service if available
-        SetText(_raceText, GetRaceName(creature.Race));
-        SetText(_genderText, GetGenderName(creature.Gender));
-        SetText(_subraceText, string.IsNullOrEmpty(creature.Subrace) ? "-" : creature.Subrace);
-        SetText(_deityText, string.IsNullOrEmpty(creature.Deity) ? "-" : creature.Deity);
-
         // Load auto-levelup package
         SetText(_packageText, GetPackageName(creature.StartingPackage));
     }
@@ -131,10 +117,6 @@ public partial class ClassesPanel : UserControl
             _noClassesText.IsVisible = true;
 
         LoadAlignment(50, 50);
-        SetText(_raceText, "Unknown");
-        SetText(_genderText, "Unknown");
-        SetText(_subraceText, "-");
-        SetText(_deityText, "-");
         SetText(_packageText, "None");
     }
 
@@ -301,43 +283,6 @@ public partial class ClassesPanel : UserControl
             21 => "Dragon Abilities",
             27 => "Inspire Courage",
             _ => ""
-        };
-    }
-
-    private string GetRaceName(byte raceId)
-    {
-        // Use display service if available
-        if (_displayService != null)
-            return _displayService.GetRaceName(raceId);
-
-        // Fallback to hardcoded names
-        return raceId switch
-        {
-            0 => "Dwarf",
-            1 => "Elf",
-            2 => "Gnome",
-            3 => "Halfling",
-            4 => "Half-Elf",
-            5 => "Half-Orc",
-            6 => "Human",
-            _ => $"Race {raceId}"
-        };
-    }
-
-    private string GetGenderName(byte genderId)
-    {
-        // Use display service if available
-        if (_displayService != null)
-            return _displayService.GetGenderName(genderId);
-
-        return genderId switch
-        {
-            0 => "Male",
-            1 => "Female",
-            2 => "Both",
-            3 => "Other",
-            4 => "None",
-            _ => $"Gender {genderId}"
         };
     }
 

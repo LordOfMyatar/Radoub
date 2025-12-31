@@ -185,34 +185,6 @@
                                 ToolTip.Tip="Full levelup wizard coming in a future sprint"/>
                     </StackPanel>
                 </Border>
-
-                <!-- Identity Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        Padding="15">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="14"/>
-
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Race:" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" x:Name="RaceText" Text="Unknown" VerticalAlignment="Center"/>
-
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Gender:" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" x:Name="GenderText" Text="Unknown" VerticalAlignment="Center"/>
-
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Subrace:" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Row="2" Grid.Column="1" x:Name="SubraceText" Text="-" VerticalAlignment="Center"/>
-
-                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Deity:" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Row="3" Grid.Column="1" x:Name="DeityText" Text="-" VerticalAlignment="Center"/>
-                        </Grid>
-                    </StackPanel>
-                </Border>
             </StackPanel>
         </ScrollViewer>
     </Border>
