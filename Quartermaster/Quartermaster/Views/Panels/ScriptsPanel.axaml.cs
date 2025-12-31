@@ -144,7 +144,8 @@ public partial class ScriptsPanel : UserControl
         }
         UpdateParleyButtonVisibility();
 
-        _isLoading = false;
+        // Defer clearing _isLoading until after dispatcher processes queued TextChanged events
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
     }
 
     private void AddScript(string eventName, string scriptResRef, string fieldName)

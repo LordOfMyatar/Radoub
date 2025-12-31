@@ -236,7 +236,8 @@ public partial class AdvancedPanel : UserControl
         SelectComboByTag(_decayTimeComboBox, creature.DecayTime);
         SelectComboByTag(_bodyBagComboBox, creature.BodyBag);
 
-        _isLoading = false;
+        // Defer clearing _isLoading until after dispatcher processes queued TextChanged/SelectionChanged events
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
     }
 
     private void SelectComboByTag(ComboBox? combo, byte value)
