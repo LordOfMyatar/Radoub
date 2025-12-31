@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.15-alpha] - 2025-12-30
+**Branch**: `quartermaster/sprint/ui-polish-panel-reorg` | **PR**: #TBD
+
+### Sprint: UI Polish & Panel Reorganization (#678)
+
+Reorganize Quartermaster's panel structure for improved usability.
+
+#### Added
+- [ ] #671 - Create Appearance Tab
+- [ ] #672 - Create Character Tab
+- [ ] #670 - Move Challenge Rating to Stats Panel
+- [ ] #674 - Remove duplicate Identity section from Classes panel
+- [ ] #673 - Remove divider between Advanced and Inventory in sidebar
+
+---
+
 ## [0.1.14-alpha] - 2025-12-30
 **Branch**: `quartermaster/sprint/scripts-advanced-props` | **PR**: #669
 
