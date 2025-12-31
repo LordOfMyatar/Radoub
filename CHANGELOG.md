@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.18.4] - 2025-12-30
-**Branch**: `radoub/fix/skia-version-mismatch` | **PR**: #TBD | **Issue**: #666
+**Branch**: `radoub/fix/skia-version-mismatch` | **PR**: #667 | **Issue**: #666
 
 ### Fix: SkiaSharp Transitive Version Mismatch
 
