@@ -10,6 +10,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.16-alpha] - 2025-12-31
+**Branch**: `quartermaster/sprint/bic-file-support` | **PR**: #688
+
+### Sprint: BIC File Support (#680)
+
+Enable Quartermaster to properly edit BIC files (player characters) with appropriate UI differences from UTC files (creature blueprints).
+
+#### Added
+
+**BIC-Specific Character Fields (#676)**
+- Player Character section with Experience, Gold, and Age fields
+- Biography section for character description (shown when examined)
+- File type detection automatically shows/hides appropriate sections
+
+**Application Branding**
+- Application icon (Quartermaster.ico) displayed in title bar and taskbar
+
+#### Changed
+
+**File Type Handling (#676)**
+- Scripts nav button hidden for BIC files (player characters don't have scripts)
+- Conversation field hidden for BIC files (not used for player characters)
+- Challenge Rating display hidden for BIC files (player characters don't have CR)
+- Blueprint ResRef and Comment fields hidden for BIC files (not in BIC format)
+- Title bar shows "(Player)" indicator when editing BIC files
+- Automatically navigates away from Scripts if loading BIC while on Scripts panel
+
+---
+
 ## [0.1.15-alpha] - 2025-12-30
 **Branch**: `quartermaster/sprint/ui-polish-panel-reorg` | **PR**: #684
 

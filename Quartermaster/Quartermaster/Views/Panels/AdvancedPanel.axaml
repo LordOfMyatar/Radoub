@@ -22,46 +22,52 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="10">
-                            <!-- Blueprint ResRef (read-only - file rename to change) -->
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Blueprint ResRef:"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="TemplateResRefTextBox"
-                                     FontFamily="Consolas, Courier New, monospace"
-                                     IsReadOnly="True"
-                                     AutomationProperties.AutomationId="TemplateResRefTextBox"
-                                     ToolTip.Tip="Read-only. Use File > Rename to change."/>
-                            <Button Grid.Row="0" Grid.Column="2" x:Name="CopyResRefButton"
-                                    Content="Copy" Padding="8,2" FontSize="11"
-                                    AutomationProperties.AutomationId="CopyResRefButton"
-                                    ToolTip.Tip="Copy ResRef to clipboard"/>
+                        <StackPanel Spacing="8">
+                            <!-- Blueprint ResRef (UTC only - hidden for BIC) -->
+                            <Grid x:Name="ResRefRow" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                <TextBlock Grid.Column="0" Text="Blueprint ResRef:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center" Width="100"/>
+                                <TextBox Grid.Column="1" x:Name="TemplateResRefTextBox"
+                                         FontFamily="Consolas, Courier New, monospace"
+                                         IsReadOnly="True"
+                                         AutomationProperties.AutomationId="TemplateResRefTextBox"
+                                         ToolTip.Tip="Read-only. Use File > Rename to change."/>
+                                <Button Grid.Column="2" x:Name="CopyResRefButton"
+                                        Content="Copy" Padding="8,2" FontSize="11"
+                                        AutomationProperties.AutomationId="CopyResRefButton"
+                                        ToolTip.Tip="Copy ResRef to clipboard"/>
+                            </Grid>
 
-                            <!-- Tag (editable) -->
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Tag:"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="TagTextBox"
-                                     FontFamily="Consolas, Courier New, monospace"
-                                     AutomationProperties.AutomationId="TagTextBox"/>
-                            <Button Grid.Row="1" Grid.Column="2" x:Name="CopyTagButton"
-                                    Content="Copy" Padding="8,2" FontSize="11"
-                                    AutomationProperties.AutomationId="CopyTagButton"
-                                    ToolTip.Tip="Copy Tag to clipboard"/>
+                            <!-- Tag (editable - both UTC and BIC) -->
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                <TextBlock Grid.Column="0" Text="Tag:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center" Width="100"/>
+                                <TextBox Grid.Column="1" x:Name="TagTextBox"
+                                         FontFamily="Consolas, Courier New, monospace"
+                                         AutomationProperties.AutomationId="TagTextBox"/>
+                                <Button Grid.Column="2" x:Name="CopyTagButton"
+                                        Content="Copy" Padding="8,2" FontSize="11"
+                                        AutomationProperties.AutomationId="CopyTagButton"
+                                        ToolTip.Tip="Copy Tag to clipboard"/>
+                            </Grid>
 
-                            <!-- Comment (editable) -->
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Comment:"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       VerticalAlignment="Top" Margin="0,5,0,0"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                                     x:Name="CommentTextBox"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     MinHeight="60"
-                                     MaxHeight="120"
-                                     AutomationProperties.AutomationId="CommentTextBox"
-                                     Watermark="Developer notes..."/>
-                        </Grid>
+                            <!-- Comment (UTC only - hidden for BIC) -->
+                            <Grid x:Name="CommentRow" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                <TextBlock Grid.Column="0" Text="Comment:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Top" Margin="0,5,0,0" Width="100"/>
+                                <TextBox Grid.Column="1"
+                                         x:Name="CommentTextBox"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         MinHeight="60"
+                                         MaxHeight="120"
+                                         AutomationProperties.AutomationId="CommentTextBox"
+                                         Watermark="Developer notes..."/>
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

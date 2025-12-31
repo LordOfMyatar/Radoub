@@ -419,6 +419,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void LoadAllPanels(UtcFile? creature)
     {
+        // Pass file type to panels that need it for BIC-specific handling
+        StatsPanelContent.SetFileType(_isBicFile);
         StatsPanelContent.LoadCreature(creature);
 
         // Pass equipped items to StatsPanel for BAB calculation
@@ -427,6 +429,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             .Select(s => s.EquippedItem!.Item);
         StatsPanelContent.SetEquippedItems(equippedItems);
 
+        CharacterPanelContent.SetFileType(_isBicFile);
         CharacterPanelContent.LoadCreature(creature);
         ClassesPanelContent.LoadCreature(creature);
         SkillsPanelContent.LoadCreature(creature);
@@ -434,12 +437,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SpellsPanelContent.LoadCreature(creature);
         ScriptsPanelContent.LoadCreature(creature);
         AppearancePanelContent.LoadCreature(creature);
+        AdvancedPanelContent.SetFileType(_isBicFile);
         AdvancedPanelContent.LoadCreature(creature);
+
+        // Update UI visibility based on file type
+        UpdateFileTypeVisibility();
+    }
+
+    /// <summary>
+    /// Update UI element visibility based on whether loaded file is BIC or UTC.
+    /// BIC files (player characters) don't have scripts, conversation, or some advanced properties.
+    /// </summary>
+    private void UpdateFileTypeVisibility()
+    {
+        // Hide Scripts nav button for BIC files (player characters don't have scripts)
+        NavScripts.IsVisible = !_isBicFile;
+
+        // If currently on Scripts section and loading a BIC, navigate away
+        if (_isBicFile && _currentSection == "Scripts")
+        {
+            NavigateToSection("Character", NavCharacter);
+        }
     }
 
     private void ClearAllPanels()
     {
+        // Reset file type for all panels that track it
+        StatsPanelContent.SetFileType(false);
         StatsPanelContent.ClearStats();
+        CharacterPanelContent.SetFileType(false);
         CharacterPanelContent.ClearPanel();
         ClassesPanelContent.ClearPanel();
         SkillsPanelContent.ClearPanel();
@@ -447,7 +473,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SpellsPanelContent.ClearPanel();
         ScriptsPanelContent.ClearPanel();
         AppearancePanelContent.ClearPanel();
+        AdvancedPanelContent.SetFileType(false);
         AdvancedPanelContent.ClearPanel();
+
+        // Restore Scripts nav button visibility (show by default)
+        NavScripts.IsVisible = true;
     }
 
     #endregion

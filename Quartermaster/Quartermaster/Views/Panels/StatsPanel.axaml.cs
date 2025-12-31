@@ -34,6 +34,7 @@ public partial class StatsPanel : UserControl
     // Combat stats controls
     private TextBlock? _naturalAcValue, _babValue, _babBreakdown, _speedValue, _crValue;
     private NumericUpDown? _crAdjustNumeric;
+    private StackPanel? _crDisplaySection;
 
     // Saving throws controls
     private TextBlock? _fortBase, _fortAbility, _fortTotal;
@@ -95,6 +96,7 @@ public partial class StatsPanel : UserControl
         _speedValue = this.FindControl<TextBlock>("SpeedValue");
         _crValue = this.FindControl<TextBlock>("CrValue");
         _crAdjustNumeric = this.FindControl<NumericUpDown>("CRAdjustNumeric");
+        _crDisplaySection = this.FindControl<StackPanel>("CrDisplaySection");
 
         // Wire up events
         if (_crAdjustNumeric != null)
@@ -120,6 +122,17 @@ public partial class StatsPanel : UserControl
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
+    }
+
+    /// <summary>
+    /// Set whether the current file is a BIC (player character) or UTC (creature blueprint).
+    /// This controls visibility of UTC-only fields like Challenge Rating.
+    /// </summary>
+    public void SetFileType(bool isBicFile)
+    {
+        // Hide CR display for BIC files (player characters don't have CR)
+        if (_crDisplaySection != null)
+            _crDisplaySection.IsVisible = !isBicFile;
     }
 
     public void LoadCreature(UtcFile? creature)

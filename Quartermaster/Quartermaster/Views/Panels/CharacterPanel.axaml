@@ -81,10 +81,11 @@
                                       HorizontalAlignment="Stretch"
                                       AutomationProperties.AutomationId="SoundSetComboBox"/>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Conversation:"
+                            <!-- Conversation row - hidden for BIC files -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" x:Name="ConversationLabel" Text="Conversation:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="5">
+                            <Grid Grid.Row="1" Grid.Column="1" x:Name="ConversationRow" ColumnDefinitions="*,Auto" ColumnSpacing="5">
                                 <TextBox Grid.Column="0" x:Name="ConversationTextBox"
                                          FontFamily="Consolas, Courier New, monospace"
                                          MaxLength="16"
@@ -104,6 +105,63 @@
                                 </StackPanel>
                             </Grid>
                         </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Player Character Section (BIC only) -->
+                <Border x:Name="PlayerCharacterSection"
+                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15"
+                        IsVisible="False">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Player Character" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="Auto,*,20,Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <!-- Experience -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Experience:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="ExperienceTextBox"
+                                     Watermark="0"
+                                     AutomationProperties.AutomationId="ExperienceTextBox"/>
+
+                            <!-- Gold -->
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="Gold:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="4" x:Name="GoldTextBox"
+                                     Watermark="0"
+                                     AutomationProperties.AutomationId="GoldTextBox"/>
+
+                            <!-- Age -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Age:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="AgeTextBox"
+                                     Watermark="0"
+                                     AutomationProperties.AutomationId="AgeTextBox"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Biography Section (BIC only) -->
+                <Border x:Name="BiographySection"
+                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15"
+                        IsVisible="False">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Biography" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBox x:Name="BiographyTextBox"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="100"
+                                 MaxHeight="200"
+                                 Watermark="Character biography (shown when examined)"
+                                 AutomationProperties.AutomationId="BiographyTextBox"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
