@@ -8,6 +8,7 @@
         x:Class="Quartermaster.Views.MainWindow"
         x:Name="MainWindowInstance"
         Title="Quartermaster"
+        Icon="avares://Quartermaster/Assets/Quartermaster.ico"
         Width="1200" Height="800"
         MinWidth="800" MinHeight="600"
         KeyDown="OnWindowKeyDown">
