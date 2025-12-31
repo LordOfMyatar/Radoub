@@ -1,0 +1,160 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.DialogBrowserWindow"
+        Title="Dialog Browser"
+        MinWidth="700" MinHeight="400"
+        Width="800" Height="500"
+        SizeToContent="Manual"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark1}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Location Override Row -->
+        <Grid Grid.Row="0" Margin="0,0,0,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       Text="Location:"
+                       VerticalAlignment="Center"
+                       Margin="0,0,8,0"
+                       FontSize="11"/>
+            <TextBlock Grid.Column="1"
+                       x:Name="LocationPathLabel"
+                       Text="(auto-detected)"
+                       VerticalAlignment="Center"
+                       FontSize="11"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       TextTrimming="CharacterEllipsis"/>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
+                <Button x:Name="ResetLocationButton"
+                        Content="reset"
+                        FontSize="11"
+                        Padding="8,2"
+                        IsVisible="False"
+                        Click="OnResetLocationClick"/>
+                <Button x:Name="BrowseLocationButton"
+                        Content="browse..."
+                        FontSize="11"
+                        Padding="8,2"
+                        Click="OnBrowseLocationClick"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Search Box and Source Toggles -->
+        <Grid Grid.Row="1" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0"
+                     x:Name="SearchBox"
+                     Watermark="Type to filter dialogs..."
+                     Margin="0,0,10,0"
+                     TextChanged="OnSearchTextChanged"/>
+
+            <CheckBox Grid.Column="1"
+                      x:Name="ShowHakCheckBox"
+                      Content="Show HAK"
+                      ToolTip.Tip="Show dialogs from HAK files"
+                      VerticalAlignment="Center"
+                      IsChecked="False"
+                      Checked="OnShowHakChanged"
+                      Unchecked="OnShowHakChanged"/>
+        </Grid>
+
+        <!-- Dialog List -->
+        <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Dialog Count Header -->
+                <TextBlock Grid.Row="0" x:Name="DialogCountLabel"
+                           Text="0 dialogs"
+                           FontWeight="Bold"
+                           Margin="0,0,0,5"/>
+
+                <!-- Dialogs ListBox -->
+                <ListBox Grid.Row="1" x:Name="DialogListBox"
+                         SelectionChanged="OnDialogSelected"
+                         DoubleTapped="OnDialogDoubleClicked">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayName}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+
+        <!-- Selected Dialog Display -->
+        <Border Grid.Row="3"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderThickness="1"
+                Padding="10"
+                Margin="0,10,0,10"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Selected:"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+                <TextBlock Grid.Column="1"
+                           x:Name="SelectedDialogLabel"
+                           Text="(none)"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Dialog Buttons -->
+        <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10">
+            <Button Content="OK"
+                    Width="80"
+                    Click="OnOkClick"
+                    IsDefault="True"/>
+            <Button Content="Cancel"
+                    Width="80"
+                    Click="OnCancelClick"
+                    IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

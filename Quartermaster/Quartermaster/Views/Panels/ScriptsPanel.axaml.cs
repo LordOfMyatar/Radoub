@@ -1,9 +1,12 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Quartermaster.Services;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
+using Radoub.UI.Views;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -20,11 +23,14 @@ public partial class ScriptsPanel : UserControl
     private ItemsControl? _scriptsList;
     private TextBlock? _noScriptsText;
     private TextBox? _conversationTextBox;
+    private Button? _browseConversationButton;
     private Button? _clearConversationButton;
     private Button? _openInParleyButton;
 
     private ObservableCollection<ScriptViewModel> _scripts = new();
     private UtcFile? _currentCreature;
+    private string? _currentFilePath;
+    private IGameDataService? _gameDataService;
     private Func<string, string?>? _resolveConversationPath;
     private bool _isLoading;
 
@@ -46,18 +52,24 @@ public partial class ScriptsPanel : UserControl
         _scriptsList = this.FindControl<ItemsControl>("ScriptsList");
         _noScriptsText = this.FindControl<TextBlock>("NoScriptsText");
         _conversationTextBox = this.FindControl<TextBox>("ConversationTextBox");
+        _browseConversationButton = this.FindControl<Button>("BrowseConversationButton");
         _clearConversationButton = this.FindControl<Button>("ClearConversationButton");
         _openInParleyButton = this.FindControl<Button>("OpenInParleyButton");
 
         if (_scriptsList != null)
         {
             _scriptsList.ItemsSource = _scripts;
-            _scriptsList.AddHandler(Button.ClickEvent, OnClearScriptClick);
+            _scriptsList.AddHandler(Button.ClickEvent, OnScriptButtonClick);
         }
 
         if (_conversationTextBox != null)
         {
             _conversationTextBox.TextChanged += OnConversationTextChanged;
+        }
+
+        if (_browseConversationButton != null)
+        {
+            _browseConversationButton.Click += OnBrowseConversationClick;
         }
 
         if (_clearConversationButton != null)
@@ -69,6 +81,22 @@ public partial class ScriptsPanel : UserControl
         {
             _openInParleyButton.Click += OnOpenInParleyClick;
         }
+    }
+
+    /// <summary>
+    /// Set the game data service for script browsing.
+    /// </summary>
+    public void SetGameDataService(IGameDataService? gameDataService)
+    {
+        _gameDataService = gameDataService;
+    }
+
+    /// <summary>
+    /// Set the current file path for context-aware script browsing.
+    /// </summary>
+    public void SetCurrentFilePath(string? filePath)
+    {
+        _currentFilePath = filePath;
     }
 
     /// <summary>
@@ -127,6 +155,7 @@ public partial class ScriptsPanel : UserControl
             ScriptResRef = scriptResRef ?? "",
             FieldName = fieldName,
             AutomationId = $"Script_{fieldName}",
+            BrowseButtonId = $"Browse_{fieldName}",
             ClearButtonId = $"Clear_{fieldName}"
         };
 
@@ -199,14 +228,43 @@ public partial class ScriptsPanel : UserControl
         }
     }
 
-    private void OnClearScriptClick(object? sender, RoutedEventArgs e)
+    private void OnScriptButtonClick(object? sender, RoutedEventArgs e)
     {
-        if (e.Source is Button button && button.Tag is string fieldName)
+        if (e.Source is not Button button || button.Tag is not string fieldName)
+            return;
+
+        var automationId = button.GetValue(Avalonia.Automation.AutomationProperties.AutomationIdProperty);
+
+        if (automationId?.StartsWith("Browse_") == true)
+        {
+            OnBrowseScriptClick(fieldName);
+        }
+        else if (automationId?.StartsWith("Clear_") == true)
         {
             var vm = _scripts.FirstOrDefault(s => s.FieldName == fieldName);
             if (vm != null)
             {
                 vm.ScriptResRef = "";
+            }
+        }
+    }
+
+    private async void OnBrowseScriptClick(string fieldName)
+    {
+        var vm = _scripts.FirstOrDefault(s => s.FieldName == fieldName);
+        if (vm == null)
+            return;
+
+        var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
+        var browser = new ScriptBrowserWindow(context);
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is Window parentWindow)
+        {
+            var result = await browser.ShowDialog<string?>(parentWindow);
+            if (!string.IsNullOrEmpty(result))
+            {
+                vm.ScriptResRef = result;
             }
         }
     }
@@ -219,6 +277,22 @@ public partial class ScriptsPanel : UserControl
         _currentCreature.Conversation = _conversationTextBox.Text ?? "";
         UpdateParleyButtonVisibility();
         ScriptsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async void OnBrowseConversationClick(object? sender, RoutedEventArgs e)
+    {
+        var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
+        var browser = new DialogBrowserWindow(context);
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is Window parentWindow)
+        {
+            var result = await browser.ShowDialog<string?>(parentWindow);
+            if (!string.IsNullOrEmpty(result) && _conversationTextBox != null)
+            {
+                _conversationTextBox.Text = result;
+            }
+        }
     }
 
     private void OnClearConversationClick(object? sender, RoutedEventArgs e)
@@ -328,6 +402,7 @@ public class ScriptViewModel : INotifyPropertyChanged
     public string EventName { get; set; } = "";
     public string FieldName { get; set; } = "";
     public string AutomationId { get; set; } = "";
+    public string BrowseButtonId { get; set; } = "";
     public string ClearButtonId { get; set; } = "";
 
     public string ScriptResRef

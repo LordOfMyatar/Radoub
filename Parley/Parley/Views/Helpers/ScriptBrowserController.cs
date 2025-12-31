@@ -11,6 +11,7 @@ using Radoub.Formats.Logging;
 using DialogEditor.Utils;
 using DialogEditor.ViewModels;
 using DialogEditor.Views;
+using Radoub.UI.Views;
 
 namespace Parley.Views.Helpers
 {
@@ -38,7 +39,7 @@ namespace Parley.Views.Helpers
 
         // Track active browser windows
         private ParameterBrowserWindow? _activeParameterBrowserWindow;
-        private ScriptBrowserWindow? _activeScriptBrowserWindow;
+        private Radoub.UI.Views.ScriptBrowserWindow? _activeScriptBrowserWindow;
 
         // Parameter autocomplete: Cache of script parameter declarations
         private ScriptParameterDeclarations? _currentConditionDeclarations;
@@ -100,7 +101,8 @@ namespace Parley.Views.Helpers
                 CloseActiveScriptBrowser();
 
                 // Create and show modeless browser window (Issue #20)
-                var scriptBrowser = new ScriptBrowserWindow(ViewModel.CurrentFileName);
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName);
+                var scriptBrowser = new Radoub.UI.Views.ScriptBrowserWindow(context);
 
                 // Track the window and handle cleanup when it closes
                 _activeScriptBrowserWindow = scriptBrowser;
@@ -155,7 +157,8 @@ namespace Parley.Views.Helpers
                 CloseActiveScriptBrowser();
 
                 // Create and show modeless browser window (Issue #20)
-                var scriptBrowser = new ScriptBrowserWindow(ViewModel.CurrentFileName);
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName);
+                var scriptBrowser = new Radoub.UI.Views.ScriptBrowserWindow(context);
 
                 // Track the window and handle cleanup when it closes
                 _activeScriptBrowserWindow = scriptBrowser;
@@ -260,7 +263,8 @@ namespace Parley.Views.Helpers
             {
                 CloseActiveScriptBrowser();
 
-                var scriptBrowser = new ScriptBrowserWindow(ViewModel.CurrentFileName);
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName);
+                var scriptBrowser = new Radoub.UI.Views.ScriptBrowserWindow(context);
 
                 _activeScriptBrowserWindow = scriptBrowser;
                 scriptBrowser.Closed += (s, e) =>

@@ -186,32 +186,21 @@ public static class UtcWriter
 
     private static void AddScriptFields(GffStruct root, UtcFile utc)
     {
-        if (!string.IsNullOrEmpty(utc.ScriptAttacked))
-            AddCResRefField(root, "ScriptAttacked", utc.ScriptAttacked);
-        if (!string.IsNullOrEmpty(utc.ScriptDamaged))
-            AddCResRefField(root, "ScriptDamaged", utc.ScriptDamaged);
-        if (!string.IsNullOrEmpty(utc.ScriptDeath))
-            AddCResRefField(root, "ScriptDeath", utc.ScriptDeath);
-        if (!string.IsNullOrEmpty(utc.ScriptDialogue))
-            AddCResRefField(root, "ScriptDialogue", utc.ScriptDialogue);
-        if (!string.IsNullOrEmpty(utc.ScriptDisturbed))
-            AddCResRefField(root, "ScriptDisturbed", utc.ScriptDisturbed);
-        if (!string.IsNullOrEmpty(utc.ScriptEndRound))
-            AddCResRefField(root, "ScriptEndRound", utc.ScriptEndRound);
-        if (!string.IsNullOrEmpty(utc.ScriptHeartbeat))
-            AddCResRefField(root, "ScriptHeartbeat", utc.ScriptHeartbeat);
-        if (!string.IsNullOrEmpty(utc.ScriptOnBlocked))
-            AddCResRefField(root, "ScriptOnBlocked", utc.ScriptOnBlocked);
-        if (!string.IsNullOrEmpty(utc.ScriptOnNotice))
-            AddCResRefField(root, "ScriptOnNotice", utc.ScriptOnNotice);
-        if (!string.IsNullOrEmpty(utc.ScriptRested))
-            AddCResRefField(root, "ScriptRested", utc.ScriptRested);
-        if (!string.IsNullOrEmpty(utc.ScriptSpawn))
-            AddCResRefField(root, "ScriptSpawn", utc.ScriptSpawn);
-        if (!string.IsNullOrEmpty(utc.ScriptSpellAt))
-            AddCResRefField(root, "ScriptSpellAt", utc.ScriptSpellAt);
-        if (!string.IsNullOrEmpty(utc.ScriptUserDefine))
-            AddCResRefField(root, "ScriptuserDefine", utc.ScriptUserDefine);
+        // Always write script fields (even if empty) for Aurora Toolset compatibility
+        // Empty scripts are written with length 0
+        AddCResRefField(root, "ScriptAttacked", utc.ScriptAttacked ?? "");
+        AddCResRefField(root, "ScriptDamaged", utc.ScriptDamaged ?? "");
+        AddCResRefField(root, "ScriptDeath", utc.ScriptDeath ?? "");
+        AddCResRefField(root, "ScriptDialogue", utc.ScriptDialogue ?? "");
+        AddCResRefField(root, "ScriptDisturbed", utc.ScriptDisturbed ?? "");
+        AddCResRefField(root, "ScriptEndRound", utc.ScriptEndRound ?? "");
+        AddCResRefField(root, "ScriptHeartbeat", utc.ScriptHeartbeat ?? "");
+        AddCResRefField(root, "ScriptOnBlocked", utc.ScriptOnBlocked ?? "");
+        AddCResRefField(root, "ScriptOnNotice", utc.ScriptOnNotice ?? "");
+        AddCResRefField(root, "ScriptRested", utc.ScriptRested ?? "");
+        AddCResRefField(root, "ScriptSpawn", utc.ScriptSpawn ?? "");
+        AddCResRefField(root, "ScriptSpellAt", utc.ScriptSpellAt ?? "");
+        AddCResRefField(root, "ScriptUserDefine", utc.ScriptUserDefine ?? "");
     }
 
     private static void AddClassList(GffStruct root, List<CreatureClass> classes)
