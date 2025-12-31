@@ -29,6 +29,8 @@ Enable Quartermaster to properly edit BIC files (player characters) with appropr
 **File Type Handling (#676)**
 - Scripts nav button hidden for BIC files (player characters don't have scripts)
 - Conversation field hidden for BIC files (not used for player characters)
+- Challenge Rating display hidden for BIC files (player characters don't have CR)
+- Blueprint ResRef and Comment fields hidden for BIC files (not in BIC format)
 - Title bar shows "(Player)" indicator when editing BIC files
 - Automatically navigates away from Scripts if loading BIC while on Scripts panel
 

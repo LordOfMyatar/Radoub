@@ -17,6 +17,8 @@ public partial class AdvancedPanel : UserControl
     private TextBox? _commentTextBox;
     private Button? _copyResRefButton;
     private Button? _copyTagButton;
+    private Grid? _resRefRow;
+    private Grid? _commentRow;
 
     // Flag checkboxes
     private CheckBox? _plotCheckBox;
@@ -57,6 +59,8 @@ public partial class AdvancedPanel : UserControl
         _commentTextBox = this.FindControl<TextBox>("CommentTextBox");
         _copyResRefButton = this.FindControl<Button>("CopyResRefButton");
         _copyTagButton = this.FindControl<Button>("CopyTagButton");
+        _resRefRow = this.FindControl<Grid>("ResRefRow");
+        _commentRow = this.FindControl<Grid>("CommentRow");
 
         // Flag checkboxes
         _plotCheckBox = this.FindControl<CheckBox>("PlotCheckBox");
@@ -118,6 +122,19 @@ public partial class AdvancedPanel : UserControl
     {
         _displayService = displayService;
         LoadBehaviorData();
+    }
+
+    /// <summary>
+    /// Set whether the current file is a BIC (player character) or UTC (creature blueprint).
+    /// This controls visibility of UTC-only fields like Blueprint ResRef and Comment.
+    /// </summary>
+    public void SetFileType(bool isBicFile)
+    {
+        // Hide ResRef and Comment rows for BIC files (these fields don't exist in BIC)
+        if (_resRefRow != null)
+            _resRefRow.IsVisible = !isBicFile;
+        if (_commentRow != null)
+            _commentRow.IsVisible = !isBicFile;
     }
 
     private void LoadBehaviorData()
