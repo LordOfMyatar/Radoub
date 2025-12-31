@@ -38,11 +38,15 @@ public partial class ScriptBrowserWindow : Window
     private bool _builtInScriptsLoaded;
     private bool _hakScriptsLoaded;
     private ScriptEntry? _selectedScriptEntry;
+    private bool _confirmed;
 
     // Static cache for HAK file contents - persists across window instances
     private static readonly Dictionary<string, ScriptHakCacheEntry> _hakCache = new();
 
-    public string? SelectedScript => _selectedScript;
+    /// <summary>
+    /// Gets the selected script name. Only valid if Confirmed is true.
+    /// </summary>
+    public string? SelectedScript => _confirmed ? _selectedScript : null;
 
     // Parameterless constructor for XAML designer/runtime loader
     public ScriptBrowserWindow() : this(null)
@@ -747,17 +751,20 @@ public partial class ScriptBrowserWindow : Window
         // Double-click selects and closes
         if (_selectedScript != null)
         {
+            _confirmed = true;
             Close(_selectedScript);
         }
     }
 
     private void OnOkClick(object? sender, RoutedEventArgs e)
     {
+        _confirmed = true;
         Close(_selectedScript);
     }
 
     private void OnCancelClick(object? sender, RoutedEventArgs e)
     {
+        // Don't set _confirmed - SelectedScript will return null
         Close(null);
     }
 
