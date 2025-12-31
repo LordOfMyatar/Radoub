@@ -111,7 +111,7 @@ Before running tests, display this warning to the user:
 
 #### 5a. Technical Debt Scan
 
-Review all changed files looking for:
+Review **all files touched by this PR** (not just new code) looking for:
 
 | Issue | Action Required |
 |-------|-----------------|
@@ -122,12 +122,21 @@ Review all changed files looking for:
 | **Hardcoded values** | Extract to constants or configuration |
 | **Copy-paste patterns** | Flag for refactoring before or after merge |
 
-If issues are found:
+**IMPORTANT**: Technical debt must be tracked regardless of when it was introduced. If a file exceeds thresholds, create an issue even if this PR didn't cause it. We need visibility into growing problems before they become MainWindow-sized monsters.
+
+**Action based on debt size**:
 1. **Small fixes** (< 15 min): Fix them now, in this branch
 2. **Medium fixes** (15-60 min): Discuss with user - fix now or create issue?
 3. **Large fixes** (> 1 hour): Create GitHub issue, link to Epic if applicable
+4. **Pre-existing debt**: Always propose creating an issue to track it
 
-**Do not silently ignore technical debt.** Either fix it or document it.
+**When creating technical debt issues**:
+- Title format: `[Tool] refactor: [Brief description]`
+- Include current line count and threshold exceeded
+- Label with `technical-debt` and tool label
+- Reference the PR that discovered it
+
+**Do not silently ignore technical debt.** Either fix it or document it with an issue.
 
 #### 5b. Security Review
 
@@ -237,12 +246,14 @@ Output format:
 
 **Technical Debt Scan**:
 - [x/⚠️] Duplicated code: [✅ None found / ⚠️ Found - see Action Items]
-- [x/⚠️] Large files (>500 lines): [✅ None / ⚠️ [list files]]
+- [x/⚠️] Large files (>500 lines): [✅ None / ⚠️ [list files with line counts]]
 - [x/⚠️] Large methods (>50 lines): [✅ None / ⚠️ [list methods]]
 - [x/⚠️] Missing abstractions: [✅ None / ⚠️ [describe]]
 - [x/⚠️] Copy-paste patterns: [✅ None / ⚠️ [describe]]
 
-**Issues Created This Review**: [#xxx, #yyy] or None
+**Technical Debt Issues**:
+- Created: [#xxx, #yyy] or None
+- Proposed: [list any issues to create] or None
 
 **Reviews**:
 - [x/⚠️] Security review: [✅ No issues / ⚠️ [N] findings]
