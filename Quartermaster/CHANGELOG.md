@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.17-alpha] - 2025-12-31
+**Branch**: `quartermaster/sprint/inventory-sync` | **PR**: #TBD
+
+### Sprint: Inventory Sync & Item Operations (#694)
+
+Implement sync layer between inventory UI and data model so item changes persist on save.
+
+#### Added
+
+- TBD
+
+#### Changed
+
+- TBD
+
+---
+
 ## [0.1.16-alpha] - 2025-12-31
 **Branch**: `quartermaster/sprint/bic-file-support` | **PR**: #688
 
