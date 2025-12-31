@@ -19,11 +19,19 @@ Implement sync layer between inventory UI and data model so item changes persist
 
 #### Added
 
-- TBD
+- Inventory metadata on ItemViewModel (grid position, dropable/pickpocketable flags)
+- CreateBackpackItem factory method for items with full inventory metadata
+- SyncInventoryToCreature() method syncs UI state to creature model before save
+- AddToBackpackRequested event for adding items from palette
+- EquipItemsRequested event for equipping items from palette
+- AddToBackpack() and RemoveFromBackpack() methods on InventoryPanel
+- UnequipToBackpack() method for moving equipped items to backpack
 
 #### Changed
 
-- TBD
+- SaveFile() now calls SyncInventoryToCreature() before writing
+- CreatePlaceholderItem() refactored to use shared ResolveUtiFile() helper
+- Backpack items now preserve grid position and flags on round-trip
 
 ---
 
