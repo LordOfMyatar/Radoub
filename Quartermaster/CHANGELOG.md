@@ -17,7 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Improve developer experience and code reliability.
 
-- #652 - Command-line arguments to open BIC/UTC files
+#### Verified
+
+- #652 - Command-line arguments to open BIC/UTC files (already implemented, added tests)
+
+#### Pending
+
 - #685 - Navigation triggers dirty flag without user changes
 - #687 - Settings file being overwritten unexpectedly
 - #692 - Fix flaky Navigation_StatsPanel_IsVisibleByDefault test

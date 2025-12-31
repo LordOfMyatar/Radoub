@@ -121,8 +121,12 @@ Determine which project to use based on issue labels:
 |-------|---------|
 | `parley` | Parley (#2) |
 | `radoub` | Radoub (#3) |
+| `quartermaster` | Radoub (#3) |
+| `manifest` | Radoub (#3) |
 | `[Parley]` in title | Parley (#2) |
 | `[Radoub]` in title | Radoub (#3) |
+| `[Quartermaster]` in title | Radoub (#3) |
+| `[Manifest]` in title | Radoub (#3) |
 
 ## Listing Commands
 

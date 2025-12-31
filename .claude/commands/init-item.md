@@ -288,6 +288,8 @@ Common label patterns:
 |-------------|---------|--------|
 | `parley` or `[Parley]` | Parley | 2 |
 | `radoub` or `[Radoub]` | Radoub | 3 |
+| `quartermaster` or `[Quartermaster]` | Radoub | 3 |
+| `manifest` or `[Manifest]` | Radoub | 3 |
 
 ### Add Sprint/Epic to Project and Set In Progress
 
