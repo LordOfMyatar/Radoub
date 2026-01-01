@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.109-alpha] - 2026-01-01
-**Branch**: `parley/refactor/split-treeview-safenode` | **PR**: #TBD
+**Branch**: `parley/refactor/split-treeview-safenode` | **PR**: #714
 
 ### Refactor: Split TreeViewSafeNode.cs (#708)
 
