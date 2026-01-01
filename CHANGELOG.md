@@ -27,9 +27,10 @@ Cross-tool refactoring for consistency and maintainability.
 - See [Manifest CHANGELOG](Manifest/CHANGELOG.md) for details
 
 #### Radoub.UI: Split ScriptBrowserWindow.axaml.cs (#683)
-- Extract HAK scanning logic to `HakScriptScanner` service
-- Extract script list management to helper class
-- Reduce file from 816 lines to manageable components
+- Extract `HakScriptScanner` service - HAK scanning with caching (285 lines)
+- Extract `ScriptListManager` - script list filtering and merging (117 lines)
+- Extract `ScriptPreviewLoader` - script content loading for preview (161 lines)
+- Reduce ScriptBrowserWindow.axaml.cs from 816 to 461 lines (44% reduction)
 
 ---
 
