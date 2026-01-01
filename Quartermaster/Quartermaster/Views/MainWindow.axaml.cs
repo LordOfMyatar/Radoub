@@ -126,6 +126,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.TagChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.CommentChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.FlagsChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.BehaviorChanged += (s, e) => MarkDirty();
 
         // Initialize scripts panel with conversation resolver and game data service
         ScriptsPanelContent.SetConversationResolver(ResolveConversationPath);

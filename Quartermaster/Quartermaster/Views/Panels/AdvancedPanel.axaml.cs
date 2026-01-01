@@ -43,6 +43,7 @@ public partial class AdvancedPanel : UserControl
     public event EventHandler? CommentChanged;
     public event EventHandler? TagChanged;
     public event EventHandler? FlagsChanged;
+    public event EventHandler? BehaviorChanged;
 
     public AdvancedPanel()
     {
@@ -90,6 +91,78 @@ public partial class AdvancedPanel : UserControl
 
         // Wire up flag checkbox events
         WireUpFlagCheckboxes();
+
+        // Wire up behavior combo box events
+        WireUpBehaviorCombos();
+    }
+
+    private void WireUpBehaviorCombos()
+    {
+        if (_factionComboBox != null)
+            _factionComboBox.SelectionChanged += OnFactionSelectionChanged;
+        if (_perceptionComboBox != null)
+            _perceptionComboBox.SelectionChanged += OnPerceptionSelectionChanged;
+        if (_walkRateComboBox != null)
+            _walkRateComboBox.SelectionChanged += OnWalkRateSelectionChanged;
+        if (_decayTimeComboBox != null)
+            _decayTimeComboBox.SelectionChanged += OnDecayTimeSelectionChanged;
+        if (_bodyBagComboBox != null)
+            _bodyBagComboBox.SelectionChanged += OnBodyBagSelectionChanged;
+    }
+
+    private void OnFactionSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _factionComboBox == null) return;
+
+        if (_factionComboBox.SelectedItem is ComboBoxItem item && item.Tag is ushort factionId)
+        {
+            _currentCreature.FactionID = factionId;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnPerceptionSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _perceptionComboBox == null) return;
+
+        if (_perceptionComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte perception)
+        {
+            _currentCreature.PerceptionRange = perception;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnWalkRateSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _walkRateComboBox == null) return;
+
+        if (_walkRateComboBox.SelectedItem is ComboBoxItem item && item.Tag is int walkRate)
+        {
+            _currentCreature.WalkRate = walkRate;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnDecayTimeSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _decayTimeComboBox == null) return;
+
+        if (_decayTimeComboBox.SelectedItem is ComboBoxItem item && item.Tag is uint decayTime)
+        {
+            _currentCreature.DecayTime = decayTime;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnBodyBagSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _bodyBagComboBox == null) return;
+
+        if (_bodyBagComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte bodyBag)
+        {
+            _currentCreature.BodyBag = bodyBag;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void WireUpFlagCheckboxes()

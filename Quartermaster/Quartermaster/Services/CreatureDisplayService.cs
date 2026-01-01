@@ -1389,13 +1389,39 @@ public class CreatureDisplayService
     }
 
     /// <summary>
-    /// Gets all factions. Returns common NWN factions.
-    /// Faction data is typically stored in repute.fac, not a 2DA.
+    /// Gets all factions from repute.fac or returns default NWN factions.
+    /// Faction data is stored in repute.fac within the module.
     /// </summary>
     public List<(ushort Id, string Name)> GetAllFactions()
     {
-        // Standard NWN factions from repute.fac
-        // These are the default factions in a new module
+        // Try to load factions from repute.fac
+        try
+        {
+            var facData = _gameDataService.FindResource("repute", Radoub.Formats.Common.ResourceTypes.Fac);
+            if (facData != null)
+            {
+                var facFile = Radoub.Formats.Fac.FacReader.Read(facData);
+                if (facFile.FactionList.Count > 0)
+                {
+                    var factions = new List<(ushort Id, string Name)>();
+                    for (int i = 0; i < facFile.FactionList.Count; i++)
+                    {
+                        var faction = facFile.FactionList[i];
+                        var displayName = string.IsNullOrEmpty(faction.FactionName)
+                            ? $"Faction {i}"
+                            : faction.FactionName;
+                        factions.Add(((ushort)i, displayName));
+                    }
+                    return factions;
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to defaults if parsing fails
+        }
+
+        // Standard NWN factions (fallback when repute.fac unavailable)
         return new List<(ushort Id, string Name)>
         {
             (0, "PC"),
