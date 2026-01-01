@@ -1,59 +1,35 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
-using Avalonia.Data;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
-using DialogEditor.Models;
 using DialogEditor.Plugins;
 using DialogEditor.Services;
+using DialogEditor.Views.Controllers;
 using Radoub.Formats.Logging;
-using ThemeManager = Radoub.UI.Services.ThemeManager;
-using ThemeManifest = Radoub.UI.Models.ThemeManifest;
-using Radoub.Dictionary;
-using Radoub.Dictionary.Models;
 
 namespace DialogEditor.Views
 {
-    /// <summary>
-    /// View model for plugin list item
-    /// </summary>
-    public class PluginListItemViewModel
-    {
-        public string PluginId { get; set; } = "";
-        public string Name { get; set; } = "";
-        public string Version { get; set; } = "";
-        public string Author { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string TrustLevel { get; set; } = "";
-        public string Permissions { get; set; } = "";
-        public bool IsEnabled { get; set; } = true;
-        public string TrustBadge => TrustLevel.ToUpperInvariant() switch
-        {
-            "OFFICIAL" => "[OFFICIAL]",
-            "VERIFIED" => "[VERIFIED]",
-            _ => "[UNVERIFIED]"
-        };
-        public string DisplayText => $"{Name} v{Version} by {Author} {TrustBadge}";
-    }
-
     public partial class SettingsWindow : Window
     {
         private bool _isInitializing = true;
-        private PluginManager? _pluginManager;
-        private bool _easterEggActivated = false;
-        private DictionaryDiscovery? _dictionaryDiscovery;
+
+        // Controllers for section-specific logic
+        private ResourcePathsController? _resourcePathsController;
+        private ThemeSettingsController? _themeSettingsController;
+        private DictionarySettingsController? _dictionarySettingsController;
+        private PluginSettingsController? _pluginSettingsController;
+        private UISettingsController? _uiSettingsController;
+        private LoggingSettingsController? _loggingSettingsController;
+        private AutoSaveSettingsController? _autoSaveSettingsController;
+        private ParameterCacheController? _parameterCacheController;
 
         // Parameterless constructor for XAML/Avalonia runtime
         public SettingsWindow() : this(0, null)
@@ -63,12 +39,12 @@ namespace DialogEditor.Views
         public SettingsWindow(int initialTab = 0, PluginManager? pluginManager = null)
         {
             InitializeComponent();
-            _pluginManager = pluginManager;
+            InitializeControllers(pluginManager);
             LoadSettings();
             _isInitializing = false;
 
             // Apply current theme immediately when dialog opens
-            ApplyThemePreview();
+            _themeSettingsController?.LoadSettings();
 
             // Select the specified tab
             var tabControl = this.FindControl<TabControl>("SettingsTabControl");
@@ -96,1168 +72,71 @@ namespace DialogEditor.Views
             AvaloniaXamlLoader.Load(this);
         }
 
+        private void InitializeControllers(PluginManager? pluginManager)
+        {
+            _resourcePathsController = new ResourcePathsController(
+                this, () => _isInitializing, GetErrorBrush, GetSuccessBrush);
+
+            _themeSettingsController = new ThemeSettingsController(
+                this, () => _isInitializing, GetErrorBrush);
+
+            _dictionarySettingsController = new DictionarySettingsController(
+                this, () => _isInitializing);
+
+            _pluginSettingsController = new PluginSettingsController(
+                this, () => _isInitializing, pluginManager);
+
+            _uiSettingsController = new UISettingsController(
+                this, () => _isInitializing);
+
+            _loggingSettingsController = new LoggingSettingsController(
+                this, () => _isInitializing);
+
+            _autoSaveSettingsController = new AutoSaveSettingsController(
+                this, () => _isInitializing);
+
+            _parameterCacheController = new ParameterCacheController(
+                this, () => _isInitializing);
+        }
+
         private void LoadSettings()
         {
-            var settings = SettingsService.Instance;
-
-            // Resource Paths
-            var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
-            var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox"); // Phase 2
-            var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
-            var recentModulesListBox = this.FindControl<ListBox>("RecentModulesListBox");
-
-            if (gamePathTextBox != null)
-            {
-                gamePathTextBox.Text = settings.NeverwinterNightsPath;
-                // Only validate if path is not empty
-                if (!string.IsNullOrEmpty(settings.NeverwinterNightsPath))
-                {
-                    ValidateGamePath(settings.NeverwinterNightsPath);
-                }
-            }
-
-            // Phase 2: Load base game installation path
-            if (baseGamePathTextBox != null)
-            {
-                baseGamePathTextBox.Text = settings.BaseGameInstallPath;
-                if (!string.IsNullOrEmpty(settings.BaseGameInstallPath))
-                {
-                    ValidateBaseGamePath(settings.BaseGameInstallPath);
-                }
-            }
-
-            if (modulePathTextBox != null)
-            {
-                modulePathTextBox.Text = settings.CurrentModulePath;
-                // Only validate if path is not empty
-                if (!string.IsNullOrEmpty(settings.CurrentModulePath))
-                {
-                    ValidateModulePath(settings.CurrentModulePath);
-                }
-            }
-
-            if (recentModulesListBox != null)
-            {
-                recentModulesListBox.ItemsSource = settings.ModulePaths;
-            }
-
-            // UI Settings - Theme
-            var themeComboBox = this.FindControl<ComboBox>("ThemeComboBox");
-            if (themeComboBox != null)
-            {
-                // Populate theme list (hide easter eggs initially)
-                PopulateThemeList(themeComboBox, includeEasterEggs: false);
-
-                // Select current theme
-                var themes = (IEnumerable<ThemeManifest>?)themeComboBox.ItemsSource;
-                var currentTheme = themes?.FirstOrDefault(t => t.Plugin.Id == settings.CurrentThemeId);
-                themeComboBox.SelectedItem = currentTheme;
-
-                // Update theme description
-                if (currentTheme != null)
-                {
-                    UpdateThemeDescription(currentTheme);
-                }
-
-            }
-
-            var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
-            var fontSizeLabel = this.FindControl<TextBlock>("FontSizeLabel");
-            var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
-
-            if (fontSizeSlider != null)
-            {
-                fontSizeSlider.Value = settings.FontSize;
-            }
-
-            if (fontSizeLabel != null)
-            {
-                fontSizeLabel.Text = settings.FontSize.ToString("0");
-            }
-
-            // Load available fonts and current font selection
-            LoadFontFamilies(settings.FontFamily);
-            UpdateFontPreview();
-
-            // Scrollbar Settings (Issue #63)
-            var allowScrollbarAutoHideCheckBox = this.FindControl<CheckBox>("AllowScrollbarAutoHideCheckBox");
-            if (allowScrollbarAutoHideCheckBox != null)
-            {
-                allowScrollbarAutoHideCheckBox.IsChecked = settings.AllowScrollbarAutoHide;
-            }
-
-            // NPC Tag Coloring (Issue #16, #36)
-            var enableNpcTagColoringCheckBox = this.FindControl<CheckBox>("EnableNpcTagColoringCheckBox");
-            if (enableNpcTagColoringCheckBox != null)
-            {
-                enableNpcTagColoringCheckBox.IsChecked = settings.EnableNpcTagColoring;
-            }
-
-            // Dialog Warnings (Issue #484)
-            var simulatorShowWarningsCheckBox = this.FindControl<CheckBox>("SimulatorShowWarningsCheckBox");
-            if (simulatorShowWarningsCheckBox != null)
-            {
-                simulatorShowWarningsCheckBox.IsChecked = settings.SimulatorShowWarnings;
-            }
-
-            // Spell Check (Issue #505)
-            var spellCheckEnabledCheckBox = this.FindControl<CheckBox>("SpellCheckEnabledCheckBox");
-            if (spellCheckEnabledCheckBox != null)
-            {
-                spellCheckEnabledCheckBox.IsChecked = settings.SpellCheckEnabled;
-            }
-
-            if (externalEditorPathTextBox != null)
-            {
-                externalEditorPathTextBox.Text = settings.ExternalEditorPath;
-            }
-
-            // Logging Settings
-            var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
-            var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
-            var logRetentionLabel = this.FindControl<TextBlock>("LogRetentionLabel");
-            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
-
-            if (logLevelComboBox != null)
-            {
-                logLevelComboBox.ItemsSource = Enum.GetValues(typeof(LogLevel)).Cast<LogLevel>().ToList();
-                logLevelComboBox.SelectedItem = settings.CurrentLogLevel;
-            }
-
-            if (logRetentionSlider != null)
-            {
-                logRetentionSlider.Value = settings.LogRetentionSessions;
-            }
-
-            if (logRetentionLabel != null)
-            {
-                logRetentionLabel.Text = $"{settings.LogRetentionSessions} sessions";
-            }
-
-            if (showDebugPanelCheckBox != null)
-            {
-                showDebugPanelCheckBox.IsChecked = settings.DebugWindowVisible;
-            }
-
-            // Auto-Save Settings (Issue #62)
-            var autoSaveEnabledCheckBox = this.FindControl<CheckBox>("AutoSaveEnabledCheckBox");
-            var autoSaveIntervalSlider = this.FindControl<Slider>("AutoSaveIntervalSlider");
-            var autoSaveIntervalLabel = this.FindControl<TextBlock>("AutoSaveIntervalLabel");
-
-            if (autoSaveEnabledCheckBox != null)
-            {
-                autoSaveEnabledCheckBox.IsChecked = settings.AutoSaveEnabled;
-            }
-
-            if (autoSaveIntervalSlider != null)
-            {
-                autoSaveIntervalSlider.Value = settings.AutoSaveIntervalMinutes;
-            }
-
-            if (autoSaveIntervalLabel != null)
-            {
-                int value = settings.AutoSaveIntervalMinutes;
-                autoSaveIntervalLabel.Text = value == 0 ? "Fast debounce (2s)" : $"Every {value} minute{(value > 1 ? "s" : "")}";
-            }
-
-            // Parameter Cache Settings
-            var enableParameterCacheCheckBox = this.FindControl<CheckBox>("EnableParameterCacheCheckBox");
-            var maxCachedValuesSlider = this.FindControl<Slider>("MaxCachedValuesSlider");
-            var maxCachedValuesLabel = this.FindControl<TextBlock>("MaxCachedValuesLabel");
-            var maxCachedScriptsSlider = this.FindControl<Slider>("MaxCachedScriptsSlider");
-            var maxCachedScriptsLabel = this.FindControl<TextBlock>("MaxCachedScriptsLabel");
-
-            if (enableParameterCacheCheckBox != null)
-            {
-                enableParameterCacheCheckBox.IsChecked = settings.EnableParameterCache;
-            }
-
-            if (maxCachedValuesSlider != null)
-            {
-                maxCachedValuesSlider.Value = settings.MaxCachedValuesPerParameter;
-            }
-
-            if (maxCachedValuesLabel != null)
-            {
-                maxCachedValuesLabel.Text = $"{settings.MaxCachedValuesPerParameter} values";
-            }
-
-            if (maxCachedScriptsSlider != null)
-            {
-                maxCachedScriptsSlider.Value = settings.MaxCachedScripts;
-            }
-
-            if (maxCachedScriptsLabel != null)
-            {
-                maxCachedScriptsLabel.Text = $"{settings.MaxCachedScripts} scripts";
-            }
-
-            // Load cache statistics
-            UpdateCacheStats();
-
-            // Platform-specific paths info
-            var platformPathsInfo = this.FindControl<TextBlock>("PlatformPathsInfo");
-            if (platformPathsInfo != null)
-            {
-                platformPathsInfo.Text = GetPlatformPathsInfo();
-            }
-
-            // Plugin settings
-            var safeModeCheckBox = this.FindControl<CheckBox>("SafeModeCheckBox");
-            if (safeModeCheckBox != null)
-            {
-                safeModeCheckBox.IsChecked = PluginSettingsService.Instance.SafeMode;
-            }
-
-            LoadPluginList();
-            LoadDictionarySettings();
-
-            // TLK Language Settings
-            LoadTlkLanguageSettings();
+            // Delegate to controllers
+            _resourcePathsController?.LoadSettings();
+            _themeSettingsController?.LoadSettings();
+            _dictionarySettingsController?.LoadSettings();
+            _pluginSettingsController?.LoadSettings();
+            _uiSettingsController?.LoadSettings();
+            _loggingSettingsController?.LoadSettings();
+            _autoSaveSettingsController?.LoadSettings();
+            _parameterCacheController?.LoadSettings();
         }
 
-        private void LoadTlkLanguageSettings()
-        {
-            var settings = SettingsService.Instance;
-            var tlkLanguageComboBox = this.FindControl<ComboBox>("TlkLanguageComboBox");
-            var tlkUseFemaleCheckBox = this.FindControl<CheckBox>("TlkUseFemaleCheckBox");
+        #region Resource Paths Handlers (delegated to controller)
 
-            if (tlkLanguageComboBox != null)
-            {
-                // Find and select the item matching current TlkLanguage setting
-                var currentLang = settings.TlkLanguage ?? "";
-                foreach (var item in tlkLanguageComboBox.Items)
-                {
-                    if (item is ComboBoxItem comboItem && (comboItem.Tag as string) == currentLang)
-                    {
-                        tlkLanguageComboBox.SelectedItem = comboItem;
-                        break;
-                    }
-                }
-            }
-
-            if (tlkUseFemaleCheckBox != null)
-            {
-                tlkUseFemaleCheckBox.IsChecked = settings.TlkUseFemale;
-            }
-
-            UpdateTlkLanguageStatus();
-        }
-
-        private void UpdateTlkLanguageStatus()
-        {
-            var tlkLanguageStatus = this.FindControl<TextBlock>("TlkLanguageStatus");
-            if (tlkLanguageStatus == null) return;
-
-            var settings = SettingsService.Instance;
-            var gameResourceService = GameResourceService.Instance;
-
-            // Check if base game path is configured
-            if (string.IsNullOrEmpty(settings.BaseGameInstallPath))
-            {
-                tlkLanguageStatus.Text = "⚠️ Base game installation path not configured. TLK files cannot be loaded.";
-                return;
-            }
-
-            // Try to determine the TLK path that would be used
-            var langCode = settings.TlkLanguage;
-            if (string.IsNullOrEmpty(langCode))
-            {
-                langCode = "en"; // Default
-            }
-
-            var tlkFileName = settings.TlkUseFemale ? "dialogf.tlk" : "dialog.tlk";
-            var tlkPath = System.IO.Path.Combine(settings.BaseGameInstallPath, "lang", langCode, "data", tlkFileName);
-
-            if (System.IO.File.Exists(tlkPath))
-            {
-                tlkLanguageStatus.Text = $"✓ TLK file found: lang/{langCode}/data/{tlkFileName}";
-            }
-            else
-            {
-                // Check if directory exists
-                var langDir = System.IO.Path.Combine(settings.BaseGameInstallPath, "lang", langCode);
-                if (!System.IO.Directory.Exists(langDir))
-                {
-                    tlkLanguageStatus.Text = $"⚠️ Language folder not found: lang/{langCode}/ - verify game installation";
-                }
-                else
-                {
-                    tlkLanguageStatus.Text = $"⚠️ TLK file not found: lang/{langCode}/data/{tlkFileName}";
-                }
-            }
-        }
-
-        private void LoadPluginList()
-        {
-            var pluginsListBox = this.FindControl<ListBox>("PluginsListBox");
-            if (pluginsListBox == null || _pluginManager == null)
-                return;
-
-            // Scan for plugins
-            _pluginManager.Discovery.ScanForPlugins();
-
-            var pluginSettings = PluginSettingsService.Instance;
-            var pluginItems = new List<Control>();
-
-            foreach (var discoveredPlugin in _pluginManager.Discovery.DiscoveredPlugins)
-            {
-                var manifest = discoveredPlugin.Manifest;
-                var permissions = manifest.Permissions != null && manifest.Permissions.Count > 0
-                    ? string.Join(", ", manifest.Permissions)
-                    : "none";
-
-                var isEnabled = pluginSettings.IsPluginEnabled(manifest.Plugin.Id);
-                var trustBadge = manifest.TrustLevel.ToUpperInvariant() switch
-                {
-                    "OFFICIAL" => "[OFFICIAL]",
-                    "VERIFIED" => "[VERIFIED]",
-                    _ => "[UNVERIFIED]"
-                };
-
-                // Create item UI directly
-                var panel = new StackPanel
-                {
-                    Spacing = 5,
-                    Margin = new Thickness(5)
-                };
-
-                var headerPanel = new Grid
-                {
-                    ColumnDefinitions = new ColumnDefinitions("*,Auto")
-                };
-
-                var titleBlock = new TextBlock
-                {
-                    Text = $"{manifest.Plugin.Name} v{manifest.Plugin.Version} by {manifest.Plugin.Author} {trustBadge}",
-                    FontWeight = FontWeight.Bold
-                };
-                Grid.SetColumn(titleBlock, 0);
-
-                var toggleSwitch = new CheckBox
-                {
-                    IsChecked = isEnabled,
-                    Content = isEnabled ? "Enabled" : "Disabled"
-                };
-                var pluginId = manifest.Plugin.Id; // Capture for lambda
-                toggleSwitch.IsCheckedChanged += (s, e) =>
-                {
-                    var checkbox = s as CheckBox;
-                    if (checkbox != null && !_isInitializing)
-                    {
-                        OnPluginToggled(pluginId, checkbox.IsChecked == true);
-                        checkbox.Content = checkbox.IsChecked == true ? "Enabled" : "Disabled";
-                    }
-                };
-                Grid.SetColumn(toggleSwitch, 1);
-
-                headerPanel.Children.Add(titleBlock);
-                headerPanel.Children.Add(toggleSwitch);
-
-                var descBlock = new TextBlock
-                {
-                    Text = manifest.Plugin.Description ?? "",
-                    TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                    FontSize = 11,
-                    Foreground = Brushes.Gray
-                };
-
-                var permBlock = new TextBlock
-                {
-                    Text = $"Permissions: {permissions}",
-                    FontSize = 11,
-                    Foreground = Brushes.DarkGray
-                };
-
-                panel.Children.Add(headerPanel);
-                panel.Children.Add(descBlock);
-                panel.Children.Add(permBlock);
-
-                var border = new Border
-                {
-                    BorderBrush = Brushes.LightGray,
-                    BorderThickness = new Thickness(1),
-                    Padding = new Thickness(8),
-                    CornerRadius = new CornerRadius(3),
-                    Margin = new Thickness(2),
-                    Child = panel
-                };
-
-                pluginItems.Add(border);
-            }
-
-            pluginsListBox.ItemsSource = pluginItems;
-        }
-
-        private void OnPluginToggled(string pluginId, bool enabled)
-        {
-            if (_isInitializing) return;
-
-            PluginSettingsService.Instance.SetPluginEnabled(pluginId, enabled);
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Plugin {pluginId} {(enabled ? "enabled" : "disabled")}");
-        }
-
-        #region Dictionary Settings
-
-        private void LoadDictionarySettings()
-        {
-            _dictionaryDiscovery = new DictionaryDiscovery(DictionaryDiscovery.GetDefaultUserDictionaryPath());
-
-            LoadPrimaryLanguageList();
-            LoadCustomDictionaryList();
-            LoadDictionaryPathInfo();
-        }
-
-        private void LoadPrimaryLanguageList()
-        {
-            var languageComboBox = this.FindControl<ComboBox>("PrimaryLanguageComboBox");
-            if (languageComboBox == null || _dictionaryDiscovery == null)
-                return;
-
-            var languages = _dictionaryDiscovery.GetAvailableLanguages();
-            var currentLanguage = DictionarySettingsService.Instance.PrimaryLanguage;
-
-            // Create display items
-            var items = languages.Select(lang => new LanguageListItem
-            {
-                Id = lang.Id,
-                DisplayName = lang.IsBundled ? $"{lang.Name} (bundled)" : lang.Name,
-                Info = lang
-            }).ToList();
-
-            languageComboBox.ItemsSource = items;
-            languageComboBox.DisplayMemberBinding = new Binding("DisplayName");
-
-            // Select current language
-            var currentItem = items.FirstOrDefault(i => i.Id == currentLanguage);
-            if (currentItem != null)
-            {
-                languageComboBox.SelectedItem = currentItem;
-            }
-            else if (items.Count > 0)
-            {
-                // Default to first available (should be en_US bundled)
-                languageComboBox.SelectedItem = items[0];
-            }
-        }
-
-        private void LoadCustomDictionaryList()
-        {
-            var dictionariesListBox = this.FindControl<ListBox>("CustomDictionariesListBox");
-            if (dictionariesListBox == null || _dictionaryDiscovery == null)
-                return;
-
-            var customDictionaries = _dictionaryDiscovery.GetAvailableCustomDictionaries();
-            var dictSettings = DictionarySettingsService.Instance;
-            var dictionaryItems = new List<Control>();
-
-            foreach (var dict in customDictionaries)
-            {
-                var isEnabled = dictSettings.IsCustomDictionaryEnabled(dict.Id);
-
-                // Create item UI (following plugin list pattern)
-                var panel = new StackPanel
-                {
-                    Spacing = 5,
-                    Margin = new Thickness(5)
-                };
-
-                var headerPanel = new Grid
-                {
-                    ColumnDefinitions = new ColumnDefinitions("*,Auto")
-                };
-
-                var badge = dict.IsBundled ? " [BUNDLED]" : "";
-                var wordCount = dict.WordCount > 0 ? $" ({dict.WordCount} words)" : "";
-                var titleBlock = new TextBlock
-                {
-                    Text = $"{dict.Name}{badge}{wordCount}",
-                    FontWeight = FontWeight.Bold
-                };
-                Grid.SetColumn(titleBlock, 0);
-
-                var toggleSwitch = new CheckBox
-                {
-                    IsChecked = isEnabled,
-                    Content = isEnabled ? "Enabled" : "Disabled"
-                };
-                var dictId = dict.Id; // Capture for lambda
-                toggleSwitch.IsCheckedChanged += (s, e) =>
-                {
-                    var checkbox = s as CheckBox;
-                    if (checkbox != null && !_isInitializing)
-                    {
-                        OnCustomDictionaryToggled(dictId, checkbox.IsChecked == true);
-                        checkbox.Content = checkbox.IsChecked == true ? "Enabled" : "Disabled";
-                    }
-                };
-                Grid.SetColumn(toggleSwitch, 1);
-
-                headerPanel.Children.Add(titleBlock);
-                headerPanel.Children.Add(toggleSwitch);
-
-                panel.Children.Add(headerPanel);
-
-                if (!string.IsNullOrWhiteSpace(dict.Description))
-                {
-                    var descBlock = new TextBlock
-                    {
-                        Text = dict.Description,
-                        TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                        FontSize = 11,
-                        Foreground = Brushes.Gray
-                    };
-                    panel.Children.Add(descBlock);
-                }
-
-                var border = new Border
-                {
-                    BorderBrush = Brushes.LightGray,
-                    BorderThickness = new Thickness(1),
-                    Padding = new Thickness(8),
-                    CornerRadius = new CornerRadius(3),
-                    Margin = new Thickness(2),
-                    Child = panel
-                };
-
-                dictionaryItems.Add(border);
-            }
-
-            if (dictionaryItems.Count == 0)
-            {
-                // Show empty state
-                var emptyText = new TextBlock
-                {
-                    Text = "No custom dictionaries found. Add .dic files to the Dictionaries folder.",
-                    FontStyle = Avalonia.Media.FontStyle.Italic,
-                    Foreground = Brushes.Gray,
-                    Margin = new Thickness(5)
-                };
-                dictionaryItems.Add(emptyText);
-            }
-
-            dictionariesListBox.ItemsSource = dictionaryItems;
-        }
-
-        private void LoadDictionaryPathInfo()
-        {
-            var pathInfo = this.FindControl<TextBlock>("DictionaryPathInfo");
-            if (pathInfo == null)
-                return;
-
-            var dictPath = DictionaryDiscovery.GetDefaultUserDictionaryPath();
-            var exists = System.IO.Directory.Exists(dictPath);
-
-            pathInfo.Text = $"To add Hunspell dictionaries, create a folder with the language code (e.g., es_ES) " +
-                           $"and place the .dic and .aff files inside.\n\n" +
-                           $"Dictionary folder: ~/Radoub/Dictionaries/ {(exists ? "✅" : "(will be created)")}";
-        }
-
-        private void OnPrimaryLanguageChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var comboBox = sender as ComboBox;
-            var selectedItem = comboBox?.SelectedItem as LanguageListItem;
-
-            if (selectedItem != null)
-            {
-                DictionarySettingsService.Instance.PrimaryLanguage = selectedItem.Id;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Primary language changed to {selectedItem.Id}");
-            }
-        }
-
-        private void OnCustomDictionaryToggled(string dictionaryId, bool enabled)
-        {
-            if (_isInitializing) return;
-
-            DictionarySettingsService.Instance.SetCustomDictionaryEnabled(dictionaryId, enabled);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Dictionary {dictionaryId} {(enabled ? "enabled" : "disabled")}");
-        }
-
-        private void OnOpenDictionariesFolderClick(object? sender, RoutedEventArgs e)
-        {
-            var dictPath = DictionaryDiscovery.GetDefaultUserDictionaryPath();
-
-            // Create directory if it doesn't exist
-            if (!System.IO.Directory.Exists(dictPath))
-            {
-                System.IO.Directory.CreateDirectory(dictPath);
-            }
-
-            try
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = dictPath,
-                    UseShellExecute = true
-                });
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open dictionaries folder: {ex.Message}");
-            }
-        }
-
-        private void OnRefreshDictionariesClick(object? sender, RoutedEventArgs e)
-        {
-            _dictionaryDiscovery?.ClearCache();
-            LoadPrimaryLanguageList();
-            LoadCustomDictionaryList();
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Dictionary list refreshed");
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Helper class for language dropdown items.
-        /// </summary>
-        private class LanguageListItem
-        {
-            public string Id { get; set; } = "";
-            public string DisplayName { get; set; } = "";
-            public DictionaryInfo? Info { get; set; }
-        }
-
-        private string GetPlatformPathsInfo()
-        {
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                var gamePath = System.IO.Path.Combine(documents, "Neverwinter Nights");
-                var modulePath = System.IO.Path.Combine(documents, "Neverwinter Nights", "modules");
-
-                var gameExists = System.IO.Directory.Exists(gamePath);
-                var moduleExists = System.IO.Directory.Exists(modulePath);
-
-                return $"Windows (Expected Locations):\n" +
-                       $"User Data: {gamePath} {(gameExists ? "✅" : "❌")}\n" +
-                       $"Modules: {modulePath} {(moduleExists ? "✅" : "❌")}";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                var gamePath = System.IO.Path.Combine(userProfile, "Library", "Application Support", "Neverwinter Nights");
-                var modulePath = System.IO.Path.Combine(userProfile, "Library", "Application Support", "Neverwinter Nights", "modules");
-
-                var gameExists = System.IO.Directory.Exists(gamePath);
-                var moduleExists = System.IO.Directory.Exists(modulePath);
-
-                return $"macOS (Expected Locations):\n" +
-                       $"User Data: {gamePath} {(gameExists ? "✅" : "❌")}\n" +
-                       $"Modules: {modulePath} {(moduleExists ? "✅" : "❌")}";
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                var gamePath = System.IO.Path.Combine(userProfile, ".local", "share", "Neverwinter Nights");
-                var modulePath = System.IO.Path.Combine(userProfile, ".local", "share", "Neverwinter Nights", "modules");
-
-                var gameExists = System.IO.Directory.Exists(gamePath);
-                var moduleExists = System.IO.Directory.Exists(modulePath);
-
-                return $"Linux (Expected Locations):\n" +
-                       $"User Data: {gamePath} {(gameExists ? "✅" : "❌")}\n" +
-                       $"Modules: {modulePath} {(moduleExists ? "✅" : "❌")}";
-            }
-
-            return "Unknown platform";
-        }
-
-        private async void OnBrowseGamePathClick(object? sender, RoutedEventArgs e)
-        {
-            // Clear previous validation errors
-            var validation = this.FindControl<TextBlock>("GamePathValidation");
-            if (validation != null)
-            {
-                validation.Text = "";
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse User Data Directory clicked");
-
-            var storageProvider = StorageProvider;
-            if (storageProvider == null) return;
-
-            // Default to Documents folder (user data location)
-            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var defaultPath = System.IO.Path.Combine(documentsPath, "Neverwinter Nights");
-
-            var options = new FolderPickerOpenOptions
-            {
-                Title = "Select Neverwinter Nights User Data Directory (Documents\\Neverwinter Nights)",
-                AllowMultiple = false,
-                SuggestedStartLocation = System.IO.Directory.Exists(defaultPath)
-                    ? await storageProvider.TryGetFolderFromPathAsync(new Uri(defaultPath))
-                    : await storageProvider.TryGetFolderFromPathAsync(new Uri(documentsPath))
-            };
-
-            var result = await storageProvider.OpenFolderPickerAsync(options);
-            if (result.Count > 0)
-            {
-                var path = result[0].Path.LocalPath;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"User selected game path: {path}");
-                var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
-                if (gamePathTextBox != null)
-                {
-                    gamePathTextBox.Text = path;
-                    ValidateGamePath(path);
-                }
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse canceled by user");
-            }
-        }
+        private void OnBrowseGamePathClick(object? sender, RoutedEventArgs e)
+            => _resourcePathsController?.OnBrowseGamePathClick(sender, e);
 
         private void OnAutoDetectGamePathClick(object? sender, RoutedEventArgs e)
-        {
-            var detectedPath = ResourcePathHelper.AutoDetectGamePath();
-            var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
+            => _resourcePathsController?.OnAutoDetectGamePathClick(sender, e);
 
-            if (!string.IsNullOrEmpty(detectedPath) && gamePathTextBox != null)
-            {
-                gamePathTextBox.Text = detectedPath;
-                ValidateGamePath(detectedPath);
-            }
-            else
-            {
-                var validation = this.FindControl<TextBlock>("GamePathValidation");
-                if (validation != null)
-                {
-                    validation.Text = "❌ Could not auto-detect game path. Please browse manually.";
-                    validation.Foreground = GetErrorBrush();
-                }
-            }
-        }
-
-        private async void OnBrowseExternalEditorClick(object? sender, RoutedEventArgs e)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse External Editor clicked");
-
-            var storageProvider = StorageProvider;
-            if (storageProvider == null) return;
-
-            var options = new FilePickerOpenOptions
-            {
-                Title = "Select External Text Editor",
-                AllowMultiple = false,
-                FileTypeFilter = new[]
-                {
-                    new FilePickerFileType("Executable Files")
-                    {
-                        Patterns = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                            ? new[] { "*.exe" }
-                            : new[] { "*" }
-                    },
-                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
-                }
-            };
-
-            var result = await storageProvider.OpenFilePickerAsync(options);
-            if (result.Count > 0)
-            {
-                var path = result[0].Path.LocalPath;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"User selected external editor: {UnifiedLogger.SanitizePath(path)}");
-                var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
-                if (externalEditorPathTextBox != null)
-                {
-                    externalEditorPathTextBox.Text = path;
-                }
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse canceled by user");
-            }
-        }
-
-        // Base Game Installation Path handlers
-        private async void OnBrowseBaseGamePathClick(object? sender, RoutedEventArgs e)
-        {
-            // Clear previous validation errors
-            var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
-            if (validation != null)
-            {
-                validation.Text = "";
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse Base Game Installation clicked");
-
-            var storageProvider = StorageProvider;
-            if (storageProvider == null) return;
-
-            var options = new FolderPickerOpenOptions
-            {
-                Title = "Select Neverwinter Nights Base Game Installation (contains data\\ folder)",
-                AllowMultiple = false
-            };
-
-            var result = await storageProvider.OpenFolderPickerAsync(options);
-            if (result.Count > 0)
-            {
-                var path = result[0].Path.LocalPath;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"User selected base game path: {path}");
-                var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox");
-                if (baseGamePathTextBox != null)
-                {
-                    baseGamePathTextBox.Text = path;
-                    ValidateBaseGamePath(path);
-                }
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse canceled by user");
-            }
-        }
+        private void OnBrowseBaseGamePathClick(object? sender, RoutedEventArgs e)
+            => _resourcePathsController?.OnBrowseBaseGamePathClick(sender, e);
 
         private void OnAutoDetectBaseGamePathClick(object? sender, RoutedEventArgs e)
-        {
-            // Use ResourcePathHelper for auto-detection (#345)
-            var detectedPath = ResourcePathHelper.AutoDetectBaseGamePath();
-            var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox");
+            => _resourcePathsController?.OnAutoDetectBaseGamePathClick(sender, e);
 
-            if (!string.IsNullOrEmpty(detectedPath) && baseGamePathTextBox != null)
-            {
-                baseGamePathTextBox.Text = detectedPath;
-                ValidateBaseGamePath(detectedPath);
-            }
-            else
-            {
-                var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
-                if (validation != null)
-                {
-                    validation.Text = "❌ Could not auto-detect base game installation. Please browse manually.";
-                    validation.Foreground = GetErrorBrush();
-                }
-            }
-        }
-
-        private void ValidateBaseGamePath(string path)
-        {
-            var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
-            if (validation == null) return;
-
-            // Use ResourcePathHelper for validation (#345)
-            var result = ResourcePathHelper.ValidateBaseGamePathWithMessage(path);
-            validation.Text = result.Message;
-            validation.Foreground = result.IsValid ? GetSuccessBrush() : GetErrorBrush();
-        }
-
-        private async void OnBrowseModulePathClick(object? sender, RoutedEventArgs e)
-        {
-            var storageProvider = StorageProvider;
-            if (storageProvider == null) return;
-
-            // Default to Documents\Neverwinter Nights\modules
-            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var defaultPath = System.IO.Path.Combine(documentsPath, "Neverwinter Nights", "modules");
-
-            var options = new FolderPickerOpenOptions
-            {
-                Title = "Select Module Directory (Documents\\Neverwinter Nights\\modules)",
-                AllowMultiple = false,
-                SuggestedStartLocation = System.IO.Directory.Exists(defaultPath)
-                    ? await storageProvider.TryGetFolderFromPathAsync(new Uri(defaultPath))
-                    : await storageProvider.TryGetFolderFromPathAsync(new Uri(System.IO.Path.Combine(documentsPath, "Neverwinter Nights")))
-            };
-
-            var result = await storageProvider.OpenFolderPickerAsync(options);
-            if (result.Count > 0)
-            {
-                var path = result[0].Path.LocalPath;
-                var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
-                if (modulePathTextBox != null)
-                {
-                    modulePathTextBox.Text = path;
-                    ValidateModulePath(path);
-                }
-            }
-        }
+        private void OnBrowseModulePathClick(object? sender, RoutedEventArgs e)
+            => _resourcePathsController?.OnBrowseModulePathClick(sender, e);
 
         private void OnAutoDetectModulePathClick(object? sender, RoutedEventArgs e)
-        {
-            var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
-            var gamePath = gamePathTextBox?.Text;
-
-            var detectedPath = ResourcePathHelper.AutoDetectModulePath(gamePath);
-            var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
-
-            if (!string.IsNullOrEmpty(detectedPath) && modulePathTextBox != null)
-            {
-                modulePathTextBox.Text = detectedPath;
-                ValidateModulePath(detectedPath);
-            }
-            else
-            {
-                var validation = this.FindControl<TextBlock>("ModulePathValidation");
-                if (validation != null)
-                {
-                    validation.Text = "❌ Could not auto-detect module path. Please browse manually.";
-                    validation.Foreground = GetErrorBrush();
-                }
-            }
-        }
-
-        private void ValidateGamePath(string path)
-        {
-            var validation = this.FindControl<TextBlock>("GamePathValidation");
-            if (validation == null) return;
-
-            // Use ResourcePathHelper for validation (#345)
-            var result = ResourcePathHelper.ValidateGamePathWithMessage(path);
-            validation.Text = result.Message;
-            validation.Foreground = result.IsValid ? GetSuccessBrush() : GetErrorBrush();
-        }
-
-        private void ValidateModulePath(string path)
-        {
-            var validation = this.FindControl<TextBlock>("ModulePathValidation");
-            if (validation == null) return;
-
-            // Use ResourcePathHelper for validation (#345)
-            var result = ResourcePathHelper.ValidateModulePathWithMessage(path);
-            validation.Text = result.Message;
-            validation.Foreground = result.IsValid ? GetSuccessBrush() : GetErrorBrush();
-        }
+            => _resourcePathsController?.OnAutoDetectModulePathClick(sender, e);
 
         private void OnRecentModuleSelected(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var listBox = sender as ListBox;
-            if (listBox?.SelectedItem is string selectedPath)
-            {
-                var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
-                if (modulePathTextBox != null)
-                {
-                    modulePathTextBox.Text = selectedPath;
-                    ValidateModulePath(selectedPath);
-                }
-            }
-        }
+            => _resourcePathsController?.OnRecentModuleSelected(sender, e);
 
         private void OnClearRecentModulesClick(object? sender, RoutedEventArgs e)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Clear Recent Modules clicked");
-            SettingsService.Instance.ClearModulePaths();
-
-            // Refresh the list box display
-            var recentModulesListBox = this.FindControl<ListBox>("RecentModulesListBox");
-            if (recentModulesListBox != null)
-            {
-                recentModulesListBox.ItemsSource = null;
-                recentModulesListBox.ItemsSource = SettingsService.Instance.ModulePaths;
-            }
-        }
-
-        private void OnThemeComboBoxChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var comboBox = sender as ComboBox;
-            if (comboBox?.SelectedItem is ThemeManifest theme)
-            {
-                // Apply theme immediately
-                ThemeManager.Instance.ApplyTheme(theme);
-
-                // Update theme description panel
-                UpdateThemeDescription(theme);
-
-                // Save to settings
-                SettingsService.Instance.CurrentThemeId = theme.Plugin.Id;
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Theme changed to: {theme.Plugin.Name}");
-            }
-        }
-
-        private void UpdateThemeDescription(ThemeManifest theme)
-        {
-            var nameText = this.FindControl<TextBlock>("ThemeNameText");
-            var descText = this.FindControl<TextBlock>("ThemeDescriptionText");
-            var accessText = this.FindControl<TextBlock>("ThemeAccessibilityText");
-
-            if (nameText != null)
-            {
-                nameText.Text = theme.Plugin.Name;
-            }
-
-            if (descText != null)
-            {
-                descText.Text = theme.Plugin.Description;
-            }
-
-            if (accessText != null && theme.Accessibility != null)
-            {
-                if (theme.Accessibility.Type == "colorblind")
-                {
-                    var condition = theme.Accessibility.Condition ?? "color blindness";
-                    accessText.Text = $"♿ Accessibility: Optimized for {condition} ({theme.Accessibility.ContrastLevel} contrast)";
-                    accessText.IsVisible = true;
-                }
-                else if (theme.Accessibility.Type == "nightmare")
-                {
-                    accessText.Text = theme.Accessibility.Warning ?? "⚠️ Warning: This theme may cause eye strain";
-                    accessText.Foreground = GetErrorBrush();
-                    accessText.IsVisible = true;
-                }
-                else
-                {
-                    accessText.IsVisible = false;
-                }
-            }
-        }
-
-        private void PopulateThemeList(ComboBox comboBox, bool includeEasterEggs)
-        {
-            var themes = ThemeManager.Instance.AvailableThemes;
-
-            if (!includeEasterEggs)
-            {
-                themes = themes.Where(t => !t.Plugin.Tags.Contains("easter-egg")).ToList();
-            }
-
-            var sortedThemes = themes
-                .OrderBy(t => t.Accessibility?.Type == "colorblind" ? 1 : 0)
-                .ThenBy(t => t.Plugin.Name)
-                .ToList();
-
-            comboBox.ItemsSource = sortedThemes;
-            comboBox.DisplayMemberBinding = new Avalonia.Data.Binding("Plugin.Name");
-        }
-
-        private void OnGetThemesClick(object? sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // Open GitHub themes directory in browser
-                const string themesUrl = "https://github.com/LordOfMyatar/Radoub/tree/main/Parley/Parley/Themes";
-
-                var psi = new ProcessStartInfo
-                {
-                    FileName = themesUrl,
-                    UseShellExecute = true
-                };
-                Process.Start(psi);
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Opened GitHub themes directory");
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open themes URL: {ex.Message}");
-            }
-        }
-
-        private void OnEasterEggHintClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
-        {
-            if (_easterEggActivated) return;
-
-            _easterEggActivated = true;
-
-            var comboBox = this.FindControl<ComboBox>("ThemeComboBox");
-            if (comboBox == null) return;
-
-            // Repopulate list with easter eggs
-            PopulateThemeList(comboBox, includeEasterEggs: true);
-
-            // Select the easter egg theme
-            var easterEggs = (IEnumerable<ThemeManifest>?)comboBox.ItemsSource;
-            var easterEgg = easterEggs?.FirstOrDefault(t => t.Plugin.Tags.Contains("easter-egg"));
-
-            if (easterEgg != null)
-            {
-                comboBox.SelectedItem = easterEgg;
-            }
-
-            // Update easter egg hint
-            var hint = this.FindControl<TextBlock>("EasterEggHint");
-            if (hint != null)
-            {
-                hint.Text = "🍇🍓 You found it! Enjoy the chaos...";
-                hint.Foreground = Avalonia.Media.Brushes.DarkOrange;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Easter egg theme activated!");
-        }
-
-        private void OnFontSizeChanged(object? sender, RangeBaseValueChangedEventArgs e)
-        {
-            var fontSizeLabel = this.FindControl<TextBlock>("FontSizeLabel");
-            if (fontSizeLabel != null && sender is Slider slider)
-            {
-                fontSizeLabel.Text = slider.Value.ToString("0");
-            }
-
-            // Apply font size immediately when slider changes
-            if (!_isInitializing)
-            {
-                ApplyFontSizePreview();
-                UpdateFontPreview();
-            }
-        }
-
-        private void OnLogLevelChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_isInitializing) return;
-            // Log level change will be applied when OK or Apply is clicked
-        }
-
-        private void OnLogRetentionChanged(object? sender, RangeBaseValueChangedEventArgs e)
-        {
-            var logRetentionLabel = this.FindControl<TextBlock>("LogRetentionLabel");
-            if (logRetentionLabel != null && sender is Slider slider)
-            {
-                logRetentionLabel.Text = $"{(int)slider.Value} sessions";
-            }
-        }
-
-        private void OnAutoSaveEnabledChanged(object? sender, RoutedEventArgs e)
-        {
-            if (_isInitializing) return;
-            // Auto-save enabled change will be applied when OK or Apply is clicked
-        }
-
-        private void OnAutoSaveIntervalChanged(object? sender, RangeBaseValueChangedEventArgs e)
-        {
-            var label = this.FindControl<TextBlock>("AutoSaveIntervalLabel");
-            if (label != null && sender is Slider slider)
-            {
-                int value = (int)slider.Value;
-                if (value == 0)
-                {
-                    label.Text = "Fast debounce (2s)";
-                }
-                else
-                {
-                    label.Text = $"Every {value} minute{(value > 1 ? "s" : "")}";
-                }
-            }
-        }
-
-        private void OnShowDebugPanelChanged(object? sender, RoutedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            // Apply debug panel visibility immediately
-            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
-            if (showDebugPanelCheckBox != null)
-            {
-                bool isVisible = showDebugPanelCheckBox.IsChecked ?? false;
-                SettingsService.Instance.DebugWindowVisible = isVisible;
-
-                // Find MainWindow and update debug tab visibility
-                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-                {
-                    if (desktop.MainWindow is MainWindow mainWindow)
-                    {
-                        var debugTab = mainWindow.FindControl<TabItem>("DebugTab");
-                        if (debugTab != null)
-                        {
-                            debugTab.IsVisible = isVisible;
-                        }
-                    }
-                }
-            }
-        }
+            => _resourcePathsController?.OnClearRecentModulesClick(sender, e);
 
         private async void OnTlkLanguageChanged(object? sender, SelectionChangedEventArgs e)
         {
@@ -1274,10 +153,9 @@ namespace DialogEditor.Views
                     SettingsService.Instance.TlkLanguage = langCode;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"TLK language changed from '{oldValue}' to '{langCode}'");
 
-                    // Invalidate resolver to force reload with new TLK
                     GameResourceService.Instance.InvalidateResolver();
 
-                    UpdateTlkLanguageStatus();
+                    _resourcePathsController?.UpdateTlkLanguageStatus();
                     await PromptReloadDialog();
                 }
             }
@@ -1298,10 +176,9 @@ namespace DialogEditor.Views
                     SettingsService.Instance.TlkUseFemale = useFemale;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"TLK female variant changed from {oldValue} to {useFemale}");
 
-                    // Invalidate resolver to force reload with new TLK
                     GameResourceService.Instance.InvalidateResolver();
 
-                    UpdateTlkLanguageStatus();
+                    _resourcePathsController?.UpdateTlkLanguageStatus();
                     await PromptReloadDialog();
                 }
             }
@@ -1309,7 +186,6 @@ namespace DialogEditor.Views
 
         private async Task PromptReloadDialog()
         {
-            // Check if there's a dialog loaded that might need reloading
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 if (desktop.MainWindow is MainWindow mainWindow && mainWindow.DataContext is ViewModels.MainViewModel vm)
@@ -1364,61 +240,156 @@ namespace DialogEditor.Views
             return result;
         }
 
-        private void OnSafeModeChanged(object? sender, RoutedEventArgs e)
-        {
-            if (_isInitializing) return;
+        #endregion
 
-            var safeModeCheckBox = this.FindControl<CheckBox>("SafeModeCheckBox");
-            if (safeModeCheckBox != null)
-            {
-                PluginSettingsService.Instance.SafeMode = safeModeCheckBox.IsChecked == true;
-            }
-        }
+        #region Theme Settings Handlers (delegated to controller)
+
+        private void OnThemeComboBoxChanged(object? sender, SelectionChangedEventArgs e)
+            => _themeSettingsController?.OnThemeComboBoxChanged(sender, e);
+
+        private void OnGetThemesClick(object? sender, RoutedEventArgs e)
+            => _themeSettingsController?.OnGetThemesClick(sender, e);
+
+        private void OnEasterEggHintClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+            => _themeSettingsController?.OnEasterEggHintClick(sender, e);
+
+        #endregion
+
+        #region Dictionary Settings Handlers (delegated to controller)
+
+        private void OnPrimaryLanguageChanged(object? sender, SelectionChangedEventArgs e)
+            => _dictionarySettingsController?.OnPrimaryLanguageChanged(sender, e);
+
+        private void OnOpenDictionariesFolderClick(object? sender, RoutedEventArgs e)
+            => _dictionarySettingsController?.OnOpenDictionariesFolderClick(sender, e);
+
+        private void OnRefreshDictionariesClick(object? sender, RoutedEventArgs e)
+            => _dictionarySettingsController?.OnRefreshDictionariesClick(sender, e);
+
+        #endregion
+
+        #region Plugin Settings Handlers (delegated to controller)
+
+        private void OnSafeModeChanged(object? sender, RoutedEventArgs e)
+            => _pluginSettingsController?.OnSafeModeChanged(sender, e);
 
         private void OnOpenPluginsFolderClick(object? sender, RoutedEventArgs e)
-        {
-            // New location: ~/Radoub/Parley (matches toolset structure)
-            var userDataDir = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Radoub", "Parley",
-                "Plugins",
-                "Community"
-            );
-
-            // Create directory if it doesn't exist
-            if (!System.IO.Directory.Exists(userDataDir))
-            {
-                System.IO.Directory.CreateDirectory(userDataDir);
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Created plugins directory: {userDataDir}");
-            }
-
-            // Open in file explorer
-            try
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    Process.Start("explorer.exe", userDataDir);
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    Process.Start("open", userDataDir);
-                }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    Process.Start("xdg-open", userDataDir);
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open plugins folder: {ex.Message}");
-            }
-        }
+            => _pluginSettingsController?.OnOpenPluginsFolderClick(sender, e);
 
         private void OnRefreshPluginsClick(object? sender, RoutedEventArgs e)
+            => _pluginSettingsController?.OnRefreshPluginsClick(sender, e);
+
+        #endregion
+
+        #region UI Settings Handlers (delegated to controller)
+
+        private void OnFontSizeChanged(object? sender, RangeBaseValueChangedEventArgs e)
+            => _uiSettingsController?.OnFontSizeChanged(sender, e);
+
+        private void OnFontFamilyChanged(object? sender, SelectionChangedEventArgs e)
+            => _uiSettingsController?.OnFontFamilyChanged(sender, e);
+
+        private void OnAllowScrollbarAutoHideChanged(object? sender, RoutedEventArgs e)
+            => _uiSettingsController?.OnAllowScrollbarAutoHideChanged(sender, e);
+
+        private void OnEnableNpcTagColoringChanged(object? sender, RoutedEventArgs e)
+            => _uiSettingsController?.OnEnableNpcTagColoringChanged(sender, e);
+
+        private void OnSimulatorShowWarningsChanged(object? sender, RoutedEventArgs e)
+            => _uiSettingsController?.OnSimulatorShowWarningsChanged(sender, e);
+
+        private void OnSpellCheckEnabledChanged(object? sender, RoutedEventArgs e)
+            => _uiSettingsController?.OnSpellCheckEnabledChanged(sender, e);
+
+        #endregion
+
+        #region External Editor
+
+        private async void OnBrowseExternalEditorClick(object? sender, RoutedEventArgs e)
         {
-            LoadPluginList();
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Plugin list refreshed");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse External Editor clicked");
+
+            var storageProvider = StorageProvider;
+            if (storageProvider == null) return;
+
+            var options = new FilePickerOpenOptions
+            {
+                Title = "Select External Text Editor",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Executable Files")
+                    {
+                        Patterns = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                            ? new[] { "*.exe" }
+                            : new[] { "*" }
+                    },
+                    new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+                }
+            };
+
+            var result = await storageProvider.OpenFilePickerAsync(options);
+            if (result.Count > 0)
+            {
+                var path = result[0].Path.LocalPath;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"User selected external editor: {UnifiedLogger.SanitizePath(path)}");
+                var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
+                if (externalEditorPathTextBox != null)
+                {
+                    externalEditorPathTextBox.Text = path;
+                }
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Browse canceled by user");
+            }
         }
+
+        #endregion
+
+        #region Logging Settings Handlers (delegated to controller)
+
+        private void OnLogLevelChanged(object? sender, SelectionChangedEventArgs e)
+            => _loggingSettingsController?.OnLogLevelChanged(sender, e);
+
+        private void OnLogRetentionChanged(object? sender, RangeBaseValueChangedEventArgs e)
+            => _loggingSettingsController?.OnLogRetentionChanged(sender, e);
+
+        private void OnShowDebugPanelChanged(object? sender, RoutedEventArgs e)
+            => _loggingSettingsController?.OnShowDebugPanelChanged(sender, e);
+
+        #endregion
+
+        #region Auto-Save Settings Handlers (delegated to controller)
+
+        private void OnAutoSaveEnabledChanged(object? sender, RoutedEventArgs e)
+            => _autoSaveSettingsController?.OnAutoSaveEnabledChanged(sender, e);
+
+        private void OnAutoSaveIntervalChanged(object? sender, RangeBaseValueChangedEventArgs e)
+            => _autoSaveSettingsController?.OnAutoSaveIntervalChanged(sender, e);
+
+        #endregion
+
+        #region Parameter Cache Handlers (delegated to controller)
+
+        private void OnParameterCacheSettingChanged(object? sender, RoutedEventArgs e)
+            => _parameterCacheController?.OnParameterCacheSettingChanged(sender, e);
+
+        private void OnMaxCachedValuesChanged(object? sender, RangeBaseValueChangedEventArgs e)
+            => _parameterCacheController?.OnMaxCachedValuesChanged(sender, e);
+
+        private void OnMaxCachedScriptsChanged(object? sender, RangeBaseValueChangedEventArgs e)
+            => _parameterCacheController?.OnMaxCachedScriptsChanged(sender, e);
+
+        private void OnClearParameterCacheClick(object? sender, RoutedEventArgs e)
+            => _parameterCacheController?.OnClearParameterCacheClick(sender, e);
+
+        private void OnRefreshCacheStatsClick(object? sender, RoutedEventArgs e)
+            => _parameterCacheController?.OnRefreshCacheStatsClick(sender, e);
+
+        #endregion
+
+        #region Dialog Buttons
 
         private void OnOkClick(object? sender, RoutedEventArgs e)
         {
@@ -1438,442 +409,19 @@ namespace DialogEditor.Views
 
         private void ApplySettings()
         {
-            var settings = SettingsService.Instance;
-
-            // Resource Paths
-            var gamePathTextBox = this.FindControl<TextBox>("GamePathTextBox");
-            var baseGamePathTextBox = this.FindControl<TextBox>("BaseGamePathTextBox"); // Phase 2
-            var modulePathTextBox = this.FindControl<TextBox>("ModulePathTextBox");
-
-            if (gamePathTextBox != null)
-            {
-                var gamePath = gamePathTextBox.Text ?? "";
-                if (ResourcePathHelper.ValidateGamePath(gamePath) || string.IsNullOrEmpty(gamePath))
-                {
-                    settings.NeverwinterNightsPath = gamePath;
-                }
-            }
-
-            // Phase 2: Save base game installation path
-            if (baseGamePathTextBox != null)
-            {
-                var baseGamePath = baseGamePathTextBox.Text ?? "";
-                // Validate: should have data\ folder, but allow empty
-                var dataPath = string.IsNullOrEmpty(baseGamePath) ? "" : System.IO.Path.Combine(baseGamePath, "data");
-                if (string.IsNullOrEmpty(baseGamePath) || System.IO.Directory.Exists(dataPath))
-                {
-                    settings.BaseGameInstallPath = baseGamePath;
-                }
-            }
-
-            if (modulePathTextBox != null)
-            {
-                var modulePath = modulePathTextBox.Text ?? "";
-                if (ResourcePathHelper.ValidateModulePath(modulePath) || string.IsNullOrEmpty(modulePath))
-                {
-                    settings.CurrentModulePath = modulePath;
-
-                    // Add to recent modules if valid and not empty
-                    if (!string.IsNullOrEmpty(modulePath) && ResourcePathHelper.ValidateModulePath(modulePath))
-                    {
-                        settings.AddModulePath(modulePath);
-                    }
-                }
-            }
-
-            // UI Settings
-            // Theme is now saved automatically via OnThemeComboBoxChanged
-            var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
-            var externalEditorPathTextBox = this.FindControl<TextBox>("ExternalEditorPathTextBox");
-
-            if (fontSizeSlider != null)
-            {
-                settings.FontSize = fontSizeSlider.Value;
-            }
-
-            // Save font family
-            var fontFamilyComboBox = this.FindControl<ComboBox>("FontFamilyComboBox");
-            if (fontFamilyComboBox?.SelectedItem is string selectedFont)
-            {
-                settings.FontFamily = selectedFont == "System Default" ? "" : selectedFont;
-            }
-
-            if (externalEditorPathTextBox != null)
-            {
-                settings.ExternalEditorPath = externalEditorPathTextBox.Text ?? "";
-            }
-
-            // Logging Settings
-            var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
-            var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
-            var showDebugPanelCheckBox = this.FindControl<CheckBox>("ShowDebugPanelCheckBox");
-
-            if (logLevelComboBox?.SelectedItem is LogLevel logLevel)
-            {
-                settings.CurrentLogLevel = logLevel;
-            }
-
-            if (logRetentionSlider != null)
-            {
-                settings.LogRetentionSessions = (int)logRetentionSlider.Value;
-            }
-
-            if (showDebugPanelCheckBox != null)
-            {
-                settings.DebugWindowVisible = showDebugPanelCheckBox.IsChecked ?? false;
-            }
-
-            // Auto-Save Settings (Issue #62)
-            var autoSaveEnabledCheckBox = this.FindControl<CheckBox>("AutoSaveEnabledCheckBox");
-            var autoSaveIntervalSlider = this.FindControl<Slider>("AutoSaveIntervalSlider");
-
-            if (autoSaveEnabledCheckBox != null)
-            {
-                settings.AutoSaveEnabled = autoSaveEnabledCheckBox.IsChecked ?? true;
-            }
-
-            if (autoSaveIntervalSlider != null)
-            {
-                settings.AutoSaveIntervalMinutes = (int)autoSaveIntervalSlider.Value;
-            }
+            // Delegate to controllers
+            _resourcePathsController?.ApplySettings();
+            _uiSettingsController?.ApplySettings();
+            _loggingSettingsController?.ApplySettings();
+            _autoSaveSettingsController?.ApplySettings();
 
             UnifiedLogger.LogApplication(LogLevel.INFO, "Settings applied successfully");
         }
 
-        private void ApplyThemePreview()
-        {
-            // Theme preview now handled by OnThemeComboBoxChanged
-            // This method kept for compatibility but is no longer used
-        }
-
-        private void ApplyFontSizePreview()
-        {
-            try
-            {
-                var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
-                if (fontSizeSlider != null)
-                {
-                    // Fixed in #58 - Apply font size globally using App.ApplyFontSize
-                    App.ApplyFontSize(fontSizeSlider.Value);
-                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Font size preview: {fontSizeSlider.Value}");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error applying font size preview: {ex.Message}");
-            }
-        }
-
-        private void LoadFontFamilies(string currentFontFamily)
-        {
-            try
-            {
-                var fontFamilyComboBox = this.FindControl<ComboBox>("FontFamilyComboBox");
-                if (fontFamilyComboBox == null) return;
-
-                // Get available system fonts
-                var fonts = new ObservableCollection<string> { "System Default" };
-
-                // Add common cross-platform fonts
-                var commonFonts = new[]
-                {
-                    "Arial", "Calibri", "Cambria", "Consolas", "Courier New",
-                    "Georgia", "Helvetica", "Segoe UI", "Tahoma", "Times New Roman",
-                    "Trebuchet MS", "Verdana",
-                    // Platform-specific fonts that may be available
-                    "San Francisco", "Ubuntu", "Noto Sans", "Roboto"
-                };
-
-                foreach (var font in commonFonts)
-                {
-                    try
-                    {
-                        // Test if font exists by attempting to create FontFamily
-                        var testFamily = new FontFamily(font);
-                        fonts.Add(font);
-                    }
-                    catch
-                    {
-                        // Font not available on this system - expected for fonts
-                        // not installed. No logging needed as this is normal behavior.
-                    }
-                }
-
-                fontFamilyComboBox.ItemsSource = fonts;
-
-                // Select current font
-                if (string.IsNullOrWhiteSpace(currentFontFamily))
-                {
-                    fontFamilyComboBox.SelectedIndex = 0; // System Default
-                }
-                else
-                {
-                    var index = fonts.IndexOf(currentFontFamily);
-                    fontFamilyComboBox.SelectedIndex = index >= 0 ? index : 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading font families: {ex.Message}");
-            }
-        }
-
-        private void OnFontFamilyChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var fontFamilyComboBox = sender as ComboBox;
-            if (fontFamilyComboBox?.SelectedItem is string selectedFont)
-            {
-                // Apply font family immediately
-                if (selectedFont == "System Default")
-                {
-                    App.ApplyFontFamily("");
-                }
-                else
-                {
-                    App.ApplyFontFamily(selectedFont);
-                }
-
-                UpdateFontPreview();
-            }
-        }
-
-        private void OnAllowScrollbarAutoHideChanged(object? sender, RoutedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var checkbox = sender as CheckBox;
-            if (checkbox != null)
-            {
-                SettingsService.Instance.AllowScrollbarAutoHide = checkbox.IsChecked == true;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Scrollbar auto-hide preference: {checkbox.IsChecked}");
-            }
-        }
-
-        private void OnEnableNpcTagColoringChanged(object? sender, RoutedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var checkbox = sender as CheckBox;
-            if (checkbox != null)
-            {
-                SettingsService.Instance.EnableNpcTagColoring = checkbox.IsChecked == true;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"NPC tag coloring: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
-            }
-        }
-
-        /// <summary>
-        /// Issue #484: Handle simulator warnings toggle
-        /// </summary>
-        private void OnSimulatorShowWarningsChanged(object? sender, RoutedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var checkbox = sender as CheckBox;
-            if (checkbox != null)
-            {
-                SettingsService.Instance.SimulatorShowWarnings = checkbox.IsChecked == true;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Dialog warnings: {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
-            }
-        }
-
-        /// <summary>
-        /// Issue #505: Handle spell check toggle
-        /// </summary>
-        private void OnSpellCheckEnabledChanged(object? sender, RoutedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var checkbox = sender as CheckBox;
-            if (checkbox != null)
-            {
-                SettingsService.Instance.SpellCheckEnabled = checkbox.IsChecked == true;
-            }
-        }
-
-        private void UpdateFontPreview()
-        {
-            try
-            {
-                var fontPreviewText = this.FindControl<TextBlock>("FontPreviewText");
-                var fontFamilyComboBox = this.FindControl<ComboBox>("FontFamilyComboBox");
-                var fontSizeSlider = this.FindControl<Slider>("FontSizeSlider");
-
-                if (fontPreviewText != null)
-                {
-                    if (fontSizeSlider != null)
-                    {
-                        fontPreviewText.FontSize = fontSizeSlider.Value;
-                    }
-
-                    if (fontFamilyComboBox?.SelectedItem is string selectedFont)
-                    {
-                        if (selectedFont == "System Default")
-                        {
-                            fontPreviewText.FontFamily = FontFamily.Default;
-                        }
-                        else
-                        {
-                            try
-                            {
-                                fontPreviewText.FontFamily = new FontFamily(selectedFont);
-                            }
-                            catch (Exception ex)
-                            {
-                                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Font '{selectedFont}' not available for preview, using default: {ex.Message}");
-                                fontPreviewText.FontFamily = FontFamily.Default;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error updating font preview: {ex.Message}");
-            }
-        }
-
-        // Parameter Cache Event Handlers
-
-        private void OnParameterCacheSettingChanged(object? sender, RoutedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var checkbox = sender as CheckBox;
-            if (checkbox != null)
-            {
-                SettingsService.Instance.EnableParameterCache = checkbox.IsChecked ?? true;
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Parameter cache {(checkbox.IsChecked == true ? "enabled" : "disabled")}");
-            }
-        }
-
-        private void OnMaxCachedValuesChanged(object? sender, RangeBaseValueChangedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var slider = sender as Slider;
-            var label = this.FindControl<TextBlock>("MaxCachedValuesLabel");
-
-            if (slider != null && label != null)
-            {
-                int value = (int)slider.Value;
-                label.Text = $"{value} values";
-                SettingsService.Instance.MaxCachedValuesPerParameter = value;
-            }
-        }
-
-        private void OnMaxCachedScriptsChanged(object? sender, RangeBaseValueChangedEventArgs e)
-        {
-            if (_isInitializing) return;
-
-            var slider = sender as Slider;
-            var label = this.FindControl<TextBlock>("MaxCachedScriptsLabel");
-
-            if (slider != null && label != null)
-            {
-                int value = (int)slider.Value;
-                label.Text = $"{value} scripts";
-                SettingsService.Instance.MaxCachedScripts = value;
-            }
-        }
-
-        private void UpdateCacheStats()
-        {
-            try
-            {
-                var stats = ParameterCacheService.Instance.GetStats();
-                var statsText = this.FindControl<TextBlock>("CacheStatsText");
-
-                if (statsText != null)
-                {
-                    statsText.Text = $"Cached Scripts: {stats.ScriptCount}\n" +
-                                   $"Total Parameters: {stats.ParameterCount}\n" +
-                                   $"Total Values: {stats.ValueCount}";
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error updating cache stats: {ex.Message}");
-            }
-        }
-
-        private async void OnClearParameterCacheClick(object? sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // Show confirmation (non-modal)
-                var result = await ShowConfirmationAsync("Clear Parameter Cache",
-                    "This will delete all cached parameter values. Are you sure?");
-
-                if (result)
-                {
-                    ParameterCacheService.Instance.ClearAllCache();
-                    UpdateCacheStats();
-                    UnifiedLogger.LogApplication(LogLevel.INFO, "Parameter cache cleared");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error clearing parameter cache: {ex.Message}");
-            }
-        }
-
-        private void OnRefreshCacheStatsClick(object? sender, RoutedEventArgs e)
-        {
-            UpdateCacheStats();
-        }
-
-        private async Task<bool> ShowConfirmationAsync(string title, string message)
-        {
-            var dialog = new Window
-            {
-                Title = title,
-                Width = 400,
-                Height = 150,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                CanResize = false
-            };
-
-            var result = false;
-            var panel = new StackPanel { Margin = new Thickness(20), Spacing = 15 };
-
-            panel.Children.Add(new TextBlock
-            {
-                Text = message,
-                TextWrapping = Avalonia.Media.TextWrapping.Wrap
-            });
-
-            var buttonPanel = new StackPanel
-            {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                Spacing = 10
-            };
-
-            var yesButton = new Button { Content = "Yes", Width = 80 };
-            yesButton.Click += (s, e) => { result = true; dialog.Close(); };
-
-            var noButton = new Button { Content = "No", Width = 80 };
-            noButton.Click += (s, e) => { result = false; dialog.Close(); };
-
-            buttonPanel.Children.Add(yesButton);
-            buttonPanel.Children.Add(noButton);
-            panel.Children.Add(buttonPanel);
-
-            dialog.Content = panel;
-            await dialog.ShowDialog(this);
-
-            return result;
-        }
+        #endregion
 
         #region Theme-Aware Colors
 
-        /// <summary>
-        /// Gets the theme-aware error brush for validation errors.
-        /// Falls back to red if theme error color is not available.
-        /// Issue #141: Uses theme colors for colorblind accessibility.
-        /// </summary>
         private IBrush GetErrorBrush()
         {
             var app = Application.Current;
@@ -1885,11 +433,6 @@ namespace DialogEditor.Views
             return Brushes.Red;
         }
 
-        /// <summary>
-        /// Gets the theme-aware success brush for validation success feedback.
-        /// Falls back to green if theme success color is not available.
-        /// Issue #141: Uses theme colors for colorblind accessibility.
-        /// </summary>
         private IBrush GetSuccessBrush()
         {
             var app = Application.Current;
