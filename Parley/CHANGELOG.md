@@ -15,10 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactor: Split ScriptParameterUIManager.cs (#706)
 
-- Split 666-line file for maintainability
-- Extract validation logic to ParameterValidationService
-- Extract persistence logic to ParameterPersistenceService
-- Keep core row management in ScriptParameterUIManager
+Split 666-line file into focused services for maintainability:
+
+| File | Lines | Responsibility |
+|------|-------|----------------|
+| ScriptParameterUIManager.cs | 269 | Core row management, add/remove, change handling |
+| ParameterValidationService.cs | 244 | Duplicate key validation, red borders, theme colors |
+| ParameterPersistenceService.cs | 233 | UI-to-model sync, auto-trim, parameter caching |
 
 ---
 
