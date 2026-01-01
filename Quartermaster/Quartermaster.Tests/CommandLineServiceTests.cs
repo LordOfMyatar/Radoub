@@ -97,4 +97,40 @@ public class CommandLineServiceTests
 
         Assert.Equal("static.utc", CommandLineService.Options.FilePath);
     }
+
+    [Theory]
+    [InlineData("--file")]
+    [InlineData("-f")]
+    public void Parse_FileFlag_AcceptsBicFiles(string fileArg)
+    {
+        var args = new[] { fileArg, "player.bic" };
+
+        var options = CommandLineService.Parse(args);
+
+        Assert.Equal("player.bic", options.FilePath);
+    }
+
+    [Fact]
+    public void Parse_BarePathWithoutFileExists_IsIgnored()
+    {
+        // Bare paths (without --file flag) are only accepted if File.Exists returns true
+        var args = new[] { "nonexistent.utc" };
+
+        var options = CommandLineService.Parse(args);
+
+        // Since the file doesn't exist, bare path is ignored
+        Assert.Null(options.FilePath);
+    }
+
+    [Fact]
+    public void Parse_FileFlagAcceptsNonExistentPath()
+    {
+        // --file flag always sets the path, regardless of existence
+        // HandleStartupFileAsync() handles the "file not found" error later
+        var args = new[] { "--file", "does_not_exist.utc" };
+
+        var options = CommandLineService.Parse(args);
+
+        Assert.Equal("does_not_exist.utc", options.FilePath);
+    }
 }

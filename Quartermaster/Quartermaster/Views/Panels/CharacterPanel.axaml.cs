@@ -197,7 +197,9 @@ public partial class CharacterPanel : UserControl
                 _biographyTextBox.Text = "";
         }
 
-        _isLoading = false;
+        // Defer clearing _isLoading until after dispatcher processes queued TextChanged events
+        // TextBox.Text changes queue TextChanged events to the dispatcher, which fire after this method returns
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
     }
 
     private void SelectSoundSet(ushort soundSetId)

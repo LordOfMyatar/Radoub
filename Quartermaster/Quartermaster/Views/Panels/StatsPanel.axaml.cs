@@ -200,7 +200,8 @@ public partial class StatsPanel : UserControl
         LoadSavingThrow(_refBase, _refAbility, _refTotal, creature.RefBonus, dexBonus);
         LoadSavingThrow(_willBase, _willAbility, _willTotal, creature.WillBonus, wisBonus);
 
-        _isLoading = false;
+        // Defer clearing _isLoading until after dispatcher processes queued ValueChanged events
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
     }
 
     private void OnCRAdjustValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)

@@ -260,7 +260,8 @@ public partial class AppearancePanel : UserControl
         UpdateBodyPartsEnabledState(isPartBased);
         LoadBodyPartValues(creature);
 
-        _isLoading = false;
+        // Defer clearing _isLoading until after dispatcher processes queued SelectionChanged events
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
     }
 
     private void UpdateBodyPartsEnabledState(bool isPartBased)

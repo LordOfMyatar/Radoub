@@ -290,6 +290,8 @@ After creating a sprint issue, add it to the appropriate project board.
 |-------------|---------|--------|
 | `parley` or `[Parley]` | Parley | 2 |
 | `radoub` or `[Radoub]` | Radoub | 3 |
+| `quartermaster` or `[Quartermaster]` | Radoub | 3 |
+| `manifest` or `[Manifest]` | Radoub | 3 |
 
 ### Add Sprint to Project and Set In Progress
 
