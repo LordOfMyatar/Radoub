@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.108-alpha] - 2026-01-01
+**Branch**: `parley/refactor/split-script-browser-controller` | **PR**: #TBD
+
+### Refactor: Split ScriptBrowserController.cs (#707)
+
+Split 638-line controller for maintainability:
+
+| File | Responsibility |
+|------|----------------|
+| ScriptBrowserController.cs | Core browser window management |
+| ScriptPreviewService.cs | Script preview loading and display |
+| ParameterBrowserController.cs | Parameter browser functionality |
+
+---
+
 ## [0.1.107-alpha] - 2026-01-01
 **Branch**: `parley/refactor/split-script-param-ui-manager` | **PR**: #712
 
