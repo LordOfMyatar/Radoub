@@ -165,10 +165,15 @@ namespace DialogEditor.Views
                 controls: _controls,
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
-                autoSaveProperty: AutoSaveProperty,
-                isPopulatingProperties: () => _uiState.IsPopulatingProperties,
-                parameterUIManager: _services.ParameterUI,
-                triggerAutoSave: () => { _viewModel.HasUnsavedChanges = true; TriggerDebouncedAutoSave(); });
+                autoSaveProperty: AutoSaveProperty);
+
+            _controllers.ParameterBrowser = new ParameterBrowserController(
+                controls: _controls,
+                getViewModel: () => _viewModel,
+                getSelectedNode: () => _selectedNode,
+                parameterUIManager: _services.ParameterUI);
+
+            _services.ScriptPreview = new ScriptPreviewService(_controls);
 
             _controllers.Quest = new QuestUIController(
                 window: this,
@@ -576,8 +581,9 @@ namespace DialogEditor.Views
             // Issue #343: Close all managed windows (Settings, Flowchart)
             _windows.CloseAll();
 
-            // Close browser windows managed by ScriptBrowserController
-            _controllers.ScriptBrowser.CloseAllBrowserWindows();
+            // Close browser windows managed by controllers
+            _controllers.ScriptBrowser.CloseActiveScriptBrowser();
+            _controllers.ParameterBrowser.CloseActiveParameterBrowser();
 
             // Close plugin panel windows (Epic 3 / #225)
             _services.PluginPanel.Dispose();
@@ -1025,24 +1031,24 @@ namespace DialogEditor.Views
         }
 
         private async void OnSuggestConditionsParamClick(object? sender, RoutedEventArgs e)
-            => await _controllers.ScriptBrowser.OnSuggestConditionsParamClickAsync();
+            => await _controllers.ParameterBrowser.OnSuggestConditionsParamClickAsync();
 
         private async void OnSuggestActionsParamClick(object? sender, RoutedEventArgs e)
-            => await _controllers.ScriptBrowser.OnSuggestActionsParamClickAsync();
+            => await _controllers.ParameterBrowser.OnSuggestActionsParamClickAsync();
 
         #region Script Browser Delegation Methods
-        // These methods delegate to ScriptBrowserController but are kept as instance methods
+        // These methods delegate to controllers/services but are kept as instance methods
         // because they're passed as callbacks to PropertyAutoSaveService and PropertyPanelPopulator
-        // during construction before the controller is initialized.
+        // during construction before the controllers are initialized.
 
         private Task LoadParameterDeclarationsAsync(string scriptName, bool isCondition)
-            => _controllers.ScriptBrowser.LoadParameterDeclarationsAsync(scriptName, isCondition);
+            => _controllers.ParameterBrowser.LoadParameterDeclarationsAsync(scriptName, isCondition);
 
         private Task LoadScriptPreviewAsync(string scriptName, bool isCondition)
-            => _controllers.ScriptBrowser.LoadScriptPreviewAsync(scriptName, isCondition);
+            => _services.ScriptPreview.LoadScriptPreviewAsync(scriptName, isCondition);
 
         private void ClearScriptPreview(bool isCondition)
-            => _controllers.ScriptBrowser.ClearScriptPreview(isCondition);
+            => _services.ScriptPreview.ClearScriptPreview(isCondition);
 
         // Issue #664: Population wrapper - always passes focusNewRow=false to prevent focus stealing
         private void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
