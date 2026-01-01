@@ -181,9 +181,10 @@
             </Grid.RowDefinitions>
 
             <!-- Dialog Tree / Flowchart TabControl (top left) -->
-            <TabControl x:Name="LeftPaneTabControl" Grid.Row="0" Grid.Column="0" Margin="5">
+            <TabControl x:Name="LeftPaneTabControl" AutomationProperties.AutomationId="LeftPaneTabControl"
+                        Grid.Row="0" Grid.Column="0" Margin="5">
                 <!-- Dialog Tree Tab -->
-                <TabItem Header="Dialog Tree">
+                <TabItem Header="Dialog Tree" AutomationProperties.AutomationId="DialogTreeTab">
                     <Border BorderBrush="Gray" BorderThickness="1" Padding="5">
                         <DockPanel>
                             <!-- Tree Control Buttons -->
@@ -276,7 +277,7 @@
                 </TabItem>
 
                 <!-- Flowchart Tab (Tabbed mode) -->
-                <TabItem x:Name="FlowchartTab" Header="Flowchart" IsVisible="False">
+                <TabItem x:Name="FlowchartTab" Header="Flowchart" AutomationProperties.AutomationId="FlowchartTab" IsVisible="False">
                     <views:FlowchartPanel x:Name="TabbedFlowchartPanel"/>
                 </TabItem>
             </TabControl>
@@ -359,10 +360,11 @@
 
             <!-- Tabbed Properties Panel (full height right side) -->
             <!-- DRAGON: Do not modify x:Name attributes or event handlers - only visual layout -->
-            <TabControl Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Margin="5">
+            <TabControl x:Name="PropertiesTabControl" AutomationProperties.AutomationId="PropertiesTabControl"
+                        Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" Margin="5">
 
                 <!-- Scripts & Parameters Tab -->
-                <TabItem Header="Scripts">
+                <TabItem Header="Scripts" AutomationProperties.AutomationId="ScriptsTab">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="0,0,10,0">
                         <StackPanel Margin="5,5,15,50">
 
@@ -512,7 +514,7 @@
                 </TabItem>
 
                 <!-- Node Properties Tab -->
-                <TabItem Header="Node">
+                <TabItem Header="Node" AutomationProperties.AutomationId="NodeTab">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="5">
                             <!-- Conversation Settings (shown only for ROOT node) -->
@@ -573,7 +575,8 @@
                             <TextBlock Text="Animation &amp; Audio:" FontWeight="Bold" Margin="0,5,0,5"/>
 
                             <TextBlock Text="Animation:"/>
-                            <ComboBox x:Name="AnimationComboBox" Margin="0,0,0,5"
+                            <ComboBox x:Name="AnimationComboBox" AutomationProperties.AutomationId="AnimationComboBox"
+                                      Margin="0,0,0,5"
                                       SelectionChanged="OnAnimationSelectionChanged"/>
 
                             <TextBlock Text="Sound File:"/>
@@ -678,7 +681,7 @@
                 </TabItem>
 
                 <!-- Scrap Tab - Holds deleted/cut nodes -->
-                <TabItem x:Name="ScrapTab" Header="{Binding ScrapTabHeader}">
+                <TabItem x:Name="ScrapTab" Header="{Binding ScrapTabHeader}" AutomationProperties.AutomationId="ScrapTab">
 
                     <DockPanel Margin="5">
                         <!-- Scrap Controls -->
@@ -759,7 +762,7 @@
                 </TabItem>
 
                 <!-- Debug Output Tab -->
-                <TabItem Header="Debug" x:Name="DebugTab" IsVisible="False">
+                <TabItem Header="Debug" x:Name="DebugTab" AutomationProperties.AutomationId="DebugTab" IsVisible="False">
                     <DockPanel Margin="5">
                         <!-- Debug Controls -->
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
