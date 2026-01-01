@@ -48,7 +48,7 @@ namespace DialogEditor.Services
             var panel = _findControl("ConditionsParametersPanel") as StackPanel;
             if (panel != null)
             {
-                AddParameterRow(panel, "", "", true);
+                AddParameterRow(panel, "", "", true, focusNewRow: true);
                 _setStatusMessage("Added condition parameter - enter key and value, then click elsewhere to save");
             }
             else
@@ -65,7 +65,7 @@ namespace DialogEditor.Services
             var panel = _findControl("ActionsParametersPanel") as StackPanel;
             if (panel != null)
             {
-                AddParameterRow(panel, "", "", false);
+                AddParameterRow(panel, "", "", false, focusNewRow: true);
                 _setStatusMessage("Added action parameter - enter key and value, then click elsewhere to save");
             }
             else
@@ -77,8 +77,14 @@ namespace DialogEditor.Services
         /// <summary>
         /// Adds a parameter row to the UI
         /// Issue #287: Added duplicate key validation
+        /// Issue #664: Added focusNewRow parameter to prevent focus stealing during population
         /// </summary>
-        public void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
+        /// <param name="parent">The panel to add the row to</param>
+        /// <param name="key">Parameter key</param>
+        /// <param name="value">Parameter value</param>
+        /// <param name="isCondition">True for condition params, false for action params</param>
+        /// <param name="focusNewRow">True to focus the new row (user-initiated add), false to skip focus (population)</param>
+        public void AddParameterRow(StackPanel parent, string key, string value, bool isCondition, bool focusNewRow = false)
         {
             // Create grid: [Key TextBox] [=] [Value TextBox] [Delete Button]
             // Use Auto with MinWidth so fields start compact but can expand with content
@@ -146,21 +152,25 @@ namespace DialogEditor.Services
             parent.Children.Add(grid);
 
             // Issue #287: Auto-scroll to the new row and focus the key textbox
-            // Use dispatcher to ensure the visual tree is updated before scrolling
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            // Issue #664: Only focus when user explicitly adds a row, not during population
+            if (focusNewRow)
             {
-                // Find the parent ScrollViewer
-                var scrollViewerName = isCondition ? "ConditionsParamsScrollViewer" : "ActionsParamsScrollViewer";
-                var scrollViewer = _findControl(scrollViewerName) as ScrollViewer;
-                if (scrollViewer != null)
+                // Use dispatcher to ensure the visual tree is updated before scrolling
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    // Scroll to the bottom where the new row was added
-                    scrollViewer.ScrollToEnd();
-                }
+                    // Find the parent ScrollViewer
+                    var scrollViewerName = isCondition ? "ConditionsParamsScrollViewer" : "ActionsParamsScrollViewer";
+                    var scrollViewer = _findControl(scrollViewerName) as ScrollViewer;
+                    if (scrollViewer != null)
+                    {
+                        // Scroll to the bottom where the new row was added
+                        scrollViewer.ScrollToEnd();
+                    }
 
-                // Focus the key textbox
-                keyTextBox.Focus();
-            }, Avalonia.Threading.DispatcherPriority.Loaded);
+                    // Focus the key textbox
+                    keyTextBox.Focus();
+                }, Avalonia.Threading.DispatcherPriority.Loaded);
+            }
         }
 
         /// <summary>

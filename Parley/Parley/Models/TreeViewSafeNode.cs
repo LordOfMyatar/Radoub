@@ -21,7 +21,7 @@ namespace DialogEditor.Models
         protected readonly int _depth;
         private ObservableCollection<TreeViewSafeNode>? _children;
         private bool _isExpanded;
-        private readonly bool _isUnreachableSibling; // Issue #484: Warning for unreachable NPC entries
+        private bool _isUnreachableSibling; // Issue #484: Warning for unreachable NPC entries (Issue #609: now updatable)
 
         // Global tracking of expanded nodes to show links instead of duplicating content
         private static readonly HashSet<DialogNode> _globalExpandedNodes = new();
@@ -57,8 +57,29 @@ namespace DialogEditor.Models
         /// <summary>
         /// Issue #484: True if this is an NPC entry sibling that will never be reached
         /// because a prior sibling has no condition script (Aurora picks first passing condition).
+        /// Issue #609: Made updatable so validation can refresh when conditions change.
         /// </summary>
-        public bool IsUnreachableSibling => _isUnreachableSibling;
+        public bool IsUnreachableSibling
+        {
+            get => _isUnreachableSibling;
+            private set
+            {
+                if (_isUnreachableSibling != value)
+                {
+                    _isUnreachableSibling = value;
+                    OnPropertyChanged(nameof(IsUnreachableSibling));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Issue #609: Updates the unreachable sibling status for this node.
+        /// Called when sibling conditions change to refresh validation display.
+        /// </summary>
+        public void UpdateUnreachableStatus(bool isUnreachable)
+        {
+            IsUnreachableSibling = isUnreachable;
+        }
 
         // IsExpanded for TreeView expand/collapse functionality
         public bool IsExpanded

@@ -115,6 +115,8 @@ namespace DialogEditor.Views
             SaveExpansionState(_viewModel.DialogNodes, expandedNodes);
 
             var selectedNodeText = _selectedNode?.OriginalNode?.DisplayText;
+            // Issue #594: Capture the selected node reference to detect if user navigates away during refresh
+            var selectedNodeAtRefreshStart = _selectedNode;
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔄 RefreshTreeDisplayPreserveState: Selected node text = '{selectedNodeText?.Substring(0, System.Math.Min(30, selectedNodeText?.Length ?? 0))}...'");
 
             // Force refresh by re-populating
@@ -126,10 +128,16 @@ namespace DialogEditor.Views
             {
                 RestoreExpansionState(_viewModel.DialogNodes, expandedNodes);
 
-                // Restore selection if we had one
-                if (!string.IsNullOrEmpty(selectedNodeText))
+                // Issue #594: Only restore selection if user hasn't navigated to a different node
+                // If user clicked a new node during refresh, _selectedNode will have changed
+                if (!string.IsNullOrEmpty(selectedNodeText) && _selectedNode == selectedNodeAtRefreshStart)
                 {
                     RestoreSelection(_viewModel.DialogNodes, selectedNodeText);
+                }
+                else if (_selectedNode != selectedNodeAtRefreshStart)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        "🔄 RefreshTreeDisplayPreserveState: Skipping selection restore - user navigated to different node");
                 }
             }, global::Avalonia.Threading.DispatcherPriority.Loaded);
         }
@@ -259,6 +267,128 @@ namespace DialogEditor.Views
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Issue #609: Refreshes validation status for sibling nodes when a condition script changes.
+        /// Recalculates which entry siblings are unreachable based on updated ScriptAppears values.
+        /// </summary>
+        private void RefreshSiblingValidation(TreeViewSafeNode changedNode)
+        {
+            try
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"RefreshSiblingValidation: ENTRY - changedNode='{changedNode?.OriginalNode?.DisplayText ?? "null"}'");
+
+                if (changedNode == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "RefreshSiblingValidation: changedNode is null");
+                    return;
+                }
+
+                // Debug: Log source pointer info to understand node's origin
+                var srcPtr = changedNode.SourcePointer;
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"RefreshSiblingValidation: changedNode.SourcePointer={srcPtr != null}, " +
+                    $"ScriptAppears='{srcPtr?.ScriptAppears ?? "(null)"}', " +
+                    $"NodeType={changedNode.OriginalNode?.Type}, IsChild={changedNode.IsChild}");
+
+                var treeView = this.FindControl<TreeView>("DialogTreeView");
+                if (treeView == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "RefreshSiblingValidation: TreeView not found");
+                    return;
+                }
+
+                // Find the parent node that contains this node as a child
+                var parentNode = FindParentNode(treeView, changedNode);
+                if (parentNode?.Children == null)
+                {
+                    // Parent not found - this can happen if node selection changed or tree was rebuilt
+                    // Fall back to full tree refresh which will recalculate all validation
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"RefreshSiblingValidation: Parent not found or has no children - falling back to full refresh");
+                    RefreshTreeDisplayPreserveState();
+                    return;
+                }
+
+                // Debug: Log parent node type to understand tree structure
+                var parentTypeName = parentNode.GetType().Name;
+                var parentIsRoot = parentNode is TreeViewRootNode;
+                var parentIsLink = parentNode is TreeViewSafeLinkNode;
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"RefreshSiblingValidation: Found parent '{parentNode.OriginalNode?.DisplayText}' " +
+                    $"(Type={parentNode.OriginalNode?.Type}, NodeClass={parentTypeName}, IsRoot={parentIsRoot}, IsLink={parentIsLink}) " +
+                    $"with {parentNode.Children.Count} children");
+
+                // Issue #609: Handle ROOT node specially - it uses Starts list, not Pointers
+                IList<DialogPtr>? pointersToCheck = null;
+
+                if (parentNode is TreeViewRootNode rootNode)
+                {
+                    // ROOT node: siblings are in CurrentDialog.Starts
+                    pointersToCheck = rootNode.Dialog?.Starts;
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"RefreshSiblingValidation: Parent is ROOT, using Starts list ({pointersToCheck?.Count ?? 0} entries)");
+                }
+                else
+                {
+                    // Regular node: siblings are in parent's Pointers list
+                    pointersToCheck = parentNode.OriginalNode?.Pointers;
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"RefreshSiblingValidation: Parent DialogNode has {pointersToCheck?.Count ?? 0} pointers");
+                }
+
+                if (pointersToCheck == null || pointersToCheck.Count == 0)
+                {
+                    // Fallback: just refresh the tree to recalculate all validation
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        "RefreshSiblingValidation: No pointers found - refreshing tree display");
+                    RefreshTreeDisplayPreserveState();
+                    return;
+                }
+
+                // Log pointer conditions for debugging
+                for (int i = 0; i < pointersToCheck.Count; i++)
+                {
+                    var ptr = pointersToCheck[i];
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"RefreshSiblingValidation: Pointer[{i}] Type={ptr.Type}, ScriptAppears='{ptr.ScriptAppears ?? "(null)"}', IsLink={ptr.IsLink}");
+                }
+
+                // Recalculate unreachable siblings using the updated pointer data
+                var unreachableIndices = TreeViewSafeNode.CalculateUnreachableSiblings(pointersToCheck);
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"RefreshSiblingValidation: Calculated {unreachableIndices.Count} unreachable indices: [{string.Join(",", unreachableIndices)}]");
+
+                // Update each child's unreachable status
+                int childIndex = 0;
+                foreach (var child in parentNode.Children)
+                {
+                    if (child is TreeViewSafeNode safeChild)
+                    {
+                        bool isUnreachable = unreachableIndices.Contains(childIndex);
+                        bool wasUnreachable = safeChild.IsUnreachableSibling;
+                        safeChild.UpdateUnreachableStatus(isUnreachable);
+
+                        if (wasUnreachable != isUnreachable)
+                        {
+                            UnifiedLogger.LogApplication(LogLevel.INFO,
+                                $"RefreshSiblingValidation: Child[{childIndex}] '{safeChild.OriginalNode?.DisplayText}' changed: {wasUnreachable} -> {isUnreachable}");
+                        }
+                    }
+                    childIndex++;
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"RefreshSiblingValidation: Updated {parentNode.Children.Count} siblings, {unreachableIndices.Count} marked unreachable");
+            }
+            catch (System.Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"RefreshSiblingValidation: Error updating sibling validation: {ex.Message}");
+            }
         }
     }
 }

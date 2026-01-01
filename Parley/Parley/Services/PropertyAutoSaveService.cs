@@ -20,6 +20,7 @@ namespace DialogEditor.Services
         private readonly Action<string, bool> _loadScriptPreview;
         private readonly Action<bool> _clearScriptPreview;
         private readonly Action _triggerDebouncedAutoSave;
+        private readonly Action<TreeViewSafeNode>? _refreshSiblingValidation; // Issue #609
 
         /// <summary>
         /// Property save handlers - maps control names to save actions
@@ -31,13 +32,15 @@ namespace DialogEditor.Services
             Action refreshTreeDisplay,
             Action<string, bool> loadScriptPreview,
             Action<bool> clearScriptPreview,
-            Action triggerDebouncedAutoSave)
+            Action triggerDebouncedAutoSave,
+            Action<TreeViewSafeNode>? refreshSiblingValidation = null)
         {
             _findControl = findControl ?? throw new ArgumentNullException(nameof(findControl));
             _refreshTreeDisplay = refreshTreeDisplay ?? throw new ArgumentNullException(nameof(refreshTreeDisplay));
             _loadScriptPreview = loadScriptPreview ?? throw new ArgumentNullException(nameof(loadScriptPreview));
             _clearScriptPreview = clearScriptPreview ?? throw new ArgumentNullException(nameof(clearScriptPreview));
             _triggerDebouncedAutoSave = triggerDebouncedAutoSave ?? throw new ArgumentNullException(nameof(triggerDebouncedAutoSave));
+            _refreshSiblingValidation = refreshSiblingValidation; // Issue #609: Optional callback for validation refresh
 
             _propertyHandlers = InitializeHandlers();
         }
@@ -166,6 +169,9 @@ namespace DialogEditor.Services
                 {
                     _clearScriptPreview(true);
                 }
+
+                // Issue #609: Refresh sibling validation since condition change affects reachability
+                _refreshSiblingValidation?.Invoke(node);
             }
         }
 

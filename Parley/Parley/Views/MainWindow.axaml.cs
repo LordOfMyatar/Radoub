@@ -81,7 +81,8 @@ namespace DialogEditor.Views
                 refreshTreeDisplay: RefreshTreeDisplayPreserveState,
                 loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
                 clearScriptPreview: ClearScriptPreview,
-                triggerDebouncedAutoSave: TriggerDebouncedAutoSave);
+                triggerDebouncedAutoSave: TriggerDebouncedAutoSave,
+                refreshSiblingValidation: RefreshSiblingValidation); // Issue #609
             _services.ParameterUI = new ScriptParameterUIManager(
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
@@ -1043,8 +1044,9 @@ namespace DialogEditor.Views
         private void ClearScriptPreview(bool isCondition)
             => _controllers.ScriptBrowser.ClearScriptPreview(isCondition);
 
+        // Issue #664: Population wrapper - always passes focusNewRow=false to prevent focus stealing
         private void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
-            => _services.ParameterUI.AddParameterRow(parent, key, value, isCondition);
+            => _services.ParameterUI.AddParameterRow(parent, key, value, isCondition, focusNewRow: false);
 
         #endregion
 

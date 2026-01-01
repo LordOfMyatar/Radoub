@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.104-alpha] - 2025-12-31
+**Branch**: `parley/sprint/focus-ux-fixes` | **PR**: #702
+
+### Sprint: Focus & UX Bug Fixes (#679)
+
+#### Fixed
+- Focus no longer jumps to Script Parameters when navigating in FlowView (#664)
+  - Added `focusNewRow` parameter to `AddParameterRow` - only focuses when user explicitly adds
+- Autosave no longer overrides user node navigation (#594)
+  - `RefreshTreeDisplayPreserveState` now checks if user has navigated away during refresh
+- Validation warnings (⚠️ unreachable siblings) now update immediately when condition scripts change (#609)
+  - Made `IsUnreachableSibling` updatable via property notification
+  - Added `RefreshSiblingValidation()` to recalculate when `ScriptAppears` changes
+
+---
+
 ## [0.1.103-alpha] - 2025-12-30
 **Branch**: `parley/sprint/script-browser-fixes` | **PR**: #682
 
