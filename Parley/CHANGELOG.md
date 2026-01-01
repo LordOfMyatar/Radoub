@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.104-alpha] - 2025-12-31
-**Branch**: `parley/sprint/focus-ux-fixes` | **PR**: #TBD
+**Branch**: `parley/sprint/focus-ux-fixes` | **PR**: #702
 
 ### Sprint: Focus & UX Bug Fixes (#679)
 
