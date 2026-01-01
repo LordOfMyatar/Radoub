@@ -1,62 +1,58 @@
 using FlaUI.Core.AutomationElements;
+using Radoub.IntegrationTests.Shared;
 using Xunit;
 
 namespace Radoub.IntegrationTests.Parley;
 
 /// <summary>
-/// Basic smoke tests to verify Parley launches and responds.
+/// Smoke tests to verify Parley launches and has expected UI elements.
+/// Uses consolidated step-based testing for efficient diagnostics.
 /// </summary>
 [Collection("ParleySequential")]
 public class SmokeTests : ParleyTestBase
 {
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Parley_Launches_Successfully()
+    /// <summary>
+    /// Helper to find a menu by name with retries.
+    /// </summary>
+    private AutomationElement? FindMenu(string name, int maxRetries = 5)
     {
-        // Arrange & Act
-        StartApplication();
-
-        // Assert - MainWindow being non-null means app launched
-        Assert.NotNull(MainWindow);
-        Assert.NotNull(App);
-    }
-
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Parley_MainWindow_HasExpectedTitle()
-    {
-        // Arrange
-        StartApplication();
-
-        // Act
-        var title = MainWindow!.Title;
-
-        // Assert - Parley window title should contain "Parley"
-        Assert.Contains("Parley", title, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Parley_FileMenu_Exists()
-    {
-        // Arrange
-        StartApplication();
-
-        // Wait for window to be fully ready (prevents flaky null reference)
-        var ready = WaitForTitleContains("Parley", DefaultTimeout);
-        Assert.True(ready, "Window should be ready with 'Parley' in title");
-
-        // Act - Try to find the File menu by name (with retry like ClickMenu does)
-        FlaUI.Core.AutomationElements.AutomationElement? fileMenu = null;
-        for (int attempt = 0; attempt < 5; attempt++)
+        for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            fileMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("File"));
-            if (fileMenu != null) break;
+            var menu = MainWindow?.FindFirstDescendant(cf => cf.ByName(name));
+            if (menu != null) return menu;
             Thread.Sleep(300);
             MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
         }
+        return null;
+    }
 
-        // Assert
-        Assert.NotNull(fileMenu);
+    /// <summary>
+    /// Consolidated smoke test verifying app launch and core UI.
+    /// Replaces 3 individual tests with diagnostic step tracking.
+    /// </summary>
+    [Fact]
+    [Trait("Category", "Smoke")]
+    public void Parley_LaunchAndCoreUI()
+    {
+        var steps = new TestSteps();
+
+        // Launch verification
+        steps.Run("Application launches", () =>
+        {
+            StartApplication();
+            return App != null && MainWindow != null;
+        });
+
+        steps.Run("Window title contains 'Parley'", () =>
+            MainWindow?.Title?.Contains("Parley", StringComparison.OrdinalIgnoreCase) == true);
+
+        // Wait for UI to stabilize
+        steps.Run("Window ready", () =>
+            WaitForTitleContains("Parley", DefaultTimeout));
+
+        // Menu bar verification
+        steps.Run("File menu exists", () => FindMenu("File") != null);
+
+        steps.AssertAllPassed();
     }
 }

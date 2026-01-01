@@ -1,112 +1,60 @@
 using FlaUI.Core.AutomationElements;
+using Radoub.IntegrationTests.Shared;
 using Xunit;
 
 namespace Radoub.IntegrationTests.Manifest;
 
 /// <summary>
-/// Basic smoke tests to verify Manifest launches and responds.
+/// Smoke tests to verify Manifest launches and has expected UI elements.
+/// Uses consolidated step-based testing for efficient diagnostics.
 /// </summary>
 [Collection("ManifestSequential")]
 public class SmokeTests : ManifestTestBase
 {
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Manifest_Launches_Successfully()
+    /// <summary>
+    /// Helper to find a menu by name with retries.
+    /// </summary>
+    private AutomationElement? FindMenu(string name, int maxRetries = 5)
     {
-        // Arrange & Act
-        StartApplication();
-
-        // Assert - MainWindow being non-null means app launched
-        Assert.NotNull(MainWindow);
-        Assert.NotNull(App);
-    }
-
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Manifest_MainWindow_HasExpectedTitle()
-    {
-        // Arrange
-        StartApplication();
-
-        // Act
-        var title = MainWindow!.Title;
-
-        // Assert - Manifest window title should contain "Manifest"
-        Assert.Contains("Manifest", title, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Manifest_FileMenu_Exists()
-    {
-        // Arrange
-        StartApplication();
-
-        // Wait for window to be fully ready (prevents flaky null reference)
-        var ready = WaitForTitleContains("Manifest", DefaultTimeout);
-        Assert.True(ready, "Window should be ready with 'Manifest' in title");
-
-        // Act - Try to find the File menu by name (with retry for UI stability)
-        FlaUI.Core.AutomationElements.AutomationElement? fileMenu = null;
-        for (int attempt = 0; attempt < 5; attempt++)
+        for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            fileMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("File"));
-            if (fileMenu != null) break;
+            var menu = MainWindow?.FindFirstDescendant(cf => cf.ByName(name));
+            if (menu != null) return menu;
             Thread.Sleep(300);
             MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
         }
-
-        // Assert
-        Assert.NotNull(fileMenu);
+        return null;
     }
 
+    /// <summary>
+    /// Consolidated smoke test verifying app launch and core UI.
+    /// Replaces 5 individual tests with diagnostic step tracking.
+    /// </summary>
     [Fact]
     [Trait("Category", "Smoke")]
-    public void Manifest_EditMenu_Exists()
+    public void Manifest_LaunchAndCoreUI()
     {
-        // Arrange
-        StartApplication();
+        var steps = new TestSteps();
 
-        // Wait for window to be fully ready (prevents flaky null reference)
-        var ready = WaitForTitleContains("Manifest", DefaultTimeout);
-        Assert.True(ready, "Window should be ready with 'Manifest' in title");
-
-        // Act - Try to find the Edit menu (with retry for UI stability)
-        FlaUI.Core.AutomationElements.AutomationElement? editMenu = null;
-        for (int attempt = 0; attempt < 5; attempt++)
+        // Launch verification
+        steps.Run("Application launches", () =>
         {
-            editMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("Edit"));
-            if (editMenu != null) break;
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
+            StartApplication();
+            return App != null && MainWindow != null;
+        });
 
-        // Assert
-        Assert.NotNull(editMenu);
-    }
+        steps.Run("Window title contains 'Manifest'", () =>
+            MainWindow?.Title?.Contains("Manifest", StringComparison.OrdinalIgnoreCase) == true);
 
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Manifest_HelpMenu_Exists()
-    {
-        // Arrange
-        StartApplication();
+        // Wait for UI to stabilize
+        steps.Run("Window ready", () =>
+            WaitForTitleContains("Manifest", DefaultTimeout));
 
-        // Wait for window to be fully ready (prevents flaky null reference)
-        var ready = WaitForTitleContains("Manifest", DefaultTimeout);
-        Assert.True(ready, "Window should be ready with 'Manifest' in title");
+        // Menu bar verification
+        steps.Run("File menu exists", () => FindMenu("File") != null);
+        steps.Run("Edit menu exists", () => FindMenu("Edit") != null);
+        steps.Run("Help menu exists", () => FindMenu("Help") != null);
 
-        // Act - Try to find the Help menu (with retry for UI stability)
-        FlaUI.Core.AutomationElements.AutomationElement? helpMenu = null;
-        for (int attempt = 0; attempt < 5; attempt++)
-        {
-            helpMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("Help"));
-            if (helpMenu != null) break;
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
-
-        // Assert
-        Assert.NotNull(helpMenu);
+        steps.AssertAllPassed();
     }
 }
