@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.20] - 2026-01-01
-**Branch**: `radoub/sprint/refactor-cleanup` | **PR**: #TBD
+**Branch**: `radoub/sprint/refactor-cleanup` | **PR**: #709
 
 ### Sprint: Refactor Cleanup
 
