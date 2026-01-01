@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.107-alpha] - 2026-01-01
+**Branch**: `parley/refactor/split-script-param-ui-manager` | **PR**: #712
+
+### Refactor: Split ScriptParameterUIManager.cs (#706)
+
+Split 666-line file into focused services for maintainability:
+
+| File | Lines | Responsibility |
+|------|-------|----------------|
+| ScriptParameterUIManager.cs | 269 | Core row management, add/remove, change handling |
+| ParameterValidationService.cs | 244 | Duplicate key validation, red borders, theme colors |
+| ParameterPersistenceService.cs | 233 | UI-to-model sync, auto-trim, parameter caching |
+
+---
+
 ## [0.1.106-alpha] - 2026-01-01
 **Branch**: `parley/feat/sound-browser-refactor` | **PR**: #711
 
