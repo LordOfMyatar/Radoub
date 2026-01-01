@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.106-alpha] - 2026-01-01
-**Branch**: `parley/feat/sound-browser-refactor` | **PR**: #TBD
+**Branch**: `parley/feat/sound-browser-refactor` | **PR**: #711
 
 ### Refactor: Extract services and models from SoundBrowserWindow (#611)
 
