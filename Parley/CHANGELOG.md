@@ -10,6 +10,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.105-alpha] - 2026-01-01
+**Branch**: `parley/refactor/settings-window-controllers` | **PR**: #710
+
+### Refactor: Extract controllers from SettingsWindow.axaml.cs (#610)
+
+Reduced SettingsWindow.axaml.cs from 1,904 to 449 lines (76% reduction) by extracting section-specific controllers:
+
+| Controller | Lines | Responsibility |
+|------------|-------|----------------|
+| ResourcePathsController | 500 | Game paths, module paths, TLK settings |
+| ThemeSettingsController | 197 | Theme selection, preview, easter eggs |
+| DictionarySettingsController | 247 | Primary language, custom dictionaries |
+| PluginSettingsController | 209 | Plugin list, enable/disable, safe mode |
+| UISettingsController | 292 | Font, scrollbar, NPC coloring, spell check |
+| LoggingSettingsController | 116 | Log level, retention, debug panel |
+| AutoSaveSettingsController | 86 | Auto-save enabled state and interval |
+| ParameterCacheController | 180 | Cache settings, stats, clear cache |
+
+Moved inline `PluginListItemViewModel` to proper ViewModels location.
+
+---
+
 ## [0.1.104-alpha] - 2025-12-31
 **Branch**: `parley/sprint/focus-ux-fixes` | **PR**: #702
 

@@ -22,10 +22,12 @@ Parley/
 ├── CHANGELOG.md
 ├── CLAUDE.md (this file)
 ├── Parley/
-│   ├── Views/MainWindow.axaml(.cs)
+│   ├── Views/
+│   │   ├── MainWindow.axaml(.cs)
+│   │   ├── SettingsWindow.axaml(.cs)
+│   │   └── Controllers/ (settings section controllers)
 │   ├── ViewModels/MainViewModel.cs
 │   ├── Models/ (Dialog, DialogNode, DialogPtr)
-│   ├── Parsers/ (DialogParser → DialogBuilder/DialogWriter)
 │   ├── Services/ (DialogFileService, SoundService, ScriptService, etc.)
 │   ├── Handlers/ (UI event handlers)
 │   ├── Themes/ (JSON theme files)
@@ -74,7 +76,7 @@ See wiki: [Parley-Developer-Delete-Behavior](https://github.com/LordOfMyatar/Rad
 
 ### Binary Format (CRITICAL)
 
-Before committing changes to `DialogParser.cs` or `DialogWriter.cs`:
+DLG parsing is handled by `Radoub.Formats.Dlg.DlgReader/DlgWriter`. Before committing changes:
 1. Build and run round-trip test
 2. Check logs for WARN/ERROR
 3. Test with lista.dlg (simple) and myra.dlg (complex)

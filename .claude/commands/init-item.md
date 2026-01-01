@@ -2,6 +2,18 @@
 
 Start a new branch for any GitHub issue - automatically detects item type and applies appropriate workflow.
 
+## Upfront Questions
+
+**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+
+Before initializing, collect these answers in ONE interaction (after fetching issue details):
+
+1. **Tool Confirmation** (if ambiguous): "Which tool is this for? [parley/radoub/manifest/quartermaster]"
+2. **Epic Handling** (if epic detected): "This is an epic. Options: [run-research/continue-anyway/cancel]"
+3. **Branch Name** (optional): "Use suggested branch name `[auto-generated]`? Or provide custom: [y/custom-name]"
+
+After collecting answers, proceed through all steps (branch, CHANGELOG, commit, PR, project board) without further prompts.
+
 ## Usage
 
 ```
