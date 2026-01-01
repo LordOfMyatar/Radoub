@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.106-alpha] - 2026-01-01
+**Branch**: `parley/feat/sound-browser-refactor` | **PR**: #711
+
+### Refactor: Extract services and models from SoundBrowserWindow (#611)
+
+- Extract `SoundScanner` service for HAK/KEY/BIF file scanning
+- Extract `SoundCache` service for thread-safe cache management
+- Move models to `Models/Sound/`: SoundFileInfo, HakCacheEntry, KeyCacheEntry, BifSoundInfo
+- Reduce SoundBrowserWindow.axaml.cs from 1,423 to 606 lines (57% reduction)
+
+---
+
 ## [0.1.105-alpha] - 2026-01-01
 **Branch**: `parley/refactor/settings-window-controllers` | **PR**: #710
 
