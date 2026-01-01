@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.104-alpha] - 2025-12-31
+**Branch**: `parley/sprint/focus-ux-fixes` | **PR**: #TBD
+
+### Sprint: Focus & UX Bug Fixes (#679)
+
+- Fix focus jumping to Script Parameters when navigating in FlowView (#664)
+- Fix focus returning to text field during autosave after clicking another node (#594)
+- Fix validation errors not refreshing when issue is fixed (#609)
+
+---
+
 ## [0.1.103-alpha] - 2025-12-30
 **Branch**: `parley/sprint/script-browser-fixes` | **PR**: #682
 
