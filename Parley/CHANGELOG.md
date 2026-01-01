@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Extract `SoundScanner` service for HAK/KEY/BIF file scanning
 - Extract `SoundCache` service for thread-safe cache management
 - Move models to `Models/Sound/`: SoundFileInfo, HakCacheEntry, KeyCacheEntry, BifSoundInfo
-- Reduce SoundBrowserWindow.axaml.cs from ~1,400 lines to ~500 lines
+- Reduce SoundBrowserWindow.axaml.cs from 1,423 to 606 lines (57% reduction)
 
 ---
 
