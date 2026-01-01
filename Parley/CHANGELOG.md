@@ -15,13 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactor: Split ScriptBrowserController.cs (#707)
 
-Split 638-line controller for maintainability:
+Split 638-line controller into focused components for maintainability:
 
-| File | Responsibility |
-|------|----------------|
-| ScriptBrowserController.cs | Core browser window management |
-| ScriptPreviewService.cs | Script preview loading and display |
-| ParameterBrowserController.cs | Parameter browser functionality |
+| File | Lines | Responsibility |
+|------|-------|----------------|
+| ScriptBrowserController.cs | 299 | Script browser window management |
+| ParameterBrowserController.cs | 290 | Parameter browser and declaration caching |
+| ScriptPreviewService.cs | 88 | Script preview loading and display |
 
 ---
 

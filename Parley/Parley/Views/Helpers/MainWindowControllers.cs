@@ -9,6 +9,7 @@ namespace Parley.Views.Helpers
         public FlowchartManager Flowchart { get; set; } = null!;
         public TreeViewUIController TreeView { get; set; } = null!;
         public ScriptBrowserController ScriptBrowser { get; set; } = null!;
+        public ParameterBrowserController ParameterBrowser { get; set; } = null!;
         public QuestUIController Quest { get; set; } = null!;
         public FileMenuController FileMenu { get; set; } = null!;
         public EditMenuController EditMenu { get; set; } = null!;

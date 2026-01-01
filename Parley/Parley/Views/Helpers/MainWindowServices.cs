@@ -22,6 +22,7 @@ namespace Parley.Views.Helpers
         public PropertyPanelPopulator PropertyPopulator { get; set; } = null!;
         public PropertyAutoSaveService PropertyAutoSave { get; set; } = null!;
         public ScriptParameterUIManager ParameterUI { get; set; } = null!;
+        public ScriptPreviewService ScriptPreview { get; set; } = null!;
 
         // UI helpers
         public NodeCreationHelper NodeCreation { get; set; } = null!;
