@@ -55,7 +55,7 @@ namespace DialogEditor.ViewModels
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🎯 About to iterate through {CurrentDialog.Starts.Count} start entries");
 
                 // Issue #484: Pre-calculate unreachable sibling warnings for root entries
-                var unreachableRootIndices = TreeViewSafeNode.CalculateUnreachableSiblings(CurrentDialog.Starts);
+                var unreachableRootIndices = TreeViewValidation.CalculateUnreachableSiblings(CurrentDialog.Starts);
 
                 int startIndex = 0;
                 foreach (var start in CurrentDialog.Starts)

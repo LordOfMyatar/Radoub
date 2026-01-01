@@ -401,7 +401,7 @@ namespace DialogEditor.ViewModels
             var coverage = Coverage;
 
             // Issue #484: Calculate unreachable siblings for root entries
-            var unreachableIndices = Models.TreeViewSafeNode.CalculateUnreachableSiblings(_dialog.Starts);
+            var unreachableIndices = Models.TreeViewValidation.CalculateUnreachableSiblings(_dialog.Starts);
 
             Replies.Clear();
             for (int i = 0; i < _dialog.Starts.Count; i++)

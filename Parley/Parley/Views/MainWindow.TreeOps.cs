@@ -357,7 +357,7 @@ namespace DialogEditor.Views
                 }
 
                 // Recalculate unreachable siblings using the updated pointer data
-                var unreachableIndices = TreeViewSafeNode.CalculateUnreachableSiblings(pointersToCheck);
+                var unreachableIndices = TreeViewValidation.CalculateUnreachableSiblings(pointersToCheck);
 
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"RefreshSiblingValidation: Calculated {unreachableIndices.Count} unreachable indices: [{string.Join(",", unreachableIndices)}]");

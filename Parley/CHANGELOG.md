@@ -19,9 +19,9 @@ Split 597-line file into focused components for maintainability:
 
 | File | Lines | Responsibility |
 |------|-------|----------------|
-| TreeViewSafeNode.cs | ~300 | Core node wrapper, properties, children |
-| TreeViewNodePopulator.cs | ~150 | PopulateChildren, lazy loading logic |
-| TreeViewValidation.cs | ~100 | CalculateUnreachableSiblings, validation helpers |
+| TreeViewSafeNode.cs | 473 | Core node wrapper, properties, children, subclasses |
+| TreeViewNodePopulator.cs | 123 | PopulateChildren, lazy loading logic |
+| TreeViewValidation.cs | 53 | CalculateUnreachableSiblings validation helper |
 
 ---
 
