@@ -15,13 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactor: Extract controllers from SettingsWindow.axaml.cs (#610)
 
-Extract section-specific controllers from the 1,904-line monolithic SettingsWindow code-behind:
-- ResourcePathsController - HAK/NWN/OVR/TLK path management
-- ThemeSettingsController - Theme selection and preview
-- DictionarySettingsController - TLK and dictionary management
-- PluginSettingsController - Plugin listing, enable/disable, info display
+Reduced SettingsWindow.axaml.cs from 1,904 to 449 lines (76% reduction) by extracting section-specific controllers:
 
-Move inline `PluginListItemViewModel` to proper ViewModels location.
+| Controller | Lines | Responsibility |
+|------------|-------|----------------|
+| ResourcePathsController | 500 | Game paths, module paths, TLK settings |
+| ThemeSettingsController | 197 | Theme selection, preview, easter eggs |
+| DictionarySettingsController | 247 | Primary language, custom dictionaries |
+| PluginSettingsController | 209 | Plugin list, enable/disable, safe mode |
+| UISettingsController | 292 | Font, scrollbar, NPC coloring, spell check |
+| LoggingSettingsController | 116 | Log level, retention, debug panel |
+| AutoSaveSettingsController | 86 | Auto-save enabled state and interval |
+| ParameterCacheController | 180 | Cache settings, stats, clear cache |
+
+Moved inline `PluginListItemViewModel` to proper ViewModels location.
 
 ---
 
