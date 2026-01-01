@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.19-alpha] - 2026-01-01
+**Branch**: `quartermaster/issue-715` | **PR**: #TBD
+
+### Sprint: Core Features & Workflow (#715)
+
+Complete core Quartermaster functionality to achieve Aurora Toolset feature parity for creature editing workflows.
+
+#### Added
+
+- #690 - Convert between UTC and BIC (Save As)
+- #689 - Create new UTC file
+- #626 - Wire up themes and preferences/settings
+- #643 - Faction Display & Management
+
+---
+
 ## [0.1.18-alpha] - 2025-12-31
 **Branch**: `quartermaster/sprint/tech-debt-devex` | **PR**: #698
 
