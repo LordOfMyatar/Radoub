@@ -268,5 +268,50 @@ namespace DialogEditor.Views
 
             return null;
         }
+
+        /// <summary>
+        /// Issue #609: Refreshes validation status for sibling nodes when a condition script changes.
+        /// Recalculates which entry siblings are unreachable based on updated ScriptAppears values.
+        /// </summary>
+        private void RefreshSiblingValidation(TreeViewSafeNode changedNode)
+        {
+            try
+            {
+                var treeView = this.FindControl<TreeView>("DialogTreeView");
+                if (treeView == null) return;
+
+                // Find the parent node that contains this node as a child
+                var parentNode = FindParentNode(treeView, changedNode);
+                if (parentNode?.Children == null) return;
+
+                // Get the pointers from the parent's original dialog node
+                var parentDialogNode = parentNode.OriginalNode;
+                if (parentDialogNode?.Pointers == null || parentDialogNode.Pointers.Count == 0)
+                    return;
+
+                // Recalculate unreachable siblings using the updated pointer data
+                var unreachableIndices = TreeViewSafeNode.CalculateUnreachableSiblings(parentDialogNode.Pointers);
+
+                // Update each child's unreachable status
+                int childIndex = 0;
+                foreach (var child in parentNode.Children)
+                {
+                    if (child is TreeViewSafeNode safeChild)
+                    {
+                        bool isUnreachable = unreachableIndices.Contains(childIndex);
+                        safeChild.UpdateUnreachableStatus(isUnreachable);
+                    }
+                    childIndex++;
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"RefreshSiblingValidation: Updated {parentNode.Children.Count} siblings, {unreachableIndices.Count} marked unreachable");
+            }
+            catch (System.Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"RefreshSiblingValidation: Error updating sibling validation: {ex.Message}");
+            }
+        }
     }
 }

@@ -81,7 +81,8 @@ namespace DialogEditor.Views
                 refreshTreeDisplay: RefreshTreeDisplayPreserveState,
                 loadScriptPreview: (script, isCondition) => _ = LoadScriptPreviewAsync(script, isCondition),
                 clearScriptPreview: ClearScriptPreview,
-                triggerDebouncedAutoSave: TriggerDebouncedAutoSave);
+                triggerDebouncedAutoSave: TriggerDebouncedAutoSave,
+                refreshSiblingValidation: RefreshSiblingValidation); // Issue #609
             _services.ParameterUI = new ScriptParameterUIManager(
                 findControl: this.FindControl<Control>,
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
