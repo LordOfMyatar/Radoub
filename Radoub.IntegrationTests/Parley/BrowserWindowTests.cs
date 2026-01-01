@@ -1,4 +1,3 @@
-using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using Radoub.IntegrationTests.Shared;
 using Xunit;
@@ -14,87 +13,6 @@ namespace Radoub.IntegrationTests.Parley;
 public class BrowserWindowTests : ParleyTestBase
 {
     private const string TestFileName = "test1.dlg";
-
-    /// <summary>
-    /// Helper to find an element by automation ID with retries.
-    /// </summary>
-    private AutomationElement? FindElement(string automationId, int maxRetries = 5)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            var element = MainWindow?.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
-            if (element != null) return element;
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Helper to find a tab item by name with retries.
-    /// </summary>
-    private AutomationElement? FindTabByName(string name, int maxRetries = 5)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            var tabs = MainWindow?.FindAllDescendants(cf => cf.ByControlType(ControlType.TabItem));
-            if (tabs != null)
-            {
-                foreach (var tab in tabs)
-                {
-                    if (tab.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true)
-                        return tab;
-                }
-            }
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Helper to find a popup window by automation ID.
-    /// </summary>
-    private Window? FindPopupWindow(string automationId, int maxRetries = 10)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            var windows = App?.GetAllTopLevelWindows(Automation!);
-            if (windows != null)
-            {
-                foreach (var window in windows)
-                {
-                    // Check automation ID
-                    var props = window.Properties;
-                    if (props.AutomationId.TryGetValue(out var id) && id == automationId)
-                        return window;
-                }
-            }
-            Thread.Sleep(300);
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Helper to find a popup window by title containing text.
-    /// </summary>
-    private Window? FindPopupByTitle(string titleContains, int maxRetries = 10)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            var windows = App?.GetAllTopLevelWindows(Automation!);
-            if (windows != null)
-            {
-                foreach (var window in windows)
-                {
-                    if (window.Title?.Contains(titleContains, StringComparison.OrdinalIgnoreCase) == true)
-                        return window;
-                }
-            }
-            Thread.Sleep(300);
-        }
-        return null;
-    }
 
     /// <summary>
     /// Test that clicking Browse sound button opens the Sound Browser window.

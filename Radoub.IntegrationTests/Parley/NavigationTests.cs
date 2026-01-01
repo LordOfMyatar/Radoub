@@ -1,4 +1,3 @@
-using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using Radoub.IntegrationTests.Shared;
 using Xunit;
@@ -13,55 +12,6 @@ namespace Radoub.IntegrationTests.Parley;
 public class NavigationTests : ParleyTestBase
 {
     private const string TestFileName = "test1.dlg";
-
-    /// <summary>
-    /// Helper to find an element by automation ID with retries.
-    /// </summary>
-    private AutomationElement? FindElement(string automationId, int maxRetries = 5)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            var element = MainWindow?.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
-            if (element != null) return element;
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Helper to find a tab item by name with retries.
-    /// </summary>
-    private AutomationElement? FindTabByName(string name, int maxRetries = 5)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            // Search for TabItem with matching name
-            var tabs = MainWindow?.FindAllDescendants(cf => cf.ByControlType(ControlType.TabItem));
-            if (tabs != null)
-            {
-                foreach (var tab in tabs)
-                {
-                    if (tab.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true)
-                        return tab;
-                }
-            }
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Checks if an element is visible by its automation ID.
-    /// </summary>
-    private bool IsElementVisible(string automationId)
-    {
-        var element = FindElement(automationId);
-        if (element == null) return false;
-        var bounds = element.BoundingRectangle;
-        return bounds.Width > 0 && bounds.Height > 0;
-    }
 
     /// <summary>
     /// Consolidated test for right-side properties tab navigation.

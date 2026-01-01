@@ -1,4 +1,3 @@
-using FlaUI.Core.AutomationElements;
 using Radoub.IntegrationTests.Shared;
 using Xunit;
 
@@ -11,21 +10,6 @@ namespace Radoub.IntegrationTests.Quartermaster;
 [Collection("QuartermasterSequential")]
 public class SmokeTests : QuartermasterTestBase
 {
-    /// <summary>
-    /// Helper to find a menu by name with retries.
-    /// </summary>
-    private AutomationElement? FindMenu(string name, int maxRetries = 5)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            var menu = MainWindow?.FindFirstDescendant(cf => cf.ByName(name));
-            if (menu != null) return menu;
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
-        return null;
-    }
-
     /// <summary>
     /// Consolidated smoke test verifying app launch and core UI.
     /// Replaces 5 individual tests with diagnostic step tracking.

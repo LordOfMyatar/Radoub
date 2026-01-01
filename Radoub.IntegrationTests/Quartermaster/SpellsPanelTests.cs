@@ -12,32 +12,6 @@ namespace Radoub.IntegrationTests.Quartermaster;
 public class SpellsPanelTests : QuartermasterTestBase
 {
     /// <summary>
-    /// Helper to find an element by automation ID with retries.
-    /// </summary>
-    private AutomationElement? FindElement(string automationId, int maxRetries = 5)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            var element = MainWindow?.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
-            if (element != null) return element;
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Checks if an element is visible by its automation ID.
-    /// </summary>
-    private bool IsElementVisible(string automationId)
-    {
-        var element = FindElement(automationId);
-        if (element == null) return false;
-        var bounds = element.BoundingRectangle;
-        return bounds.Width > 0 && bounds.Height > 0;
-    }
-
-    /// <summary>
     /// Consolidated test for Spells panel UI elements.
     /// Replaces 10 individual tests with diagnostic step tracking.
     /// Continue on first failure, stop on second (1 failure = specific issue, 2 = dumpster fire).

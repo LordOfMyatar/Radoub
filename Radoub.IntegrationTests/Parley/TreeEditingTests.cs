@@ -1,4 +1,3 @@
-using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using Radoub.IntegrationTests.Shared;
 using Xunit;
@@ -13,21 +12,6 @@ namespace Radoub.IntegrationTests.Parley;
 public class TreeEditingTests : ParleyTestBase
 {
     private const string TestFileName = "test1.dlg";
-
-    /// <summary>
-    /// Helper to find an element by automation ID with retries.
-    /// </summary>
-    private AutomationElement? FindElement(string automationId, int maxRetries = 5)
-    {
-        for (int attempt = 0; attempt < maxRetries; attempt++)
-        {
-            var element = MainWindow?.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
-            if (element != null) return element;
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
-        return null;
-    }
 
     /// <summary>
     /// Consolidated test for dialog tree visibility and content on file load.
