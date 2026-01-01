@@ -15,6 +15,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.20] - 2026-01-01
+**Branch**: `radoub/sprint/refactor-cleanup` | **PR**: #TBD
+
+### Sprint: Refactor Cleanup
+
+Cross-tool refactoring for consistency and maintainability.
+
+#### Manifest: Rename PreferencesWindow to SettingsWindow (#542)
+- Align window naming with Parley for cross-tool consistency
+- See [Manifest CHANGELOG](Manifest/CHANGELOG.md) for details
+
+#### Radoub.UI: Split ScriptBrowserWindow.axaml.cs (#683)
+- Extract HAK scanning logic to `HakScriptScanner` service
+- Extract script list management to helper class
+- Reduce file from 816 lines to manageable components
+
+---
+
 ## [0.9.19] - 2025-12-31
 **Branch**: `radoub/sprint/ui-testing-improvements` | **PR**: #699
 
