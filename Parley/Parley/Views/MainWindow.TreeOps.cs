@@ -115,6 +115,8 @@ namespace DialogEditor.Views
             SaveExpansionState(_viewModel.DialogNodes, expandedNodes);
 
             var selectedNodeText = _selectedNode?.OriginalNode?.DisplayText;
+            // Issue #594: Capture the selected node reference to detect if user navigates away during refresh
+            var selectedNodeAtRefreshStart = _selectedNode;
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔄 RefreshTreeDisplayPreserveState: Selected node text = '{selectedNodeText?.Substring(0, System.Math.Min(30, selectedNodeText?.Length ?? 0))}...'");
 
             // Force refresh by re-populating
@@ -126,10 +128,16 @@ namespace DialogEditor.Views
             {
                 RestoreExpansionState(_viewModel.DialogNodes, expandedNodes);
 
-                // Restore selection if we had one
-                if (!string.IsNullOrEmpty(selectedNodeText))
+                // Issue #594: Only restore selection if user hasn't navigated to a different node
+                // If user clicked a new node during refresh, _selectedNode will have changed
+                if (!string.IsNullOrEmpty(selectedNodeText) && _selectedNode == selectedNodeAtRefreshStart)
                 {
                     RestoreSelection(_viewModel.DialogNodes, selectedNodeText);
+                }
+                else if (_selectedNode != selectedNodeAtRefreshStart)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        "🔄 RefreshTreeDisplayPreserveState: Skipping selection restore - user navigated to different node");
                 }
             }, global::Avalonia.Threading.DispatcherPriority.Loaded);
         }
