@@ -347,6 +347,108 @@ public abstract class FlaUITestBase : IDisposable
 
     #endregion
 
+    #region Element Finding Helpers
+
+    /// <summary>
+    /// Finds an element by automation ID with retries.
+    /// </summary>
+    /// <param name="automationId">The automation ID to search for</param>
+    /// <param name="maxRetries">Maximum retry attempts (default 5)</param>
+    /// <returns>The element if found, null otherwise</returns>
+    protected AutomationElement? FindElement(string automationId, int maxRetries = 5)
+    {
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            var element = MainWindow?.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
+            if (element != null) return element;
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Finds a tab item by name with retries.
+    /// </summary>
+    /// <param name="name">The tab name to search for</param>
+    /// <param name="maxRetries">Maximum retry attempts (default 5)</param>
+    /// <returns>The tab element if found, null otherwise</returns>
+    protected AutomationElement? FindTabByName(string name, int maxRetries = 5)
+    {
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            var tabs = MainWindow?.FindAllDescendants(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.TabItem));
+            if (tabs != null)
+            {
+                foreach (var tab in tabs)
+                {
+                    if (tab.Name?.Equals(name, StringComparison.OrdinalIgnoreCase) == true)
+                        return tab;
+                }
+            }
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Finds a menu item by name with retries.
+    /// </summary>
+    /// <param name="name">The menu name to search for</param>
+    /// <param name="maxRetries">Maximum retry attempts (default 5)</param>
+    /// <returns>The menu element if found, null otherwise</returns>
+    protected AutomationElement? FindMenu(string name, int maxRetries = 5)
+    {
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            var menu = MainWindow?.FindFirstDescendant(cf => cf.ByName(name));
+            if (menu != null) return menu;
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Finds a popup window by title containing text.
+    /// </summary>
+    /// <param name="titleContains">Text to search for in window title</param>
+    /// <param name="maxRetries">Maximum retry attempts (default 10)</param>
+    /// <returns>The window if found, null otherwise</returns>
+    protected Window? FindPopupByTitle(string titleContains, int maxRetries = 10)
+    {
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            var windows = App?.GetAllTopLevelWindows(Automation!);
+            if (windows != null)
+            {
+                foreach (var window in windows)
+                {
+                    if (window.Title?.Contains(titleContains, StringComparison.OrdinalIgnoreCase) == true)
+                        return window;
+                }
+            }
+            Thread.Sleep(300);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if an element is visible by its automation ID.
+    /// </summary>
+    /// <param name="automationId">The automation ID to check</param>
+    /// <returns>True if element exists and has non-zero bounds</returns>
+    protected bool IsElementVisible(string automationId)
+    {
+        var element = FindElement(automationId);
+        if (element == null) return false;
+        var bounds = element.BoundingRectangle;
+        return bounds.Width > 0 && bounds.Height > 0;
+    }
+
+    #endregion
+
     /// <summary>
     /// Sends keyboard shortcut to the application.
     /// DEPRECATED: Use SendKeyboardShortcut() instead for focus-safe keyboard input.

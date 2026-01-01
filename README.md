@@ -152,4 +152,4 @@ See [LICENSE](LICENSE) for details.
 
 ---
 
-*"Not all treasure is silver and gold, mate. Sometimes it's a working dialog editor."*
+*"Not all treasure is silver and gold, mate. Sometimes it's a readable dialog editor."*

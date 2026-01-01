@@ -15,6 +15,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.19] - 2025-12-31
+**Branch**: `radoub/sprint/ui-testing-improvements` | **PR**: #699
+
+### Sprint: UI Testing Improvements
+
+Cross-tool testing improvements for FlaUI-based UI testing.
+
+#### TestSteps Helper (#693)
+- Add `TestSteps` class for consolidated test diagnostics
+- Continue after first failure, stop on second (1 = specific issue, 2 = dumpster fire)
+- Detailed step-by-step failure output with investigation hints
+- Consolidate SpellsPanelTests: 10 tests → 2 consolidated tests
+- Consolidate SmokeTests across all 3 tools
+
+#### Parley Navigation Tests (#624)
+- Add AutomationIds to TabControls and TabItems for FlaUI testability
+- Create `NavigationTests.cs` with consolidated step-based tests
+  - PropertiesTabs_NavigationWorks: Scripts, Node, Scrap tab switching
+  - LeftPane_DialogTreeTabWorks: Tree elements present
+  - BrowseButtons_ExistAndAccessible: All browse buttons findable
+  - TabKeyNavigation_MovesForward: Focus movement
+- Consolidate TreeEditingTests using TestSteps pattern
+
+#### Browser Window Tests (#441)
+- **Unblock #441**: FlaUI can now navigate Avalonia TabControls
+- Add AutomationIds to SoundBrowserWindow, ScriptBrowserWindow, CreaturePickerWindow
+- Add BrowseSoundButton AutomationId to MainWindow
+- Create `BrowserWindowTests.cs` with Script Browser test (working)
+- Sound/Creature browser tests skipped pending investigation (#700, #701)
+
+---
+
 ## [0.9.18.3] - 2025-12-30
 **Branch**: `radoub/fix/skiasharp-version-mismatch` | **PR**: #660 | **Issue**: #661
 

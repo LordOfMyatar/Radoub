@@ -1,62 +1,42 @@
-using FlaUI.Core.AutomationElements;
+using Radoub.IntegrationTests.Shared;
 using Xunit;
 
 namespace Radoub.IntegrationTests.Parley;
 
 /// <summary>
-/// Basic smoke tests to verify Parley launches and responds.
+/// Smoke tests to verify Parley launches and has expected UI elements.
+/// Uses consolidated step-based testing for efficient diagnostics.
 /// </summary>
 [Collection("ParleySequential")]
 public class SmokeTests : ParleyTestBase
 {
+    /// <summary>
+    /// Consolidated smoke test verifying app launch and core UI.
+    /// Replaces 3 individual tests with diagnostic step tracking.
+    /// </summary>
     [Fact]
     [Trait("Category", "Smoke")]
-    public void Parley_Launches_Successfully()
+    public void Parley_LaunchAndCoreUI()
     {
-        // Arrange & Act
-        StartApplication();
+        var steps = new TestSteps();
 
-        // Assert - MainWindow being non-null means app launched
-        Assert.NotNull(MainWindow);
-        Assert.NotNull(App);
-    }
-
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Parley_MainWindow_HasExpectedTitle()
-    {
-        // Arrange
-        StartApplication();
-
-        // Act
-        var title = MainWindow!.Title;
-
-        // Assert - Parley window title should contain "Parley"
-        Assert.Contains("Parley", title, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    [Trait("Category", "Smoke")]
-    public void Parley_FileMenu_Exists()
-    {
-        // Arrange
-        StartApplication();
-
-        // Wait for window to be fully ready (prevents flaky null reference)
-        var ready = WaitForTitleContains("Parley", DefaultTimeout);
-        Assert.True(ready, "Window should be ready with 'Parley' in title");
-
-        // Act - Try to find the File menu by name (with retry like ClickMenu does)
-        FlaUI.Core.AutomationElements.AutomationElement? fileMenu = null;
-        for (int attempt = 0; attempt < 5; attempt++)
+        // Launch verification
+        steps.Run("Application launches", () =>
         {
-            fileMenu = MainWindow?.FindFirstDescendant(cf => cf.ByName("File"));
-            if (fileMenu != null) break;
-            Thread.Sleep(300);
-            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
-        }
+            StartApplication();
+            return App != null && MainWindow != null;
+        });
 
-        // Assert
-        Assert.NotNull(fileMenu);
+        steps.Run("Window title contains 'Parley'", () =>
+            MainWindow?.Title?.Contains("Parley", StringComparison.OrdinalIgnoreCase) == true);
+
+        // Wait for UI to stabilize
+        steps.Run("Window ready", () =>
+            WaitForTitleContains("Parley", DefaultTimeout));
+
+        // Menu bar verification
+        steps.Run("File menu exists", () => FindMenu("File") != null);
+
+        steps.AssertAllPassed();
     }
 }
