@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.107-alpha] - 2026-01-01
-**Branch**: `parley/refactor/split-script-param-ui-manager` | **PR**: #TBD
+**Branch**: `parley/refactor/split-script-param-ui-manager` | **PR**: #712
 
 ### Refactor: Split ScriptParameterUIManager.cs (#706)
 
