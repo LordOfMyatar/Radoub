@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.108-alpha] - 2026-01-01
-**Branch**: `parley/refactor/split-script-browser-controller` | **PR**: #TBD
+**Branch**: `parley/refactor/split-script-browser-controller` | **PR**: #713
 
 ### Refactor: Split ScriptBrowserController.cs (#707)
 
