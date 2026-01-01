@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.19] - 2025-12-31
+**Branch**: `radoub/sprint/ui-testing-improvements` | **PR**: #TBD
+
+### Sprint: UI Testing Improvements
+
+Cross-tool testing improvements for FlaUI-based UI testing.
+
+- Review test suite for redundancy and utility (#693)
+- Apply Quartermaster navigation patterns to Parley tab testing (#624)
+- Improve tab behavior testing in Parley
+- Improve button browse behavior testing
+
+---
+
 ## [0.9.18.3] - 2025-12-30
 **Branch**: `radoub/fix/skiasharp-version-mismatch` | **PR**: #660 | **Issue**: #661
 
