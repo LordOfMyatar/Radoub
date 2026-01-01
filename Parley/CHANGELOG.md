@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.109-alpha] - 2026-01-01
+**Branch**: `parley/refactor/split-treeview-safenode` | **PR**: #TBD
+
+### Refactor: Split TreeViewSafeNode.cs (#708)
+
+Split 597-line file into focused components for maintainability:
+
+| File | Lines | Responsibility |
+|------|-------|----------------|
+| TreeViewSafeNode.cs | ~300 | Core node wrapper, properties, children |
+| TreeViewNodePopulator.cs | ~150 | PopulateChildren, lazy loading logic |
+| TreeViewValidation.cs | ~100 | CalculateUnreachableSiblings, validation helpers |
+
+---
+
 ## [0.1.108-alpha] - 2026-01-01
 **Branch**: `parley/refactor/split-script-browser-controller` | **PR**: #713
 
