@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.19] - 2025-12-31
-**Branch**: `radoub/sprint/ui-testing-improvements` | **PR**: #TBD
+**Branch**: `radoub/sprint/ui-testing-improvements` | **PR**: #699
 
 ### Sprint: UI Testing Improvements
 
