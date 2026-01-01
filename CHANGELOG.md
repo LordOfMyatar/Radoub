@@ -38,6 +38,13 @@ Cross-tool testing improvements for FlaUI-based UI testing.
   - TabKeyNavigation_MovesForward: Focus movement
 - Consolidate TreeEditingTests using TestSteps pattern
 
+#### Browser Window Tests (#441)
+- **Unblock #441**: FlaUI can now navigate Avalonia TabControls
+- Add AutomationIds to SoundBrowserWindow, ScriptBrowserWindow, CreaturePickerWindow
+- Add BrowseSoundButton AutomationId to MainWindow
+- Create `BrowserWindowTests.cs` with Script Browser test (working)
+- Sound/Creature browser tests skipped pending investigation (#700, #701)
+
 ---
 
 ## [0.9.18.3] - 2025-12-30
