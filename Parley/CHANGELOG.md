@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.105-alpha] - 2026-01-01
-**Branch**: `parley/refactor/settings-window-controllers` | **PR**: #TBD
+**Branch**: `parley/refactor/settings-window-controllers` | **PR**: #710
 
 ### Refactor: Extract controllers from SettingsWindow.axaml.cs (#610)
 
