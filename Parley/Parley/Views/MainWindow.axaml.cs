@@ -1043,8 +1043,9 @@ namespace DialogEditor.Views
         private void ClearScriptPreview(bool isCondition)
             => _controllers.ScriptBrowser.ClearScriptPreview(isCondition);
 
+        // Issue #664: Population wrapper - always passes focusNewRow=false to prevent focus stealing
         private void AddParameterRow(StackPanel parent, string key, string value, bool isCondition)
-            => _services.ParameterUI.AddParameterRow(parent, key, value, isCondition);
+            => _services.ParameterUI.AddParameterRow(parent, key, value, isCondition, focusNewRow: false);
 
         #endregion
 

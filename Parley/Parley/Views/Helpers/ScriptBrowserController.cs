@@ -457,7 +457,8 @@ namespace Parley.Views.Helpers
 
                         if (panel != null)
                         {
-                            _parameterUIManager.AddParameterRow(panel, key, value, isCondition);
+                            // User-initiated add from browser - focus the new row
+                            _parameterUIManager.AddParameterRow(panel, key, value, isCondition, focusNewRow: true);
                             OnParameterChanged(isCondition);
 
                             var paramType = isCondition ? "condition" : "action";
