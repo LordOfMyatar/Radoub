@@ -1211,10 +1211,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         await dialog.ShowDialog(this);
     }
 
-    private void OnPreferencesClick(object? sender, RoutedEventArgs e)
+    private void OnSettingsClick(object? sender, RoutedEventArgs e)
     {
-        var prefsWindow = new PreferencesWindow();
-        prefsWindow.Show(this);
+        var settingsWindow = new SettingsWindow();
+        settingsWindow.Show(this);
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)

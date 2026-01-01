@@ -1,32 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
-using Radoub.Formats.Common;
-using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 
 namespace Radoub.UI.Views;
 
-/// <summary>
-/// Cached HAK file script data to avoid re-scanning on each browser open.
-/// </summary>
-internal class ScriptHakCacheEntry
-{
-    public string HakPath { get; set; } = "";
-    public DateTime LastModified { get; set; }
-    public List<ScriptEntry> Scripts { get; set; } = new();
-}
-
 public partial class ScriptBrowserWindow : Window
 {
     private readonly IScriptBrowserContext? _context;
+    private readonly HakScriptScanner _hakScanner = new();
+    private readonly ScriptPreviewLoader _previewLoader;
     private List<ScriptEntry> _moduleScripts;
     private List<ScriptEntry> _builtInScripts;
     private List<ScriptEntry> _hakScripts;
@@ -39,9 +28,6 @@ public partial class ScriptBrowserWindow : Window
     private bool _hakScriptsLoaded;
     private ScriptEntry? _selectedScriptEntry;
     private bool _confirmed;
-
-    // Static cache for HAK file contents - persists across window instances
-    private static readonly Dictionary<string, ScriptHakCacheEntry> _hakCache = new();
 
     /// <summary>
     /// Gets the selected script name. Only valid if Confirmed is true.
@@ -57,6 +43,7 @@ public partial class ScriptBrowserWindow : Window
     {
         InitializeComponent();
         _context = context;
+        _previewLoader = new ScriptPreviewLoader(context, _hakScanner);
         _moduleScripts = new List<ScriptEntry>();
         _builtInScripts = new List<ScriptEntry>();
         _hakScripts = new List<ScriptEntry>();
@@ -261,163 +248,32 @@ public partial class ScriptBrowserWindow : Window
     {
         try
         {
-            _hakScripts = new List<ScriptEntry>();
-
-            // Get HAK paths to scan
-            var hakPaths = new List<string>();
-
-            // 1. Current file directory (highest priority for module HAKs)
-            var currentDir = GetCurrentDirectory();
-            if (!string.IsNullOrEmpty(currentDir))
-            {
-                hakPaths.AddRange(GetHakFilesFromPath(currentDir));
-            }
-
-            // 2. Override path if set
-            if (!string.IsNullOrEmpty(_overridePath))
-            {
-                hakPaths.AddRange(GetHakFilesFromPath(_overridePath));
-            }
-
-            // 3. NWN user hak folder
-            var userPath = _context?.NeverwinterNightsPath;
-            if (!string.IsNullOrEmpty(userPath) && Directory.Exists(userPath))
-            {
-                var hakFolder = Path.Combine(userPath, "hak");
-                if (Directory.Exists(hakFolder))
-                {
-                    hakPaths.AddRange(GetHakFilesFromPath(hakFolder));
-                }
-            }
-
-            // Deduplicate HAK paths (same file might be found in multiple locations)
-            hakPaths = hakPaths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            // Collect HAK paths from all relevant locations
+            var hakPaths = HakScriptScanner.CollectHakPaths(
+                GetCurrentDirectory(),
+                _overridePath,
+                _context?.NeverwinterNightsPath);
 
             if (hakPaths.Count == 0)
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Script Browser: No HAK files found to scan");
                 _hakScriptsLoaded = true;
                 return;
             }
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Script Browser: Scanning {hakPaths.Count} HAK files for scripts");
+            // Scan HAKs using the scanner service
+            _hakScripts = await _hakScanner.ScanHaksForScriptsAsync(
+                hakPaths,
+                _moduleScripts,
+                (current, total, hakName) =>
+                {
+                    ScriptCountLabel.Text = $"Loading HAK {current}/{total}: {hakName}...";
+                });
 
-            // Scan HAKs for .nss scripts
-            for (int i = 0; i < hakPaths.Count; i++)
-            {
-                var hakPath = hakPaths[i];
-                var hakName = Path.GetFileName(hakPath);
-                ScriptCountLabel.Text = $"Loading HAK {i + 1}/{hakPaths.Count}: {hakName}...";
-
-                await Task.Run(() => ScanHakForScripts(hakPath));
-            }
-
-            _hakScripts = _hakScripts.OrderBy(s => s.Name).ToList();
             _hakScriptsLoaded = true;
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Script Browser: Loaded {_hakScripts.Count} scripts from HAK files");
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load HAK scripts: {ex.Message}");
-        }
-    }
-
-    private IEnumerable<string> GetHakFilesFromPath(string path)
-    {
-        try
-        {
-            if (Directory.Exists(path))
-            {
-                return Directory.GetFiles(path, "*.hak", SearchOption.TopDirectoryOnly);
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Error scanning for HAKs in {UnifiedLogger.SanitizePath(path)}: {ex.Message}");
-        }
-        return Enumerable.Empty<string>();
-    }
-
-    private void ScanHakForScripts(string hakPath)
-    {
-        try
-        {
-            var hakFileName = Path.GetFileName(hakPath);
-            var lastModified = File.GetLastWriteTimeUtc(hakPath);
-
-            // Check cache first
-            if (_hakCache.TryGetValue(hakPath, out var cached) && cached.LastModified == lastModified)
-            {
-                // Use cached scripts - deep copy to avoid shared state issues
-                foreach (var script in cached.Scripts)
-                {
-                    // Skip if we already have this script from module (module overrides HAK)
-                    if (_moduleScripts.Any(s => s.Name.Equals(script.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-                    // Skip if already found in another HAK
-                    if (_hakScripts.Any(s => s.Name.Equals(script.Name, StringComparison.OrdinalIgnoreCase)))
-                        continue;
-
-                    _hakScripts.Add(new ScriptEntry
-                    {
-                        Name = script.Name,
-                        IsBuiltIn = false,
-                        Source = script.Source,
-                        HakPath = script.HakPath,
-                        ErfEntry = script.ErfEntry
-                    });
-                }
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Script Browser: Used cached {cached.Scripts.Count} scripts from {hakFileName}");
-                return;
-            }
-
-            // Not cached or outdated - scan HAK
-            // Use ReadMetadataOnly to avoid loading entire file into memory (large HAKs can be 800MB+)
-            var erf = ErfReader.ReadMetadataOnly(hakPath);
-            var nssResources = erf.GetResourcesByType(ResourceTypes.Nss).ToList();
-            var newCacheEntry = new ScriptHakCacheEntry
-            {
-                HakPath = hakPath,
-                LastModified = lastModified,
-                Scripts = new List<ScriptEntry>()
-            };
-
-            foreach (var resource in nssResources)
-            {
-                var scriptName = resource.ResRef;
-                var scriptEntry = new ScriptEntry
-                {
-                    Name = scriptName,
-                    IsBuiltIn = false,
-                    Source = $"HAK: {hakFileName}",
-                    HakPath = hakPath,
-                    ErfEntry = resource
-                };
-
-                // Add to cache
-                newCacheEntry.Scripts.Add(scriptEntry);
-
-                // Skip if we already have this script from module (module overrides HAK)
-                if (_moduleScripts.Any(s => s.Name.Equals(scriptName, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-                // Skip if already found in another HAK
-                if (_hakScripts.Any(s => s.Name.Equals(scriptName, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
-                _hakScripts.Add(scriptEntry);
-            }
-
-            // Update cache
-            _hakCache[hakPath] = newCacheEntry;
-
-            UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"Script Browser: Scanned and cached {nssResources.Count} scripts in {hakFileName}");
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error scanning HAK {UnifiedLogger.SanitizePath(hakPath)}: {ex.Message}");
         }
     }
 
@@ -462,59 +318,21 @@ public partial class ScriptBrowserWindow : Window
     {
         ScriptListBox.Items.Clear();
 
-        var searchText = SearchBox?.Text?.ToLowerInvariant();
+        var result = ScriptListManager.CombineAndFilter(
+            _moduleScripts,
+            _hakScripts,
+            _builtInScripts,
+            _showHakScripts,
+            _showBuiltIn,
+            SearchBox?.Text);
 
-        // Combine module, HAK, and built-in scripts (in priority order)
-        var allScripts = _moduleScripts.ToList();
-        if (_showHakScripts)
-        {
-            // Add HAK scripts that aren't already in module list
-            foreach (var hakScript in _hakScripts)
-            {
-                if (!allScripts.Any(s => s.Name.Equals(hakScript.Name, StringComparison.OrdinalIgnoreCase)))
-                {
-                    allScripts.Add(hakScript);
-                }
-            }
-        }
-        if (_showBuiltIn)
-        {
-            // Add built-in scripts that aren't already in module or HAK list
-            foreach (var builtIn in _builtInScripts)
-            {
-                if (!allScripts.Any(s => s.Name.Equals(builtIn.Name, StringComparison.OrdinalIgnoreCase)))
-                {
-                    allScripts.Add(builtIn);
-                }
-            }
-        }
-
-        var scriptsToDisplay = allScripts;
-
-        if (!string.IsNullOrWhiteSpace(searchText))
-        {
-            scriptsToDisplay = allScripts
-                .Where(s => s.Name.ToLowerInvariant().Contains(searchText))
-                .ToList();
-        }
-
-        // Sort: module scripts first, then HAK, then built-in, all alphabetical
-        scriptsToDisplay = scriptsToDisplay
-            .OrderBy(s => s.IsBuiltIn ? 2 : s.IsFromHak ? 1 : 0)
-            .ThenBy(s => s.Name)
-            .ToList();
-
-        foreach (var script in scriptsToDisplay)
+        foreach (var script in result.Scripts)
         {
             ScriptListBox.Items.Add(script);
         }
 
         // Update count label
-        var moduleCount = scriptsToDisplay.Count(s => !s.IsBuiltIn && !s.IsFromHak);
-        var hakCount = scriptsToDisplay.Count(s => s.IsFromHak);
-        var builtInCount = scriptsToDisplay.Count(s => s.IsBuiltIn);
-
-        if (scriptsToDisplay.Count == 0)
+        if (result.TotalCount == 0)
         {
             if (!string.IsNullOrEmpty(_overridePath))
             {
@@ -532,16 +350,7 @@ public partial class ScriptBrowserWindow : Window
         }
         else
         {
-            var countText = $"{moduleCount} module";
-            if (hakCount > 0)
-            {
-                countText += $" + {hakCount} 📦 HAK";
-            }
-            if (builtInCount > 0)
-            {
-                countText += $" + {builtInCount} 🎮 built-in";
-            }
-            ScriptCountLabel.Text = countText;
+            ScriptCountLabel.Text = ScriptListManager.FormatCountText(result);
             ScriptCountLabel.Foreground = new SolidColorBrush(Colors.White);
         }
     }
@@ -564,58 +373,11 @@ public partial class ScriptBrowserWindow : Window
             OpenInEditorButton.IsEnabled = !scriptEntry.IsBuiltIn && !scriptEntry.IsFromHak;
 
             // Load script preview
-            try
-            {
-                PreviewHeaderLabel.Text = $"Preview: {scriptEntry.Name}.nss";
-                PreviewTextBox.Text = "Loading...";
+            PreviewHeaderLabel.Text = $"Preview: {scriptEntry.Name}.nss";
+            PreviewTextBox.Text = "Loading...";
 
-                string? scriptContent = null;
-
-                if (scriptEntry.IsBuiltIn)
-                {
-                    // Built-in scripts - extract .nss source from game BIFs
-                    scriptContent = await LoadScriptContentFromGameFilesAsync(scriptEntry);
-                }
-                else if (scriptEntry.IsFromHak)
-                {
-                    // HAK scripts - extract from archive for preview
-                    scriptContent = await LoadScriptContentFromHakAsync(scriptEntry);
-                }
-                else
-                {
-                    // Module/filesystem scripts
-                    if (!string.IsNullOrEmpty(scriptEntry.FilePath) && File.Exists(scriptEntry.FilePath))
-                    {
-                        scriptContent = await File.ReadAllTextAsync(scriptEntry.FilePath);
-                    }
-                    else
-                    {
-                        // Try to find in current directory
-                        var currentDir = _overridePath ?? GetCurrentDirectory();
-                        if (!string.IsNullOrEmpty(currentDir))
-                        {
-                            scriptContent = await LoadScriptContentFromPathAsync(scriptEntry.Name, currentDir);
-                        }
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(scriptContent))
-                {
-                    PreviewTextBox.Text = scriptContent;
-                }
-                else
-                {
-                    PreviewTextBox.Text = $"// Script '{scriptEntry.Name}.nss' not found or could not be loaded.\n" +
-                                          "// This may be a compiled game resource (.ncs) without source available.\n" +
-                                          "// Use nwnnsscomp to decompile .ncs files: github.com/niv/neverwinter.nim\n" +
-                                          "// The script name will still be saved to the file.";
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading script preview: {ex.Message}");
-                PreviewTextBox.Text = $"// Error loading script preview: {ex.Message}";
-            }
+            var content = await _previewLoader.LoadScriptContentAsync(scriptEntry, _overridePath);
+            PreviewTextBox.Text = content;
         }
         else
         {
@@ -626,123 +388,6 @@ public partial class ScriptBrowserWindow : Window
             PreviewHeaderLabel.Text = "Script Preview";
             PreviewTextBox.Text = "";
             OpenInEditorButton.IsEnabled = false;
-        }
-    }
-
-    private async Task<string?> LoadScriptContentFromPathAsync(string scriptName, string basePath)
-    {
-        try
-        {
-            var scriptFileName = scriptName.EndsWith(".nss", StringComparison.OrdinalIgnoreCase)
-                ? scriptName
-                : $"{scriptName}.nss";
-
-            if (Directory.Exists(basePath))
-            {
-                // Use case-insensitive file matching (required for Linux compatibility)
-                var matchingFile = Directory.EnumerateFiles(basePath, "*.nss", SearchOption.AllDirectories)
-                    .FirstOrDefault(f => Path.GetFileName(f).Equals(scriptFileName, StringComparison.OrdinalIgnoreCase));
-
-                if (matchingFile != null)
-                {
-                    return await File.ReadAllTextAsync(matchingFile);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error loading script from path: {ex.Message}");
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Load script content from a HAK file by extracting the resource.
-    /// </summary>
-    private async Task<string?> LoadScriptContentFromHakAsync(ScriptEntry scriptEntry)
-    {
-        if (!scriptEntry.IsFromHak || scriptEntry.HakPath == null || scriptEntry.ErfEntry == null)
-            return null;
-
-        try
-        {
-            // Extract script data from HAK on background thread
-            var scriptData = await Task.Run(() =>
-                ErfReader.ExtractResource(scriptEntry.HakPath, scriptEntry.ErfEntry));
-
-            if (scriptData == null || scriptData.Length == 0)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN,
-                    $"Failed to extract script '{scriptEntry.Name}' from HAK: empty data");
-                return null;
-            }
-
-            // NWScript source files are plain text
-            var content = System.Text.Encoding.UTF8.GetString(scriptData);
-
-            // Add source header for context
-            var header = $"// Script from HAK: {Path.GetFileName(scriptEntry.HakPath)}\n" +
-                        $"// ResRef: {scriptEntry.Name}\n" +
-                        "//\n";
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"Extracted script '{scriptEntry.Name}' from HAK ({scriptData.Length} bytes)");
-
-            return header + content;
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR,
-                $"Error extracting script from HAK: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Load script content from game BIF files (built-in scripts).
-    /// </summary>
-    private async Task<string?> LoadScriptContentFromGameFilesAsync(ScriptEntry scriptEntry)
-    {
-        if (!scriptEntry.IsBuiltIn || _context == null)
-            return null;
-
-        try
-        {
-            // Extract script data from game BIFs on background thread
-            var scriptData = await Task.Run(() =>
-                _context.FindBuiltInResource(scriptEntry.Name, ResourceTypes.Nss));
-
-            if (scriptData == null || scriptData.Length == 0)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"No .nss source found for built-in script '{scriptEntry.Name}'");
-                return $"// Built-in game script: {scriptEntry.Name}\n" +
-                       $"// Source: {scriptEntry.Source}\n" +
-                       "//\n" +
-                       "// Source code (.nss) not found in game files.\n" +
-                       "// This may be a compiled-only script.\n" +
-                       "// The script name can still be referenced.";
-            }
-
-            // NWScript source files are plain text
-            var content = System.Text.Encoding.UTF8.GetString(scriptData);
-
-            // Add source header for context
-            var header = $"// Built-in script from: {scriptEntry.Source}\n" +
-                        $"// ResRef: {scriptEntry.Name}\n" +
-                        "//\n";
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                $"Extracted built-in script '{scriptEntry.Name}' ({scriptData.Length} bytes)");
-
-            return header + content;
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR,
-                $"Error extracting built-in script: {ex.Message}");
-            return null;
         }
     }
 

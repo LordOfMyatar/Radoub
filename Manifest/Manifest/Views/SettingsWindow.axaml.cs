@@ -16,11 +16,11 @@ using System.Linq;
 
 namespace Manifest.Views;
 
-public partial class PreferencesWindow : Window
+public partial class SettingsWindow : Window
 {
     private bool _isLoading = true;
 
-    public PreferencesWindow()
+    public SettingsWindow()
     {
         InitializeComponent();
         LoadSettings();

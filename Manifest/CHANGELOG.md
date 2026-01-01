@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.12.0-alpha] - 2026-01-01
+**Branch**: `radoub/sprint/refactor-cleanup` | **PR**: #709
+
+### Refactor: Rename PreferencesWindow to SettingsWindow (#542)
+
+Align window naming with Parley for cross-tool consistency.
+
+#### Changed
+- Rename `PreferencesWindow` to `SettingsWindow`
+- Update menu item from "Preferences" to "Settings"
+- Update window title to "Settings - Manifest"
+
+---
+
 ## [0.11.0-alpha] - 2025-12-25
 **Branch**: `manifest/feat/dictionary-settings` | **PR**: #541
 

@@ -3,8 +3,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="450"
-        x:Class="Manifest.Views.PreferencesWindow"
-        Title="Preferences - Manifest"
+        x:Class="Manifest.Views.SettingsWindow"
+        Title="Settings - Manifest"
         Icon="avares://Manifest/Assets/manifest.ico"
         Width="500" Height="620"
         MinWidth="400" MinHeight="520"
@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Preferences" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+        <TextBlock Grid.Row="0" Text="Settings" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
 
         <!-- Settings Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
