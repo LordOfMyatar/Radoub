@@ -22,10 +22,7 @@ Improve developer experience and code reliability.
 - #652 - Command-line arguments to open BIC/UTC files (already implemented, added tests)
 - #685 - File marked dirty on initial load due to deferred TextChanged events from Avalonia dispatcher
 - #687 - Settings MaxRecentFiles defaults to 10 if 0/corrupt; added logging for missing file cleanup
-
-#### Pending
-
-- #692 - Fix flaky Navigation_StatsPanel_IsVisibleByDefault test
+- #692 - Fixed navigation test to check CharacterPanel (actual default), added Character to Theory tests
 
 ---
 

@@ -73,7 +73,7 @@ public class NavigationTests : QuartermasterTestBase
 
     [Fact]
     [Trait("Category", "Navigation")]
-    public void Navigation_StatsPanel_IsVisibleByDefault()
+    public void Navigation_CharacterPanel_IsVisibleByDefault()
     {
         // Arrange
         StartApplication();
@@ -83,12 +83,13 @@ public class NavigationTests : QuartermasterTestBase
         // Ensure focus before checking panel visibility
         EnsureFocused();
 
-        // Assert - Stats panel should be visible by default
-        Assert.True(WaitForPanelVisible("StatsPanel"), "Stats panel should be visible by default");
+        // Assert - Character panel is the default (see MainWindow.axaml line 231, MainWindow.axaml.cs line 29)
+        Assert.True(WaitForPanelVisible("CharacterPanel"), "Character panel should be visible by default");
     }
 
     [Theory]
     [Trait("Category", "Navigation")]
+    [InlineData("Character", "CharacterPanel")]
     [InlineData("Stats", "StatsPanel")]
     [InlineData("Classes", "ClassesPanel")]
     [InlineData("Skills", "SkillsPanel")]
