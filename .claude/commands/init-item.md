@@ -10,7 +10,6 @@ Before initializing, collect these answers in ONE interaction (after fetching is
 
 1. **Tool Confirmation** (if ambiguous): "Which tool is this for? [parley/radoub/manifest/quartermaster]"
 2. **Epic Handling** (if epic detected): "This is an epic. Options: [run-research/continue-anyway/cancel]"
-3. **Branch Name** (optional): "Use suggested branch name `[auto-generated]`? Or provide custom: [y/custom-name]"
 
 After collecting answers, proceed through all steps (branch, CHANGELOG, commit, PR, project board) without further prompts.
 
@@ -57,17 +56,22 @@ Extract:
 - **Body**: For additional context
 - **Milestone**: For version targeting
 
-### Step 4: Determine Item Type
+### Step 4: Determine Item Type and Branch Name
 
-Detect type from labels (in priority order):
+**Branch Naming**: Always use `[tool]/issue-[number]` format.
+- Simple, predictable, easy to track
+- Example: `parley/issue-708`, `radoub/issue-45`
 
-| Label Contains | Type | Branch Pattern |
-|----------------|------|----------------|
-| `epic` | Epic | `[tool]/feat/epic-[N]-[short-name]` |
-| `sprint` | Sprint | `[tool]/sprint/[short-name]` |
-| `bug`, `fix` | Fix | `[tool]/fix/[short-name]` |
-| `enhancement`, `feature` | Feature | `[tool]/feat/[short-name]` |
-| (none of above) | Feature | `[tool]/feat/[short-name]` |
+Detect type from labels (in priority order) for PR title and CHANGELOG:
+
+| Label Contains | Type |
+|----------------|------|
+| `epic` | Epic |
+| `sprint` | Sprint |
+| `bug`, `fix` | Fix |
+| `refactor` | Refactor |
+| `enhancement`, `feature` | Feature |
+| (none of above) | Feature |
 
 Determine tool from:
 - Labels containing `parley`, `radoub`, or tool names
@@ -116,15 +120,13 @@ Standard feature workflow:
 
 ### Step 6: Create Branch
 
-Generate short-name from issue title:
-- Convert to kebab-case
-- Remove common words (the, a, an, for, to)
-- Limit to 3-4 words
-- Example: "Add sound preview to dialog editor" → `sound-preview`
+Use the simple `[tool]/issue-[number]` format:
 
 ```bash
-git checkout -b [branch-name]
+git checkout -b [tool]/issue-[number]
 ```
+
+Example: `git checkout -b parley/issue-708`
 
 ### Step 7: Update CHANGELOG
 

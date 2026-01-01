@@ -329,142 +329,18 @@ namespace DialogEditor.Models
                 PopulateChildrenInternal();
             }
         }
-        
+
         // Internal method to actually populate the children
-        // Matches copy tree function logic exactly for consistency
+        // Delegates to TreeViewNodePopulator service (#708)
         private void PopulateChildrenInternal()
         {
             if (_children == null || _children.Count > 0)
                 return; // Already populated or not initialized
 
-            // Null safety check for _originalNode (#375 stability)
-            if (_originalNode == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "🌳 TreeView: _originalNode is null in PopulateChildrenInternal");
+            if (_originalNode == null || _depth >= TreeViewNodePopulator.MaxDepth)
                 return;
-            }
 
-            // Add basic depth protection to prevent infinite recursion (same as copy tree)
-            // Issue #32: Increased from 50 to 250 to support dialogs up to depth 100+
-            // (Each Entry→Reply pair counts as 2 depth levels in TreeView)
-            if (_depth >= 250)
-            {
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"🌳 TreeView: Hit max depth {_depth} for node '{_originalNode.DisplayText}' - dialog may be extremely deep");
-                return;
-            }
-
-            // Null safety check for Pointers (#375 stability)
-            if (_originalNode.Pointers == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Node '{_originalNode.DisplayText}' has null Pointers");
-                return;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Populating children for '{_originalNode.DisplayText}' at depth {_depth}, has {_originalNode.Pointers.Count} pointers");
-
-            // Track nodes already added to this parent to prevent duplicates (same as copy tree)
-            var addedNodes = new HashSet<DialogNode>();
-
-            // Issue #484: Pre-calculate unreachable sibling warnings for NPC entries
-            // Aurora picks the first entry whose condition passes. If an entry has no condition,
-            // it always passes, making all subsequent sibling entries unreachable.
-            var unreachableSiblingIndices = CalculateUnreachableSiblings(_originalNode.Pointers);
-
-            int pointerIndex = 0;
-            foreach (var pointer in _originalNode.Pointers)
-            {
-                if (pointer.Node != null)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Processing pointer to '{pointer.Node.DisplayText}' (Type: {pointer.Type}, Index: {pointer.Index}, IsLink: {pointer.IsLink})");
-
-                    // Skip if we already added this node to this parent (same as copy tree)
-                    if (addedNodes.Contains(pointer.Node))
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Skipping duplicate node '{pointer.Node.DisplayText}'");
-                        continue;
-                    }
-
-                    // Track that we're adding this node
-                    addedNodes.Add(pointer.Node);
-
-                    // Links are ALWAYS shown as link nodes (gray, IsChild marked) - don't expand them
-                    if (pointer.IsLink)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Creating link node for '{pointer.Node.DisplayText}' (IsLink=true)");
-                        var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Link", pointer, _originalNode);
-                        _children.Add(linkNode);
-                    }
-                    // Check if node is in our ancestor chain (circular reference within this path)
-                    else if (_ancestorNodes.Contains(pointer.Node))
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Creating circular link for '{pointer.Node.DisplayText}' (ancestor chain protection)");
-                        var linkNode = new TreeViewSafeLinkNode(pointer.Node, _depth + 1, "Circular", null, _originalNode);
-                        _children.Add(linkNode);
-                    }
-                    else
-                    {
-                        // This is a real child node - expand it with updated ancestor chain
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Creating full child node for '{pointer.Node.DisplayText}'");
-
-                        // Pass down ancestor chain for circular detection AND the source pointer for properties display
-                        var newAncestors = new HashSet<DialogNode>(_ancestorNodes) { _originalNode };
-
-                        // Issue #484: Check if this entry is unreachable
-                        bool isUnreachable = unreachableSiblingIndices.Contains(pointerIndex);
-
-                        var childNode = new TreeViewSafeNode(pointer.Node, newAncestors, _depth + 1, pointer, isUnreachable);
-                        _children.Add(childNode);
-                    }
-                }
-                else
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"🌳 TreeView: Pointer to Index {pointer.Index} has null Node!");
-                }
-                pointerIndex++;
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🌳 TreeView: Finished populating '{_originalNode.DisplayText}', added {_children.Count} children");
-        }
-
-        /// <summary>
-        /// Issue #484: Calculate which entry siblings are unreachable.
-        /// Aurora engine picks the first NPC entry whose condition passes.
-        /// If an entry has no condition script, it always passes, blocking all subsequent siblings.
-        /// </summary>
-        /// <param name="pointers">List of sibling pointers to analyze</param>
-        /// <returns>Set of pointer indices that are unreachable</returns>
-        public static HashSet<int> CalculateUnreachableSiblings(IList<DialogPtr> pointers)
-        {
-            var unreachableIndices = new HashSet<int>();
-
-            // Only applies to Entry type siblings (NPC responses)
-            // Reply siblings (PC choices) are all shown to the player
-            var entryPointers = pointers
-                .Select((ptr, idx) => (ptr, idx))
-                .Where(x => x.ptr.Type == DialogNodeType.Entry && !x.ptr.IsLink && x.ptr.Node != null)
-                .ToList();
-
-            if (entryPointers.Count <= 1)
-                return unreachableIndices; // No siblings to compare
-
-            // Find the first entry without a condition - it blocks everything after it
-            bool foundBlocker = false;
-            foreach (var (ptr, idx) in entryPointers)
-            {
-                if (foundBlocker)
-                {
-                    // Everything after an unconditional entry is unreachable
-                    unreachableIndices.Add(idx);
-                }
-                else if (string.IsNullOrEmpty(ptr.ScriptAppears))
-                {
-                    // This entry has no condition - it will always be picked
-                    // All subsequent siblings become unreachable
-                    foundBlocker = true;
-                }
-            }
-
-            return unreachableIndices;
+            TreeViewNodePopulator.PopulateChildren(_children, _originalNode, _ancestorNodes, _depth);
         }
 
         // For TreeView binding - determines if node should show expand arrow (virtual for override)
