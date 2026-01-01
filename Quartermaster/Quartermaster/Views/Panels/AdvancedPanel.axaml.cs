@@ -38,6 +38,7 @@ public partial class AdvancedPanel : UserControl
 
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
+    private string? _currentModuleDirectory;
     private bool _isLoading;
 
     public event EventHandler? CommentChanged;
@@ -210,6 +211,46 @@ public partial class AdvancedPanel : UserControl
             _commentRow.IsVisible = !isBicFile;
     }
 
+    /// <summary>
+    /// Set the module directory to load factions from repute.fac.
+    /// </summary>
+    public void SetModuleDirectory(string? moduleDirectory)
+    {
+        if (_currentModuleDirectory != moduleDirectory)
+        {
+            _currentModuleDirectory = moduleDirectory;
+            ReloadFactions();
+        }
+    }
+
+    /// <summary>
+    /// Reload the faction dropdown from the current module's repute.fac.
+    /// </summary>
+    private void ReloadFactions()
+    {
+        if (_factionComboBox == null || _displayService == null) return;
+
+        // Remember current selection
+        ushort? currentFactionId = null;
+        if (_factionComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is ushort id)
+        {
+            currentFactionId = id;
+        }
+
+        _factionComboBox.Items.Clear();
+        var factions = _displayService.GetAllFactions(_currentModuleDirectory);
+        foreach (var (factionId, name) in factions)
+        {
+            _factionComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = factionId });
+        }
+
+        // Restore selection if possible
+        if (currentFactionId.HasValue)
+        {
+            SelectComboByTag(_factionComboBox, (byte)currentFactionId.Value);
+        }
+    }
+
     private void LoadBehaviorData()
     {
         // Perception Range dropdown
@@ -261,16 +302,8 @@ public partial class AdvancedPanel : UserControl
             _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "No Body (4)", Tag = (byte)4 });
         }
 
-        // Faction - will load from 2DA or repute.fac
-        if (_factionComboBox != null && _displayService != null)
-        {
-            _factionComboBox.Items.Clear();
-            var factions = _displayService.GetAllFactions();
-            foreach (var (id, name) in factions)
-            {
-                _factionComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
-            }
-        }
+        // Faction - will load from repute.fac when module directory is set
+        ReloadFactions();
     }
 
     public void LoadCreature(UtcFile? creature)

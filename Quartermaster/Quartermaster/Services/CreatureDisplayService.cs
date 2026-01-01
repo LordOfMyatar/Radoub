@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
@@ -1390,35 +1391,39 @@ public class CreatureDisplayService
 
     /// <summary>
     /// Gets all factions from repute.fac or returns default NWN factions.
-    /// Faction data is stored in repute.fac within the module.
+    /// Faction data is stored in repute.fac within the module working directory.
     /// </summary>
-    public List<(ushort Id, string Name)> GetAllFactions()
+    /// <param name="moduleDirectory">Optional path to the module directory containing repute.fac</param>
+    public List<(ushort Id, string Name)> GetAllFactions(string? moduleDirectory = null)
     {
-        // Try to load factions from repute.fac
-        try
+        // Try to load factions from repute.fac in the module directory
+        if (!string.IsNullOrEmpty(moduleDirectory))
         {
-            var facData = _gameDataService.FindResource("repute", Radoub.Formats.Common.ResourceTypes.Fac);
-            if (facData != null)
+            try
             {
-                var facFile = Radoub.Formats.Fac.FacReader.Read(facData);
-                if (facFile.FactionList.Count > 0)
+                var facPath = Path.Combine(moduleDirectory, "repute.fac");
+                if (File.Exists(facPath))
                 {
-                    var factions = new List<(ushort Id, string Name)>();
-                    for (int i = 0; i < facFile.FactionList.Count; i++)
+                    var facFile = Radoub.Formats.Fac.FacReader.Read(facPath);
+                    if (facFile.FactionList.Count > 0)
                     {
-                        var faction = facFile.FactionList[i];
-                        var displayName = string.IsNullOrEmpty(faction.FactionName)
-                            ? $"Faction {i}"
-                            : faction.FactionName;
-                        factions.Add(((ushort)i, displayName));
+                        var factions = new List<(ushort Id, string Name)>();
+                        for (int i = 0; i < facFile.FactionList.Count; i++)
+                        {
+                            var faction = facFile.FactionList[i];
+                            var displayName = string.IsNullOrEmpty(faction.FactionName)
+                                ? $"Faction {i}"
+                                : faction.FactionName;
+                            factions.Add(((ushort)i, displayName));
+                        }
+                        return factions;
                     }
-                    return factions;
                 }
             }
-        }
-        catch
-        {
-            // Fall through to defaults if parsing fails
+            catch
+            {
+                // Fall through to defaults if parsing fails
+            }
         }
 
         // Standard NWN factions (fallback when repute.fac unavailable)

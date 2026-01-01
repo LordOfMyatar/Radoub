@@ -167,6 +167,10 @@ public partial class MainWindow
             // Update scripts panel with current file context for script browsing
             ScriptsPanelContent.SetCurrentFilePath(_currentFilePath);
 
+            // Update advanced panel with module directory for faction loading
+            var moduleDirectory = Path.GetDirectoryName(_currentFilePath);
+            AdvancedPanelContent.SetModuleDirectory(moduleDirectory);
+
             PopulateInventoryUI();
             UpdateCharacterHeader();
             LoadAllPanels(_currentCreature);
