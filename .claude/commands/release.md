@@ -2,6 +2,17 @@
 
 Create and push a version tag to trigger the GitHub Actions release workflow.
 
+## Upfront Questions
+
+**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+
+Before creating any release, collect these answers in ONE interaction:
+
+1. **Release Type** (if not specified in args): "Which release? [parley/manifest/radoub]"
+2. **Version Confirmation**: "Ready to release [type] v[version] from commit [hash]? [y/n]"
+
+After collecting answers, proceed through all steps without further prompts unless errors occur.
+
 ## Usage
 
 ```

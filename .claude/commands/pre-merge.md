@@ -4,6 +4,18 @@ Analyze the current PR and generate a comprehensive pre-merge checklist with aut
 
 **MAINTAINABILITY IS A HIGH PRIORITY.** We learned hard lessons from Parley's MainWindow growing into an untestable monolith. Every PR should leave the codebase cleaner than we found it. Don't merge technical debt - fix it or create issues.
 
+## Upfront Questions
+
+**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+
+Before running any checks, collect these answers in ONE interaction:
+
+1. **Test Execution**: "Ready to run tests? UI tests require hands-off keyboard/mouse for ~5 minutes." [y/n/skip]
+2. **Documentation Scope** (if code changes detected): "Run /documentation for wiki updates?" [yes/dev-only/skip]
+3. **Related Epic** (if not auto-detected): "Is this work part of an epic? Enter # or skip."
+
+After collecting answers, proceed through all steps without further prompts unless errors occur.
+
 ## Usage
 
 ```

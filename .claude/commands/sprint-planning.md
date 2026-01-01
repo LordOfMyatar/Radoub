@@ -2,6 +2,18 @@
 
 Help plan the next sprint by reviewing open issues, PRs, and current work.
 
+## Upfront Questions
+
+**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+
+Before analyzing issues, collect these answers in ONE interaction:
+
+1. **Tool Focus** (optional): "Focus on a specific tool? [all/parley/radoub/manifest/quartermaster]"
+2. **Create Issues**: "After planning, auto-create sprint issues on GitHub?" [y/n/ask-after]"
+3. **Project Board**: "Add created sprints to project boards?" [y/n]"
+
+After collecting answers, proceed through all analysis and output without further prompts. If "ask-after" selected for issue creation, prompt once at the end.
+
 ## Grouping Methodology
 
 **Epics**: Large feature areas numbered 0-N

@@ -2,6 +2,18 @@
 
 Investigate a GitHub issue or feature request and produce a research summary.
 
+## Upfront Questions
+
+**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+
+Before starting research, collect these answers in ONE interaction:
+
+1. **Scope Clarification** (if topic is broad): "What specific aspects should I focus on? [implementation/libraries/architecture/all]"
+2. **Depth**: "Research depth? [quick-scan/thorough/exhaustive]"
+3. **Output Location**: "Save research notes to NonPublic/Research/?" [y/n]"
+
+After collecting answers, proceed through all exploration and analysis without further prompts unless critical ambiguity is discovered.
+
 ## Usage
 
 ```

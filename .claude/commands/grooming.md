@@ -2,6 +2,18 @@
 
 Review open issues for formatting, labeling, and relevance. Ensures issues stay current and properly organized.
 
+## Upfront Questions
+
+**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+
+Before reviewing issues, collect these answers in ONE interaction:
+
+1. **Auto-Fix Mode**: "Auto-apply obvious fixes (add tool labels, standardize titles)?" [y/n/ask-each]
+2. **Stale Handling**: "For stale issues (15+ days), should I check if they were resolved by recent PRs?" [y/n]
+3. **Project Board**: "Add sprints/epics to project boards automatically?" [y/n]
+
+If "ask-each" is selected for Auto-Fix, the command will prompt for each issue. Otherwise, proceed autonomously.
+
 ## Usage
 
 ```

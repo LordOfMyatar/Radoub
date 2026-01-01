@@ -2,6 +2,20 @@
 
 Perform cleanup tasks after a PR has been merged to main.
 
+## Upfront Questions
+
+**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+
+Before running any cleanup, collect these answers in ONE interaction:
+
+1. **Branch Cleanup**: "Delete local feature branch `[branch-name]` after cleanup?" [y/n]
+2. **Related Issues**: "Auto-close issues referenced in PR (Closes #X) if still open?" [y/n]
+3. **Epic Update**: "Update parent epic with completion comment?" [y/n/not-applicable]
+4. **Wiki Sync**: "Push any uncommitted wiki changes?" [y/n/skip]
+5. **Release**: "Create a GitHub release for v[version]?" [y/n]
+
+After collecting answers, proceed through all steps without further prompts unless errors occur.
+
 ## Usage
 
 ```
@@ -40,10 +54,7 @@ git pull origin main
 
 Remote branches are auto-pruned. Only local cleanup needed.
 
-**Ask user before deleting:**
-> "The feature branch `[branch-name]` has been merged. Would you like me to delete the local branch?"
-
-Only delete if user confirms:
+**Note**: User already answered branch cleanup in upfront questions. If confirmed, delete:
 ```bash
 git branch -d [branch-name]
 ```
@@ -67,10 +78,7 @@ Check if this merge warrants a release:
 - Significant bug fixes
 - Version bump in CHANGELOG
 
-If release criteria met, **ask user:**
-> "This merge includes [features/fixes]. Would you like me to run `/release` to create a GitHub release for v[version]?"
-
-If user confirms, invoke the release command:
+**Note**: User already answered release question in upfront questions. If confirmed, invoke:
 ```
 /release
 ```
@@ -99,10 +107,7 @@ gh issue view [issue-number] --json state,title -q '{state: .state, title: .titl
 - If CLOSED: ✅ Issue was auto-closed by merge
 - If OPEN: ⚠️ Issue is still open
 
-**If issues are still OPEN, ask user:**
-> "Issue #[number] '[title]' is still open. Would you like me to close it with a comment referencing PR #[pr-number]?"
-
-Only close if user confirms:
+**Note**: User already answered issue closing in upfront questions. If confirmed, close:
 ```bash
 gh issue close [issue-number] --comment "Completed in PR #[pr-number]"
 ```
@@ -124,17 +129,12 @@ If an epic number is found:
    gh issue view [epic-number] --json body,title,state -q '{title: .title, state: .state}'
    ```
 
-2. **Ask user about epic update:**
-   > "Found parent epic #[number]: '[title]'. Would you like me to:
-   > - Add a completion comment for this sprint?
-   > - Update the epic checklist (if applicable)?"
-
-3. **If user confirms comment**, add completion note:
+2. **Note**: User already answered epic update in upfront questions. If confirmed, add completion note:
    ```bash
    gh issue comment [epic-number] --body "Sprint completed via PR #[pr-number]: [PR title]"
    ```
 
-4. **If user wants checklist updates**, read the epic body and:
+3. **If checklist updates requested**, read the epic body and:
    - Mark completed sprint/phase as `[x]`
    - Update status sections
    - Add implementation notes for what was delivered
@@ -157,10 +157,7 @@ If wiki updates were made during the PR but not yet pushed:
    git status
    ```
 
-2. **If uncommitted changes exist, ask user:**
-   > "The wiki has uncommitted changes. Would you like me to commit and push them?"
-
-3. **If user confirms:**
+2. **Note**: User already answered wiki sync in upfront questions. If confirmed:
    ```bash
    cd d:\LOM\workspace\Radoub.wiki
    git add .
@@ -172,7 +169,7 @@ If wiki updates were made during the PR but not yet pushed:
    git push
    ```
 
-4. **Verify wiki pages are accessible:**
+3. **Verify wiki pages are accessible:**
    - Check https://github.com/LordOfMyatar/Radoub/wiki for updated pages
    - Report any sync issues to user
 

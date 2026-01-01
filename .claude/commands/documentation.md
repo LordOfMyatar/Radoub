@@ -2,6 +2,18 @@
 
 Update wiki documentation after code changes. Handles user docs (requires review) and developer docs (Claude-authored).
 
+## Upfront Questions
+
+**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+
+Before analyzing or updating documentation, collect these answers in ONE interaction:
+
+1. **Scope**: "Which documentation to update?" [both/dev-only/user-only]
+2. **Commit Confirmation**: "Auto-commit and push developer docs when complete?" [y/n]
+3. **User Docs Location**: "Stage user docs in NonPublic folder for review?" [y/n]
+
+After collecting answers, proceed through all steps without further prompts unless errors occur.
+
 ## Usage
 
 ```
@@ -133,10 +145,7 @@ git add .
 git status
 ```
 
-**Ask user before committing:**
-> "Ready to commit developer documentation updates. Proceed?"
-
-If confirmed:
+**Note**: User already answered commit confirmation in upfront questions. If confirmed:
 ```bash
 git commit -m "Update developer docs for PR #[number]
 
