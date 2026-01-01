@@ -591,7 +591,8 @@
                                 <TextBox x:Name="SoundTextBox" Grid.Column="0" TextWrapping="Wrap"
                                          GotFocus="OnFieldGotFocus"
                                          LostFocus="OnFieldLostFocus"/>
-                                <Button x:Name="BrowseSoundButton" Grid.Column="2" Content="Browse..."
+                                <Button x:Name="BrowseSoundButton" AutomationProperties.AutomationId="BrowseSoundButton"
+                                        Grid.Column="2" Content="Browse..."
                                         MinWidth="55" Padding="5,0" Click="OnBrowseSoundClick"/>
                                 <Button x:Name="PlaySoundButton" Grid.Column="4" Content="Play"
                                         MinWidth="40" Padding="5,0" Click="OnPlaySoundClick"/>
