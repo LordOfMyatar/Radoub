@@ -22,10 +22,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Cross-tool testing improvements for FlaUI-based UI testing.
 
-- Review test suite for redundancy and utility (#693)
-- Apply Quartermaster navigation patterns to Parley tab testing (#624)
-- Improve tab behavior testing in Parley
-- Improve button browse behavior testing
+#### TestSteps Helper (#693)
+- Add `TestSteps` class for consolidated test diagnostics
+- Continue after first failure, stop on second (1 = specific issue, 2 = dumpster fire)
+- Detailed step-by-step failure output with investigation hints
+- Consolidate SpellsPanelTests: 10 tests → 2 consolidated tests
+- Consolidate SmokeTests across all 3 tools
+
+#### Parley Navigation Tests (#624)
+- Add AutomationIds to TabControls and TabItems for FlaUI testability
+- Create `NavigationTests.cs` with consolidated step-based tests
+  - PropertiesTabs_NavigationWorks: Scripts, Node, Scrap tab switching
+  - LeftPane_DialogTreeTabWorks: Tree elements present
+  - BrowseButtons_ExistAndAccessible: All browse buttons findable
+  - TabKeyNavigation_MovesForward: Focus movement
+- Consolidate TreeEditingTests using TestSteps pattern
 
 ---
 
