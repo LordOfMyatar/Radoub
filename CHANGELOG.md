@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.21] - 2026-01-01
-**Branch**: `radoub/sprint/test-fixes` | **PR**: #TBD
+**Branch**: `radoub/sprint/test-fixes` | **PR**: #721
 
 ### Sprint: Test Fixes
 
