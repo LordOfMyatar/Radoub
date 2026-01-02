@@ -16,9 +16,10 @@ public class BrowserWindowTests : ParleyTestBase
 
     /// <summary>
     /// Test that clicking Browse sound button opens the Sound Browser window.
-    /// Skipped: Requires module context with sound files. See #701.
+    /// Skipped: Sound Browser requires game resources (ambient/music WAVs from BIFs or HAKs).
+    /// These files are too large to include in test data. See #701.
     /// </summary>
-    [Fact(Skip = "Requires module context with sound files (#701)")]
+    [Fact(Skip = "Requires game sound resources (BIF/HAK) - see #701")]
     [Trait("Category", "Browser")]
     public void BrowseSoundButton_OpensSoundBrowserWindow()
     {
@@ -122,8 +123,9 @@ public class BrowserWindowTests : ParleyTestBase
         steps.Run("Click BrowseConditionalScriptButton", () =>
         {
             var button = FindElement("BrowseConditionalScriptButton");
+            EnsureFocused(); // Ensure main window focus before clicking
             button?.Click();
-            Thread.Sleep(500);
+            Thread.Sleep(800); // Wait for Script Browser to open
             return true;
         });
 
@@ -153,9 +155,9 @@ public class BrowserWindowTests : ParleyTestBase
 
     /// <summary>
     /// Test that clicking Browse creature button opens the Creature Picker window.
-    /// Skipped: Window doesn't open in test context - needs investigation. See #700.
+    /// Uses parleypirate.utc in TestFiles directory.
     /// </summary>
-    [Fact(Skip = "Window doesn't open in test context - needs investigation (#700)")]
+    [Fact]
     [Trait("Category", "Browser")]
     public void BrowseCreatureButton_OpensCreaturePickerWindow()
     {
@@ -183,29 +185,64 @@ public class BrowserWindowTests : ParleyTestBase
         steps.Run("Click BrowseCreatureButton", () =>
         {
             var button = FindElement("BrowseCreatureButton");
+            EnsureFocused(); // Ensure main window focus before clicking
             button?.Click();
-            Thread.Sleep(500);
+            Thread.Sleep(800); // Wait for Creature Picker to open
             return true;
         });
 
         steps.Run("Creature Picker window opens", () =>
         {
-            var popup = FindPopupByTitle("Select Creature");
-            return popup != null;
+            // Try both title search and AutomationId search
+            // Avalonia popups may not appear in GetAllTopLevelWindows
+            for (int i = 0; i < 15; i++)
+            {
+                var popup = FindPopupByTitle("Select Creature", maxRetries: 1);
+                if (popup != null) return true;
+
+                // Also try searching desktop for the window by AutomationId
+                var desktop = Automation?.GetDesktop();
+                var pickerWindow = desktop?.FindFirstDescendant(cf => cf.ByAutomationId("CreaturePickerWindow"));
+                if (pickerWindow != null) return true;
+
+                Thread.Sleep(300);
+            }
+            return false;
         });
 
         steps.Run("Creature Picker has list box", () =>
         {
-            var popup = FindPopupByTitle("Select Creature");
-            var listBox = popup?.FindFirstDescendant(cf => cf.ByAutomationId("CreaturesListBox"));
+            // Search desktop for the picker window
+            var desktop = Automation?.GetDesktop();
+            var pickerWindow = desktop?.FindFirstDescendant(cf => cf.ByAutomationId("CreaturePickerWindow"));
+            if (pickerWindow == null)
+            {
+                pickerWindow = FindPopupByTitle("Select Creature");
+            }
+            var listBox = pickerWindow?.FindFirstDescendant(cf => cf.ByAutomationId("CreaturesListBox"));
             return listBox != null;
         });
 
         steps.Run("Close Creature Picker", () =>
         {
-            var popup = FindPopupByTitle("Select Creature");
-            popup?.Close();
-            Thread.Sleep(300);
+            // Try to find and close via popup helper first
+            var popup = FindPopupByTitle("Select Creature", maxRetries: 1);
+            if (popup != null)
+            {
+                popup.Close();
+                Thread.Sleep(300);
+                return true;
+            }
+
+            // Fallback: find by AutomationId and send close via pattern
+            var desktop = Automation?.GetDesktop();
+            var pickerWindow = desktop?.FindFirstDescendant(cf => cf.ByAutomationId("CreaturePickerWindow"));
+            if (pickerWindow != null)
+            {
+                var windowPattern = pickerWindow.Patterns.Window.PatternOrDefault;
+                windowPattern?.Close();
+                Thread.Sleep(300);
+            }
             return true;
         });
 

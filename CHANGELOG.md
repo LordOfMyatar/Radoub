@@ -15,6 +15,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.21] - 2026-01-01
+**Branch**: `radoub/sprint/test-fixes` | **PR**: #721
+
+### Sprint: Test Fixes
+
+UI test stabilization and reliability improvements.
+
+#### Focus-Stealing Fix
+- Strengthen startup focus with double-tap SetForeground + Focus pattern
+- Add `SendTab()` and `SendShiftTab()` focus-safe keyboard helpers
+- Fix NavigationTests to use focus-safe Tab key helpers instead of direct Keyboard.Press calls
+
+#### MultipleUndo Test (#705)
+- Fix test to use normalized baseline after round-trip save
+- Increase undo attempts and tolerance for serialization differences
+- Remove inter-operation clicks that created extra undo states
+
+#### Script Browser Timing (#704)
+- Add EnsureFocused before button clicks
+- Increase wait time for Script Browser window to open
+
+#### Creature Picker Window Detection (#700)
+- Add desktop search by AutomationId as fallback for popup detection
+- Fix window detection when Avalonia popup isn't in GetAllTopLevelWindows
+- Enable test (was skipped) - uses existing parleypirate.utc test file
+
+#### Sound Browser Test (#701)
+- Updated skip message: requires game sound resources (BIF/HAK files)
+- Test remains skipped - sound files too large for test data
+
+---
+
 ## [0.9.20] - 2026-01-01
 **Branch**: `radoub/sprint/refactor-cleanup` | **PR**: #709
 
