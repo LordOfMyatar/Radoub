@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
@@ -1389,13 +1390,43 @@ public class CreatureDisplayService
     }
 
     /// <summary>
-    /// Gets all factions. Returns common NWN factions.
-    /// Faction data is typically stored in repute.fac, not a 2DA.
+    /// Gets all factions from repute.fac or returns default NWN factions.
+    /// Faction data is stored in repute.fac within the module working directory.
     /// </summary>
-    public List<(ushort Id, string Name)> GetAllFactions()
+    /// <param name="moduleDirectory">Optional path to the module directory containing repute.fac</param>
+    public List<(ushort Id, string Name)> GetAllFactions(string? moduleDirectory = null)
     {
-        // Standard NWN factions from repute.fac
-        // These are the default factions in a new module
+        // Try to load factions from repute.fac in the module directory
+        if (!string.IsNullOrEmpty(moduleDirectory))
+        {
+            try
+            {
+                var facPath = Path.Combine(moduleDirectory, "repute.fac");
+                if (File.Exists(facPath))
+                {
+                    var facFile = Radoub.Formats.Fac.FacReader.Read(facPath);
+                    if (facFile.FactionList.Count > 0)
+                    {
+                        var factions = new List<(ushort Id, string Name)>();
+                        for (int i = 0; i < facFile.FactionList.Count; i++)
+                        {
+                            var faction = facFile.FactionList[i];
+                            var displayName = string.IsNullOrEmpty(faction.FactionName)
+                                ? $"Faction {i}"
+                                : faction.FactionName;
+                            factions.Add(((ushort)i, displayName));
+                        }
+                        return factions;
+                    }
+                }
+            }
+            catch
+            {
+                // Fall through to defaults if parsing fails
+            }
+        }
+
+        // Standard NWN factions (fallback when repute.fac unavailable)
         return new List<(ushort Id, string Name)>
         {
             (0, "PC"),

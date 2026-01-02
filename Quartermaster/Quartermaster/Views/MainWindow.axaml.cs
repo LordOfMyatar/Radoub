@@ -5,6 +5,7 @@ using Quartermaster.Services;
 using Quartermaster.Views.Panels;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
+using Quartermaster.Views.Dialogs;
 using Quartermaster.Views.Helpers;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
@@ -126,6 +127,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.TagChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.CommentChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.FlagsChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.BehaviorChanged += (s, e) => MarkDirty();
 
         // Initialize scripts panel with conversation resolver and game data service
         ScriptsPanelContent.SetConversationResolver(ResolveConversationPath);
@@ -546,10 +548,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #region Menu Handlers - Dialogs
 
-    private void OnSettingsClick(object? sender, RoutedEventArgs e)
+    private async void OnSettingsClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: Open settings window
-        UpdateStatus("Settings not yet implemented");
+        var settingsWindow = new SettingsWindow();
+        await settingsWindow.ShowDialog(this);
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)

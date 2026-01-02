@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
+using Quartermaster.Views.Dialogs;
 using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Panels;
@@ -30,7 +33,8 @@ public partial class AdvancedPanel : UserControl
     private CheckBox? _interruptableCheckBox;
 
     // Behavior
-    private ComboBox? _factionComboBox;
+    private TextBox? _factionTextBox;
+    private Button? _factionBrowseButton;
     private ComboBox? _perceptionComboBox;
     private ComboBox? _walkRateComboBox;
     private ComboBox? _decayTimeComboBox;
@@ -38,11 +42,13 @@ public partial class AdvancedPanel : UserControl
 
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
+    private string? _currentModuleDirectory;
     private bool _isLoading;
 
     public event EventHandler? CommentChanged;
     public event EventHandler? TagChanged;
     public event EventHandler? FlagsChanged;
+    public event EventHandler? BehaviorChanged;
 
     public AdvancedPanel()
     {
@@ -72,7 +78,8 @@ public partial class AdvancedPanel : UserControl
         _interruptableCheckBox = this.FindControl<CheckBox>("InterruptableCheckBox");
 
         // Behavior
-        _factionComboBox = this.FindControl<ComboBox>("FactionComboBox");
+        _factionTextBox = this.FindControl<TextBox>("FactionTextBox");
+        _factionBrowseButton = this.FindControl<Button>("FactionBrowseButton");
         _perceptionComboBox = this.FindControl<ComboBox>("PerceptionComboBox");
         _walkRateComboBox = this.FindControl<ComboBox>("WalkRateComboBox");
         _decayTimeComboBox = this.FindControl<ComboBox>("DecayTimeComboBox");
@@ -90,6 +97,87 @@ public partial class AdvancedPanel : UserControl
 
         // Wire up flag checkbox events
         WireUpFlagCheckboxes();
+
+        // Wire up behavior combo box events
+        WireUpBehaviorCombos();
+    }
+
+    private void WireUpBehaviorCombos()
+    {
+        if (_factionBrowseButton != null)
+            _factionBrowseButton.Click += OnFactionBrowseClick;
+        if (_perceptionComboBox != null)
+            _perceptionComboBox.SelectionChanged += OnPerceptionSelectionChanged;
+        if (_walkRateComboBox != null)
+            _walkRateComboBox.SelectionChanged += OnWalkRateSelectionChanged;
+        if (_decayTimeComboBox != null)
+            _decayTimeComboBox.SelectionChanged += OnDecayTimeSelectionChanged;
+        if (_bodyBagComboBox != null)
+            _bodyBagComboBox.SelectionChanged += OnBodyBagSelectionChanged;
+    }
+
+    private async void OnFactionBrowseClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentCreature == null || _displayService == null) return;
+
+        var factions = _displayService.GetAllFactions(_currentModuleDirectory);
+        var picker = new FactionPickerWindow(factions, _currentCreature.FactionID);
+
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
+        if (parentWindow != null)
+        {
+            await picker.ShowDialog(parentWindow);
+            if (picker.Confirmed && picker.SelectedFactionId.HasValue)
+            {
+                _currentCreature.FactionID = picker.SelectedFactionId.Value;
+                UpdateFactionDisplay();
+                BehaviorChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    private void OnPerceptionSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _perceptionComboBox == null) return;
+
+        if (_perceptionComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte perception)
+        {
+            _currentCreature.PerceptionRange = perception;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnWalkRateSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _walkRateComboBox == null) return;
+
+        if (_walkRateComboBox.SelectedItem is ComboBoxItem item && item.Tag is int walkRate)
+        {
+            _currentCreature.WalkRate = walkRate;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnDecayTimeSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _decayTimeComboBox == null) return;
+
+        if (_decayTimeComboBox.SelectedItem is ComboBoxItem item && item.Tag is uint decayTime)
+        {
+            _currentCreature.DecayTime = decayTime;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnBodyBagSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null || _bodyBagComboBox == null) return;
+
+        if (_bodyBagComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte bodyBag)
+        {
+            _currentCreature.BodyBag = bodyBag;
+            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void WireUpFlagCheckboxes()
@@ -135,6 +223,40 @@ public partial class AdvancedPanel : UserControl
             _resRefRow.IsVisible = !isBicFile;
         if (_commentRow != null)
             _commentRow.IsVisible = !isBicFile;
+    }
+
+    /// <summary>
+    /// Set the module directory to load factions from repute.fac.
+    /// </summary>
+    public void SetModuleDirectory(string? moduleDirectory)
+    {
+        _currentModuleDirectory = moduleDirectory;
+        // Faction display will be updated when LoadCreature is called
+    }
+
+    /// <summary>
+    /// Update the faction text display based on current creature's faction ID.
+    /// </summary>
+    private void UpdateFactionDisplay()
+    {
+        if (_factionTextBox == null || _currentCreature == null) return;
+
+        var factionId = _currentCreature.FactionID;
+
+        // Try to find faction name from repute.fac
+        if (_displayService != null)
+        {
+            var factions = _displayService.GetAllFactions(_currentModuleDirectory);
+            var faction = factions.FirstOrDefault(f => f.Id == factionId);
+            if (!string.IsNullOrEmpty(faction.Name))
+            {
+                _factionTextBox.Text = $"{faction.Name} ({factionId})";
+                return;
+            }
+        }
+
+        // Fallback to ID only
+        _factionTextBox.Text = factionId.ToString();
     }
 
     private void LoadBehaviorData()
@@ -188,16 +310,7 @@ public partial class AdvancedPanel : UserControl
             _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "No Body (4)", Tag = (byte)4 });
         }
 
-        // Faction - will load from 2DA or repute.fac
-        if (_factionComboBox != null && _displayService != null)
-        {
-            _factionComboBox.Items.Clear();
-            var factions = _displayService.GetAllFactions();
-            foreach (var (id, name) in factions)
-            {
-                _factionComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
-            }
-        }
+        // Faction - handled by UpdateFactionDisplay() in LoadCreature
     }
 
     public void LoadCreature(UtcFile? creature)
@@ -229,8 +342,8 @@ public partial class AdvancedPanel : UserControl
         SetCheckBox(_lootableCheckBox, creature.Lootable);
         SetCheckBox(_interruptableCheckBox, creature.Interruptable);
 
-        // Behavior - select in combos
-        SelectComboByTag(_factionComboBox, creature.FactionID);
+        // Behavior - faction uses text display, others use combos
+        UpdateFactionDisplay();
         SelectComboByTag(_perceptionComboBox, creature.PerceptionRange);
         SelectComboByTag(_walkRateComboBox, creature.WalkRate);
         SelectComboByTag(_decayTimeComboBox, creature.DecayTime);
@@ -331,9 +444,9 @@ public partial class AdvancedPanel : UserControl
         SetCheckBox(_lootableCheckBox, false);
         SetCheckBox(_interruptableCheckBox, true); // Default
 
-        // Clear behavior combos
-        if (_factionComboBox != null)
-            _factionComboBox.SelectedIndex = -1;
+        // Clear behavior fields
+        if (_factionTextBox != null)
+            _factionTextBox.Text = "";
         if (_perceptionComboBox != null)
             _perceptionComboBox.SelectedIndex = 2; // Normal (11)
         if (_walkRateComboBox != null)

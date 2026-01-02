@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Quartermaster.Views.Dialogs.FactionPickerWindow"
+        Title="Select Faction"
+        AutomationProperties.AutomationId="FactionPickerWindow"
+        Width="400" Height="350"
+        MinWidth="300" MinHeight="250"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Available Factions" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+        <!-- Factions List -->
+        <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <ListBox x:Name="FactionsListBox"
+                     AutomationProperties.AutomationId="FactionsListBox"
+                     SelectionChanged="OnFactionSelected">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Id}"
+                                       Foreground="Gray" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <!-- Info text -->
+        <TextBlock Grid.Row="2" x:Name="InfoLabel"
+                   Text="Factions loaded from repute.fac"
+                   FontSize="11" Foreground="Gray"
+                   Margin="0,10,0,0"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Spacing="10" Margin="0,15,0,0">
+            <Button x:Name="OkButton" Content="OK" Width="80"
+                    IsEnabled="False" Click="OnOkClick"
+                    AutomationProperties.AutomationId="OkButton"/>
+            <Button x:Name="CancelButton" Content="Cancel" Width="80"
+                    Click="OnCancelClick"
+                    AutomationProperties.AutomationId="CancelButton"/>
+        </StackPanel>
+    </Grid>
+</Window>

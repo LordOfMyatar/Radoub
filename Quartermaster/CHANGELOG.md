@@ -10,6 +10,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.19-alpha] - 2026-01-01
+**Branch**: `quartermaster/issue-715` | **PR**: #716
+
+### Sprint: Core Features & Workflow (#715)
+
+Complete core Quartermaster functionality to achieve Aurora Toolset feature parity for creature editing workflows.
+
+#### Added
+
+- #643 - Faction Display & Management
+  - Created FacFile and FacReader in Radoub.Formats for parsing repute.fac
+  - FactionPickerWindow dialog with ListBox showing faction ID and name
+  - Display faction name from repute.fac if available, with ID fallback
+  - Graceful fallback to 5 default NWN factions when repute.fac not found
+- #626 - Wire up themes and preferences/settings
+  - Created SettingsWindow with 3 tabs: Resource Paths, UI Settings, Logging
+  - Resource Paths: Base game path and user data path with browse/auto-detect
+  - UI Settings: Theme selection, font size slider, font family picker with preview
+  - Logging: Log level dropdown, log retention slider
+  - Wired View > Settings menu item to open SettingsWindow
+- #690 - Convert between UTC and BIC (Save As)
+  - Added BicFile.FromUtcFile() and BicFile.ToUtcFile() conversion methods
+  - SaveFileAs automatically converts creature format based on selected extension
+  - UTC→BIC: Creates BicFile copy, sets IsPC=true, initializes BIC-specific fields
+  - BIC→UTC: Creates UtcFile copy, sets IsPC=false, discards player-specific data
+
+---
+
 ## [0.1.18-alpha] - 2025-12-31
 **Branch**: `quartermaster/sprint/tech-debt-devex` | **PR**: #698
 

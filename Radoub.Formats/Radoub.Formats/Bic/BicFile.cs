@@ -19,6 +19,229 @@ public class BicFile : UtcFile
         IsPC = true;
     }
 
+    /// <summary>
+    /// Creates a BicFile from a UtcFile, copying all base properties
+    /// and initializing BIC-specific fields with defaults.
+    /// Use this to convert a creature blueprint to a player character.
+    /// </summary>
+    /// <param name="utc">Source UtcFile to convert</param>
+    /// <returns>New BicFile with copied properties</returns>
+    public static BicFile FromUtcFile(UtcFile utc)
+    {
+        if (utc is BicFile existingBic)
+        {
+            // Already a BicFile, just ensure FileType is correct
+            existingBic.FileType = "BIC ";
+            return existingBic;
+        }
+
+        var bic = new BicFile();
+        CopyBaseProperties(utc, bic);
+        bic.FileType = "BIC ";
+        bic.IsPC = true;
+
+        // Calculate Experience from total class levels
+        // NWN XP formula: level N requires (N-1)*N/2 * 1000 XP
+        // We need XP for the character's current total level
+        int totalLevel = bic.ClassList.Sum(c => c.ClassLevel);
+        if (totalLevel > 0)
+        {
+            // XP required for current level (minimum XP to be this level)
+            bic.Experience = (uint)((totalLevel - 1) * totalLevel / 2 * 1000);
+        }
+
+        return bic;
+    }
+
+    /// <summary>
+    /// Creates a UtcFile from this BicFile, copying all base properties.
+    /// BIC-specific fields (Age, Experience, Gold, QBList, ReputationList) are not copied.
+    /// Use this to convert a player character to a creature blueprint.
+    /// </summary>
+    /// <returns>New UtcFile with copied properties</returns>
+    public UtcFile ToUtcFile()
+    {
+        var utc = new UtcFile();
+        CopyBaseProperties(this, utc);
+        utc.FileType = "UTC ";
+        utc.IsPC = false;
+        return utc;
+    }
+
+    private static void CopyBaseProperties(UtcFile source, UtcFile target)
+    {
+        // File info (not FileType - that's set by caller)
+        target.FileVersion = source.FileVersion;
+
+        // Blueprint-only fields
+        target.TemplateResRef = source.TemplateResRef;
+        target.Comment = source.Comment;
+        target.PaletteID = source.PaletteID;
+
+        // Identity fields
+        target.FirstName = source.FirstName;
+        target.LastName = source.LastName;
+        target.Tag = source.Tag;
+        target.Description = source.Description;
+
+        // Basic info fields
+        target.Race = source.Race;
+        target.Gender = source.Gender;
+        target.Subrace = source.Subrace;
+        target.Deity = source.Deity;
+
+        // Appearance fields
+        target.AppearanceType = source.AppearanceType;
+        target.Phenotype = source.Phenotype;
+        target.PortraitId = source.PortraitId;
+        target.Wings = source.Wings;
+        target.Tail = source.Tail;
+        target.BodyBag = source.BodyBag;
+
+        // Body parts (part-based appearances)
+        target.AppearanceHead = source.AppearanceHead;
+        target.BodyPart_Belt = source.BodyPart_Belt;
+        target.BodyPart_LBicep = source.BodyPart_LBicep;
+        target.BodyPart_RBicep = source.BodyPart_RBicep;
+        target.BodyPart_LFArm = source.BodyPart_LFArm;
+        target.BodyPart_RFArm = source.BodyPart_RFArm;
+        target.BodyPart_LFoot = source.BodyPart_LFoot;
+        target.BodyPart_RFoot = source.BodyPart_RFoot;
+        target.BodyPart_LHand = source.BodyPart_LHand;
+        target.BodyPart_RHand = source.BodyPart_RHand;
+        target.BodyPart_LShin = source.BodyPart_LShin;
+        target.BodyPart_RShin = source.BodyPart_RShin;
+        target.BodyPart_LShoul = source.BodyPart_LShoul;
+        target.BodyPart_RShoul = source.BodyPart_RShoul;
+        target.BodyPart_LThigh = source.BodyPart_LThigh;
+        target.BodyPart_RThigh = source.BodyPart_RThigh;
+        target.BodyPart_Neck = source.BodyPart_Neck;
+        target.BodyPart_Pelvis = source.BodyPart_Pelvis;
+        target.BodyPart_Torso = source.BodyPart_Torso;
+
+        // Colors
+        target.Color_Hair = source.Color_Hair;
+        target.Color_Skin = source.Color_Skin;
+        target.Color_Tattoo1 = source.Color_Tattoo1;
+        target.Color_Tattoo2 = source.Color_Tattoo2;
+
+        // Armor parts
+        target.ArmorPart_Belt = source.ArmorPart_Belt;
+        target.ArmorPart_LBicep = source.ArmorPart_LBicep;
+        target.ArmorPart_RBicep = source.ArmorPart_RBicep;
+        target.ArmorPart_LFArm = source.ArmorPart_LFArm;
+        target.ArmorPart_RFArm = source.ArmorPart_RFArm;
+        target.ArmorPart_LFoot = source.ArmorPart_LFoot;
+        target.ArmorPart_RFoot = source.ArmorPart_RFoot;
+        target.ArmorPart_LHand = source.ArmorPart_LHand;
+        target.ArmorPart_RHand = source.ArmorPart_RHand;
+        target.ArmorPart_LShin = source.ArmorPart_LShin;
+        target.ArmorPart_RShin = source.ArmorPart_RShin;
+        target.ArmorPart_LShoul = source.ArmorPart_LShoul;
+        target.ArmorPart_RShoul = source.ArmorPart_RShoul;
+        target.ArmorPart_LThigh = source.ArmorPart_LThigh;
+        target.ArmorPart_RThigh = source.ArmorPart_RThigh;
+        target.ArmorPart_Neck = source.ArmorPart_Neck;
+        target.ArmorPart_Pelvis = source.ArmorPart_Pelvis;
+        target.ArmorPart_Torso = source.ArmorPart_Torso;
+        target.ArmorPart_Robe = source.ArmorPart_Robe;
+
+        // Ability scores
+        target.Str = source.Str;
+        target.Dex = source.Dex;
+        target.Con = source.Con;
+        target.Int = source.Int;
+        target.Wis = source.Wis;
+        target.Cha = source.Cha;
+
+        // Combat stats
+        target.NaturalAC = source.NaturalAC;
+        target.HitPoints = source.HitPoints;
+        target.CurrentHitPoints = source.CurrentHitPoints;
+        target.MaxHitPoints = source.MaxHitPoints;
+        target.ChallengeRating = source.ChallengeRating;
+        target.CRAdjust = source.CRAdjust;
+
+        // Saving throw bonuses
+        target.FortBonus = source.FortBonus;
+        target.RefBonus = source.RefBonus;
+        target.WillBonus = source.WillBonus;
+
+        // Alignment
+        target.GoodEvil = source.GoodEvil;
+        target.LawfulChaotic = source.LawfulChaotic;
+
+        // Behavior
+        target.FactionID = source.FactionID;
+        target.PerceptionRange = source.PerceptionRange;
+        target.WalkRate = source.WalkRate;
+        target.SoundSetFile = source.SoundSetFile;
+        target.DecayTime = source.DecayTime;
+        target.StartingPackage = source.StartingPackage;
+
+        // Flags
+        target.Plot = source.Plot;
+        target.IsImmortal = source.IsImmortal;
+        target.NoPermDeath = source.NoPermDeath;
+        target.Disarmable = source.Disarmable;
+        target.Lootable = source.Lootable;
+        target.Interruptable = source.Interruptable;
+        // Note: IsPC is set by caller based on target type
+
+        // Scripts
+        target.ScriptAttacked = source.ScriptAttacked;
+        target.ScriptDamaged = source.ScriptDamaged;
+        target.ScriptDeath = source.ScriptDeath;
+        target.ScriptDialogue = source.ScriptDialogue;
+        target.ScriptDisturbed = source.ScriptDisturbed;
+        target.ScriptEndRound = source.ScriptEndRound;
+        target.ScriptHeartbeat = source.ScriptHeartbeat;
+        target.ScriptOnBlocked = source.ScriptOnBlocked;
+        target.ScriptOnNotice = source.ScriptOnNotice;
+        target.ScriptRested = source.ScriptRested;
+        target.ScriptSpawn = source.ScriptSpawn;
+        target.ScriptSpellAt = source.ScriptSpellAt;
+        target.ScriptUserDefine = source.ScriptUserDefine;
+
+        // Conversation
+        target.Conversation = source.Conversation;
+
+        // Class list - deep copy
+        target.ClassList = source.ClassList.Select(c => new CreatureClass
+        {
+            Class = c.Class,
+            ClassLevel = c.ClassLevel
+        }).ToList();
+
+        // Feats and skills - deep copy
+        target.FeatList = new List<ushort>(source.FeatList);
+        target.SkillList = new List<byte>(source.SkillList);
+
+        // Special abilities - deep copy
+        target.SpecAbilityList = source.SpecAbilityList.Select(a => new SpecialAbility
+        {
+            Spell = a.Spell,
+            SpellCasterLevel = a.SpellCasterLevel,
+            SpellFlags = a.SpellFlags
+        }).ToList();
+
+        // Inventory - shallow copy (items have their own ResRefs)
+        target.ItemList = source.ItemList.Select(i => new InventoryItem
+        {
+            InventoryRes = i.InventoryRes,
+            Repos_PosX = i.Repos_PosX,
+            Repos_PosY = i.Repos_PosY,
+            Dropable = i.Dropable,
+            Pickpocketable = i.Pickpocketable
+        }).ToList();
+
+        target.EquipItemList = source.EquipItemList.Select(e => new EquippedItem
+        {
+            Slot = e.Slot,
+            EquipRes = e.EquipRes
+        }).ToList();
+    }
+
     // Player-specific fields (Table 2.6.1)
 
     /// <summary>

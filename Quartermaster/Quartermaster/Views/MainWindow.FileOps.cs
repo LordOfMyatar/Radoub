@@ -167,6 +167,10 @@ public partial class MainWindow
             // Update scripts panel with current file context for script browsing
             ScriptsPanelContent.SetCurrentFilePath(_currentFilePath);
 
+            // Update advanced panel with module directory for faction loading
+            var moduleDirectory = Path.GetDirectoryName(_currentFilePath);
+            AdvancedPanelContent.SetModuleDirectory(moduleDirectory);
+
             PopulateInventoryUI();
             UpdateCharacterHeader();
             LoadAllPanels(_currentCreature);
@@ -241,9 +245,32 @@ public partial class MainWindow
         if (file != null)
         {
             _currentFilePath = file.Path.LocalPath;
-            _isBicFile = Path.GetExtension(_currentFilePath).ToLowerInvariant() == ".bic";
+            var newExtension = Path.GetExtension(_currentFilePath).ToLowerInvariant();
+            var savingAsBic = newExtension == ".bic";
+
+            // Handle format conversion
+            if (savingAsBic && !_isBicFile)
+            {
+                // Converting UTC to BIC
+                _currentCreature = BicFile.FromUtcFile(_currentCreature);
+                _isBicFile = true;
+                UnifiedLogger.LogCreature(LogLevel.INFO, "Converted UTC to BIC format");
+            }
+            else if (!savingAsBic && _isBicFile && _currentCreature is BicFile bicFile)
+            {
+                // Converting BIC to UTC
+                _currentCreature = bicFile.ToUtcFile();
+                _isBicFile = false;
+                UnifiedLogger.LogCreature(LogLevel.INFO, "Converted BIC to UTC format");
+            }
+            else
+            {
+                _isBicFile = savingAsBic;
+            }
+
             await SaveFile();
             UpdateTitle();
+            UpdateCharacterHeader();
             SettingsService.Instance.AddRecentFile(_currentFilePath);
             UpdateRecentFilesMenu();
         }
