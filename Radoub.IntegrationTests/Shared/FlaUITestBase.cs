@@ -108,10 +108,19 @@ public abstract class FlaUITestBase : IDisposable
 
         // Explicitly focus the main window to prevent keyboard input going to other apps
         // This fixes issues where VSCode or other apps steal focus during test startup
+        // Use aggressive focus strategy: SetForeground + Focus + verify
         if (MainWindow != null)
         {
+            MainWindow.SetForeground();
+            Thread.Sleep(50);
             MainWindow.Focus();
-            Thread.Sleep(100); // Brief delay to ensure focus is established
+            Thread.Sleep(150); // Allow focus to fully establish
+
+            // Double-tap focus to overcome any race conditions with other apps
+            // VSCode can steal focus during the initial window render
+            MainWindow.SetForeground();
+            MainWindow.Focus();
+            Thread.Sleep(100);
         }
     }
 
@@ -344,6 +353,12 @@ public abstract class FlaUITestBase : IDisposable
 
     /// <summary>Sends Escape key with focus verification.</summary>
     protected void SendEscape() => SendKeyboardShortcut(VirtualKeyShort.ESCAPE);
+
+    /// <summary>Sends Tab key with focus verification.</summary>
+    protected void SendTab() => SendKeyboardShortcut(VirtualKeyShort.TAB);
+
+    /// <summary>Sends Shift+Tab key with focus verification.</summary>
+    protected void SendShiftTab() => SendKeyboardShortcut(VirtualKeyShort.SHIFT, VirtualKeyShort.TAB);
 
     #endregion
 

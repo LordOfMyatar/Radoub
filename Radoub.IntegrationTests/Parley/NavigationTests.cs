@@ -242,9 +242,8 @@ public class NavigationTests : ParleyTestBase
 
         steps.Run("Tab key moves focus", () =>
         {
-            // Send Tab key
-            EnsureFocused();
-            FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.TAB);
+            // Send Tab key (focus-safe)
+            SendTab();
             Thread.Sleep(200);
             // Focus should have moved - we verify by checking the window still responds
             return MainWindow?.Title != null;
@@ -269,8 +268,8 @@ public class NavigationTests : ParleyTestBase
 
         steps.Run("Tab from ScriptAppearsTextBox moves focus", () =>
         {
-            EnsureFocused();
-            FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.TAB);
+            // Send Tab key (focus-safe)
+            SendTab();
             Thread.Sleep(200);
             return true;
         });

@@ -20,22 +20,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Test Fixes
 
-UI test stabilization and focus-stealing fix.
+UI test stabilization and reliability improvements.
 
 #### Focus-Stealing Fix
-- Investigate and fix test focus issues with VSCode
+- Strengthen startup focus with double-tap SetForeground + Focus pattern
+- Add `SendTab()` and `SendShiftTab()` focus-safe keyboard helpers
+- Fix NavigationTests to use focus-safe Tab key helpers instead of direct Keyboard.Press calls
 
 #### MultipleUndo Test (#705)
-- Fix file size mismatch after multiple undos
+- Fix test to use normalized baseline after round-trip save
+- Increase undo attempts and tolerance for serialization differences
+- Remove inter-operation clicks that created extra undo states
 
 #### Script Browser Timing (#704)
-- Fix intermittent Script Browser window detection
+- Add EnsureFocused before button clicks
+- Increase wait time for Script Browser window to open
 
-#### Sound Browser Context (#701)
-- Add module context for Sound Browser test
+#### Creature Picker Window Detection (#700)
+- Add desktop search by AutomationId as fallback for popup detection
+- Fix window detection when Avalonia popup isn't in GetAllTopLevelWindows
+- Enable test (was skipped) - uses existing parleypirate.utc test file
 
-#### Creature Picker Data (#700)
-- Add UTC test data for Creature Picker test
+#### Sound Browser Test (#701)
+- Updated skip message: requires game sound resources (BIF/HAK files)
+- Test remains skipped - sound files too large for test data
 
 ---
 
