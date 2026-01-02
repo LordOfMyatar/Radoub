@@ -39,6 +39,17 @@ public class BicFile : UtcFile
         CopyBaseProperties(utc, bic);
         bic.FileType = "BIC ";
         bic.IsPC = true;
+
+        // Calculate Experience from total class levels
+        // NWN XP formula: level N requires (N-1)*N/2 * 1000 XP
+        // We need XP for the character's current total level
+        int totalLevel = bic.ClassList.Sum(c => c.ClassLevel);
+        if (totalLevel > 0)
+        {
+            // XP required for current level (minimum XP to be this level)
+            bic.Experience = (uint)((totalLevel - 1) * totalLevel / 2 * 1000);
+        }
+
         return bic;
     }
 
