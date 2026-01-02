@@ -19,10 +19,22 @@ Complete core Quartermaster functionality to achieve Aurora Toolset feature pari
 
 #### Added
 
-- #690 - Convert between UTC and BIC (Save As)
-- #689 - Create new UTC file
-- #626 - Wire up themes and preferences/settings
 - #643 - Faction Display & Management
+  - Created FacFile and FacReader in Radoub.Formats for parsing repute.fac
+  - FactionPickerWindow dialog with ListBox showing faction ID and name
+  - Display faction name from repute.fac if available, with ID fallback
+  - Graceful fallback to 5 default NWN factions when repute.fac not found
+- #626 - Wire up themes and preferences/settings
+  - Created SettingsWindow with 3 tabs: Resource Paths, UI Settings, Logging
+  - Resource Paths: Base game path and user data path with browse/auto-detect
+  - UI Settings: Theme selection, font size slider, font family picker with preview
+  - Logging: Log level dropdown, log retention slider
+  - Wired View > Settings menu item to open SettingsWindow
+- #690 - Convert between UTC and BIC (Save As)
+  - Added BicFile.FromUtcFile() and BicFile.ToUtcFile() conversion methods
+  - SaveFileAs automatically converts creature format based on selected extension
+  - UTC→BIC: Creates BicFile copy, sets IsPC=true, initializes BIC-specific fields
+  - BIC→UTC: Creates UtcFile copy, sets IsPC=false, discards player-specific data
 
 ---
 
