@@ -103,9 +103,16 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="FactionComboBox"
-                                      HorizontalAlignment="Left" MinWidth="180"
-                                      AutomationProperties.AutomationId="FactionComboBox"/>
+                            <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto">
+                                <TextBox Grid.Column="0" x:Name="FactionTextBox"
+                                         MinWidth="140" MaxWidth="200"
+                                         IsReadOnly="True"
+                                         AutomationProperties.AutomationId="FactionTextBox"/>
+                                <Button Grid.Column="1" x:Name="FactionBrowseButton"
+                                        Content="..." Width="30" Margin="5,0,0,0"
+                                        ToolTip.Tip="Browse factions from repute.fac"
+                                        AutomationProperties.AutomationId="FactionBrowseButton"/>
+                            </Grid>
 
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Perception Range:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"

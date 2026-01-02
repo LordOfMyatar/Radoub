@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
+using Quartermaster.Views.Dialogs;
 using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Panels;
@@ -30,7 +33,8 @@ public partial class AdvancedPanel : UserControl
     private CheckBox? _interruptableCheckBox;
 
     // Behavior
-    private ComboBox? _factionComboBox;
+    private TextBox? _factionTextBox;
+    private Button? _factionBrowseButton;
     private ComboBox? _perceptionComboBox;
     private ComboBox? _walkRateComboBox;
     private ComboBox? _decayTimeComboBox;
@@ -74,7 +78,8 @@ public partial class AdvancedPanel : UserControl
         _interruptableCheckBox = this.FindControl<CheckBox>("InterruptableCheckBox");
 
         // Behavior
-        _factionComboBox = this.FindControl<ComboBox>("FactionComboBox");
+        _factionTextBox = this.FindControl<TextBox>("FactionTextBox");
+        _factionBrowseButton = this.FindControl<Button>("FactionBrowseButton");
         _perceptionComboBox = this.FindControl<ComboBox>("PerceptionComboBox");
         _walkRateComboBox = this.FindControl<ComboBox>("WalkRateComboBox");
         _decayTimeComboBox = this.FindControl<ComboBox>("DecayTimeComboBox");
@@ -99,8 +104,8 @@ public partial class AdvancedPanel : UserControl
 
     private void WireUpBehaviorCombos()
     {
-        if (_factionComboBox != null)
-            _factionComboBox.SelectionChanged += OnFactionSelectionChanged;
+        if (_factionBrowseButton != null)
+            _factionBrowseButton.Click += OnFactionBrowseClick;
         if (_perceptionComboBox != null)
             _perceptionComboBox.SelectionChanged += OnPerceptionSelectionChanged;
         if (_walkRateComboBox != null)
@@ -111,14 +116,23 @@ public partial class AdvancedPanel : UserControl
             _bodyBagComboBox.SelectionChanged += OnBodyBagSelectionChanged;
     }
 
-    private void OnFactionSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private async void OnFactionBrowseClick(object? sender, RoutedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null || _factionComboBox == null) return;
+        if (_currentCreature == null || _displayService == null) return;
 
-        if (_factionComboBox.SelectedItem is ComboBoxItem item && item.Tag is ushort factionId)
+        var factions = _displayService.GetAllFactions(_currentModuleDirectory);
+        var picker = new FactionPickerWindow(factions, _currentCreature.FactionID);
+
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
+        if (parentWindow != null)
         {
-            _currentCreature.FactionID = factionId;
-            BehaviorChanged?.Invoke(this, EventArgs.Empty);
+            await picker.ShowDialog(parentWindow);
+            if (picker.Confirmed && picker.SelectedFactionId.HasValue)
+            {
+                _currentCreature.FactionID = picker.SelectedFactionId.Value;
+                UpdateFactionDisplay();
+                BehaviorChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 
@@ -216,39 +230,33 @@ public partial class AdvancedPanel : UserControl
     /// </summary>
     public void SetModuleDirectory(string? moduleDirectory)
     {
-        if (_currentModuleDirectory != moduleDirectory)
-        {
-            _currentModuleDirectory = moduleDirectory;
-            ReloadFactions();
-        }
+        _currentModuleDirectory = moduleDirectory;
+        // Faction display will be updated when LoadCreature is called
     }
 
     /// <summary>
-    /// Reload the faction dropdown from the current module's repute.fac.
+    /// Update the faction text display based on current creature's faction ID.
     /// </summary>
-    private void ReloadFactions()
+    private void UpdateFactionDisplay()
     {
-        if (_factionComboBox == null || _displayService == null) return;
+        if (_factionTextBox == null || _currentCreature == null) return;
 
-        // Remember current selection
-        ushort? currentFactionId = null;
-        if (_factionComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is ushort id)
+        var factionId = _currentCreature.FactionID;
+
+        // Try to find faction name from repute.fac
+        if (_displayService != null)
         {
-            currentFactionId = id;
+            var factions = _displayService.GetAllFactions(_currentModuleDirectory);
+            var faction = factions.FirstOrDefault(f => f.Id == factionId);
+            if (!string.IsNullOrEmpty(faction.Name))
+            {
+                _factionTextBox.Text = $"{faction.Name} ({factionId})";
+                return;
+            }
         }
 
-        _factionComboBox.Items.Clear();
-        var factions = _displayService.GetAllFactions(_currentModuleDirectory);
-        foreach (var (factionId, name) in factions)
-        {
-            _factionComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = factionId });
-        }
-
-        // Restore selection if possible
-        if (currentFactionId.HasValue)
-        {
-            SelectComboByTag(_factionComboBox, (byte)currentFactionId.Value);
-        }
+        // Fallback to ID only
+        _factionTextBox.Text = factionId.ToString();
     }
 
     private void LoadBehaviorData()
@@ -302,8 +310,7 @@ public partial class AdvancedPanel : UserControl
             _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "No Body (4)", Tag = (byte)4 });
         }
 
-        // Faction - will load from repute.fac when module directory is set
-        ReloadFactions();
+        // Faction - handled by UpdateFactionDisplay() in LoadCreature
     }
 
     public void LoadCreature(UtcFile? creature)
@@ -335,8 +342,8 @@ public partial class AdvancedPanel : UserControl
         SetCheckBox(_lootableCheckBox, creature.Lootable);
         SetCheckBox(_interruptableCheckBox, creature.Interruptable);
 
-        // Behavior - select in combos
-        SelectComboByTag(_factionComboBox, creature.FactionID);
+        // Behavior - faction uses text display, others use combos
+        UpdateFactionDisplay();
         SelectComboByTag(_perceptionComboBox, creature.PerceptionRange);
         SelectComboByTag(_walkRateComboBox, creature.WalkRate);
         SelectComboByTag(_decayTimeComboBox, creature.DecayTime);
@@ -437,9 +444,9 @@ public partial class AdvancedPanel : UserControl
         SetCheckBox(_lootableCheckBox, false);
         SetCheckBox(_interruptableCheckBox, true); // Default
 
-        // Clear behavior combos
-        if (_factionComboBox != null)
-            _factionComboBox.SelectedIndex = -1;
+        // Clear behavior fields
+        if (_factionTextBox != null)
+            _factionTextBox.Text = "";
         if (_perceptionComboBox != null)
             _perceptionComboBox.SelectedIndex = 2; // Normal (11)
         if (_walkRateComboBox != null)
