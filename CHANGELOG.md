@@ -15,6 +15,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.21] - 2026-01-01
+**Branch**: `radoub/sprint/test-fixes` | **PR**: #TBD
+
+### Sprint: Test Fixes
+
+UI test stabilization and focus-stealing fix.
+
+#### Focus-Stealing Fix
+- Investigate and fix test focus issues with VSCode
+
+#### MultipleUndo Test (#705)
+- Fix file size mismatch after multiple undos
+
+#### Script Browser Timing (#704)
+- Fix intermittent Script Browser window detection
+
+#### Sound Browser Context (#701)
+- Add module context for Sound Browser test
+
+#### Creature Picker Data (#700)
+- Add UTC test data for Creature Picker test
+
+---
+
 ## [0.9.20] - 2026-01-01
 **Branch**: `radoub/sprint/refactor-cleanup` | **PR**: #709
 
