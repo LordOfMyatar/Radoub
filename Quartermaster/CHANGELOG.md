@@ -17,9 +17,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Add race and alignment editing to Character panel, plus fix the emoji display bug.
 
-- [ ] #748 - Add Race dropdown to Character panel
-- [ ] #732 - Edit Alignment (Good-Evil, Lawful-Chaotic)
-- [ ] #691 - Navigation button emojis change from colored to black (quick fix)
+#### Added
+
+- **Race Dropdown** (#748)
+  - Add GetAllRaces() to CreatureDisplayService (loads from racialtypes.2da)
+  - Race ComboBox in Identity section of Character panel
+  - Custom races from modules added dynamically if not in 2DA
+
+- **Editable Alignment** (#732)
+  - Replace read-only ProgressBars with interactive Sliders
+  - Good-Evil and Lawful-Chaotic axes (0-100 scale)
+  - Alignment name updates live as sliders change
+  - AlignmentChanged event for dirty flag tracking
+
+#### Fixed
+
+- **Navigation Button Emojis** (#691)
+  - Add NavIcon class to emoji TextBlocks to prevent Foreground inheritance
+  - Emojis now maintain consistent appearance regardless of selection state
 
 ---
 
