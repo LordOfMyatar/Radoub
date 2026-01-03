@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.21-alpha] - 2026-01-03
-**Branch**: `quartermaster/issue-725` | **PR**: #TBD
+**Branch**: `quartermaster/issue-725` | **PR**: #749
 
 ### Feature: Edit Ability Scores (#725)
 
