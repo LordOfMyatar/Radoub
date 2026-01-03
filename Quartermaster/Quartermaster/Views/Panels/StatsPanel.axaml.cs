@@ -40,8 +40,6 @@ public partial class StatsPanel : UserControl
     private NumericUpDown? _baseHpNumeric;
     private TextBlock? _baseHpNote;
     private TextBlock? _maxHpValue, _conHpBonus;
-    private NumericUpDown? _currentHpNumeric;
-    private TextBlock? _hpPercent;
 
     // Combat stats controls
     private NumericUpDown? _naturalAcNumeric;
@@ -103,14 +101,10 @@ public partial class StatsPanel : UserControl
         _baseHpNote = this.FindControl<TextBlock>("BaseHpNote");
         _maxHpValue = this.FindControl<TextBlock>("MaxHpValue");
         _conHpBonus = this.FindControl<TextBlock>("ConHpBonus");
-        _currentHpNumeric = this.FindControl<NumericUpDown>("CurrentHpNumeric");
-        _hpPercent = this.FindControl<TextBlock>("HpPercent");
 
         // Wire up hit points events
         if (_baseHpNumeric != null)
             _baseHpNumeric.ValueChanged += OnBaseHpValueChanged;
-        if (_currentHpNumeric != null)
-            _currentHpNumeric.ValueChanged += OnCurrentHpValueChanged;
 
         // Combat stats
         _naturalAcNumeric = this.FindControl<NumericUpDown>("NaturalAcNumeric");
@@ -196,15 +190,7 @@ public partial class StatsPanel : UserControl
         if (_baseHpNumeric != null)
             _baseHpNumeric.Value = creature.HitPoints;
         SetText(_maxHpValue, creature.MaxHitPoints.ToString());
-        if (_currentHpNumeric != null)
-            _currentHpNumeric.Value = creature.CurrentHitPoints;
-        SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
-
-        // Calculate HP percentage
-        var hpPercent = creature.MaxHitPoints > 0
-            ? (creature.CurrentHitPoints * 100) / creature.MaxHitPoints
-            : 0;
-        SetText(_hpPercent, $"({hpPercent}%)");
+        SetText(_conHpBonus, CreatureDisplayService.FormatBonus(conHpContribution));
 
         // Load combat stats
         if (_naturalAcNumeric != null)
@@ -276,19 +262,6 @@ public partial class StatsPanel : UserControl
         HitPointsChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnCurrentHpValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
-    {
-        if (_isLoading || _currentCreature == null) return;
-
-        short newCurrentHp = (short)(e.NewValue ?? 0);
-        _currentCreature.CurrentHitPoints = newCurrentHp;
-
-        // Update HP percentage display
-        UpdateHpPercentDisplay();
-
-        HitPointsChanged?.Invoke(this, EventArgs.Empty);
-    }
-
     private void RecalculateMaxHp()
     {
         if (_currentCreature == null) return;
@@ -303,20 +276,12 @@ public partial class StatsPanel : UserControl
         int newMaxHp = _currentCreature.HitPoints + conHpContribution;
         _currentCreature.MaxHitPoints = (short)Math.Max(1, newMaxHp);
 
+        // Set CurrentHP = MaxHP (creatures spawn at full health)
+        _currentCreature.CurrentHitPoints = _currentCreature.MaxHitPoints;
+
         // Update displays
         SetText(_maxHpValue, _currentCreature.MaxHitPoints.ToString());
-        SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
-        UpdateHpPercentDisplay();
-    }
-
-    private void UpdateHpPercentDisplay()
-    {
-        if (_currentCreature == null) return;
-
-        var hpPercent = _currentCreature.MaxHitPoints > 0
-            ? (_currentCreature.CurrentHitPoints * 100) / _currentCreature.MaxHitPoints
-            : 0;
-        SetText(_hpPercent, $"({hpPercent}%)");
+        SetText(_conHpBonus, CreatureDisplayService.FormatBonus(conHpContribution));
     }
 
     private void WireAbilityScoreEvents()
@@ -544,10 +509,7 @@ public partial class StatsPanel : UserControl
         if (_baseHpNumeric != null)
             _baseHpNumeric.Value = 1;
         SetText(_maxHpValue, "1");
-        if (_currentHpNumeric != null)
-            _currentHpNumeric.Value = 1;
-        SetText(_conHpBonus, "(+0 Con)");
-        SetText(_hpPercent, "(100%)");
+        SetText(_conHpBonus, "+0");
 
         // Clear combat stats
         if (_naturalAcNumeric != null)

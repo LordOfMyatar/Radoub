@@ -127,22 +127,19 @@
                                                FormatString="0" FontSize="14" MinWidth="90"
                                                AutomationProperties.AutomationId="BaseHpNumeric"
                                                ToolTip.Tip="Hit points from dice rolls (excluding Con bonus)"/>
-                                <TextBlock x:Name="BaseHpNote" Text="(dice rolls only)" FontSize="10"
+                                <TextBlock x:Name="BaseHpNote" Text="(dice rolls)" FontSize="10"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="MaxHpDisplay">
-                                <TextBlock Text="Maximum HP" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="ConBonusDisplay">
+                                <TextBlock Text="Con Bonus" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="ConHpBonus" Text="+0" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock x:Name="ConBonusNote" Text="(Con × levels)" FontSize="10"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" AutomationProperties.AutomationId="MaxHpDisplay">
+                                <TextBlock Text="Max HP" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="MaxHpValue" Text="0" FontSize="18" FontWeight="Bold"/>
-                                <TextBlock x:Name="ConHpBonus" Text="(+0 Con)" FontSize="10"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" AutomationProperties.AutomationId="CurrentHpDisplay">
-                                <TextBlock Text="Current HP" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <NumericUpDown x:Name="CurrentHpNumeric" Value="0" Minimum="-10" Maximum="9999" Increment="1"
-                                               FormatString="0" FontSize="14" MinWidth="90"
-                                               AutomationProperties.AutomationId="CurrentHpNumeric"
-                                               ToolTip.Tip="Current hit points (can go negative for dying creatures)"/>
-                                <TextBlock x:Name="HpPercent" Text="(0%)" FontSize="10"
+                                <TextBlock Text="(Base + Con)" FontSize="10"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                         </Grid>

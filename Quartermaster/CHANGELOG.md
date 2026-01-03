@@ -20,10 +20,10 @@ Complete Stats panel editing to match Aurora Toolset parity.
 #### Added
 
 - **Hit Points Editing** (#726)
-  - NumericUpDown controls for Base HP and Current HP
-  - Base HP changes automatically recalculate Max HP (with Con bonus)
-  - Current HP can go negative for dying creatures (-10 minimum)
-  - HP percentage display updates in real-time
+  - NumericUpDown control for Base HP (dice rolls)
+  - Con Bonus and Max HP displayed as calculated values
+  - Base HP changes automatically recalculate Max HP
+  - Matches Aurora Toolset behavior (CurrentHP not exposed)
 - **Natural AC Editing** (#727)
   - NumericUpDown control for natural armor class (0-255 range)
 - **Challenge Rating Editing** (#729)
