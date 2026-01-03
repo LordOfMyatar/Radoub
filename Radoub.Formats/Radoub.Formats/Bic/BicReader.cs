@@ -84,7 +84,11 @@ public static class BicReader
             BodyPart_LFArm = root.GetFieldValue<byte>("BodyPart_LFArm", 0),
             BodyPart_RFArm = root.GetFieldValue<byte>("BodyPart_RFArm", 0),
             BodyPart_LFoot = root.GetFieldValue<byte>("BodyPart_LFoot", 0),
-            BodyPart_RFoot = root.GetFieldValue<byte>("BodyPart_RFoot", 0),
+            // Aurora Toolset bug: BodyPart_RFoot is sometimes saved as ArmorPart_RFoot
+            // Fall back to ArmorPart_RFoot if BodyPart_RFoot is missing
+            BodyPart_RFoot = root.GetField("BodyPart_RFoot") != null
+                ? root.GetFieldValue<byte>("BodyPart_RFoot", 0)
+                : root.GetFieldValue<byte>("ArmorPart_RFoot", 0),
             BodyPart_LHand = root.GetFieldValue<byte>("BodyPart_LHand", 0),
             BodyPart_RHand = root.GetFieldValue<byte>("BodyPart_RHand", 0),
             BodyPart_LShin = root.GetFieldValue<byte>("BodyPart_LShin", 0),
