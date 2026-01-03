@@ -24,7 +24,7 @@
                         <TextBlock Text="Ability Scores" FontWeight="SemiBold" FontSize="14"/>
 
                         <!-- Column Headers -->
-                        <Grid ColumnDefinitions="100,60,60,60,60">
+                        <Grid ColumnDefinitions="100,80,60,60,60">
                             <TextBlock Grid.Column="0" Text="Ability" FontWeight="SemiBold" FontSize="11"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock Grid.Column="1" Text="Base" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
@@ -38,10 +38,10 @@
                         </Grid>
 
                         <!-- Strength Row -->
-                        <Grid ColumnDefinitions="100,60,60,60,60" AutomationProperties.AutomationId="StrRow">
+                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="StrRow">
                             <TextBlock Grid.Column="0" Text="Strength" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="StrBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" MinWidth="55" FontSize="12"
+                                           FormatString="0" FontSize="12"
                                            AutomationProperties.AutomationId="StrBaseNumeric"/>
                             <TextBlock x:Name="StrRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -50,10 +50,10 @@
                         </Grid>
 
                         <!-- Dexterity Row -->
-                        <Grid ColumnDefinitions="100,60,60,60,60" AutomationProperties.AutomationId="DexRow">
+                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="DexRow">
                             <TextBlock Grid.Column="0" Text="Dexterity" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="DexBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" MinWidth="55" FontSize="12"
+                                           FormatString="0" FontSize="12"
                                            AutomationProperties.AutomationId="DexBaseNumeric"/>
                             <TextBlock x:Name="DexRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -62,10 +62,10 @@
                         </Grid>
 
                         <!-- Constitution Row -->
-                        <Grid ColumnDefinitions="100,60,60,60,60" AutomationProperties.AutomationId="ConRow">
+                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="ConRow">
                             <TextBlock Grid.Column="0" Text="Constitution" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="ConBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" MinWidth="55" FontSize="12"
+                                           FormatString="0" FontSize="12"
                                            AutomationProperties.AutomationId="ConBaseNumeric"/>
                             <TextBlock x:Name="ConRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -74,10 +74,10 @@
                         </Grid>
 
                         <!-- Intelligence Row -->
-                        <Grid ColumnDefinitions="100,60,60,60,60" AutomationProperties.AutomationId="IntRow">
+                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="IntRow">
                             <TextBlock Grid.Column="0" Text="Intelligence" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="IntBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" MinWidth="55" FontSize="12"
+                                           FormatString="0" FontSize="12"
                                            AutomationProperties.AutomationId="IntBaseNumeric"/>
                             <TextBlock x:Name="IntRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -86,10 +86,10 @@
                         </Grid>
 
                         <!-- Wisdom Row -->
-                        <Grid ColumnDefinitions="100,60,60,60,60" AutomationProperties.AutomationId="WisRow">
+                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="WisRow">
                             <TextBlock Grid.Column="0" Text="Wisdom" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="WisBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" MinWidth="55" FontSize="12"
+                                           FormatString="0" FontSize="12"
                                            AutomationProperties.AutomationId="WisBaseNumeric"/>
                             <TextBlock x:Name="WisRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -98,10 +98,10 @@
                         </Grid>
 
                         <!-- Charisma Row -->
-                        <Grid ColumnDefinitions="100,60,60,60,60" AutomationProperties.AutomationId="ChaRow">
+                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="ChaRow">
                             <TextBlock Grid.Column="0" Text="Charisma" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="ChaBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" MinWidth="55" FontSize="12"
+                                           FormatString="0" FontSize="12"
                                            AutomationProperties.AutomationId="ChaBaseNumeric"/>
                             <TextBlock x:Name="ChaRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
