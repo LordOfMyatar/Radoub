@@ -130,22 +130,20 @@
                                     <TextBlock Grid.Column="0" Text="Evil" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" x:Name="GoodEvilValue"
+                                               Text="50"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="2" Text="Good" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <Slider Grid.Column="0" x:Name="GoodEvilSlider"
-                                            Minimum="0" Maximum="100" Value="50"
-                                            TickFrequency="1" IsSnapToTickEnabled="True"
-                                            AutomationProperties.AutomationId="GoodEvilSlider"/>
-                                    <TextBlock Grid.Column="1" x:Name="GoodEvilValue"
-                                               Text="50"
-                                               FontSize="12"
-                                               MinWidth="30"
-                                               Margin="8,0,0,0"
-                                               VerticalAlignment="Center"/>
-                                </Grid>
+                                <Slider x:Name="GoodEvilSlider"
+                                        Minimum="0" Maximum="100" Value="50"
+                                        TickFrequency="1" IsSnapToTickEnabled="True"
+                                        AutomationProperties.AutomationId="GoodEvilSlider"/>
                             </StackPanel>
 
                             <!-- Lawful-Chaotic (0=Chaotic, 100=Lawful) -->
@@ -154,22 +152,20 @@
                                     <TextBlock Grid.Column="0" Text="Chaotic" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" x:Name="LawChaosValue"
+                                               Text="50"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="2" Text="Lawful" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <Slider Grid.Column="0" x:Name="LawChaosSlider"
-                                            Minimum="0" Maximum="100" Value="50"
-                                            TickFrequency="1" IsSnapToTickEnabled="True"
-                                            AutomationProperties.AutomationId="LawChaosSlider"/>
-                                    <TextBlock Grid.Column="1" x:Name="LawChaosValue"
-                                               Text="50"
-                                               FontSize="12"
-                                               MinWidth="30"
-                                               Margin="8,0,0,0"
-                                               VerticalAlignment="Center"/>
-                                </Grid>
+                                <Slider x:Name="LawChaosSlider"
+                                        Minimum="0" Maximum="100" Value="50"
+                                        TickFrequency="1" IsSnapToTickEnabled="True"
+                                        AutomationProperties.AutomationId="LawChaosSlider"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
