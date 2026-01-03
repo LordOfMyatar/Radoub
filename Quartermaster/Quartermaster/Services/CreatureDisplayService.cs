@@ -48,6 +48,37 @@ public class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets all races from racialtypes.2da.
+    /// Returns list of (id, name) tuples sorted by name.
+    /// </summary>
+    public List<(byte Id, string Name)> GetAllRaces()
+    {
+        var races = new List<(byte Id, string Name)>();
+
+        // racialtypes.2da can have custom content additions, scan up to 255 (byte max)
+        for (int i = 0; i < 256; i++)
+        {
+            var label = _gameDataService.Get2DAValue("racialtypes", i, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                // Stop after we've found some races and hit a gap
+                if (races.Count > 10 && i > 50)
+                    break;
+                continue;
+            }
+
+            // Check if this race is player-selectable (PlayerRace column)
+            // Include all races for creature editing, not just player races
+            var name = GetRaceName((byte)i);
+            races.Add(((byte)i, name));
+        }
+
+        // Sort alphabetically by name for easier selection
+        races.Sort((a, b) => string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase));
+        return races;
+    }
+
+    /// <summary>
     /// Gets the display name for a gender ID.
     /// </summary>
     public string GetGenderName(byte genderId)

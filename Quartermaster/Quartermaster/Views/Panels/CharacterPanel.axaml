@@ -47,18 +47,25 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Subrace:"
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Race:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="SubraceTextBox"
+                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="RaceComboBox"
+                                      HorizontalAlignment="Stretch"
+                                      AutomationProperties.AutomationId="RaceComboBox"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Subrace:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="SubraceTextBox"
                                      AutomationProperties.AutomationId="SubraceTextBox"
                                      Watermark="e.g., Gold Elf, Shield Dwarf"/>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Deity:"
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Deity:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="DeityTextBox"
+                            <TextBox Grid.Row="2" Grid.Column="1" x:Name="DeityTextBox"
                                      AutomationProperties.AutomationId="DeityTextBox"
                                      Watermark="e.g., Mystra, Torm"/>
                         </Grid>
