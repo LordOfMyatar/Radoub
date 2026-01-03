@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.24-alpha] - 2026-01-03
+**Branch**: `quartermaster/issue-756` | **PR**: #TBD
+
+### Sprint: Spells Foundation (#756)
+
+Enable SpellsPanel to display creature's actual known and memorized spells by implementing the GFF parsing layer.
+
+- #740 - Parse Known Spell Lists (KnownList0-9)
+- #741 - Parse Memorized Spell Lists (MemorizedList0-9)
+
+---
+
 ## [0.1.23-alpha] - 2026-01-03
 **Branch**: `quartermaster/issue-751` | **PR**: #755
 
