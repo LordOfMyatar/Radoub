@@ -123,7 +123,10 @@
                         <Grid ColumnDefinitions="*,*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="BaseHpDisplay">
                                 <TextBlock Text="Base HP" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="BaseHpValue" Text="0" FontSize="18" FontWeight="Bold"/>
+                                <NumericUpDown x:Name="BaseHpNumeric" Value="0" Minimum="1" Maximum="9999" Increment="1"
+                                               FormatString="0" FontSize="14" MinWidth="90"
+                                               AutomationProperties.AutomationId="BaseHpNumeric"
+                                               ToolTip.Tip="Hit points from dice rolls (excluding Con bonus)"/>
                                 <TextBlock x:Name="BaseHpNote" Text="(dice rolls only)" FontSize="10"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
@@ -135,7 +138,10 @@
                             </StackPanel>
                             <StackPanel Grid.Column="2" AutomationProperties.AutomationId="CurrentHpDisplay">
                                 <TextBlock Text="Current HP" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="CurrentHpValue" Text="0" FontSize="18" FontWeight="Bold"/>
+                                <NumericUpDown x:Name="CurrentHpNumeric" Value="0" Minimum="-10" Maximum="9999" Increment="1"
+                                               FormatString="0" FontSize="14" MinWidth="90"
+                                               AutomationProperties.AutomationId="CurrentHpNumeric"
+                                               ToolTip.Tip="Current hit points (can go negative for dying creatures)"/>
                                 <TextBlock x:Name="HpPercent" Text="(0%)" FontSize="10"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
@@ -155,7 +161,10 @@
                         <Grid ColumnDefinitions="*,*,*,*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="NaturalAcDisplay">
                                 <TextBlock Text="Natural AC" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="NaturalAcValue" Text="0" FontSize="16" FontWeight="Bold"/>
+                                <NumericUpDown x:Name="NaturalAcNumeric" Value="0" Minimum="0" Maximum="255" Increment="1"
+                                               FormatString="0" FontSize="14" MinWidth="70"
+                                               AutomationProperties.AutomationId="NaturalAcNumeric"
+                                               ToolTip.Tip="Natural armor class bonus"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="DexAcDisplay">
                                 <TextBlock Text="Dex AC" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -173,7 +182,10 @@
                             </StackPanel>
                             <StackPanel Grid.Column="4" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
                                 <TextBlock Text="Challenge Rating" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="CrValue" Text="0" FontSize="16" FontWeight="Bold"/>
+                                <NumericUpDown x:Name="CrValueNumeric" Value="0" Minimum="0" Maximum="100" Increment="0.25"
+                                               FormatString="0.##" FontSize="14" MinWidth="70"
+                                               AutomationProperties.AutomationId="CrValueNumeric"
+                                               ToolTip.Tip="Base Challenge Rating"/>
                                 <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
                                     <TextBlock Text="Adjust:" FontSize="10" VerticalAlignment="Center"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>

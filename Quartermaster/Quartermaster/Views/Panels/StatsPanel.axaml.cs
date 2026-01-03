@@ -17,7 +17,10 @@ public partial class StatsPanel : UserControl
     private bool _isLoading;
 
     public event EventHandler? CRAdjustChanged;
+    public event EventHandler? ChallengeRatingChanged;
     public event EventHandler? AbilityScoresChanged;
+    public event EventHandler? HitPointsChanged;
+    public event EventHandler? NaturalAcChanged;
 
     // Ability score controls - NumericUpDown for base, TextBlock for derived
     private NumericUpDown? _strBase;
@@ -34,12 +37,16 @@ public partial class StatsPanel : UserControl
     private TextBlock? _chaRacial, _chaTotal, _chaBonus;
 
     // Hit points controls
-    private TextBlock? _baseHpValue, _baseHpNote;
+    private NumericUpDown? _baseHpNumeric;
+    private TextBlock? _baseHpNote;
     private TextBlock? _maxHpValue, _conHpBonus;
-    private TextBlock? _currentHpValue, _hpPercent;
+    private NumericUpDown? _currentHpNumeric;
+    private TextBlock? _hpPercent;
 
     // Combat stats controls
-    private TextBlock? _naturalAcValue, _dexAcValue, _babValue, _babBreakdown, _speedValue, _crValue;
+    private NumericUpDown? _naturalAcNumeric;
+    private TextBlock? _dexAcValue, _babValue, _babBreakdown, _speedValue;
+    private NumericUpDown? _crValueNumeric;
     private NumericUpDown? _crAdjustNumeric;
     private StackPanel? _crDisplaySection;
 
@@ -92,24 +99,34 @@ public partial class StatsPanel : UserControl
         WireAbilityScoreEvents();
 
         // Hit points
-        _baseHpValue = this.FindControl<TextBlock>("BaseHpValue");
+        _baseHpNumeric = this.FindControl<NumericUpDown>("BaseHpNumeric");
         _baseHpNote = this.FindControl<TextBlock>("BaseHpNote");
         _maxHpValue = this.FindControl<TextBlock>("MaxHpValue");
         _conHpBonus = this.FindControl<TextBlock>("ConHpBonus");
-        _currentHpValue = this.FindControl<TextBlock>("CurrentHpValue");
+        _currentHpNumeric = this.FindControl<NumericUpDown>("CurrentHpNumeric");
         _hpPercent = this.FindControl<TextBlock>("HpPercent");
 
+        // Wire up hit points events
+        if (_baseHpNumeric != null)
+            _baseHpNumeric.ValueChanged += OnBaseHpValueChanged;
+        if (_currentHpNumeric != null)
+            _currentHpNumeric.ValueChanged += OnCurrentHpValueChanged;
+
         // Combat stats
-        _naturalAcValue = this.FindControl<TextBlock>("NaturalAcValue");
+        _naturalAcNumeric = this.FindControl<NumericUpDown>("NaturalAcNumeric");
+        if (_naturalAcNumeric != null)
+            _naturalAcNumeric.ValueChanged += OnNaturalAcValueChanged;
         _dexAcValue = this.FindControl<TextBlock>("DexAcValue");
         _babValue = this.FindControl<TextBlock>("BabValue");
         _babBreakdown = this.FindControl<TextBlock>("BabBreakdown");
         _speedValue = this.FindControl<TextBlock>("SpeedValue");
-        _crValue = this.FindControl<TextBlock>("CrValue");
+        _crValueNumeric = this.FindControl<NumericUpDown>("CrValueNumeric");
         _crAdjustNumeric = this.FindControl<NumericUpDown>("CRAdjustNumeric");
         _crDisplaySection = this.FindControl<StackPanel>("CrDisplaySection");
 
         // Wire up events
+        if (_crValueNumeric != null)
+            _crValueNumeric.ValueChanged += OnCrValueChanged;
         if (_crAdjustNumeric != null)
             _crAdjustNumeric.ValueChanged += OnCRAdjustValueChanged;
 
@@ -176,9 +193,11 @@ public partial class StatsPanel : UserControl
         int conHpContribution = conBonus * totalLevel;
 
         // Load hit points
-        SetText(_baseHpValue, creature.HitPoints.ToString());
+        if (_baseHpNumeric != null)
+            _baseHpNumeric.Value = creature.HitPoints;
         SetText(_maxHpValue, creature.MaxHitPoints.ToString());
-        SetText(_currentHpValue, creature.CurrentHitPoints.ToString());
+        if (_currentHpNumeric != null)
+            _currentHpNumeric.Value = creature.CurrentHitPoints;
         SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
 
         // Calculate HP percentage
@@ -188,8 +207,10 @@ public partial class StatsPanel : UserControl
         SetText(_hpPercent, $"({hpPercent}%)");
 
         // Load combat stats
-        SetText(_naturalAcValue, creature.NaturalAC.ToString());
-        SetText(_crValue, creature.ChallengeRating.ToString("F1"));
+        if (_naturalAcNumeric != null)
+            _naturalAcNumeric.Value = creature.NaturalAC;
+        if (_crValueNumeric != null)
+            _crValueNumeric.Value = (decimal)creature.ChallengeRating;
         if (_crAdjustNumeric != null)
             _crAdjustNumeric.Value = creature.CRAdjust;
 
@@ -224,6 +245,78 @@ public partial class StatsPanel : UserControl
 
         _currentCreature.CRAdjust = (int)(e.NewValue ?? 0);
         CRAdjustChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnCrValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.ChallengeRating = (float)(e.NewValue ?? 0);
+        ChallengeRatingChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnNaturalAcValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.NaturalAC = (byte)(e.NewValue ?? 0);
+        NaturalAcChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnBaseHpValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        short newBaseHp = (short)(e.NewValue ?? 1);
+        _currentCreature.HitPoints = newBaseHp;
+
+        // Recalculate MaxHP = BaseHP + Con contribution
+        RecalculateMaxHp();
+
+        HitPointsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnCurrentHpValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        short newCurrentHp = (short)(e.NewValue ?? 0);
+        _currentCreature.CurrentHitPoints = newCurrentHp;
+
+        // Update HP percentage display
+        UpdateHpPercentDisplay();
+
+        HitPointsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RecalculateMaxHp()
+    {
+        if (_currentCreature == null) return;
+
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int conTotal = _currentCreature.Con + racialMods.Con;
+        int conBonus = CreatureDisplayService.CalculateAbilityBonus(conTotal);
+        int totalLevel = _currentCreature.ClassList.Sum(c => c.ClassLevel);
+        int conHpContribution = conBonus * totalLevel;
+
+        // Calculate new MaxHP
+        int newMaxHp = _currentCreature.HitPoints + conHpContribution;
+        _currentCreature.MaxHitPoints = (short)Math.Max(1, newMaxHp);
+
+        // Update displays
+        SetText(_maxHpValue, _currentCreature.MaxHitPoints.ToString());
+        SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
+        UpdateHpPercentDisplay();
+    }
+
+    private void UpdateHpPercentDisplay()
+    {
+        if (_currentCreature == null) return;
+
+        var hpPercent = _currentCreature.MaxHitPoints > 0
+            ? (_currentCreature.CurrentHitPoints * 100) / _currentCreature.MaxHitPoints
+            : 0;
+        SetText(_hpPercent, $"({hpPercent}%)");
     }
 
     private void WireAbilityScoreEvents()
@@ -326,28 +419,8 @@ public partial class StatsPanel : UserControl
 
     private void UpdateHitPointsDisplay()
     {
-        if (_currentCreature == null) return;
-
-        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
-        int conTotal = _currentCreature.Con + racialMods.Con;
-        int conBonus = CreatureDisplayService.CalculateAbilityBonus(conTotal);
-        int totalLevel = _currentCreature.ClassList.Sum(c => c.ClassLevel);
-        int conHpContribution = conBonus * totalLevel;
-
-        // Recalculate MaxHP = BaseHP (dice rolls) + Con contribution
-        int baseHp = _currentCreature.HitPoints; // Stored dice roll total
-        int newMaxHp = baseHp + conHpContribution;
-        _currentCreature.MaxHitPoints = (short)Math.Max(1, newMaxHp); // Min 1 HP
-
-        // Update display
-        SetText(_maxHpValue, _currentCreature.MaxHitPoints.ToString());
-        SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
-
-        // Update HP percentage
-        var hpPercent = _currentCreature.MaxHitPoints > 0
-            ? (_currentCreature.CurrentHitPoints * 100) / _currentCreature.MaxHitPoints
-            : 0;
-        SetText(_hpPercent, $"({hpPercent}%)");
+        // Delegate to the shared recalculation logic
+        RecalculateMaxHp();
     }
 
     private void UpdateDexAcDisplay()
@@ -468,19 +541,23 @@ public partial class StatsPanel : UserControl
         LoadAbilityScore(_chaBase, _chaRacial, _chaTotal, _chaBonus, 10, 0);
 
         // Clear hit points
-        SetText(_baseHpValue, "0");
-        SetText(_maxHpValue, "0");
-        SetText(_currentHpValue, "0");
+        if (_baseHpNumeric != null)
+            _baseHpNumeric.Value = 1;
+        SetText(_maxHpValue, "1");
+        if (_currentHpNumeric != null)
+            _currentHpNumeric.Value = 1;
         SetText(_conHpBonus, "(+0 Con)");
-        SetText(_hpPercent, "(0%)");
+        SetText(_hpPercent, "(100%)");
 
         // Clear combat stats
-        SetText(_naturalAcValue, "0");
+        if (_naturalAcNumeric != null)
+            _naturalAcNumeric.Value = 0;
         SetText(_dexAcValue, "+0");
         SetText(_babValue, "+0");
         SetText(_babBreakdown, "");
         SetText(_speedValue, "Normal");
-        SetText(_crValue, "0");
+        if (_crValueNumeric != null)
+            _crValueNumeric.Value = 0;
         if (_crAdjustNumeric != null)
             _crAdjustNumeric.Value = 0;
 

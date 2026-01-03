@@ -17,11 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Complete Stats panel editing to match Aurora Toolset parity.
 
-#### Work Items
+#### Added
 
-- [ ] #726 - Edit Hit Points (Base/Max/Current)
-- [ ] #727 - Edit Natural AC
-- [ ] #729 - Edit Challenge Rating
+- **Hit Points Editing** (#726)
+  - NumericUpDown controls for Base HP and Current HP
+  - Base HP changes automatically recalculate Max HP (with Con bonus)
+  - Current HP can go negative for dying creatures (-10 minimum)
+  - HP percentage display updates in real-time
+- **Natural AC Editing** (#727)
+  - NumericUpDown control for natural armor class (0-255 range)
+- **Challenge Rating Editing** (#729)
+  - NumericUpDown control for base CR (0-100, 0.25 increment)
+  - Works alongside existing CR Adjust control
 
 ---
 

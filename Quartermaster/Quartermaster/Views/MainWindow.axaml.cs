@@ -100,7 +100,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize stats panel with display service
         StatsPanelContent.SetDisplayService(_creatureDisplayService);
         StatsPanelContent.CRAdjustChanged += (s, e) => MarkDirty();
+        StatsPanelContent.ChallengeRatingChanged += (s, e) => MarkDirty();
         StatsPanelContent.AbilityScoresChanged += (s, e) => MarkDirty();
+        StatsPanelContent.HitPointsChanged += (s, e) => MarkDirty();
+        StatsPanelContent.NaturalAcChanged += (s, e) => MarkDirty();
 
         // Initialize character panel with display service
         CharacterPanelContent.SetDisplayService(_creatureDisplayService);
