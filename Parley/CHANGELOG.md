@@ -10,6 +10,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.110-alpha] - 2026-01-02
+**Branch**: `parley/issue-723` | **PR**: #724
+
+### Sprint: Settings Persistence & Cleanup (#723)
+
+#### #719 - SettingsService Refactoring
+
+Split SettingsService (1,405 → 1,275 lines) into focused services:
+
+| New File | Lines | Responsibility |
+|----------|-------|----------------|
+| RecentFilesService.cs | 141 | Recent files list management |
+| UISettingsService.cs | 178 | Fonts, themes, flowchart layout, scrollbars |
+
+#### #717 - Dead Code Removal
+
+Removed unused properties:
+- `UseNewLayout` - feature flag never implemented
+- `WarnMissingScriptInDialogDirectory` - never referenced
+
+#### #718 - Settings Persistence Fix
+
+Fixed silent data loss: `ExternalEditorPath` and `ScriptSearchPaths` now persist across restarts.
+Added to SettingsData, LoadSettings(), and SaveSettings().
+
+---
+
 ## [0.1.109-alpha] - 2026-01-01
 **Branch**: `parley/refactor/split-treeview-safenode` | **PR**: #714
 

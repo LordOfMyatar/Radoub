@@ -65,10 +65,6 @@ namespace DialogEditor.Services
         private static string LegacySettingsFilePath => Path.Combine(LegacySettingsDirectory, "ParleySettings.json");
         private const int DefaultMaxRecentFiles = 10;
         
-        // Recent files
-        private List<string> _recentFiles = new List<string>();
-        private int _maxRecentFiles = DefaultMaxRecentFiles;
-        
         // Window settings
         private double _windowLeft = 100;
         private double _windowTop = 100;
@@ -79,14 +75,6 @@ namespace DialogEditor.Services
         // Panel layout settings - GridSplitter positions (#108)
         private double _leftPanelWidth = 800; // Tree+Text area width (default ~67% at 1200px window)
         private double _topLeftPanelHeight = 400; // Dialog tree height (default 2* of left panels)
-
-        // UI settings
-        private double _fontSize = 14;
-        private string _fontFamily = ""; // Empty string = use system default
-        private bool _isDarkTheme = false; // DEPRECATED: Use CurrentThemeId instead
-        private string _currentThemeId = "org.parley.theme.light"; // Default theme
-        private bool _useNewLayout = false; // Feature flag for new layout (#108)
-        private string _flowchartLayout = "Floating"; // Flowchart layout: "Floating", "SideBySide", "Tabbed"
 
         // Flowchart window settings (#377)
         private double _flowchartWindowLeft = 100;
@@ -119,9 +107,6 @@ namespace DialogEditor.Services
         private int _autoSaveDelayMs = 2000; // Default: 2 seconds (fast debounce)
         private int _autoSaveIntervalMinutes = 0; // Default: 0 = use AutoSaveDelayMs instead (Issue #62)
 
-        // UI settings (Issue #63)
-        private bool _allowScrollbarAutoHide = false; // Default: always visible
-
         // NPC speaker visual preferences (Issue #16, #36)
         // NOTE: Speaker preferences are now stored in SpeakerPreferencesService (Issue #179)
         // This field is only used for migration from old settings files
@@ -137,7 +122,6 @@ namespace DialogEditor.Services
         // Script editor settings
         private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
         private List<string> _scriptSearchPaths = new List<string>(); // Additional directories to search for scripts
-        private bool _warnMissingScriptInDialogDirectory = true; // Warn if script not in same directory as dialog
 
         // Radoub tool integration settings (#416)
         private string _manifestPath = ""; // Path to Manifest.exe (journal editor)
@@ -160,6 +144,10 @@ namespace DialogEditor.Services
 
         private SettingsService()
         {
+            // Subscribe to delegated services for save notifications (#719)
+            RecentFilesService.Instance.SettingsChanged += SaveSettings;
+            UISettingsService.Instance.SettingsChanged += SaveSettings;
+
             // Migrate from legacy ~/Parley to new ~/Radoub/Parley location (#472)
             MigrateLegacySettingsFolder();
 
@@ -367,22 +355,13 @@ namespace DialogEditor.Services
             }
         }
 
-        public List<string> RecentFiles
-        {
-            get => _recentFiles.ToList(); // Return a copy to prevent external modification
-        }
-        
+        // Recent files - DELEGATED to RecentFilesService (#719)
+        public List<string> RecentFiles => RecentFilesService.Instance.RecentFiles;
+
         public int MaxRecentFiles
         {
-            get => _maxRecentFiles;
-            set
-            {
-                if (SetProperty(ref _maxRecentFiles, Math.Max(1, Math.Min(20, value))))
-                {
-                    TrimRecentFiles();
-                    SaveSettings();
-                }
-            }
+            get => RecentFilesService.Instance.MaxRecentFiles;
+            set => RecentFilesService.Instance.MaxRecentFiles = value;
         }
         
         // Window properties
@@ -429,17 +408,17 @@ namespace DialogEditor.Services
             set { if (SetProperty(ref _topLeftPanelHeight, Math.Max(150, value))) SaveSettings(); }
         }
 
-        // UI properties
+        // UI properties - DELEGATED to UISettingsService (#719)
         public double FontSize
         {
-            get => _fontSize;
-            set { if (SetProperty(ref _fontSize, Math.Max(8, Math.Min(24, value)))) SaveSettings(); }
+            get => UISettingsService.Instance.FontSize;
+            set => UISettingsService.Instance.FontSize = value;
         }
 
         public string FontFamily
         {
-            get => _fontFamily;
-            set { if (SetProperty(ref _fontFamily, value ?? "")) SaveSettings(); }
+            get => UISettingsService.Instance.FontFamily;
+            set => UISettingsService.Instance.FontFamily = value;
         }
 
         /// <summary>
@@ -447,17 +426,8 @@ namespace DialogEditor.Services
         /// </summary>
         public bool IsDarkTheme
         {
-            get => _isDarkTheme;
-            set
-            {
-                if (SetProperty(ref _isDarkTheme, value))
-                {
-                    // Auto-migrate to new theme system
-                    _currentThemeId = value ? "org.parley.theme.dark" : "org.parley.theme.light";
-                    OnPropertyChanged(nameof(CurrentThemeId));
-                    SaveSettings();
-                }
-            }
+            get => UISettingsService.Instance.IsDarkTheme;
+            set => UISettingsService.Instance.IsDarkTheme = value;
         }
 
         /// <summary>
@@ -465,22 +435,8 @@ namespace DialogEditor.Services
         /// </summary>
         public string CurrentThemeId
         {
-            get => _currentThemeId;
-            set
-            {
-                if (SetProperty(ref _currentThemeId, value))
-                {
-                    // Update legacy IsDarkTheme for compatibility
-                    _isDarkTheme = value.Contains("dark", StringComparison.OrdinalIgnoreCase);
-                    SaveSettings();
-                }
-            }
-        }
-
-        public bool UseNewLayout
-        {
-            get => _useNewLayout;
-            set { if (SetProperty(ref _useNewLayout, value)) SaveSettings(); }
+            get => UISettingsService.Instance.CurrentThemeId;
+            set => UISettingsService.Instance.CurrentThemeId = value;
         }
 
         /// <summary>
@@ -488,18 +444,8 @@ namespace DialogEditor.Services
         /// </summary>
         public string FlowchartLayout
         {
-            get => _flowchartLayout;
-            set
-            {
-                // Validate value
-                var validValues = new[] { "Floating", "SideBySide", "Tabbed" };
-                var safeValue = validValues.Contains(value) ? value : "Floating";
-                if (SetProperty(ref _flowchartLayout, safeValue))
-                {
-                    SaveSettings();
-                    UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart layout set to {safeValue}");
-                }
-            }
+            get => UISettingsService.Instance.FlowchartLayout;
+            set => UISettingsService.Instance.FlowchartLayout = value;
         }
 
         // Flowchart Window Properties (#377)
@@ -788,18 +734,11 @@ namespace DialogEditor.Services
             }
         }
 
-        // UI Settings Properties (Issue #63)
+        // UI Settings Properties (Issue #63) - DELEGATED to UISettingsService (#719)
         public bool AllowScrollbarAutoHide
         {
-            get => _allowScrollbarAutoHide;
-            set
-            {
-                if (SetProperty(ref _allowScrollbarAutoHide, value))
-                {
-                    SaveSettings();
-                    OnPropertyChanged(nameof(AllowScrollbarAutoHide));
-                }
-            }
+            get => UISettingsService.Instance.AllowScrollbarAutoHide;
+            set => UISettingsService.Instance.AllowScrollbarAutoHide = value;
         }
 
         // NPC Speaker Visual Preferences (Issue #16, #36, #179)
@@ -880,12 +819,6 @@ namespace DialogEditor.Services
                 OnPropertyChanged(nameof(ScriptSearchPaths));
                 SaveSettings();
             }
-        }
-
-        public bool WarnMissingScriptInDialogDirectory
-        {
-            get => _warnMissingScriptInDialogDirectory;
-            set { if (SetProperty(ref _warnMissingScriptInDialogDirectory, value)) SaveSettings(); }
         }
 
         // Radoub Tool Integration Properties (#416)
@@ -993,8 +926,10 @@ namespace DialogEditor.Services
                     
                     if (settings != null)
                     {
-                        _recentFiles = ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>());
-                        _maxRecentFiles = Math.Max(1, Math.Min(20, settings.MaxRecentFiles));
+                        // Initialize RecentFilesService (#719)
+                        RecentFilesService.Instance.Initialize(
+                            ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>()),
+                            settings.MaxRecentFiles);
 
                         // Load window settings
                         _windowLeft = settings.WindowLeft;
@@ -1009,25 +944,15 @@ namespace DialogEditor.Services
                         _leftPanelWidth = Math.Max(350, settings.LeftPanelWidth);
                         _topLeftPanelHeight = Math.Max(150, settings.TopLeftPanelHeight);
 
-                        // Load UI settings
-                        _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
-                        _fontFamily = settings.FontFamily ?? "";
+                        // Initialize UISettingsService (#719)
+                        UISettingsService.Instance.Initialize(
+                            settings.FontSize,
+                            settings.FontFamily ?? "",
+                            settings.IsDarkTheme,
+                            settings.CurrentThemeId,
+                            settings.FlowchartLayout ?? "Floating",
+                            settings.AllowScrollbarAutoHide);
 
-                        // Migrate from old IsDarkTheme to new CurrentThemeId
-                        if (!string.IsNullOrEmpty(settings.CurrentThemeId))
-                        {
-                            _currentThemeId = settings.CurrentThemeId;
-                            _isDarkTheme = settings.IsDarkTheme; // Keep for compatibility
-                        }
-                        else
-                        {
-                            // Old settings file - migrate
-                            _isDarkTheme = settings.IsDarkTheme;
-                            _currentThemeId = _isDarkTheme ? "org.parley.theme.dark" : "org.parley.theme.light";
-                        }
-
-                        _useNewLayout = settings.UseNewLayout;
-                        _flowchartLayout = settings.FlowchartLayout ?? "Floating"; // #329: Flowchart layout
                         // Flowchart window settings (#377)
                         _flowchartWindowLeft = settings.FlowchartWindowLeft;
                         _flowchartWindowTop = settings.FlowchartWindowTop;
@@ -1036,7 +961,6 @@ namespace DialogEditor.Services
                         _flowchartWindowOpen = settings.FlowchartWindowOpen;
                         _flowchartPanelWidth = Math.Max(200, settings.FlowchartPanelWidth);
                         _flowchartVisible = settings.FlowchartVisible;
-                        _allowScrollbarAutoHide = settings.AllowScrollbarAutoHide; // Issue #63
 
                         // Issue #179: Migrate speaker preferences to separate file
                         // Store temporarily for migration, then clear from main settings
@@ -1103,7 +1027,11 @@ namespace DialogEditor.Services
                         // Load Radoub tool integration settings (#416)
                         _manifestPath = ExpandPath(settings.ManifestPath ?? "");
 
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}, theme={(_isDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
+                        // Load script editor settings (#718)
+                        _externalEditorPath = ExpandPath(settings.ExternalEditorPath ?? "");
+                        _scriptSearchPaths = ExpandPaths(settings.ScriptSearchPaths?.ToList() ?? new List<string>());
+
+                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {RecentFilesService.Instance.RecentFiles.Count} recent files, max={RecentFilesService.Instance.MaxRecentFiles}, theme={(UISettingsService.Instance.IsDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
                     }
                     else
                     {
@@ -1127,7 +1055,7 @@ namespace DialogEditor.Services
             {
                 var settings = new SettingsData
                 {
-                    RecentFiles = ContractPaths(_recentFiles), // Use ~ for home directory
+                    RecentFiles = ContractPaths(RecentFilesService.Instance.RecentFiles), // Use ~ for home directory
                     MaxRecentFiles = MaxRecentFiles,
                     WindowLeft = WindowLeft,
                     WindowTop = WindowTop,
@@ -1140,7 +1068,6 @@ namespace DialogEditor.Services
                     FontFamily = FontFamily,
                     IsDarkTheme = IsDarkTheme, // Keep for backwards compatibility
                     CurrentThemeId = CurrentThemeId,
-                    UseNewLayout = UseNewLayout,
                     FlowchartLayout = FlowchartLayout, // #329: Flowchart layout
                     // Flowchart window settings (#377)
                     FlowchartWindowLeft = FlowchartWindowLeft,
@@ -1182,7 +1109,10 @@ namespace DialogEditor.Services
                     // Spell Check settings (#505)
                     SpellCheckEnabled = SpellCheckEnabled,
                     // Radoub tool integration (#416)
-                    ManifestPath = ContractPath(ManifestPath)
+                    ManifestPath = ContractPath(ManifestPath),
+                    // Script editor settings (#718)
+                    ExternalEditorPath = ContractPath(ExternalEditorPath),
+                    ScriptSearchPaths = ContractPaths(_scriptSearchPaths)
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -1199,67 +1129,11 @@ namespace DialogEditor.Services
             }
         }
 
-        public void AddRecentFile(string filePath)
-        {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                return;
-
-            // Remove if already exists (to move to top)
-            _recentFiles.Remove(filePath);
-            
-            // Add to beginning
-            _recentFiles.Insert(0, filePath);
-            
-            // Trim to max allowed
-            TrimRecentFiles();
-            
-            OnPropertyChanged(nameof(RecentFiles));
-            SaveSettings();
-            
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added recent file: {Path.GetFileName(filePath)}");
-        }
-        
-        public void RemoveRecentFile(string filePath)
-        {
-            if (_recentFiles.Remove(filePath))
-            {
-                OnPropertyChanged(nameof(RecentFiles));
-                SaveSettings();
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed recent file: {Path.GetFileName(filePath)}");
-            }
-        }
-        
-        public void ClearRecentFiles()
-        {
-            if (_recentFiles.Count > 0)
-            {
-                _recentFiles.Clear();
-                OnPropertyChanged(nameof(RecentFiles));
-                SaveSettings();
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared all recent files");
-            }
-        }
-        
-        public void CleanupRecentFiles()
-        {
-            var originalCount = _recentFiles.Count;
-            _recentFiles.RemoveAll(file => !File.Exists(file));
-            
-            if (_recentFiles.Count != originalCount)
-            {
-                OnPropertyChanged(nameof(RecentFiles));
-                SaveSettings();
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Cleaned up {originalCount - _recentFiles.Count} non-existent recent files");
-            }
-        }
-
-        private void TrimRecentFiles()
-        {
-            while (_recentFiles.Count > MaxRecentFiles)
-            {
-                _recentFiles.RemoveAt(_recentFiles.Count - 1);
-            }
-        }
+        // Recent file methods - DELEGATED to RecentFilesService (#719)
+        public void AddRecentFile(string filePath) => RecentFilesService.Instance.AddRecentFile(filePath);
+        public void RemoveRecentFile(string filePath) => RecentFilesService.Instance.RemoveRecentFile(filePath);
+        public void ClearRecentFiles() => RecentFilesService.Instance.ClearRecentFiles();
+        public void CleanupRecentFiles() => RecentFilesService.Instance.CleanupRecentFiles();
 
         /// <summary>
         /// Contracts a path for storage - replaces user home directory with ~
@@ -1348,7 +1222,6 @@ namespace DialogEditor.Services
             public string FontFamily { get; set; } = "";
             public bool IsDarkTheme { get; set; } = false; // DEPRECATED: For backwards compatibility
             public string? CurrentThemeId { get; set; } = "org.parley.theme.light";
-            public bool UseNewLayout { get; set; } = false;
             public string FlowchartLayout { get; set; } = "Floating"; // #329: Flowchart layout
             // Flowchart window settings (#377)
             public double FlowchartWindowLeft { get; set; } = 100;
@@ -1400,6 +1273,10 @@ namespace DialogEditor.Services
 
             // Radoub tool integration settings (#416)
             public string ManifestPath { get; set; } = "";
+
+            // Script editor settings (#718)
+            public string ExternalEditorPath { get; set; } = "";
+            public List<string> ScriptSearchPaths { get; set; } = new List<string>();
         }
     }
 }
