@@ -19,7 +19,18 @@ Implement character color customization (Skin, Hair, Tattoo1, Tattoo2) for part-
 
 #### Added
 
-- Color fields exposed in Appearance tab (Phase 1)
+- Color fields (Skin, Hair, Tattoo1, Tattoo2) in Appearance tab with NumericUpDown controls
+- Color swatches displaying actual palette colors next to each color field
+- Clickable swatches open ColorPickerWindow dialog
+- ColorPickerWindow with 16x11 gradient swatch grid matching Aurora Toolset layout
+- PaletteColorService for extracting colors and gradients from NWN palette TGA files
+- TgaReader in Radoub.Formats for parsing uncompressed TGA images
+- Double-click on swatch confirms selection
+
+#### Fixed
+
+- Handle Aurora Toolset's BodyPart_RFoot bug (incorrectly saved as ArmorPart_RFoot)
+- NumericUpDown decimal display (added FormatString="0")
 
 ---
 
