@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using Quartermaster.Services;
+using Quartermaster.Views.Dialogs;
 using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Panels;
@@ -44,7 +47,20 @@ public partial class AppearancePanel : UserControl
     private ComboBox? _lFootComboBox;
     private ComboBox? _rFootComboBox;
 
+    // Color controls
+    private NumericUpDown? _skinColorNumeric;
+    private NumericUpDown? _hairColorNumeric;
+    private NumericUpDown? _tattoo1ColorNumeric;
+    private NumericUpDown? _tattoo2ColorNumeric;
+
+    // Color swatches
+    private Border? _skinColorSwatch;
+    private Border? _hairColorSwatch;
+    private Border? _tattoo1ColorSwatch;
+    private Border? _tattoo2ColorSwatch;
+
     private CreatureDisplayService? _displayService;
+    private PaletteColorService? _paletteColorService;
     private UtcFile? _currentCreature;
     private List<AppearanceInfo>? _appearances;
     private List<PhenotypeInfo>? _phenotypes;
@@ -96,9 +112,53 @@ public partial class AppearancePanel : UserControl
         _lFootComboBox = this.FindControl<ComboBox>("LFootComboBox");
         _rFootComboBox = this.FindControl<ComboBox>("RFootComboBox");
 
+        // Color controls
+        _skinColorNumeric = this.FindControl<NumericUpDown>("SkinColorNumeric");
+        _hairColorNumeric = this.FindControl<NumericUpDown>("HairColorNumeric");
+        _tattoo1ColorNumeric = this.FindControl<NumericUpDown>("Tattoo1ColorNumeric");
+        _tattoo2ColorNumeric = this.FindControl<NumericUpDown>("Tattoo2ColorNumeric");
+
+        // Color swatches
+        _skinColorSwatch = this.FindControl<Border>("SkinColorSwatch");
+        _hairColorSwatch = this.FindControl<Border>("HairColorSwatch");
+        _tattoo1ColorSwatch = this.FindControl<Border>("Tattoo1ColorSwatch");
+        _tattoo2ColorSwatch = this.FindControl<Border>("Tattoo2ColorSwatch");
+
         // Wire up events
         if (_appearanceComboBox != null)
             _appearanceComboBox.SelectionChanged += OnAppearanceSelectionChanged;
+
+        // Color value changed events
+        if (_skinColorNumeric != null)
+            _skinColorNumeric.ValueChanged += OnColorValueChanged;
+        if (_hairColorNumeric != null)
+            _hairColorNumeric.ValueChanged += OnColorValueChanged;
+        if (_tattoo1ColorNumeric != null)
+            _tattoo1ColorNumeric.ValueChanged += OnColorValueChanged;
+        if (_tattoo2ColorNumeric != null)
+            _tattoo2ColorNumeric.ValueChanged += OnColorValueChanged;
+
+        // Color swatch click events - open color picker
+        if (_skinColorSwatch != null)
+        {
+            _skinColorSwatch.Cursor = new Cursor(StandardCursorType.Hand);
+            _skinColorSwatch.PointerPressed += OnSkinColorSwatchClicked;
+        }
+        if (_hairColorSwatch != null)
+        {
+            _hairColorSwatch.Cursor = new Cursor(StandardCursorType.Hand);
+            _hairColorSwatch.PointerPressed += OnHairColorSwatchClicked;
+        }
+        if (_tattoo1ColorSwatch != null)
+        {
+            _tattoo1ColorSwatch.Cursor = new Cursor(StandardCursorType.Hand);
+            _tattoo1ColorSwatch.PointerPressed += OnTattoo1ColorSwatchClicked;
+        }
+        if (_tattoo2ColorSwatch != null)
+        {
+            _tattoo2ColorSwatch.Cursor = new Cursor(StandardCursorType.Hand);
+            _tattoo2ColorSwatch.PointerPressed += OnTattoo2ColorSwatchClicked;
+        }
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
@@ -106,6 +166,11 @@ public partial class AppearancePanel : UserControl
         _displayService = displayService;
         LoadAppearanceData();
         LoadBodyPartData();
+    }
+
+    public void SetPaletteColorService(PaletteColorService paletteColorService)
+    {
+        _paletteColorService = paletteColorService;
     }
 
     private void LoadAppearanceData()
@@ -305,6 +370,44 @@ public partial class AppearancePanel : UserControl
         SelectComboByTag(_rShinComboBox, creature.BodyPart_RShin);
         SelectComboByTag(_lFootComboBox, creature.BodyPart_LFoot);
         SelectComboByTag(_rFootComboBox, creature.BodyPart_RFoot);
+
+        // Colors
+        if (_skinColorNumeric != null)
+            _skinColorNumeric.Value = creature.Color_Skin;
+        if (_hairColorNumeric != null)
+            _hairColorNumeric.Value = creature.Color_Hair;
+        if (_tattoo1ColorNumeric != null)
+            _tattoo1ColorNumeric.Value = creature.Color_Tattoo1;
+        if (_tattoo2ColorNumeric != null)
+            _tattoo2ColorNumeric.Value = creature.Color_Tattoo2;
+
+        // Update color swatches
+        UpdateAllColorSwatches();
+    }
+
+    private void UpdateAllColorSwatches()
+    {
+        if (_currentCreature == null) return;
+
+        UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, _currentCreature.Color_Skin);
+        UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, _currentCreature.Color_Hair);
+        UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, _currentCreature.Color_Tattoo1);
+        UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, _currentCreature.Color_Tattoo2);
+    }
+
+    private void UpdateColorSwatch(Border? swatch, string paletteName, byte colorIndex)
+    {
+        if (swatch == null) return;
+
+        if (_paletteColorService != null)
+        {
+            var color = _paletteColorService.GetPaletteColor(paletteName, colorIndex);
+            swatch.Background = new SolidColorBrush(color);
+        }
+        else
+        {
+            swatch.Background = new SolidColorBrush(Colors.Gray);
+        }
     }
 
     private void SelectComboByTag(ComboBox? combo, byte value)
@@ -407,6 +510,36 @@ public partial class AppearancePanel : UserControl
         }
     }
 
+    private void OnColorValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        var value = (byte)(e.NewValue ?? 0);
+
+        if (sender == _skinColorNumeric)
+        {
+            _currentCreature.Color_Skin = value;
+            UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, value);
+        }
+        else if (sender == _hairColorNumeric)
+        {
+            _currentCreature.Color_Hair = value;
+            UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, value);
+        }
+        else if (sender == _tattoo1ColorNumeric)
+        {
+            _currentCreature.Color_Tattoo1 = value;
+            UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, value);
+        }
+        else if (sender == _tattoo2ColorNumeric)
+        {
+            _currentCreature.Color_Tattoo2 = value;
+            UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, value);
+        }
+
+        AppearanceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void ClearPanel()
     {
         // Clear appearance
@@ -419,5 +552,83 @@ public partial class AppearancePanel : UserControl
 
         // Disable body parts section
         UpdateBodyPartsEnabledState(false);
+
+        // Clear colors
+        if (_skinColorNumeric != null)
+            _skinColorNumeric.Value = 0;
+        if (_hairColorNumeric != null)
+            _hairColorNumeric.Value = 0;
+        if (_tattoo1ColorNumeric != null)
+            _tattoo1ColorNumeric.Value = 0;
+        if (_tattoo2ColorNumeric != null)
+            _tattoo2ColorNumeric.Value = 0;
+    }
+
+    private void OnSkinColorSwatchClicked(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Skin, _currentCreature?.Color_Skin ?? 0, newIndex =>
+        {
+            if (_currentCreature != null) _currentCreature.Color_Skin = newIndex;
+            if (_skinColorNumeric != null) _skinColorNumeric.Value = newIndex;
+            UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, newIndex);
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        });
+    }
+
+    private void OnHairColorSwatchClicked(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Hair, _currentCreature?.Color_Hair ?? 0, newIndex =>
+        {
+            if (_currentCreature != null) _currentCreature.Color_Hair = newIndex;
+            if (_hairColorNumeric != null) _hairColorNumeric.Value = newIndex;
+            UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, newIndex);
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        });
+    }
+
+    private void OnTattoo1ColorSwatchClicked(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Tattoo1, _currentCreature?.Color_Tattoo1 ?? 0, newIndex =>
+        {
+            if (_currentCreature != null) _currentCreature.Color_Tattoo1 = newIndex;
+            if (_tattoo1ColorNumeric != null) _tattoo1ColorNumeric.Value = newIndex;
+            UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, newIndex);
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        });
+    }
+
+    private void OnTattoo2ColorSwatchClicked(object? sender, PointerPressedEventArgs e)
+    {
+        OpenColorPicker(PaletteColorService.Palettes.Tattoo2, _currentCreature?.Color_Tattoo2 ?? 0, newIndex =>
+        {
+            if (_currentCreature != null) _currentCreature.Color_Tattoo2 = newIndex;
+            if (_tattoo2ColorNumeric != null) _tattoo2ColorNumeric.Value = newIndex;
+            UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, newIndex);
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        });
+    }
+
+    private async void OpenColorPicker(string paletteName, byte currentIndex, Action<byte> onColorSelected)
+    {
+        if (_paletteColorService == null) return;
+
+        var picker = new ColorPickerWindow(_paletteColorService, paletteName, currentIndex);
+
+        // Get the parent window
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
+        if (parentWindow != null)
+        {
+            await picker.ShowDialog(parentWindow);
+        }
+        else
+        {
+            picker.Show();
+            return;
+        }
+
+        if (picker.Confirmed)
+        {
+            onColorSelected(picker.SelectedColorIndex);
+        }
     }
 }

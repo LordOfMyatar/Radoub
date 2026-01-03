@@ -82,97 +82,55 @@ public static class UtcWriter
         AddByteField(root, "BodyBag", utc.BodyBag);
 
         // Body parts (for part-based appearances)
-        // Only write if non-zero to preserve file compatibility
-        if (utc.AppearanceHead != 0)
-            AddByteField(root, "Appearance_Head", utc.AppearanceHead);
-        if (utc.BodyPart_Belt != 0)
-            AddByteField(root, "BodyPart_Belt", utc.BodyPart_Belt);
-        if (utc.BodyPart_LBicep != 0)
-            AddByteField(root, "BodyPart_LBicep", utc.BodyPart_LBicep);
-        if (utc.BodyPart_RBicep != 0)
-            AddByteField(root, "BodyPart_RBicep", utc.BodyPart_RBicep);
-        if (utc.BodyPart_LFArm != 0)
-            AddByteField(root, "BodyPart_LFArm", utc.BodyPart_LFArm);
-        if (utc.BodyPart_RFArm != 0)
-            AddByteField(root, "BodyPart_RFArm", utc.BodyPart_RFArm);
-        if (utc.BodyPart_LFoot != 0)
-            AddByteField(root, "BodyPart_LFoot", utc.BodyPart_LFoot);
-        if (utc.BodyPart_RFoot != 0)
-            AddByteField(root, "BodyPart_RFoot", utc.BodyPart_RFoot);
-        if (utc.BodyPart_LHand != 0)
-            AddByteField(root, "BodyPart_LHand", utc.BodyPart_LHand);
-        if (utc.BodyPart_RHand != 0)
-            AddByteField(root, "BodyPart_RHand", utc.BodyPart_RHand);
-        if (utc.BodyPart_LShin != 0)
-            AddByteField(root, "BodyPart_LShin", utc.BodyPart_LShin);
-        if (utc.BodyPart_RShin != 0)
-            AddByteField(root, "BodyPart_RShin", utc.BodyPart_RShin);
-        if (utc.BodyPart_LShoul != 0)
-            AddByteField(root, "BodyPart_LShoul", utc.BodyPart_LShoul);
-        if (utc.BodyPart_RShoul != 0)
-            AddByteField(root, "BodyPart_RShoul", utc.BodyPart_RShoul);
-        if (utc.BodyPart_LThigh != 0)
-            AddByteField(root, "BodyPart_LThigh", utc.BodyPart_LThigh);
-        if (utc.BodyPart_RThigh != 0)
-            AddByteField(root, "BodyPart_RThigh", utc.BodyPart_RThigh);
-        if (utc.BodyPart_Neck != 0)
-            AddByteField(root, "BodyPart_Neck", utc.BodyPart_Neck);
-        if (utc.BodyPart_Pelvis != 0)
-            AddByteField(root, "BodyPart_Pelvis", utc.BodyPart_Pelvis);
-        if (utc.BodyPart_Torso != 0)
-            AddByteField(root, "BodyPart_Torso", utc.BodyPart_Torso);
+        // Always write - 0 is a valid body part value
+        AddByteField(root, "Appearance_Head", utc.AppearanceHead);
+        AddByteField(root, "BodyPart_Belt", utc.BodyPart_Belt);
+        AddByteField(root, "BodyPart_LBicep", utc.BodyPart_LBicep);
+        AddByteField(root, "BodyPart_RBicep", utc.BodyPart_RBicep);
+        AddByteField(root, "BodyPart_LFArm", utc.BodyPart_LFArm);
+        AddByteField(root, "BodyPart_RFArm", utc.BodyPart_RFArm);
+        AddByteField(root, "BodyPart_LFoot", utc.BodyPart_LFoot);
+        AddByteField(root, "BodyPart_RFoot", utc.BodyPart_RFoot);
+        AddByteField(root, "BodyPart_LHand", utc.BodyPart_LHand);
+        AddByteField(root, "BodyPart_RHand", utc.BodyPart_RHand);
+        AddByteField(root, "BodyPart_LShin", utc.BodyPart_LShin);
+        AddByteField(root, "BodyPart_RShin", utc.BodyPart_RShin);
+        AddByteField(root, "BodyPart_LShoul", utc.BodyPart_LShoul);
+        AddByteField(root, "BodyPart_RShoul", utc.BodyPart_RShoul);
+        AddByteField(root, "BodyPart_LThigh", utc.BodyPart_LThigh);
+        AddByteField(root, "BodyPart_RThigh", utc.BodyPart_RThigh);
+        AddByteField(root, "BodyPart_Neck", utc.BodyPart_Neck);
+        AddByteField(root, "BodyPart_Pelvis", utc.BodyPart_Pelvis);
+        AddByteField(root, "BodyPart_Torso", utc.BodyPart_Torso);
 
         // Colors (for part-based appearances)
-        // Only write if non-zero to preserve file compatibility
-        if (utc.Color_Skin != 0)
-            AddByteField(root, "Color_Skin", utc.Color_Skin);
-        if (utc.Color_Hair != 0)
-            AddByteField(root, "Color_Hair", utc.Color_Hair);
-        if (utc.Color_Tattoo1 != 0)
-            AddByteField(root, "Color_Tattoo1", utc.Color_Tattoo1);
-        if (utc.Color_Tattoo2 != 0)
-            AddByteField(root, "Color_Tattoo2", utc.Color_Tattoo2);
+        // Always write - 0 is a valid color index
+        AddByteField(root, "Color_Skin", utc.Color_Skin);
+        AddByteField(root, "Color_Hair", utc.Color_Hair);
+        AddByteField(root, "Color_Tattoo1", utc.Color_Tattoo1);
+        AddByteField(root, "Color_Tattoo2", utc.Color_Tattoo2);
 
         // Armor part appearance (game instance fields - from equipped armor)
-        // Only write if non-zero to preserve file compatibility
-        if (utc.ArmorPart_Belt != 0)
-            AddByteField(root, "ArmorPart_Belt", utc.ArmorPart_Belt);
-        if (utc.ArmorPart_LBicep != 0)
-            AddByteField(root, "ArmorPart_LBicep", utc.ArmorPart_LBicep);
-        if (utc.ArmorPart_RBicep != 0)
-            AddByteField(root, "ArmorPart_RBicep", utc.ArmorPart_RBicep);
-        if (utc.ArmorPart_LFArm != 0)
-            AddByteField(root, "ArmorPart_LFArm", utc.ArmorPart_LFArm);
-        if (utc.ArmorPart_RFArm != 0)
-            AddByteField(root, "ArmorPart_RFArm", utc.ArmorPart_RFArm);
-        if (utc.ArmorPart_LFoot != 0)
-            AddByteField(root, "ArmorPart_LFoot", utc.ArmorPart_LFoot);
-        if (utc.ArmorPart_RFoot != 0)
-            AddByteField(root, "ArmorPart_RFoot", utc.ArmorPart_RFoot);
-        if (utc.ArmorPart_LHand != 0)
-            AddByteField(root, "ArmorPart_LHand", utc.ArmorPart_LHand);
-        if (utc.ArmorPart_RHand != 0)
-            AddByteField(root, "ArmorPart_RHand", utc.ArmorPart_RHand);
-        if (utc.ArmorPart_LShin != 0)
-            AddByteField(root, "ArmorPart_LShin", utc.ArmorPart_LShin);
-        if (utc.ArmorPart_RShin != 0)
-            AddByteField(root, "ArmorPart_RShin", utc.ArmorPart_RShin);
-        if (utc.ArmorPart_LShoul != 0)
-            AddByteField(root, "ArmorPart_LShoul", utc.ArmorPart_LShoul);
-        if (utc.ArmorPart_RShoul != 0)
-            AddByteField(root, "ArmorPart_RShoul", utc.ArmorPart_RShoul);
-        if (utc.ArmorPart_LThigh != 0)
-            AddByteField(root, "ArmorPart_LThigh", utc.ArmorPart_LThigh);
-        if (utc.ArmorPart_RThigh != 0)
-            AddByteField(root, "ArmorPart_RThigh", utc.ArmorPart_RThigh);
-        if (utc.ArmorPart_Neck != 0)
-            AddByteField(root, "ArmorPart_Neck", utc.ArmorPart_Neck);
-        if (utc.ArmorPart_Pelvis != 0)
-            AddByteField(root, "ArmorPart_Pelvis", utc.ArmorPart_Pelvis);
-        if (utc.ArmorPart_Torso != 0)
-            AddByteField(root, "ArmorPart_Torso", utc.ArmorPart_Torso);
-        if (utc.ArmorPart_Robe != 0)
-            AddByteField(root, "ArmorPart_Robe", utc.ArmorPart_Robe);
+        // Always write - 0 is a valid value
+        AddByteField(root, "ArmorPart_Belt", utc.ArmorPart_Belt);
+        AddByteField(root, "ArmorPart_LBicep", utc.ArmorPart_LBicep);
+        AddByteField(root, "ArmorPart_RBicep", utc.ArmorPart_RBicep);
+        AddByteField(root, "ArmorPart_LFArm", utc.ArmorPart_LFArm);
+        AddByteField(root, "ArmorPart_RFArm", utc.ArmorPart_RFArm);
+        AddByteField(root, "ArmorPart_LFoot", utc.ArmorPart_LFoot);
+        AddByteField(root, "ArmorPart_RFoot", utc.ArmorPart_RFoot);
+        AddByteField(root, "ArmorPart_LHand", utc.ArmorPart_LHand);
+        AddByteField(root, "ArmorPart_RHand", utc.ArmorPart_RHand);
+        AddByteField(root, "ArmorPart_LShin", utc.ArmorPart_LShin);
+        AddByteField(root, "ArmorPart_RShin", utc.ArmorPart_RShin);
+        AddByteField(root, "ArmorPart_LShoul", utc.ArmorPart_LShoul);
+        AddByteField(root, "ArmorPart_RShoul", utc.ArmorPart_RShoul);
+        AddByteField(root, "ArmorPart_LThigh", utc.ArmorPart_LThigh);
+        AddByteField(root, "ArmorPart_RThigh", utc.ArmorPart_RThigh);
+        AddByteField(root, "ArmorPart_Neck", utc.ArmorPart_Neck);
+        AddByteField(root, "ArmorPart_Pelvis", utc.ArmorPart_Pelvis);
+        AddByteField(root, "ArmorPart_Torso", utc.ArmorPart_Torso);
+        AddByteField(root, "ArmorPart_Robe", utc.ArmorPart_Robe);
 
         // Ability scores
         AddByteField(root, "Str", utc.Str);

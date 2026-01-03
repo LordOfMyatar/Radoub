@@ -10,6 +10,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.20-alpha] - 2026-01-02
+**Branch**: `quartermaster/issue-645` | **PR**: #747
+
+### Epic: Character Color Picker (#645)
+
+Implement character color customization (Skin, Hair, Tattoo1, Tattoo2) for part-based appearances.
+
+#### Added
+
+- Color fields (Skin, Hair, Tattoo1, Tattoo2) in Appearance tab with NumericUpDown controls
+- Color swatches displaying actual palette colors next to each color field
+- Clickable swatches open ColorPickerWindow dialog
+- ColorPickerWindow with 16x11 gradient swatch grid matching Aurora Toolset layout
+- PaletteColorService for extracting colors and gradients from NWN palette TGA files
+- TgaReader in Radoub.Formats for parsing uncompressed TGA images
+- Double-click on swatch confirms selection
+
+#### Fixed
+
+- Handle Aurora Toolset's BodyPart_RFoot bug (incorrectly saved as ArmorPart_RFoot)
+- NumericUpDown decimal display (added FormatString="0")
+
+---
+
 ## [0.1.19-alpha] - 2026-01-01
 **Branch**: `quartermaster/issue-715` | **PR**: #716
 

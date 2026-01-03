@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Quartermaster.Views.Dialogs.ColorPickerWindow"
+        Title="Select Color"
+        AutomationProperties.AutomationId="ColorPickerWindow"
+        Width="500" Height="420"
+        MinWidth="450" MinHeight="350"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+            <TextBlock x:Name="TitleLabel" Text="Select Color" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <Border x:Name="CurrentColorSwatch" Width="50" Height="26"
+                    CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
+                    Background="Gray" VerticalAlignment="Center"/>
+            <TextBlock x:Name="CurrentColorLabel" Text="Index: 0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        </StackPanel>
+
+        <!-- Color Grid -->
+        <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl x:Name="ColorGrid" AutomationProperties.AutomationId="ColorGrid">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Info text -->
+        <TextBlock Grid.Row="2" x:Name="InfoLabel"
+                   Text="176 colors available"
+                   FontSize="11" Foreground="Gray"
+                   Margin="0,10,0,0"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Spacing="10" Margin="0,15,0,0">
+            <Button x:Name="OkButton" Content="OK" Width="80"
+                    Click="OnOkClick"
+                    AutomationProperties.AutomationId="OkButton"/>
+            <Button x:Name="CancelButton" Content="Cancel" Width="80"
+                    Click="OnCancelClick"
+                    AutomationProperties.AutomationId="CancelButton"/>
+        </StackPanel>
+    </Grid>
+</Window>
