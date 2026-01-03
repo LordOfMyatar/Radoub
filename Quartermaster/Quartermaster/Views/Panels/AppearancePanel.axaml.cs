@@ -44,6 +44,12 @@ public partial class AppearancePanel : UserControl
     private ComboBox? _lFootComboBox;
     private ComboBox? _rFootComboBox;
 
+    // Color controls
+    private NumericUpDown? _skinColorNumeric;
+    private NumericUpDown? _hairColorNumeric;
+    private NumericUpDown? _tattoo1ColorNumeric;
+    private NumericUpDown? _tattoo2ColorNumeric;
+
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
     private List<AppearanceInfo>? _appearances;
@@ -96,9 +102,25 @@ public partial class AppearancePanel : UserControl
         _lFootComboBox = this.FindControl<ComboBox>("LFootComboBox");
         _rFootComboBox = this.FindControl<ComboBox>("RFootComboBox");
 
+        // Color controls
+        _skinColorNumeric = this.FindControl<NumericUpDown>("SkinColorNumeric");
+        _hairColorNumeric = this.FindControl<NumericUpDown>("HairColorNumeric");
+        _tattoo1ColorNumeric = this.FindControl<NumericUpDown>("Tattoo1ColorNumeric");
+        _tattoo2ColorNumeric = this.FindControl<NumericUpDown>("Tattoo2ColorNumeric");
+
         // Wire up events
         if (_appearanceComboBox != null)
             _appearanceComboBox.SelectionChanged += OnAppearanceSelectionChanged;
+
+        // Color value changed events
+        if (_skinColorNumeric != null)
+            _skinColorNumeric.ValueChanged += OnColorValueChanged;
+        if (_hairColorNumeric != null)
+            _hairColorNumeric.ValueChanged += OnColorValueChanged;
+        if (_tattoo1ColorNumeric != null)
+            _tattoo1ColorNumeric.ValueChanged += OnColorValueChanged;
+        if (_tattoo2ColorNumeric != null)
+            _tattoo2ColorNumeric.ValueChanged += OnColorValueChanged;
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
@@ -305,6 +327,16 @@ public partial class AppearancePanel : UserControl
         SelectComboByTag(_rShinComboBox, creature.BodyPart_RShin);
         SelectComboByTag(_lFootComboBox, creature.BodyPart_LFoot);
         SelectComboByTag(_rFootComboBox, creature.BodyPart_RFoot);
+
+        // Colors
+        if (_skinColorNumeric != null)
+            _skinColorNumeric.Value = creature.Color_Skin;
+        if (_hairColorNumeric != null)
+            _hairColorNumeric.Value = creature.Color_Hair;
+        if (_tattoo1ColorNumeric != null)
+            _tattoo1ColorNumeric.Value = creature.Color_Tattoo1;
+        if (_tattoo2ColorNumeric != null)
+            _tattoo2ColorNumeric.Value = creature.Color_Tattoo2;
     }
 
     private void SelectComboByTag(ComboBox? combo, byte value)
@@ -407,6 +439,24 @@ public partial class AppearancePanel : UserControl
         }
     }
 
+    private void OnColorValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        var value = (byte)(e.NewValue ?? 0);
+
+        if (sender == _skinColorNumeric)
+            _currentCreature.Color_Skin = value;
+        else if (sender == _hairColorNumeric)
+            _currentCreature.Color_Hair = value;
+        else if (sender == _tattoo1ColorNumeric)
+            _currentCreature.Color_Tattoo1 = value;
+        else if (sender == _tattoo2ColorNumeric)
+            _currentCreature.Color_Tattoo2 = value;
+
+        AppearanceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void ClearPanel()
     {
         // Clear appearance
@@ -419,5 +469,15 @@ public partial class AppearancePanel : UserControl
 
         // Disable body parts section
         UpdateBodyPartsEnabledState(false);
+
+        // Clear colors
+        if (_skinColorNumeric != null)
+            _skinColorNumeric.Value = 0;
+        if (_hairColorNumeric != null)
+            _hairColorNumeric.Value = 0;
+        if (_tattoo1ColorNumeric != null)
+            _tattoo1ColorNumeric.Value = 0;
+        if (_tattoo2ColorNumeric != null)
+            _tattoo2ColorNumeric.Value = 0;
     }
 }

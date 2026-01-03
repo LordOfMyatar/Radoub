@@ -210,6 +210,42 @@
                                 <ComboBox Grid.Column="3" x:Name="RFootComboBox"
                                           HorizontalAlignment="Stretch" FontSize="11"/>
                             </Grid>
+
+                            <!-- Colors Section -->
+                            <TextBlock Text="Colors" FontWeight="SemiBold" FontSize="12" Margin="0,10,0,5"/>
+                            <Grid ColumnDefinitions="80,*,80,*" RowDefinitions="Auto,Auto" RowSpacing="6" ColumnSpacing="10">
+                                <!-- Row 0: Skin / Hair -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Skin:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="SkinColorNumeric"
+                                               Minimum="0" Maximum="175" Value="0"
+                                               HorizontalAlignment="Left" MinWidth="80" FontSize="11"
+                                               AutomationProperties.AutomationId="SkinColorNumeric"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Hair:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Row="0" Grid.Column="3" x:Name="HairColorNumeric"
+                                               Minimum="0" Maximum="175" Value="0"
+                                               HorizontalAlignment="Left" MinWidth="80" FontSize="11"
+                                               AutomationProperties.AutomationId="HairColorNumeric"/>
+
+                                <!-- Row 1: Tattoo 1 / Tattoo 2 -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Tattoo 1:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="Tattoo1ColorNumeric"
+                                               Minimum="0" Maximum="175" Value="0"
+                                               HorizontalAlignment="Left" MinWidth="80" FontSize="11"
+                                               AutomationProperties.AutomationId="Tattoo1ColorNumeric"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Tattoo 2:" FontSize="11"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="3" x:Name="Tattoo2ColorNumeric"
+                                               Minimum="0" Maximum="175" Value="0"
+                                               HorizontalAlignment="Left" MinWidth="80" FontSize="11"
+                                               AutomationProperties.AutomationId="Tattoo2ColorNumeric"/>
+                            </Grid>
                         </StackPanel>
                     </StackPanel>
                 </Border>
