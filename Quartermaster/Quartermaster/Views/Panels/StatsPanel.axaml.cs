@@ -46,7 +46,7 @@ public partial class StatsPanel : UserControl
     private TextBlock? _dexAcValue, _sizeModValue, _totalAcValue;
 
     // Combat stats controls
-    private TextBlock? _babValue, _babBreakdown, _speedValue;
+    private TextBlock? _babValue, _babBreakdown;
     private NumericUpDown? _crValueNumeric;
     private NumericUpDown? _crAdjustNumeric;
     private StackPanel? _crDisplaySection;
@@ -120,7 +120,6 @@ public partial class StatsPanel : UserControl
         // Combat stats
         _babValue = this.FindControl<TextBlock>("BabValue");
         _babBreakdown = this.FindControl<TextBlock>("BabBreakdown");
-        _speedValue = this.FindControl<TextBlock>("SpeedValue");
         _crValueNumeric = this.FindControl<NumericUpDown>("CrValueNumeric");
         _crAdjustNumeric = this.FindControl<NumericUpDown>("CRAdjustNumeric");
         _crDisplaySection = this.FindControl<StackPanel>("CrDisplaySection");
@@ -209,10 +208,6 @@ public partial class StatsPanel : UserControl
 
         // Calculate BAB from class levels + equipment
         UpdateBabDisplay();
-
-        // Speed from WalkRate
-        var speedName = GetSpeedName(creature.WalkRate);
-        SetText(_speedValue, speedName);
 
         // Load saving throws with ability modifiers
         int dexTotal = creature.Dex + racialMods.Dex;
@@ -508,24 +503,6 @@ public partial class StatsPanel : UserControl
         SetText(totalCtrl, CreatureDisplayService.FormatBonus(total));
     }
 
-    private static string GetSpeedName(int walkRate)
-    {
-        // Walk rates from creaturespeed.2da
-        return walkRate switch
-        {
-            0 => "PC",
-            1 => "Immobile",
-            2 => "Very Slow",
-            3 => "Slow",
-            4 => "Normal",
-            5 => "Fast",
-            6 => "Very Fast",
-            7 => "Default",
-            8 => "DM Fast",
-            _ => $"Rate {walkRate}"
-        };
-    }
-
     public void ClearStats()
     {
         _isLoading = true;
@@ -554,7 +531,6 @@ public partial class StatsPanel : UserControl
         // Clear combat stats
         SetText(_babValue, "+0");
         SetText(_babBreakdown, "");
-        SetText(_speedValue, "Normal");
         if (_crValueNumeric != null)
             _crValueNumeric.Value = 0;
         if (_crAdjustNumeric != null)
