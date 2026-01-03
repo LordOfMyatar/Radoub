@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.20-alpha] - 2026-01-02
+**Branch**: `quartermaster/issue-645` | **PR**: #TBD
+
+### Epic: Character Color Picker (#645)
+
+Implement character color customization (Skin, Hair, Tattoo1, Tattoo2) for part-based appearances.
+
+#### Added
+
+- Color fields exposed in Appearance tab (Phase 1)
+
+---
+
 ## [0.1.19-alpha] - 2026-01-01
 **Branch**: `quartermaster/issue-715` | **PR**: #716
 
