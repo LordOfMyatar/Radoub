@@ -112,6 +112,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Initialize classes panel with display service for 2DA/TLK lookups
         ClassesPanelContent.SetDisplayService(_creatureDisplayService);
+        ClassesPanelContent.AlignmentChanged += (s, e) => MarkDirty();
 
         // Initialize feats panel with display service for 2DA/TLK lookups
         FeatsPanelContent.SetDisplayService(_creatureDisplayService);

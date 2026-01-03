@@ -126,15 +126,23 @@
 
                             <!-- Good-Evil -->
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
-                                <TextBlock Text="Good ↔ Evil" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Good" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="Evil" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <ProgressBar Grid.Column="0" x:Name="GoodEvilBar"
-                                                 Minimum="0" Maximum="100" Value="50"
-                                                 Height="8" CornerRadius="4"/>
+                                    <Slider Grid.Column="0" x:Name="GoodEvilSlider"
+                                            Minimum="0" Maximum="100" Value="50"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            AutomationProperties.AutomationId="GoodEvilSlider"/>
                                     <TextBlock Grid.Column="1" x:Name="GoodEvilValue"
                                                Text="50"
                                                FontSize="12"
+                                               MinWidth="30"
                                                Margin="8,0,0,0"
                                                VerticalAlignment="Center"/>
                                 </Grid>
@@ -142,15 +150,23 @@
 
                             <!-- Lawful-Chaotic -->
                             <StackPanel Grid.Row="1" Grid.Column="1">
-                                <TextBlock Text="Lawful ↔ Chaotic" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Lawful" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="Chaotic" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <ProgressBar Grid.Column="0" x:Name="LawChaosBar"
-                                                 Minimum="0" Maximum="100" Value="50"
-                                                 Height="8" CornerRadius="4"/>
+                                    <Slider Grid.Column="0" x:Name="LawChaosSlider"
+                                            Minimum="0" Maximum="100" Value="50"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            AutomationProperties.AutomationId="LawChaosSlider"/>
                                     <TextBlock Grid.Column="1" x:Name="LawChaosValue"
                                                Text="50"
                                                FontSize="12"
+                                               MinWidth="30"
                                                Margin="8,0,0,0"
                                                VerticalAlignment="Center"/>
                                 </Grid>
