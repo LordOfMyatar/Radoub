@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.22-alpha] - 2026-01-03
-**Branch**: `quartermaster/issue-750` | **PR**: #TBD
+**Branch**: `quartermaster/issue-750` | **PR**: #752
 
 ### Sprint: Stats Panel Editing (#750)
 
