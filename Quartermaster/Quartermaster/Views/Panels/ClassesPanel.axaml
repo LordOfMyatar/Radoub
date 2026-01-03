@@ -124,13 +124,13 @@
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
 
-                            <!-- Good-Evil -->
+                            <!-- Good-Evil (0=Evil, 100=Good) -->
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                                 <Grid ColumnDefinitions="Auto,*,Auto">
-                                    <TextBlock Grid.Column="0" Text="Good" FontSize="11"
+                                    <TextBlock Grid.Column="0" Text="Evil" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="Evil" FontSize="11"
+                                    <TextBlock Grid.Column="2" Text="Good" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
@@ -148,13 +148,13 @@
                                 </Grid>
                             </StackPanel>
 
-                            <!-- Lawful-Chaotic -->
+                            <!-- Lawful-Chaotic (0=Chaotic, 100=Lawful) -->
                             <StackPanel Grid.Row="1" Grid.Column="1">
                                 <Grid ColumnDefinitions="Auto,*,Auto">
-                                    <TextBlock Grid.Column="0" Text="Lawful" FontSize="11"
+                                    <TextBlock Grid.Column="0" Text="Chaotic" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="Chaotic" FontSize="11"
+                                    <TextBlock Grid.Column="2" Text="Lawful" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
