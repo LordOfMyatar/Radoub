@@ -21,7 +21,11 @@ Add editing capability for the 6 ability scores (STR, DEX, CON, INT, WIS, CHA).
 
 - NumericUpDown controls for modifying base ability scores
 - Validation for 3-40 range (NWN limits)
-- Recalculation of derived stats on change
+- Recalculation of derived stats on ability change:
+  - MaxHP recalculated when CON changes
+  - Saving throws updated for CON/DEX/WIS changes
+  - Dex AC bonus displayed in Combat section
+- AbilityScoresChanged event for dirty flag tracking
 
 ---
 
