@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.21-alpha] - 2026-01-03
+**Branch**: `quartermaster/issue-725` | **PR**: #TBD
+
+### Feature: Edit Ability Scores (#725)
+
+Add editing capability for the 6 ability scores (STR, DEX, CON, INT, WIS, CHA).
+
+#### Added
+
+- NumericUpDown controls for modifying base ability scores
+- Validation for 3-40 range (NWN limits)
+- Recalculation of derived stats on change
+
+---
+
 ## [0.1.20-alpha] - 2026-01-02
 **Branch**: `quartermaster/issue-645` | **PR**: #747
 
