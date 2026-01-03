@@ -1027,6 +1027,10 @@ namespace DialogEditor.Services
                         // Load Radoub tool integration settings (#416)
                         _manifestPath = ExpandPath(settings.ManifestPath ?? "");
 
+                        // Load script editor settings (#718)
+                        _externalEditorPath = ExpandPath(settings.ExternalEditorPath ?? "");
+                        _scriptSearchPaths = ExpandPaths(settings.ScriptSearchPaths?.ToList() ?? new List<string>());
+
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {RecentFilesService.Instance.RecentFiles.Count} recent files, max={RecentFilesService.Instance.MaxRecentFiles}, theme={(UISettingsService.Instance.IsDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
                     }
                     else
@@ -1105,7 +1109,10 @@ namespace DialogEditor.Services
                     // Spell Check settings (#505)
                     SpellCheckEnabled = SpellCheckEnabled,
                     // Radoub tool integration (#416)
-                    ManifestPath = ContractPath(ManifestPath)
+                    ManifestPath = ContractPath(ManifestPath),
+                    // Script editor settings (#718)
+                    ExternalEditorPath = ContractPath(ExternalEditorPath),
+                    ScriptSearchPaths = ContractPaths(_scriptSearchPaths)
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -1266,6 +1273,10 @@ namespace DialogEditor.Services
 
             // Radoub tool integration settings (#416)
             public string ManifestPath { get; set; } = "";
+
+            // Script editor settings (#718)
+            public string ExternalEditorPath { get; set; } = "";
+            public List<string> ScriptSearchPaths { get; set; } = new List<string>();
         }
     }
 }
