@@ -17,7 +17,10 @@ public partial class StatsPanel : UserControl
     private bool _isLoading;
 
     public event EventHandler? CRAdjustChanged;
+    public event EventHandler? ChallengeRatingChanged;
     public event EventHandler? AbilityScoresChanged;
+    public event EventHandler? HitPointsChanged;
+    public event EventHandler? NaturalAcChanged;
 
     // Ability score controls - NumericUpDown for base, TextBlock for derived
     private NumericUpDown? _strBase;
@@ -34,12 +37,17 @@ public partial class StatsPanel : UserControl
     private TextBlock? _chaRacial, _chaTotal, _chaBonus;
 
     // Hit points controls
-    private TextBlock? _baseHpValue, _baseHpNote;
+    private NumericUpDown? _baseHpNumeric;
+    private TextBlock? _baseHpNote;
     private TextBlock? _maxHpValue, _conHpBonus;
-    private TextBlock? _currentHpValue, _hpPercent;
+
+    // Armor class controls
+    private NumericUpDown? _naturalAcNumeric;
+    private TextBlock? _dexAcValue, _sizeModValue, _totalAcValue;
 
     // Combat stats controls
-    private TextBlock? _naturalAcValue, _dexAcValue, _babValue, _babBreakdown, _speedValue, _crValue;
+    private TextBlock? _babValue, _babBreakdown;
+    private NumericUpDown? _crValueNumeric;
     private NumericUpDown? _crAdjustNumeric;
     private StackPanel? _crDisplaySection;
 
@@ -92,24 +100,33 @@ public partial class StatsPanel : UserControl
         WireAbilityScoreEvents();
 
         // Hit points
-        _baseHpValue = this.FindControl<TextBlock>("BaseHpValue");
+        _baseHpNumeric = this.FindControl<NumericUpDown>("BaseHpNumeric");
         _baseHpNote = this.FindControl<TextBlock>("BaseHpNote");
         _maxHpValue = this.FindControl<TextBlock>("MaxHpValue");
         _conHpBonus = this.FindControl<TextBlock>("ConHpBonus");
-        _currentHpValue = this.FindControl<TextBlock>("CurrentHpValue");
-        _hpPercent = this.FindControl<TextBlock>("HpPercent");
+
+        // Wire up hit points events
+        if (_baseHpNumeric != null)
+            _baseHpNumeric.ValueChanged += OnBaseHpValueChanged;
+
+        // Armor class controls
+        _naturalAcNumeric = this.FindControl<NumericUpDown>("NaturalAcNumeric");
+        if (_naturalAcNumeric != null)
+            _naturalAcNumeric.ValueChanged += OnNaturalAcValueChanged;
+        _dexAcValue = this.FindControl<TextBlock>("DexAcValue");
+        _sizeModValue = this.FindControl<TextBlock>("SizeModValue");
+        _totalAcValue = this.FindControl<TextBlock>("TotalAcValue");
 
         // Combat stats
-        _naturalAcValue = this.FindControl<TextBlock>("NaturalAcValue");
-        _dexAcValue = this.FindControl<TextBlock>("DexAcValue");
         _babValue = this.FindControl<TextBlock>("BabValue");
         _babBreakdown = this.FindControl<TextBlock>("BabBreakdown");
-        _speedValue = this.FindControl<TextBlock>("SpeedValue");
-        _crValue = this.FindControl<TextBlock>("CrValue");
+        _crValueNumeric = this.FindControl<NumericUpDown>("CrValueNumeric");
         _crAdjustNumeric = this.FindControl<NumericUpDown>("CRAdjustNumeric");
         _crDisplaySection = this.FindControl<StackPanel>("CrDisplaySection");
 
         // Wire up events
+        if (_crValueNumeric != null)
+            _crValueNumeric.ValueChanged += OnCrValueChanged;
         if (_crAdjustNumeric != null)
             _crAdjustNumeric.ValueChanged += OnCRAdjustValueChanged;
 
@@ -176,29 +193,21 @@ public partial class StatsPanel : UserControl
         int conHpContribution = conBonus * totalLevel;
 
         // Load hit points
-        SetText(_baseHpValue, creature.HitPoints.ToString());
+        if (_baseHpNumeric != null)
+            _baseHpNumeric.Value = creature.HitPoints;
         SetText(_maxHpValue, creature.MaxHitPoints.ToString());
-        SetText(_currentHpValue, creature.CurrentHitPoints.ToString());
-        SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
-
-        // Calculate HP percentage
-        var hpPercent = creature.MaxHitPoints > 0
-            ? (creature.CurrentHitPoints * 100) / creature.MaxHitPoints
-            : 0;
-        SetText(_hpPercent, $"({hpPercent}%)");
+        SetText(_conHpBonus, CreatureDisplayService.FormatBonus(conHpContribution));
 
         // Load combat stats
-        SetText(_naturalAcValue, creature.NaturalAC.ToString());
-        SetText(_crValue, creature.ChallengeRating.ToString("F1"));
+        if (_naturalAcNumeric != null)
+            _naturalAcNumeric.Value = creature.NaturalAC;
+        if (_crValueNumeric != null)
+            _crValueNumeric.Value = (decimal)creature.ChallengeRating;
         if (_crAdjustNumeric != null)
             _crAdjustNumeric.Value = creature.CRAdjust;
 
         // Calculate BAB from class levels + equipment
         UpdateBabDisplay();
-
-        // Speed from WalkRate
-        var speedName = GetSpeedName(creature.WalkRate);
-        SetText(_speedValue, speedName);
 
         // Load saving throws with ability modifiers
         int dexTotal = creature.Dex + racialMods.Dex;
@@ -209,6 +218,14 @@ public partial class StatsPanel : UserControl
 
         // Display Dex AC bonus
         SetText(_dexAcValue, CreatureDisplayService.FormatBonus(dexBonus));
+
+        // Display Size AC modifier (from appearance.2da SIZECATEGORY)
+        int sizeAcMod = _displayService?.GetSizeAcModifier(creature.AppearanceType) ?? 0;
+        SetText(_sizeModValue, CreatureDisplayService.FormatBonus(sizeAcMod));
+
+        // Calculate and display Total AC: 10 (base) + Natural AC + Dex Bonus + Size Mod
+        int totalAc = 10 + creature.NaturalAC + dexBonus + sizeAcMod;
+        SetText(_totalAcValue, totalAc.ToString());
 
         LoadSavingThrow(_fortBase, _fortAbility, _fortTotal, creature.FortBonus, conBonus);
         LoadSavingThrow(_refBase, _refAbility, _refTotal, creature.RefBonus, dexBonus);
@@ -224,6 +241,58 @@ public partial class StatsPanel : UserControl
 
         _currentCreature.CRAdjust = (int)(e.NewValue ?? 0);
         CRAdjustChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnCrValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.ChallengeRating = (float)(e.NewValue ?? 0);
+        ChallengeRatingChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnNaturalAcValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.NaturalAC = (byte)(e.NewValue ?? 0);
+        RecalculateTotalAc();
+        NaturalAcChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnBaseHpValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        short newBaseHp = (short)(e.NewValue ?? 1);
+        _currentCreature.HitPoints = newBaseHp;
+
+        // Recalculate MaxHP = BaseHP + Con contribution
+        RecalculateMaxHp();
+
+        HitPointsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RecalculateMaxHp()
+    {
+        if (_currentCreature == null) return;
+
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int conTotal = _currentCreature.Con + racialMods.Con;
+        int conBonus = CreatureDisplayService.CalculateAbilityBonus(conTotal);
+        int totalLevel = _currentCreature.ClassList.Sum(c => c.ClassLevel);
+        int conHpContribution = conBonus * totalLevel;
+
+        // Calculate new MaxHP
+        int newMaxHp = _currentCreature.HitPoints + conHpContribution;
+        _currentCreature.MaxHitPoints = (short)Math.Max(1, newMaxHp);
+
+        // Set CurrentHP = MaxHP (creatures spawn at full health)
+        _currentCreature.CurrentHitPoints = _currentCreature.MaxHitPoints;
+
+        // Update displays
+        SetText(_maxHpValue, _currentCreature.MaxHitPoints.ToString());
+        SetText(_conHpBonus, CreatureDisplayService.FormatBonus(conHpContribution));
     }
 
     private void WireAbilityScoreEvents()
@@ -326,28 +395,8 @@ public partial class StatsPanel : UserControl
 
     private void UpdateHitPointsDisplay()
     {
-        if (_currentCreature == null) return;
-
-        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
-        int conTotal = _currentCreature.Con + racialMods.Con;
-        int conBonus = CreatureDisplayService.CalculateAbilityBonus(conTotal);
-        int totalLevel = _currentCreature.ClassList.Sum(c => c.ClassLevel);
-        int conHpContribution = conBonus * totalLevel;
-
-        // Recalculate MaxHP = BaseHP (dice rolls) + Con contribution
-        int baseHp = _currentCreature.HitPoints; // Stored dice roll total
-        int newMaxHp = baseHp + conHpContribution;
-        _currentCreature.MaxHitPoints = (short)Math.Max(1, newMaxHp); // Min 1 HP
-
-        // Update display
-        SetText(_maxHpValue, _currentCreature.MaxHitPoints.ToString());
-        SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
-
-        // Update HP percentage
-        var hpPercent = _currentCreature.MaxHitPoints > 0
-            ? (_currentCreature.CurrentHitPoints * 100) / _currentCreature.MaxHitPoints
-            : 0;
-        SetText(_hpPercent, $"({hpPercent}%)");
+        // Delegate to the shared recalculation logic
+        RecalculateMaxHp();
     }
 
     private void UpdateDexAcDisplay()
@@ -359,6 +408,23 @@ public partial class StatsPanel : UserControl
         int dexBonus = CreatureDisplayService.CalculateAbilityBonus(dexTotal);
 
         SetText(_dexAcValue, CreatureDisplayService.FormatBonus(dexBonus));
+
+        // Dex change affects Total AC
+        RecalculateTotalAc();
+    }
+
+    private void RecalculateTotalAc()
+    {
+        if (_currentCreature == null) return;
+
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int dexTotal = _currentCreature.Dex + racialMods.Dex;
+        int dexBonus = CreatureDisplayService.CalculateAbilityBonus(dexTotal);
+        int sizeAcMod = _displayService?.GetSizeAcModifier(_currentCreature.AppearanceType) ?? 0;
+
+        // Total AC = 10 (base) + Natural AC + Dex Bonus + Size Mod
+        int totalAc = 10 + _currentCreature.NaturalAC + dexBonus + sizeAcMod;
+        SetText(_totalAcValue, totalAc.ToString());
     }
 
     private void UpdateSavingThrows()
@@ -437,24 +503,6 @@ public partial class StatsPanel : UserControl
         SetText(totalCtrl, CreatureDisplayService.FormatBonus(total));
     }
 
-    private static string GetSpeedName(int walkRate)
-    {
-        // Walk rates from creaturespeed.2da
-        return walkRate switch
-        {
-            0 => "PC",
-            1 => "Immobile",
-            2 => "Very Slow",
-            3 => "Slow",
-            4 => "Normal",
-            5 => "Fast",
-            6 => "Very Fast",
-            7 => "Default",
-            8 => "DM Fast",
-            _ => $"Rate {walkRate}"
-        };
-    }
-
     public void ClearStats()
     {
         _isLoading = true;
@@ -468,19 +516,23 @@ public partial class StatsPanel : UserControl
         LoadAbilityScore(_chaBase, _chaRacial, _chaTotal, _chaBonus, 10, 0);
 
         // Clear hit points
-        SetText(_baseHpValue, "0");
-        SetText(_maxHpValue, "0");
-        SetText(_currentHpValue, "0");
-        SetText(_conHpBonus, "(+0 Con)");
-        SetText(_hpPercent, "(0%)");
+        if (_baseHpNumeric != null)
+            _baseHpNumeric.Value = 1;
+        SetText(_maxHpValue, "1");
+        SetText(_conHpBonus, "+0");
+
+        // Clear armor class
+        if (_naturalAcNumeric != null)
+            _naturalAcNumeric.Value = 0;
+        SetText(_dexAcValue, "+0");
+        SetText(_sizeModValue, "+0");
+        SetText(_totalAcValue, "10");
 
         // Clear combat stats
-        SetText(_naturalAcValue, "0");
-        SetText(_dexAcValue, "+0");
         SetText(_babValue, "+0");
         SetText(_babBreakdown, "");
-        SetText(_speedValue, "Normal");
-        SetText(_crValue, "0");
+        if (_crValueNumeric != null)
+            _crValueNumeric.Value = 0;
         if (_crAdjustNumeric != null)
             _crAdjustNumeric.Value = 0;
 

@@ -10,6 +10,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.22-alpha] - 2026-01-03
+**Branch**: `quartermaster/issue-750` | **PR**: #752
+
+### Sprint: Stats Panel Editing (#750)
+
+Complete Stats panel editing to match Aurora Toolset parity.
+
+#### Added
+
+- **Hit Points Editing** (#726)
+  - NumericUpDown control for Base HP (dice rolls)
+  - Con Bonus and Max HP displayed as calculated values
+  - Base HP changes automatically recalculate Max HP
+  - Matches Aurora Toolset behavior (CurrentHP not exposed)
+- **Natural AC Editing** (#727)
+  - NumericUpDown control for natural armor class (0-255 range)
+- **Armor Class Section** (Aurora Toolset parity)
+  - Separated Armor Class section from Combat section
+  - Display Base AC (10), Dex Bonus, Size Modifier, and Total AC
+  - Size Modifier calculated from appearance.2da SIZECATEGORY
+  - Total AC recalculates when Natural AC or Dex changes
+- **Challenge Rating Editing** (#729)
+  - NumericUpDown control for base CR (0-100, 0.25 increment)
+  - Works alongside existing CR Adjust control
+
+---
+
 ## [0.1.21-alpha] - 2026-01-03
 **Branch**: `quartermaster/issue-725` | **PR**: #749
 
