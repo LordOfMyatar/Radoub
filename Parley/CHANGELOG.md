@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.110-alpha] - 2026-01-02
+**Branch**: `parley/issue-723` | **PR**: #TBD
+
+### Sprint: Settings Persistence & Cleanup (#723)
+
+- [ ] #718 - Fix broken settings persistence for ExternalEditorPath and ScriptSearchPaths
+- [ ] #717 - Remove dead code from SettingsService
+- [ ] #719 - Tech debt: Large files needing refactoring (partial: SettingsService only)
+
+---
+
 ## [0.1.109-alpha] - 2026-01-01
 **Branch**: `parley/refactor/split-treeview-safenode` | **PR**: #714
 
