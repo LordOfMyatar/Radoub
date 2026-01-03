@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.23-alpha] - 2026-01-03
-**Branch**: `quartermaster/issue-751` | **PR**: #TBD
+**Branch**: `quartermaster/issue-751` | **PR**: #755
 
 ### Sprint: Character & Alignment (#751)
 
