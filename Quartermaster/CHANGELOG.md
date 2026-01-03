@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.20-alpha] - 2026-01-02
-**Branch**: `quartermaster/issue-645` | **PR**: #TBD
+**Branch**: `quartermaster/issue-645` | **PR**: #747
 
 ### Epic: Character Color Picker (#645)
 
