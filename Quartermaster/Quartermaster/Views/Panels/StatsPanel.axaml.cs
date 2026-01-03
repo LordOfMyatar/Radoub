@@ -17,14 +17,21 @@ public partial class StatsPanel : UserControl
     private bool _isLoading;
 
     public event EventHandler? CRAdjustChanged;
+    public event EventHandler? AbilityScoresChanged;
 
-    // Ability score controls
-    private TextBlock? _strBase, _strRacial, _strTotal, _strBonus;
-    private TextBlock? _dexBase, _dexRacial, _dexTotal, _dexBonus;
-    private TextBlock? _conBase, _conRacial, _conTotal, _conBonus;
-    private TextBlock? _intBase, _intRacial, _intTotal, _intBonus;
-    private TextBlock? _wisBase, _wisRacial, _wisTotal, _wisBonus;
-    private TextBlock? _chaBase, _chaRacial, _chaTotal, _chaBonus;
+    // Ability score controls - NumericUpDown for base, TextBlock for derived
+    private NumericUpDown? _strBase;
+    private TextBlock? _strRacial, _strTotal, _strBonus;
+    private NumericUpDown? _dexBase;
+    private TextBlock? _dexRacial, _dexTotal, _dexBonus;
+    private NumericUpDown? _conBase;
+    private TextBlock? _conRacial, _conTotal, _conBonus;
+    private NumericUpDown? _intBase;
+    private TextBlock? _intRacial, _intTotal, _intBonus;
+    private NumericUpDown? _wisBase;
+    private TextBlock? _wisRacial, _wisTotal, _wisBonus;
+    private NumericUpDown? _chaBase;
+    private TextBlock? _chaRacial, _chaTotal, _chaBonus;
 
     // Hit points controls
     private TextBlock? _baseHpValue, _baseHpNote;
@@ -50,36 +57,39 @@ public partial class StatsPanel : UserControl
     {
         AvaloniaXamlLoader.Load(this);
 
-        // Ability scores
-        _strBase = this.FindControl<TextBlock>("StrBase");
+        // Ability scores - NumericUpDown for base values
+        _strBase = this.FindControl<NumericUpDown>("StrBase");
         _strRacial = this.FindControl<TextBlock>("StrRacial");
         _strTotal = this.FindControl<TextBlock>("StrTotal");
         _strBonus = this.FindControl<TextBlock>("StrBonus");
 
-        _dexBase = this.FindControl<TextBlock>("DexBase");
+        _dexBase = this.FindControl<NumericUpDown>("DexBase");
         _dexRacial = this.FindControl<TextBlock>("DexRacial");
         _dexTotal = this.FindControl<TextBlock>("DexTotal");
         _dexBonus = this.FindControl<TextBlock>("DexBonus");
 
-        _conBase = this.FindControl<TextBlock>("ConBase");
+        _conBase = this.FindControl<NumericUpDown>("ConBase");
         _conRacial = this.FindControl<TextBlock>("ConRacial");
         _conTotal = this.FindControl<TextBlock>("ConTotal");
         _conBonus = this.FindControl<TextBlock>("ConBonus");
 
-        _intBase = this.FindControl<TextBlock>("IntBase");
+        _intBase = this.FindControl<NumericUpDown>("IntBase");
         _intRacial = this.FindControl<TextBlock>("IntRacial");
         _intTotal = this.FindControl<TextBlock>("IntTotal");
         _intBonus = this.FindControl<TextBlock>("IntBonus");
 
-        _wisBase = this.FindControl<TextBlock>("WisBase");
+        _wisBase = this.FindControl<NumericUpDown>("WisBase");
         _wisRacial = this.FindControl<TextBlock>("WisRacial");
         _wisTotal = this.FindControl<TextBlock>("WisTotal");
         _wisBonus = this.FindControl<TextBlock>("WisBonus");
 
-        _chaBase = this.FindControl<TextBlock>("ChaBase");
+        _chaBase = this.FindControl<NumericUpDown>("ChaBase");
         _chaRacial = this.FindControl<TextBlock>("ChaRacial");
         _chaTotal = this.FindControl<TextBlock>("ChaTotal");
         _chaBonus = this.FindControl<TextBlock>("ChaBonus");
+
+        // Wire up ability score change events
+        WireAbilityScoreEvents();
 
         // Hit points
         _baseHpValue = this.FindControl<TextBlock>("BaseHpValue");
@@ -212,6 +222,135 @@ public partial class StatsPanel : UserControl
         CRAdjustChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    private void WireAbilityScoreEvents()
+    {
+        if (_strBase != null) _strBase.ValueChanged += OnStrValueChanged;
+        if (_dexBase != null) _dexBase.ValueChanged += OnDexValueChanged;
+        if (_conBase != null) _conBase.ValueChanged += OnConValueChanged;
+        if (_intBase != null) _intBase.ValueChanged += OnIntValueChanged;
+        if (_wisBase != null) _wisBase.ValueChanged += OnWisValueChanged;
+        if (_chaBase != null) _chaBase.ValueChanged += OnChaValueChanged;
+    }
+
+    private void OnStrValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.Str = (byte)(e.NewValue ?? 10);
+        UpdateAbilityDisplay("Str", _currentCreature.Str);
+        AbilityScoresChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnDexValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.Dex = (byte)(e.NewValue ?? 10);
+        UpdateAbilityDisplay("Dex", _currentCreature.Dex);
+        UpdateSavingThrows(); // Dex affects Reflex save
+        AbilityScoresChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnConValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.Con = (byte)(e.NewValue ?? 10);
+        UpdateAbilityDisplay("Con", _currentCreature.Con);
+        UpdateHitPointsDisplay(); // Con affects HP
+        UpdateSavingThrows(); // Con affects Fortitude save
+        AbilityScoresChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnIntValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.Int = (byte)(e.NewValue ?? 10);
+        UpdateAbilityDisplay("Int", _currentCreature.Int);
+        AbilityScoresChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnWisValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.Wis = (byte)(e.NewValue ?? 10);
+        UpdateAbilityDisplay("Wis", _currentCreature.Wis);
+        UpdateSavingThrows(); // Wis affects Will save
+        AbilityScoresChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnChaValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.Cha = (byte)(e.NewValue ?? 10);
+        UpdateAbilityDisplay("Cha", _currentCreature.Cha);
+        AbilityScoresChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void UpdateAbilityDisplay(string ability, byte baseValue)
+    {
+        if (_currentCreature == null) return;
+
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int racialMod = ability switch
+        {
+            "Str" => racialMods.Str,
+            "Dex" => racialMods.Dex,
+            "Con" => racialMods.Con,
+            "Int" => racialMods.Int,
+            "Wis" => racialMods.Wis,
+            "Cha" => racialMods.Cha,
+            _ => 0
+        };
+
+        int total = baseValue + racialMod;
+        int bonus = CreatureDisplayService.CalculateAbilityBonus(total);
+
+        var (racialCtrl, totalCtrl, bonusCtrl) = ability switch
+        {
+            "Str" => (_strRacial, _strTotal, _strBonus),
+            "Dex" => (_dexRacial, _dexTotal, _dexBonus),
+            "Con" => (_conRacial, _conTotal, _conBonus),
+            "Int" => (_intRacial, _intTotal, _intBonus),
+            "Wis" => (_wisRacial, _wisTotal, _wisBonus),
+            "Cha" => (_chaRacial, _chaTotal, _chaBonus),
+            _ => (null, null, null)
+        };
+
+        SetText(racialCtrl, CreatureDisplayService.FormatBonus(racialMod));
+        SetText(totalCtrl, total.ToString());
+        SetText(bonusCtrl, CreatureDisplayService.FormatBonus(bonus));
+    }
+
+    private void UpdateHitPointsDisplay()
+    {
+        if (_currentCreature == null) return;
+
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int conTotal = _currentCreature.Con + racialMods.Con;
+        int conBonus = CreatureDisplayService.CalculateAbilityBonus(conTotal);
+        int totalLevel = _currentCreature.ClassList.Sum(c => c.ClassLevel);
+        int conHpContribution = conBonus * totalLevel;
+
+        SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
+    }
+
+    private void UpdateSavingThrows()
+    {
+        if (_currentCreature == null) return;
+
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+
+        int conTotal = _currentCreature.Con + racialMods.Con;
+        int dexTotal = _currentCreature.Dex + racialMods.Dex;
+        int wisTotal = _currentCreature.Wis + racialMods.Wis;
+
+        int conBonus = CreatureDisplayService.CalculateAbilityBonus(conTotal);
+        int dexBonus = CreatureDisplayService.CalculateAbilityBonus(dexTotal);
+        int wisBonus = CreatureDisplayService.CalculateAbilityBonus(wisTotal);
+
+        LoadSavingThrow(_fortBase, _fortAbility, _fortTotal, _currentCreature.FortBonus, conBonus);
+        LoadSavingThrow(_refBase, _refAbility, _refTotal, _currentCreature.RefBonus, dexBonus);
+        LoadSavingThrow(_willBase, _willAbility, _willTotal, _currentCreature.WillBonus, wisBonus);
+    }
+
     /// <summary>
     /// Sets the equipped items for combat stat calculations.
     /// Call this after loading creature and populating inventory.
@@ -247,13 +386,13 @@ public partial class StatsPanel : UserControl
         }
     }
 
-    private void LoadAbilityScore(TextBlock? baseCtrl, TextBlock? racialCtrl, TextBlock? totalCtrl, TextBlock? bonusCtrl,
+    private void LoadAbilityScore(NumericUpDown? baseCtrl, TextBlock? racialCtrl, TextBlock? totalCtrl, TextBlock? bonusCtrl,
         byte baseValue, int racialMod)
     {
         int total = baseValue + racialMod;
         int bonus = CreatureDisplayService.CalculateAbilityBonus(total);
 
-        SetText(baseCtrl, baseValue.ToString());
+        if (baseCtrl != null) baseCtrl.Value = baseValue;
         SetText(racialCtrl, CreatureDisplayService.FormatBonus(racialMod));
         SetText(totalCtrl, total.ToString());
         SetText(bonusCtrl, CreatureDisplayService.FormatBonus(bonus));
@@ -289,6 +428,8 @@ public partial class StatsPanel : UserControl
 
     public void ClearStats()
     {
+        _isLoading = true;
+
         // Clear ability scores
         LoadAbilityScore(_strBase, _strRacial, _strTotal, _strBonus, 10, 0);
         LoadAbilityScore(_dexBase, _dexRacial, _dexTotal, _dexBonus, 10, 0);
@@ -317,6 +458,8 @@ public partial class StatsPanel : UserControl
         LoadSavingThrow(_fortBase, _fortAbility, _fortTotal, 0, 0);
         LoadSavingThrow(_refBase, _refAbility, _refTotal, 0, 0);
         LoadSavingThrow(_willBase, _willAbility, _willTotal, 0, 0);
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
     }
 
     private static void SetText(TextBlock? block, string text)
