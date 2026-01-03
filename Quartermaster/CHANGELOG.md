@@ -30,6 +30,12 @@ Add race and alignment editing to Character panel, plus fix the emoji display bu
   - Alignment name updates live as sliders change
   - AlignmentChanged event for dirty flag tracking
 
+- **Package Picker**
+  - Add GetAllPackages() and GetPackageName() to CreatureDisplayService (loads from packages.2da)
+  - PackagePickerWindow dialog for selecting auto-levelup packages
+  - Picker button in Levelup Settings section of Classes panel
+  - Package names now display from 2DA/TLK instead of hardcoded values
+
 #### Fixed
 
 - **Navigation Button Emojis** (#691)

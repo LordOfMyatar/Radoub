@@ -179,13 +179,18 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Levelup Settings" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto" ColumnSpacing="15">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Default Package:"
                                        VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock Grid.Row="0" Grid.Column="1" x:Name="PackageText"
                                        Text="None"
                                        VerticalAlignment="Center"/>
+                            <Button Grid.Row="0" Grid.Column="2" x:Name="PackagePickerButton"
+                                    Content="..."
+                                    Padding="8,4"
+                                    ToolTip.Tip="Select package"
+                                    AutomationProperties.AutomationId="PackagePickerButton"/>
                         </Grid>
 
                         <!-- Levelup Wizard Button -->

@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
+using Quartermaster.Views.Dialogs;
 using Radoub.Formats.Utc;
 using System.Collections.ObjectModel;
 
@@ -26,11 +27,13 @@ public partial class ClassesPanel : UserControl
     private Slider? _lawChaosSlider;
     private TextBlock? _lawChaosValue;
     private TextBlock? _packageText;
+    private Button? _packagePickerButton;
     private Button? _levelupWizardButton;
 
     private ObservableCollection<ClassSlotViewModel> _classSlots = new();
 
     public event EventHandler? AlignmentChanged;
+    public event EventHandler? PackageChanged;
 
     public ClassesPanel()
     {
@@ -51,6 +54,7 @@ public partial class ClassesPanel : UserControl
         _lawChaosSlider = this.FindControl<Slider>("LawChaosSlider");
         _lawChaosValue = this.FindControl<TextBlock>("LawChaosValue");
         _packageText = this.FindControl<TextBlock>("PackageText");
+        _packagePickerButton = this.FindControl<Button>("PackagePickerButton");
         _levelupWizardButton = this.FindControl<Button>("LevelupWizardButton");
 
         if (_classSlotsList != null)
@@ -61,6 +65,10 @@ public partial class ClassesPanel : UserControl
             _goodEvilSlider.ValueChanged += OnAlignmentSliderChanged;
         if (_lawChaosSlider != null)
             _lawChaosSlider.ValueChanged += OnAlignmentSliderChanged;
+
+        // Wire up package picker button
+        if (_packagePickerButton != null)
+            _packagePickerButton.Click += OnPackagePickerClick;
     }
 
     /// <summary>
@@ -117,7 +125,7 @@ public partial class ClassesPanel : UserControl
         LoadAlignment(creature.GoodEvil, creature.LawfulChaotic);
 
         // Load auto-levelup package
-        SetText(_packageText, GetPackageName(creature.StartingPackage));
+        SetText(_packageText, _displayService?.GetPackageName(creature.StartingPackage) ?? $"Package {creature.StartingPackage}");
 
         _isLoading = false;
     }
@@ -167,6 +175,27 @@ public partial class ClassesPanel : UserControl
         SetText(_alignmentName, GetAlignmentName(goodEvil, lawChaotic));
 
         AlignmentChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async void OnPackagePickerClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_currentCreature == null || _displayService == null) return;
+
+        var packages = _displayService.GetAllPackages();
+        var picker = new PackagePickerWindow(packages, _currentCreature.StartingPackage);
+
+        var parentWindow = this.VisualRoot as Window;
+        if (parentWindow != null)
+        {
+            await picker.ShowDialog(parentWindow);
+        }
+
+        if (picker.Confirmed && picker.SelectedPackageId.HasValue)
+        {
+            _currentCreature.StartingPackage = picker.SelectedPackageId.Value;
+            SetText(_packageText, _displayService.GetPackageName(picker.SelectedPackageId.Value));
+            PackageChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private static string GetAlignmentName(byte goodEvil, byte lawChaotic)
@@ -321,50 +350,6 @@ public partial class ClassesPanel : UserControl
             21 => "Dragon Abilities",
             27 => "Inspire Courage",
             _ => ""
-        };
-    }
-
-    private string GetPackageName(byte packageId)
-    {
-        // Package names from packages.2da Label column
-        // These are auto-levelup presets for each class
-        return packageId switch
-        {
-            0 => "Barbarian",
-            1 => "Bard",
-            2 => "Cleric",
-            3 => "Druid",
-            4 => "Fighter",
-            5 => "Monk",
-            6 => "Paladin",
-            7 => "Ranger",
-            8 => "Rogue",
-            9 => "Sorcerer",
-            10 => "Wizard",
-            11 => "Shadowdancer",
-            12 => "Harper Scout",
-            13 => "Arcane Archer",
-            14 => "Assassin",
-            15 => "Blackguard",
-            16 => "Champion of Torm",
-            17 => "Weapon Master",
-            18 => "Pale Master",
-            19 => "Shifter",
-            20 => "Dwarven Defender",
-            21 => "Dragon Disciple",
-            // Additional package variants
-            100 => "Barbarian (Aggressive)",
-            101 => "Bard (Performer)",
-            102 => "Cleric (Divine)",
-            103 => "Druid (Nature)",
-            104 => "Fighter (Defender)",
-            105 => "Monk (Ascetic)",
-            106 => "Paladin (Holy)",
-            107 => "Ranger (Archer)",
-            108 => "Rogue (Thief)",
-            109 => "Sorcerer (Aggressive)",
-            110 => "Wizard (Arcane)",
-            _ => $"Package {packageId}"
         };
     }
 
