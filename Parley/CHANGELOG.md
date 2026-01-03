@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.110-alpha] - 2026-01-02
-**Branch**: `parley/issue-723` | **PR**: #TBD
+**Branch**: `parley/issue-723` | **PR**: #724
 
 ### Sprint: Settings Persistence & Cleanup (#723)
 
