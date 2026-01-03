@@ -39,7 +39,7 @@ public partial class StatsPanel : UserControl
     private TextBlock? _currentHpValue, _hpPercent;
 
     // Combat stats controls
-    private TextBlock? _naturalAcValue, _babValue, _babBreakdown, _speedValue, _crValue;
+    private TextBlock? _naturalAcValue, _dexAcValue, _babValue, _babBreakdown, _speedValue, _crValue;
     private NumericUpDown? _crAdjustNumeric;
     private StackPanel? _crDisplaySection;
 
@@ -101,6 +101,7 @@ public partial class StatsPanel : UserControl
 
         // Combat stats
         _naturalAcValue = this.FindControl<TextBlock>("NaturalAcValue");
+        _dexAcValue = this.FindControl<TextBlock>("DexAcValue");
         _babValue = this.FindControl<TextBlock>("BabValue");
         _babBreakdown = this.FindControl<TextBlock>("BabBreakdown");
         _speedValue = this.FindControl<TextBlock>("SpeedValue");
@@ -206,6 +207,9 @@ public partial class StatsPanel : UserControl
         int dexBonus = CreatureDisplayService.CalculateAbilityBonus(dexTotal);
         int wisBonus = CreatureDisplayService.CalculateAbilityBonus(wisTotal);
 
+        // Display Dex AC bonus
+        SetText(_dexAcValue, CreatureDisplayService.FormatBonus(dexBonus));
+
         LoadSavingThrow(_fortBase, _fortAbility, _fortTotal, creature.FortBonus, conBonus);
         LoadSavingThrow(_refBase, _refAbility, _refTotal, creature.RefBonus, dexBonus);
         LoadSavingThrow(_willBase, _willAbility, _willTotal, creature.WillBonus, wisBonus);
@@ -245,6 +249,7 @@ public partial class StatsPanel : UserControl
         if (_isLoading || _currentCreature == null) return;
         _currentCreature.Dex = (byte)(e.NewValue ?? 10);
         UpdateAbilityDisplay("Dex", _currentCreature.Dex);
+        UpdateDexAcDisplay(); // Dex affects AC
         UpdateSavingThrows(); // Dex affects Reflex save
         AbilityScoresChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -329,7 +334,31 @@ public partial class StatsPanel : UserControl
         int totalLevel = _currentCreature.ClassList.Sum(c => c.ClassLevel);
         int conHpContribution = conBonus * totalLevel;
 
+        // Recalculate MaxHP = BaseHP (dice rolls) + Con contribution
+        int baseHp = _currentCreature.HitPoints; // Stored dice roll total
+        int newMaxHp = baseHp + conHpContribution;
+        _currentCreature.MaxHitPoints = (short)Math.Max(1, newMaxHp); // Min 1 HP
+
+        // Update display
+        SetText(_maxHpValue, _currentCreature.MaxHitPoints.ToString());
         SetText(_conHpBonus, $"({CreatureDisplayService.FormatBonus(conHpContribution)} Con)");
+
+        // Update HP percentage
+        var hpPercent = _currentCreature.MaxHitPoints > 0
+            ? (_currentCreature.CurrentHitPoints * 100) / _currentCreature.MaxHitPoints
+            : 0;
+        SetText(_hpPercent, $"({hpPercent}%)");
+    }
+
+    private void UpdateDexAcDisplay()
+    {
+        if (_currentCreature == null) return;
+
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int dexTotal = _currentCreature.Dex + racialMods.Dex;
+        int dexBonus = CreatureDisplayService.CalculateAbilityBonus(dexTotal);
+
+        SetText(_dexAcValue, CreatureDisplayService.FormatBonus(dexBonus));
     }
 
     private void UpdateSavingThrows()
@@ -447,6 +476,7 @@ public partial class StatsPanel : UserControl
 
         // Clear combat stats
         SetText(_naturalAcValue, "0");
+        SetText(_dexAcValue, "+0");
         SetText(_babValue, "+0");
         SetText(_babBreakdown, "");
         SetText(_speedValue, "Normal");

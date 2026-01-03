@@ -152,22 +152,26 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Combat" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="*,*,*,*">
+                        <Grid ColumnDefinitions="*,*,*,*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="NaturalAcDisplay">
                                 <TextBlock Text="Natural AC" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="NaturalAcValue" Text="0" FontSize="16" FontWeight="Bold"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="BabDisplay">
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="DexAcDisplay">
+                                <TextBlock Text="Dex AC" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="DexAcValue" Text="+0" FontSize="16" FontWeight="Bold"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Margin="0,0,10,0" AutomationProperties.AutomationId="BabDisplay">
                                 <TextBlock Text="Base Attack" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="BabValue" Text="+0" FontSize="16" FontWeight="Bold"/>
                                 <TextBlock x:Name="BabBreakdown" Text="" FontSize="10"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="2" Margin="0,0,10,0" AutomationProperties.AutomationId="SpeedDisplay">
+                            <StackPanel Grid.Column="3" Margin="0,0,10,0" AutomationProperties.AutomationId="SpeedDisplay">
                                 <TextBlock Text="Speed" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="SpeedValue" Text="Normal" FontSize="16" FontWeight="Bold"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="3" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
+                            <StackPanel Grid.Column="4" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
                                 <TextBlock Text="Challenge Rating" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="CrValue" Text="0" FontSize="16" FontWeight="Bold"/>
                                 <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
