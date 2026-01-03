@@ -414,6 +414,109 @@ public class UtcReaderTests
         Assert.Equal(utc.SpecAbilityList[0].SpellFlags, utc2.SpecAbilityList[0].SpellFlags);
     }
 
+    [Fact]
+    public void Read_UtcWithKnownSpells_ParsesSpells()
+    {
+        var buffer = CreateUtcWithKnownSpells();
+
+        var utc = UtcReader.Read(buffer);
+
+        Assert.Single(utc.ClassList);
+        var wizardClass = utc.ClassList[0];
+
+        // Level 0 known spells
+        Assert.Equal(2, wizardClass.KnownSpells[0].Count);
+        Assert.Equal((ushort)158, wizardClass.KnownSpells[0][0].Spell); // Light
+        Assert.Equal((ushort)159, wizardClass.KnownSpells[0][1].Spell); // Ray of Frost
+
+        // Level 1 known spells
+        Assert.Single(wizardClass.KnownSpells[1]);
+        Assert.Equal((ushort)112, wizardClass.KnownSpells[1][0].Spell); // Magic Missile
+
+        // Level 2+ should be empty
+        for (int level = 2; level < 10; level++)
+        {
+            Assert.Empty(wizardClass.KnownSpells[level]);
+        }
+    }
+
+    [Fact]
+    public void Read_UtcWithMemorizedSpells_ParsesSpells()
+    {
+        var buffer = CreateUtcWithMemorizedSpells();
+
+        var utc = UtcReader.Read(buffer);
+
+        Assert.Single(utc.ClassList);
+        var wizardClass = utc.ClassList[0];
+
+        // Level 0 memorized spells
+        Assert.Single(wizardClass.MemorizedSpells[0]);
+        Assert.Equal((ushort)158, wizardClass.MemorizedSpells[0][0].Spell); // Light
+        Assert.Equal((byte)0x01, wizardClass.MemorizedSpells[0][0].SpellFlags);
+
+        // Level 1 memorized spells with metamagic
+        Assert.Single(wizardClass.MemorizedSpells[1]);
+        Assert.Equal((ushort)112, wizardClass.MemorizedSpells[1][0].Spell); // Magic Missile
+        Assert.Equal((byte)0x01, wizardClass.MemorizedSpells[1][0].SpellMetaMagic); // Empower
+
+        // Level 2+ should be empty
+        for (int level = 2; level < 10; level++)
+        {
+            Assert.Empty(wizardClass.MemorizedSpells[level]);
+        }
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithKnownSpells_PreservesData()
+    {
+        var original = CreateUtcWithKnownSpells();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.ClassList.Count, utc2.ClassList.Count);
+        var class1 = utc.ClassList[0];
+        var class2 = utc2.ClassList[0];
+
+        for (int level = 0; level < 10; level++)
+        {
+            Assert.Equal(class1.KnownSpells[level].Count, class2.KnownSpells[level].Count);
+            for (int i = 0; i < class1.KnownSpells[level].Count; i++)
+            {
+                Assert.Equal(class1.KnownSpells[level][i].Spell, class2.KnownSpells[level][i].Spell);
+                Assert.Equal(class1.KnownSpells[level][i].SpellFlags, class2.KnownSpells[level][i].SpellFlags);
+                Assert.Equal(class1.KnownSpells[level][i].SpellMetaMagic, class2.KnownSpells[level][i].SpellMetaMagic);
+            }
+        }
+    }
+
+    [Fact]
+    public void RoundTrip_UtcWithMemorizedSpells_PreservesData()
+    {
+        var original = CreateUtcWithMemorizedSpells();
+
+        var utc = UtcReader.Read(original);
+        var written = UtcWriter.Write(utc);
+        var utc2 = UtcReader.Read(written);
+
+        Assert.Equal(utc.ClassList.Count, utc2.ClassList.Count);
+        var class1 = utc.ClassList[0];
+        var class2 = utc2.ClassList[0];
+
+        for (int level = 0; level < 10; level++)
+        {
+            Assert.Equal(class1.MemorizedSpells[level].Count, class2.MemorizedSpells[level].Count);
+            for (int i = 0; i < class1.MemorizedSpells[level].Count; i++)
+            {
+                Assert.Equal(class1.MemorizedSpells[level][i].Spell, class2.MemorizedSpells[level][i].Spell);
+                Assert.Equal(class1.MemorizedSpells[level][i].SpellFlags, class2.MemorizedSpells[level][i].SpellFlags);
+                Assert.Equal(class1.MemorizedSpells[level][i].SpellMetaMagic, class2.MemorizedSpells[level][i].SpellMetaMagic);
+            }
+        }
+    }
+
     #endregion
 
     #region Test Helpers
@@ -756,6 +859,124 @@ public class UtcReaderTests
             Label = "ClassList",
             Value = classList
         });
+    }
+
+    private static byte[] CreateUtcWithKnownSpells()
+    {
+        var gff = CreateGffFileWithType("UTC ");
+        var root = gff.RootStruct;
+
+        var classList = new GffList();
+
+        // Wizard 5
+        var wizardStruct = new GffStruct { Type = 2 };
+        AddIntField(wizardStruct, "Class", 10); // Wizard
+        AddShortField(wizardStruct, "ClassLevel", 5);
+
+        // KnownList0 - Cantrips
+        var knownList0 = new GffList();
+        var spell0a = new GffStruct { Type = 3 };
+        AddWordField(spell0a, "Spell", 158); // Light
+        AddByteField(spell0a, "SpellFlags", 0x01);
+        AddByteField(spell0a, "SpellMetaMagic", 0);
+        knownList0.Elements.Add(spell0a);
+
+        var spell0b = new GffStruct { Type = 3 };
+        AddWordField(spell0b, "Spell", 159); // Ray of Frost
+        AddByteField(spell0b, "SpellFlags", 0x01);
+        AddByteField(spell0b, "SpellMetaMagic", 0);
+        knownList0.Elements.Add(spell0b);
+
+        knownList0.Count = 2;
+        wizardStruct.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "KnownList0",
+            Value = knownList0
+        });
+
+        // KnownList1 - 1st level spells
+        var knownList1 = new GffList();
+        var spell1a = new GffStruct { Type = 3 };
+        AddWordField(spell1a, "Spell", 112); // Magic Missile
+        AddByteField(spell1a, "SpellFlags", 0x01);
+        AddByteField(spell1a, "SpellMetaMagic", 0);
+        knownList1.Elements.Add(spell1a);
+
+        knownList1.Count = 1;
+        wizardStruct.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "KnownList1",
+            Value = knownList1
+        });
+
+        classList.Elements.Add(wizardStruct);
+        classList.Count = 1;
+        root.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "ClassList",
+            Value = classList
+        });
+
+        return GffWriter.Write(gff);
+    }
+
+    private static byte[] CreateUtcWithMemorizedSpells()
+    {
+        var gff = CreateGffFileWithType("UTC ");
+        var root = gff.RootStruct;
+
+        var classList = new GffList();
+
+        // Wizard 5
+        var wizardStruct = new GffStruct { Type = 2 };
+        AddIntField(wizardStruct, "Class", 10); // Wizard
+        AddShortField(wizardStruct, "ClassLevel", 5);
+
+        // MemorizedList0 - Cantrips
+        var memList0 = new GffList();
+        var spell0a = new GffStruct { Type = 3 };
+        AddWordField(spell0a, "Spell", 158); // Light
+        AddByteField(spell0a, "SpellFlags", 0x01);
+        AddByteField(spell0a, "SpellMetaMagic", 0);
+        memList0.Elements.Add(spell0a);
+
+        memList0.Count = 1;
+        wizardStruct.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "MemorizedList0",
+            Value = memList0
+        });
+
+        // MemorizedList1 - 1st level spells with metamagic (Empower)
+        var memList1 = new GffList();
+        var spell1a = new GffStruct { Type = 3 };
+        AddWordField(spell1a, "Spell", 112); // Magic Missile
+        AddByteField(spell1a, "SpellFlags", 0x01);
+        AddByteField(spell1a, "SpellMetaMagic", 0x01); // Empower
+        memList1.Elements.Add(spell1a);
+
+        memList1.Count = 1;
+        wizardStruct.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "MemorizedList1",
+            Value = memList1
+        });
+
+        classList.Elements.Add(wizardStruct);
+        classList.Count = 1;
+        root.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "ClassList",
+            Value = classList
+        });
+
+        return GffWriter.Write(gff);
     }
 
     private static GffFile CreateGffFileWithType(string fileType)

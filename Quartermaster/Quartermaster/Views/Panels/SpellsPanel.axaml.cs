@@ -249,11 +249,23 @@ public partial class SpellsPanel : UserControl
 
         var classEntry = _currentCreature.ClassList[classIndex];
 
-        // NOTE: Spell lists (KnownList0-9, MemorizedList0-9) are stored per-class
-        // but not yet parsed in our current UtcFile implementation.
-        // For now, we show all available spells for the class without
-        // marking known/memorized status. This is read-only.
-        // TODO: Add spell list parsing to UtcFile and CreatureClass
+        // Populate known spell IDs from parsed KnownList0-9
+        for (int level = 0; level < 10; level++)
+        {
+            foreach (var spell in classEntry.KnownSpells[level])
+            {
+                _knownSpellIds.Add(spell.Spell);
+            }
+        }
+
+        // Populate memorized spell IDs from parsed MemorizedList0-9
+        for (int level = 0; level < 10; level++)
+        {
+            foreach (var spell in classEntry.MemorizedSpells[level])
+            {
+                _memorizedSpellIds.Add(spell.Spell);
+            }
+        }
 
         // Load all spells from spells.2da
         LoadAllSpells(classEntry.Class);

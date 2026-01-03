@@ -17,8 +17,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Enable SpellsPanel to display creature's actual known and memorized spells by implementing the GFF parsing layer.
 
-- #740 - Parse Known Spell Lists (KnownList0-9)
-- #741 - Parse Memorized Spell Lists (MemorizedList0-9)
+#### Added
+
+- **Spell List Parsing** (#740, #741)
+  - `KnownSpell` model class with Spell, SpellFlags, SpellMetaMagic fields
+  - `MemorizedSpell` model class with additional Ready field for game instances
+  - `CreatureClass.KnownSpells[10]` - arrays of known spells by spell level (0-9)
+  - `CreatureClass.MemorizedSpells[10]` - arrays of memorized spells by spell level (0-9)
+  - UtcReader/BicReader: Parse KnownList0-9 and MemorizedList0-9 from creature GFF
+  - UtcWriter/BicWriter: Write spell lists back to GFF (round-trip support)
+  - BicFile conversion: Deep copy spell lists during UTC/BIC conversion
+
+- **SpellsPanel Integration**
+  - Populate _knownSpellIds from parsed KnownSpells data
+  - Populate _memorizedSpellIds from parsed MemorizedSpells data
+  - Spells now correctly show Known/Memorized status from creature file
+
+#### Tests
+
+- Round-trip tests for KnownSpells (UtcReaderTests)
+- Round-trip tests for MemorizedSpells (UtcReaderTests)
+- Parse tests verifying spell ID, flags, and metamagic extraction
 
 ---
 

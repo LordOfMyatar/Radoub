@@ -206,11 +206,39 @@ public class BicFile : UtcFile
         // Conversation
         target.Conversation = source.Conversation;
 
-        // Class list - deep copy
-        target.ClassList = source.ClassList.Select(c => new CreatureClass
+        // Class list - deep copy including spell lists
+        target.ClassList = source.ClassList.Select(c =>
         {
-            Class = c.Class,
-            ClassLevel = c.ClassLevel
+            var newClass = new CreatureClass
+            {
+                Class = c.Class,
+                ClassLevel = c.ClassLevel
+            };
+
+            // Copy known spells
+            for (int level = 0; level < 10; level++)
+            {
+                newClass.KnownSpells[level] = c.KnownSpells[level].Select(s => new KnownSpell
+                {
+                    Spell = s.Spell,
+                    SpellFlags = s.SpellFlags,
+                    SpellMetaMagic = s.SpellMetaMagic
+                }).ToList();
+            }
+
+            // Copy memorized spells
+            for (int level = 0; level < 10; level++)
+            {
+                newClass.MemorizedSpells[level] = c.MemorizedSpells[level].Select(s => new MemorizedSpell
+                {
+                    Spell = s.Spell,
+                    SpellFlags = s.SpellFlags,
+                    SpellMetaMagic = s.SpellMetaMagic,
+                    Ready = s.Ready
+                }).ToList();
+            }
+
+            return newClass;
         }).ToList();
 
         // Feats and skills - deep copy

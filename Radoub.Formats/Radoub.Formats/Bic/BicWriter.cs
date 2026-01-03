@@ -227,9 +227,63 @@ public static class BicWriter
             var classStruct = new GffStruct { Type = 2 };
             AddIntField(classStruct, "Class", cls.Class);
             AddShortField(classStruct, "ClassLevel", cls.ClassLevel);
+
+            // Write known spells (KnownList0-9)
+            for (int level = 0; level < 10; level++)
+            {
+                AddKnownSpellList(classStruct, cls.KnownSpells[level], level);
+            }
+
+            // Write memorized spells (MemorizedList0-9)
+            for (int level = 0; level < 10; level++)
+            {
+                AddMemorizedSpellList(classStruct, cls.MemorizedSpells[level], level);
+            }
+
             list.Elements.Add(classStruct);
         }
         AddListField(root, "ClassList", list);
+    }
+
+    private static void AddKnownSpellList(GffStruct classStruct, List<KnownSpell> spells, int spellLevel)
+    {
+        // Only write the list if there are spells at this level
+        if (spells.Count == 0)
+            return;
+
+        var list = new GffList();
+        foreach (var spell in spells)
+        {
+            var spellStruct = new GffStruct { Type = 3 };
+            AddWordField(spellStruct, "Spell", spell.Spell);
+            AddByteField(spellStruct, "SpellFlags", spell.SpellFlags);
+            AddByteField(spellStruct, "SpellMetaMagic", spell.SpellMetaMagic);
+            list.Elements.Add(spellStruct);
+        }
+        AddListField(classStruct, $"KnownList{spellLevel}", list);
+    }
+
+    private static void AddMemorizedSpellList(GffStruct classStruct, List<MemorizedSpell> spells, int spellLevel)
+    {
+        // Only write the list if there are spells at this level
+        if (spells.Count == 0)
+            return;
+
+        var list = new GffList();
+        foreach (var spell in spells)
+        {
+            var spellStruct = new GffStruct { Type = 3 };
+            AddWordField(spellStruct, "Spell", spell.Spell);
+            AddByteField(spellStruct, "SpellFlags", spell.SpellFlags);
+            AddByteField(spellStruct, "SpellMetaMagic", spell.SpellMetaMagic);
+            // Ready field is game-only, but we write it for round-trip compatibility
+            if (spell.Ready != 1)
+            {
+                AddIntField(spellStruct, "Ready", spell.Ready);
+            }
+            list.Elements.Add(spellStruct);
+        }
+        AddListField(classStruct, $"MemorizedList{spellLevel}", list);
     }
 
     private static void AddFeatList(GffStruct root, List<ushort> feats)
