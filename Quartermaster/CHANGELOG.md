@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.22-alpha] - 2026-01-03
+**Branch**: `quartermaster/issue-750` | **PR**: #TBD
+
+### Sprint: Stats Panel Editing (#750)
+
+Complete Stats panel editing to match Aurora Toolset parity.
+
+#### Work Items
+
+- [ ] #726 - Edit Hit Points (Base/Max/Current)
+- [ ] #727 - Edit Natural AC
+- [ ] #729 - Edit Challenge Rating
+
+---
+
 ## [0.1.21-alpha] - 2026-01-03
 **Branch**: `quartermaster/issue-725` | **PR**: #749
 
