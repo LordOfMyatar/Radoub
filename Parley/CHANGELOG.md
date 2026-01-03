@@ -15,9 +15,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Settings Persistence & Cleanup (#723)
 
-- [ ] #718 - Fix broken settings persistence for ExternalEditorPath and ScriptSearchPaths
-- [ ] #717 - Remove dead code from SettingsService
-- [ ] #719 - Tech debt: Large files needing refactoring (partial: SettingsService only)
+#### #719 - SettingsService Refactoring
+
+Split SettingsService (1,405 → 1,275 lines) into focused services:
+
+| New File | Lines | Responsibility |
+|----------|-------|----------------|
+| RecentFilesService.cs | 141 | Recent files list management |
+| UISettingsService.cs | 178 | Fonts, themes, flowchart layout, scrollbars |
+
+#### #717 - Dead Code Removal
+
+Removed unused properties:
+- `UseNewLayout` - feature flag never implemented
+- `WarnMissingScriptInDialogDirectory` - never referenced
+
+#### #718 - Settings Persistence Fix
+
+Fixed silent data loss: `ExternalEditorPath` and `ScriptSearchPaths` now persist across restarts.
+Added to SettingsData, LoadSettings(), and SaveSettings().
 
 ---
 
