@@ -11,6 +11,7 @@ public partial class CharacterPanel : UserControl
 {
     private TextBox? _firstNameTextBox;
     private TextBox? _lastNameTextBox;
+    private ComboBox? _raceComboBox;
     private TextBox? _subraceTextBox;
     private TextBox? _deityTextBox;
     private ComboBox? _soundSetComboBox;
@@ -49,6 +50,7 @@ public partial class CharacterPanel : UserControl
 
         _firstNameTextBox = this.FindControl<TextBox>("FirstNameTextBox");
         _lastNameTextBox = this.FindControl<TextBox>("LastNameTextBox");
+        _raceComboBox = this.FindControl<ComboBox>("RaceComboBox");
         _subraceTextBox = this.FindControl<TextBox>("SubraceTextBox");
         _deityTextBox = this.FindControl<TextBox>("DeityTextBox");
         _soundSetComboBox = this.FindControl<ComboBox>("SoundSetComboBox");
@@ -77,6 +79,8 @@ public partial class CharacterPanel : UserControl
             _subraceTextBox.TextChanged += OnTextChanged;
         if (_deityTextBox != null)
             _deityTextBox.TextChanged += OnTextChanged;
+        if (_raceComboBox != null)
+            _raceComboBox.SelectionChanged += OnSelectionChanged;
         if (_soundSetComboBox != null)
             _soundSetComboBox.SelectionChanged += OnSelectionChanged;
         if (_conversationTextBox != null)
@@ -98,6 +102,7 @@ public partial class CharacterPanel : UserControl
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
+        LoadRaceData();
         LoadSoundSetData();
     }
 
@@ -131,6 +136,18 @@ public partial class CharacterPanel : UserControl
             _biographySection.IsVisible = _isBicFile;
     }
 
+    private void LoadRaceData()
+    {
+        if (_displayService == null || _raceComboBox == null) return;
+
+        _raceComboBox.Items.Clear();
+        var races = _displayService.GetAllRaces();
+        foreach (var (id, name) in races)
+        {
+            _raceComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
+        }
+    }
+
     private void LoadSoundSetData()
     {
         if (_displayService == null || _soundSetComboBox == null) return;
@@ -162,6 +179,7 @@ public partial class CharacterPanel : UserControl
             _lastNameTextBox.Text = creature.LastName?.GetString(0) ?? "";
 
         // Identity
+        SelectRace(creature.Race);
         if (_subraceTextBox != null)
             _subraceTextBox.Text = creature.Subrace ?? "";
         if (_deityTextBox != null)
@@ -200,6 +218,30 @@ public partial class CharacterPanel : UserControl
         // Defer clearing _isLoading until after dispatcher processes queued TextChanged events
         // TextBox.Text changes queue TextChanged events to the dispatcher, which fire after this method returns
         Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private void SelectRace(byte raceId)
+    {
+        if (_raceComboBox == null) return;
+
+        for (int i = 0; i < _raceComboBox.Items.Count; i++)
+        {
+            if (_raceComboBox.Items[i] is ComboBoxItem item &&
+                item.Tag is byte id && id == raceId)
+            {
+                _raceComboBox.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // If not found, add it (custom race from module)
+        var raceName = _displayService?.GetRaceName(raceId) ?? $"Race {raceId}";
+        _raceComboBox.Items.Add(new ComboBoxItem
+        {
+            Content = raceName,
+            Tag = raceId
+        });
+        _raceComboBox.SelectedIndex = _raceComboBox.Items.Count - 1;
     }
 
     private void SelectSoundSet(ushort soundSetId)
@@ -284,9 +326,16 @@ public partial class CharacterPanel : UserControl
     {
         if (_isLoading || _currentCreature == null) return;
 
-        if (sender == _soundSetComboBox &&
-            _soundSetComboBox?.SelectedItem is ComboBoxItem item &&
-            item.Tag is ushort soundSetId)
+        if (sender == _raceComboBox &&
+            _raceComboBox?.SelectedItem is ComboBoxItem raceItem &&
+            raceItem.Tag is byte raceId)
+        {
+            _currentCreature.Race = raceId;
+            CharacterChanged?.Invoke(this, EventArgs.Empty);
+        }
+        else if (sender == _soundSetComboBox &&
+            _soundSetComboBox?.SelectedItem is ComboBoxItem soundItem &&
+            soundItem.Tag is ushort soundSetId)
         {
             _currentCreature.SoundSetFile = soundSetId;
             CharacterChanged?.Invoke(this, EventArgs.Empty);
@@ -305,6 +354,8 @@ public partial class CharacterPanel : UserControl
             _firstNameTextBox.Text = "";
         if (_lastNameTextBox != null)
             _lastNameTextBox.Text = "";
+        if (_raceComboBox != null)
+            _raceComboBox.SelectedIndex = -1;
         if (_subraceTextBox != null)
             _subraceTextBox.Text = "";
         if (_deityTextBox != null)

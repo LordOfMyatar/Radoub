@@ -30,6 +30,10 @@
             <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
+        <!-- Emoji icons should not inherit foreground color changes -->
+        <Style Selector="Button.NavButton TextBlock.NavIcon">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Style>
     </Window.Styles>
 
     <DockPanel>
@@ -138,7 +142,7 @@
                                     Click="OnNavButtonClick" Tag="Character"
                                     AutomationProperties.AutomationId="NavButton_Character">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="🧑" FontSize="14"/>
+                                    <TextBlock Text="🧑" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Character" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -146,7 +150,7 @@
                                     Click="OnNavButtonClick" Tag="Appearance"
                                     AutomationProperties.AutomationId="NavButton_Appearance">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="👤" FontSize="14"/>
+                                    <TextBlock Text="👤" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Appearance" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -154,7 +158,7 @@
                                     Click="OnNavButtonClick" Tag="Classes"
                                     AutomationProperties.AutomationId="NavButton_Classes">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="⚔️" FontSize="14"/>
+                                    <TextBlock Text="⚔️" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Classes" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -162,7 +166,7 @@
                                     Click="OnNavButtonClick" Tag="Stats"
                                     AutomationProperties.AutomationId="NavButton_Stats">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="📊" FontSize="14"/>
+                                    <TextBlock Text="📊" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Stats" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -170,7 +174,7 @@
                                     Click="OnNavButtonClick" Tag="Feats"
                                     AutomationProperties.AutomationId="NavButton_Feats">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="⭐" FontSize="14"/>
+                                    <TextBlock Text="⭐" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Feats" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -178,7 +182,7 @@
                                     Click="OnNavButtonClick" Tag="Skills"
                                     AutomationProperties.AutomationId="NavButton_Skills">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="🎯" FontSize="14"/>
+                                    <TextBlock Text="🎯" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Skills" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -186,7 +190,7 @@
                                     Click="OnNavButtonClick" Tag="Spells"
                                     AutomationProperties.AutomationId="NavButton_Spells">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="✨" FontSize="14"/>
+                                    <TextBlock Text="✨" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Spells" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -194,7 +198,7 @@
                                     Click="OnNavButtonClick" Tag="Inventory"
                                     AutomationProperties.AutomationId="NavButton_Inventory">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="🎒" FontSize="14"/>
+                                    <TextBlock Text="🎒" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Inventory" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -202,7 +206,7 @@
                                     Click="OnNavButtonClick" Tag="Advanced"
                                     AutomationProperties.AutomationId="NavButton_Advanced">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="⚙️" FontSize="14"/>
+                                    <TextBlock Text="⚙️" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Advanced" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -210,7 +214,7 @@
                                     Click="OnNavButtonClick" Tag="Scripts"
                                     AutomationProperties.AutomationId="NavButton_Scripts">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="📜" FontSize="14"/>
+                                    <TextBlock Text="📜" FontSize="14" Classes="NavIcon"/>
                                     <TextBlock Text="Scripts" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>

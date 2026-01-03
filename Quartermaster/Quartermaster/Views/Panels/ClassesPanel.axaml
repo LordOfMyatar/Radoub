@@ -124,36 +124,48 @@
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
 
-                            <!-- Good-Evil -->
+                            <!-- Good-Evil (0=Evil, 100=Good) -->
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
-                                <TextBlock Text="Good ↔ Evil" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <ProgressBar Grid.Column="0" x:Name="GoodEvilBar"
-                                                 Minimum="0" Maximum="100" Value="50"
-                                                 Height="8" CornerRadius="4"/>
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Evil" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" x:Name="GoodEvilValue"
                                                Text="50"
                                                FontSize="12"
-                                               Margin="8,0,0,0"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="Good" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
+                                <Slider x:Name="GoodEvilSlider"
+                                        Minimum="0" Maximum="100" Value="50"
+                                        TickFrequency="1" IsSnapToTickEnabled="True"
+                                        AutomationProperties.AutomationId="GoodEvilSlider"/>
                             </StackPanel>
 
-                            <!-- Lawful-Chaotic -->
+                            <!-- Lawful-Chaotic (0=Chaotic, 100=Lawful) -->
                             <StackPanel Grid.Row="1" Grid.Column="1">
-                                <TextBlock Text="Lawful ↔ Chaotic" FontSize="11"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <ProgressBar Grid.Column="0" x:Name="LawChaosBar"
-                                                 Minimum="0" Maximum="100" Value="50"
-                                                 Height="8" CornerRadius="4"/>
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="Chaotic" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" x:Name="LawChaosValue"
                                                Text="50"
                                                FontSize="12"
-                                               Margin="8,0,0,0"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="Lawful" FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
+                                <Slider x:Name="LawChaosSlider"
+                                        Minimum="0" Maximum="100" Value="50"
+                                        TickFrequency="1" IsSnapToTickEnabled="True"
+                                        AutomationProperties.AutomationId="LawChaosSlider"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
@@ -167,13 +179,18 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Levelup Settings" FontWeight="SemiBold" FontSize="14"/>
 
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto" ColumnSpacing="15">
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Default Package:"
                                        VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock Grid.Row="0" Grid.Column="1" x:Name="PackageText"
                                        Text="None"
                                        VerticalAlignment="Center"/>
+                            <Button Grid.Row="0" Grid.Column="2" x:Name="PackagePickerButton"
+                                    Content="..."
+                                    Padding="8,4"
+                                    ToolTip.Tip="Select package"
+                                    AutomationProperties.AutomationId="PackagePickerButton"/>
                         </Grid>
 
                         <!-- Levelup Wizard Button -->

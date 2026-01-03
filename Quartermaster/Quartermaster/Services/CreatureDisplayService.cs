@@ -48,6 +48,37 @@ public class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets all races from racialtypes.2da.
+    /// Returns list of (id, name) tuples sorted by name.
+    /// </summary>
+    public List<(byte Id, string Name)> GetAllRaces()
+    {
+        var races = new List<(byte Id, string Name)>();
+
+        // racialtypes.2da can have custom content additions, scan up to 255 (byte max)
+        for (int i = 0; i < 256; i++)
+        {
+            var label = _gameDataService.Get2DAValue("racialtypes", i, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                // Stop after we've found some races and hit a gap
+                if (races.Count > 10 && i > 50)
+                    break;
+                continue;
+            }
+
+            // Check if this race is player-selectable (PlayerRace column)
+            // Include all races for creature editing, not just player races
+            var name = GetRaceName((byte)i);
+            races.Add(((byte)i, name));
+        }
+
+        // Sort alphabetically by name for easier selection
+        races.Sort((a, b) => string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase));
+        return races;
+    }
+
+    /// <summary>
     /// Gets the display name for a gender ID.
     /// </summary>
     public string GetGenderName(byte genderId)
@@ -1465,6 +1496,61 @@ public class CreatureDisplayService
             (3, "Merchant"),
             (4, "Defender")
         };
+    }
+
+    #endregion
+
+    #region Package Methods
+
+    /// <summary>
+    /// Gets the display name for a package (auto-levelup preset) ID.
+    /// </summary>
+    public string GetPackageName(byte packageId)
+    {
+        // Try 2DA/TLK lookup first
+        var strRef = _gameDataService.Get2DAValue("packages", packageId, "Name");
+        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+        {
+            var tlkName = _gameDataService.GetString(strRef);
+            if (!string.IsNullOrEmpty(tlkName))
+                return tlkName;
+        }
+
+        // Fallback to Label column
+        var label = _gameDataService.Get2DAValue("packages", packageId, "Label");
+        if (!string.IsNullOrEmpty(label) && label != "****")
+            return label;
+
+        return $"Package {packageId}";
+    }
+
+    /// <summary>
+    /// Gets all packages from packages.2da.
+    /// Returns list of (id, name) tuples sorted by name.
+    /// </summary>
+    public List<(byte Id, string Name)> GetAllPackages()
+    {
+        var packages = new List<(byte Id, string Name)>();
+
+        // packages.2da can have 100+ rows (base classes + variants)
+        for (int i = 0; i < 256; i++)
+        {
+            var label = _gameDataService.Get2DAValue("packages", i, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                // Stop after we've found some packages and hit a gap
+                if (packages.Count > 20 && i > 50)
+                    break;
+                continue;
+            }
+
+            var name = GetPackageName((byte)i);
+            packages.Add(((byte)i, name));
+        }
+
+        // Sort alphabetically by name for easier selection
+        packages.Sort((a, b) => string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase));
+        return packages;
     }
 
     #endregion

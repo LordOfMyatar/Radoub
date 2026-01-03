@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.23-alpha] - 2026-01-03
+**Branch**: `quartermaster/issue-751` | **PR**: #755
+
+### Sprint: Character & Alignment (#751)
+
+Add race and alignment editing to Character panel, plus fix the emoji display bug.
+
+#### Added
+
+- **Race Dropdown** (#748)
+  - Add GetAllRaces() to CreatureDisplayService (loads from racialtypes.2da)
+  - Race ComboBox in Identity section of Character panel
+  - Custom races from modules added dynamically if not in 2DA
+
+- **Editable Alignment** (#732)
+  - Replace read-only ProgressBars with interactive Sliders
+  - Good-Evil and Lawful-Chaotic axes (0-100 scale)
+  - Alignment name updates live as sliders change
+  - AlignmentChanged event for dirty flag tracking
+
+- **Package Picker**
+  - Add GetAllPackages() and GetPackageName() to CreatureDisplayService (loads from packages.2da)
+  - PackagePickerWindow dialog for selecting auto-levelup packages
+  - Picker button in Levelup Settings section of Classes panel
+  - Package names now display from 2DA/TLK instead of hardcoded values
+
+#### Fixed
+
+- **Navigation Button Emojis** (#691)
+  - Add NavIcon class to emoji TextBlocks to prevent Foreground inheritance
+  - Emojis now maintain consistent appearance regardless of selection state
+
+---
+
 ## [0.1.22-alpha] - 2026-01-03
 **Branch**: `quartermaster/issue-750` | **PR**: #752
 
