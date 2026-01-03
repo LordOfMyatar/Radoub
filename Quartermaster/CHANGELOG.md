@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.23-alpha] - 2026-01-03
+**Branch**: `quartermaster/issue-751` | **PR**: #TBD
+
+### Sprint: Character & Alignment (#751)
+
+Add race and alignment editing to Character panel, plus fix the emoji display bug.
+
+- [ ] #748 - Add Race dropdown to Character panel
+- [ ] #732 - Edit Alignment (Good-Evil, Lawful-Chaotic)
+- [ ] #691 - Navigation button emojis change from colored to black (quick fix)
+
+---
+
 ## [0.1.22-alpha] - 2026-01-03
 **Branch**: `quartermaster/issue-750` | **PR**: #752
 
