@@ -24,7 +24,6 @@ namespace DialogEditor.Services
         private string _currentThemeId = "org.parley.theme.light"; // Default theme
 
         // Layout settings
-        private bool _useNewLayout = false; // Feature flag for new layout (#108)
         private string _flowchartLayout = "Floating"; // "Floating", "SideBySide", "Tabbed"
 
         // Scrollbar settings
@@ -51,7 +50,6 @@ namespace DialogEditor.Services
             string fontFamily,
             bool isDarkTheme,
             string? currentThemeId,
-            bool useNewLayout,
             string flowchartLayout,
             bool allowScrollbarAutoHide)
         {
@@ -71,7 +69,6 @@ namespace DialogEditor.Services
                 _currentThemeId = _isDarkTheme ? "org.parley.theme.dark" : "org.parley.theme.light";
             }
 
-            _useNewLayout = useNewLayout;
             _flowchartLayout = flowchartLayout ?? "Floating";
             _allowScrollbarAutoHide = allowScrollbarAutoHide;
         }
@@ -128,16 +125,6 @@ namespace DialogEditor.Services
                     _isDarkTheme = value.Contains("dark", StringComparison.OrdinalIgnoreCase);
                     SettingsChanged?.Invoke();
                 }
-            }
-        }
-
-        public bool UseNewLayout
-        {
-            get => _useNewLayout;
-            set
-            {
-                if (SetProperty(ref _useNewLayout, value))
-                    SettingsChanged?.Invoke();
             }
         }
 

@@ -65,10 +65,6 @@ namespace DialogEditor.Services
         private static string LegacySettingsFilePath => Path.Combine(LegacySettingsDirectory, "ParleySettings.json");
         private const int DefaultMaxRecentFiles = 10;
         
-        // Recent files - DELEGATED to RecentFilesService (#719)
-        // private List<string> _recentFiles - removed, use RecentFilesService.Instance
-        // private int _maxRecentFiles - removed, use RecentFilesService.Instance
-        
         // Window settings
         private double _windowLeft = 100;
         private double _windowTop = 100;
@@ -79,14 +75,6 @@ namespace DialogEditor.Services
         // Panel layout settings - GridSplitter positions (#108)
         private double _leftPanelWidth = 800; // Tree+Text area width (default ~67% at 1200px window)
         private double _topLeftPanelHeight = 400; // Dialog tree height (default 2* of left panels)
-
-        // UI settings - DELEGATED to UISettingsService (#719)
-        // private double _fontSize - removed, use UISettingsService.Instance
-        // private string _fontFamily - removed, use UISettingsService.Instance
-        // private bool _isDarkTheme - removed, use UISettingsService.Instance
-        // private string _currentThemeId - removed, use UISettingsService.Instance
-        // private bool _useNewLayout - removed, use UISettingsService.Instance
-        // private string _flowchartLayout - removed, use UISettingsService.Instance
 
         // Flowchart window settings (#377)
         private double _flowchartWindowLeft = 100;
@@ -119,9 +107,6 @@ namespace DialogEditor.Services
         private int _autoSaveDelayMs = 2000; // Default: 2 seconds (fast debounce)
         private int _autoSaveIntervalMinutes = 0; // Default: 0 = use AutoSaveDelayMs instead (Issue #62)
 
-        // UI settings (Issue #63) - DELEGATED to UISettingsService (#719)
-        // private bool _allowScrollbarAutoHide - removed, use UISettingsService.Instance
-
         // NPC speaker visual preferences (Issue #16, #36)
         // NOTE: Speaker preferences are now stored in SpeakerPreferencesService (Issue #179)
         // This field is only used for migration from old settings files
@@ -137,7 +122,6 @@ namespace DialogEditor.Services
         // Script editor settings
         private string _externalEditorPath = ""; // Path to external text editor (VS Code, Notepad++, etc.)
         private List<string> _scriptSearchPaths = new List<string>(); // Additional directories to search for scripts
-        private bool _warnMissingScriptInDialogDirectory = true; // Warn if script not in same directory as dialog
 
         // Radoub tool integration settings (#416)
         private string _manifestPath = ""; // Path to Manifest.exe (journal editor)
@@ -453,12 +437,6 @@ namespace DialogEditor.Services
         {
             get => UISettingsService.Instance.CurrentThemeId;
             set => UISettingsService.Instance.CurrentThemeId = value;
-        }
-
-        public bool UseNewLayout
-        {
-            get => UISettingsService.Instance.UseNewLayout;
-            set => UISettingsService.Instance.UseNewLayout = value;
         }
 
         /// <summary>
@@ -843,12 +821,6 @@ namespace DialogEditor.Services
             }
         }
 
-        public bool WarnMissingScriptInDialogDirectory
-        {
-            get => _warnMissingScriptInDialogDirectory;
-            set { if (SetProperty(ref _warnMissingScriptInDialogDirectory, value)) SaveSettings(); }
-        }
-
         // Radoub Tool Integration Properties (#416)
         public string ManifestPath
         {
@@ -978,7 +950,6 @@ namespace DialogEditor.Services
                             settings.FontFamily ?? "",
                             settings.IsDarkTheme,
                             settings.CurrentThemeId,
-                            settings.UseNewLayout,
                             settings.FlowchartLayout ?? "Floating",
                             settings.AllowScrollbarAutoHide);
 
@@ -1093,7 +1064,6 @@ namespace DialogEditor.Services
                     FontFamily = FontFamily,
                     IsDarkTheme = IsDarkTheme, // Keep for backwards compatibility
                     CurrentThemeId = CurrentThemeId,
-                    UseNewLayout = UseNewLayout,
                     FlowchartLayout = FlowchartLayout, // #329: Flowchart layout
                     // Flowchart window settings (#377)
                     FlowchartWindowLeft = FlowchartWindowLeft,
@@ -1245,7 +1215,6 @@ namespace DialogEditor.Services
             public string FontFamily { get; set; } = "";
             public bool IsDarkTheme { get; set; } = false; // DEPRECATED: For backwards compatibility
             public string? CurrentThemeId { get; set; } = "org.parley.theme.light";
-            public bool UseNewLayout { get; set; } = false;
             public string FlowchartLayout { get; set; } = "Floating"; // #329: Flowchart layout
             // Flowchart window settings (#377)
             public double FlowchartWindowLeft { get; set; } = 100;
