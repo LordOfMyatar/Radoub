@@ -146,14 +146,14 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Combat Stats Section -->
+                <!-- Armor Class Section -->
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"
-                        AutomationProperties.AutomationId="CombatStatsSection">
+                        AutomationProperties.AutomationId="ArmorClassSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Combat" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Armor Class" FontWeight="SemiBold" FontSize="14"/>
 
                         <Grid ColumnDefinitions="*,*,*,*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="NaturalAcDisplay">
@@ -163,24 +163,51 @@
                                                AutomationProperties.AutomationId="NaturalAcNumeric"
                                                ToolTip.Tip="Natural armor class bonus"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="DexAcDisplay">
-                                <TextBlock Text="Dex AC" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="DexAcValue" Text="+0" FontSize="16" FontWeight="Bold"/>
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="BaseAcDisplay">
+                                <TextBlock Text="Base" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock Text="10" FontSize="18" FontWeight="Bold"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="2" Margin="0,0,10,0" AutomationProperties.AutomationId="BabDisplay">
+                            <StackPanel Grid.Column="2" Margin="0,0,10,0" AutomationProperties.AutomationId="DexAcDisplay">
+                                <TextBlock Text="Dex Bonus" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="DexAcValue" Text="+0" FontSize="18" FontWeight="Bold"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" Margin="0,0,10,0" AutomationProperties.AutomationId="SizeModDisplay">
+                                <TextBlock Text="Size Mod" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="SizeModValue" Text="+0" FontSize="18" FontWeight="Bold"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4" AutomationProperties.AutomationId="TotalAcDisplay">
+                                <TextBlock Text="Total AC" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="TotalAcValue" Text="10" FontSize="18" FontWeight="Bold"
+                                           Foreground="{DynamicResource SystemAccentColor}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Combat Stats Section -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15"
+                        AutomationProperties.AutomationId="CombatStatsSection">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Combat" FontWeight="SemiBold" FontSize="14"/>
+
+                        <Grid ColumnDefinitions="*,*,*">
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="BabDisplay">
                                 <TextBlock Text="Base Attack" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="BabValue" Text="+0" FontSize="16" FontWeight="Bold"/>
+                                <TextBlock x:Name="BabValue" Text="+0" FontSize="18" FontWeight="Bold"/>
                                 <TextBlock x:Name="BabBreakdown" Text="" FontSize="10"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="3" Margin="0,0,10,0" AutomationProperties.AutomationId="SpeedDisplay">
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="SpeedDisplay">
                                 <TextBlock Text="Speed" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="SpeedValue" Text="Normal" FontSize="16" FontWeight="Bold"/>
+                                <TextBlock x:Name="SpeedValue" Text="Normal" FontSize="18" FontWeight="Bold"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="4" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
+                            <StackPanel Grid.Column="2" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
                                 <TextBlock Text="Challenge Rating" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <NumericUpDown x:Name="CrValueNumeric" Value="0" Minimum="0" Maximum="100" Increment="0.25"
-                                               FormatString="0.##" FontSize="14" MinWidth="70"
+                                               FormatString="0.##" FontSize="14" MinWidth="80"
                                                AutomationProperties.AutomationId="CrValueNumeric"
                                                ToolTip.Tip="Base Challenge Rating"/>
                                 <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">

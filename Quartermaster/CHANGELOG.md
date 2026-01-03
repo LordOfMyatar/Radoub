@@ -26,6 +26,11 @@ Complete Stats panel editing to match Aurora Toolset parity.
   - Matches Aurora Toolset behavior (CurrentHP not exposed)
 - **Natural AC Editing** (#727)
   - NumericUpDown control for natural armor class (0-255 range)
+- **Armor Class Section** (Aurora Toolset parity)
+  - Separated Armor Class section from Combat section
+  - Display Base AC (10), Dex Bonus, Size Modifier, and Total AC
+  - Size Modifier calculated from appearance.2da SIZECATEGORY
+  - Total AC recalculates when Natural AC or Dex changes
 - **Challenge Rating Editing** (#729)
   - NumericUpDown control for base CR (0-100, 0.25 increment)
   - Works alongside existing CR Adjust control

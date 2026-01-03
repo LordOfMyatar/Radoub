@@ -41,9 +41,12 @@ public partial class StatsPanel : UserControl
     private TextBlock? _baseHpNote;
     private TextBlock? _maxHpValue, _conHpBonus;
 
-    // Combat stats controls
+    // Armor class controls
     private NumericUpDown? _naturalAcNumeric;
-    private TextBlock? _dexAcValue, _babValue, _babBreakdown, _speedValue;
+    private TextBlock? _dexAcValue, _sizeModValue, _totalAcValue;
+
+    // Combat stats controls
+    private TextBlock? _babValue, _babBreakdown, _speedValue;
     private NumericUpDown? _crValueNumeric;
     private NumericUpDown? _crAdjustNumeric;
     private StackPanel? _crDisplaySection;
@@ -106,11 +109,15 @@ public partial class StatsPanel : UserControl
         if (_baseHpNumeric != null)
             _baseHpNumeric.ValueChanged += OnBaseHpValueChanged;
 
-        // Combat stats
+        // Armor class controls
         _naturalAcNumeric = this.FindControl<NumericUpDown>("NaturalAcNumeric");
         if (_naturalAcNumeric != null)
             _naturalAcNumeric.ValueChanged += OnNaturalAcValueChanged;
         _dexAcValue = this.FindControl<TextBlock>("DexAcValue");
+        _sizeModValue = this.FindControl<TextBlock>("SizeModValue");
+        _totalAcValue = this.FindControl<TextBlock>("TotalAcValue");
+
+        // Combat stats
         _babValue = this.FindControl<TextBlock>("BabValue");
         _babBreakdown = this.FindControl<TextBlock>("BabBreakdown");
         _speedValue = this.FindControl<TextBlock>("SpeedValue");
@@ -217,6 +224,14 @@ public partial class StatsPanel : UserControl
         // Display Dex AC bonus
         SetText(_dexAcValue, CreatureDisplayService.FormatBonus(dexBonus));
 
+        // Display Size AC modifier (from appearance.2da SIZECATEGORY)
+        int sizeAcMod = _displayService?.GetSizeAcModifier(creature.AppearanceType) ?? 0;
+        SetText(_sizeModValue, CreatureDisplayService.FormatBonus(sizeAcMod));
+
+        // Calculate and display Total AC: 10 (base) + Natural AC + Dex Bonus + Size Mod
+        int totalAc = 10 + creature.NaturalAC + dexBonus + sizeAcMod;
+        SetText(_totalAcValue, totalAc.ToString());
+
         LoadSavingThrow(_fortBase, _fortAbility, _fortTotal, creature.FortBonus, conBonus);
         LoadSavingThrow(_refBase, _refAbility, _refTotal, creature.RefBonus, dexBonus);
         LoadSavingThrow(_willBase, _willAbility, _willTotal, creature.WillBonus, wisBonus);
@@ -246,6 +261,7 @@ public partial class StatsPanel : UserControl
         if (_isLoading || _currentCreature == null) return;
 
         _currentCreature.NaturalAC = (byte)(e.NewValue ?? 0);
+        RecalculateTotalAc();
         NaturalAcChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -397,6 +413,23 @@ public partial class StatsPanel : UserControl
         int dexBonus = CreatureDisplayService.CalculateAbilityBonus(dexTotal);
 
         SetText(_dexAcValue, CreatureDisplayService.FormatBonus(dexBonus));
+
+        // Dex change affects Total AC
+        RecalculateTotalAc();
+    }
+
+    private void RecalculateTotalAc()
+    {
+        if (_currentCreature == null) return;
+
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int dexTotal = _currentCreature.Dex + racialMods.Dex;
+        int dexBonus = CreatureDisplayService.CalculateAbilityBonus(dexTotal);
+        int sizeAcMod = _displayService?.GetSizeAcModifier(_currentCreature.AppearanceType) ?? 0;
+
+        // Total AC = 10 (base) + Natural AC + Dex Bonus + Size Mod
+        int totalAc = 10 + _currentCreature.NaturalAC + dexBonus + sizeAcMod;
+        SetText(_totalAcValue, totalAc.ToString());
     }
 
     private void UpdateSavingThrows()
@@ -511,10 +544,14 @@ public partial class StatsPanel : UserControl
         SetText(_maxHpValue, "1");
         SetText(_conHpBonus, "+0");
 
-        // Clear combat stats
+        // Clear armor class
         if (_naturalAcNumeric != null)
             _naturalAcNumeric.Value = 0;
         SetText(_dexAcValue, "+0");
+        SetText(_sizeModValue, "+0");
+        SetText(_totalAcValue, "10");
+
+        // Clear combat stats
         SetText(_babValue, "+0");
         SetText(_babBreakdown, "");
         SetText(_speedValue, "Normal");

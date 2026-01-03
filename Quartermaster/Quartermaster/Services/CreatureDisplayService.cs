@@ -1136,6 +1136,36 @@ public class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets the size AC modifier for a creature based on its appearance.
+    /// Looks up SIZECATEGORY from appearance.2da and returns the AC modifier.
+    /// D&D 3e size categories: Tiny +2, Small +1, Medium 0, Large -1, Huge -2
+    /// </summary>
+    public int GetSizeAcModifier(ushort appearanceId)
+    {
+        var sizeCategoryStr = _gameDataService.Get2DAValue("appearance", appearanceId, "SIZECATEGORY");
+        if (string.IsNullOrEmpty(sizeCategoryStr) || sizeCategoryStr == "****")
+            return 0; // Default to Medium (no modifier)
+
+        if (!int.TryParse(sizeCategoryStr, out int sizeCategory))
+            return 0;
+
+        // NWN creaturesize.2da indices and corresponding AC modifiers:
+        // 0 = Invalid, 1 = Tiny (+2), 2 = Small (+1), 3 = Medium (0),
+        // 4 = Large (-1), 5 = Huge (-2), 6 = Gargantuan (-4), 7 = Colossal (-8)
+        return sizeCategory switch
+        {
+            1 => 2,   // Tiny
+            2 => 1,   // Small
+            3 => 0,   // Medium
+            4 => -1,  // Large
+            5 => -2,  // Huge
+            6 => -4,  // Gargantuan (extrapolated)
+            7 => -8,  // Colossal (extrapolated)
+            _ => 0    // Default/Invalid
+        };
+    }
+
+    /// <summary>
     /// Gets all appearance IDs from appearance.2da.
     /// Returns list of (id, name, isPartBased) tuples.
     /// </summary>
