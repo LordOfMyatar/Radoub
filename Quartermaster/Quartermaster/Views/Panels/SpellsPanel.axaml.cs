@@ -188,26 +188,31 @@ public partial class SpellsPanel : UserControl
                 bool isCaster = _displayService?.IsCasterClass(classEntry.Class) ?? false;
                 int maxSpellLevel = isCaster ? (_displayService?.GetMaxSpellLevel(classEntry.Class, classEntry.ClassLevel) ?? -1) : -1;
 
+                // Check if this class actually has spells in the creature data
+                bool hasSpellsInData = classEntry.KnownSpells.Any(list => list.Count > 0) ||
+                                       classEntry.MemorizedSpells.Any(list => list.Count > 0);
+
                 // Format: "Wizard (10) - Lvl 5" or "Fighter (5)" for non-casters
                 if (isCaster && maxSpellLevel >= 0)
                 {
                     radio.Content = $"{className} ({classEntry.ClassLevel}) - Lvl {maxSpellLevel}";
                 }
-                else if (isCaster)
+                else if (isCaster || hasSpellsInData)
                 {
-                    // Caster but no spells yet (e.g., Paladin 1-3, Ranger 1-3)
-                    radio.Content = $"{className} ({classEntry.ClassLevel}) - No spells";
+                    // Caster class or has spell data
+                    radio.Content = $"{className} ({classEntry.ClassLevel})";
                 }
                 else
                 {
                     radio.Content = $"{className} ({classEntry.ClassLevel})";
                 }
 
-                radio.IsEnabled = isCaster && maxSpellLevel >= 0;
+                // Enable if: detected as caster with spells, OR has actual spell data in creature
+                radio.IsEnabled = (isCaster && maxSpellLevel >= 0) || hasSpellsInData;
                 radio.IsVisible = true;
 
                 // Select first enabled caster class by default
-                if (!foundCaster && isCaster && maxSpellLevel >= 0)
+                if (!foundCaster && radio.IsEnabled)
                 {
                     radio.IsChecked = true;
                     _selectedClassIndex = i;
