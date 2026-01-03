@@ -118,8 +118,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize spells panel with display service for 2DA/TLK lookups
         SpellsPanelContent.SetDisplayService(_creatureDisplayService);
 
-        // Initialize appearance panel with display service
+        // Initialize appearance panel with display service and palette colors
         AppearancePanelContent.SetDisplayService(_creatureDisplayService);
+        AppearancePanelContent.SetPaletteColorService(new PaletteColorService(_gameDataService));
         AppearancePanelContent.AppearanceChanged += (s, e) => MarkDirty();
 
         // Initialize advanced panel with display service

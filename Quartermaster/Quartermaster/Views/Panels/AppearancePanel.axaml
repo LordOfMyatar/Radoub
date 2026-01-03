@@ -218,33 +218,57 @@
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Skin:" FontSize="11"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
-                                <NumericUpDown Grid.Row="0" Grid.Column="1" x:Name="SkinColorNumeric"
-                                               Minimum="0" Maximum="175" Value="0"
-                                               HorizontalAlignment="Left" MinWidth="80" FontSize="11"
-                                               AutomationProperties.AutomationId="SkinColorNumeric"/>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                    <NumericUpDown x:Name="SkinColorNumeric"
+                                                   Minimum="0" Maximum="175" Value="0"
+                                                   FormatString="0"
+                                                   MinWidth="80" FontSize="11"
+                                                   AutomationProperties.AutomationId="SkinColorNumeric"/>
+                                    <Border x:Name="SkinColorSwatch" Width="20" Height="20"
+                                            CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
+                                            Background="Gray" VerticalAlignment="Center"/>
+                                </StackPanel>
                                 <TextBlock Grid.Row="0" Grid.Column="2" Text="Hair:" FontSize="11"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
-                                <NumericUpDown Grid.Row="0" Grid.Column="3" x:Name="HairColorNumeric"
-                                               Minimum="0" Maximum="175" Value="0"
-                                               HorizontalAlignment="Left" MinWidth="80" FontSize="11"
-                                               AutomationProperties.AutomationId="HairColorNumeric"/>
+                                <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Spacing="5">
+                                    <NumericUpDown x:Name="HairColorNumeric"
+                                                   Minimum="0" Maximum="175" Value="0"
+                                                   FormatString="0"
+                                                   MinWidth="80" FontSize="11"
+                                                   AutomationProperties.AutomationId="HairColorNumeric"/>
+                                    <Border x:Name="HairColorSwatch" Width="20" Height="20"
+                                            CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
+                                            Background="Gray" VerticalAlignment="Center"/>
+                                </StackPanel>
 
                                 <!-- Row 1: Tattoo 1 / Tattoo 2 -->
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Tattoo 1:" FontSize="11"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
-                                <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="Tattoo1ColorNumeric"
-                                               Minimum="0" Maximum="175" Value="0"
-                                               HorizontalAlignment="Left" MinWidth="80" FontSize="11"
-                                               AutomationProperties.AutomationId="Tattoo1ColorNumeric"/>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                    <NumericUpDown x:Name="Tattoo1ColorNumeric"
+                                                   Minimum="0" Maximum="175" Value="0"
+                                                   FormatString="0"
+                                                   MinWidth="80" FontSize="11"
+                                                   AutomationProperties.AutomationId="Tattoo1ColorNumeric"/>
+                                    <Border x:Name="Tattoo1ColorSwatch" Width="20" Height="20"
+                                            CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
+                                            Background="Gray" VerticalAlignment="Center"/>
+                                </StackPanel>
                                 <TextBlock Grid.Row="1" Grid.Column="2" Text="Tattoo 2:" FontSize="11"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center"/>
-                                <NumericUpDown Grid.Row="1" Grid.Column="3" x:Name="Tattoo2ColorNumeric"
-                                               Minimum="0" Maximum="175" Value="0"
-                                               HorizontalAlignment="Left" MinWidth="80" FontSize="11"
-                                               AutomationProperties.AutomationId="Tattoo2ColorNumeric"/>
+                                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Spacing="5">
+                                    <NumericUpDown x:Name="Tattoo2ColorNumeric"
+                                                   Minimum="0" Maximum="175" Value="0"
+                                                   FormatString="0"
+                                                   MinWidth="80" FontSize="11"
+                                                   AutomationProperties.AutomationId="Tattoo2ColorNumeric"/>
+                                    <Border x:Name="Tattoo2ColorSwatch" Width="20" Height="20"
+                                            CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
+                                            Background="Gray" VerticalAlignment="Center"/>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </StackPanel>
