@@ -5,14 +5,13 @@ using Avalonia.Media.Imaging;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Quartermaster.Views.Panels;
 
-public partial class SkillsPanel : UserControl
+public partial class SkillsPanel : BasePanelControl
 {
     private CreatureDisplayService? _displayService;
     private ItemIconService? _itemIconService;
@@ -24,10 +23,9 @@ public partial class SkillsPanel : UserControl
     private CheckBox? _trainedOnlyCheckBox;
 
     private ObservableCollection<SkillViewModel> _skills = new();
-    private List<SkillViewModel> _allSkills = new(); // Unfiltered list
+    private List<SkillViewModel> _allSkills = new();
     private HashSet<int> _classSkillIds = new();
     private HashSet<int> _unavailableSkillIds = new();
-    private UtcFile? _currentCreature;
 
     public SkillsPanel()
     {
@@ -47,42 +45,31 @@ public partial class SkillsPanel : UserControl
         if (_skillsList != null)
             _skillsList.ItemsSource = _skills;
 
-        // Wire up sort/filter controls
         if (_sortComboBox != null)
-        {
             _sortComboBox.SelectionChanged += (s, e) => ApplySortAndFilter();
-        }
 
         if (_trainedOnlyCheckBox != null)
-        {
             _trainedOnlyCheckBox.IsCheckedChanged += (s, e) => ApplySortAndFilter();
-        }
     }
 
-    /// <summary>
-    /// Sets the display service for 2DA/TLK lookups.
-    /// </summary>
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
     }
 
-    /// <summary>
-    /// Sets the icon service for loading skill icons.
-    /// </summary>
     public void SetIconService(ItemIconService iconService)
     {
         _itemIconService = iconService;
         UnifiedLogger.LogUI(LogLevel.INFO, $"SkillsPanel: IconService set, IsGameDataAvailable={iconService?.IsGameDataAvailable}");
     }
 
-    public void LoadCreature(UtcFile? creature)
+    public override void LoadCreature(UtcFile? creature)
     {
         _skills.Clear();
         _allSkills.Clear();
         _classSkillIds.Clear();
         _unavailableSkillIds.Clear();
-        _currentCreature = creature;
+        CurrentCreature = creature;
 
         if (creature == null || creature.SkillList.Count == 0)
         {
@@ -90,14 +77,12 @@ public partial class SkillsPanel : UserControl
             return;
         }
 
-        // Get combined class skills and unavailable skills from all character classes
         if (_displayService != null)
         {
             _classSkillIds = _displayService.GetCombinedClassSkillIds(creature);
             _unavailableSkillIds = _displayService.GetUnavailableSkillIds(creature, creature.SkillList.Count);
         }
 
-        // Load all skills
         for (int i = 0; i < creature.SkillList.Count; i++)
         {
             var ranks = creature.SkillList[i];
@@ -106,21 +91,19 @@ public partial class SkillsPanel : UserControl
             var isClassSkill = _classSkillIds.Contains(i);
             var isUnavailable = _unavailableSkillIds.Contains(i);
 
-            // Calculate ability modifier for total
             var abilityModifier = GetAbilityModifier(creature, keyAbility);
             var total = ranks + abilityModifier;
 
-            // Determine row background and text opacity
             IBrush rowBackground;
             double textOpacity;
             if (isUnavailable)
             {
-                rowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128)); // Gray for unavailable
+                rowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128));
                 textOpacity = 0.5;
             }
             else if (isClassSkill)
             {
-                rowBackground = new SolidColorBrush(Color.FromArgb(30, 100, 149, 237)); // Light blue for class skills
+                rowBackground = new SolidColorBrush(Color.FromArgb(30, 100, 149, 237));
                 textOpacity = 1.0;
             }
             else
@@ -138,7 +121,7 @@ public partial class SkillsPanel : UserControl
                 RanksDisplay = ranks.ToString(),
                 AbilityModifier = abilityModifier,
                 Total = total,
-                TotalDisplay = FormatTotal(total, abilityModifier),
+                TotalDisplay = total.ToString(),
                 IsClassSkill = isClassSkill,
                 IsUnavailable = isUnavailable,
                 ClassSkillIndicator = isUnavailable ? "✗" : (isClassSkill ? "●" : "○"),
@@ -146,16 +129,11 @@ public partial class SkillsPanel : UserControl
                 TextOpacity = textOpacity
             };
 
-            // Load skill icon if available
-            LoadSkillIcon(vm);
-
+            vm.SetIconService(_itemIconService);
             _allSkills.Add(vm);
         }
 
-        // Apply initial sort and filter
         ApplySortAndFilter();
-
-        // Update summary
         UpdateSummary();
 
         if (_noSkillsText != null)
@@ -164,7 +142,6 @@ public partial class SkillsPanel : UserControl
 
     private int GetAbilityModifier(UtcFile creature, string keyAbility)
     {
-        // Get the base ability score + racial modifier, then calculate modifier
         int abilityScore = keyAbility.ToUpperInvariant() switch
         {
             "STR" => creature.Str,
@@ -176,24 +153,16 @@ public partial class SkillsPanel : UserControl
             _ => 10
         };
 
-        // Standard D&D formula: (score - 10) / 2
         return CreatureDisplayService.CalculateAbilityBonus(abilityScore);
     }
 
-    private static string FormatTotal(int total, int abilityModifier)
-    {
-        // Show total with modifier breakdown in tooltip-friendly format
-        var sign = abilityModifier >= 0 ? "+" : "";
-        return $"{total}";
-    }
-
-    public void ClearPanel()
+    public override void ClearPanel()
     {
         _skills.Clear();
         _allSkills.Clear();
         _classSkillIds.Clear();
         _unavailableSkillIds.Clear();
-        _currentCreature = null;
+        CurrentCreature = null;
         SetText(_skillsSummaryText, "0 skills with ranks");
         if (_noSkillsText != null)
             _noSkillsText.IsVisible = true;
@@ -206,29 +175,22 @@ public partial class SkillsPanel : UserControl
 
         var filtered = _allSkills.AsEnumerable();
 
-        // Apply "trained only" filter
         bool trainedOnly = _trainedOnlyCheckBox?.IsChecked ?? false;
         if (trainedOnly)
-        {
             filtered = filtered.Where(s => s.Ranks > 0);
-        }
 
-        // Apply sort
         int sortIndex = _sortComboBox?.SelectedIndex ?? 0;
         filtered = sortIndex switch
         {
-            0 => filtered.OrderBy(s => s.SkillName),                          // Alphabetical
-            1 => filtered.OrderByDescending(s => s.Ranks).ThenBy(s => s.SkillName), // By Rank (descending)
-            2 => filtered.OrderByDescending(s => s.IsClassSkill).ThenBy(s => s.SkillName), // Class skills first
+            0 => filtered.OrderBy(s => s.SkillName),
+            1 => filtered.OrderByDescending(s => s.Ranks).ThenBy(s => s.SkillName),
+            2 => filtered.OrderByDescending(s => s.IsClassSkill).ThenBy(s => s.SkillName),
             _ => filtered.OrderBy(s => s.SkillName)
         };
 
-        // Update display
         _skills.Clear();
         foreach (var skill in filtered)
-        {
             _skills.Add(skill);
-        }
 
         UpdateSummary();
     }
@@ -251,7 +213,6 @@ public partial class SkillsPanel : UserControl
         if (_displayService != null)
             return _displayService.GetSkillName(skillId);
 
-        // Fallback to hardcoded names
         return skillId switch
         {
             0 => "Animal Empathy",
@@ -291,55 +252,38 @@ public partial class SkillsPanel : UserControl
         if (_displayService != null)
             return _displayService.GetSkillKeyAbility(skillId);
 
-        // Fallback to hardcoded values
         return skillId switch
         {
-            0 => "CHA",  // Animal Empathy
-            1 => "CON",  // Concentration
-            2 => "INT",  // Disable Trap
-            3 => "STR",  // Discipline
-            4 => "WIS",  // Heal
-            5 => "DEX",  // Hide
-            6 => "WIS",  // Listen
-            7 => "INT",  // Lore
-            8 => "DEX",  // Move Silently
-            9 => "DEX",  // Open Lock
-            10 => "DEX", // Parry
-            11 => "CHA", // Perform
-            12 => "CHA", // Persuade
-            13 => "DEX", // Pick Pocket
-            14 => "INT", // Search
-            15 => "DEX", // Set Trap
-            16 => "INT", // Spellcraft
-            17 => "WIS", // Spot
-            18 => "CHA", // Taunt
-            19 => "CHA", // Use Magic Device
-            20 => "INT", // Appraise
-            21 => "DEX", // Tumble
-            22 => "INT", // Craft Trap
-            23 => "CHA", // Bluff
-            24 => "CHA", // Intimidate
-            25 => "INT", // Craft Armor
-            26 => "INT", // Craft Weapon
-            27 => "DEX", // Ride
+            0 => "CHA",
+            1 => "CON",
+            2 => "INT",
+            3 => "STR",
+            4 => "WIS",
+            5 => "DEX",
+            6 => "WIS",
+            7 => "INT",
+            8 => "DEX",
+            9 => "DEX",
+            10 => "DEX",
+            11 => "CHA",
+            12 => "CHA",
+            13 => "DEX",
+            14 => "INT",
+            15 => "DEX",
+            16 => "INT",
+            17 => "WIS",
+            18 => "CHA",
+            19 => "CHA",
+            20 => "INT",
+            21 => "DEX",
+            22 => "INT",
+            23 => "CHA",
+            24 => "CHA",
+            25 => "INT",
+            26 => "INT",
+            27 => "DEX",
             _ => "INT"
         };
-    }
-
-    /// <summary>
-    /// Loads the game icon for a skill from skills.2da Icon column.
-    /// Icons are loaded lazily when binding requests them.
-    /// </summary>
-    private void LoadSkillIcon(SkillViewModel skillVm)
-    {
-        // Don't load upfront - use lazy loading via IconBitmap getter
-        skillVm.SetIconService(_itemIconService);
-    }
-
-    private static void SetText(TextBlock? block, string text)
-    {
-        if (block != null)
-            block.Text = text;
     }
 }
 
@@ -363,23 +307,15 @@ public class SkillViewModel
     public IBrush RowBackground { get; set; } = Brushes.Transparent;
     public double TextOpacity { get; set; } = 1.0;
 
-    /// <summary>
-    /// Sets the icon service for lazy loading.
-    /// </summary>
     public void SetIconService(ItemIconService? iconService)
     {
         _iconService = iconService;
     }
 
-    /// <summary>
-    /// Game icon for this skill (from skills.2da Icon column).
-    /// Loaded lazily on first access.
-    /// </summary>
     public Bitmap? IconBitmap
     {
         get
         {
-            // Lazy load on first access
             if (!_iconLoaded && _iconService != null && _iconService.IsGameDataAvailable)
             {
                 _iconLoaded = true;
@@ -401,9 +337,5 @@ public class SkillViewModel
         }
     }
 
-    /// <summary>
-    /// Whether we have a real game icon (not placeholder).
-    /// Returns true if icon service is available (assumes icon exists to avoid triggering load).
-    /// </summary>
     public bool HasGameIcon => _iconService != null && _iconService.IsGameDataAvailable;
 }

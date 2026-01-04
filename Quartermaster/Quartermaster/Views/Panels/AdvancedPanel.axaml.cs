@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
@@ -12,7 +9,7 @@ using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Panels;
 
-public partial class AdvancedPanel : UserControl
+public partial class AdvancedPanel : BasePanelControl
 {
     // Identity section
     private TextBox? _templateResRefTextBox;
@@ -41,9 +38,7 @@ public partial class AdvancedPanel : UserControl
     private ComboBox? _bodyBagComboBox;
 
     private CreatureDisplayService? _displayService;
-    private UtcFile? _currentCreature;
     private string? _currentModuleDirectory;
-    private bool _isLoading;
 
     public event EventHandler? CommentChanged;
     public event EventHandler? TagChanged;
@@ -95,10 +90,7 @@ public partial class AdvancedPanel : UserControl
         if (_commentTextBox != null)
             _commentTextBox.TextChanged += OnCommentTextChanged;
 
-        // Wire up flag checkbox events
         WireUpFlagCheckboxes();
-
-        // Wire up behavior combo box events
         WireUpBehaviorCombos();
     }
 
@@ -118,10 +110,10 @@ public partial class AdvancedPanel : UserControl
 
     private async void OnFactionBrowseClick(object? sender, RoutedEventArgs e)
     {
-        if (_currentCreature == null || _displayService == null) return;
+        if (CurrentCreature == null || _displayService == null) return;
 
         var factions = _displayService.GetAllFactions(_currentModuleDirectory);
-        var picker = new FactionPickerWindow(factions, _currentCreature.FactionID);
+        var picker = new FactionPickerWindow(factions, CurrentCreature.FactionID);
 
         var parentWindow = TopLevel.GetTopLevel(this) as Window;
         if (parentWindow != null)
@@ -129,7 +121,7 @@ public partial class AdvancedPanel : UserControl
             await picker.ShowDialog(parentWindow);
             if (picker.Confirmed && picker.SelectedFactionId.HasValue)
             {
-                _currentCreature.FactionID = picker.SelectedFactionId.Value;
+                CurrentCreature.FactionID = picker.SelectedFactionId.Value;
                 UpdateFactionDisplay();
                 BehaviorChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -138,44 +130,48 @@ public partial class AdvancedPanel : UserControl
 
     private void OnPerceptionSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null || _perceptionComboBox == null) return;
+        if (IsLoading || CurrentCreature == null) return;
 
-        if (_perceptionComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte perception)
+        var perception = ComboBoxHelper.GetSelectedTag<byte>(_perceptionComboBox);
+        if (perception.HasValue)
         {
-            _currentCreature.PerceptionRange = perception;
+            CurrentCreature.PerceptionRange = perception.Value;
             BehaviorChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
     private void OnWalkRateSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null || _walkRateComboBox == null) return;
+        if (IsLoading || CurrentCreature == null) return;
 
-        if (_walkRateComboBox.SelectedItem is ComboBoxItem item && item.Tag is int walkRate)
+        var walkRate = ComboBoxHelper.GetSelectedTag<int>(_walkRateComboBox);
+        if (walkRate.HasValue)
         {
-            _currentCreature.WalkRate = walkRate;
+            CurrentCreature.WalkRate = walkRate.Value;
             BehaviorChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
     private void OnDecayTimeSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null || _decayTimeComboBox == null) return;
+        if (IsLoading || CurrentCreature == null) return;
 
-        if (_decayTimeComboBox.SelectedItem is ComboBoxItem item && item.Tag is uint decayTime)
+        var decayTime = ComboBoxHelper.GetSelectedTag<uint>(_decayTimeComboBox);
+        if (decayTime.HasValue)
         {
-            _currentCreature.DecayTime = decayTime;
+            CurrentCreature.DecayTime = decayTime.Value;
             BehaviorChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
     private void OnBodyBagSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null || _bodyBagComboBox == null) return;
+        if (IsLoading || CurrentCreature == null) return;
 
-        if (_bodyBagComboBox.SelectedItem is ComboBoxItem item && item.Tag is byte bodyBag)
+        var bodyBag = ComboBoxHelper.GetSelectedTag<byte>(_bodyBagComboBox);
+        if (bodyBag.HasValue)
         {
-            _currentCreature.BodyBag = bodyBag;
+            CurrentCreature.BodyBag = bodyBag.Value;
             BehaviorChanged?.Invoke(this, EventArgs.Empty);
         }
     }
@@ -188,7 +184,7 @@ public partial class AdvancedPanel : UserControl
             {
                 cb.IsCheckedChanged += (s, e) =>
                 {
-                    if (!_isLoading && _currentCreature != null)
+                    if (!IsLoading && CurrentCreature != null)
                     {
                         setter(cb.IsChecked ?? false);
                         FlagsChanged?.Invoke(this, EventArgs.Empty);
@@ -197,13 +193,13 @@ public partial class AdvancedPanel : UserControl
             }
         }
 
-        WireFlag(_plotCheckBox, v => { if (_currentCreature != null) _currentCreature.Plot = v; });
-        WireFlag(_immortalCheckBox, v => { if (_currentCreature != null) _currentCreature.IsImmortal = v; });
-        WireFlag(_noPermDeathCheckBox, v => { if (_currentCreature != null) _currentCreature.NoPermDeath = v; });
-        WireFlag(_isPCCheckBox, v => { if (_currentCreature != null) _currentCreature.IsPC = v; });
-        WireFlag(_disarmableCheckBox, v => { if (_currentCreature != null) _currentCreature.Disarmable = v; });
-        WireFlag(_lootableCheckBox, v => { if (_currentCreature != null) _currentCreature.Lootable = v; });
-        WireFlag(_interruptableCheckBox, v => { if (_currentCreature != null) _currentCreature.Interruptable = v; });
+        WireFlag(_plotCheckBox, v => { if (CurrentCreature != null) CurrentCreature.Plot = v; });
+        WireFlag(_immortalCheckBox, v => { if (CurrentCreature != null) CurrentCreature.IsImmortal = v; });
+        WireFlag(_noPermDeathCheckBox, v => { if (CurrentCreature != null) CurrentCreature.NoPermDeath = v; });
+        WireFlag(_isPCCheckBox, v => { if (CurrentCreature != null) CurrentCreature.IsPC = v; });
+        WireFlag(_disarmableCheckBox, v => { if (CurrentCreature != null) CurrentCreature.Disarmable = v; });
+        WireFlag(_lootableCheckBox, v => { if (CurrentCreature != null) CurrentCreature.Lootable = v; });
+        WireFlag(_interruptableCheckBox, v => { if (CurrentCreature != null) CurrentCreature.Interruptable = v; });
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
@@ -218,7 +214,6 @@ public partial class AdvancedPanel : UserControl
     /// </summary>
     public void SetFileType(bool isBicFile)
     {
-        // Hide ResRef and Comment rows for BIC files (these fields don't exist in BIC)
         if (_resRefRow != null)
             _resRefRow.IsVisible = !isBicFile;
         if (_commentRow != null)
@@ -231,19 +226,14 @@ public partial class AdvancedPanel : UserControl
     public void SetModuleDirectory(string? moduleDirectory)
     {
         _currentModuleDirectory = moduleDirectory;
-        // Faction display will be updated when LoadCreature is called
     }
 
-    /// <summary>
-    /// Update the faction text display based on current creature's faction ID.
-    /// </summary>
     private void UpdateFactionDisplay()
     {
-        if (_factionTextBox == null || _currentCreature == null) return;
+        if (_factionTextBox == null || CurrentCreature == null) return;
 
-        var factionId = _currentCreature.FactionID;
+        var factionId = CurrentCreature.FactionID;
 
-        // Try to find faction name from repute.fac
         if (_displayService != null)
         {
             var factions = _displayService.GetAllFactions(_currentModuleDirectory);
@@ -255,13 +245,11 @@ public partial class AdvancedPanel : UserControl
             }
         }
 
-        // Fallback to ID only
         _factionTextBox.Text = factionId.ToString();
     }
 
     private void LoadBehaviorData()
     {
-        // Perception Range dropdown
         if (_perceptionComboBox != null)
         {
             _perceptionComboBox.Items.Clear();
@@ -272,7 +260,6 @@ public partial class AdvancedPanel : UserControl
             _perceptionComboBox.Items.Add(new ComboBoxItem { Content = "Maximum (13)", Tag = (byte)13 });
         }
 
-        // Walk Rate dropdown
         if (_walkRateComboBox != null)
         {
             _walkRateComboBox.Items.Clear();
@@ -286,7 +273,6 @@ public partial class AdvancedPanel : UserControl
             _walkRateComboBox.Items.Add(new ComboBoxItem { Content = "Default (7)", Tag = 7 });
         }
 
-        // Decay Time dropdown - common presets
         if (_decayTimeComboBox != null)
         {
             _decayTimeComboBox.Items.Clear();
@@ -299,7 +285,6 @@ public partial class AdvancedPanel : UserControl
             _decayTimeComboBox.Items.Add(new ComboBoxItem { Content = "5 minutes", Tag = 300000u });
         }
 
-        // Body Bag dropdown - from bodybag.2da
         if (_bodyBagComboBox != null)
         {
             _bodyBagComboBox.Items.Clear();
@@ -309,29 +294,24 @@ public partial class AdvancedPanel : UserControl
             _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "Treasure Pile (3)", Tag = (byte)3 });
             _bodyBagComboBox.Items.Add(new ComboBoxItem { Content = "No Body (4)", Tag = (byte)4 });
         }
-
-        // Faction - handled by UpdateFactionDisplay() in LoadCreature
     }
 
-    public void LoadCreature(UtcFile? creature)
+    public override void LoadCreature(UtcFile? creature)
     {
-        _isLoading = true;
-        _currentCreature = creature;
+        IsLoading = true;
+        CurrentCreature = creature;
 
         if (creature == null)
         {
             ClearPanel();
-            _isLoading = false;
+            IsLoading = false;
             return;
         }
 
         // Identity
-        if (_templateResRefTextBox != null)
-            _templateResRefTextBox.Text = creature.TemplateResRef ?? "";
-        if (_tagTextBox != null)
-            _tagTextBox.Text = creature.Tag ?? "";
-        if (_commentTextBox != null)
-            _commentTextBox.Text = creature.Comment ?? "";
+        SetTextBox(_templateResRefTextBox, creature.TemplateResRef ?? "");
+        SetTextBox(_tagTextBox, creature.Tag ?? "");
+        SetTextBox(_commentTextBox, creature.Comment ?? "");
 
         // Flags
         SetCheckBox(_plotCheckBox, creature.Plot);
@@ -342,100 +322,22 @@ public partial class AdvancedPanel : UserControl
         SetCheckBox(_lootableCheckBox, creature.Lootable);
         SetCheckBox(_interruptableCheckBox, creature.Interruptable);
 
-        // Behavior - faction uses text display, others use combos
+        // Behavior
         UpdateFactionDisplay();
-        SelectComboByTag(_perceptionComboBox, creature.PerceptionRange);
-        SelectComboByTag(_walkRateComboBox, creature.WalkRate);
-        SelectComboByTag(_decayTimeComboBox, creature.DecayTime);
-        SelectComboByTag(_bodyBagComboBox, creature.BodyBag);
+        ComboBoxHelper.SelectByTag(_perceptionComboBox, creature.PerceptionRange);
+        ComboBoxHelper.SelectByTag(_walkRateComboBox, creature.WalkRate);
+        ComboBoxHelper.SelectByTag(_decayTimeComboBox, creature.DecayTime, "{0} ms");
+        ComboBoxHelper.SelectByTag(_bodyBagComboBox, creature.BodyBag);
 
-        // Defer clearing _isLoading until after dispatcher processes queued TextChanged/SelectionChanged events
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
+        DeferLoadingReset();
     }
 
-    private void SelectComboByTag(ComboBox? combo, byte value)
+    public override void ClearPanel()
     {
-        if (combo == null) return;
+        SetTextBox(_templateResRefTextBox, "");
+        SetTextBox(_tagTextBox, "");
+        SetTextBox(_commentTextBox, "");
 
-        for (int i = 0; i < combo.Items.Count; i++)
-        {
-            if (combo.Items[i] is ComboBoxItem item && item.Tag is byte id && id == value)
-            {
-                combo.SelectedIndex = i;
-                return;
-            }
-        }
-
-        // If not found, add it
-        combo.Items.Add(new ComboBoxItem { Content = value.ToString(), Tag = value });
-        combo.SelectedIndex = combo.Items.Count - 1;
-    }
-
-    private void SelectComboByTag(ComboBox? combo, ushort value)
-    {
-        if (combo == null) return;
-
-        for (int i = 0; i < combo.Items.Count; i++)
-        {
-            if (combo.Items[i] is ComboBoxItem item && item.Tag is ushort id && id == value)
-            {
-                combo.SelectedIndex = i;
-                return;
-            }
-        }
-
-        // If not found, add it
-        combo.Items.Add(new ComboBoxItem { Content = value.ToString(), Tag = value });
-        combo.SelectedIndex = combo.Items.Count - 1;
-    }
-
-    private void SelectComboByTag(ComboBox? combo, int value)
-    {
-        if (combo == null) return;
-
-        for (int i = 0; i < combo.Items.Count; i++)
-        {
-            if (combo.Items[i] is ComboBoxItem item && item.Tag is int id && id == value)
-            {
-                combo.SelectedIndex = i;
-                return;
-            }
-        }
-
-        // If not found, add it
-        combo.Items.Add(new ComboBoxItem { Content = value.ToString(), Tag = value });
-        combo.SelectedIndex = combo.Items.Count - 1;
-    }
-
-    private void SelectComboByTag(ComboBox? combo, uint value)
-    {
-        if (combo == null) return;
-
-        for (int i = 0; i < combo.Items.Count; i++)
-        {
-            if (combo.Items[i] is ComboBoxItem item && item.Tag is uint id && id == value)
-            {
-                combo.SelectedIndex = i;
-                return;
-            }
-        }
-
-        // If not found, add it
-        combo.Items.Add(new ComboBoxItem { Content = $"{value} ms", Tag = value });
-        combo.SelectedIndex = combo.Items.Count - 1;
-    }
-
-    public void ClearPanel()
-    {
-        // Clear identity
-        if (_templateResRefTextBox != null)
-            _templateResRefTextBox.Text = "";
-        if (_tagTextBox != null)
-            _tagTextBox.Text = "";
-        if (_commentTextBox != null)
-            _commentTextBox.Text = "";
-
-        // Clear all flags
         SetCheckBox(_plotCheckBox, false);
         SetCheckBox(_immortalCheckBox, false);
         SetCheckBox(_noPermDeathCheckBox, false);
@@ -444,9 +346,7 @@ public partial class AdvancedPanel : UserControl
         SetCheckBox(_lootableCheckBox, false);
         SetCheckBox(_interruptableCheckBox, true); // Default
 
-        // Clear behavior fields
-        if (_factionTextBox != null)
-            _factionTextBox.Text = "";
+        SetTextBox(_factionTextBox, "");
         if (_perceptionComboBox != null)
             _perceptionComboBox.SelectedIndex = 2; // Normal (11)
         if (_walkRateComboBox != null)
@@ -457,7 +357,7 @@ public partial class AdvancedPanel : UserControl
             _bodyBagComboBox.SelectedIndex = 0;
     }
 
-    private async void OnCopyResRefClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void OnCopyResRefClick(object? sender, RoutedEventArgs e)
     {
         var text = _templateResRefTextBox?.Text;
         if (!string.IsNullOrEmpty(text))
@@ -468,7 +368,7 @@ public partial class AdvancedPanel : UserControl
         }
     }
 
-    private async void OnCopyTagClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void OnCopyTagClick(object? sender, RoutedEventArgs e)
     {
         var text = _tagTextBox?.Text;
         if (!string.IsNullOrEmpty(text))
@@ -481,32 +381,20 @@ public partial class AdvancedPanel : UserControl
 
     private void OnTagTextChanged(object? sender, TextChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null) return;
+        if (IsLoading || CurrentCreature == null) return;
 
-        _currentCreature.Tag = _tagTextBox?.Text ?? "";
+        CurrentCreature.Tag = _tagTextBox?.Text ?? "";
         TagChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnCommentTextChanged(object? sender, TextChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null) return;
+        if (IsLoading || CurrentCreature == null) return;
 
-        _currentCreature.Comment = _commentTextBox?.Text ?? "";
+        CurrentCreature.Comment = _commentTextBox?.Text ?? "";
         CommentChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public string GetComment() => _commentTextBox?.Text ?? "";
     public string GetTag() => _tagTextBox?.Text ?? "";
-
-    private static void SetCheckBox(CheckBox? cb, bool value)
-    {
-        if (cb != null)
-            cb.IsChecked = value;
-    }
-
-    private static void SetText(TextBlock? block, string text)
-    {
-        if (block != null)
-            block.Text = text;
-    }
 }
