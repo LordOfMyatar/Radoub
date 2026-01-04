@@ -1,11 +1,136 @@
 using System.Numerics;
 using Radoub.Formats.Mdl;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Radoub.Formats.Tests;
 
 public class MdlAsciiReaderTests
 {
+    private readonly ITestOutputHelper _output;
+
+    public MdlAsciiReaderTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    [Fact]
+    public void Parse_CompleteModel_ShowsOutput()
+    {
+        var mdlContent = @"
+newmodel test_character
+setsupermodel test_character NULL
+classification character
+setanimationscale 1.0
+beginmodelgeom test_character
+node dummy test_character
+  parent NULL
+  position 0 0 0
+  node trimesh body_mesh
+    parent test_character
+    position 0 0 1
+    bitmap armor_tex
+    ambient 0.2 0.2 0.2
+    diffuse 0.8 0.8 0.8
+    verts 4
+      -1 -1 0
+      1 -1 0
+      1 1 0
+      -1 1 0
+    tverts 4
+      0 0
+      1 0
+      1 1
+      0 1
+    faces 2
+      0 1 2 1 0 1 2 0
+      0 2 3 1 0 2 3 0
+  endnode
+  node light torch
+    parent test_character
+    position 0 0 2
+    color 1.0 0.8 0.5
+    radius 5.0
+  endnode
+endnode
+endmodelgeom test_character
+newanim idle test_character
+  length 2.0
+  transtime 0.25
+  animroot test_character
+  event 0.5 sound_breath
+doneanim idle test_character
+donemodel test_character
+";
+
+        var reader = new MdlAsciiReader();
+        var model = reader.Parse(mdlContent);
+
+        _output.WriteLine("=== MDL Parser Output ===\n");
+        _output.WriteLine($"Model Name: {model.Name}");
+        _output.WriteLine($"Classification: {model.Classification}");
+        _output.WriteLine($"Animation Scale: {model.AnimationScale}");
+        _output.WriteLine($"Super Model: {model.SuperModel}");
+        _output.WriteLine($"Bounding Min: {model.BoundingMin}");
+        _output.WriteLine($"Bounding Max: {model.BoundingMax}");
+        _output.WriteLine($"Radius: {model.Radius:F2}");
+
+        _output.WriteLine($"\n--- Nodes ({model.EnumerateAllNodes().Count()}) ---");
+        foreach (var node in model.EnumerateAllNodes())
+        {
+            var indent = "";
+            var p = node.Parent;
+            while (p != null) { indent += "  "; p = p.Parent; }
+
+            _output.WriteLine($"{indent}[{node.NodeType}] {node.Name}");
+            _output.WriteLine($"{indent}  Position: {node.Position}");
+
+            if (node is MdlTrimeshNode mesh)
+            {
+                _output.WriteLine($"{indent}  Bitmap: {mesh.Bitmap}");
+                _output.WriteLine($"{indent}  Vertices: {mesh.Vertices.Length}");
+                _output.WriteLine($"{indent}  Faces: {mesh.Faces.Length}");
+                _output.WriteLine($"{indent}  Diffuse: {mesh.Diffuse}");
+            }
+            else if (node is MdlLightNode light)
+            {
+                _output.WriteLine($"{indent}  Color: {light.Color}");
+                _output.WriteLine($"{indent}  Radius: {light.Radius}");
+            }
+        }
+
+        _output.WriteLine($"\n--- Animations ({model.Animations.Count}) ---");
+        foreach (var anim in model.Animations)
+        {
+            _output.WriteLine($"Animation: {anim.Name}");
+            _output.WriteLine($"  Length: {anim.Length}s");
+            _output.WriteLine($"  Transition: {anim.TransitionTime}s");
+            _output.WriteLine($"  Events: {anim.Events.Count}");
+            foreach (var evt in anim.Events)
+                _output.WriteLine($"    @{evt.Time}s: {evt.EventName}");
+        }
+
+        _output.WriteLine($"\n--- Mesh Geometry ---");
+        foreach (var mesh in model.GetMeshNodes())
+        {
+            _output.WriteLine($"Mesh '{mesh.Name}':");
+            _output.WriteLine($"  Vertices ({mesh.Vertices.Length}):");
+            for (int i = 0; i < mesh.Vertices.Length; i++)
+                _output.WriteLine($"    [{i}] {mesh.Vertices[i]}");
+            _output.WriteLine($"  Faces ({mesh.Faces.Length}):");
+            for (int i = 0; i < mesh.Faces.Length; i++)
+            {
+                var f = mesh.Faces[i];
+                _output.WriteLine($"    [{i}] vertices: ({f.VertexIndex0}, {f.VertexIndex1}, {f.VertexIndex2})");
+            }
+        }
+
+        // Actual assertions
+        Assert.Equal("test_character", model.Name);
+        Assert.Equal(3, model.EnumerateAllNodes().Count());
+        Assert.Single(model.Animations);
+    }
+
     [Fact]
     public void Parse_MinimalModel_ReturnsModel()
     {

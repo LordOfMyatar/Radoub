@@ -90,6 +90,9 @@ public class MdlNode
 
     /// <summary>Wireframe display color (RGB, 0-1 range).</summary>
     public Vector3 Wirecolor { get; set; } = Vector3.One;
+
+    /// <summary>Inherit color from parent.</summary>
+    public bool InheritColor { get; set; }
 }
 
 /// <summary>
@@ -147,9 +150,6 @@ public class MdlTrimeshNode : MdlNode
 
     /// <summary>Whether lighting affects this mesh.</summary>
     public bool Beaming { get; set; }
-
-    /// <summary>Inherit parent color.</summary>
-    public bool InheritColor { get; set; }
 
     /// <summary>Rotate texture.</summary>
     public bool RotateTexture { get; set; }
