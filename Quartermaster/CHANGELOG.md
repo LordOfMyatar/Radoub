@@ -10,6 +10,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.24-alpha] - 2026-01-03
+**Branch**: `quartermaster/issue-756` | **PR**: #757
+
+### Sprint: Spells Foundation (#756)
+
+Enable SpellsPanel to display creature's actual known and memorized spells by implementing the GFF parsing layer.
+
+#### Added
+
+- **Spell List Parsing** (#740, #741)
+  - `KnownSpell` model class with Spell, SpellFlags, SpellMetaMagic fields
+  - `MemorizedSpell` model class with additional Ready field for game instances
+  - `CreatureClass.KnownSpells[10]` - arrays of known spells by spell level (0-9)
+  - `CreatureClass.MemorizedSpells[10]` - arrays of memorized spells by spell level (0-9)
+  - UtcReader/BicReader: Parse KnownList0-9 and MemorizedList0-9 from creature GFF
+  - UtcWriter/BicWriter: Write spell lists back to GFF (round-trip support)
+  - BicFile conversion: Deep copy spell lists during UTC/BIC conversion
+
+- **SpellsPanel Integration**
+  - Populate _knownSpellIds from parsed KnownSpells data
+  - Populate _memorizedSpellIds from parsed MemorizedSpells data
+  - Spells now correctly show Known/Memorized status from creature file
+
+- **Spell Editing**
+  - Checkboxes now enabled for non-blocked spells
+  - Click checkbox to add/remove spells from known list
+  - Changes update model data and mark document dirty
+  - SpellsChanged event for dirty state tracking
+
+#### Fixed
+
+- **Caster Class Selection** - Radio buttons now enable based on actual spell data in creature file, not just 2DA lookup results
+
+#### Tests
+
+- Round-trip tests for KnownSpells (UtcReaderTests)
+- Round-trip tests for MemorizedSpells (UtcReaderTests)
+- Parse tests verifying spell ID, flags, and metamagic extraction
+
+---
+
 ## [0.1.23-alpha] - 2026-01-03
 **Branch**: `quartermaster/issue-751` | **PR**: #755
 

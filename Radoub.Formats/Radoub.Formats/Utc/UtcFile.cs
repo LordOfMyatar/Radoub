@@ -617,6 +617,34 @@ public class CreatureClass
     /// Level in this class
     /// </summary>
     public short ClassLevel { get; set; }
+
+    /// <summary>
+    /// Known spells by spell level (0-9).
+    /// Used by Bards, Sorcerers, and PC Wizards (spellbook).
+    /// </summary>
+    public List<KnownSpell>[] KnownSpells { get; set; } = CreateKnownSpellArrays();
+
+    /// <summary>
+    /// Memorized spells by spell level (0-9).
+    /// Used by Wizards and divine casters (prepared spellcasters).
+    /// </summary>
+    public List<MemorizedSpell>[] MemorizedSpells { get; set; } = CreateMemorizedSpellArrays();
+
+    private static List<KnownSpell>[] CreateKnownSpellArrays()
+    {
+        var arrays = new List<KnownSpell>[10];
+        for (int i = 0; i < 10; i++)
+            arrays[i] = new List<KnownSpell>();
+        return arrays;
+    }
+
+    private static List<MemorizedSpell>[] CreateMemorizedSpellArrays()
+    {
+        var arrays = new List<MemorizedSpell>[10];
+        for (int i = 0; i < 10; i++)
+            arrays[i] = new List<MemorizedSpell>();
+        return arrays;
+    }
 }
 
 /// <summary>
@@ -638,6 +666,58 @@ public class SpecialAbility
     /// Bit flags: 0x01=readied, 0x02=spontaneous, 0x04=unlimited
     /// </summary>
     public byte SpellFlags { get; set; } = 0x01;
+}
+
+/// <summary>
+/// Represents a known spell in a KnownList (StructID 3).
+/// Used by Bards, Sorcerers, and PC Wizard spellbooks.
+/// </summary>
+public class KnownSpell
+{
+    /// <summary>
+    /// Index into spells.2da
+    /// </summary>
+    public ushort Spell { get; set; }
+
+    /// <summary>
+    /// Bit flags: 0x01=readied (always set), 0x02=spontaneous, 0x04=unlimited
+    /// </summary>
+    public byte SpellFlags { get; set; } = 0x01;
+
+    /// <summary>
+    /// Metamagic type applied: 0x00=none, 0x01=empower, 0x02=extend,
+    /// 0x04=maximize, 0x08=quicken, 0x10=silent, 0x20=still
+    /// </summary>
+    public byte SpellMetaMagic { get; set; }
+}
+
+/// <summary>
+/// Represents a memorized (prepared) spell in a MemorizedList (StructID 3).
+/// Used by Wizards and divine casters.
+/// </summary>
+public class MemorizedSpell
+{
+    /// <summary>
+    /// Index into spells.2da
+    /// </summary>
+    public ushort Spell { get; set; }
+
+    /// <summary>
+    /// Bit flags: 0x01=readied (always set), 0x02=spontaneous, 0x04=unlimited
+    /// </summary>
+    public byte SpellFlags { get; set; } = 0x01;
+
+    /// <summary>
+    /// Metamagic type applied: 0x00=none, 0x01=empower, 0x02=extend,
+    /// 0x04=maximize, 0x08=quicken, 0x10=silent, 0x20=still
+    /// </summary>
+    public byte SpellMetaMagic { get; set; }
+
+    /// <summary>
+    /// 1 if the spell is readied for casting (game instance field).
+    /// This is separate from SpellFlags.
+    /// </summary>
+    public int Ready { get; set; } = 1;
 }
 
 /// <summary>

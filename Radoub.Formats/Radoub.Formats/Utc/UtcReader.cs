@@ -230,7 +230,59 @@ public static class UtcReader
                 Class = classStruct.GetFieldValue<int>("Class", 0),
                 ClassLevel = classStruct.GetFieldValue<short>("ClassLevel", 1)
             };
+
+            // Parse known spells (KnownList0-9) - used by Bards, Sorcerers, PC Wizards
+            for (int level = 0; level < 10; level++)
+            {
+                ParseKnownSpellList(classStruct, creatureClass, level);
+            }
+
+            // Parse memorized spells (MemorizedList0-9) - used by Wizards, Clerics, etc.
+            for (int level = 0; level < 10; level++)
+            {
+                ParseMemorizedSpellList(classStruct, creatureClass, level);
+            }
+
             utc.ClassList.Add(creatureClass);
+        }
+    }
+
+    private static void ParseKnownSpellList(GffStruct classStruct, CreatureClass creatureClass, int spellLevel)
+    {
+        var fieldName = $"KnownList{spellLevel}";
+        var listField = classStruct.GetField(fieldName);
+        if (listField == null || !listField.IsList || listField.Value is not GffList spellList)
+            return;
+
+        foreach (var spellStruct in spellList.Elements)
+        {
+            var knownSpell = new KnownSpell
+            {
+                Spell = spellStruct.GetFieldValue<ushort>("Spell", 0),
+                SpellFlags = spellStruct.GetFieldValue<byte>("SpellFlags", 0x01),
+                SpellMetaMagic = spellStruct.GetFieldValue<byte>("SpellMetaMagic", 0)
+            };
+            creatureClass.KnownSpells[spellLevel].Add(knownSpell);
+        }
+    }
+
+    private static void ParseMemorizedSpellList(GffStruct classStruct, CreatureClass creatureClass, int spellLevel)
+    {
+        var fieldName = $"MemorizedList{spellLevel}";
+        var listField = classStruct.GetField(fieldName);
+        if (listField == null || !listField.IsList || listField.Value is not GffList spellList)
+            return;
+
+        foreach (var spellStruct in spellList.Elements)
+        {
+            var memorizedSpell = new MemorizedSpell
+            {
+                Spell = spellStruct.GetFieldValue<ushort>("Spell", 0),
+                SpellFlags = spellStruct.GetFieldValue<byte>("SpellFlags", 0x01),
+                SpellMetaMagic = spellStruct.GetFieldValue<byte>("SpellMetaMagic", 0),
+                Ready = spellStruct.GetFieldValue<int>("Ready", 1)
+            };
+            creatureClass.MemorizedSpells[spellLevel].Add(memorizedSpell);
         }
     }
 

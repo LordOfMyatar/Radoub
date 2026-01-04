@@ -14,9 +14,16 @@ public partial class SpellsPanel : UserControl
 {
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
+    private bool _isLoading;
+
+    /// <summary>
+    /// Raised when the user modifies known/memorized spells.
+    /// </summary>
+    public event EventHandler? SpellsChanged;
 
     // UI Controls
     private TextBlock? _spellsSummaryText;
+    private TextBlock? _spellSlotSummaryText;
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
     private ComboBox? _levelFilterComboBox;
@@ -44,6 +51,7 @@ public partial class SpellsPanel : UserControl
     private HashSet<int> _knownSpellIds = new();
     private HashSet<int> _memorizedSpellIds = new();
     private int _selectedClassIndex = 0;
+    private bool _isSpontaneousCaster = false;
 
     public SpellsPanel()
     {
@@ -56,6 +64,7 @@ public partial class SpellsPanel : UserControl
 
         // Find UI controls
         _spellsSummaryText = this.FindControl<TextBlock>("SpellsSummaryText");
+        _spellSlotSummaryText = this.FindControl<TextBlock>("SpellSlotSummaryText");
         _searchTextBox = this.FindControl<TextBox>("SearchTextBox");
         _clearSearchButton = this.FindControl<Button>("ClearSearchButton");
         _levelFilterComboBox = this.FindControl<ComboBox>("LevelFilterComboBox");
@@ -118,15 +127,19 @@ public partial class SpellsPanel : UserControl
 
     private void OnClassRadioChecked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (sender is RadioButton radio)
+        if (_isLoading) return;
+
+        if (sender is RadioButton radio && radio.IsChecked == true)
         {
             var index = Array.IndexOf(_classRadios, radio);
             if (index >= 0 && index != _selectedClassIndex)
             {
+                _isLoading = true;
                 _selectedClassIndex = index;
                 // Reload spells for the selected class
                 if (_currentCreature != null)
                     LoadSpellsForClass(_selectedClassIndex);
+                _isLoading = false;
             }
         }
     }
@@ -154,6 +167,9 @@ public partial class SpellsPanel : UserControl
             return;
         }
 
+        // Prevent dirty marking during load
+        _isLoading = true;
+
         // Show loading state
         if (_loadingText != null)
             _loadingText.IsVisible = true;
@@ -167,6 +183,8 @@ public partial class SpellsPanel : UserControl
         // Hide loading state
         if (_loadingText != null)
             _loadingText.IsVisible = false;
+
+        _isLoading = false;
     }
 
     private void UpdateClassRadioButtons(UtcFile creature)
@@ -188,26 +206,31 @@ public partial class SpellsPanel : UserControl
                 bool isCaster = _displayService?.IsCasterClass(classEntry.Class) ?? false;
                 int maxSpellLevel = isCaster ? (_displayService?.GetMaxSpellLevel(classEntry.Class, classEntry.ClassLevel) ?? -1) : -1;
 
+                // Check if this class actually has spells in the creature data
+                bool hasSpellsInData = classEntry.KnownSpells.Any(list => list.Count > 0) ||
+                                       classEntry.MemorizedSpells.Any(list => list.Count > 0);
+
                 // Format: "Wizard (10) - Lvl 5" or "Fighter (5)" for non-casters
                 if (isCaster && maxSpellLevel >= 0)
                 {
                     radio.Content = $"{className} ({classEntry.ClassLevel}) - Lvl {maxSpellLevel}";
                 }
-                else if (isCaster)
+                else if (isCaster || hasSpellsInData)
                 {
-                    // Caster but no spells yet (e.g., Paladin 1-3, Ranger 1-3)
-                    radio.Content = $"{className} ({classEntry.ClassLevel}) - No spells";
+                    // Caster class or has spell data
+                    radio.Content = $"{className} ({classEntry.ClassLevel})";
                 }
                 else
                 {
                     radio.Content = $"{className} ({classEntry.ClassLevel})";
                 }
 
-                radio.IsEnabled = isCaster && maxSpellLevel >= 0;
+                // Enable if: detected as caster with spells, OR has actual spell data in creature
+                radio.IsEnabled = (isCaster && maxSpellLevel >= 0) || hasSpellsInData;
                 radio.IsVisible = true;
 
                 // Select first enabled caster class by default
-                if (!foundCaster && isCaster && maxSpellLevel >= 0)
+                if (!foundCaster && radio.IsEnabled)
                 {
                     radio.IsChecked = true;
                     _selectedClassIndex = i;
@@ -229,9 +252,11 @@ public partial class SpellsPanel : UserControl
 
     private void LoadSpellsForClass(int classIndex)
     {
+        _displayedSpells.Clear();
         _allSpells.Clear();
         _knownSpellIds.Clear();
         _memorizedSpellIds.Clear();
+        _isSpontaneousCaster = false;
 
         if (_currentCreature == null || _displayService == null)
         {
@@ -249,11 +274,26 @@ public partial class SpellsPanel : UserControl
 
         var classEntry = _currentCreature.ClassList[classIndex];
 
-        // NOTE: Spell lists (KnownList0-9, MemorizedList0-9) are stored per-class
-        // but not yet parsed in our current UtcFile implementation.
-        // For now, we show all available spells for the class without
-        // marking known/memorized status. This is read-only.
-        // TODO: Add spell list parsing to UtcFile and CreatureClass
+        // Check if this is a spontaneous caster (Sorcerer, Bard)
+        _isSpontaneousCaster = _displayService.IsSpontaneousCaster(classEntry.Class);
+
+        // Populate known spell IDs from parsed KnownList0-9
+        for (int level = 0; level < 10; level++)
+        {
+            foreach (var spell in classEntry.KnownSpells[level])
+            {
+                _knownSpellIds.Add(spell.Spell);
+            }
+        }
+
+        // Populate memorized spell IDs from parsed MemorizedList0-9
+        for (int level = 0; level < 10; level++)
+        {
+            foreach (var spell in classEntry.MemorizedSpells[level])
+            {
+                _memorizedSpellIds.Add(spell.Spell);
+            }
+        }
 
         // Load all spells from spells.2da
         LoadAllSpells(classEntry.Class);
@@ -292,7 +332,7 @@ public partial class SpellsPanel : UserControl
         if (spellInfo == null)
         {
             // Basic fallback if no spell info available
-            return new SpellListViewModel
+            var fallbackVm = new SpellListViewModel
             {
                 SpellId = spellId,
                 SpellName = spellName,
@@ -305,9 +345,13 @@ public partial class SpellsPanel : UserControl
                 IsKnown = _knownSpellIds.Contains(spellId),
                 IsMemorized = _memorizedSpellIds.Contains(spellId),
                 IsBlocked = false,
+                IsSpontaneousCaster = _isSpontaneousCaster,
                 BlockedReason = "",
                 Description = spellName
             };
+            fallbackVm.OnKnownChanged = OnSpellKnownChanged;
+            fallbackVm.OnMemorizedChanged = OnSpellMemorizedChanged;
+            return fallbackVm;
         }
 
         // Get spell level for this class
@@ -354,7 +398,7 @@ public partial class SpellsPanel : UserControl
             textOpacity = 0.7;
         }
 
-        return new SpellListViewModel
+        var vm = new SpellListViewModel
         {
             SpellId = spellId,
             SpellName = spellName,
@@ -367,6 +411,7 @@ public partial class SpellsPanel : UserControl
             IsKnown = isKnown,
             IsMemorized = isMemorized,
             IsBlocked = isBlocked,
+            IsSpontaneousCaster = _isSpontaneousCaster,
             BlockedReason = blockedReason,
             Description = BuildTooltip(spellName, spellInfo, blockedReason),
             StatusText = statusText,
@@ -374,6 +419,164 @@ public partial class SpellsPanel : UserControl
             RowBackground = rowBackground,
             TextOpacity = textOpacity
         };
+
+        // Wire up change handlers
+        vm.OnKnownChanged = OnSpellKnownChanged;
+        vm.OnMemorizedChanged = OnSpellMemorizedChanged;
+
+        return vm;
+    }
+
+    private void OnSpellKnownChanged(SpellListViewModel spell, bool isNowKnown)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        if (_selectedClassIndex >= _currentCreature.ClassList.Count) return;
+
+        var classEntry = _currentCreature.ClassList[_selectedClassIndex];
+
+        if (isNowKnown)
+        {
+            // Add to known spells
+            if (!_knownSpellIds.Contains(spell.SpellId))
+            {
+                _knownSpellIds.Add(spell.SpellId);
+
+                // Add to model at appropriate spell level
+                classEntry.KnownSpells[spell.SpellLevel].Add(new KnownSpell
+                {
+                    Spell = (ushort)spell.SpellId,
+                    SpellFlags = 0x01,
+                    SpellMetaMagic = 0
+                });
+            }
+        }
+        else
+        {
+            // Remove from known spells
+            _knownSpellIds.Remove(spell.SpellId);
+
+            // Remove from model
+            var knownList = classEntry.KnownSpells[spell.SpellLevel];
+            var existing = knownList.FirstOrDefault(s => s.Spell == spell.SpellId);
+            if (existing != null)
+            {
+                knownList.Remove(existing);
+            }
+
+            // Also remove from memorized if it was memorized
+            if (_memorizedSpellIds.Contains(spell.SpellId))
+            {
+                _memorizedSpellIds.Remove(spell.SpellId);
+                var memorizedList = classEntry.MemorizedSpells[spell.SpellLevel];
+                var memorized = memorizedList.FirstOrDefault(s => s.Spell == spell.SpellId);
+                if (memorized != null)
+                {
+                    memorizedList.Remove(memorized);
+                }
+                spell.IsMemorized = false;
+            }
+        }
+
+        // Update visual status
+        UpdateSpellVisualStatus(spell);
+
+        // Notify that spells changed
+        SpellsChanged?.Invoke(this, EventArgs.Empty);
+
+        // Update summary
+        UpdateSummary();
+    }
+
+    private void OnSpellMemorizedChanged(SpellListViewModel spell, bool isNowMemorized)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        if (_selectedClassIndex >= _currentCreature.ClassList.Count) return;
+
+        var classEntry = _currentCreature.ClassList[_selectedClassIndex];
+
+        if (isNowMemorized)
+        {
+            // Add to memorized spells
+            if (!_memorizedSpellIds.Contains(spell.SpellId))
+            {
+                _memorizedSpellIds.Add(spell.SpellId);
+
+                // Add to model at appropriate spell level
+                classEntry.MemorizedSpells[spell.SpellLevel].Add(new MemorizedSpell
+                {
+                    Spell = (ushort)spell.SpellId,
+                    SpellFlags = 0x01,
+                    SpellMetaMagic = 0,
+                    Ready = 1
+                });
+            }
+        }
+        else
+        {
+            // Remove from memorized spells
+            _memorizedSpellIds.Remove(spell.SpellId);
+
+            // Remove from model
+            var memorizedList = classEntry.MemorizedSpells[spell.SpellLevel];
+            var existing = memorizedList.FirstOrDefault(s => s.Spell == spell.SpellId);
+            if (existing != null)
+            {
+                memorizedList.Remove(existing);
+            }
+        }
+
+        // Update visual status
+        UpdateSpellVisualStatus(spell);
+
+        // Notify that spells changed
+        SpellsChanged?.Invoke(this, EventArgs.Empty);
+
+        // Update summary
+        UpdateSummary();
+    }
+
+    private void UpdateSpellVisualStatus(SpellListViewModel spell)
+    {
+        // Update status based on new known/memorized state
+        bool isKnown = spell.IsKnown;
+        bool isMemorized = _memorizedSpellIds.Contains(spell.SpellId);
+
+        if (spell.IsBlocked)
+        {
+            spell.StatusText = "Blocked";
+            spell.StatusColor = new SolidColorBrush(Colors.Gray);
+            spell.RowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128));
+            spell.TextOpacity = 0.5;
+        }
+        else if (isKnown && isMemorized)
+        {
+            spell.StatusText = "K + M";
+            spell.StatusColor = new SolidColorBrush(Colors.Gold);
+            spell.RowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0));
+            spell.TextOpacity = 1.0;
+        }
+        else if (isMemorized)
+        {
+            // Memorized but not known (edge case - shouldn't happen normally)
+            spell.StatusText = "Memorized";
+            spell.StatusColor = new SolidColorBrush(Colors.Gold);
+            spell.RowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0));
+            spell.TextOpacity = 1.0;
+        }
+        else if (isKnown)
+        {
+            spell.StatusText = "Known";
+            spell.StatusColor = new SolidColorBrush(Colors.Green);
+            spell.RowBackground = new SolidColorBrush(Color.FromArgb(30, 0, 128, 0));
+            spell.TextOpacity = 1.0;
+        }
+        else
+        {
+            spell.StatusText = "";
+            spell.StatusColor = Brushes.Transparent;
+            spell.RowBackground = Brushes.Transparent;
+            spell.TextOpacity = 0.7;
+        }
     }
 
     private static string GetSchoolName(SpellSchool school)
@@ -483,6 +686,73 @@ public partial class SpellsPanel : UserControl
 
         SetText(_spellsSummaryText,
             $"Known: {knownCount} | Memorized: {memorizedCount}{filterNote}");
+
+        // Update spell slot summary
+        UpdateSpellSlotSummary();
+    }
+
+    private void UpdateSpellSlotSummary()
+    {
+        if (_spellSlotSummaryText == null) return;
+
+        if (_currentCreature == null || _displayService == null ||
+            _selectedClassIndex >= _currentCreature.ClassList.Count)
+        {
+            _spellSlotSummaryText.Text = "";
+            return;
+        }
+
+        var classEntry = _currentCreature.ClassList[_selectedClassIndex];
+        var slots = _displayService.GetSpellSlots(classEntry.Class, classEntry.ClassLevel);
+
+        if (slots == null)
+        {
+            _spellSlotSummaryText.Text = "No spell slots for this class";
+            return;
+        }
+
+        var summaryParts = new List<string>();
+
+        for (int level = 0; level <= 9; level++)
+        {
+            int totalSlots = slots[level];
+            if (totalSlots <= 0) continue;
+
+            // Count known spells at this level
+            var knownAtLevel = classEntry.KnownSpells[level];
+            int usedSlots = knownAtLevel.Count;
+
+            // Get spell names for this level
+            var spellNames = new List<string>();
+            foreach (var spell in knownAtLevel)
+            {
+                var name = _displayService.GetSpellName(spell.Spell);
+                if (!string.IsNullOrEmpty(name))
+                    spellNames.Add(name);
+            }
+
+            // Format: "Lvl 3: 2/3 (Fireball, Haste)" or "Lvl 3: 0/3"
+            var levelSummary = $"Lvl {level}: {usedSlots}/{totalSlots}";
+            if (spellNames.Count > 0)
+            {
+                // Truncate long lists
+                var displayNames = spellNames.Count > 3
+                    ? string.Join(", ", spellNames.Take(3)) + $" +{spellNames.Count - 3}"
+                    : string.Join(", ", spellNames);
+                levelSummary += $" ({displayNames})";
+            }
+
+            summaryParts.Add(levelSummary);
+        }
+
+        if (summaryParts.Count == 0)
+        {
+            _spellSlotSummaryText.Text = "No spell slots available at current level";
+        }
+        else
+        {
+            _spellSlotSummaryText.Text = string.Join(" | ", summaryParts);
+        }
     }
 
     public void ClearPanel()
@@ -495,6 +765,7 @@ public partial class SpellsPanel : UserControl
         _selectedClassIndex = 0;
 
         SetText(_spellsSummaryText, "No spells loaded");
+        SetText(_spellSlotSummaryText, "");
 
         if (_noSpellsText != null)
             _noSpellsText.IsVisible = false;
@@ -534,8 +805,15 @@ public partial class SpellsPanel : UserControl
 /// <summary>
 /// View model for a spell in the spells list.
 /// </summary>
-public class SpellListViewModel
+public class SpellListViewModel : System.ComponentModel.INotifyPropertyChanged
 {
+    private bool _isKnown;
+    private bool _isMemorized;
+    private string _statusText = "";
+    private IBrush _statusColor = Brushes.Transparent;
+    private IBrush _rowBackground = Brushes.Transparent;
+    private double _textOpacity = 1.0;
+
     public int SpellId { get; set; }
     public string SpellName { get; set; } = "";
     public int SpellLevel { get; set; }
@@ -544,13 +822,142 @@ public class SpellListViewModel
     public string InnateLevelDisplay { get; set; } = "";
     public SpellSchool School { get; set; }
     public string SchoolName { get; set; } = "";
-    public bool IsKnown { get; set; }
-    public bool IsMemorized { get; set; }
+
+    public bool IsKnown
+    {
+        get => _isKnown;
+        set
+        {
+            if (_isKnown != value)
+            {
+                _isKnown = value;
+                OnPropertyChanged(nameof(IsKnown));
+                OnPropertyChanged(nameof(KnownTooltip));
+                OnPropertyChanged(nameof(CanToggleMemorized));
+                OnPropertyChanged(nameof(MemorizedTooltip));
+                OnKnownChanged?.Invoke(this, value);
+            }
+        }
+    }
+
+    public bool IsMemorized
+    {
+        get => _isMemorized;
+        set
+        {
+            if (_isMemorized != value)
+            {
+                _isMemorized = value;
+                OnPropertyChanged(nameof(IsMemorized));
+                OnPropertyChanged(nameof(MemorizedTooltip));
+                OnMemorizedChanged?.Invoke(this, value);
+            }
+        }
+    }
+
     public bool IsBlocked { get; set; }
+    public bool IsSpontaneousCaster { get; set; }
     public string BlockedReason { get; set; } = "";
     public string Description { get; set; } = "";
-    public string StatusText { get; set; } = "";
-    public IBrush StatusColor { get; set; } = Brushes.Transparent;
-    public IBrush RowBackground { get; set; } = Brushes.Transparent;
-    public double TextOpacity { get; set; } = 1.0;
+
+    public string StatusText
+    {
+        get => _statusText;
+        set
+        {
+            if (_statusText != value)
+            {
+                _statusText = value;
+                OnPropertyChanged(nameof(StatusText));
+            }
+        }
+    }
+
+    public IBrush StatusColor
+    {
+        get => _statusColor;
+        set
+        {
+            if (_statusColor != value)
+            {
+                _statusColor = value;
+                OnPropertyChanged(nameof(StatusColor));
+            }
+        }
+    }
+
+    public IBrush RowBackground
+    {
+        get => _rowBackground;
+        set
+        {
+            if (_rowBackground != value)
+            {
+                _rowBackground = value;
+                OnPropertyChanged(nameof(RowBackground));
+            }
+        }
+    }
+
+    public double TextOpacity
+    {
+        get => _textOpacity;
+        set
+        {
+            if (Math.Abs(_textOpacity - value) > 0.001)
+            {
+                _textOpacity = value;
+                OnPropertyChanged(nameof(TextOpacity));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the Known checkbox can be toggled (not blocked).
+    /// </summary>
+    public bool CanToggleKnown => !IsBlocked;
+
+    /// <summary>
+    /// Whether the Memorized checkbox can be toggled.
+    /// Must be known, not blocked, and not a spontaneous caster.
+    /// </summary>
+    public bool CanToggleMemorized => !IsBlocked && IsKnown && !IsSpontaneousCaster;
+
+    /// <summary>
+    /// Tooltip for the Known checkbox.
+    /// </summary>
+    public string KnownTooltip => IsBlocked
+        ? BlockedReason
+        : (IsKnown ? "Click to remove from known spells" : "Click to add to known spells");
+
+    /// <summary>
+    /// Tooltip for the Memorized checkbox.
+    /// </summary>
+    public string MemorizedTooltip
+    {
+        get
+        {
+            if (IsBlocked) return BlockedReason;
+            if (IsSpontaneousCaster) return "Spontaneous casters don't memorize spells";
+            if (!IsKnown) return "Must know spell before memorizing";
+            return IsMemorized ? "Click to remove from memorized spells" : "Click to memorize spell";
+        }
+    }
+
+    /// <summary>
+    /// Callback when IsKnown changes. Args: (SpellListViewModel spell, bool newValue)
+    /// </summary>
+    public Action<SpellListViewModel, bool>? OnKnownChanged { get; set; }
+
+    /// <summary>
+    /// Callback when IsMemorized changes. Args: (SpellListViewModel spell, bool newValue)
+    /// </summary>
+    public Action<SpellListViewModel, bool>? OnMemorizedChanged { get; set; }
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+    }
 }
