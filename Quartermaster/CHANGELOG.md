@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.26-alpha] - 2026-01-04
+**Branch**: `quartermaster/issue-760` | **PR**: #TBD
+
+### Sprint: Panel Refactoring (#760)
+
+Reduce code duplication and improve maintainability across Quartermaster panels.
+
+- [ ] #686 - Extract common panel patterns to base class
+- [ ] #632 - Split CreatureDisplayService into focused services
+
+---
+
 ## [0.1.25-alpha] - 2026-01-03
 **Branch**: `quartermaster/issue-587` | **PR**: #759
 
