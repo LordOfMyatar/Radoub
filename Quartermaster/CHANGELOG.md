@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.25-alpha] - 2026-01-03
-**Branch**: `quartermaster/issue-587` | **PR**: #TBD
+**Branch**: `quartermaster/issue-587` | **PR**: #759
 
 ### Feature: Extract NWN Item Icons from TGA/DDS (#587)
 
