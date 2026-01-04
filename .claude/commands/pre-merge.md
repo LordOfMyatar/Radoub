@@ -2,244 +2,126 @@
 
 Validate the current PR is ready to merge. Runs tests, checks code quality, verifies documentation.
 
-**MAINTAINABILITY IS A HIGH PRIORITY.** We learned hard lessons from Parley's MainWindow growing into an untestable monolith. Every PR should leave the codebase cleaner than we found it. Don't merge technical debt - fix it or create issues.
-
-## Upfront Questions
-
-**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
-
-Before running any checks, collect these answers in ONE interaction:
-
-1. **Test Execution**: "Ready to run tests? UI tests require hands-off keyboard/mouse for ~5 minutes." [yes/skip/tool-specific]
-2. **Related Epic** (if not auto-detected): "Is this work part of an epic? Enter # or skip."
-
-After collecting answers, proceed through all steps without further prompts unless errors occur.
-
 ## Usage
 
 ```
-/pre-merge
+/pre-merge [--skip-tests] [--ui-tests] [--full-tests]
 ```
 
-Runs against the current branch, comparing to main.
+**Flags**:
+- `--skip-tests` - Skip test execution (validation only)
+- `--ui-tests` - Include UI integration tests (default: unit tests only)
+- `--full-tests` - Run all tests regardless of what changed
 
 ## Workflow
 
-### Step 1: Identify Current PR
+### Step 1: Get PR Info (single gh call)
 
 ```bash
-git branch --show-current
-gh pr view --json number,title,state,baseRefName,isDraft -q '.'
+gh pr view --json number,title,state,baseRefName,isDraft,body
 ```
 
-If no PR exists, warn user and suggest creating one first.
+If no PR exists, warn and stop.
 
 ### Step 2: Analyze Changes
 
-Get list of changed files:
 ```bash
 git diff main...HEAD --name-only
 ```
 
-Categorize changes:
-- **UI files**: `*.axaml`, `*.axaml.cs`, `Views/`, `ViewModels/`
-- **Logic files**: `*.cs` (non-UI)
-- **Test files**: `*Tests.cs`, `*Tests/`
-- **Documentation**: `*.md`, `Documentation/`
-- **Config/Build**: `*.csproj`, `*.sln`, `*.json`
+**Determine tool and test scope**:
 
-### Step 3: Determine Required Tests
+| Changed Path | Tool | Include Shared |
+|--------------|------|----------------|
+| `Parley/**` only | Parley | No |
+| `Manifest/**` only | Manifest | No |
+| `Quartermaster/**` only | Quartermaster | No |
+| `Radoub.*/**` | All affected | Yes |
+| Multiple tools | All affected | Yes |
 
-Based on changed files:
+### Step 3: Build & Test (single script call)
 
-| Changed | Tests Required |
-|---------|---------------|
-| `Parley/Parley/**/*.cs` | Parley.Tests + UI tests |
-| `Manifest/Manifest/**/*.cs` | Manifest.Tests |
-| `Quartermaster/Quartermaster/**/*.cs` | Quartermaster.Tests |
-| `Radoub.Formats/**/*.cs` | Radoub.Formats.Tests |
-| `*.md` only | No automated tests |
-
-### Step 4: Run Automated Checks
-
-**Build Check**:
-```bash
-dotnet build [affected-project] --no-restore
-```
-
-**Run Tests** (based on user's answer):
-```bash
-dotnet test [affected-project].Tests
-```
-
-For UI tests (Windows only, requires hands-off):
 ```powershell
-.\Radoub.IntegrationTests\run-tests.ps1
+# Auto-detected scope
+.\Radoub.IntegrationTests\run-tests.ps1 -Tool [detected] [-SkipShared] -UnitOnly -TechDebt
+
+# With --ui-tests flag (omit -UnitOnly)
+.\Radoub.IntegrationTests\run-tests.ps1 -Tool [detected] [-SkipShared] -TechDebt
+
+# With --full-tests flag
+.\Radoub.IntegrationTests\run-tests.ps1 -TechDebt
 ```
 
-**Privacy Scan** (check for hardcoded paths):
-```bash
-git diff main...HEAD --name-only | xargs grep -l "C:\\Users\|D:\\LOM\|/home/" 2>/dev/null
-```
+The script handles:
+- Privacy scan (hardcoded paths)
+- Tech debt scan (large files >500 lines)
+- Unit tests (tool + shared if needed)
+- UI tests (if not -UnitOnly)
 
-### Step 5: CHANGELOG Validation
+### Step 4: CHANGELOG Validation
 
-```bash
-git diff main...HEAD --name-only | grep -E "CHANGELOG.md"
-```
+Read CHANGELOG and verify:
+- Version section exists
+- PR number filled in (not TBD)
+- Date is today or earlier
 
-Read the CHANGELOG and verify:
-- Version section exists for this PR
-- Branch name matches current branch
-- PR number is filled in (not TBD)
-- Date is valid:
-  - ✅ Today's date or earlier
-  - ⚠️ TBD - warn user to set date before merge
-  - ❌ Future date - likely error
-
-### Step 6: Technical Debt Scan
-
-**Check existing tech debt issues**:
-```bash
-gh issue list --label "tech-debt" --state open --json number,title
-```
-
-**Scan changed files** for:
-
-| Issue | Threshold | Action |
-|-------|-----------|--------|
-| Large files | >500 lines | Create issue or fix |
-| Large methods | >50 lines | Create issue or fix |
-| Duplicated code | Obvious patterns | Extract or create issue |
-| TODO comments | Any new ones | Should reference issue # |
+### Step 5: Wiki Freshness Check
 
 ```bash
-# Count lines in changed CS files
-git diff main...HEAD --name-only | grep "\.cs$" | while read f; do echo "$(wc -l < "$f") $f"; done | sort -rn
+grep "Page freshness:" d:\LOM\workspace\Radoub.wiki\[Tool]-Developer-Architecture.md
 ```
 
-**Action based on debt size**:
-1. **Small fixes** (< 15 min): Fix now
-2. **Medium fixes** (15-60 min): Discuss - fix now or create issue?
-3. **Large fixes** (> 1 hour): Create GitHub issue with `tech-debt` label
+Flag if >30 days old and code changed.
 
-### Step 7: Documentation Validation
-
-**Wiki freshness check** (validation only - updates should be done before running pre-merge):
-```bash
-cd d:\LOM\workspace\Radoub.wiki
-# Check freshness dates on relevant pages
-grep "Page freshness:" [Tool]-Developer-Architecture.md
-```
-
-If wiki page freshness is >30 days old and code changed in that area, flag as needing update.
-
-**README check**:
-- Version in README matches CHANGELOG
-- Feature list reflects current state
-
-**CLAUDE.md check**:
-- New patterns documented
-- New slash commands documented
-
-### Step 8: Generate Checklist
-
-Output format:
+### Step 6: Generate Checklist
 
 ```markdown
 ## Pre-Merge Checklist for PR #[number]
 
-**Branch**: [branch-name]
-**Title**: [PR title]
-**Changed Files**: [count]
+**Branch**: [branch]
+**Title**: [title]
+**Tool**: [detected]
 
----
-
-### Build & Tests
-
+### Tests
 | Check | Status |
 |-------|--------|
-| Build | ✅/❌ |
-| [Project].Tests | ✅ N passed / ❌ N failed |
-| Privacy scan | ✅ No hardcoded paths / ⚠️ Found |
+| Privacy scan | ✅/⚠️ |
+| Tech debt | ✅/⚠️ |
+| Unit tests | ✅ N passed / ❌ N failed |
+| UI tests | ⏭️ / ✅ N passed |
 
----
-
-### Code Quality
-
+### Validation
 | Check | Status |
 |-------|--------|
-| Large files (>500 lines) | ✅ None / ⚠️ [list] |
-| Tech debt issues | ✅ None / ⚠️ Created #xxx |
+| CHANGELOG | ✅/⚠️ |
+| Wiki | ✅ Current / ⚠️ Stale |
 
----
-
-### Documentation
-
-| Check | Status |
-|-------|--------|
-| CHANGELOG | ✅ Updated / ⚠️ Missing version/date |
-| Wiki freshness | ✅ Current / ⚠️ Needs update |
-| README | ✅ Current / N/A |
-
----
-
-### Files Changed
-
-**By Category**:
-- Logic: [count] files
-- UI: [count] files
-- Tests: [count] files
-- Docs: [count] files
-
----
-
-### Action Items
-
-1. [Any failing checks]
-2. [Any warnings to address]
-
----
-
-### Ready to Merge?
-
-**Status**: ✅ Ready / ⚠️ [N] items need attention / ❌ Blocked: [reason]
+### Status
+**Ready**: ✅ / ⚠️ [N] warnings / ❌ Blocked
 ```
 
-### Step 9: Update PR Description
+### Step 7: Update PR (batched gh commands)
 
 ```bash
-gh pr edit [number] --body "$(cat <<'EOF'
-## Summary
-[Brief description from CHANGELOG]
-
-## Test Results
-| Project | Passed | Failed |
-|---------|--------|--------|
-| [Project].Tests | N | N |
-
-## Checklist
-- [x] Build passes
-- [x] Tests pass
-- [x] CHANGELOG updated
-- [x] No hardcoded paths
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
+# Single command with && chaining
+gh pr edit [number] --body "[generated body]" && gh pr ready [number] 2>/dev/null || true
 ```
 
-### Step 10: Mark PR Ready (if draft)
+The `|| true` handles case where PR is already ready.
 
-```bash
-gh pr view --json isDraft -q '.isDraft'
-# If true:
-gh pr ready [number]
+## Test Script Reference
+
+```powershell
+.\Radoub.IntegrationTests\run-tests.ps1
+    -Tool [Parley|Quartermaster|Manifest]
+    -SkipShared      # Skip Radoub.* tests
+    -UnitOnly        # Skip UI tests (default for pre-merge)
+    -TechDebt        # Include large file scan
 ```
 
 ## Notes
 
-- This command validates readiness - it does NOT update wiki/docs
-- Run `/documentation` separately if wiki updates are needed
-- All changes must be committed and pushed before running
-- Some checks require human judgment
+- Default: unit tests only (fast)
+- UI tests require `--ui-tests` (slower, hands-off keyboard)
+- Shared library changes → include shared tests
+- Wiki updates done separately with `/documentation`
