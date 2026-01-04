@@ -50,6 +50,16 @@ Add support for extracting and displaying actual NWN item icons from game files.
   - `ItemListView.axaml` updated to show game icons in palette/backpack
   - Graceful fallback to existing SVG placeholders when game data unavailable
 
+#### Fixed
+
+- **Panel Crash on Icon Load** - Fixed crash when loading panels with many items
+  - SpellsPanel/FeatsPanel: Converted from non-virtualized `ItemsControl` to virtualized `ListBox`
+  - Inventory: Implemented lazy icon loading via delegate pattern (icons load on scroll into view)
+  - Prevents loading hundreds of bitmaps simultaneously during panel render
+
+- **Log Level Setting Ignored** - User's log level preference wasn't being applied on startup
+  - `SettingsService.LoadSettings()` now calls `UnifiedLogger.SetLogLevel()` after loading saved value
+
 #### Tests
 
 - PLT reader tests (7 tests)
