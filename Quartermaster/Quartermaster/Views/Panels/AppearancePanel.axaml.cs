@@ -59,6 +59,9 @@ public partial class AppearancePanel : UserControl
     private Border? _tattoo1ColorSwatch;
     private Border? _tattoo2ColorSwatch;
 
+    // 3D Preview container (will host OpenGL control)
+    private Border? _modelPreviewContainer;
+
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
     private UtcFile? _currentCreature;
@@ -123,6 +126,9 @@ public partial class AppearancePanel : UserControl
         _hairColorSwatch = this.FindControl<Border>("HairColorSwatch");
         _tattoo1ColorSwatch = this.FindControl<Border>("Tattoo1ColorSwatch");
         _tattoo2ColorSwatch = this.FindControl<Border>("Tattoo2ColorSwatch");
+
+        // 3D Preview container
+        _modelPreviewContainer = this.FindControl<Border>("ModelPreviewContainer");
 
         // Wire up events
         if (_appearanceComboBox != null)
