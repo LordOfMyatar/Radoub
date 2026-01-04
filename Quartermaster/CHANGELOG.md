@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.25-alpha] - 2026-01-03
+**Branch**: `quartermaster/issue-587` | **PR**: #TBD
+
+### Feature: Extract NWN Item Icons from TGA/DDS (#587)
+
+Add support for extracting and displaying actual NWN item icons from game files.
+
+#### Added
+
+- TBD
+
+---
+
 ## [0.1.24-alpha] - 2026-01-03
 **Branch**: `quartermaster/issue-756` | **PR**: #757
 
