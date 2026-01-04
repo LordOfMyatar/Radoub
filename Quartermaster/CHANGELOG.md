@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.27-alpha] - 2026-01-04
-**Branch**: `quartermaster/issue-617` | **PR**: #TBD
+**Branch**: `quartermaster/issue-617` | **PR**: #766
 
 ### Sprint: 3D Character Model Preview (#617)
 
