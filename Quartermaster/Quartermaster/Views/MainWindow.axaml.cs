@@ -35,6 +35,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly IGameDataService _gameDataService;
     private readonly CreatureDisplayService _creatureDisplayService;
     private readonly ItemViewModelFactory _itemViewModelFactory;
+    private readonly ItemIconService _itemIconService;
 
     // Equipment slots collection (shared with InventoryPanel)
     private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
@@ -60,6 +61,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _gameDataService = new GameDataService();
         _creatureDisplayService = new CreatureDisplayService(_gameDataService);
         _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
+        _itemIconService = new ItemIconService(_gameDataService);
 
         if (_gameDataService.IsConfigured)
         {

@@ -108,11 +108,13 @@ public partial class MainWindow
         }
 
         // Use factory for proper name resolution via 2DA/TLK
-        return _itemViewModelFactory.CreateBackpackItem(
+        var viewModel = _itemViewModelFactory.CreateBackpackItem(
             item,
             invItem.Repos_PosX, invItem.Repos_PosY,
             invItem.Dropable, invItem.Pickpocketable,
             source);
+        LoadItemIcon(viewModel);
+        return viewModel;
     }
 
     /// <summary>
@@ -143,7 +145,9 @@ public partial class MainWindow
             );
         }
 
-        return _itemViewModelFactory.Create(item, source);
+        var viewModel = _itemViewModelFactory.Create(item, source);
+        LoadItemIcon(viewModel);
+        return viewModel;
     }
 
     /// <summary>
@@ -255,6 +259,7 @@ public partial class MainWindow
                 isDropable: true,
                 isPickpocketable: false,
                 paletteItem.Source);
+            LoadItemIcon(backpackItem);
 
             InventoryPanelContent.AddToBackpack(backpackItem);
         }
@@ -346,6 +351,7 @@ public partial class MainWindow
             isDropable: true,
             isPickpocketable: false,
             item.Source);
+        LoadItemIcon(backpackItem);
 
         // Clear the slot
         slot.EquippedItem = null;
@@ -472,6 +478,7 @@ public partial class MainWindow
                     {
                         var item = UtiReader.Read(utiPath);
                         var viewModel = _itemViewModelFactory.Create(item, GameResourceSource.Module);
+                        LoadItemIcon(viewModel);
 
                         // Only add if not already in palette (from game data)
                         if (!InventoryPanelContent.PaletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
@@ -536,6 +543,7 @@ public partial class MainWindow
                     {
                         var item = UtiReader.Read(utiData);
                         var viewModel = _itemViewModelFactory.Create(item, resourceInfo.Source);
+                        LoadItemIcon(viewModel);
                         batch.Add(viewModel);
                         existingResRefs.Add(resourceInfo.ResRef);
                         gameItemCount++;
@@ -587,6 +595,29 @@ public partial class MainWindow
                 InventoryPanelContent.PaletteItems.Add(item);
             }
         });
+    }
+
+    /// <summary>
+    /// Loads the actual game icon for an item and sets it on the ViewModel.
+    /// Falls back silently to placeholder if icon not found.
+    /// </summary>
+    private void LoadItemIcon(ItemViewModel itemVm)
+    {
+        if (!_itemIconService.IsGameDataAvailable)
+            return;
+
+        try
+        {
+            var bitmap = _itemIconService.GetItemIcon(itemVm.Item);
+            if (bitmap != null)
+            {
+                itemVm.IconBitmap = bitmap;
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to load icon for {itemVm.ResRef}: {ex.Message}");
+        }
     }
 
     #endregion

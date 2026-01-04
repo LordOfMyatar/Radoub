@@ -1,3 +1,4 @@
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
@@ -142,6 +143,24 @@ public partial class ItemViewModel : ObservableObject
     /// Icons from game-icons.net (CC BY 3.0).
     /// </summary>
     public string IconPath => ItemIconHelper.GetIconPath(BaseItem);
+
+    /// <summary>
+    /// Actual item icon bitmap loaded from game files.
+    /// Null if game data not available (use IconPath placeholder).
+    /// Set by ItemIconService at the application layer.
+    /// </summary>
+    [ObservableProperty]
+    private Bitmap? _iconBitmap;
+
+    /// <summary>
+    /// True if we have an actual game icon (not placeholder).
+    /// </summary>
+    public bool HasGameIcon => IconBitmap != null;
+
+    partial void OnIconBitmapChanged(Bitmap? value)
+    {
+        OnPropertyChanged(nameof(HasGameIcon));
+    }
 
     #region Inventory Metadata (for backpack items)
 

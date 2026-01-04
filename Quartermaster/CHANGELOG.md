@@ -19,7 +19,44 @@ Add support for extracting and displaying actual NWN item icons from game files.
 
 #### Added
 
-- TBD
+- **Pfim Library Integration**
+  - Added Pfim NuGet package (0.11.4) for TGA/DDS decoding
+  - Pure managed .NET Standard 2.0 - cross-platform compatible
+
+- **Image Service Infrastructure** (Radoub.Formats)
+  - `IImageService` interface for loading NWN image assets
+  - `ImageService` implementation with TGA/DDS decoding via Pfim
+  - `ImageData` class for RGBA pixel data output
+  - Memory cache with LRU eviction (~500 icons, ~2MB)
+
+- **PLT (Palette Texture) Parser** (Radoub.Formats)
+  - `PltReader` for NWN's layered texture format
+  - 24-byte header parsing (signature, version, dimensions)
+  - 2-byte pixel format (grayscale + layer ID)
+  - `PltLayers` constants for 10 color layers (Skin, Hair, Metal1/2, Cloth1/2, etc.)
+  - `PaletteData` for loading pal_*.tga palette files
+  - Rendering with palette color application
+
+- **Item Icon Service** (Quartermaster)
+  - `ItemIconService` converts ImageData to Avalonia Bitmap
+  - Icon lookup from baseitems.2da (ItemClass, DefaultIcon, MinRange, MaxRange)
+  - Icon naming pattern support: i<ItemClass>_<number>.tga
+  - Portrait loading support
+
+- **UI Integration**
+  - `ItemViewModel.IconBitmap` property for actual game icons
+  - `ItemViewModel.HasGameIcon` for conditional rendering
+  - `EquipmentSlotControl.axaml` updated to show game icons or SVG placeholders
+  - `ItemListView.axaml` updated to show game icons in palette/backpack
+  - Graceful fallback to existing SVG placeholders when game data unavailable
+
+#### Tests
+
+- PLT reader tests (7 tests)
+  - Valid PLT parsing and pixel extraction
+  - Invalid signature/size handling
+  - Grayscale fallback rendering
+  - Palette ResRef lookup
 
 ---
 
