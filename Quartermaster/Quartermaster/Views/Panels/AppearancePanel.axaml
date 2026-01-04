@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Quartermaster.Controls"
              mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="700"
              x:Class="Quartermaster.Views.Panels.AppearancePanel">
 
@@ -283,20 +284,10 @@
                         <TextBlock Text="Model Preview" FontWeight="SemiBold" FontSize="13"/>
                     </Border>
 
-                    <!-- 3D Preview Area - placeholder for OpenGL control -->
+                    <!-- 3D Preview Area -->
                     <Border Grid.Row="1" x:Name="ModelPreviewContainer"
-                            Background="#1A1A2E" Margin="10">
-                        <Grid>
-                            <!-- Placeholder content until 3D renderer is implemented -->
-                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
-                                <TextBlock Text="🎭" FontSize="64" HorizontalAlignment="Center"
-                                           Foreground="#4A4A6A"/>
-                                <TextBlock Text="3D Preview" FontSize="16"
-                                           Foreground="#6A6A8A" HorizontalAlignment="Center"/>
-                                <TextBlock Text="(Coming Soon)" FontSize="12"
-                                           Foreground="#4A4A6A" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
+                            Background="#1A1A2E" Margin="10" CornerRadius="4">
+                        <controls:ModelPreviewControl x:Name="ModelPreview"/>
                     </Border>
 
                     <!-- Preview Controls -->
@@ -305,15 +296,15 @@
                             BorderThickness="0,1,0,0">
                         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
                             <Button x:Name="RotateLeftButton" Content="↺" Width="32" Height="32"
-                                    ToolTip.Tip="Rotate Left" IsEnabled="False"/>
+                                    ToolTip.Tip="Rotate Left"/>
                             <Button x:Name="ResetViewButton" Content="⟲" Width="32" Height="32"
-                                    ToolTip.Tip="Reset View" IsEnabled="False"/>
+                                    ToolTip.Tip="Reset View"/>
                             <Button x:Name="RotateRightButton" Content="↻" Width="32" Height="32"
-                                    ToolTip.Tip="Rotate Right" IsEnabled="False"/>
+                                    ToolTip.Tip="Rotate Right"/>
                             <Button x:Name="ZoomInButton" Content="+" Width="32" Height="32"
-                                    ToolTip.Tip="Zoom In" IsEnabled="False" Margin="20,0,0,0"/>
+                                    ToolTip.Tip="Zoom In" Margin="20,0,0,0"/>
                             <Button x:Name="ZoomOutButton" Content="-" Width="32" Height="32"
-                                    ToolTip.Tip="Zoom Out" IsEnabled="False"/>
+                                    ToolTip.Tip="Zoom Out"/>
                         </StackPanel>
                     </Border>
                 </Grid>
