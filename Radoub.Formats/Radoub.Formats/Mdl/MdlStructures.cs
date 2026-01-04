@@ -446,23 +446,23 @@ public class MdlModel
     public bool IsBinary { get; set; }
 
     /// <summary>
-    /// Recursively enumerate all nodes in the model.
+    /// Recursively enumerate all nodes in the model (breadth-first order).
     /// </summary>
     public IEnumerable<MdlNode> EnumerateAllNodes()
     {
         if (GeometryRoot == null) yield break;
 
-        var stack = new Stack<MdlNode>();
-        stack.Push(GeometryRoot);
+        var queue = new Queue<MdlNode>();
+        queue.Enqueue(GeometryRoot);
 
-        while (stack.Count > 0)
+        while (queue.Count > 0)
         {
-            var node = stack.Pop();
+            var node = queue.Dequeue();
             yield return node;
 
             foreach (var child in node.Children)
             {
-                stack.Push(child);
+                queue.Enqueue(child);
             }
         }
     }
