@@ -113,7 +113,7 @@ public partial class MainWindow
             invItem.Repos_PosX, invItem.Repos_PosY,
             invItem.Dropable, invItem.Pickpocketable,
             source);
-        LoadItemIcon(viewModel);
+        SetupLazyIconLoading(viewModel);
         return viewModel;
     }
 
@@ -146,7 +146,7 @@ public partial class MainWindow
         }
 
         var viewModel = _itemViewModelFactory.Create(item, source);
-        LoadItemIcon(viewModel);
+        SetupLazyIconLoading(viewModel);
         return viewModel;
     }
 
@@ -259,7 +259,7 @@ public partial class MainWindow
                 isDropable: true,
                 isPickpocketable: false,
                 paletteItem.Source);
-            LoadItemIcon(backpackItem);
+            SetupLazyIconLoading(backpackItem);
 
             InventoryPanelContent.AddToBackpack(backpackItem);
         }
@@ -351,7 +351,7 @@ public partial class MainWindow
             isDropable: true,
             isPickpocketable: false,
             item.Source);
-        LoadItemIcon(backpackItem);
+        SetupLazyIconLoading(backpackItem);
 
         // Clear the slot
         slot.EquippedItem = null;
@@ -478,7 +478,7 @@ public partial class MainWindow
                     {
                         var item = UtiReader.Read(utiPath);
                         var viewModel = _itemViewModelFactory.Create(item, GameResourceSource.Module);
-                        LoadItemIcon(viewModel);
+                        SetupLazyIconLoading(viewModel);
 
                         // Only add if not already in palette (from game data)
                         if (!InventoryPanelContent.PaletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
@@ -543,7 +543,7 @@ public partial class MainWindow
                     {
                         var item = UtiReader.Read(utiData);
                         var viewModel = _itemViewModelFactory.Create(item, resourceInfo.Source);
-                        LoadItemIcon(viewModel);
+                        SetupLazyIconLoading(viewModel);
                         batch.Add(viewModel);
                         existingResRefs.Add(resourceInfo.ResRef);
                         gameItemCount++;
@@ -598,26 +598,16 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Loads the actual game icon for an item and sets it on the ViewModel.
-    /// Falls back silently to placeholder if icon not found.
+    /// Sets up lazy icon loading for an item ViewModel.
+    /// Icons are loaded on first access for virtualized UI performance.
     /// </summary>
-    private void LoadItemIcon(ItemViewModel itemVm)
+    private void SetupLazyIconLoading(ItemViewModel itemVm)
     {
         if (!_itemIconService.IsGameDataAvailable)
             return;
 
-        try
-        {
-            var bitmap = _itemIconService.GetItemIcon(itemVm.Item);
-            if (bitmap != null)
-            {
-                itemVm.IconBitmap = bitmap;
-            }
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to load icon for {itemVm.ResRef}: {ex.Message}");
-        }
+        // Use closure to capture the icon service
+        itemVm.SetIconLoader(item => _itemIconService.GetItemIcon(item));
     }
 
     #endregion

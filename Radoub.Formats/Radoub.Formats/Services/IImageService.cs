@@ -40,6 +40,38 @@ public interface IImageService
     ImageData? GetPortrait(string resRef);
 
     /// <summary>
+    /// Get a spell icon by spell ID.
+    /// Uses spells.2da IconResRef column.
+    /// </summary>
+    /// <param name="spellId">Spell ID from spells.2da</param>
+    /// <returns>Decoded icon image, or null if not found</returns>
+    ImageData? GetSpellIcon(int spellId);
+
+    /// <summary>
+    /// Get a feat icon by feat ID.
+    /// Uses feat.2da ICON column.
+    /// </summary>
+    /// <param name="featId">Feat ID from feat.2da</param>
+    /// <returns>Decoded icon image, or null if not found</returns>
+    ImageData? GetFeatIcon(int featId);
+
+    /// <summary>
+    /// Get a skill icon by skill ID.
+    /// Uses skills.2da Icon column.
+    /// </summary>
+    /// <param name="skillId">Skill ID from skills.2da</param>
+    /// <returns>Decoded icon image, or null if not found</returns>
+    ImageData? GetSkillIcon(int skillId);
+
+    /// <summary>
+    /// Get a class icon by class ID.
+    /// Uses classes.2da Icon column.
+    /// </summary>
+    /// <param name="classId">Class ID from classes.2da</param>
+    /// <returns>Decoded icon image, or null if not found</returns>
+    ImageData? GetClassIcon(int classId);
+
+    /// <summary>
     /// Clear the image cache.
     /// Call when resource paths change.
     /// </summary>

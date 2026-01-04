@@ -124,6 +124,46 @@ public class ImageService : IImageService
     }
 
     /// <inheritdoc/>
+    public ImageData? GetSpellIcon(int spellId)
+    {
+        var iconResRef = _gameData.Get2DAValue("spells", spellId, "IconResRef");
+        if (string.IsNullOrEmpty(iconResRef) || iconResRef == "****")
+            return null;
+
+        return LoadImage(iconResRef, ResourceTypes.Tga);
+    }
+
+    /// <inheritdoc/>
+    public ImageData? GetFeatIcon(int featId)
+    {
+        var iconResRef = _gameData.Get2DAValue("feat", featId, "ICON");
+        if (string.IsNullOrEmpty(iconResRef) || iconResRef == "****")
+            return null;
+
+        return LoadImage(iconResRef, ResourceTypes.Tga);
+    }
+
+    /// <inheritdoc/>
+    public ImageData? GetSkillIcon(int skillId)
+    {
+        var iconResRef = _gameData.Get2DAValue("skills", skillId, "Icon");
+        if (string.IsNullOrEmpty(iconResRef) || iconResRef == "****")
+            return null;
+
+        return LoadImage(iconResRef, ResourceTypes.Tga);
+    }
+
+    /// <inheritdoc/>
+    public ImageData? GetClassIcon(int classId)
+    {
+        var iconResRef = _gameData.Get2DAValue("classes", classId, "Icon");
+        if (string.IsNullOrEmpty(iconResRef) || iconResRef == "****")
+            return null;
+
+        return LoadImage(iconResRef, ResourceTypes.Tga);
+    }
+
+    /// <inheritdoc/>
     public void ClearCache()
     {
         _imageCache.Clear();

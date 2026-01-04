@@ -145,119 +145,131 @@
             </Grid>
 
             <!-- Spells List -->
-            <Border Grid.Row="4"
-                    BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
-                    BorderThickness="1"
-                    CornerRadius="4">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <!-- Header Row -->
-                        <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                Padding="10,8,25,8">
-                            <Grid ColumnDefinitions="35,35,*,60,100,80,80">
-                                <TextBlock Grid.Column="0" Text="K" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
-                                           ToolTip.Tip="Known - Spell is in spellbook/learned"/>
-                                <TextBlock Grid.Column="1" Text="M" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
-                                           x:Name="MemorizedHeader"
-                                           ToolTip.Tip="Memorized - Spell is prepared for casting (disabled for spontaneous casters)"/>
-                                <TextBlock Grid.Column="2" Text="Spell Name" FontWeight="SemiBold" FontSize="11"/>
-                                <TextBlock Grid.Column="3" Text="Level" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="School" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="5" Text="Innate" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
-                                           ToolTip.Tip="Innate Spell Level"/>
-                                <TextBlock Grid.Column="6" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                            </Grid>
-                        </Border>
+            <Grid Grid.Row="4" RowDefinitions="Auto,*,Auto,Auto">
+                <!-- Header Row -->
+                <Border Grid.Row="0"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1,1,1,0"
+                        CornerRadius="4,4,0,0"
+                        Padding="10,8,25,8">
+                    <Grid ColumnDefinitions="32,35,35,*,60,100,80,80">
+                        <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="K" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                                   ToolTip.Tip="Known - Spell is in spellbook/learned"/>
+                        <TextBlock Grid.Column="2" Text="M" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                                   x:Name="MemorizedHeader"
+                                   ToolTip.Tip="Memorized - Spell is prepared for casting (disabled for spontaneous casters)"/>
+                        <TextBlock Grid.Column="3" Text="Spell Name" FontWeight="SemiBold" FontSize="11"/>
+                        <TextBlock Grid.Column="4" Text="Level" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="5" Text="School" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="6" Text="Innate" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                                   ToolTip.Tip="Innate Spell Level"/>
+                        <TextBlock Grid.Column="7" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                    </Grid>
+                </Border>
 
-                        <!-- Spell Items -->
-                        <ItemsControl x:Name="SpellsList"
-                                      AutomationProperties.AutomationId="SpellsListItems">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="{Binding RowBackground}"
-                                            Padding="10,6,25,6"
-                                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                            BorderThickness="0,0,0,1"
-                                            ToolTip.Tip="{Binding Description}">
-                                        <Grid ColumnDefinitions="35,35,*,60,100,80,80">
-                                            <!-- Known checkbox -->
-                                            <CheckBox Grid.Column="0"
-                                                      IsChecked="{Binding IsKnown}"
-                                                      IsEnabled="{Binding CanToggleKnown}"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      ToolTip.Tip="{Binding KnownTooltip}"
-                                                      AutomationProperties.AutomationId="SpellKnownCheckbox"/>
+                <!-- Virtualized Spell Items using ListBox -->
+                <ListBox Grid.Row="1"
+                         x:Name="SpellsList"
+                         BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                         BorderThickness="1,0,1,1"
+                         Background="Transparent"
+                         SelectionMode="Single"
+                         AutomationProperties.AutomationId="SpellsListItems">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{Binding RowBackground}"
+                                    Padding="10,6,10,6"
+                                    ToolTip.Tip="{Binding Description}">
+                                <Grid ColumnDefinitions="32,35,35,*,60,100,80,80">
+                                    <!-- Icon -->
+                                    <Image Grid.Column="0"
+                                           Source="{Binding IconBitmap}"
+                                           Width="24" Height="24"
+                                           Stretch="Uniform"
+                                           IsVisible="{Binding HasGameIcon}"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
 
-                                            <!-- Memorized checkbox -->
-                                            <CheckBox Grid.Column="1"
-                                                      IsChecked="{Binding IsMemorized}"
-                                                      IsEnabled="{Binding CanToggleMemorized}"
-                                                      HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      ToolTip.Tip="{Binding MemorizedTooltip}"
-                                                      AutomationProperties.AutomationId="SpellMemorizedCheckbox"/>
+                                    <!-- Known checkbox -->
+                                    <CheckBox Grid.Column="1"
+                                              IsChecked="{Binding IsKnown}"
+                                              IsEnabled="{Binding CanToggleKnown}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              ToolTip.Tip="{Binding KnownTooltip}"
+                                              AutomationProperties.AutomationId="SpellKnownCheckbox"/>
 
-                                            <!-- Spell Name -->
-                                            <TextBlock Grid.Column="2"
-                                                       Text="{Binding SpellName}"
-                                                       VerticalAlignment="Center"
-                                                       FontSize="13"
-                                                       Opacity="{Binding TextOpacity}"/>
+                                    <!-- Memorized checkbox -->
+                                    <CheckBox Grid.Column="2"
+                                              IsChecked="{Binding IsMemorized}"
+                                              IsEnabled="{Binding CanToggleMemorized}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              ToolTip.Tip="{Binding MemorizedTooltip}"
+                                              AutomationProperties.AutomationId="SpellMemorizedCheckbox"/>
 
-                                            <!-- Spell Level -->
-                                            <TextBlock Grid.Column="3"
-                                                       Text="{Binding SpellLevelDisplay}"
-                                                       FontSize="12"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
+                                    <!-- Spell Name -->
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding SpellName}"
+                                               VerticalAlignment="Center"
+                                               FontSize="13"
+                                               Opacity="{Binding TextOpacity}"/>
 
-                                            <!-- School -->
-                                            <TextBlock Grid.Column="4"
-                                                       Text="{Binding SchoolName}"
-                                                       FontSize="11"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
+                                    <!-- Spell Level -->
+                                    <TextBlock Grid.Column="4"
+                                               Text="{Binding SpellLevelDisplay}"
+                                               FontSize="12"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
 
-                                            <!-- Innate Level -->
-                                            <TextBlock Grid.Column="5"
-                                                       Text="{Binding InnateLevelDisplay}"
-                                                       FontSize="11"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
+                                    <!-- School -->
+                                    <TextBlock Grid.Column="5"
+                                               Text="{Binding SchoolName}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
 
-                                            <!-- Status -->
-                                            <TextBlock Grid.Column="6"
-                                                       Text="{Binding StatusText}"
-                                                       FontSize="11"
-                                                       Foreground="{Binding StatusColor}"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                    <!-- Innate Level -->
+                                    <TextBlock Grid.Column="6"
+                                               Text="{Binding InnateLevelDisplay}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
 
-                        <TextBlock x:Name="NoSpellsText"
-                                   Text="No spells match the current filter"
-                                   FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                   IsVisible="False"
-                                   Margin="15,15"
-                                   AutomationProperties.AutomationId="NoSpellsText"/>
+                                    <!-- Status -->
+                                    <TextBlock Grid.Column="7"
+                                               Text="{Binding StatusText}"
+                                               FontSize="11"
+                                               Foreground="{Binding StatusColor}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
 
-                        <TextBlock x:Name="LoadingText"
-                                   Text="Loading spells..."
-                                   FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                   IsVisible="False"
-                                   Margin="15,15"/>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
+                <TextBlock Grid.Row="2"
+                           x:Name="NoSpellsText"
+                           Text="No spells match the current filter"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           IsVisible="False"
+                           Margin="15,15"
+                           AutomationProperties.AutomationId="NoSpellsText"/>
+
+                <TextBlock Grid.Row="3"
+                           x:Name="LoadingText"
+                           Text="Loading spells..."
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           IsVisible="False"
+                           Margin="15,15"/>
+            </Grid>
 
             <!-- Footer with Meta-Magic and Actions -->
             <Grid Grid.Row="5" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
