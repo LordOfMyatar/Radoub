@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using System;
 using System.Collections.Generic;
@@ -13,6 +15,7 @@ namespace Quartermaster.Views.Panels;
 public partial class SpellsPanel : UserControl
 {
     private CreatureDisplayService? _displayService;
+    private ItemIconService? _itemIconService;
     private UtcFile? _currentCreature;
     private bool _isLoading;
 
@@ -29,7 +32,7 @@ public partial class SpellsPanel : UserControl
     private ComboBox? _levelFilterComboBox;
     private ComboBox? _schoolFilterComboBox;
     private ComboBox? _statusFilterComboBox;
-    private ItemsControl? _spellsList;
+    private ListBox? _spellsList;
     private TextBlock? _noSpellsText;
     private TextBlock? _loadingText;
     private Expander? _metaMagicExpander;
@@ -70,7 +73,7 @@ public partial class SpellsPanel : UserControl
         _levelFilterComboBox = this.FindControl<ComboBox>("LevelFilterComboBox");
         _schoolFilterComboBox = this.FindControl<ComboBox>("SchoolFilterComboBox");
         _statusFilterComboBox = this.FindControl<ComboBox>("StatusFilterComboBox");
-        _spellsList = this.FindControl<ItemsControl>("SpellsList");
+        _spellsList = this.FindControl<ListBox>("SpellsList");
         _noSpellsText = this.FindControl<TextBlock>("NoSpellsText");
         _loadingText = this.FindControl<TextBlock>("LoadingText");
         _metaMagicExpander = this.FindControl<Expander>("MetaMagicExpander");
@@ -150,6 +153,15 @@ public partial class SpellsPanel : UserControl
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
+    }
+
+    /// <summary>
+    /// Sets the icon service for loading spell icons.
+    /// </summary>
+    public void SetIconService(ItemIconService iconService)
+    {
+        _itemIconService = iconService;
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel: IconService set, IsGameDataAvailable={iconService?.IsGameDataAvailable}");
     }
 
     public void LoadCreature(UtcFile? creature)
@@ -298,11 +310,17 @@ public partial class SpellsPanel : UserControl
         // Load all spells from spells.2da
         LoadAllSpells(classEntry.Class);
 
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadSpellsForClass: About to ApplyFilters...");
+
         // Apply filters
         ApplyFilters();
 
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadSpellsForClass: About to UpdateSummary...");
+
         // Update summary
         UpdateSummary();
+
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadSpellsForClass: Done, returning to caller");
     }
 
     private void LoadAllSpells(int classId)
@@ -310,16 +328,27 @@ public partial class SpellsPanel : UserControl
         if (_displayService == null) return;
 
         var allSpellIds = _displayService.GetAllSpellIds();
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadAllSpells: Loading {allSpellIds.Count} spells for class {classId}");
 
+        int count = 0;
         foreach (var spellId in allSpellIds)
         {
             var vm = CreateSpellViewModel(spellId, classId);
             if (vm != null)
                 _allSpells.Add(vm);
+            count++;
+            if (count % 100 == 0)
+            {
+                UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadAllSpells: Processed {count}/{allSpellIds.Count} spells");
+            }
         }
+
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadAllSpells: Finished loading {_allSpells.Count} valid spells, now sorting...");
 
         // Sort by name
         _allSpells = _allSpells.OrderBy(s => s.SpellName).ToList();
+
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadAllSpells: Done sorting");
     }
 
     private SpellListViewModel? CreateSpellViewModel(int spellId, int classId)
@@ -351,6 +380,7 @@ public partial class SpellsPanel : UserControl
             };
             fallbackVm.OnKnownChanged = OnSpellKnownChanged;
             fallbackVm.OnMemorizedChanged = OnSpellMemorizedChanged;
+            LoadSpellIcon(fallbackVm);
             return fallbackVm;
         }
 
@@ -424,7 +454,21 @@ public partial class SpellsPanel : UserControl
         vm.OnKnownChanged = OnSpellKnownChanged;
         vm.OnMemorizedChanged = OnSpellMemorizedChanged;
 
+        // Load spell icon if available
+        LoadSpellIcon(vm);
+
         return vm;
+    }
+
+    /// <summary>
+    /// Loads the game icon for a spell from spells.2da IconResRef.
+    /// Icons are loaded lazily when binding requests them.
+    /// </summary>
+    private void LoadSpellIcon(SpellListViewModel spellVm)
+    {
+        // Don't load upfront - use lazy loading via IconBitmap getter
+        // This prevents loading 467+ bitmaps at once which crashes Avalonia
+        spellVm.SetIconService(_itemIconService);
     }
 
     private void OnSpellKnownChanged(SpellListViewModel spell, bool isNowKnown)
@@ -660,11 +704,24 @@ public partial class SpellsPanel : UserControl
         };
 
         // Update display
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.ApplyFilters: Clearing displayedSpells...");
         _displayedSpells.Clear();
-        foreach (var spell in filtered)
+
+        var filteredList = filtered.ToList();
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.ApplyFilters: Adding {filteredList.Count} spells to display...");
+
+        int addCount = 0;
+        foreach (var spell in filteredList)
         {
             _displayedSpells.Add(spell);
+            addCount++;
+            if (addCount % 100 == 0)
+            {
+                UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.ApplyFilters: Added {addCount}/{filteredList.Count} spells to display");
+            }
         }
+
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.ApplyFilters: Done adding spells, count={_displayedSpells.Count}");
 
         // Show "no spells" message if empty
         if (_noSpellsText != null)
@@ -813,8 +870,60 @@ public class SpellListViewModel : System.ComponentModel.INotifyPropertyChanged
     private IBrush _statusColor = Brushes.Transparent;
     private IBrush _rowBackground = Brushes.Transparent;
     private double _textOpacity = 1.0;
+    private Bitmap? _iconBitmap;
+    private bool _iconLoaded = false;
+    private ItemIconService? _iconService;
 
     public int SpellId { get; set; }
+
+    /// <summary>
+    /// Sets the icon service for lazy loading.
+    /// </summary>
+    public void SetIconService(ItemIconService? iconService)
+    {
+        _iconService = iconService;
+    }
+
+    /// <summary>
+    /// Game icon for this spell (from spells.2da IconResRef).
+    /// Loaded lazily on first access.
+    /// </summary>
+    public Bitmap? IconBitmap
+    {
+        get
+        {
+            // Lazy load on first access
+            if (!_iconLoaded && _iconService != null && _iconService.IsGameDataAvailable)
+            {
+                _iconLoaded = true;
+                try
+                {
+                    _iconBitmap = _iconService.GetSpellIcon(SpellId);
+                }
+                catch
+                {
+                    // Silently fail - no icon
+                }
+            }
+            return _iconBitmap;
+        }
+        set
+        {
+            if (_iconBitmap != value)
+            {
+                _iconBitmap = value;
+                _iconLoaded = true;
+                OnPropertyChanged(nameof(IconBitmap));
+                OnPropertyChanged(nameof(HasGameIcon));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether we have a real game icon (not placeholder).
+    /// Returns true if icon service is available (assumes icon exists to avoid triggering load).
+    /// </summary>
+    public bool HasGameIcon => _iconService != null && _iconService.IsGameDataAvailable;
     public string SpellName { get; set; } = "";
     public int SpellLevel { get; set; }
     public string SpellLevelDisplay { get; set; } = "";

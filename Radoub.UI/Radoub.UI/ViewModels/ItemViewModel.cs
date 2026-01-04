@@ -1,3 +1,4 @@
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
@@ -142,6 +143,67 @@ public partial class ItemViewModel : ObservableObject
     /// Icons from game-icons.net (CC BY 3.0).
     /// </summary>
     public string IconPath => ItemIconHelper.GetIconPath(BaseItem);
+
+    /// <summary>
+    /// Delegate for lazy loading icon bitmaps.
+    /// </summary>
+    public delegate Bitmap? IconLoader(UtiFile item);
+
+    private Bitmap? _iconBitmap;
+    private bool _iconLoaded;
+    private IconLoader? _iconLoader;
+
+    /// <summary>
+    /// Sets the icon loader for lazy loading.
+    /// Call this once at construction time.
+    /// </summary>
+    public void SetIconLoader(IconLoader? loader)
+    {
+        _iconLoader = loader;
+    }
+
+    /// <summary>
+    /// Actual item icon bitmap loaded from game files.
+    /// Loaded lazily on first access for virtualized UI performance.
+    /// Null if game data not available (use IconPath placeholder).
+    /// </summary>
+    public Bitmap? IconBitmap
+    {
+        get
+        {
+            // Lazy load on first access
+            if (!_iconLoaded && _iconLoader != null)
+            {
+                _iconLoaded = true;
+                try
+                {
+                    _iconBitmap = _iconLoader(_item);
+                    OnPropertyChanged(nameof(HasGameIcon));
+                }
+                catch
+                {
+                    // Silently fail - use placeholder
+                }
+            }
+            return _iconBitmap;
+        }
+        set
+        {
+            if (_iconBitmap != value)
+            {
+                _iconBitmap = value;
+                _iconLoaded = true;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasGameIcon));
+            }
+        }
+    }
+
+    /// <summary>
+    /// True if we have an actual game icon (not placeholder).
+    /// Returns true if icon loader is available (assumes icon exists to avoid triggering load).
+    /// </summary>
+    public bool HasGameIcon => _iconLoader != null || _iconBitmap != null;
 
     #region Inventory Metadata (for backpack items)
 

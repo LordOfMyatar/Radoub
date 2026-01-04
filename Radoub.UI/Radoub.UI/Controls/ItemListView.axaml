@@ -65,11 +65,23 @@
         <DataGridTemplateColumn Header="" Width="32" CanUserResize="False" CanUserSort="False">
           <DataGridTemplateColumn.CellTemplate>
             <DataTemplate>
-              <svg:Svg Path="{Binding IconPath}"
+              <Grid>
+                <!-- Actual game icon (if available) -->
+                <Image Source="{Binding IconBitmap}"
+                       IsVisible="{Binding HasGameIcon, FallbackValue=False}"
                        Width="20"
                        Height="20"
                        HorizontalAlignment="Center"
-                       VerticalAlignment="Center"/>
+                       VerticalAlignment="Center"
+                       Stretch="Uniform"/>
+                <!-- Placeholder SVG (fallback) -->
+                <svg:Svg Path="{Binding IconPath}"
+                         IsVisible="{Binding HasGameIcon, Converter={x:Static BoolConverters.Not}, FallbackValue=True}"
+                         Width="20"
+                         Height="20"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"/>
+              </Grid>
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>

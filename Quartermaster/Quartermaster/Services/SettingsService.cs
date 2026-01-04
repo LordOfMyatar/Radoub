@@ -17,7 +17,51 @@ namespace Quartermaster.Services;
 /// </summary>
 public class SettingsService : INotifyPropertyChanged
 {
-    public static SettingsService Instance { get; } = new SettingsService();
+    private static SettingsService? _instance;
+    private static readonly object _lock = new();
+
+    public static SettingsService Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    _instance ??= new SettingsService();
+                }
+            }
+            return _instance;
+        }
+    }
+
+    /// <summary>
+    /// Configure test mode with isolated settings directory.
+    /// MUST be called before first access to Instance.
+    /// </summary>
+    /// <param name="testDirectory">Temp directory for test settings</param>
+    public static void ConfigureForTesting(string testDirectory)
+    {
+        lock (_lock)
+        {
+            if (_instance != null)
+                throw new InvalidOperationException("ConfigureForTesting must be called before first Instance access");
+            _settingsDirectory = testDirectory;
+        }
+    }
+
+    /// <summary>
+    /// Reset for testing - allows re-initialization with different settings.
+    /// Only for use in test teardown.
+    /// </summary>
+    public static void ResetForTesting()
+    {
+        lock (_lock)
+        {
+            _instance = null;
+            _settingsDirectory = null;
+        }
+    }
 
     /// <summary>
     /// Shared settings for game paths and TLK configuration.
@@ -262,6 +306,7 @@ public class SettingsService : INotifyPropertyChanged
 
                     _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
                     _logLevel = settings.LogLevel;
+                    UnifiedLogger.SetLogLevel(_logLevel); // Apply loaded log level to logger
 
                     _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
                     // Use default if MaxRecentFiles is 0 (corrupt/old file) or out of range

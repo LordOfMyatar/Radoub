@@ -11,4 +11,9 @@
     <Version>0.1.0</Version>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Pfim for TGA/DDS decoding - pure managed, cross-platform -->
+    <PackageReference Include="Pfim" Version="0.11.4" />
+  </ItemGroup>
+
 </Project>

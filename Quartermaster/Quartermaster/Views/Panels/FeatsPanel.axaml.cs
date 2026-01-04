@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using System;
 using System.Collections.Generic;
@@ -13,6 +15,7 @@ namespace Quartermaster.Views.Panels;
 public partial class FeatsPanel : UserControl
 {
     private CreatureDisplayService? _displayService;
+    private ItemIconService? _itemIconService;
     private UtcFile? _currentCreature;
 
     /// <summary>
@@ -24,7 +27,7 @@ public partial class FeatsPanel : UserControl
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
     private ComboBox? _categoryFilterComboBox;
-    private ItemsControl? _featsList;
+    private ListBox? _featsList;
     private TextBlock? _noFeatsText;
     private TextBlock? _loadingText;
     private Expander? _specialAbilitiesExpander;
@@ -51,7 +54,7 @@ public partial class FeatsPanel : UserControl
         _searchTextBox = this.FindControl<TextBox>("SearchTextBox");
         _clearSearchButton = this.FindControl<Button>("ClearSearchButton");
         _categoryFilterComboBox = this.FindControl<ComboBox>("CategoryFilterComboBox");
-        _featsList = this.FindControl<ItemsControl>("FeatsList");
+        _featsList = this.FindControl<ListBox>("FeatsList");
         _noFeatsText = this.FindControl<TextBlock>("NoFeatsText");
         _loadingText = this.FindControl<TextBlock>("LoadingText");
         _specialAbilitiesExpander = this.FindControl<Expander>("SpecialAbilitiesExpander");
@@ -93,6 +96,15 @@ public partial class FeatsPanel : UserControl
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
+    }
+
+    /// <summary>
+    /// Sets the icon service for loading feat icons.
+    /// </summary>
+    public void SetIconService(ItemIconService iconService)
+    {
+        _itemIconService = iconService;
+        UnifiedLogger.LogUI(LogLevel.INFO, $"FeatsPanel: IconService set, IsGameDataAvailable={iconService?.IsGameDataAvailable}");
     }
 
     public void LoadCreature(UtcFile? creature)
@@ -246,7 +258,7 @@ public partial class FeatsPanel : UserControl
             textOpacity = 0.6;
         }
 
-        return new FeatListViewModel
+        var vm = new FeatListViewModel
         {
             FeatId = featId,
             FeatName = GetFeatNameInternal(featId),
@@ -264,6 +276,21 @@ public partial class FeatsPanel : UserControl
             RowBackground = rowBackground,
             TextOpacity = textOpacity
         };
+
+        // Load feat icon if available
+        LoadFeatIcon(vm);
+
+        return vm;
+    }
+
+    /// <summary>
+    /// Loads the game icon for a feat from feat.2da ICON column.
+    /// Icons are loaded lazily when binding requests them.
+    /// </summary>
+    private void LoadFeatIcon(FeatListViewModel featVm)
+    {
+        // Don't load upfront - use lazy loading via IconBitmap getter
+        featVm.SetIconService(_itemIconService);
     }
 
     private static string BuildTooltip(string description, FeatPrereqResult? prereqResult, bool isUnavailable)
@@ -524,6 +551,10 @@ public partial class FeatsPanel : UserControl
 
 public class FeatListViewModel
 {
+    private Bitmap? _iconBitmap;
+    private bool _iconLoaded = false;
+    private ItemIconService? _iconService;
+
     public ushort FeatId { get; set; }
     public string FeatName { get; set; } = "";
     public string Description { get; set; } = "";
@@ -539,6 +570,50 @@ public class FeatListViewModel
     public IBrush StatusColor { get; set; } = Brushes.Transparent;
     public IBrush RowBackground { get; set; } = Brushes.Transparent;
     public double TextOpacity { get; set; } = 1.0;
+
+    /// <summary>
+    /// Sets the icon service for lazy loading.
+    /// </summary>
+    public void SetIconService(ItemIconService? iconService)
+    {
+        _iconService = iconService;
+    }
+
+    /// <summary>
+    /// Game icon for this feat (from feat.2da ICON column).
+    /// Loaded lazily on first access.
+    /// </summary>
+    public Bitmap? IconBitmap
+    {
+        get
+        {
+            // Lazy load on first access
+            if (!_iconLoaded && _iconService != null && _iconService.IsGameDataAvailable)
+            {
+                _iconLoaded = true;
+                try
+                {
+                    _iconBitmap = _iconService.GetFeatIcon(FeatId);
+                }
+                catch
+                {
+                    // Silently fail - no icon
+                }
+            }
+            return _iconBitmap;
+        }
+        set
+        {
+            _iconBitmap = value;
+            _iconLoaded = true;
+        }
+    }
+
+    /// <summary>
+    /// Whether we have a real game icon (not placeholder).
+    /// Returns true if icon service is available (assumes icon exists to avoid triggering load).
+    /// </summary>
+    public bool HasGameIcon => _iconService != null && _iconService.IsGameDataAvailable;
 
     /// <summary>
     /// Can this feat be added? (Not assigned and not granted)

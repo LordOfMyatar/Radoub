@@ -53,11 +53,23 @@
                       Background="{DynamicResource SystemControlBackgroundListMediumBrush}"
                       CornerRadius="3"
                       Margin="2">
-                <svg:Svg Path="{Binding IconPath}"
+                <Grid>
+                  <!-- Actual game icon (if available) -->
+                  <Image Source="{Binding EquippedItem.IconBitmap}"
+                         IsVisible="{Binding EquippedItem.HasGameIcon, FallbackValue=False}"
                          Width="48"
                          Height="48"
                          HorizontalAlignment="Center"
-                         VerticalAlignment="Center"/>
+                         VerticalAlignment="Center"
+                         Stretch="Uniform"/>
+                  <!-- Placeholder SVG (fallback) -->
+                  <svg:Svg Path="{Binding IconPath}"
+                           IsVisible="{Binding EquippedItem.HasGameIcon, Converter={x:Static BoolConverters.Not}, FallbackValue=True}"
+                           Width="48"
+                           Height="48"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+                </Grid>
               </Border>
 
               <!-- Warning indicator -->

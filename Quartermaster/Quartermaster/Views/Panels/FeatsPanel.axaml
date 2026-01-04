@@ -89,107 +89,119 @@
             </Grid>
 
             <!-- Feats List -->
-            <Border Grid.Row="3"
-                    BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
-                    BorderThickness="1"
-                    CornerRadius="4">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <!-- Header Row -->
-                        <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                Padding="10,8,25,8">
-                            <Grid ColumnDefinitions="30,*,120,80,60">
-                                <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
-                                <TextBlock Grid.Column="1" Text="Feat Name" FontWeight="SemiBold" FontSize="11"/>
-                                <TextBlock Grid.Column="2" Text="Category" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                            </Grid>
-                        </Border>
+            <Grid Grid.Row="3" RowDefinitions="Auto,*,Auto,Auto">
+                <!-- Header Row -->
+                <Border Grid.Row="0"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1,1,1,0"
+                        CornerRadius="4,4,0,0"
+                        Padding="10,8,25,8">
+                    <Grid ColumnDefinitions="32,30,*,120,80,60">
+                        <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
+                        <TextBlock Grid.Column="1" Text="" FontWeight="SemiBold" FontSize="11"/>
+                        <TextBlock Grid.Column="2" Text="Feat Name" FontWeight="SemiBold" FontSize="11"/>
+                        <TextBlock Grid.Column="3" Text="Category" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="4" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="5" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                    </Grid>
+                </Border>
 
-                        <!-- Feats Items -->
-                        <ItemsControl x:Name="FeatsList">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="{Binding RowBackground}"
-                                            Padding="10,6,25,6"
-                                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                            BorderThickness="0,0,0,1"
-                                            ToolTip.Tip="{Binding Description}">
-                                        <Grid ColumnDefinitions="30,*,120,80,60">
-                                            <!-- Status Indicator -->
-                                            <TextBlock Grid.Column="0"
-                                                       Text="{Binding StatusIndicator}"
-                                                       Foreground="{Binding StatusColor}"
-                                                       FontSize="12"
-                                                       FontWeight="Bold"
-                                                       VerticalAlignment="Center"
-                                                       HorizontalAlignment="Center"/>
+                <!-- Virtualized Feats Items using ListBox -->
+                <ListBox Grid.Row="1"
+                         x:Name="FeatsList"
+                         BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                         BorderThickness="1,0,1,1"
+                         Background="Transparent"
+                         SelectionMode="Single">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{Binding RowBackground}"
+                                    Padding="10,6,10,6"
+                                    ToolTip.Tip="{Binding Description}">
+                                <Grid ColumnDefinitions="32,30,*,120,80,60">
+                                    <!-- Icon -->
+                                    <Image Grid.Column="0"
+                                           Source="{Binding IconBitmap}"
+                                           Width="24" Height="24"
+                                           Stretch="Uniform"
+                                           IsVisible="{Binding HasGameIcon}"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
 
-                                            <!-- Feat Name -->
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding FeatName}"
-                                                       VerticalAlignment="Center"
-                                                       FontSize="13"
-                                                       Opacity="{Binding TextOpacity}"/>
+                                    <!-- Status Indicator -->
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding StatusIndicator}"
+                                               Foreground="{Binding StatusColor}"
+                                               FontSize="12"
+                                               FontWeight="Bold"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center"/>
 
-                                            <!-- Category -->
-                                            <TextBlock Grid.Column="2"
-                                                       Text="{Binding CategoryName}"
-                                                       FontSize="11"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
+                                    <!-- Feat Name -->
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding FeatName}"
+                                               VerticalAlignment="Center"
+                                               FontSize="13"
+                                               Opacity="{Binding TextOpacity}"/>
 
-                                            <!-- Assigned/Granted Status -->
-                                            <TextBlock Grid.Column="3"
-                                                       Text="{Binding StatusText}"
-                                                       FontSize="11"
-                                                       Foreground="{Binding StatusColor}"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"/>
+                                    <!-- Category -->
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding CategoryName}"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
 
-                                            <!-- Add/Remove Buttons -->
-                                            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
-                                                <Button Content="+"
-                                                        Width="24" Height="24"
-                                                        FontSize="14" FontWeight="Bold"
-                                                        Padding="0"
-                                                        IsVisible="{Binding CanAdd}"
-                                                        Tag="{Binding FeatId}"
-                                                        ToolTip.Tip="Add feat"
-                                                        AutomationProperties.AutomationId="AddFeatButton"/>
-                                                <Button Content="−"
-                                                        Width="24" Height="24"
-                                                        FontSize="14" FontWeight="Bold"
-                                                        Padding="0"
-                                                        IsVisible="{Binding CanRemove}"
-                                                        Tag="{Binding FeatId}"
-                                                        ToolTip.Tip="Remove feat"
-                                                        AutomationProperties.AutomationId="RemoveFeatButton"/>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                    <!-- Assigned/Granted Status -->
+                                    <TextBlock Grid.Column="4"
+                                               Text="{Binding StatusText}"
+                                               FontSize="11"
+                                               Foreground="{Binding StatusColor}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
 
-                        <TextBlock x:Name="NoFeatsText"
-                                   Text="No feats match the current filter"
-                                   FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                   IsVisible="False"
-                                   Margin="15,15"/>
+                                    <!-- Add/Remove Buttons -->
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                        <Button Content="+"
+                                                Width="24" Height="24"
+                                                FontSize="14" FontWeight="Bold"
+                                                Padding="0"
+                                                IsVisible="{Binding CanAdd}"
+                                                Tag="{Binding FeatId}"
+                                                ToolTip.Tip="Add feat"
+                                                AutomationProperties.AutomationId="AddFeatButton"/>
+                                        <Button Content="−"
+                                                Width="24" Height="24"
+                                                FontSize="14" FontWeight="Bold"
+                                                Padding="0"
+                                                IsVisible="{Binding CanRemove}"
+                                                Tag="{Binding FeatId}"
+                                                ToolTip.Tip="Remove feat"
+                                                AutomationProperties.AutomationId="RemoveFeatButton"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
 
-                        <TextBlock x:Name="LoadingText"
-                                   Text="Loading feats..."
-                                   FontStyle="Italic"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                   IsVisible="False"
-                                   Margin="15,15"/>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
+                <TextBlock Grid.Row="2"
+                           x:Name="NoFeatsText"
+                           Text="No feats match the current filter"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           IsVisible="False"
+                           Margin="15,15"/>
+
+                <TextBlock Grid.Row="3"
+                           x:Name="LoadingText"
+                           Text="Loading feats..."
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           IsVisible="False"
+                           Margin="15,15"/>
+            </Grid>
 
             <!-- Footer with Special Abilities -->
             <Expander Grid.Row="4"
