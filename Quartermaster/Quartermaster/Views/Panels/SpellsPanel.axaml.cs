@@ -653,6 +653,11 @@ public partial class SpellsPanel : UserControl
 public class SpellListViewModel : System.ComponentModel.INotifyPropertyChanged
 {
     private bool _isKnown;
+    private bool _isMemorized;
+    private string _statusText = "";
+    private IBrush _statusColor = Brushes.Transparent;
+    private IBrush _rowBackground = Brushes.Transparent;
+    private double _textOpacity = 1.0;
 
     public int SpellId { get; set; }
     public string SpellName { get; set; } = "";
@@ -672,19 +677,80 @@ public class SpellListViewModel : System.ComponentModel.INotifyPropertyChanged
             {
                 _isKnown = value;
                 OnPropertyChanged(nameof(IsKnown));
+                OnPropertyChanged(nameof(ToggleTooltip));
                 OnKnownChanged?.Invoke(this, value);
             }
         }
     }
 
-    public bool IsMemorized { get; set; }
+    public bool IsMemorized
+    {
+        get => _isMemorized;
+        set
+        {
+            if (_isMemorized != value)
+            {
+                _isMemorized = value;
+                OnPropertyChanged(nameof(IsMemorized));
+            }
+        }
+    }
+
     public bool IsBlocked { get; set; }
     public string BlockedReason { get; set; } = "";
     public string Description { get; set; } = "";
-    public string StatusText { get; set; } = "";
-    public IBrush StatusColor { get; set; } = Brushes.Transparent;
-    public IBrush RowBackground { get; set; } = Brushes.Transparent;
-    public double TextOpacity { get; set; } = 1.0;
+
+    public string StatusText
+    {
+        get => _statusText;
+        set
+        {
+            if (_statusText != value)
+            {
+                _statusText = value;
+                OnPropertyChanged(nameof(StatusText));
+            }
+        }
+    }
+
+    public IBrush StatusColor
+    {
+        get => _statusColor;
+        set
+        {
+            if (_statusColor != value)
+            {
+                _statusColor = value;
+                OnPropertyChanged(nameof(StatusColor));
+            }
+        }
+    }
+
+    public IBrush RowBackground
+    {
+        get => _rowBackground;
+        set
+        {
+            if (_rowBackground != value)
+            {
+                _rowBackground = value;
+                OnPropertyChanged(nameof(RowBackground));
+            }
+        }
+    }
+
+    public double TextOpacity
+    {
+        get => _textOpacity;
+        set
+        {
+            if (Math.Abs(_textOpacity - value) > 0.001)
+            {
+                _textOpacity = value;
+                OnPropertyChanged(nameof(TextOpacity));
+            }
+        }
+    }
 
     /// <summary>
     /// Whether the spell checkbox can be toggled (not blocked).
