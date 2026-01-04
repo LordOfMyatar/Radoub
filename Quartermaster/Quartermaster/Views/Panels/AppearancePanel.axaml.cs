@@ -73,6 +73,7 @@ public partial class AppearancePanel : UserControl
 
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
+    private ModelService? _modelService;
     private UtcFile? _currentCreature;
     private List<AppearanceInfo>? _appearances;
     private List<PhenotypeInfo>? _phenotypes;
@@ -204,6 +205,11 @@ public partial class AppearancePanel : UserControl
     public void SetPaletteColorService(PaletteColorService paletteColorService)
     {
         _paletteColorService = paletteColorService;
+    }
+
+    public void SetModelService(ModelService modelService)
+    {
+        _modelService = modelService;
     }
 
     private void LoadAppearanceData()
@@ -358,8 +364,28 @@ public partial class AppearancePanel : UserControl
         UpdateBodyPartsEnabledState(isPartBased);
         LoadBodyPartValues(creature);
 
+        // Load model preview
+        UpdateModelPreview();
+
         // Defer clearing _isLoading until after dispatcher processes queued SelectionChanged events
         Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private void UpdateModelPreview()
+    {
+        if (_modelService == null || _currentCreature == null || _modelPreview == null)
+            return;
+
+        try
+        {
+            var model = _modelService.LoadCreatureModel(_currentCreature);
+            _modelPreview.Model = model;
+        }
+        catch (Exception)
+        {
+            // Failed to load model - show empty preview
+            _modelPreview.Model = null;
+        }
     }
 
     private void UpdateBodyPartsEnabledState(bool isPartBased)
@@ -539,6 +565,14 @@ public partial class AppearancePanel : UserControl
         {
             var isPartBased = _displayService?.IsPartBasedAppearance(appearanceId) ?? false;
             UpdateBodyPartsEnabledState(isPartBased);
+
+            // Update model preview when appearance changes
+            if (_currentCreature != null)
+            {
+                _currentCreature.AppearanceType = appearanceId;
+                UpdateModelPreview();
+            }
+
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         }
     }
