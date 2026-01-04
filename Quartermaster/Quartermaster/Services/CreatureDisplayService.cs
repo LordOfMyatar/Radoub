@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 
@@ -8,23 +6,36 @@ namespace Quartermaster.Services;
 
 /// <summary>
 /// Provides display name resolution for creature data using 2DA and TLK lookups.
-/// Centralizes all creature stat display calculations and name lookups.
+/// Core creature lookups (race, gender, class, combat stats) plus delegation to focused services.
 /// </summary>
 public class CreatureDisplayService
 {
     private readonly IGameDataService _gameDataService;
 
+    // Focused services for specific domains
+    public SkillService Skills { get; }
+    public FeatService Feats { get; }
+    public AppearanceService Appearances { get; }
+    public SpellService Spells { get; }
+
     public CreatureDisplayService(IGameDataService gameDataService)
     {
         _gameDataService = gameDataService;
+
+        // Initialize focused services
+        Skills = new SkillService(gameDataService);
+        Feats = new FeatService(gameDataService, Skills);
+        Appearances = new AppearanceService(gameDataService);
+        Spells = new SpellService(gameDataService);
     }
+
+    #region Race/Gender/Class Lookups
 
     /// <summary>
     /// Gets the display name for a race ID.
     /// </summary>
     public string GetRaceName(byte raceId)
     {
-        // Try 2DA/TLK lookup first
         var strRef = _gameDataService.Get2DAValue("racialtypes", raceId, "Name");
         if (!string.IsNullOrEmpty(strRef) && strRef != "****")
         {
@@ -33,7 +44,6 @@ public class CreatureDisplayService
                 return tlkName;
         }
 
-        // Fallback to hardcoded names
         return raceId switch
         {
             0 => "Dwarf",
@@ -49,31 +59,25 @@ public class CreatureDisplayService
 
     /// <summary>
     /// Gets all races from racialtypes.2da.
-    /// Returns list of (id, name) tuples sorted by name.
     /// </summary>
     public List<(byte Id, string Name)> GetAllRaces()
     {
         var races = new List<(byte Id, string Name)>();
 
-        // racialtypes.2da can have custom content additions, scan up to 255 (byte max)
         for (int i = 0; i < 256; i++)
         {
             var label = _gameDataService.Get2DAValue("racialtypes", i, "Label");
             if (string.IsNullOrEmpty(label) || label == "****")
             {
-                // Stop after we've found some races and hit a gap
                 if (races.Count > 10 && i > 50)
                     break;
                 continue;
             }
 
-            // Check if this race is player-selectable (PlayerRace column)
-            // Include all races for creature editing, not just player races
             var name = GetRaceName((byte)i);
             races.Add(((byte)i, name));
         }
 
-        // Sort alphabetically by name for easier selection
         races.Sort((a, b) => string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase));
         return races;
     }
@@ -83,7 +87,6 @@ public class CreatureDisplayService
     /// </summary>
     public string GetGenderName(byte genderId)
     {
-        // Try 2DA/TLK lookup first
         var strRef = _gameDataService.Get2DAValue("gender", genderId, "NAME");
         if (!string.IsNullOrEmpty(strRef) && strRef != "****")
         {
@@ -92,7 +95,6 @@ public class CreatureDisplayService
                 return tlkName;
         }
 
-        // Fallback to hardcoded names
         return genderId switch
         {
             0 => "Male",
@@ -109,7 +111,6 @@ public class CreatureDisplayService
     /// </summary>
     public string GetClassName(int classId)
     {
-        // Try 2DA/TLK lookup first
         var strRef = _gameDataService.Get2DAValue("classes", classId, "Name");
         if (!string.IsNullOrEmpty(strRef) && strRef != "****")
         {
@@ -118,7 +119,6 @@ public class CreatureDisplayService
                 return tlkName;
         }
 
-        // Fallback to hardcoded names
         return classId switch
         {
             0 => "Barbarian",
@@ -148,300 +148,9 @@ public class CreatureDisplayService
         };
     }
 
-    /// <summary>
-    /// Gets the display name for a feat ID.
-    /// </summary>
-    public string GetFeatName(int featId)
-    {
-        // Try 2DA/TLK lookup first
-        var strRef = _gameDataService.Get2DAValue("feat", featId, "FEAT");
-        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-        {
-            var tlkName = _gameDataService.GetString(strRef);
-            if (!string.IsNullOrEmpty(tlkName))
-                return tlkName;
-        }
+    #endregion
 
-        // Fallback to hardcoded common feats
-        return featId switch
-        {
-            0 => "Alertness",
-            1 => "Ambidexterity",
-            2 => "Armor Proficiency (Heavy)",
-            3 => "Armor Proficiency (Light)",
-            4 => "Armor Proficiency (Medium)",
-            5 => "Blind-Fight",
-            6 => "Called Shot",
-            7 => "Cleave",
-            8 => "Combat Casting",
-            9 => "Deflect Arrows",
-            10 => "Disarm",
-            11 => "Dodge",
-            _ => $"Feat {featId}"
-        };
-    }
-
-    /// <summary>
-    /// Gets the display name for a spell ID.
-    /// </summary>
-    public string GetSpellName(int spellId)
-    {
-        // Try 2DA/TLK lookup first
-        var strRef = _gameDataService.Get2DAValue("spells", spellId, "Name");
-        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-        {
-            var tlkName = _gameDataService.GetString(strRef);
-            if (!string.IsNullOrEmpty(tlkName))
-                return tlkName;
-        }
-
-        return $"Spell {spellId}";
-    }
-
-    /// <summary>
-    /// Gets the display name for a skill ID.
-    /// </summary>
-    public string GetSkillName(int skillId)
-    {
-        // Try 2DA/TLK lookup first
-        var strRef = _gameDataService.Get2DAValue("skills", skillId, "Name");
-        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-        {
-            var tlkName = _gameDataService.GetString(strRef);
-            if (!string.IsNullOrEmpty(tlkName))
-                return tlkName;
-        }
-
-        // Fallback to hardcoded common skills
-        return skillId switch
-        {
-            0 => "Animal Empathy",
-            1 => "Concentration",
-            2 => "Disable Trap",
-            3 => "Discipline",
-            4 => "Heal",
-            5 => "Hide",
-            6 => "Listen",
-            7 => "Lore",
-            8 => "Move Silently",
-            9 => "Open Lock",
-            10 => "Parry",
-            11 => "Perform",
-            12 => "Persuade",
-            13 => "Pick Pocket",
-            14 => "Search",
-            15 => "Set Trap",
-            16 => "Spellcraft",
-            17 => "Spot",
-            18 => "Taunt",
-            19 => "Use Magic Device",
-            20 => "Appraise",
-            21 => "Tumble",
-            22 => "Craft Trap",
-            23 => "Bluff",
-            24 => "Intimidate",
-            25 => "Craft Armor",
-            26 => "Craft Weapon",
-            27 => "Ride",
-            _ => $"Skill {skillId}"
-        };
-    }
-
-    /// <summary>
-    /// Gets the key ability for a skill (STR, DEX, INT, WIS, CHA, CON).
-    /// </summary>
-    public string GetSkillKeyAbility(int skillId)
-    {
-        // Try 2DA lookup first
-        var ability = _gameDataService.Get2DAValue("skills", skillId, "KeyAbility");
-        if (!string.IsNullOrEmpty(ability) && ability != "****")
-            return ability;
-
-        // Fallback to hardcoded values
-        return skillId switch
-        {
-            0 => "CHA",  // Animal Empathy
-            1 => "CON",  // Concentration
-            2 => "INT",  // Disable Trap
-            3 => "STR",  // Discipline
-            4 => "WIS",  // Heal
-            5 => "DEX",  // Hide
-            6 => "WIS",  // Listen
-            7 => "INT",  // Lore
-            8 => "DEX",  // Move Silently
-            9 => "DEX",  // Open Lock
-            10 => "DEX", // Parry
-            11 => "CHA", // Perform
-            12 => "CHA", // Persuade
-            13 => "DEX", // Pick Pocket
-            14 => "INT", // Search
-            15 => "DEX", // Set Trap
-            16 => "INT", // Spellcraft
-            17 => "WIS", // Spot
-            18 => "CHA", // Taunt
-            19 => "CHA", // Use Magic Device
-            20 => "INT", // Appraise
-            21 => "DEX", // Tumble
-            22 => "INT", // Craft Trap
-            23 => "CHA", // Bluff
-            24 => "CHA", // Intimidate
-            25 => "INT", // Craft Armor
-            26 => "INT", // Craft Weapon
-            27 => "DEX", // Ride
-            _ => "INT"
-        };
-    }
-
-    /// <summary>
-    /// Gets the skills table name for a class (e.g., "cls_skill_fight" for Fighter).
-    /// </summary>
-    public string? GetClassSkillsTable(int classId)
-    {
-        var skillsTable = _gameDataService.Get2DAValue("classes", classId, "SkillsTable");
-        if (!string.IsNullOrEmpty(skillsTable) && skillsTable != "****")
-            return skillsTable;
-        return null;
-    }
-
-    /// <summary>
-    /// Checks if a skill is a class skill for the given class.
-    /// </summary>
-    public bool IsClassSkill(int classId, int skillId)
-    {
-        var skillsTable = GetClassSkillsTable(classId);
-        if (skillsTable == null)
-            return false;
-
-        // The cls_skill_*.2da files have rows with SkillIndex and ClassSkill columns
-        // We need to iterate through the rows to find the matching skill
-        // Since we don't have row count, we iterate up to a reasonable limit
-        for (int row = 0; row < 50; row++)
-        {
-            var skillIndexStr = _gameDataService.Get2DAValue(skillsTable, row, "SkillIndex");
-            if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
-                break;
-
-            if (int.TryParse(skillIndexStr, out int tableSkillId) && tableSkillId == skillId)
-            {
-                var classSkillStr = _gameDataService.Get2DAValue(skillsTable, row, "ClassSkill");
-                return classSkillStr == "1";
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Gets the set of class skill IDs for a given class.
-    /// </summary>
-    public HashSet<int> GetClassSkillIds(int classId)
-    {
-        var result = new HashSet<int>();
-        var skillsTable = GetClassSkillsTable(classId);
-        if (skillsTable == null)
-            return result;
-
-        // Iterate through the cls_skill_*.2da rows
-        for (int row = 0; row < 50; row++)
-        {
-            var skillIndexStr = _gameDataService.Get2DAValue(skillsTable, row, "SkillIndex");
-            if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
-                break;
-
-            var classSkillStr = _gameDataService.Get2DAValue(skillsTable, row, "ClassSkill");
-            if (classSkillStr == "1" && int.TryParse(skillIndexStr, out int skillId))
-            {
-                result.Add(skillId);
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Gets the combined set of class skill IDs for all classes the creature has.
-    /// </summary>
-    public HashSet<int> GetCombinedClassSkillIds(UtcFile creature)
-    {
-        var result = new HashSet<int>();
-        foreach (var creatureClass in creature.ClassList)
-        {
-            var classSkills = GetClassSkillIds(creatureClass.Class);
-            foreach (var skillId in classSkills)
-            {
-                result.Add(skillId);
-            }
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Checks if a skill can be used by all classes (AllClassesCanUse column in skills.2da).
-    /// </summary>
-    public bool IsSkillUniversal(int skillId)
-    {
-        var allClassesCanUse = _gameDataService.Get2DAValue("skills", skillId, "AllClassesCanUse");
-        return allClassesCanUse == "1";
-    }
-
-    /// <summary>
-    /// Checks if a skill appears in any of the character's class skill tables.
-    /// If AllClassesCanUse is 0, and the skill doesn't appear in any cls_skill_*.2da for
-    /// the character's classes, it's completely unavailable to them.
-    /// </summary>
-    public bool IsSkillAvailable(UtcFile creature, int skillId)
-    {
-        // Check if all classes can use this skill
-        if (IsSkillUniversal(skillId))
-            return true;
-
-        // Check each class's skill table to see if the skill appears at all
-        foreach (var creatureClass in creature.ClassList)
-        {
-            if (IsSkillInClassTable(creatureClass.Class, skillId))
-                return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Checks if a skill appears in a class's skill table at all (regardless of ClassSkill value).
-    /// </summary>
-    private bool IsSkillInClassTable(int classId, int skillId)
-    {
-        var skillsTable = GetClassSkillsTable(classId);
-        if (skillsTable == null)
-            return false;
-
-        for (int row = 0; row < 50; row++)
-        {
-            var skillIndexStr = _gameDataService.Get2DAValue(skillsTable, row, "SkillIndex");
-            if (string.IsNullOrEmpty(skillIndexStr) || skillIndexStr == "****")
-                break;
-
-            if (int.TryParse(skillIndexStr, out int tableSkillId) && tableSkillId == skillId)
-                return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Gets the set of unavailable skill IDs for a creature (skills they cannot take at all).
-    /// </summary>
-    public HashSet<int> GetUnavailableSkillIds(UtcFile creature, int totalSkillCount)
-    {
-        var result = new HashSet<int>();
-        for (int skillId = 0; skillId < totalSkillCount; skillId++)
-        {
-            if (!IsSkillAvailable(creature, skillId))
-            {
-                result.Add(skillId);
-            }
-        }
-        return result;
-    }
+    #region Racial Modifiers
 
     /// <summary>
     /// Gets the racial ability modifier for a specific ability.
@@ -485,6 +194,10 @@ public class CreatureDisplayService
         };
     }
 
+    #endregion
+
+    #region Ability Calculations
+
     /// <summary>
     /// Calculates the ability bonus from an ability score.
     /// Standard D&D formula: (score - 10) / 2
@@ -501,6 +214,10 @@ public class CreatureDisplayService
     {
         return value >= 0 ? $"+{value}" : value.ToString();
     }
+
+    #endregion
+
+    #region Creature Display
 
     /// <summary>
     /// Gets the full display name of a creature (first + last name).
@@ -537,9 +254,12 @@ public class CreatureDisplayService
         return summary;
     }
 
+    #endregion
+
+    #region Combat Stats
+
     /// <summary>
     /// Calculates Base Attack Bonus from class levels.
-    /// Sums BAB from each class's attack table (cls_atk_*.2da).
     /// </summary>
     public int CalculateBaseAttackBonus(UtcFile creature)
     {
@@ -562,35 +282,26 @@ public class CreatureDisplayService
         if (classLevel <= 0)
             return 0;
 
-        // Get the attack bonus table name from classes.2da
         var attackTable = _gameDataService.Get2DAValue("classes", classId, "AttackBonusTable");
         if (string.IsNullOrEmpty(attackTable) || attackTable == "****")
         {
-            // Fallback: estimate based on class type (1, 3/4, or 1/2 progression)
             return EstimateBab(classId, classLevel);
         }
 
-        // Look up BAB from the class-specific attack table
-        // Row index is level - 1 (row 0 = level 1)
         var babValue = _gameDataService.Get2DAValue(attackTable, classLevel - 1, "BAB");
         if (!string.IsNullOrEmpty(babValue) && babValue != "****" && int.TryParse(babValue, out int bab))
         {
             return bab;
         }
 
-        // Fallback if 2DA not available
         return EstimateBab(classId, classLevel);
     }
 
     /// <summary>
     /// Estimates BAB when 2DA tables are not available.
-    /// Uses standard D&D 3E progression rates.
     /// </summary>
     private static int EstimateBab(int classId, int classLevel)
     {
-        // Full BAB (Fighter, Barbarian, Paladin, Ranger): 1 per level
-        // 3/4 BAB (Cleric, Druid, Monk, Rogue): 3/4 per level
-        // 1/2 BAB (Wizard, Sorcerer): 1/2 per level
         var progression = classId switch
         {
             0 => 1.0,   // Barbarian - full
@@ -616,7 +327,7 @@ public class CreatureDisplayService
             20 => 1.0,  // Dwarven Defender - full
             21 => 0.75, // Dragon Disciple - 3/4
             27 => 1.0,  // Purple Dragon Knight - full
-            _ => 0.75   // Default to 3/4
+            _ => 0.75
         };
 
         return (int)(classLevel * progression);
@@ -624,13 +335,11 @@ public class CreatureDisplayService
 
     /// <summary>
     /// Calculates attack bonus from equipped items.
-    /// Looks for Enhancement Bonus and Attack Bonus item properties.
     /// </summary>
-    /// <param name="equippedItems">List of equipped items with their loaded UTI data</param>
     public int CalculateEquipmentAttackBonus(IEnumerable<Radoub.Formats.Uti.UtiFile?> equippedItems)
     {
         int totalBonus = 0;
-        int highestEnhancement = 0; // Enhancement bonuses don't stack - take highest
+        int highestEnhancement = 0;
 
         foreach (var item in equippedItems)
         {
@@ -638,19 +347,14 @@ public class CreatureDisplayService
 
             foreach (var prop in item.Properties)
             {
-                // PropertyName indices from itempropdef.2da:
-                // 6 = Enhancement Bonus (doesn't stack - highest wins)
-                // 56 = Attack Bonus (stacks)
                 if (prop.PropertyName == 6) // Enhancement Bonus
                 {
-                    // CostValue is the bonus amount (index into iprp_bonuscost.2da, where value = row index)
                     var bonus = prop.CostValue;
                     if (bonus > highestEnhancement)
                         highestEnhancement = bonus;
                 }
                 else if (prop.PropertyName == 56) // Attack Bonus
                 {
-                    // Attack bonus stacks
                     totalBonus += prop.CostValue;
                 }
             }
@@ -666,1168 +370,77 @@ public class CreatureDisplayService
     {
         var stats = new CombatStats();
 
-        // Base Attack Bonus from class levels
         stats.BaseBab = CalculateBaseAttackBonus(creature);
 
-        // Equipment bonus (if items provided)
         if (equippedItems != null)
         {
             stats.EquipmentBonus = CalculateEquipmentAttackBonus(equippedItems);
         }
 
-        // Total BAB
         stats.TotalBab = stats.BaseBab + stats.EquipmentBonus;
 
         return stats;
     }
 
-    #region Feat Methods
-
-    /// <summary>
-    /// Gets the toolset category for a feat (TOOLSCATEGORIES column).
-    /// Returns: 1=Combat, 2=Active Combat, 3=Defensive, 4=Magical, 5=Class/Racial, 6=Other
-    /// </summary>
-    public FeatCategory GetFeatCategory(int featId)
-    {
-        var category = _gameDataService.Get2DAValue("feat", featId, "TOOLSCATEGORIES");
-        if (!string.IsNullOrEmpty(category) && category != "****" && int.TryParse(category, out int catId))
-        {
-            return catId switch
-            {
-                1 => FeatCategory.Combat,
-                2 => FeatCategory.ActiveCombat,
-                3 => FeatCategory.Defensive,
-                4 => FeatCategory.Magical,
-                5 => FeatCategory.ClassRacial,
-                6 => FeatCategory.Other,
-                _ => FeatCategory.Other
-            };
-        }
-        return FeatCategory.Other;
-    }
-
-    /// <summary>
-    /// Gets the description StrRef for a feat.
-    /// </summary>
-    public string GetFeatDescription(int featId)
-    {
-        var strRef = _gameDataService.Get2DAValue("feat", featId, "DESCRIPTION");
-        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-        {
-            var desc = _gameDataService.GetString(strRef);
-            if (!string.IsNullOrEmpty(desc))
-                return desc;
-        }
-        return "";
-    }
-
-    /// <summary>
-    /// Checks if a feat can be used by all classes (ALLCLASSESCANUSE column).
-    /// </summary>
-    public bool IsFeatUniversal(int featId)
-    {
-        var allClassesCanUse = _gameDataService.Get2DAValue("feat", featId, "ALLCLASSESCANUSE");
-        return allClassesCanUse == "1";
-    }
-
-    /// <summary>
-    /// Gets all valid feat IDs from feat.2da.
-    /// Iterates until finding an empty/invalid row.
-    /// </summary>
-    public List<int> GetAllFeatIds()
-    {
-        var featIds = new List<int>();
-
-        // feat.2da can have 1000+ rows, iterate until we find empty
-        for (int i = 0; i < 2000; i++)
-        {
-            var label = _gameDataService.Get2DAValue("feat", i, "LABEL");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                // Check if we've found any feats - if yes, we've hit the end
-                // If no, keep looking (some 2DAs have gaps)
-                if (featIds.Count > 100)
-                    break;
-                continue;
-            }
-
-            var featName = _gameDataService.Get2DAValue("feat", i, "FEAT");
-            // Skip feats with no name (internal/unused)
-            if (string.IsNullOrEmpty(featName) || featName == "****")
-                continue;
-
-            featIds.Add(i);
-        }
-
-        return featIds;
-    }
-
-    /// <summary>
-    /// Gets detailed feat information for display.
-    /// </summary>
-    public FeatInfo GetFeatInfo(int featId)
-    {
-        return new FeatInfo
-        {
-            FeatId = featId,
-            Name = GetFeatName(featId),
-            Description = GetFeatDescription(featId),
-            Category = GetFeatCategory(featId),
-            IsUniversal = IsFeatUniversal(featId)
-        };
-    }
-
-    /// <summary>
-    /// Gets the set of feat IDs granted by a class at all levels.
-    /// Reads from cls_feat_*.2da files.
-    /// </summary>
-    public HashSet<int> GetClassGrantedFeatIds(int classId)
-    {
-        var result = new HashSet<int>();
-
-        // Get the feat table name from classes.2da
-        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
-        if (string.IsNullOrEmpty(featTable) || featTable == "****")
-            return result;
-
-        // Iterate through cls_feat_*.2da rows
-        for (int row = 0; row < 200; row++)
-        {
-            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
-            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
-                break;
-
-            if (int.TryParse(featIndexStr, out int featId))
-            {
-                // Check if it's granted (List column = 3 means automatic)
-                var listType = _gameDataService.Get2DAValue(featTable, row, "List");
-                if (listType == "3") // Automatic/granted feat
-                {
-                    result.Add(featId);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Gets combined granted feats from all of a creature's classes.
-    /// </summary>
-    public HashSet<int> GetCombinedGrantedFeatIds(UtcFile creature)
-    {
-        var result = new HashSet<int>();
-        foreach (var creatureClass in creature.ClassList)
-        {
-            var classFeats = GetClassGrantedFeatIds(creatureClass.Class);
-            foreach (var featId in classFeats)
-            {
-                result.Add(featId);
-            }
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Checks if a feat is available to a creature (can be selected).
-    /// A feat is available if it's universal OR appears in any of the creature's class feat tables.
-    /// </summary>
-    public bool IsFeatAvailable(UtcFile creature, int featId)
-    {
-        // Universal feats are available to all
-        if (IsFeatUniversal(featId))
-            return true;
-
-        // Check each class's feat table
-        foreach (var creatureClass in creature.ClassList)
-        {
-            if (IsFeatInClassTable(creatureClass.Class, featId))
-                return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Checks if a feat appears in a class's feat table (regardless of List type).
-    /// </summary>
-    private bool IsFeatInClassTable(int classId, int featId)
-    {
-        var featTable = _gameDataService.Get2DAValue("classes", classId, "FeatsTable");
-        if (string.IsNullOrEmpty(featTable) || featTable == "****")
-            return false;
-
-        for (int row = 0; row < 300; row++)
-        {
-            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
-            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
-                break;
-
-            if (int.TryParse(featIndexStr, out int tableFeatId) && tableFeatId == featId)
-                return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Gets the set of unavailable feat IDs for a creature.
-    /// </summary>
-    public HashSet<int> GetUnavailableFeatIds(UtcFile creature, IEnumerable<int> allFeatIds)
-    {
-        var result = new HashSet<int>();
-        foreach (var featId in allFeatIds)
-        {
-            if (!IsFeatAvailable(creature, featId))
-            {
-                result.Add(featId);
-            }
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Gets the prerequisites for a feat.
-    /// </summary>
-    public FeatPrerequisites GetFeatPrerequisites(int featId)
-    {
-        var prereqs = new FeatPrerequisites { FeatId = featId };
-
-        // Required feats (AND - must have all)
-        var prereq1 = _gameDataService.Get2DAValue("feat", featId, "PREREQFEAT1");
-        if (!string.IsNullOrEmpty(prereq1) && prereq1 != "****" && int.TryParse(prereq1, out int feat1))
-            prereqs.RequiredFeats.Add(feat1);
-
-        var prereq2 = _gameDataService.Get2DAValue("feat", featId, "PREREQFEAT2");
-        if (!string.IsNullOrEmpty(prereq2) && prereq2 != "****" && int.TryParse(prereq2, out int feat2))
-            prereqs.RequiredFeats.Add(feat2);
-
-        // Or-required feats (OR - must have at least one)
-        for (int i = 0; i <= 4; i++)
-        {
-            var orReq = _gameDataService.Get2DAValue("feat", featId, $"OrReqFeat{i}");
-            if (!string.IsNullOrEmpty(orReq) && orReq != "****" && int.TryParse(orReq, out int orFeatId))
-                prereqs.OrRequiredFeats.Add(orFeatId);
-        }
-
-        // Minimum ability scores
-        var minStr = _gameDataService.Get2DAValue("feat", featId, "MINSTR");
-        if (!string.IsNullOrEmpty(minStr) && minStr != "****" && int.TryParse(minStr, out int str))
-            prereqs.MinStr = str;
-
-        var minDex = _gameDataService.Get2DAValue("feat", featId, "MINDEX");
-        if (!string.IsNullOrEmpty(minDex) && minDex != "****" && int.TryParse(minDex, out int dex))
-            prereqs.MinDex = dex;
-
-        var minInt = _gameDataService.Get2DAValue("feat", featId, "MININT");
-        if (!string.IsNullOrEmpty(minInt) && minInt != "****" && int.TryParse(minInt, out int intel))
-            prereqs.MinInt = intel;
-
-        var minWis = _gameDataService.Get2DAValue("feat", featId, "MINWIS");
-        if (!string.IsNullOrEmpty(minWis) && minWis != "****" && int.TryParse(minWis, out int wis))
-            prereqs.MinWis = wis;
-
-        var minCon = _gameDataService.Get2DAValue("feat", featId, "MINCON");
-        if (!string.IsNullOrEmpty(minCon) && minCon != "****" && int.TryParse(minCon, out int con))
-            prereqs.MinCon = con;
-
-        var minCha = _gameDataService.Get2DAValue("feat", featId, "MINCHA");
-        if (!string.IsNullOrEmpty(minCha) && minCha != "****" && int.TryParse(minCha, out int cha))
-            prereqs.MinCha = cha;
-
-        // Minimum BAB
-        var minBab = _gameDataService.Get2DAValue("feat", featId, "MINATTACKBONUS");
-        if (!string.IsNullOrEmpty(minBab) && minBab != "****" && int.TryParse(minBab, out int bab))
-            prereqs.MinBab = bab;
-
-        // Minimum spell level
-        var minSpell = _gameDataService.Get2DAValue("feat", featId, "MINSPELLLVL");
-        if (!string.IsNullOrEmpty(minSpell) && minSpell != "****" && int.TryParse(minSpell, out int spell))
-            prereqs.MinSpellLevel = spell;
-
-        // Required skills
-        var reqSkill = _gameDataService.Get2DAValue("feat", featId, "REQSKILL");
-        var reqSkillRanks = _gameDataService.Get2DAValue("feat", featId, "ReqSkillMinRanks");
-        if (!string.IsNullOrEmpty(reqSkill) && reqSkill != "****" && int.TryParse(reqSkill, out int skillId) &&
-            !string.IsNullOrEmpty(reqSkillRanks) && int.TryParse(reqSkillRanks, out int ranks))
-        {
-            prereqs.RequiredSkills.Add((skillId, ranks));
-        }
-
-        var reqSkill2 = _gameDataService.Get2DAValue("feat", featId, "REQSKILL2");
-        var reqSkillRanks2 = _gameDataService.Get2DAValue("feat", featId, "ReqSkillMinRanks2");
-        if (!string.IsNullOrEmpty(reqSkill2) && reqSkill2 != "****" && int.TryParse(reqSkill2, out int skillId2) &&
-            !string.IsNullOrEmpty(reqSkillRanks2) && int.TryParse(reqSkillRanks2, out int ranks2))
-        {
-            prereqs.RequiredSkills.Add((skillId2, ranks2));
-        }
-
-        // Level requirements
-        var minLevel = _gameDataService.Get2DAValue("feat", featId, "MinLevel");
-        var minLevelClass = _gameDataService.Get2DAValue("feat", featId, "MinLevelClass");
-        if (!string.IsNullOrEmpty(minLevel) && minLevel != "****" && int.TryParse(minLevel, out int lvl))
-        {
-            prereqs.MinLevel = lvl;
-            if (!string.IsNullOrEmpty(minLevelClass) && minLevelClass != "****" && int.TryParse(minLevelClass, out int classId))
-                prereqs.MinLevelClass = classId;
-        }
-
-        var maxLevel = _gameDataService.Get2DAValue("feat", featId, "MaxLevel");
-        if (!string.IsNullOrEmpty(maxLevel) && maxLevel != "****" && int.TryParse(maxLevel, out int max))
-            prereqs.MaxLevel = max;
-
-        // Epic requirement
-        var preReqEpic = _gameDataService.Get2DAValue("feat", featId, "PreReqEpic");
-        prereqs.RequiresEpic = preReqEpic == "1";
-
-        return prereqs;
-    }
-
-    /// <summary>
-    /// Checks if a creature meets the prerequisites for a feat.
-    /// Returns a result with details about what is/isn't met.
-    /// </summary>
-    public FeatPrereqResult CheckFeatPrerequisites(UtcFile creature, int featId, HashSet<ushort> creatureFeats)
-    {
-        var prereqs = GetFeatPrerequisites(featId);
-        var result = new FeatPrereqResult { FeatId = featId };
-
-        // Check required feats (AND)
-        foreach (var reqFeat in prereqs.RequiredFeats)
-        {
-            var met = creatureFeats.Contains((ushort)reqFeat);
-            result.RequiredFeatsMet.Add((reqFeat, GetFeatName(reqFeat), met));
-            if (!met) result.AllMet = false;
-        }
-
-        // Check or-required feats (OR - at least one)
-        if (prereqs.OrRequiredFeats.Count > 0)
-        {
-            bool anyMet = false;
-            foreach (var orFeat in prereqs.OrRequiredFeats)
-            {
-                var met = creatureFeats.Contains((ushort)orFeat);
-                result.OrRequiredFeatsMet.Add((orFeat, GetFeatName(orFeat), met));
-                if (met) anyMet = true;
-            }
-            if (!anyMet) result.AllMet = false;
-        }
-
-        // Check ability scores
-        if (prereqs.MinStr > 0)
-        {
-            var met = creature.Str >= prereqs.MinStr;
-            result.AbilityRequirements.Add(($"STR {prereqs.MinStr}+", met));
-            if (!met) result.AllMet = false;
-        }
-        if (prereqs.MinDex > 0)
-        {
-            var met = creature.Dex >= prereqs.MinDex;
-            result.AbilityRequirements.Add(($"DEX {prereqs.MinDex}+", met));
-            if (!met) result.AllMet = false;
-        }
-        if (prereqs.MinInt > 0)
-        {
-            var met = creature.Int >= prereqs.MinInt;
-            result.AbilityRequirements.Add(($"INT {prereqs.MinInt}+", met));
-            if (!met) result.AllMet = false;
-        }
-        if (prereqs.MinWis > 0)
-        {
-            var met = creature.Wis >= prereqs.MinWis;
-            result.AbilityRequirements.Add(($"WIS {prereqs.MinWis}+", met));
-            if (!met) result.AllMet = false;
-        }
-        if (prereqs.MinCon > 0)
-        {
-            var met = creature.Con >= prereqs.MinCon;
-            result.AbilityRequirements.Add(($"CON {prereqs.MinCon}+", met));
-            if (!met) result.AllMet = false;
-        }
-        if (prereqs.MinCha > 0)
-        {
-            var met = creature.Cha >= prereqs.MinCha;
-            result.AbilityRequirements.Add(($"CHA {prereqs.MinCha}+", met));
-            if (!met) result.AllMet = false;
-        }
-
-        // Check BAB
-        if (prereqs.MinBab > 0)
-        {
-            var bab = CalculateBaseAttackBonus(creature);
-            var met = bab >= prereqs.MinBab;
-            result.OtherRequirements.Add(($"BAB {prereqs.MinBab}+", met));
-            if (!met) result.AllMet = false;
-        }
-
-        // Check spell level (simplified - just note requirement)
-        if (prereqs.MinSpellLevel > 0)
-        {
-            // Can't easily check this without spell slot analysis
-            result.OtherRequirements.Add(($"Cast level {prereqs.MinSpellLevel} spells", null));
-        }
-
-        // Check skills
-        foreach (var (skillId, minRanks) in prereqs.RequiredSkills)
-        {
-            var skillName = GetSkillName(skillId);
-            var ranks = skillId < creature.SkillList.Count ? creature.SkillList[skillId] : 0;
-            var met = ranks >= minRanks;
-            result.SkillRequirements.Add(($"{skillName} {minRanks}+", met));
-            if (!met) result.AllMet = false;
-        }
-
-        // Check level
-        if (prereqs.MinLevel > 0)
-        {
-            if (prereqs.MinLevelClass.HasValue)
-            {
-                var className = GetClassName(prereqs.MinLevelClass.Value);
-                var classLevel = creature.ClassList
-                    .Where(c => c.Class == prereqs.MinLevelClass.Value)
-                    .Select(c => (int)c.ClassLevel)
-                    .FirstOrDefault();
-                var met = classLevel >= prereqs.MinLevel;
-                result.OtherRequirements.Add(($"{className} level {prereqs.MinLevel}+", met));
-                if (!met) result.AllMet = false;
-            }
-            else
-            {
-                var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
-                var met = totalLevel >= prereqs.MinLevel;
-                result.OtherRequirements.Add(($"Character level {prereqs.MinLevel}+", met));
-                if (!met) result.AllMet = false;
-            }
-        }
-
-        if (prereqs.MaxLevel > 0)
-        {
-            var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
-            var met = totalLevel <= prereqs.MaxLevel;
-            result.OtherRequirements.Add(($"Max level {prereqs.MaxLevel}", met));
-            if (!met) result.AllMet = false;
-        }
-
-        // Epic requirement
-        if (prereqs.RequiresEpic)
-        {
-            var totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
-            var met = totalLevel >= 21;
-            result.OtherRequirements.Add(("Epic (level 21+)", met));
-            if (!met) result.AllMet = false;
-        }
-
-        result.HasPrerequisites = prereqs.RequiredFeats.Count > 0 ||
-                                   prereqs.OrRequiredFeats.Count > 0 ||
-                                   prereqs.MinStr > 0 || prereqs.MinDex > 0 ||
-                                   prereqs.MinInt > 0 || prereqs.MinWis > 0 ||
-                                   prereqs.MinCon > 0 || prereqs.MinCha > 0 ||
-                                   prereqs.MinBab > 0 || prereqs.MinSpellLevel > 0 ||
-                                   prereqs.RequiredSkills.Count > 0 ||
-                                   prereqs.MinLevel > 0 || prereqs.MaxLevel > 0 ||
-                                   prereqs.RequiresEpic;
-
-        return result;
-    }
-
     #endregion
 
-    #region Appearance Methods
+    #region Delegation Methods (for backward compatibility)
 
-    /// <summary>
-    /// Gets the display name for an appearance type ID.
-    /// </summary>
-    public string GetAppearanceName(ushort appearanceId)
-    {
-        // Try 2DA/TLK lookup first
-        var strRef = _gameDataService.Get2DAValue("appearance", appearanceId, "STRING_REF");
-        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-        {
-            var tlkName = _gameDataService.GetString(strRef);
-            if (!string.IsNullOrEmpty(tlkName))
-                return tlkName;
-        }
+    // These methods delegate to focused services for backward compatibility
+    // New code should access services directly: displayService.Skills.GetSkillName(id)
 
-        // Fallback to LABEL column
-        var label = _gameDataService.Get2DAValue("appearance", appearanceId, "LABEL");
-        if (!string.IsNullOrEmpty(label) && label != "****")
-            return label;
+    public string GetSkillName(int skillId) => Skills.GetSkillName(skillId);
+    public string GetSkillKeyAbility(int skillId) => Skills.GetSkillKeyAbility(skillId);
+    public bool IsClassSkill(int classId, int skillId) => Skills.IsClassSkill(classId, skillId);
+    public HashSet<int> GetClassSkillIds(int classId) => Skills.GetClassSkillIds(classId);
+    public HashSet<int> GetCombinedClassSkillIds(UtcFile creature) => Skills.GetCombinedClassSkillIds(creature);
+    public bool IsSkillUniversal(int skillId) => Skills.IsSkillUniversal(skillId);
+    public bool IsSkillAvailable(UtcFile creature, int skillId) => Skills.IsSkillAvailable(creature, skillId);
+    public HashSet<int> GetUnavailableSkillIds(UtcFile creature, int totalSkillCount) => Skills.GetUnavailableSkillIds(creature, totalSkillCount);
 
-        return $"Appearance {appearanceId}";
-    }
+    public string GetFeatName(int featId) => Feats.GetFeatName(featId);
+    public FeatCategory GetFeatCategory(int featId) => Feats.GetFeatCategory(featId);
+    public string GetFeatDescription(int featId) => Feats.GetFeatDescription(featId);
+    public bool IsFeatUniversal(int featId) => Feats.IsFeatUniversal(featId);
+    public List<int> GetAllFeatIds() => Feats.GetAllFeatIds();
+    public FeatInfo GetFeatInfo(int featId) => Feats.GetFeatInfo(featId);
+    public HashSet<int> GetClassGrantedFeatIds(int classId) => Feats.GetClassGrantedFeatIds(classId);
+    public HashSet<int> GetCombinedGrantedFeatIds(UtcFile creature) => Feats.GetCombinedGrantedFeatIds(creature);
+    public bool IsFeatAvailable(UtcFile creature, int featId) => Feats.IsFeatAvailable(creature, featId);
+    public HashSet<int> GetUnavailableFeatIds(UtcFile creature, IEnumerable<int> allFeatIds) => Feats.GetUnavailableFeatIds(creature, allFeatIds);
+    public FeatPrerequisites GetFeatPrerequisites(int featId) => Feats.GetFeatPrerequisites(featId);
 
-    /// <summary>
-    /// Checks if an appearance type is part-based (dynamic).
-    /// Returns true if MODELTYPE is "P" in appearance.2da.
-    /// </summary>
-    public bool IsPartBasedAppearance(ushort appearanceId)
-    {
-        var modelType = _gameDataService.Get2DAValue("appearance", appearanceId, "MODELTYPE");
-        return modelType?.ToUpperInvariant() == "P";
-    }
+    public FeatPrereqResult CheckFeatPrerequisites(UtcFile creature, int featId, HashSet<ushort> creatureFeats) =>
+        Feats.CheckFeatPrerequisites(creature, featId, creatureFeats, CalculateBaseAttackBonus, GetClassName);
 
-    /// <summary>
-    /// Gets the size AC modifier for a creature based on its appearance.
-    /// Looks up SIZECATEGORY from appearance.2da and returns the AC modifier.
-    /// D&D 3e size categories: Tiny +2, Small +1, Medium 0, Large -1, Huge -2
-    /// </summary>
-    public int GetSizeAcModifier(ushort appearanceId)
-    {
-        var sizeCategoryStr = _gameDataService.Get2DAValue("appearance", appearanceId, "SIZECATEGORY");
-        if (string.IsNullOrEmpty(sizeCategoryStr) || sizeCategoryStr == "****")
-            return 0; // Default to Medium (no modifier)
+    public string GetAppearanceName(ushort appearanceId) => Appearances.GetAppearanceName(appearanceId);
+    public bool IsPartBasedAppearance(ushort appearanceId) => Appearances.IsPartBasedAppearance(appearanceId);
+    public int GetSizeAcModifier(ushort appearanceId) => Appearances.GetSizeAcModifier(appearanceId);
+    public List<AppearanceInfo> GetAllAppearances() => Appearances.GetAllAppearances();
+    public string GetPhenotypeName(int phenotype) => Appearances.GetPhenotypeName(phenotype);
+    public List<PhenotypeInfo> GetAllPhenotypes() => Appearances.GetAllPhenotypes();
+    public string GetPortraitName(ushort portraitId) => Appearances.GetPortraitName(portraitId);
+    public string? GetPortraitResRef(ushort portraitId) => Appearances.GetPortraitResRef(portraitId);
+    public List<(ushort Id, string Name)> GetAllPortraits() => Appearances.GetAllPortraits();
+    public string GetWingName(byte wingId) => Appearances.GetWingName(wingId);
+    public string GetTailName(byte tailId) => Appearances.GetTailName(tailId);
+    public List<(byte Id, string Name)> GetAllWings() => Appearances.GetAllWings();
+    public List<(byte Id, string Name)> GetAllTails() => Appearances.GetAllTails();
+    public List<(ushort Id, string Name)> GetAllSoundSets() => Appearances.GetAllSoundSets();
+    public List<(ushort Id, string Name)> GetAllFactions(string? moduleDirectory = null) => Appearances.GetAllFactions(moduleDirectory);
+    public string GetPackageName(byte packageId) => Appearances.GetPackageName(packageId);
+    public List<(byte Id, string Name)> GetAllPackages() => Appearances.GetAllPackages();
 
-        if (!int.TryParse(sizeCategoryStr, out int sizeCategory))
-            return 0;
-
-        // NWN creaturesize.2da indices and corresponding AC modifiers:
-        // 0 = Invalid, 1 = Tiny (+2), 2 = Small (+1), 3 = Medium (0),
-        // 4 = Large (-1), 5 = Huge (-2), 6 = Gargantuan (-4), 7 = Colossal (-8)
-        return sizeCategory switch
-        {
-            1 => 2,   // Tiny
-            2 => 1,   // Small
-            3 => 0,   // Medium
-            4 => -1,  // Large
-            5 => -2,  // Huge
-            6 => -4,  // Gargantuan (extrapolated)
-            7 => -8,  // Colossal (extrapolated)
-            _ => 0    // Default/Invalid
-        };
-    }
-
-    /// <summary>
-    /// Gets all appearance IDs from appearance.2da.
-    /// Returns list of (id, name, isPartBased) tuples.
-    /// </summary>
-    public List<AppearanceInfo> GetAllAppearances()
-    {
-        var appearances = new List<AppearanceInfo>();
-
-        // appearance.2da can have 500+ rows
-        for (int i = 0; i < 1000; i++)
-        {
-            var label = _gameDataService.Get2DAValue("appearance", i, "LABEL");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (appearances.Count > 100)
-                    break;
-                continue;
-            }
-
-            var modelType = _gameDataService.Get2DAValue("appearance", i, "MODELTYPE");
-            var isPartBased = modelType?.ToUpperInvariant() == "P";
-
-            appearances.Add(new AppearanceInfo
-            {
-                AppearanceId = (ushort)i,
-                Name = GetAppearanceName((ushort)i),
-                Label = label,
-                IsPartBased = isPartBased
-            });
-        }
-
-        return appearances;
-    }
-
-    /// <summary>
-    /// Gets the display name for a phenotype.
-    /// </summary>
-    public string GetPhenotypeName(int phenotype)
-    {
-        // Try 2DA/TLK lookup first
-        var strRef = _gameDataService.Get2DAValue("phenotype", phenotype, "Name");
-        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-        {
-            var tlkName = _gameDataService.GetString(strRef);
-            if (!string.IsNullOrEmpty(tlkName))
-                return tlkName;
-        }
-
-        // Fallback to hardcoded names
-        return phenotype switch
-        {
-            0 => "Normal",
-            2 => "Large",
-            _ => $"Phenotype {phenotype}"
-        };
-    }
-
-    /// <summary>
-    /// Gets all phenotypes from phenotype.2da.
-    /// </summary>
-    public List<PhenotypeInfo> GetAllPhenotypes()
-    {
-        var phenotypes = new List<PhenotypeInfo>();
-
-        // phenotype.2da typically has only a few entries
-        for (int i = 0; i < 20; i++)
-        {
-            var label = _gameDataService.Get2DAValue("phenotype", i, "Label");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (phenotypes.Count > 0)
-                    break;
-                continue;
-            }
-
-            phenotypes.Add(new PhenotypeInfo
-            {
-                PhenotypeId = i,
-                Name = GetPhenotypeName(i),
-                Label = label
-            });
-        }
-
-        // If no 2DA data, return hardcoded defaults
-        if (phenotypes.Count == 0)
-        {
-            phenotypes.Add(new PhenotypeInfo { PhenotypeId = 0, Name = "Normal", Label = "Normal" });
-            phenotypes.Add(new PhenotypeInfo { PhenotypeId = 2, Name = "Large", Label = "Large" });
-        }
-
-        return phenotypes;
-    }
-
-    /// <summary>
-    /// Gets the display name for a portrait ID.
-    /// </summary>
-    public string GetPortraitName(ushort portraitId)
-    {
-        // Try 2DA lookup - portraits.2da has BaseResRef column
-        var baseResRef = _gameDataService.Get2DAValue("portraits", portraitId, "BaseResRef");
-        if (!string.IsNullOrEmpty(baseResRef) && baseResRef != "****")
-            return baseResRef;
-
-        return $"Portrait {portraitId}";
-    }
-
-    /// <summary>
-    /// Gets the portrait resref for loading the image.
-    /// </summary>
-    public string? GetPortraitResRef(ushort portraitId)
-    {
-        var baseResRef = _gameDataService.Get2DAValue("portraits", portraitId, "BaseResRef");
-        if (!string.IsNullOrEmpty(baseResRef) && baseResRef != "****")
-            return baseResRef;
-        return null;
-    }
-
-    /// <summary>
-    /// Gets the display name for a wing type.
-    /// </summary>
-    public string GetWingName(byte wingId)
-    {
-        if (wingId == 0)
-            return "None";
-
-        var label = _gameDataService.Get2DAValue("wingmodel", wingId, "LABEL");
-        if (!string.IsNullOrEmpty(label) && label != "****")
-            return label;
-
-        return $"Wings {wingId}";
-    }
-
-    /// <summary>
-    /// Gets the display name for a tail type.
-    /// </summary>
-    public string GetTailName(byte tailId)
-    {
-        if (tailId == 0)
-            return "None";
-
-        var label = _gameDataService.Get2DAValue("tailmodel", tailId, "LABEL");
-        if (!string.IsNullOrEmpty(label) && label != "****")
-            return label;
-
-        return $"Tail {tailId}";
-    }
-
-    /// <summary>
-    /// Gets all wing types from wingmodel.2da.
-    /// </summary>
-    public List<(byte Id, string Name)> GetAllWings()
-    {
-        var wings = new List<(byte Id, string Name)> { (0, "None") };
-
-        for (int i = 1; i < 50; i++)
-        {
-            var label = _gameDataService.Get2DAValue("wingmodel", i, "LABEL");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (wings.Count > 5)
-                    break;
-                continue;
-            }
-
-            wings.Add(((byte)i, label));
-        }
-
-        return wings;
-    }
-
-    /// <summary>
-    /// Gets all tail types from tailmodel.2da.
-    /// </summary>
-    public List<(byte Id, string Name)> GetAllTails()
-    {
-        var tails = new List<(byte Id, string Name)> { (0, "None") };
-
-        for (int i = 1; i < 50; i++)
-        {
-            var label = _gameDataService.Get2DAValue("tailmodel", i, "LABEL");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (tails.Count > 5)
-                    break;
-                continue;
-            }
-
-            tails.Add(((byte)i, label));
-        }
-
-        return tails;
-    }
-
-    /// <summary>
-    /// Gets all portraits from portraits.2da.
-    /// </summary>
-    public List<(ushort Id, string Name)> GetAllPortraits()
-    {
-        var portraits = new List<(ushort Id, string Name)>();
-
-        // portraits.2da typically has 100+ rows
-        for (int i = 0; i < 500; i++)
-        {
-            var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");
-            if (string.IsNullOrEmpty(baseResRef) || baseResRef == "****")
-            {
-                if (portraits.Count > 50)
-                    break;
-                continue;
-            }
-
-            portraits.Add(((ushort)i, baseResRef));
-        }
-
-        return portraits;
-    }
-
-    /// <summary>
-    /// Gets all sound sets from soundset.2da.
-    /// </summary>
-    public List<(ushort Id, string Name)> GetAllSoundSets()
-    {
-        var soundSets = new List<(ushort Id, string Name)>();
-
-        // soundset.2da can have many rows
-        for (int i = 0; i < 500; i++)
-        {
-            var label = _gameDataService.Get2DAValue("soundset", i, "LABEL");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                if (soundSets.Count > 50)
-                    break;
-                continue;
-            }
-
-            // Try to get STRREF for localized name
-            var strRef = _gameDataService.Get2DAValue("soundset", i, "STRREF");
-            string displayName;
-            if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-            {
-                var tlkName = _gameDataService.GetString(strRef);
-                displayName = !string.IsNullOrEmpty(tlkName) ? tlkName : label;
-            }
-            else
-            {
-                displayName = label;
-            }
-
-            soundSets.Add(((ushort)i, displayName));
-        }
-
-        return soundSets;
-    }
-
-    /// <summary>
-    /// Gets all factions from repute.fac or returns default NWN factions.
-    /// Faction data is stored in repute.fac within the module working directory.
-    /// </summary>
-    /// <param name="moduleDirectory">Optional path to the module directory containing repute.fac</param>
-    public List<(ushort Id, string Name)> GetAllFactions(string? moduleDirectory = null)
-    {
-        // Try to load factions from repute.fac in the module directory
-        if (!string.IsNullOrEmpty(moduleDirectory))
-        {
-            try
-            {
-                var facPath = Path.Combine(moduleDirectory, "repute.fac");
-                if (File.Exists(facPath))
-                {
-                    var facFile = Radoub.Formats.Fac.FacReader.Read(facPath);
-                    if (facFile.FactionList.Count > 0)
-                    {
-                        var factions = new List<(ushort Id, string Name)>();
-                        for (int i = 0; i < facFile.FactionList.Count; i++)
-                        {
-                            var faction = facFile.FactionList[i];
-                            var displayName = string.IsNullOrEmpty(faction.FactionName)
-                                ? $"Faction {i}"
-                                : faction.FactionName;
-                            factions.Add(((ushort)i, displayName));
-                        }
-                        return factions;
-                    }
-                }
-            }
-            catch
-            {
-                // Fall through to defaults if parsing fails
-            }
-        }
-
-        // Standard NWN factions (fallback when repute.fac unavailable)
-        return new List<(ushort Id, string Name)>
-        {
-            (0, "PC"),
-            (1, "Hostile"),
-            (2, "Commoner"),
-            (3, "Merchant"),
-            (4, "Defender")
-        };
-    }
+    public string GetSpellName(int spellId) => Spells.GetSpellName(spellId);
+    public List<int> GetAllSpellIds() => Spells.GetAllSpellIds();
+    public SpellInfo? GetSpellInfo(int spellId) => Spells.GetSpellInfo(spellId);
+    public string GetSpellSchoolName(SpellSchool school) => SpellService.GetSpellSchoolName(school);
+    public int GetMaxSpellLevel(int classId, int classLevel) => Spells.GetMaxSpellLevel(classId, classLevel);
+    public bool IsCasterClass(int classId) => Spells.IsCasterClass(classId);
+    public bool IsSpontaneousCaster(int classId) => Spells.IsSpontaneousCaster(classId);
+    public int[]? GetSpellSlots(int classId, int classLevel) => Spells.GetSpellSlots(classId, classLevel);
 
     #endregion
-
-    #region Package Methods
-
-    /// <summary>
-    /// Gets the display name for a package (auto-levelup preset) ID.
-    /// </summary>
-    public string GetPackageName(byte packageId)
-    {
-        // Try 2DA/TLK lookup first
-        var strRef = _gameDataService.Get2DAValue("packages", packageId, "Name");
-        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-        {
-            var tlkName = _gameDataService.GetString(strRef);
-            if (!string.IsNullOrEmpty(tlkName))
-                return tlkName;
-        }
-
-        // Fallback to Label column
-        var label = _gameDataService.Get2DAValue("packages", packageId, "Label");
-        if (!string.IsNullOrEmpty(label) && label != "****")
-            return label;
-
-        return $"Package {packageId}";
-    }
-
-    /// <summary>
-    /// Gets all packages from packages.2da.
-    /// Returns list of (id, name) tuples sorted by name.
-    /// </summary>
-    public List<(byte Id, string Name)> GetAllPackages()
-    {
-        var packages = new List<(byte Id, string Name)>();
-
-        // packages.2da can have 100+ rows (base classes + variants)
-        for (int i = 0; i < 256; i++)
-        {
-            var label = _gameDataService.Get2DAValue("packages", i, "Label");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                // Stop after we've found some packages and hit a gap
-                if (packages.Count > 20 && i > 50)
-                    break;
-                continue;
-            }
-
-            var name = GetPackageName((byte)i);
-            packages.Add(((byte)i, name));
-        }
-
-        // Sort alphabetically by name for easier selection
-        packages.Sort((a, b) => string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase));
-        return packages;
-    }
-
-    #endregion
-
-    #region Spell Methods
-
-    /// <summary>
-    /// Gets all valid spell IDs from spells.2da.
-    /// </summary>
-    public List<int> GetAllSpellIds()
-    {
-        var spellIds = new List<int>();
-
-        // spells.2da can have 700+ rows
-        for (int i = 0; i < 1000; i++)
-        {
-            var label = _gameDataService.Get2DAValue("spells", i, "Label");
-            if (string.IsNullOrEmpty(label) || label == "****")
-            {
-                // Check if we've found spells - if yes, we've hit the end
-                if (spellIds.Count > 100)
-                    break;
-                continue;
-            }
-
-            var spellName = _gameDataService.Get2DAValue("spells", i, "Name");
-            // Skip spells with no name (internal/unused)
-            if (string.IsNullOrEmpty(spellName) || spellName == "****")
-                continue;
-
-            spellIds.Add(i);
-        }
-
-        return spellIds;
-    }
-
-    /// <summary>
-    /// Gets detailed spell information from spells.2da.
-    /// </summary>
-    public SpellInfo? GetSpellInfo(int spellId)
-    {
-        var label = _gameDataService.Get2DAValue("spells", spellId, "Label");
-        if (string.IsNullOrEmpty(label) || label == "****")
-            return null;
-
-        var info = new SpellInfo
-        {
-            SpellId = spellId,
-            Name = GetSpellName(spellId)
-        };
-
-        // Innate level
-        var innateStr = _gameDataService.Get2DAValue("spells", spellId, "Innate");
-        if (!string.IsNullOrEmpty(innateStr) && innateStr != "****" && int.TryParse(innateStr, out int innate))
-            info.InnateLevel = innate;
-
-        // School
-        var schoolStr = _gameDataService.Get2DAValue("spells", spellId, "School");
-        if (!string.IsNullOrEmpty(schoolStr) && schoolStr != "****")
-        {
-            info.School = schoolStr.ToUpperInvariant() switch
-            {
-                "A" => SpellSchool.Abjuration,
-                "C" => SpellSchool.Conjuration,
-                "D" => SpellSchool.Divination,
-                "E" => SpellSchool.Enchantment,
-                "V" => SpellSchool.Evocation,
-                "I" => SpellSchool.Illusion,
-                "N" => SpellSchool.Necromancy,
-                "T" => SpellSchool.Transmutation,
-                _ => SpellSchool.Unknown
-            };
-        }
-
-        // Class spell levels
-        // Bard = Class 1
-        var bardLevel = _gameDataService.Get2DAValue("spells", spellId, "Bard");
-        if (!string.IsNullOrEmpty(bardLevel) && bardLevel != "****" && int.TryParse(bardLevel, out int bard))
-            info.ClassLevels[1] = bard;
-
-        // Cleric = Class 2
-        var clericLevel = _gameDataService.Get2DAValue("spells", spellId, "Cleric");
-        if (!string.IsNullOrEmpty(clericLevel) && clericLevel != "****" && int.TryParse(clericLevel, out int cleric))
-            info.ClassLevels[2] = cleric;
-
-        // Druid = Class 3
-        var druidLevel = _gameDataService.Get2DAValue("spells", spellId, "Druid");
-        if (!string.IsNullOrEmpty(druidLevel) && druidLevel != "****" && int.TryParse(druidLevel, out int druid))
-            info.ClassLevels[3] = druid;
-
-        // Paladin = Class 6
-        var paladinLevel = _gameDataService.Get2DAValue("spells", spellId, "Paladin");
-        if (!string.IsNullOrEmpty(paladinLevel) && paladinLevel != "****" && int.TryParse(paladinLevel, out int paladin))
-            info.ClassLevels[6] = paladin;
-
-        // Ranger = Class 7
-        var rangerLevel = _gameDataService.Get2DAValue("spells", spellId, "Ranger");
-        if (!string.IsNullOrEmpty(rangerLevel) && rangerLevel != "****" && int.TryParse(rangerLevel, out int ranger))
-            info.ClassLevels[7] = ranger;
-
-        // Wizard/Sorcerer = Classes 9 and 10 (use Wiz_Sorc column)
-        var wizSorcLevel = _gameDataService.Get2DAValue("spells", spellId, "Wiz_Sorc");
-        if (!string.IsNullOrEmpty(wizSorcLevel) && wizSorcLevel != "****" && int.TryParse(wizSorcLevel, out int wizsorc))
-        {
-            info.ClassLevels[9] = wizsorc;  // Sorcerer
-            info.ClassLevels[10] = wizsorc; // Wizard
-        }
-
-        return info;
-    }
-
-    /// <summary>
-    /// Gets the spell school name.
-    /// </summary>
-    public string GetSpellSchoolName(SpellSchool school)
-    {
-        return school switch
-        {
-            SpellSchool.Abjuration => "Abjuration",
-            SpellSchool.Conjuration => "Conjuration",
-            SpellSchool.Divination => "Divination",
-            SpellSchool.Enchantment => "Enchantment",
-            SpellSchool.Evocation => "Evocation",
-            SpellSchool.Illusion => "Illusion",
-            SpellSchool.Necromancy => "Necromancy",
-            SpellSchool.Transmutation => "Transmutation",
-            _ => "General"
-        };
-    }
-
-    /// <summary>
-    /// Gets the maximum spell level a class can cast at a given class level.
-    /// Uses the cls_spgn_*.2da tables referenced from classes.2da SpellGainTable column.
-    /// </summary>
-    /// <param name="classId">The class ID</param>
-    /// <param name="classLevel">The level in that class</param>
-    /// <returns>Maximum spell level (0-9), or -1 if not a caster class</returns>
-    public int GetMaxSpellLevel(int classId, int classLevel)
-    {
-        // Get the spell gain table name from classes.2da
-        var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
-        if (string.IsNullOrEmpty(spellGainTable) || spellGainTable == "****")
-            return -1; // Not a caster class
-
-        // cls_spgn_*.2da has rows for class levels (0-indexed, so level 1 = row 0)
-        // and columns for spell levels (NumSpellLevels0, NumSpellLevels1, etc.)
-        // A value > 0 means the class can cast spells of that level at that class level
-        int rowIndex = classLevel - 1;
-        if (rowIndex < 0) return -1;
-
-        int maxSpellLevel = -1;
-
-        // Check spell levels 0-9
-        for (int spellLevel = 0; spellLevel <= 9; spellLevel++)
-        {
-            var columnName = $"NumSpellLevels{spellLevel}";
-            var slotsStr = _gameDataService.Get2DAValue(spellGainTable, rowIndex, columnName);
-
-            if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" && slotsStr != "-")
-            {
-                if (int.TryParse(slotsStr, out int slots) && slots > 0)
-                {
-                    maxSpellLevel = spellLevel;
-                }
-            }
-        }
-
-        return maxSpellLevel;
-    }
-
-    /// <summary>
-    /// Checks if a class is a spellcasting class.
-    /// </summary>
-    public bool IsCasterClass(int classId)
-    {
-        var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
-        return !string.IsNullOrEmpty(spellGainTable) && spellGainTable != "****";
-    }
-
-    /// <summary>
-    /// Checks if a class is a spontaneous caster (Sorcerer, Bard).
-    /// Spontaneous casters don't memorize spells - they can cast any known spell using available slots.
-    /// </summary>
-    public bool IsSpontaneousCaster(int classId)
-    {
-        // Check MemorizesSpells column in classes.2da
-        // 1 = prepared caster (Wizard, Cleric, etc.) - DOES memorize spells
-        // 0 or **** = spontaneous caster (Sorcerer, Bard) - does NOT memorize spells
-        var memorizesSpells = _gameDataService.Get2DAValue("classes", classId, "MemorizesSpells");
-        if (!string.IsNullOrEmpty(memorizesSpells) && memorizesSpells != "****")
-        {
-            if (int.TryParse(memorizesSpells, out int value))
-            {
-                // If MemorizesSpells = 1, class memorizes, so NOT spontaneous
-                // If MemorizesSpells = 0, class doesn't memorize, so IS spontaneous
-                return value != 1;
-            }
-        }
-        // Default: if no value or ****, assume spontaneous (disable memorize column)
-        return true;
-    }
-
-    /// <summary>
-    /// Gets the number of spell slots available at each spell level for a class at a given level.
-    /// </summary>
-    /// <param name="classId">The class ID</param>
-    /// <param name="classLevel">The level in that class</param>
-    /// <returns>Array of 10 integers (indices 0-9) with slot counts per spell level, or null if not a caster</returns>
-    public int[]? GetSpellSlots(int classId, int classLevel)
-    {
-        var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
-        if (string.IsNullOrEmpty(spellGainTable) || spellGainTable == "****")
-            return null;
-
-        int rowIndex = classLevel - 1;
-        if (rowIndex < 0) return null;
-
-        var slots = new int[10];
-
-        for (int spellLevel = 0; spellLevel <= 9; spellLevel++)
-        {
-            var columnName = $"NumSpellLevels{spellLevel}";
-            var slotsStr = _gameDataService.Get2DAValue(spellGainTable, rowIndex, columnName);
-
-            if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" && slotsStr != "-")
-            {
-                if (int.TryParse(slotsStr, out int count))
-                {
-                    slots[spellLevel] = count;
-                }
-            }
-        }
-
-        return slots;
-    }
-
-    #endregion
-}
-
-/// <summary>
-/// Spell schools from spells.2da
-/// </summary>
-public enum SpellSchool
-{
-    Abjuration = 0,
-    Conjuration = 1,
-    Divination = 2,
-    Enchantment = 3,
-    Evocation = 4,
-    Illusion = 5,
-    Necromancy = 6,
-    Transmutation = 7,
-    Unknown = -1
-}
-
-/// <summary>
-/// Spell information from spells.2da
-/// </summary>
-public class SpellInfo
-{
-    public int SpellId { get; set; }
-    public string Name { get; set; } = "";
-    public int InnateLevel { get; set; }
-    public SpellSchool School { get; set; }
-
-    /// <summary>
-    /// Spell levels by class ID.
-    /// </summary>
-    public Dictionary<int, int> ClassLevels { get; set; } = new();
-
-    /// <summary>
-    /// Gets the spell level for a specific class, or -1 if not available.
-    /// </summary>
-    public int GetLevelForClass(int classId)
-    {
-        return ClassLevels.TryGetValue(classId, out int level) ? level : -1;
-    }
 }
 
 /// <summary>
@@ -1851,132 +464,4 @@ public class RacialModifiers
     public int Int { get; set; }
     public int Wis { get; set; }
     public int Cha { get; set; }
-}
-
-/// <summary>
-/// Feat category from TOOLSCATEGORIES column in feat.2da.
-/// </summary>
-public enum FeatCategory
-{
-    Combat = 1,
-    ActiveCombat = 2,
-    Defensive = 3,
-    Magical = 4,
-    ClassRacial = 5,
-    Other = 6
-}
-
-/// <summary>
-/// Detailed feat information for display.
-/// </summary>
-public class FeatInfo
-{
-    public int FeatId { get; set; }
-    public string Name { get; set; } = "";
-    public string Description { get; set; } = "";
-    public FeatCategory Category { get; set; }
-    public bool IsUniversal { get; set; }
-}
-
-/// <summary>
-/// Raw prerequisites data from feat.2da.
-/// </summary>
-public class FeatPrerequisites
-{
-    public int FeatId { get; set; }
-    public List<int> RequiredFeats { get; set; } = new();
-    public List<int> OrRequiredFeats { get; set; } = new();
-    public int MinStr { get; set; }
-    public int MinDex { get; set; }
-    public int MinInt { get; set; }
-    public int MinWis { get; set; }
-    public int MinCon { get; set; }
-    public int MinCha { get; set; }
-    public int MinBab { get; set; }
-    public int MinSpellLevel { get; set; }
-    public List<(int SkillId, int MinRanks)> RequiredSkills { get; set; } = new();
-    public int MinLevel { get; set; }
-    public int? MinLevelClass { get; set; }
-    public int MaxLevel { get; set; }
-    public bool RequiresEpic { get; set; }
-}
-
-/// <summary>
-/// Result of checking feat prerequisites against a creature.
-/// </summary>
-public class FeatPrereqResult
-{
-    public int FeatId { get; set; }
-    public bool AllMet { get; set; } = true;
-    public bool HasPrerequisites { get; set; }
-
-    /// <summary>Required feats (AND): (FeatId, FeatName, Met)</summary>
-    public List<(int FeatId, string Name, bool Met)> RequiredFeatsMet { get; set; } = new();
-
-    /// <summary>Or-required feats (OR - need at least one): (FeatId, FeatName, Met)</summary>
-    public List<(int FeatId, string Name, bool Met)> OrRequiredFeatsMet { get; set; } = new();
-
-    /// <summary>Ability requirements: (Description, Met)</summary>
-    public List<(string Description, bool Met)> AbilityRequirements { get; set; } = new();
-
-    /// <summary>Skill requirements: (Description, Met)</summary>
-    public List<(string Description, bool Met)> SkillRequirements { get; set; } = new();
-
-    /// <summary>Other requirements: (Description, Met or null if unknown)</summary>
-    public List<(string Description, bool? Met)> OtherRequirements { get; set; } = new();
-
-    /// <summary>
-    /// Builds a tooltip string showing all prerequisites and their status.
-    /// </summary>
-    public string GetTooltip()
-    {
-        if (!HasPrerequisites)
-            return "No prerequisites";
-
-        var lines = new List<string>();
-        lines.Add("Prerequisites:");
-
-        foreach (var (_, name, met) in RequiredFeatsMet)
-            lines.Add($"  {(met ? "✓" : "✗")} {name}");
-
-        if (OrRequiredFeatsMet.Count > 0)
-        {
-            var anyMet = OrRequiredFeatsMet.Any(o => o.Met);
-            lines.Add($"  {(anyMet ? "✓" : "✗")} One of:");
-            foreach (var (_, name, met) in OrRequiredFeatsMet)
-                lines.Add($"    {(met ? "✓" : "○")} {name}");
-        }
-
-        foreach (var (desc, met) in AbilityRequirements)
-            lines.Add($"  {(met ? "✓" : "✗")} {desc}");
-
-        foreach (var (desc, met) in SkillRequirements)
-            lines.Add($"  {(met ? "✓" : "✗")} {desc}");
-
-        foreach (var (desc, met) in OtherRequirements)
-            lines.Add($"  {(met.HasValue ? (met.Value ? "✓" : "✗") : "?")} {desc}");
-
-        return string.Join("\n", lines);
-    }
-}
-
-/// <summary>
-/// Appearance information from appearance.2da.
-/// </summary>
-public class AppearanceInfo
-{
-    public ushort AppearanceId { get; set; }
-    public string Name { get; set; } = "";
-    public string Label { get; set; } = "";
-    public bool IsPartBased { get; set; }
-}
-
-/// <summary>
-/// Phenotype information from phenotype.2da.
-/// </summary>
-public class PhenotypeInfo
-{
-    public int PhenotypeId { get; set; }
-    public string Name { get; set; } = "";
-    public string Label { get; set; } = "";
 }

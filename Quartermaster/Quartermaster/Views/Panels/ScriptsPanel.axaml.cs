@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
+using Quartermaster.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
@@ -13,11 +14,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace Quartermaster.Views.Panels;
 
-public partial class ScriptsPanel : UserControl
+public partial class ScriptsPanel : BasePanelControl
 {
     private TextBlock? _scriptsSummaryText;
     private ItemsControl? _scriptsList;
@@ -28,15 +28,10 @@ public partial class ScriptsPanel : UserControl
     private Button? _openInParleyButton;
 
     private ObservableCollection<ScriptViewModel> _scripts = new();
-    private UtcFile? _currentCreature;
     private string? _currentFilePath;
     private IGameDataService? _gameDataService;
     private Func<string, string?>? _resolveConversationPath;
-    private bool _isLoading;
 
-    /// <summary>
-    /// Raised when any script value is modified.
-    /// </summary>
     public event EventHandler? ScriptsChanged;
 
     public ScriptsPanel()
@@ -63,64 +58,46 @@ public partial class ScriptsPanel : UserControl
         }
 
         if (_conversationTextBox != null)
-        {
             _conversationTextBox.TextChanged += OnConversationTextChanged;
-        }
 
         if (_browseConversationButton != null)
-        {
             _browseConversationButton.Click += OnBrowseConversationClick;
-        }
 
         if (_clearConversationButton != null)
-        {
             _clearConversationButton.Click += OnClearConversationClick;
-        }
 
         if (_openInParleyButton != null)
-        {
             _openInParleyButton.Click += OnOpenInParleyClick;
-        }
     }
 
-    /// <summary>
-    /// Set the game data service for script browsing.
-    /// </summary>
     public void SetGameDataService(IGameDataService? gameDataService)
     {
         _gameDataService = gameDataService;
     }
 
-    /// <summary>
-    /// Set the current file path for context-aware script browsing.
-    /// </summary>
     public void SetCurrentFilePath(string? filePath)
     {
         _currentFilePath = filePath;
     }
 
-    /// <summary>
-    /// Set a callback to resolve conversation resref to full file path.
-    /// </summary>
     public void SetConversationResolver(Func<string, string?> resolver)
     {
         _resolveConversationPath = resolver;
     }
 
-    public void LoadCreature(UtcFile? creature)
+    public override void LoadCreature(UtcFile? creature)
     {
-        _isLoading = true;
+        IsLoading = true;
         _scripts.Clear();
-        _currentCreature = creature;
+        CurrentCreature = creature;
 
         if (creature == null)
         {
             ClearPanel();
-            _isLoading = false;
+            IsLoading = false;
             return;
         }
 
-        // Add all script events with field references for updating
         AddScript("OnSpawnIn", creature.ScriptSpawn, nameof(UtcFile.ScriptSpawn));
         AddScript("OnHeartbeat", creature.ScriptHeartbeat, nameof(UtcFile.ScriptHeartbeat));
         AddScript("OnPerception", creature.ScriptOnNotice, nameof(UtcFile.ScriptOnNotice));
@@ -137,15 +114,10 @@ public partial class ScriptsPanel : UserControl
 
         UpdateSummary();
 
-        // Conversation
-        if (_conversationTextBox != null)
-        {
-            _conversationTextBox.Text = creature.Conversation ?? "";
-        }
+        SetTextBox(_conversationTextBox, creature.Conversation ?? "");
         UpdateParleyButtonVisibility();
 
-        // Defer clearing _isLoading until after dispatcher processes queued TextChanged events
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
+        DeferLoadingReset();
     }
 
     private void AddScript(string eventName, string scriptResRef, string fieldName)
@@ -160,20 +132,17 @@ public partial class ScriptsPanel : UserControl
             ClearButtonId = $"Clear_{fieldName}"
         };
 
-        // Subscribe to property changes to update creature and fire event
         vm.PropertyChanged += OnScriptPropertyChanged;
-
         _scripts.Add(vm);
     }
 
     private void OnScriptPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null || sender is not ScriptViewModel vm)
+        if (IsLoading || CurrentCreature == null || sender is not ScriptViewModel vm)
             return;
 
         if (e.PropertyName == nameof(ScriptViewModel.ScriptResRef))
         {
-            // Update the creature's script field
             UpdateCreatureScript(vm.FieldName, vm.ScriptResRef);
             UpdateSummary();
             ScriptsChanged?.Invoke(this, EventArgs.Empty);
@@ -182,50 +151,23 @@ public partial class ScriptsPanel : UserControl
 
     private void UpdateCreatureScript(string fieldName, string value)
     {
-        if (_currentCreature == null)
-            return;
+        if (CurrentCreature == null) return;
 
         switch (fieldName)
         {
-            case nameof(UtcFile.ScriptSpawn):
-                _currentCreature.ScriptSpawn = value;
-                break;
-            case nameof(UtcFile.ScriptHeartbeat):
-                _currentCreature.ScriptHeartbeat = value;
-                break;
-            case nameof(UtcFile.ScriptOnNotice):
-                _currentCreature.ScriptOnNotice = value;
-                break;
-            case nameof(UtcFile.ScriptDialogue):
-                _currentCreature.ScriptDialogue = value;
-                break;
-            case nameof(UtcFile.ScriptAttacked):
-                _currentCreature.ScriptAttacked = value;
-                break;
-            case nameof(UtcFile.ScriptDamaged):
-                _currentCreature.ScriptDamaged = value;
-                break;
-            case nameof(UtcFile.ScriptDeath):
-                _currentCreature.ScriptDeath = value;
-                break;
-            case nameof(UtcFile.ScriptDisturbed):
-                _currentCreature.ScriptDisturbed = value;
-                break;
-            case nameof(UtcFile.ScriptEndRound):
-                _currentCreature.ScriptEndRound = value;
-                break;
-            case nameof(UtcFile.ScriptOnBlocked):
-                _currentCreature.ScriptOnBlocked = value;
-                break;
-            case nameof(UtcFile.ScriptRested):
-                _currentCreature.ScriptRested = value;
-                break;
-            case nameof(UtcFile.ScriptSpellAt):
-                _currentCreature.ScriptSpellAt = value;
-                break;
-            case nameof(UtcFile.ScriptUserDefine):
-                _currentCreature.ScriptUserDefine = value;
-                break;
+            case nameof(UtcFile.ScriptSpawn): CurrentCreature.ScriptSpawn = value; break;
+            case nameof(UtcFile.ScriptHeartbeat): CurrentCreature.ScriptHeartbeat = value; break;
+            case nameof(UtcFile.ScriptOnNotice): CurrentCreature.ScriptOnNotice = value; break;
+            case nameof(UtcFile.ScriptDialogue): CurrentCreature.ScriptDialogue = value; break;
+            case nameof(UtcFile.ScriptAttacked): CurrentCreature.ScriptAttacked = value; break;
+            case nameof(UtcFile.ScriptDamaged): CurrentCreature.ScriptDamaged = value; break;
+            case nameof(UtcFile.ScriptDeath): CurrentCreature.ScriptDeath = value; break;
+            case nameof(UtcFile.ScriptDisturbed): CurrentCreature.ScriptDisturbed = value; break;
+            case nameof(UtcFile.ScriptEndRound): CurrentCreature.ScriptEndRound = value; break;
+            case nameof(UtcFile.ScriptOnBlocked): CurrentCreature.ScriptOnBlocked = value; break;
+            case nameof(UtcFile.ScriptRested): CurrentCreature.ScriptRested = value; break;
+            case nameof(UtcFile.ScriptSpellAt): CurrentCreature.ScriptSpellAt = value; break;
+            case nameof(UtcFile.ScriptUserDefine): CurrentCreature.ScriptUserDefine = value; break;
         }
     }
 
@@ -244,17 +186,14 @@ public partial class ScriptsPanel : UserControl
         {
             var vm = _scripts.FirstOrDefault(s => s.FieldName == fieldName);
             if (vm != null)
-            {
                 vm.ScriptResRef = "";
-            }
         }
     }
 
     private async void OnBrowseScriptClick(string fieldName)
     {
         var vm = _scripts.FirstOrDefault(s => s.FieldName == fieldName);
-        if (vm == null)
-            return;
+        if (vm == null) return;
 
         var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
         var browser = new ScriptBrowserWindow(context);
@@ -264,18 +203,16 @@ public partial class ScriptsPanel : UserControl
         {
             var result = await browser.ShowDialog<string?>(parentWindow);
             if (!string.IsNullOrEmpty(result))
-            {
                 vm.ScriptResRef = result;
-            }
         }
     }
 
     private void OnConversationTextChanged(object? sender, TextChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null || _conversationTextBox == null)
+        if (IsLoading || CurrentCreature == null || _conversationTextBox == null)
             return;
 
-        _currentCreature.Conversation = _conversationTextBox.Text ?? "";
+        CurrentCreature.Conversation = _conversationTextBox.Text ?? "";
         UpdateParleyButtonVisibility();
         ScriptsChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -290,18 +227,14 @@ public partial class ScriptsPanel : UserControl
         {
             var result = await browser.ShowDialog<string?>(parentWindow);
             if (!string.IsNullOrEmpty(result) && _conversationTextBox != null)
-            {
                 _conversationTextBox.Text = result;
-            }
         }
     }
 
     private void OnClearConversationClick(object? sender, RoutedEventArgs e)
     {
         if (_conversationTextBox != null)
-        {
             _conversationTextBox.Text = "";
-        }
     }
 
     private void UpdateParleyButtonVisibility()
@@ -324,23 +257,24 @@ public partial class ScriptsPanel : UserControl
             _noScriptsText.IsVisible = assignedCount == 0;
     }
 
-    public void ClearPanel()
+    public override void ClearPanel()
     {
-        _isLoading = true;
+        IsLoading = true;
         foreach (var vm in _scripts)
-        {
             vm.PropertyChanged -= OnScriptPropertyChanged;
-        }
+
         _scripts.Clear();
-        _currentCreature = null;
+        CurrentCreature = null;
         SetText(_scriptsSummaryText, "0 of 13 scripts assigned");
+
         if (_noScriptsText != null)
             _noScriptsText.IsVisible = true;
         if (_conversationTextBox != null)
             _conversationTextBox.Text = "";
         if (_openInParleyButton != null)
             _openInParleyButton.IsVisible = false;
-        _isLoading = false;
+
+        IsLoading = false;
     }
 
     private void OnOpenInParleyClick(object? sender, RoutedEventArgs e)
@@ -356,12 +290,9 @@ public partial class ScriptsPanel : UserControl
             return;
         }
 
-        // Resolve conversation resref to file path
         string? dialogPath = null;
         if (_resolveConversationPath != null)
-        {
             dialogPath = _resolveConversationPath(conversation);
-        }
 
         try
         {
@@ -388,15 +319,12 @@ public partial class ScriptsPanel : UserControl
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to launch Parley: {ex.Message}");
         }
     }
-
-    private static void SetText(TextBlock? block, string text)
-    {
-        if (block != null)
-            block.Text = text;
-    }
 }
 
-public class ScriptViewModel : INotifyPropertyChanged
+/// <summary>
+/// ViewModel for a single script event slot.
+/// </summary>
+public class ScriptViewModel : BindableBase
 {
     private string _scriptResRef = "";
 
@@ -409,20 +337,6 @@ public class ScriptViewModel : INotifyPropertyChanged
     public string ScriptResRef
     {
         get => _scriptResRef;
-        set
-        {
-            if (_scriptResRef != value)
-            {
-                _scriptResRef = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        set => SetProperty(ref _scriptResRef, value);
     }
 }

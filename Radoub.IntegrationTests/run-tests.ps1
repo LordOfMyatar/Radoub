@@ -1,13 +1,30 @@
-# Run all Radoub test projects
-# Usage: .\run-tests.ps1 [-UIOnly] [-UnitOnly] [-SkipPrivacy] [-ParleyOnly] [-QuartermasterOnly]
+# Run Radoub test projects
+# Usage: .\run-tests.ps1 [-Tool <name>] [-SkipShared] [-UnitOnly] [-UIOnly] [-SkipPrivacy] [-TechDebt]
+#
+# Examples:
+#   .\run-tests.ps1                           # All tests
+#   .\run-tests.ps1 -Tool Quartermaster       # Quartermaster + shared library tests
+#   .\run-tests.ps1 -Tool Parley -SkipShared  # Parley tests only (no shared)
+#   .\run-tests.ps1 -Tool Manifest -UnitOnly  # Manifest unit tests only
+#   .\run-tests.ps1 -UnitOnly                 # All unit tests, no UI tests
+#   .\run-tests.ps1 -TechDebt                 # Include tech debt scan (large files)
 
 param(
+    [ValidateSet("Parley", "Quartermaster", "Manifest")]
+    [string]$Tool,
+    [switch]$SkipShared,
     [switch]$UIOnly,
     [switch]$UnitOnly,
     [switch]$SkipPrivacy,
+    [switch]$TechDebt,
+    # Legacy flags (deprecated, use -Tool instead)
     [switch]$ParleyOnly,
     [switch]$QuartermasterOnly
 )
+
+# Handle legacy flags
+if ($ParleyOnly) { $Tool = "Parley" }
+if ($QuartermasterOnly) { $Tool = "Quartermaster" }
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"
 $outputDir = "Radoub.IntegrationTests\TestOutput"
@@ -16,6 +33,9 @@ if (-not (Test-Path $outputDir)) { New-Item -ItemType Directory -Path $outputDir
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Radoub Test Suite" -ForegroundColor Cyan
 Write-Host "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Cyan
+if ($Tool) {
+    Write-Host "Tool: $Tool $(if ($SkipShared) { '(skip shared)' } else { '(+ shared)' })" -ForegroundColor Cyan
+}
 Write-Host "========================================" -ForegroundColor Cyan
 
 $script:totalPassed = 0
@@ -29,13 +49,11 @@ function Invoke-PrivacyScan {
 
     $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest", "Quartermaster")
 
-    # Patterns that indicate actual hardcoded user paths (not path detection logic)
-    # Uses regex with word boundaries to avoid matching comments like "// Unix: /home/"
     $patterns = @(
-        'C:\\Users\\[A-Za-z]',     # Windows user path with username start
-        'C:/Users/[A-Za-z]',       # Windows user path forward slash
-        '"/Users/[A-Za-z]',        # Mac user path in string
-        '"/home/[A-Za-z]'          # Linux user path in string
+        'C:\\Users\\[A-Za-z]',
+        'C:/Users/[A-Za-z]',
+        '"/Users/[A-Za-z]',
+        '"/home/[A-Za-z]'
     )
 
     $violations = @()
@@ -49,7 +67,6 @@ function Invoke-PrivacyScan {
                     foreach ($pattern in $patterns) {
                         if ($content -match $pattern) {
                             $relativePath = $file.FullName.Replace((Get-Location).Path + "\", "")
-                            # Exclude test files and test data
                             if ($relativePath -notmatch "\.Tests\\|TestData\\|\.test\.cs$") {
                                 $violations += "$relativePath matches pattern '$pattern'"
                             }
@@ -72,37 +89,90 @@ function Invoke-PrivacyScan {
     }
 }
 
-# Unit/Headless Tests (fast, no UI required)
-$allUnitTests = @(
-    @{ Name = "Radoub.Formats.Tests"; Path = "Radoub.Formats\Radoub.Formats.Tests"; Tool = "Shared" },
-    @{ Name = "Radoub.UI.Tests"; Path = "Radoub.UI\Radoub.UI.Tests"; Tool = "Shared" },
-    @{ Name = "Radoub.Dictionary.Tests"; Path = "Radoub.Dictionary\Radoub.Dictionary.Tests"; Tool = "Shared" },
-    @{ Name = "Parley.Tests"; Path = "Parley\Parley.Tests"; Tool = "Parley" },
-    @{ Name = "Manifest.Tests"; Path = "Manifest\Manifest.Tests"; Tool = "Shared" },
-    @{ Name = "Quartermaster.Tests"; Path = "Quartermaster\Quartermaster.Tests"; Tool = "Quartermaster" }
-)
+# Tech debt scan - check for large files in changed code
+function Invoke-TechDebtScan {
+    Write-Host "`n=== Tech Debt Scan ===" -ForegroundColor Magenta
+    Write-Host "Checking for large files (>500 lines)..." -ForegroundColor Yellow
 
-# UI Tests (slower, requires display)
-$allUiTests = @(
-    @{ Name = "Radoub.IntegrationTests.Parley"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Parley"; Tool = "Parley" },
-    @{ Name = "Radoub.IntegrationTests.Quartermaster"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Quartermaster"; Tool = "Quartermaster" }
-)
+    $largeFiles = @()
+    $threshold = 500
 
-# Filter tests based on tool flags
-function Get-FilteredTests {
-    param($AllTests)
+    # Get changed files compared to main
+    $changedFiles = git diff main...HEAD --name-only 2>$null | Where-Object { $_ -match "\.cs$" }
 
-    if ($ParleyOnly) {
-        return $AllTests | Where-Object { $_.Tool -eq "Parley" -or $_.Tool -eq "Shared" }
+    if (-not $changedFiles) {
+        Write-Host "  No changed .cs files to scan" -ForegroundColor Gray
+        return
     }
-    elseif ($QuartermasterOnly) {
-        return $AllTests | Where-Object { $_.Tool -eq "Quartermaster" -or $_.Tool -eq "Shared" }
+
+    foreach ($file in $changedFiles) {
+        if (Test-Path $file) {
+            $lineCount = (Get-Content $file | Measure-Object -Line).Lines
+            if ($lineCount -gt $threshold) {
+                $largeFiles += [PSCustomObject]@{ File = $file; Lines = $lineCount }
+            }
+        }
     }
-    return $AllTests
+
+    if ($largeFiles.Count -eq 0) {
+        Write-Host "  PASS - No large files (>$threshold lines)" -ForegroundColor Green
+    } else {
+        Write-Host "  WARN - Large files found:" -ForegroundColor Yellow
+        foreach ($f in $largeFiles | Sort-Object Lines -Descending) {
+            Write-Host ("    {0,5} lines: {1}" -f $f.Lines, $f.File) -ForegroundColor Yellow
+        }
+        Write-Host "  Consider refactoring or creating tech-debt issues" -ForegroundColor Gray
+    }
 }
 
-$unitTests = Get-FilteredTests $allUnitTests
-$uiTests = Get-FilteredTests $allUiTests
+# Test project definitions
+$sharedUnitTests = @(
+    @{ Name = "Radoub.Formats.Tests"; Path = "Radoub.Formats\Radoub.Formats.Tests" },
+    @{ Name = "Radoub.UI.Tests"; Path = "Radoub.UI\Radoub.UI.Tests" },
+    @{ Name = "Radoub.Dictionary.Tests"; Path = "Radoub.Dictionary\Radoub.Dictionary.Tests" }
+)
+
+$toolUnitTests = @{
+    "Parley" = @{ Name = "Parley.Tests"; Path = "Parley\Parley.Tests" }
+    "Manifest" = @{ Name = "Manifest.Tests"; Path = "Manifest\Manifest.Tests" }
+    "Quartermaster" = @{ Name = "Quartermaster.Tests"; Path = "Quartermaster\Quartermaster.Tests" }
+}
+
+$toolUiTests = @{
+    "Parley" = @{ Name = "Radoub.IntegrationTests.Parley"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Parley" }
+    "Quartermaster" = @{ Name = "Radoub.IntegrationTests.Quartermaster"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Quartermaster" }
+    # Manifest has no UI tests currently
+}
+
+# Build test list based on parameters
+function Get-TestsToRun {
+    $unitTests = @()
+    $uiTests = @()
+
+    if ($Tool) {
+        # Specific tool requested
+        if (-not $SkipShared) {
+            $unitTests += $sharedUnitTests
+        }
+        if ($toolUnitTests.ContainsKey($Tool)) {
+            $unitTests += $toolUnitTests[$Tool]
+        }
+        if ($toolUiTests.ContainsKey($Tool)) {
+            $uiTests += $toolUiTests[$Tool]
+        }
+    } else {
+        # All tests
+        $unitTests += $sharedUnitTests
+        foreach ($key in $toolUnitTests.Keys) {
+            $unitTests += $toolUnitTests[$key]
+        }
+        foreach ($key in $toolUiTests.Keys) {
+            $uiTests += $toolUiTests[$key]
+        }
+    }
+
+    return @{ Unit = $unitTests; UI = $uiTests }
+}
 
 function Invoke-TestProject {
     param($TestInfo)
@@ -121,7 +191,6 @@ function Invoke-TestProject {
     }
     $output | Out-File -FilePath $outputFile
 
-    # Parse results - dotnet test outputs "Total tests: N" and "Passed: N" on separate lines
     $totalLine = $output | Select-String -Pattern "Total tests:\s*(\d+)" | Select-Object -Last 1
     $passedLine = $output | Select-String -Pattern "^\s+Passed:\s*(\d+)" | Select-Object -Last 1
     $failedLine = $output | Select-String -Pattern "^\s+Failed:\s*(\d+)" | Select-Object -Last 1
@@ -144,7 +213,6 @@ function Invoke-TestProject {
         $script:results += [PSCustomObject]@{ Name = $name; Passed = 0; Failed = 0; Status = "UNKNOWN" }
     }
 
-    # Show failed tests if any
     $failedTests = $output | Select-String -Pattern "\[FAIL\]"
     if ($failedTests) {
         Write-Host "  Failed tests:" -ForegroundColor Red
@@ -157,22 +225,27 @@ if (-not $SkipPrivacy) {
     Invoke-PrivacyScan | Out-Null
 }
 
+# Run tech debt scan if requested
+if ($TechDebt) {
+    Invoke-TechDebtScan
+}
+
+$tests = Get-TestsToRun
+
 # Run unit tests unless UIOnly specified
 if (-not $UIOnly) {
-    Write-Host "`n=== Unit/Headless Tests ===" -ForegroundColor Magenta
-    foreach ($test in $unitTests) {
+    Write-Host "`n=== Unit Tests ===" -ForegroundColor Magenta
+    foreach ($test in $tests.Unit) {
         Invoke-TestProject $test
     }
 }
 
 # Run UI tests unless UnitOnly specified
-if (-not $UnitOnly) {
+if (-not $UnitOnly -and $tests.UI.Count -gt 0) {
     Write-Host "`n=== UI Integration Tests ===" -ForegroundColor Magenta
     $firstUiTest = $true
-    foreach ($test in $uiTests) {
+    foreach ($test in $tests.UI) {
         if (-not $firstUiTest) {
-            # Brief pause between UI test suites to let system settle
-            # This helps prevent focus issues when transitioning between app tests
             Write-Host "  [Waiting 2s for system to settle...]" -ForegroundColor Gray
             Start-Sleep -Seconds 2
         }
@@ -190,10 +263,15 @@ Write-Host ""
 
 foreach ($r in $results) {
     $color = if ($r.Status -eq "PASS") { "Green" } elseif ($r.Status -eq "FAIL") { "Red" } else { "Gray" }
-    Write-Host ("  {0,-30} {1}" -f $r.Name, $r.Status) -ForegroundColor $color
+    Write-Host ("  {0,-35} {1}" -f $r.Name, $r.Status) -ForegroundColor $color
 }
 
 Write-Host ""
 $overallColor = if ($totalFailed -eq 0) { "Green" } else { "Red" }
 Write-Host "Total: Passed $totalPassed, Failed $totalFailed" -ForegroundColor $overallColor
 Write-Host "Output files saved to: $outputDir"
+
+# Exit with error code if any tests failed
+if ($totalFailed -gt 0) {
+    exit 1
+}

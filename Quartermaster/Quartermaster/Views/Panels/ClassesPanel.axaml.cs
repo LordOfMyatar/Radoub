@@ -9,13 +9,11 @@ using System.Collections.ObjectModel;
 
 namespace Quartermaster.Views.Panels;
 
-public partial class ClassesPanel : UserControl
+public partial class ClassesPanel : BasePanelControl
 {
     private const int MaxClassSlots = 8; // Beamdog EE supports 8 classes
 
     private CreatureDisplayService? _displayService;
-    private UtcFile? _currentCreature;
-    private bool _isLoading;
 
     private TextBlock? _totalLevelText;
     private ItemsControl? _classSlotsList;
@@ -60,38 +58,32 @@ public partial class ClassesPanel : UserControl
         if (_classSlotsList != null)
             _classSlotsList.ItemsSource = _classSlots;
 
-        // Wire up alignment slider events
         if (_goodEvilSlider != null)
             _goodEvilSlider.ValueChanged += OnAlignmentSliderChanged;
         if (_lawChaosSlider != null)
             _lawChaosSlider.ValueChanged += OnAlignmentSliderChanged;
 
-        // Wire up package picker button
         if (_packagePickerButton != null)
             _packagePickerButton.Click += OnPackagePickerClick;
     }
 
-    /// <summary>
-    /// Sets the display service for 2DA/TLK lookups.
-    /// </summary>
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
     }
 
-    public void LoadCreature(UtcFile? creature)
+    public override void LoadCreature(UtcFile? creature)
     {
-        _isLoading = true;
-        _currentCreature = creature;
+        IsLoading = true;
+        CurrentCreature = creature;
 
         if (creature == null)
         {
             ClearPanel();
-            _isLoading = false;
+            IsLoading = false;
             return;
         }
 
-        // Load only active classes (not empty slots)
         _classSlots.Clear();
         int totalLevel = 0;
 
@@ -113,26 +105,22 @@ public partial class ClassesPanel : UserControl
 
         SetText(_totalLevelText, $"Total Level: {totalLevel}");
 
-        // Show/hide "Add Class" button based on whether more classes can be added
         if (_addClassButton != null)
             _addClassButton.IsVisible = creature.ClassList.Count < MaxClassSlots;
 
-        // Show "No classes" message if empty
         if (_noClassesText != null)
             _noClassesText.IsVisible = creature.ClassList.Count == 0;
 
-        // Load alignment
         LoadAlignment(creature.GoodEvil, creature.LawfulChaotic);
 
-        // Load auto-levelup package
         SetText(_packageText, _displayService?.GetPackageName(creature.StartingPackage) ?? $"Package {creature.StartingPackage}");
 
-        _isLoading = false;
+        IsLoading = false;
     }
 
-    public void ClearPanel()
+    public override void ClearPanel()
     {
-        _currentCreature = null;
+        CurrentCreature = null;
         _classSlots.Clear();
 
         SetText(_totalLevelText, "Total Level: 0");
@@ -160,16 +148,14 @@ public partial class ClassesPanel : UserControl
 
     private void OnAlignmentSliderChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null) return;
+        if (IsLoading || CurrentCreature == null) return;
 
         var goodEvil = (byte)(_goodEvilSlider?.Value ?? 50);
         var lawChaotic = (byte)(_lawChaosSlider?.Value ?? 50);
 
-        // Update creature
-        _currentCreature.GoodEvil = goodEvil;
-        _currentCreature.LawfulChaotic = lawChaotic;
+        CurrentCreature.GoodEvil = goodEvil;
+        CurrentCreature.LawfulChaotic = lawChaotic;
 
-        // Update display
         SetText(_goodEvilValue, goodEvil.ToString());
         SetText(_lawChaosValue, lawChaotic.ToString());
         SetText(_alignmentName, GetAlignmentName(goodEvil, lawChaotic));
@@ -179,10 +165,10 @@ public partial class ClassesPanel : UserControl
 
     private async void OnPackagePickerClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (_currentCreature == null || _displayService == null) return;
+        if (CurrentCreature == null || _displayService == null) return;
 
         var packages = _displayService.GetAllPackages();
-        var picker = new PackagePickerWindow(packages, _currentCreature.StartingPackage);
+        var picker = new PackagePickerWindow(packages, CurrentCreature.StartingPackage);
 
         var parentWindow = this.VisualRoot as Window;
         if (parentWindow != null)
@@ -192,7 +178,7 @@ public partial class ClassesPanel : UserControl
 
         if (picker.Confirmed && picker.SelectedPackageId.HasValue)
         {
-            _currentCreature.StartingPackage = picker.SelectedPackageId.Value;
+            CurrentCreature.StartingPackage = picker.SelectedPackageId.Value;
             SetText(_packageText, _displayService.GetPackageName(picker.SelectedPackageId.Value));
             PackageChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -222,11 +208,9 @@ public partial class ClassesPanel : UserControl
 
     private string GetClassName(int classId)
     {
-        // Use display service if available
         if (_displayService != null)
             return _displayService.GetClassName(classId);
 
-        // Fallback to hardcoded names
         return classId switch
         {
             0 => "Barbarian",
@@ -258,72 +242,68 @@ public partial class ClassesPanel : UserControl
 
     private string GetClassHitDie(int classId)
     {
-        // Get hit die from classes.2da HitDie column
-        // Fallback to standard D&D values
         return classId switch
         {
-            0 => "d12",  // Barbarian
-            1 => "d6",   // Bard
-            2 => "d8",   // Cleric
-            3 => "d8",   // Druid
-            4 => "d10",  // Fighter
-            5 => "d8",   // Monk
-            6 => "d10",  // Paladin
-            7 => "d10",  // Ranger (NWN uses d10, 3.5E uses d8)
-            8 => "d6",   // Rogue
-            9 => "d4",   // Sorcerer
-            10 => "d4",  // Wizard
-            11 => "d8",  // Shadowdancer
-            12 => "d6",  // Harper Scout
-            13 => "d8",  // Arcane Archer
-            14 => "d6",  // Assassin
-            15 => "d10", // Blackguard
-            16 => "d10", // Champion of Torm
-            17 => "d10", // Weapon Master
-            18 => "d6",  // Pale Master
-            19 => "d8",  // Shifter
-            20 => "d10", // Dwarven Defender
-            21 => "d6",  // Dragon Disciple
-            27 => "d10", // Purple Dragon Knight
-            _ => "d8"    // Default
+            0 => "d12",
+            1 => "d6",
+            2 => "d8",
+            3 => "d8",
+            4 => "d10",
+            5 => "d8",
+            6 => "d10",
+            7 => "d10",
+            8 => "d6",
+            9 => "d4",
+            10 => "d4",
+            11 => "d8",
+            12 => "d6",
+            13 => "d8",
+            14 => "d6",
+            15 => "d10",
+            16 => "d10",
+            17 => "d10",
+            18 => "d6",
+            19 => "d8",
+            20 => "d10",
+            21 => "d6",
+            27 => "d10",
+            _ => "d8"
         };
     }
 
     private int GetClassSkillPoints(int classId)
     {
-        // SkillPointBase from classes.2da (before Int modifier)
         return classId switch
         {
-            0 => 4,   // Barbarian
-            1 => 4,   // Bard
-            2 => 2,   // Cleric
-            3 => 4,   // Druid
-            4 => 2,   // Fighter
-            5 => 4,   // Monk
-            6 => 2,   // Paladin
-            7 => 4,   // Ranger
-            8 => 8,   // Rogue
-            9 => 2,   // Sorcerer
-            10 => 2,  // Wizard
-            11 => 6,  // Shadowdancer
-            12 => 4,  // Harper Scout
-            13 => 4,  // Arcane Archer
-            14 => 4,  // Assassin
-            15 => 2,  // Blackguard
-            16 => 2,  // Champion of Torm
-            17 => 2,  // Weapon Master
-            18 => 2,  // Pale Master
-            19 => 4,  // Shifter
-            20 => 2,  // Dwarven Defender
-            21 => 2,  // Dragon Disciple
-            27 => 2,  // Purple Dragon Knight
-            _ => 2    // Default
+            0 => 4,
+            1 => 4,
+            2 => 2,
+            3 => 4,
+            4 => 2,
+            5 => 4,
+            6 => 2,
+            7 => 4,
+            8 => 8,
+            9 => 2,
+            10 => 2,
+            11 => 6,
+            12 => 4,
+            13 => 4,
+            14 => 4,
+            15 => 2,
+            16 => 2,
+            17 => 2,
+            18 => 2,
+            19 => 4,
+            20 => 2,
+            21 => 2,
+            27 => 2,
+            _ => 2
         };
     }
 
     private string GetClassFeatures(int classId)
     {
-        // Key class features - abbreviated for display
         return classId switch
         {
             0 => "Rage, Fast Movement",
@@ -352,17 +332,8 @@ public partial class ClassesPanel : UserControl
             _ => ""
         };
     }
-
-    private static void SetText(TextBlock? block, string text)
-    {
-        if (block != null)
-            block.Text = text;
-    }
 }
 
-/// <summary>
-/// ViewModel for an active class slot.
-/// </summary>
 public class ClassSlotViewModel
 {
     public int SlotIndex { get; set; }
@@ -375,9 +346,6 @@ public class ClassSlotViewModel
     public int SkillPoints { get; set; }
     public string ClassFeatures { get; set; } = "";
 
-    /// <summary>
-    /// Combined display of hit die and skill points.
-    /// </summary>
     public string ClassInfoDisplay
     {
         get
