@@ -14,6 +14,12 @@ public partial class SpellsPanel : UserControl
 {
     private CreatureDisplayService? _displayService;
     private UtcFile? _currentCreature;
+    private bool _isLoading;
+
+    /// <summary>
+    /// Raised when the user modifies known/memorized spells.
+    /// </summary>
+    public event EventHandler? SpellsChanged;
 
     // UI Controls
     private TextBlock? _spellsSummaryText;
@@ -154,6 +160,9 @@ public partial class SpellsPanel : UserControl
             return;
         }
 
+        // Prevent dirty marking during load
+        _isLoading = true;
+
         // Show loading state
         if (_loadingText != null)
             _loadingText.IsVisible = true;
@@ -167,6 +176,8 @@ public partial class SpellsPanel : UserControl
         // Hide loading state
         if (_loadingText != null)
             _loadingText.IsVisible = false;
+
+        _isLoading = false;
     }
 
     private void UpdateClassRadioButtons(UtcFile creature)
@@ -371,7 +382,7 @@ public partial class SpellsPanel : UserControl
             textOpacity = 0.7;
         }
 
-        return new SpellListViewModel
+        var vm = new SpellListViewModel
         {
             SpellId = spellId,
             SpellName = spellName,
@@ -391,6 +402,94 @@ public partial class SpellsPanel : UserControl
             RowBackground = rowBackground,
             TextOpacity = textOpacity
         };
+
+        // Wire up change handler
+        vm.OnKnownChanged = OnSpellKnownChanged;
+
+        return vm;
+    }
+
+    private void OnSpellKnownChanged(SpellListViewModel spell, bool isNowKnown)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        if (_selectedClassIndex >= _currentCreature.ClassList.Count) return;
+
+        var classEntry = _currentCreature.ClassList[_selectedClassIndex];
+
+        if (isNowKnown)
+        {
+            // Add to known spells
+            if (!_knownSpellIds.Contains(spell.SpellId))
+            {
+                _knownSpellIds.Add(spell.SpellId);
+
+                // Add to model at appropriate spell level
+                classEntry.KnownSpells[spell.SpellLevel].Add(new KnownSpell
+                {
+                    Spell = (ushort)spell.SpellId,
+                    SpellFlags = 0x01,
+                    SpellMetaMagic = 0
+                });
+            }
+        }
+        else
+        {
+            // Remove from known spells
+            _knownSpellIds.Remove(spell.SpellId);
+
+            // Remove from model
+            var spellList = classEntry.KnownSpells[spell.SpellLevel];
+            var existing = spellList.FirstOrDefault(s => s.Spell == spell.SpellId);
+            if (existing != null)
+            {
+                spellList.Remove(existing);
+            }
+        }
+
+        // Update visual status
+        UpdateSpellVisualStatus(spell);
+
+        // Notify that spells changed
+        SpellsChanged?.Invoke(this, EventArgs.Empty);
+
+        // Update summary
+        UpdateSummary();
+    }
+
+    private void UpdateSpellVisualStatus(SpellListViewModel spell)
+    {
+        // Update status based on new known/memorized state
+        if (spell.IsBlocked)
+        {
+            spell.StatusText = "Blocked";
+            spell.StatusColor = new SolidColorBrush(Colors.Gray);
+            spell.RowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128));
+            spell.TextOpacity = 0.5;
+        }
+        else if (_memorizedSpellIds.Contains(spell.SpellId))
+        {
+            spell.StatusText = "Memorized";
+            spell.StatusColor = new SolidColorBrush(Colors.Gold);
+            spell.RowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0));
+            spell.TextOpacity = 1.0;
+            spell.IsMemorized = true;
+        }
+        else if (spell.IsKnown)
+        {
+            spell.StatusText = "Known";
+            spell.StatusColor = new SolidColorBrush(Colors.Green);
+            spell.RowBackground = new SolidColorBrush(Color.FromArgb(30, 0, 128, 0));
+            spell.TextOpacity = 1.0;
+            spell.IsMemorized = false;
+        }
+        else
+        {
+            spell.StatusText = "";
+            spell.StatusColor = Brushes.Transparent;
+            spell.RowBackground = Brushes.Transparent;
+            spell.TextOpacity = 0.7;
+            spell.IsMemorized = false;
+        }
     }
 
     private static string GetSchoolName(SpellSchool school)
@@ -551,8 +650,10 @@ public partial class SpellsPanel : UserControl
 /// <summary>
 /// View model for a spell in the spells list.
 /// </summary>
-public class SpellListViewModel
+public class SpellListViewModel : System.ComponentModel.INotifyPropertyChanged
 {
+    private bool _isKnown;
+
     public int SpellId { get; set; }
     public string SpellName { get; set; } = "";
     public int SpellLevel { get; set; }
@@ -561,7 +662,21 @@ public class SpellListViewModel
     public string InnateLevelDisplay { get; set; } = "";
     public SpellSchool School { get; set; }
     public string SchoolName { get; set; } = "";
-    public bool IsKnown { get; set; }
+
+    public bool IsKnown
+    {
+        get => _isKnown;
+        set
+        {
+            if (_isKnown != value)
+            {
+                _isKnown = value;
+                OnPropertyChanged(nameof(IsKnown));
+                OnKnownChanged?.Invoke(this, value);
+            }
+        }
+    }
+
     public bool IsMemorized { get; set; }
     public bool IsBlocked { get; set; }
     public string BlockedReason { get; set; } = "";
@@ -570,4 +685,28 @@ public class SpellListViewModel
     public IBrush StatusColor { get; set; } = Brushes.Transparent;
     public IBrush RowBackground { get; set; } = Brushes.Transparent;
     public double TextOpacity { get; set; } = 1.0;
+
+    /// <summary>
+    /// Whether the spell checkbox can be toggled (not blocked).
+    /// </summary>
+    public bool CanToggle => !IsBlocked;
+
+    /// <summary>
+    /// Tooltip for the checkbox explaining the action.
+    /// </summary>
+    public string ToggleTooltip => IsBlocked
+        ? BlockedReason
+        : (IsKnown ? "Click to remove from known spells" : "Click to add to known spells");
+
+    /// <summary>
+    /// Callback when IsKnown changes. Args: (SpellListViewModel spell, bool newValue)
+    /// </summary>
+    public Action<SpellListViewModel, bool>? OnKnownChanged { get; set; }
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+    }
 }

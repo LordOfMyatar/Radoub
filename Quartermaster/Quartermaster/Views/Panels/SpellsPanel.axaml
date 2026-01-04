@@ -170,10 +170,10 @@
                                             <!-- Checkbox for known/memorized -->
                                             <CheckBox Grid.Column="0"
                                                       IsChecked="{Binding IsKnown}"
-                                                      IsEnabled="False"
+                                                      IsEnabled="{Binding CanToggle}"
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"
-                                                      ToolTip.Tip="Known/Memorized (editing not yet implemented)"
+                                                      ToolTip.Tip="{Binding ToggleTooltip}"
                                                       AutomationProperties.AutomationId="SpellCheckbox"/>
 
                                             <!-- Spell Name -->

@@ -33,6 +33,16 @@ Enable SpellsPanel to display creature's actual known and memorized spells by im
   - Populate _memorizedSpellIds from parsed MemorizedSpells data
   - Spells now correctly show Known/Memorized status from creature file
 
+- **Spell Editing**
+  - Checkboxes now enabled for non-blocked spells
+  - Click checkbox to add/remove spells from known list
+  - Changes update model data and mark document dirty
+  - SpellsChanged event for dirty state tracking
+
+#### Fixed
+
+- **Caster Class Selection** - Radio buttons now enable based on actual spell data in creature file, not just 2DA lookup results
+
 #### Tests
 
 - Round-trip tests for KnownSpells (UtcReaderTests)
