@@ -1730,6 +1730,63 @@ public class CreatureDisplayService
         return !string.IsNullOrEmpty(spellGainTable) && spellGainTable != "****";
     }
 
+    /// <summary>
+    /// Checks if a class is a spontaneous caster (Sorcerer, Bard).
+    /// Spontaneous casters don't memorize spells - they can cast any known spell using available slots.
+    /// </summary>
+    public bool IsSpontaneousCaster(int classId)
+    {
+        // Check MemorizesSpells column in classes.2da
+        // 1 = prepared caster (Wizard, Cleric, etc.) - DOES memorize spells
+        // 0 or **** = spontaneous caster (Sorcerer, Bard) - does NOT memorize spells
+        var memorizesSpells = _gameDataService.Get2DAValue("classes", classId, "MemorizesSpells");
+        if (!string.IsNullOrEmpty(memorizesSpells) && memorizesSpells != "****")
+        {
+            if (int.TryParse(memorizesSpells, out int value))
+            {
+                // If MemorizesSpells = 1, class memorizes, so NOT spontaneous
+                // If MemorizesSpells = 0, class doesn't memorize, so IS spontaneous
+                return value != 1;
+            }
+        }
+        // Default: if no value or ****, assume spontaneous (disable memorize column)
+        return true;
+    }
+
+    /// <summary>
+    /// Gets the number of spell slots available at each spell level for a class at a given level.
+    /// </summary>
+    /// <param name="classId">The class ID</param>
+    /// <param name="classLevel">The level in that class</param>
+    /// <returns>Array of 10 integers (indices 0-9) with slot counts per spell level, or null if not a caster</returns>
+    public int[]? GetSpellSlots(int classId, int classLevel)
+    {
+        var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
+        if (string.IsNullOrEmpty(spellGainTable) || spellGainTable == "****")
+            return null;
+
+        int rowIndex = classLevel - 1;
+        if (rowIndex < 0) return null;
+
+        var slots = new int[10];
+
+        for (int spellLevel = 0; spellLevel <= 9; spellLevel++)
+        {
+            var columnName = $"NumSpellLevels{spellLevel}";
+            var slotsStr = _gameDataService.Get2DAValue(spellGainTable, rowIndex, columnName);
+
+            if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" && slotsStr != "-")
+            {
+                if (int.TryParse(slotsStr, out int count))
+                {
+                    slots[spellLevel] = count;
+                }
+            }
+        }
+
+        return slots;
+    }
+
     #endregion
 }
 
