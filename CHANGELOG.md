@@ -15,6 +15,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.22] - 2026-01-04
+**Branch**: `quartermaster/issue-760` | **PR**: #765
+
+### Slash Commands & Test Infrastructure
+
+#### run-tests.ps1 Improvements
+- Add `-Tool [Parley|Quartermaster|Manifest]` parameter for targeted testing
+- Add `-SkipShared` flag to skip Radoub.* library tests
+- Add `-TechDebt` flag for large file scan (>500 lines in changed files)
+- Exit with error code 1 when tests fail (for CI integration)
+- Keep legacy `-ParleyOnly`/`-QuartermasterOnly` for backwards compatibility
+
+#### /pre-merge Streamlined
+- Remove upfront questions (didn't work with permission model)
+- Batch `gh` commands with `&&` chaining (fewer approvals)
+- Auto-detect tool from changed files
+- Default to unit tests only (faster feedback)
+- Delegate privacy + tech debt scans to test script
+
+#### /post-merge Simplified
+- Remove duplicate CHANGELOG/wiki validation (done in pre-merge)
+- Focus on cleanup tasks: branch deletion, issue closing, epic update, release
+- Reduce from 5 upfront questions to 2
+
+#### /backlog Added
+- Combined grooming + sprint planning (replaces separate commands)
+- Lighter hygiene check (counts only, not per-issue details)
+- Sprint options with complexity estimates
+
+---
+
 ## [0.9.21] - 2026-01-01
 **Branch**: `radoub/sprint/test-fixes` | **PR**: #721
 
