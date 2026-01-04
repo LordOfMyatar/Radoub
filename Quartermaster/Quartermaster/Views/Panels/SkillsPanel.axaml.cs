@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using System;
 using System.Collections.Generic;
@@ -13,6 +15,7 @@ namespace Quartermaster.Views.Panels;
 public partial class SkillsPanel : UserControl
 {
     private CreatureDisplayService? _displayService;
+    private ItemIconService? _itemIconService;
 
     private TextBlock? _skillsSummaryText;
     private ItemsControl? _skillsList;
@@ -62,6 +65,15 @@ public partial class SkillsPanel : UserControl
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
+    }
+
+    /// <summary>
+    /// Sets the icon service for loading skill icons.
+    /// </summary>
+    public void SetIconService(ItemIconService iconService)
+    {
+        _itemIconService = iconService;
+        UnifiedLogger.LogUI(LogLevel.INFO, $"SkillsPanel: IconService set, IsGameDataAvailable={iconService?.IsGameDataAvailable}");
     }
 
     public void LoadCreature(UtcFile? creature)
@@ -117,7 +129,7 @@ public partial class SkillsPanel : UserControl
                 textOpacity = 1.0;
             }
 
-            _allSkills.Add(new SkillViewModel
+            var vm = new SkillViewModel
             {
                 SkillId = i,
                 SkillName = skillName,
@@ -132,7 +144,12 @@ public partial class SkillsPanel : UserControl
                 ClassSkillIndicator = isUnavailable ? "✗" : (isClassSkill ? "●" : "○"),
                 RowBackground = rowBackground,
                 TextOpacity = textOpacity
-            });
+            };
+
+            // Load skill icon if available
+            LoadSkillIcon(vm);
+
+            _allSkills.Add(vm);
         }
 
         // Apply initial sort and filter
@@ -309,6 +326,16 @@ public partial class SkillsPanel : UserControl
         };
     }
 
+    /// <summary>
+    /// Loads the game icon for a skill from skills.2da Icon column.
+    /// Icons are loaded lazily when binding requests them.
+    /// </summary>
+    private void LoadSkillIcon(SkillViewModel skillVm)
+    {
+        // Don't load upfront - use lazy loading via IconBitmap getter
+        skillVm.SetIconService(_itemIconService);
+    }
+
     private static void SetText(TextBlock? block, string text)
     {
         if (block != null)
@@ -318,6 +345,10 @@ public partial class SkillsPanel : UserControl
 
 public class SkillViewModel
 {
+    private Bitmap? _iconBitmap;
+    private bool _iconLoaded = false;
+    private ItemIconService? _iconService;
+
     public int SkillId { get; set; }
     public string SkillName { get; set; } = "";
     public string KeyAbility { get; set; } = "";
@@ -331,4 +362,48 @@ public class SkillViewModel
     public string ClassSkillIndicator { get; set; } = "○";
     public IBrush RowBackground { get; set; } = Brushes.Transparent;
     public double TextOpacity { get; set; } = 1.0;
+
+    /// <summary>
+    /// Sets the icon service for lazy loading.
+    /// </summary>
+    public void SetIconService(ItemIconService? iconService)
+    {
+        _iconService = iconService;
+    }
+
+    /// <summary>
+    /// Game icon for this skill (from skills.2da Icon column).
+    /// Loaded lazily on first access.
+    /// </summary>
+    public Bitmap? IconBitmap
+    {
+        get
+        {
+            // Lazy load on first access
+            if (!_iconLoaded && _iconService != null && _iconService.IsGameDataAvailable)
+            {
+                _iconLoaded = true;
+                try
+                {
+                    _iconBitmap = _iconService.GetSkillIcon(SkillId);
+                }
+                catch
+                {
+                    // Silently fail - no icon
+                }
+            }
+            return _iconBitmap;
+        }
+        set
+        {
+            _iconBitmap = value;
+            _iconLoaded = true;
+        }
+    }
+
+    /// <summary>
+    /// Whether we have a real game icon (not placeholder).
+    /// Returns true if icon service is available (assumes icon exists to avoid triggering load).
+    /// </summary>
+    public bool HasGameIcon => _iconService != null && _iconService.IsGameDataAvailable;
 }

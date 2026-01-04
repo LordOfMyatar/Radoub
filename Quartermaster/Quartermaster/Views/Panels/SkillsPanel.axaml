@@ -71,13 +71,14 @@
                         <!-- Header Row -->
                         <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                 Padding="10,8,25,8">
-                            <Grid ColumnDefinitions="25,*,50,50,50,70">
+                            <Grid ColumnDefinitions="32,25,*,50,50,50,70">
                                 <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
-                                <TextBlock Grid.Column="1" Text="Skill" FontWeight="SemiBold" FontSize="11"/>
-                                <TextBlock Grid.Column="2" Text="Ability" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="Rank" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="Total" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="5" Text="" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="1" Text="" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="Skill" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="3" Text="Ability" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="Rank" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="Total" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="6" Text="" FontWeight="SemiBold" FontSize="11"/>
                             </Grid>
                         </Border>
 
@@ -90,9 +91,18 @@
                                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                             BorderThickness="0,0,0,1"
                                             Opacity="{Binding TextOpacity}">
-                                        <Grid ColumnDefinitions="25,*,50,50,50,70">
+                                        <Grid ColumnDefinitions="32,25,*,50,50,50,70">
+                                            <!-- Icon -->
+                                            <Image Grid.Column="0"
+                                                   Source="{Binding IconBitmap}"
+                                                   Width="24" Height="24"
+                                                   Stretch="Uniform"
+                                                   IsVisible="{Binding HasGameIcon}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"/>
+
                                             <!-- Class Skill Indicator -->
-                                            <TextBlock Grid.Column="0"
+                                            <TextBlock Grid.Column="1"
                                                        Text="{Binding ClassSkillIndicator}"
                                                        Foreground="CornflowerBlue"
                                                        FontSize="10"
@@ -100,13 +110,13 @@
                                                        HorizontalAlignment="Center"/>
 
                                             <!-- Skill Name -->
-                                            <TextBlock Grid.Column="1"
+                                            <TextBlock Grid.Column="2"
                                                        Text="{Binding SkillName}"
                                                        VerticalAlignment="Center"
                                                        FontSize="13"/>
 
                                             <!-- Key Ability -->
-                                            <TextBlock Grid.Column="2"
+                                            <TextBlock Grid.Column="3"
                                                        Text="{Binding KeyAbility}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
@@ -114,14 +124,14 @@
                                                        VerticalAlignment="Center"/>
 
                                             <!-- Rank Value -->
-                                            <TextBlock Grid.Column="3"
+                                            <TextBlock Grid.Column="4"
                                                        Text="{Binding RanksDisplay}"
                                                        FontSize="13"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
 
                                             <!-- Total (Rank + Ability Modifier) -->
-                                            <TextBlock Grid.Column="4"
+                                            <TextBlock Grid.Column="5"
                                                        Text="{Binding TotalDisplay}"
                                                        FontWeight="SemiBold"
                                                        FontSize="13"
@@ -129,7 +139,7 @@
                                                        VerticalAlignment="Center"/>
 
                                             <!-- Placeholder for +/- buttons (future editing) -->
-                                            <StackPanel Grid.Column="5"
+                                            <StackPanel Grid.Column="6"
                                                         Orientation="Horizontal"
                                                         Spacing="2"
                                                         HorizontalAlignment="Right"
