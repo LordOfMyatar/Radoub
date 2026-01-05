@@ -2,37 +2,70 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="600"
              x:Class="Quartermaster.Views.Panels.SpellsPanel">
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,20,20">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
-            <!-- Header -->
-            <TextBlock Grid.Row="0"
-                       Text="Spells"
-                       FontSize="20"
-                       FontWeight="Bold"/>
+        <!-- Main layout: Spell Slot Table on left, Spell List on right -->
+        <Grid ColumnDefinitions="Auto,*">
 
-            <!-- All Caster Classes Summary -->
-            <Border Grid.Row="1"
-                    x:Name="AllClassesSummaryBorder"
-                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                    CornerRadius="4"
-                    Padding="10"
-                    Margin="0,5,0,10"
-                    IsVisible="False"
-                    AutomationProperties.AutomationId="AllClassesSummarySection">
-                <StackPanel x:Name="AllClassesSummaryPanel" Spacing="4">
-                    <TextBlock Text="Spell Slots by Class"
-                               FontWeight="SemiBold"
-                               FontSize="12"
-                               Margin="0,0,0,6"/>
-                    <!-- Dynamic class summaries added here -->
-                </StackPanel>
-            </Border>
+            <!-- LEFT COLUMN: Spell Slot Table + Known Spells List -->
+            <StackPanel Grid.Column="0" Margin="0,0,15,0">
+                <!-- Spell Slot Table -->
+                <Border x:Name="SpellSlotTableBorder"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4"
+                        Padding="10"
+                        MinWidth="180"
+                        IsVisible="False"
+                        AutomationProperties.AutomationId="SpellSlotTableSection">
+                    <StackPanel>
+                        <TextBlock Text="Spell Slots"
+                                   FontWeight="SemiBold"
+                                   FontSize="14"
+                                   Margin="0,0,0,10"/>
+                        <!-- Dynamic table grid will be added here -->
+                        <Grid x:Name="SpellSlotTableGrid">
+                            <!-- Columns and rows populated dynamically based on caster classes -->
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
-            <!-- Class Radio Buttons (Class 1-8) -->
-            <Border Grid.Row="2"
+                <!-- Known Spells List (grouped by level) -->
+                <Border x:Name="KnownSpellsListBorder"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="0,10,0,0"
+                        MinWidth="180"
+                        MaxHeight="400"
+                        IsVisible="False"
+                        AutomationProperties.AutomationId="KnownSpellsListSection">
+                    <StackPanel>
+                        <TextBlock Text="Known Spells"
+                                   FontWeight="SemiBold"
+                                   FontSize="14"
+                                   Margin="0,0,0,10"/>
+                        <!-- Scrollable list of known spells grouped by level -->
+                        <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="KnownSpellsListPanel">
+                                <!-- Dynamically populated with spell names grouped by level -->
+                            </StackPanel>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- RIGHT COLUMN: Original spell panel content -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,*,Auto">
+                <!-- Header -->
+                <TextBlock Grid.Row="0"
+                           Text="Spells"
+                           FontSize="20"
+                           FontWeight="Bold"/>
+
+                <!-- Class Radio Buttons (Class 1-8) -->
+                <Border Grid.Row="1"
                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="4"
                     Padding="10"
@@ -81,7 +114,7 @@
             </Border>
 
             <!-- Filter Toolbar -->
-            <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,10">
+            <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,10">
                 <!-- Search Box -->
                 <Grid Grid.Column="0" ColumnDefinitions="*,Auto">
                     <TextBox x:Name="SearchTextBox"
@@ -154,7 +187,7 @@
             </Grid>
 
             <!-- Spells List -->
-            <Grid Grid.Row="4" RowDefinitions="Auto,*,Auto,Auto">
+            <Grid Grid.Row="3" RowDefinitions="Auto,*,Auto,Auto">
                 <!-- Header Row -->
                 <Border Grid.Row="0"
                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
@@ -281,7 +314,7 @@
             </Grid>
 
             <!-- Footer with Meta-Magic and Actions -->
-            <Grid Grid.Row="5" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+            <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
                 <!-- Meta-Magic Expander (placeholder) -->
                 <Expander Grid.Column="0"
                           Header="Meta-Magic Feats"
@@ -322,6 +355,7 @@
                             ToolTip.Tip="Load class spell list (not yet implemented)"
                             AutomationProperties.AutomationId="LoadSpellListButton"/>
                 </StackPanel>
+            </Grid>
             </Grid>
         </Grid>
     </Border>

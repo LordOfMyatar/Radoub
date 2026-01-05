@@ -23,12 +23,24 @@ Enhance SpellsPanel with multi-class spell slot display and polish spell editing
 
 #### Added
 
-- **Spell Slots by Class** section showing all caster classes at once
-  - Multi-class characters see spell usage for every caster class simultaneously
-  - Format: `Wizard (10): 0:4/4 | 1:3/4 | 2:2/3 | ...`
-  - Selected class highlighted in blue
-  - Non-caster classes omitted
-  - Updates when spells are added/removed
+- **Spell Slot Table** (left panel) showing spell slots/known limits per class
+  - Grid format with spell levels as rows, caster classes as columns
+  - Color-coded: gold (full), green (partial), gray (empty/unavailable)
+  - Spontaneous casters show "spells known" limits, prepared casters show spell slots
+  - Filters out feat-based abilities from slot counts
+- **Known Spells List** (left panel, below slot table)
+  - Shows ALL caster classes with their spells grouped by level
+  - Overlapping spells (same spell in multiple classes) highlighted in gold with ⬥
+  - Feat-based abilities marked with asterisk (*) in gray
+  - Selected class header highlighted in blue
+  - Scrollable for characters with many spells
+
+#### Fixed
+
+- Spell list now loads all spells from spells.2da (fixed early termination bug)
+  - Previously stopped at first gap after 100 spells
+  - Now scans up to 2000 rows with consecutive-empty detection
+  - Supports custom content (CEP, PRC, etc.)
 
 ---
 
