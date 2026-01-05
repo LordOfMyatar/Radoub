@@ -76,9 +76,10 @@ public class MdlBinaryReaderTests
             Assert.NotNull(model);
             Assert.True(model.IsBinary);
         }
-        catch (Exception ex) when (ex is EndOfStreamException or IndexOutOfRangeException)
+        catch (Exception ex) when (ex is EndOfStreamException or IndexOutOfRangeException or InvalidDataException)
         {
             // Expected for minimal test data - binary format is complex
+            // InvalidDataException thrown when model data is smaller than required header size
             // This test validates the format detection works
         }
     }
