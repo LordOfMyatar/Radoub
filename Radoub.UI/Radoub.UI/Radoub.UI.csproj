@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <!-- Equipment slot placeholder icons from game-icons.net (CC BY 3.0) -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" />
     <AvaloniaResource Include="Assets\Icons\*.svg" />
   </ItemGroup>
 
