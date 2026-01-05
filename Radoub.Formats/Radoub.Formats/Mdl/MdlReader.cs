@@ -30,7 +30,12 @@ public class MdlReader
     /// </summary>
     public MdlModel Parse(byte[] data)
     {
-        if (MdlBinaryReader.IsBinaryMdl(data))
+        var isBinary = MdlBinaryReader.IsBinaryMdl(data);
+        Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+            Radoub.Formats.Logging.LogLevel.DEBUG,
+            $"[MDL] MdlReader.Parse: dataLen={data.Length}, isBinary={isBinary}, first4bytes=0x{(data.Length >= 4 ? BitConverter.ToUInt32(data, 0) : 0):X8}");
+
+        if (isBinary)
         {
             return _binaryReader.Parse(data);
         }

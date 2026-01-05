@@ -74,6 +74,7 @@ public partial class AppearancePanel : UserControl
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
     private ModelService? _modelService;
+    private TextureService? _textureService;
     private UtcFile? _currentCreature;
     private List<AppearanceInfo>? _appearances;
     private List<PhenotypeInfo>? _phenotypes;
@@ -210,6 +211,12 @@ public partial class AppearancePanel : UserControl
     public void SetModelService(ModelService modelService)
     {
         _modelService = modelService;
+    }
+
+    public void SetTextureService(TextureService textureService)
+    {
+        _textureService = textureService;
+        _modelPreview?.SetTextureService(textureService);
     }
 
     private void LoadAppearanceData()
@@ -378,6 +385,13 @@ public partial class AppearancePanel : UserControl
 
         try
         {
+            // Update character colors for PLT rendering
+            _modelPreview.SetCharacterColors(
+                _currentCreature.Color_Skin,
+                _currentCreature.Color_Hair,
+                _currentCreature.Color_Tattoo1,
+                _currentCreature.Color_Tattoo2);
+
             var model = _modelService.LoadCreatureModel(_currentCreature);
             _modelPreview.Model = model;
         }
@@ -603,6 +617,9 @@ public partial class AppearancePanel : UserControl
             _currentCreature.Color_Tattoo2 = value;
             UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, value);
         }
+
+        // Update model preview with new colors
+        UpdateModelPreview();
 
         AppearanceChanged?.Invoke(this, EventArgs.Empty);
     }

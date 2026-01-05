@@ -3,6 +3,7 @@
 // This is a foundation - can be upgraded to OpenGL later
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Avalonia;
 using Avalonia.Controls;
@@ -10,6 +11,7 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
+using Quartermaster.Services;
 using Radoub.Formats.Mdl;
 using SkiaSharp;
 
@@ -22,10 +24,23 @@ namespace Quartermaster.Controls;
 public class ModelPreviewControl : Control
 {
     private MdlModel? _model;
-    private float _rotationY;
+    private TextureService? _textureService;
+    private float _rotationY = (float)Math.PI; // Default 180° so model faces camera
     private float _rotationX;
     private float _zoom = 1.0f;
     private Vector3 _cameraPosition = new(0, 0, 5);
+
+    // Character colors for PLT rendering
+    private int _skinColor;
+    private int _hairColor;
+    private int _tattoo1Color;
+    private int _tattoo2Color;
+
+    // Texture cache: resref -> SKBitmap
+    private readonly Dictionary<string, SKBitmap?> _textureCache = new();
+
+    // Render mode
+    private bool _wireframeMode;
 
     /// <summary>
     /// The model to render.
@@ -81,6 +96,55 @@ public class ModelPreviewControl : Control
     }
 
     /// <summary>
+    /// Set the texture service for loading textures.
+    /// </summary>
+    public void SetTextureService(TextureService textureService)
+    {
+        _textureService = textureService;
+        ClearTextureCache();
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Set character colors for PLT texture rendering.
+    /// </summary>
+    public void SetCharacterColors(int skinColor, int hairColor, int tattoo1Color, int tattoo2Color)
+    {
+        if (_skinColor != skinColor || _hairColor != hairColor ||
+            _tattoo1Color != tattoo1Color || _tattoo2Color != tattoo2Color)
+        {
+            _skinColor = skinColor;
+            _hairColor = hairColor;
+            _tattoo1Color = tattoo1Color;
+            _tattoo2Color = tattoo2Color;
+            ClearTextureCache(); // Clear cache since colors changed
+            InvalidateVisual();
+        }
+    }
+
+    /// <summary>
+    /// Toggle wireframe mode.
+    /// </summary>
+    public bool WireframeMode
+    {
+        get => _wireframeMode;
+        set
+        {
+            _wireframeMode = value;
+            InvalidateVisual();
+        }
+    }
+
+    private void ClearTextureCache()
+    {
+        foreach (var bitmap in _textureCache.Values)
+        {
+            bitmap?.Dispose();
+        }
+        _textureCache.Clear();
+    }
+
+    /// <summary>
     /// Rotate the model incrementally.
     /// </summary>
     public void Rotate(float deltaY, float deltaX = 0)
@@ -91,11 +155,11 @@ public class ModelPreviewControl : Control
     }
 
     /// <summary>
-    /// Reset the view to default.
+    /// Reset the view to default (facing front).
     /// </summary>
     public void ResetView()
     {
-        _rotationY = 0;
+        _rotationY = (float)Math.PI; // Face camera (180° rotation)
         _rotationX = 0;
         _zoom = 1.0f;
         CenterCamera();
@@ -137,6 +201,25 @@ public class ModelPreviewControl : Control
             return;
         }
 
+        // Load textures for model if texture service is available
+        var meshTextures = new Dictionary<string, SKBitmap?>();
+        if (_textureService != null && !_wireframeMode)
+        {
+            foreach (var mesh in _model.GetMeshNodes())
+            {
+                var textureName = mesh.Bitmap?.ToLowerInvariant() ?? "";
+                if (!string.IsNullOrEmpty(textureName) && !meshTextures.ContainsKey(textureName))
+                {
+                    if (!_textureCache.TryGetValue(textureName, out var bitmap))
+                    {
+                        bitmap = LoadTextureAsBitmap(textureName);
+                        _textureCache[textureName] = bitmap;
+                    }
+                    meshTextures[textureName] = bitmap;
+                }
+            }
+        }
+
         // Use custom SkiaSharp drawing operation for 3D rendering
         var customOp = new ModelRenderOperation(
             new Rect(0, 0, bounds.Width, bounds.Height),
@@ -144,9 +227,46 @@ public class ModelPreviewControl : Control
             _rotationY,
             _rotationX,
             _zoom,
-            _cameraPosition);
+            _cameraPosition,
+            _wireframeMode,
+            meshTextures);
 
         context.Custom(customOp);
+    }
+
+    private SKBitmap? LoadTextureAsBitmap(string textureName)
+    {
+        if (_textureService == null || string.IsNullOrEmpty(textureName))
+            return null;
+
+        try
+        {
+            // Try to load texture with character colors
+            var textureData = _textureService.LoadTexture(
+                textureName,
+                _skinColor,
+                _hairColor,
+                _tattoo1Color,
+                _tattoo2Color);
+
+            if (textureData == null)
+                return null;
+
+            var (width, height, pixels) = textureData.Value;
+
+            // Create SKBitmap from RGBA pixel data
+            var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+            var handle = bitmap.GetPixels();
+
+            // Copy pixel data - TextureService returns RGBA
+            System.Runtime.InteropServices.Marshal.Copy(pixels, 0, handle, pixels.Length);
+
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private void DrawPlaceholder(DrawingContext context, Rect bounds)
@@ -179,9 +299,12 @@ public class ModelPreviewControl : Control
         private readonly float _rotationX;
         private readonly float _zoom;
         private readonly Vector3 _cameraPosition;
+        private readonly bool _wireframeMode;
+        private readonly Dictionary<string, SKBitmap?> _textures;
 
         public ModelRenderOperation(Rect bounds, MdlModel model,
-            float rotationY, float rotationX, float zoom, Vector3 cameraPosition)
+            float rotationY, float rotationX, float zoom, Vector3 cameraPosition,
+            bool wireframeMode, Dictionary<string, SKBitmap?> textures)
         {
             _bounds = bounds;
             _model = model;
@@ -189,6 +312,8 @@ public class ModelPreviewControl : Control
             _rotationX = rotationX;
             _zoom = zoom;
             _cameraPosition = cameraPosition;
+            _wireframeMode = wireframeMode;
+            _textures = textures;
         }
 
         public Rect Bounds => _bounds;
@@ -219,45 +344,105 @@ public class ModelPreviewControl : Control
             canvas.ClipRect(new SKRect(0, 0, (float)_bounds.Width, (float)_bounds.Height));
 
             // Set up transformation matrices
-            var rotationMatrix = Matrix4x4.CreateRotationY(_rotationY) *
+            // NWN uses Z-up: rotate around Z for horizontal spin (left/right), X for tilt (up/down)
+            var rotationMatrix = Matrix4x4.CreateRotationZ(_rotationY) *
                                 Matrix4x4.CreateRotationX(_rotationX);
-
-            var viewMatrix = Matrix4x4.CreateLookAt(
-                _cameraPosition,
-                new Vector3(_cameraPosition.X, _cameraPosition.Y, 0),
-                Vector3.UnitY);
-
-            var projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(
-                MathF.PI / 4, // 45 degrees FOV
-                (float)(_bounds.Width / _bounds.Height),
-                0.1f,
-                1000f);
 
             var screenCenterX = (float)_bounds.Width / 2;
             var screenCenterY = (float)_bounds.Height / 2;
-            var scale = (float)Math.Min(_bounds.Width, _bounds.Height) / 2 * _zoom;
 
-            // Draw wireframe for each mesh
-            using var paint = new SKPaint
-            {
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 1,
-                Color = new SKColor(100, 180, 255), // Light blue wireframe
-                IsAntialias = true
-            };
+            // Calculate scale to fit model in viewport
+            // Model radius determines how big it appears; we want it to fill ~80% of the smaller dimension
+            var modelRadius = _model.Radius > 0 ? _model.Radius : 1f;
+            var viewportSize = (float)Math.Min(_bounds.Width, _bounds.Height);
+            // Scale factor: we want modelRadius to map to ~40% of viewport (leaving margin)
+            // The projection divides by Z (~5), so multiply scale accordingly
+            var scale = (viewportSize * 0.4f / modelRadius) * 5f * _zoom;
 
-            foreach (var mesh in _model.GetMeshNodes())
+            // Light direction for basic shading (from upper right)
+            var lightDir = Vector3.Normalize(new Vector3(0.5f, 0.8f, 0.3f));
+
+            if (_wireframeMode)
             {
-                DrawMeshWireframe(canvas, mesh, rotationMatrix, viewMatrix, projectionMatrix,
-                    screenCenterX, screenCenterY, scale, paint);
+                // Wireframe rendering
+                using var paint = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 1,
+                    Color = new SKColor(100, 180, 255), // Light blue wireframe
+                    IsAntialias = true
+                };
+
+                foreach (var mesh in _model.GetMeshNodes())
+                {
+                    DrawMeshWireframe(canvas, mesh, rotationMatrix, screenCenterX, screenCenterY, scale, paint);
+                }
+            }
+            else
+            {
+                // Solid flat-shaded rendering with depth sorting
+                var allFaces = new List<(MdlTrimeshNode mesh, int faceIndex, float depth, SKPoint[] points, Vector3 normal)>();
+
+                foreach (var mesh in _model.GetMeshNodes())
+                {
+                    CollectSortedFaces(mesh, rotationMatrix, screenCenterX, screenCenterY, scale, allFaces);
+                }
+
+                // Sort by depth (painter's algorithm - draw far faces first)
+                allFaces.Sort((a, b) => b.depth.CompareTo(a.depth));
+
+                using var fillPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
+
+                foreach (var (mesh, faceIndex, depth, points, normal) in allFaces)
+                {
+                    // Calculate lighting
+                    var rotatedNormal = Vector3.TransformNormal(normal, rotationMatrix);
+                    var lightIntensity = Math.Max(0.2f, Vector3.Dot(rotatedNormal, lightDir));
+
+                    // Get base color from texture or material
+                    var baseColor = GetMeshColor(mesh);
+                    var r = (byte)Math.Clamp(baseColor.Red * lightIntensity, 0, 255);
+                    var g = (byte)Math.Clamp(baseColor.Green * lightIntensity, 0, 255);
+                    var b = (byte)Math.Clamp(baseColor.Blue * lightIntensity, 0, 255);
+
+                    fillPaint.Color = new SKColor(r, g, b);
+
+                    // Draw filled triangle
+                    using var path = new SKPath();
+                    path.MoveTo(points[0]);
+                    path.LineTo(points[1]);
+                    path.LineTo(points[2]);
+                    path.Close();
+                    canvas.DrawPath(path, fillPaint);
+                }
             }
 
             canvas.Restore();
         }
 
-        private void DrawMeshWireframe(SKCanvas canvas, MdlTrimeshNode mesh,
-            Matrix4x4 rotation, Matrix4x4 view, Matrix4x4 projection,
-            float centerX, float centerY, float scale, SKPaint paint)
+        private SKColor GetMeshColor(MdlTrimeshNode mesh)
+        {
+            // Try to get average color from texture
+            var textureName = mesh.Bitmap?.ToLowerInvariant() ?? "";
+            if (!string.IsNullOrEmpty(textureName) && _textures.TryGetValue(textureName, out var bitmap) && bitmap != null)
+            {
+                // Sample center of texture for average color
+                var centerX = bitmap.Width / 2;
+                var centerY = bitmap.Height / 2;
+                return bitmap.GetPixel(centerX, centerY);
+            }
+
+            // Fall back to mesh diffuse color
+            var d = mesh.Diffuse;
+            return new SKColor(
+                (byte)(d.X * 255),
+                (byte)(d.Y * 255),
+                (byte)(d.Z * 255));
+        }
+
+        private void CollectSortedFaces(MdlTrimeshNode mesh, Matrix4x4 rotation,
+            float centerX, float centerY, float scale,
+            List<(MdlTrimeshNode mesh, int faceIndex, float depth, SKPoint[] points, Vector3 normal)> faces)
         {
             if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
                 return;
@@ -265,25 +450,99 @@ public class ModelPreviewControl : Control
             // Model center for rotation
             var modelCenter = (_model.BoundingMin + _model.BoundingMax) * 0.5f;
 
+            // Get mesh node's position offset (body parts have different positions)
+            var nodePosition = mesh.Position;
+
+            // Project vertices to screen space
+            var screenPoints = new SKPoint[mesh.Vertices.Length];
+            var worldPositions = new Vector3[mesh.Vertices.Length];
+
+            for (int i = 0; i < mesh.Vertices.Length; i++)
+            {
+                // Apply node position offset, then center on model
+                var v = mesh.Vertices[i] + nodePosition - modelCenter;
+                var rotated = Vector3.Transform(v, rotation);
+                worldPositions[i] = rotated;
+
+                // NWN uses Z-up coordinate system:
+                // X = left/right, Y = forward/back (depth), Z = up/down
+                // After rotation, Y becomes depth into screen
+                var depth = -rotated.Y + 5; // Negate Y for correct depth after rotation
+                if (depth < 0.1f) depth = 0.1f;
+
+                var screenX = centerX + (rotated.X / depth) * scale;
+                var screenY = centerY - (rotated.Z / depth) * scale; // - because screen Y increases down, Z increases up
+
+                screenPoints[i] = new SKPoint(screenX, screenY);
+            }
+
+            // Collect faces with depth info
+            for (int faceIdx = 0; faceIdx < mesh.Faces.Length; faceIdx++)
+            {
+                var face = mesh.Faces[faceIdx];
+                if (face.VertexIndex0 >= mesh.Vertices.Length ||
+                    face.VertexIndex1 >= mesh.Vertices.Length ||
+                    face.VertexIndex2 >= mesh.Vertices.Length)
+                    continue;
+
+                var p0 = screenPoints[face.VertexIndex0];
+                var p1 = screenPoints[face.VertexIndex1];
+                var p2 = screenPoints[face.VertexIndex2];
+
+                // Backface culling (reversed due to Y flip)
+                var cross = (p1.X - p0.X) * (p2.Y - p0.Y) - (p1.Y - p0.Y) * (p2.X - p0.X);
+                if (cross > 0) continue;
+
+                // Average depth for sorting (negated Y is depth after rotation)
+                var avgDepth = -(worldPositions[face.VertexIndex0].Y +
+                                worldPositions[face.VertexIndex1].Y +
+                                worldPositions[face.VertexIndex2].Y) / 3f;
+
+                // Calculate face normal
+                var v0 = mesh.Vertices[face.VertexIndex0];
+                var v1 = mesh.Vertices[face.VertexIndex1];
+                var v2 = mesh.Vertices[face.VertexIndex2];
+                var edge1 = v1 - v0;
+                var edge2 = v2 - v0;
+                var normal = Vector3.Normalize(Vector3.Cross(edge1, edge2));
+
+                faces.Add((mesh, faceIdx, avgDepth, new[] { p0, p1, p2 }, normal));
+            }
+        }
+
+        private void DrawMeshWireframe(SKCanvas canvas, MdlTrimeshNode mesh,
+            Matrix4x4 rotation, float centerX, float centerY, float scale, SKPaint paint)
+        {
+            if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
+                return;
+
+            // Model center for rotation
+            var modelCenter = (_model.BoundingMin + _model.BoundingMax) * 0.5f;
+
+            // Get mesh node's position offset (body parts have different positions)
+            var nodePosition = mesh.Position;
+
             // Project vertices to screen space
             var screenPoints = new SKPoint[mesh.Vertices.Length];
             var depths = new float[mesh.Vertices.Length];
 
             for (int i = 0; i < mesh.Vertices.Length; i++)
             {
-                // Center on model, rotate, then project
-                var v = mesh.Vertices[i] - modelCenter;
+                // Apply node position offset, center on model, rotate, then project
+                var v = mesh.Vertices[i] + nodePosition - modelCenter;
                 var rotated = Vector3.Transform(v, rotation);
 
-                // Simple perspective projection
-                var z = rotated.Z + 5; // Move away from camera
-                if (z < 0.1f) z = 0.1f;
+                // NWN uses Z-up coordinate system:
+                // X = left/right, Y = forward/back (depth), Z = up/down
+                // After rotation, Y becomes depth into screen
+                var depth = -rotated.Y + 5; // Negate Y for correct depth after rotation
+                if (depth < 0.1f) depth = 0.1f;
 
-                var screenX = centerX + (rotated.X / z) * scale;
-                var screenY = centerY - (rotated.Y / z) * scale; // Flip Y
+                var screenX = centerX + (rotated.X / depth) * scale;
+                var screenY = centerY - (rotated.Z / depth) * scale; // - because screen Y increases down, Z increases up
 
                 screenPoints[i] = new SKPoint(screenX, screenY);
-                depths[i] = z;
+                depths[i] = depth;
             }
 
             // Draw triangle edges
@@ -298,9 +557,9 @@ public class ModelPreviewControl : Control
                 var p1 = screenPoints[face.VertexIndex1];
                 var p2 = screenPoints[face.VertexIndex2];
 
-                // Simple backface culling using screen-space winding
+                // Simple backface culling using screen-space winding (reversed due to Y flip)
                 var cross = (p1.X - p0.X) * (p2.Y - p0.Y) - (p1.Y - p0.Y) * (p2.X - p0.X);
-                if (cross < 0) continue; // Backface
+                if (cross > 0) continue; // Backface
 
                 // Draw edges
                 canvas.DrawLine(p0, p1, paint);

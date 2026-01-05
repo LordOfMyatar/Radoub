@@ -130,10 +130,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SpellsPanelContent.SetIconService(_itemIconService);
         SpellsPanelContent.SpellsChanged += (s, e) => MarkDirty();
 
-        // Initialize appearance panel with display service, palette colors, and model service
+        // Initialize appearance panel with display service, palette colors, model service, and texture service
         AppearancePanelContent.SetDisplayService(_creatureDisplayService);
         AppearancePanelContent.SetPaletteColorService(new PaletteColorService(_gameDataService));
         AppearancePanelContent.SetModelService(new ModelService(_gameDataService));
+        AppearancePanelContent.SetTextureService(new TextureService(_gameDataService));
         AppearancePanelContent.AppearanceChanged += (s, e) => MarkDirty();
 
         // Initialize advanced panel with display service

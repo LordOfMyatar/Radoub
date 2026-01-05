@@ -152,8 +152,14 @@ public class MdlAsciiReader
 
     private MdlNode? ParseGeometry()
     {
-        MdlNode? root = null;
-        var nodeStack = new Stack<MdlNode>();
+        // NWN ASCII MDL uses a FLAT node list with "parent" properties, NOT nested nodes.
+        // First pass: collect all nodes and their parent names
+        var nodesByName = new Dictionary<string, MdlNode>(StringComparer.OrdinalIgnoreCase);
+        var parentNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+            Radoub.Formats.Logging.LogLevel.DEBUG,
+            $"[MDL-ASCII] ParseGeometry START");
 
         while (_currentLine < _lines.Length)
         {
@@ -175,23 +181,24 @@ public class MdlAsciiReader
             {
                 case "endmodelgeom":
                     _currentLine++;
-                    return root;
+                    return LinkNodeHierarchy(nodesByName, parentNames);
 
                 case "node":
                     if (tokens.Length >= 3)
                     {
-                        var node = ParseNode(tokens[1], tokens[2]);
-                        if (root == null)
+                        var nodeType = tokens[1];
+                        var nodeName = tokens[2];
+                        var (node, parentName) = ParseNodeWithParent(nodeType, nodeName);
+
+                        nodesByName[nodeName] = node;
+                        if (!string.IsNullOrEmpty(parentName) && !parentName.Equals("NULL", StringComparison.OrdinalIgnoreCase))
                         {
-                            root = node;
+                            parentNames[nodeName] = parentName;
                         }
-                        else if (nodeStack.Count > 0)
-                        {
-                            var parent = nodeStack.Peek();
-                            node.Parent = parent;
-                            parent.Children.Add(node);
-                        }
-                        nodeStack.Push(node);
+
+                        Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                            Radoub.Formats.Logging.LogLevel.DEBUG,
+                            $"[MDL-ASCII] Parsed node: name='{nodeName}', type='{nodeType}', parent='{parentName ?? "NULL"}'");
                     }
                     else
                     {
@@ -200,8 +207,6 @@ public class MdlAsciiReader
                     break;
 
                 case "endnode":
-                    if (nodeStack.Count > 0)
-                        nodeStack.Pop();
                     _currentLine++;
                     break;
 
@@ -211,10 +216,55 @@ public class MdlAsciiReader
             }
         }
 
+        return LinkNodeHierarchy(nodesByName, parentNames);
+    }
+
+    /// <summary>
+    /// Link nodes into hierarchy based on parent names, returns root node.
+    /// </summary>
+    private MdlNode? LinkNodeHierarchy(Dictionary<string, MdlNode> nodesByName, Dictionary<string, string> parentNames)
+    {
+        MdlNode? root = null;
+
+        // Link all nodes to their parents
+        foreach (var kvp in parentNames)
+        {
+            var childName = kvp.Key;
+            var parentName = kvp.Value;
+
+            if (nodesByName.TryGetValue(childName, out var child) &&
+                nodesByName.TryGetValue(parentName, out var parent))
+            {
+                child.Parent = parent;
+                parent.Children.Add(child);
+            }
+        }
+
+        // Find root node (node with no parent that has children, or first node with NULL parent)
+        foreach (var node in nodesByName.Values)
+        {
+            if (node.Parent == null)
+            {
+                // Prefer node that has children
+                if (node.Children.Count > 0 || root == null)
+                {
+                    root = node;
+                }
+            }
+        }
+
+        Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+            Radoub.Formats.Logging.LogLevel.DEBUG,
+            $"[MDL-ASCII] ParseGeometry END: root={root?.Name ?? "null"}, rootChildren={root?.Children.Count ?? 0}, totalNodes={nodesByName.Count}");
+
         return root;
     }
 
-    private MdlNode ParseNode(string nodeType, string nodeName)
+    /// <summary>
+    /// Parse a node and return the node along with its declared parent name.
+    /// NWN ASCII MDL uses flat node list with explicit "parent" properties.
+    /// </summary>
+    private (MdlNode node, string? parentName) ParseNodeWithParent(string nodeType, string nodeName)
     {
         MdlNode node = nodeType.ToLowerInvariant() switch
         {
@@ -230,6 +280,7 @@ public class MdlAsciiReader
         };
 
         node.Name = nodeName;
+        string? parentName = null;
         _currentLine++;
 
         // Parse node properties
@@ -255,11 +306,23 @@ public class MdlAsciiReader
             if (prop == "endnode" || prop == "node")
                 break;
 
+            // Capture parent name
+            if (prop == "parent" && tokens.Length >= 2)
+            {
+                parentName = tokens[1];
+            }
+
             // Parse property based on node type
             ParseNodeProperty(node, prop, tokens);
             _currentLine++;
         }
 
+        return (node, parentName);
+    }
+
+    private MdlNode ParseNode(string nodeType, string nodeName)
+    {
+        var (node, _) = ParseNodeWithParent(nodeType, nodeName);
         return node;
     }
 
