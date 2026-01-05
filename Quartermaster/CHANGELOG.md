@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.29-alpha] - 2026-01-04
+**Branch**: `quartermaster/issue-761` | **PR**: #TBD
+
+### Sprint: Spell System Polish (#761)
+
+Add spell slots display and enable adding/removing spells from known and memorized lists.
+
+- [ ] #758 - Add spell slot summary for each caster class
+- [ ] #737 - Add/Remove Known Spells
+- [ ] #738 - Add/Remove Memorized Spells
+
+---
+
 ## [0.1.28-alpha] - 2026-01-04
 **Branch**: `radoub/issue-557` | **PR**: #772
 
