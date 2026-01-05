@@ -58,6 +58,25 @@
                    Margin="16,0,0,0"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
       </Grid>
+
+      <!-- Row 3: Property search -->
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Grid.Column="0"
+                   Text="Properties:"
+                   VerticalAlignment="Center"
+                   Margin="0,0,8,0"/>
+        <TextBox x:Name="PropertySearchBox"
+                 Grid.Column="1"
+                 Watermark="Search properties (e.g., Enhancement, Monk, Fire)..."
+                 Text="{Binding PropertySearchText, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
+        <Button x:Name="ClearPropertyButton"
+                Grid.Column="2"
+                Content="✕"
+                Width="32"
+                Margin="4,0,0,0"
+                Click="OnClearPropertySearchClick"
+                ToolTip.Tip="Clear property search"/>
+      </Grid>
     </StackPanel>
   </Border>
 </UserControl>

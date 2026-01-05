@@ -82,6 +82,12 @@ public partial class ItemFilterPanel : UserControl
     public static readonly StyledProperty<string> ContextKeyProperty =
         AvaloniaProperty.Register<ItemFilterPanel, string>(nameof(ContextKey), defaultValue: "Default");
 
+    /// <summary>
+    /// Property search text for filtering by item properties.
+    /// </summary>
+    public static readonly StyledProperty<string> PropertySearchTextProperty =
+        AvaloniaProperty.Register<ItemFilterPanel, string>(nameof(PropertySearchText), defaultValue: string.Empty);
+
     #endregion
 
     #region Events
@@ -206,6 +212,15 @@ public partial class ItemFilterPanel : UserControl
         set => SetValue(ContextKeyProperty, value);
     }
 
+    /// <summary>
+    /// Property search text for filtering by item properties.
+    /// </summary>
+    public string PropertySearchText
+    {
+        get => GetValue(PropertySearchTextProperty);
+        set => SetValue(PropertySearchTextProperty, value);
+    }
+
     #endregion
 
     #region Lifecycle
@@ -255,7 +270,7 @@ public partial class ItemFilterPanel : UserControl
 
             ApplyFilter();
         }
-        else if (change.Property == SearchTextProperty)
+        else if (change.Property == SearchTextProperty || change.Property == PropertySearchTextProperty)
         {
             // Debounce search text changes
             _debounceTimer.Stop();
@@ -349,6 +364,7 @@ public partial class ItemFilterPanel : UserControl
         }
 
         var searchLower = SearchText?.ToLowerInvariant() ?? string.Empty;
+        var propertySearchLower = PropertySearchText?.ToLowerInvariant() ?? string.Empty;
         var typeFilter = SelectedItemType;
         var showStandard = ShowStandard;
         var showCustom = ShowCustom;
@@ -358,7 +374,7 @@ public partial class ItemFilterPanel : UserControl
 
         foreach (var item in Items)
         {
-            if (MatchesFilter(item, searchLower, typeFilter, showStandard, showCustom))
+            if (MatchesFilter(item, searchLower, propertySearchLower, typeFilter, showStandard, showCustom))
             {
                 FilteredItems.Add(item);
                 matchCount++;
@@ -376,6 +392,7 @@ public partial class ItemFilterPanel : UserControl
     private bool MatchesFilter(
         ItemViewModel item,
         string searchLower,
+        string propertySearchLower,
         ItemTypeInfo? typeFilter,
         bool showStandard,
         bool showCustom)
@@ -399,6 +416,14 @@ public partial class ItemFilterPanel : UserControl
             var resRefMatch = item.ResRef.ToLowerInvariant().Contains(searchLower);
 
             if (!nameMatch && !tagMatch && !resRefMatch)
+                return false;
+        }
+
+        // Property search (searches resolved property strings)
+        if (!string.IsNullOrEmpty(propertySearchLower))
+        {
+            var propsLower = item.PropertiesDisplay.ToLowerInvariant();
+            if (!propsLower.Contains(propertySearchLower))
                 return false;
         }
 
@@ -426,6 +451,7 @@ public partial class ItemFilterPanel : UserControl
         ShowStandard = state.ShowStandard;
         ShowCustom = state.ShowCustom;
         SearchText = state.SearchText ?? string.Empty;
+        PropertySearchText = state.PropertySearchText ?? string.Empty;
 
         // Restore selected type
         if (state.SelectedBaseItemIndex.HasValue)
@@ -448,7 +474,8 @@ public partial class ItemFilterPanel : UserControl
             ShowStandard = ShowStandard,
             ShowCustom = ShowCustom,
             SearchText = string.IsNullOrEmpty(SearchText) ? null : SearchText,
-            SelectedBaseItemIndex = SelectedItemType?.IsAllTypes == true ? null : SelectedItemType?.BaseItemIndex
+            SelectedBaseItemIndex = SelectedItemType?.IsAllTypes == true ? null : SelectedItemType?.BaseItemIndex,
+            PropertySearchText = string.IsNullOrEmpty(PropertySearchText) ? null : PropertySearchText
         };
 
         FilterSettings.SetFilterState(ContextKey, state);
@@ -462,6 +489,11 @@ public partial class ItemFilterPanel : UserControl
     private void OnClearSearchClick(object? sender, RoutedEventArgs e)
     {
         SearchText = string.Empty;
+    }
+
+    private void OnClearPropertySearchClick(object? sender, RoutedEventArgs e)
+    {
+        PropertySearchText = string.Empty;
     }
 
     #endregion

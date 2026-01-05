@@ -10,6 +10,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.28-alpha] - 2026-01-04
+**Branch**: `radoub/issue-557` | **PR**: #772
+
+### Sprint: Item Property Search (#557)
+
+Add item property search to ItemFilterPanel. Search/filter items by their properties.
+
+#### Added
+
+- **Property Search** in ItemFilterPanel
+  - New "Properties:" text box searches item property strings
+  - Debounced input (300ms) for performance
+  - Case-insensitive search
+  - Clear button to reset property filter
+  - Filter state persisted with other filter settings
+
+#### Use Cases
+
+- Find class-restricted items: search "monk" or "wizard"
+- Find spell items by level: search "level 3"
+- Find items with specific bonuses: search "enhancement" or "+2"
+- Find damage types: search "fire" or "cold"
+
+---
+
 ## [0.1.27-alpha] - 2026-01-04
 **Branch**: `quartermaster/issue-617` | **PR**: #766
 
