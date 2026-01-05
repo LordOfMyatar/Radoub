@@ -13,14 +13,23 @@
                        FontSize="20"
                        FontWeight="Bold"/>
 
-            <!-- Spells Summary -->
-            <TextBlock Grid.Row="1"
-                       x:Name="SpellsSummaryText"
-                       Text="No spells loaded"
-                       FontSize="12"
-                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                       Margin="0,5,0,10"
-                       AutomationProperties.AutomationId="SpellsSummary"/>
+            <!-- All Caster Classes Summary -->
+            <Border Grid.Row="1"
+                    x:Name="AllClassesSummaryBorder"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="4"
+                    Padding="10"
+                    Margin="0,5,0,10"
+                    IsVisible="False"
+                    AutomationProperties.AutomationId="AllClassesSummarySection">
+                <StackPanel x:Name="AllClassesSummaryPanel" Spacing="4">
+                    <TextBlock Text="Spell Slots by Class"
+                               FontWeight="SemiBold"
+                               FontSize="12"
+                               Margin="0,0,0,6"/>
+                    <!-- Dynamic class summaries added here -->
+                </StackPanel>
+            </Border>
 
             <!-- Class Radio Buttons (Class 1-8) -->
             <Border Grid.Row="2"

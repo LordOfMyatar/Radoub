@@ -25,7 +25,8 @@ public partial class SpellsPanel : UserControl
     public event EventHandler? SpellsChanged;
 
     // UI Controls
-    private TextBlock? _spellsSummaryText;
+    private Border? _allClassesSummaryBorder;
+    private StackPanel? _allClassesSummaryPanel;
     private TextBlock? _spellSlotSummaryText;
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
@@ -66,7 +67,8 @@ public partial class SpellsPanel : UserControl
         AvaloniaXamlLoader.Load(this);
 
         // Find UI controls
-        _spellsSummaryText = this.FindControl<TextBlock>("SpellsSummaryText");
+        _allClassesSummaryBorder = this.FindControl<Border>("AllClassesSummaryBorder");
+        _allClassesSummaryPanel = this.FindControl<StackPanel>("AllClassesSummaryPanel");
         _spellSlotSummaryText = this.FindControl<TextBlock>("SpellSlotSummaryText");
         _searchTextBox = this.FindControl<TextBox>("SearchTextBox");
         _clearSearchButton = this.FindControl<Button>("ClearSearchButton");
@@ -732,20 +734,95 @@ public partial class SpellsPanel : UserControl
 
     private void UpdateSummary()
     {
-        var knownCount = _knownSpellIds.Count;
-        var memorizedCount = _memorizedSpellIds.Count;
-        var displayedCount = _displayedSpells.Count;
-        var totalCount = _allSpells.Count;
+        // Update all caster classes summary
+        UpdateAllClassesSummary();
 
-        var filterNote = displayedCount < totalCount
-            ? $" (showing {displayedCount} of {totalCount})"
-            : "";
-
-        SetText(_spellsSummaryText,
-            $"Known: {knownCount} | Memorized: {memorizedCount}{filterNote}");
-
-        // Update spell slot summary
+        // Update selected class spell slot summary
         UpdateSpellSlotSummary();
+    }
+
+    /// <summary>
+    /// Updates the all-classes spell slot summary section.
+    /// Shows spell slots for each caster class in the creature.
+    /// </summary>
+    private void UpdateAllClassesSummary()
+    {
+        if (_allClassesSummaryPanel == null || _allClassesSummaryBorder == null) return;
+
+        // Clear existing class summaries (keep the header)
+        while (_allClassesSummaryPanel.Children.Count > 1)
+        {
+            _allClassesSummaryPanel.Children.RemoveAt(_allClassesSummaryPanel.Children.Count - 1);
+        }
+
+        if (_currentCreature == null || _displayService == null)
+        {
+            _allClassesSummaryBorder.IsVisible = false;
+            return;
+        }
+
+        var casterClasses = new List<(int classIndex, string className, int classLevel, int[] slots, CreatureClass classEntry)>();
+
+        // Find all caster classes
+        for (int i = 0; i < _currentCreature.ClassList.Count; i++)
+        {
+            var classEntry = _currentCreature.ClassList[i];
+            var className = _displayService.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
+            var slots = _displayService.GetSpellSlots(classEntry.Class, classEntry.ClassLevel);
+
+            // Check if this class has spell slots or has spell data
+            bool hasSpellSlots = slots != null && slots.Any(s => s > 0);
+            bool hasSpellData = classEntry.KnownSpells.Any(list => list.Count > 0) ||
+                                classEntry.MemorizedSpells.Any(list => list.Count > 0);
+
+            if (hasSpellSlots || hasSpellData)
+            {
+                casterClasses.Add((i, className, classEntry.ClassLevel, slots ?? new int[10], classEntry));
+            }
+        }
+
+        if (casterClasses.Count == 0)
+        {
+            _allClassesSummaryBorder.IsVisible = false;
+            return;
+        }
+
+        _allClassesSummaryBorder.IsVisible = true;
+
+        // Add a summary line for each caster class
+        foreach (var (classIndex, className, classLevel, slots, classEntry) in casterClasses)
+        {
+            var slotParts = new List<string>();
+
+            for (int level = 0; level <= 9; level++)
+            {
+                int totalSlots = slots[level];
+                if (totalSlots <= 0) continue;
+
+                // Count known/memorized spells at this level
+                int usedSlots = classEntry.KnownSpells[level].Count;
+
+                slotParts.Add($"{level}:{usedSlots}/{totalSlots}");
+            }
+
+            var slotsText = slotParts.Count > 0
+                ? string.Join(" | ", slotParts)
+                : "(no spell slots at current level)";
+
+            // Create the summary TextBlock
+            var summaryText = new TextBlock
+            {
+                Text = $"{className} ({classLevel}): {slotsText}",
+                FontSize = 11,
+                Foreground = classIndex == _selectedClassIndex
+                    ? new SolidColorBrush(Color.FromRgb(100, 180, 255))  // Highlight selected class
+                    : this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
+                      ?? new SolidColorBrush(Colors.Gray),
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap
+            };
+
+            _allClassesSummaryPanel.Children.Add(summaryText);
+        }
     }
 
     private void UpdateSpellSlotSummary()
@@ -821,7 +898,15 @@ public partial class SpellsPanel : UserControl
         _currentCreature = null;
         _selectedClassIndex = 0;
 
-        SetText(_spellsSummaryText, "No spells loaded");
+        // Hide all-classes summary
+        if (_allClassesSummaryBorder != null)
+            _allClassesSummaryBorder.IsVisible = false;
+        if (_allClassesSummaryPanel != null)
+        {
+            while (_allClassesSummaryPanel.Children.Count > 1)
+                _allClassesSummaryPanel.Children.RemoveAt(_allClassesSummaryPanel.Children.Count - 1);
+        }
+
         SetText(_spellSlotSummaryText, "");
 
         if (_noSpellsText != null)
