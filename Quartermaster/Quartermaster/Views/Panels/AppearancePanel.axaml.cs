@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Quartermaster.Controls;
 using Quartermaster.Services;
 using Quartermaster.Views.Dialogs;
+using Radoub.Formats.Mdl;
 using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Panels;
@@ -59,8 +62,19 @@ public partial class AppearancePanel : UserControl
     private Border? _tattoo1ColorSwatch;
     private Border? _tattoo2ColorSwatch;
 
+    // 3D Preview
+    private Border? _modelPreviewContainer;
+    private ModelPreviewControl? _modelPreview;
+    private Button? _rotateLeftButton;
+    private Button? _rotateRightButton;
+    private Button? _resetViewButton;
+    private Button? _zoomInButton;
+    private Button? _zoomOutButton;
+
     private CreatureDisplayService? _displayService;
     private PaletteColorService? _paletteColorService;
+    private ModelService? _modelService;
+    private TextureService? _textureService;
     private UtcFile? _currentCreature;
     private List<AppearanceInfo>? _appearances;
     private List<PhenotypeInfo>? _phenotypes;
@@ -124,6 +138,15 @@ public partial class AppearancePanel : UserControl
         _tattoo1ColorSwatch = this.FindControl<Border>("Tattoo1ColorSwatch");
         _tattoo2ColorSwatch = this.FindControl<Border>("Tattoo2ColorSwatch");
 
+        // 3D Preview
+        _modelPreviewContainer = this.FindControl<Border>("ModelPreviewContainer");
+        _modelPreview = this.FindControl<ModelPreviewControl>("ModelPreview");
+        _rotateLeftButton = this.FindControl<Button>("RotateLeftButton");
+        _rotateRightButton = this.FindControl<Button>("RotateRightButton");
+        _resetViewButton = this.FindControl<Button>("ResetViewButton");
+        _zoomInButton = this.FindControl<Button>("ZoomInButton");
+        _zoomOutButton = this.FindControl<Button>("ZoomOutButton");
+
         // Wire up events
         if (_appearanceComboBox != null)
             _appearanceComboBox.SelectionChanged += OnAppearanceSelectionChanged;
@@ -159,6 +182,18 @@ public partial class AppearancePanel : UserControl
             _tattoo2ColorSwatch.Cursor = new Cursor(StandardCursorType.Hand);
             _tattoo2ColorSwatch.PointerPressed += OnTattoo2ColorSwatchClicked;
         }
+
+        // 3D Preview button events
+        if (_rotateLeftButton != null)
+            _rotateLeftButton.Click += OnRotateLeftClicked;
+        if (_rotateRightButton != null)
+            _rotateRightButton.Click += OnRotateRightClicked;
+        if (_resetViewButton != null)
+            _resetViewButton.Click += OnResetViewClicked;
+        if (_zoomInButton != null)
+            _zoomInButton.Click += OnZoomInClicked;
+        if (_zoomOutButton != null)
+            _zoomOutButton.Click += OnZoomOutClicked;
     }
 
     public void SetDisplayService(CreatureDisplayService displayService)
@@ -171,6 +206,17 @@ public partial class AppearancePanel : UserControl
     public void SetPaletteColorService(PaletteColorService paletteColorService)
     {
         _paletteColorService = paletteColorService;
+    }
+
+    public void SetModelService(ModelService modelService)
+    {
+        _modelService = modelService;
+    }
+
+    public void SetTextureService(TextureService textureService)
+    {
+        _textureService = textureService;
+        _modelPreview?.SetTextureService(textureService);
     }
 
     private void LoadAppearanceData()
@@ -325,8 +371,35 @@ public partial class AppearancePanel : UserControl
         UpdateBodyPartsEnabledState(isPartBased);
         LoadBodyPartValues(creature);
 
+        // Load model preview
+        UpdateModelPreview();
+
         // Defer clearing _isLoading until after dispatcher processes queued SelectionChanged events
         Avalonia.Threading.Dispatcher.UIThread.Post(() => _isLoading = false, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private void UpdateModelPreview()
+    {
+        if (_modelService == null || _currentCreature == null || _modelPreview == null)
+            return;
+
+        try
+        {
+            // Update character colors for PLT rendering
+            _modelPreview.SetCharacterColors(
+                _currentCreature.Color_Skin,
+                _currentCreature.Color_Hair,
+                _currentCreature.Color_Tattoo1,
+                _currentCreature.Color_Tattoo2);
+
+            var model = _modelService.LoadCreatureModel(_currentCreature);
+            _modelPreview.Model = model;
+        }
+        catch (Exception)
+        {
+            // Failed to load model - show empty preview
+            _modelPreview.Model = null;
+        }
     }
 
     private void UpdateBodyPartsEnabledState(bool isPartBased)
@@ -506,6 +579,14 @@ public partial class AppearancePanel : UserControl
         {
             var isPartBased = _displayService?.IsPartBasedAppearance(appearanceId) ?? false;
             UpdateBodyPartsEnabledState(isPartBased);
+
+            // Update model preview when appearance changes
+            if (_currentCreature != null)
+            {
+                _currentCreature.AppearanceType = appearanceId;
+                UpdateModelPreview();
+            }
+
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         }
     }
@@ -536,6 +617,9 @@ public partial class AppearancePanel : UserControl
             _currentCreature.Color_Tattoo2 = value;
             UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, value);
         }
+
+        // Update model preview with new colors
+        UpdateModelPreview();
 
         AppearanceChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -630,5 +714,42 @@ public partial class AppearancePanel : UserControl
         {
             onColorSelected(picker.SelectedColorIndex);
         }
+    }
+
+    // 3D Preview control handlers
+    private void OnRotateLeftClicked(object? sender, RoutedEventArgs e)
+    {
+        _modelPreview?.Rotate(-0.3f);
+    }
+
+    private void OnRotateRightClicked(object? sender, RoutedEventArgs e)
+    {
+        _modelPreview?.Rotate(0.3f);
+    }
+
+    private void OnResetViewClicked(object? sender, RoutedEventArgs e)
+    {
+        _modelPreview?.ResetView();
+    }
+
+    private void OnZoomInClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_modelPreview != null)
+            _modelPreview.Zoom *= 1.2f;
+    }
+
+    private void OnZoomOutClicked(object? sender, RoutedEventArgs e)
+    {
+        if (_modelPreview != null)
+            _modelPreview.Zoom /= 1.2f;
+    }
+
+    /// <summary>
+    /// Set a model for the 3D preview.
+    /// </summary>
+    public void SetPreviewModel(MdlModel? model)
+    {
+        if (_modelPreview != null)
+            _modelPreview.Model = model;
     }
 }

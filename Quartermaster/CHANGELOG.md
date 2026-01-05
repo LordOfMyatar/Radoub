@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.27-alpha] - 2026-01-04
+**Branch**: `quartermaster/issue-617` | **PR**: #766
+
+### Sprint: 3D Character Model Preview (#617)
+
+Add 3D character model preview to the Appearance tab, showing the character's visual appearance alongside body part configuration.
+
+#### Layout Changes
+- Restructure Appearance tab: body parts on left, 3D model preview on right
+- Reduce text box widths to respect Aurora Engine's 16-char filename limit
+
+#### 3D Model Rendering
+- MDL parser for NWN model format
+- PLT (palette texture) rendering with color channels
+- Skeleton/animation support (idle pose minimum)
+- Real-time model updates when appearance parts change
+
+---
+
 ## [0.1.26-alpha] - 2026-01-04
 **Branch**: `quartermaster/issue-760` | **PR**: #765
 
