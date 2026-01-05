@@ -439,6 +439,7 @@ public class CreatureDisplayService
     public bool IsCasterClass(int classId) => Spells.IsCasterClass(classId);
     public bool IsSpontaneousCaster(int classId) => Spells.IsSpontaneousCaster(classId);
     public int[]? GetSpellSlots(int classId, int classLevel) => Spells.GetSpellSlots(classId, classLevel);
+    public int[]? GetSpellsKnownLimit(int classId, int classLevel) => Spells.GetSpellsKnownLimit(classId, classLevel);
 
     #endregion
 }

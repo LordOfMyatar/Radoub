@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.29-alpha] - 2026-01-04
+**Branch**: `quartermaster/issue-761` | **PR**: #774
+
+### Sprint: Spell System Polish (#761)
+
+Enhance SpellsPanel with multi-class spell slot display and polish spell editing workflow.
+
+- [x] #758 - Add spell slot summary for each caster class
+- [x] #737 - Add/Remove Known Spells (already implemented in #756)
+- [x] #738 - Add/Remove Memorized Spells (already implemented in #756)
+
+#### Added
+
+- **Spell Slot Table** (left panel) showing spell slots/known limits per class
+  - Grid format with spell levels as rows, caster classes as columns
+  - Color-coded: gold (full), green (partial), gray (empty/unavailable)
+  - Spontaneous casters show "spells known" limits, prepared casters show spell slots
+  - Filters out feat-based abilities from slot counts
+- **Known Spells List** (left panel, below slot table)
+  - Shows ALL caster classes with their spells grouped by level
+  - Overlapping spells (same spell in multiple classes) highlighted in gold with ⬥
+  - Feat-based abilities marked with asterisk (*) in gray
+  - Selected class header highlighted in blue
+  - Scrollable for characters with many spells
+
+#### Fixed
+
+- Spell list now loads all spells from spells.2da (fixed early termination bug)
+  - Previously stopped at first gap after 100 spells
+  - Now scans up to 2000 rows with consecutive-empty detection
+  - Supports custom content (CEP, PRC, etc.)
+
+---
+
 ## [0.1.28-alpha] - 2026-01-04
 **Branch**: `radoub/issue-557` | **PR**: #772
 

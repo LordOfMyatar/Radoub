@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 
 namespace Quartermaster.Services;
@@ -34,20 +35,29 @@ public class SpellService
 
     /// <summary>
     /// Gets all valid spell IDs from spells.2da.
+    /// NWN spells.2da has gaps, so we must scan the full range.
+    /// Base game has ~550 spells, but custom content (CEP, PRC) can add more.
     /// </summary>
     public List<int> GetAllSpellIds()
     {
         var spellIds = new List<int>();
+        int consecutiveEmpty = 0;
+        const int maxConsecutiveEmpty = 100; // Stop after 100 consecutive empty rows
 
-        for (int i = 0; i < 1000; i++)
+        // Scan up to 2000 to support custom content
+        for (int i = 0; i < 2000; i++)
         {
             var label = _gameDataService.Get2DAValue("spells", i, "Label");
             if (string.IsNullOrEmpty(label) || label == "****")
             {
-                if (spellIds.Count > 100)
+                consecutiveEmpty++;
+                // Only break if we've found spells AND hit many consecutive empty rows
+                if (spellIds.Count > 0 && consecutiveEmpty >= maxConsecutiveEmpty)
                     break;
                 continue;
             }
+
+            consecutiveEmpty = 0; // Reset counter when we find a valid row
 
             var spellName = _gameDataService.Get2DAValue("spells", i, "Name");
             if (string.IsNullOrEmpty(spellName) || spellName == "****")
@@ -215,8 +225,16 @@ public class SpellService
     public int[]? GetSpellSlots(int classId, int classLevel)
     {
         var spellGainTable = _gameDataService.Get2DAValue("classes", classId, "SpellGainTable");
+        UnifiedLogger.Log(LogLevel.INFO, $"GetSpellSlots: classId={classId}, classLevel={classLevel}, SpellGainTable={spellGainTable}", "SpellService", "🔮");
         if (string.IsNullOrEmpty(spellGainTable) || spellGainTable == "****")
             return null;
+
+        // Log columns for debugging
+        var twoDA = _gameDataService.Get2DA(spellGainTable);
+        if (twoDA != null)
+        {
+            UnifiedLogger.Log(LogLevel.INFO, $"GetSpellSlots: {spellGainTable} columns = [{string.Join(", ", twoDA.Columns)}]", "SpellService", "🔮");
+        }
 
         int rowIndex = classLevel - 1;
         if (rowIndex < 0) return null;
@@ -225,7 +243,8 @@ public class SpellService
 
         for (int spellLevel = 0; spellLevel <= 9; spellLevel++)
         {
-            var columnName = $"NumSpellLevels{spellLevel}";
+            // Column name is "SpellLevel0", "SpellLevel1", etc. in cls_spgn_* tables
+            var columnName = $"SpellLevel{spellLevel}";
             var slotsStr = _gameDataService.Get2DAValue(spellGainTable, rowIndex, columnName);
 
             if (!string.IsNullOrEmpty(slotsStr) && slotsStr != "****" && slotsStr != "-")
@@ -237,7 +256,44 @@ public class SpellService
             }
         }
 
+        UnifiedLogger.Log(LogLevel.INFO, $"GetSpellSlots: Result slots = [{string.Join(",", slots)}]", "SpellService", "🔮");
         return slots;
+    }
+
+    /// <summary>
+    /// Gets the number of spells a spontaneous caster can know at each spell level.
+    /// Uses the SpellKnownTable (cls_spkn_*) from classes.2da.
+    /// </summary>
+    /// <param name="classId">The class ID</param>
+    /// <param name="classLevel">The level in that class</param>
+    /// <returns>Array of 10 integers (indices 0-9) with max known spells per level, or null if not applicable</returns>
+    public int[]? GetSpellsKnownLimit(int classId, int classLevel)
+    {
+        var spellKnownTable = _gameDataService.Get2DAValue("classes", classId, "SpellKnownTable");
+        if (string.IsNullOrEmpty(spellKnownTable) || spellKnownTable == "****")
+            return null;
+
+        int rowIndex = classLevel - 1;
+        if (rowIndex < 0) return null;
+
+        var limits = new int[10];
+
+        for (int spellLevel = 0; spellLevel <= 9; spellLevel++)
+        {
+            // Column name is "SpellLevel0", "SpellLevel1", etc. in cls_spkn_* tables
+            var columnName = $"SpellLevel{spellLevel}";
+            var limitStr = _gameDataService.Get2DAValue(spellKnownTable, rowIndex, columnName);
+
+            if (!string.IsNullOrEmpty(limitStr) && limitStr != "****" && limitStr != "-")
+            {
+                if (int.TryParse(limitStr, out int count))
+                {
+                    limits[spellLevel] = count;
+                }
+            }
+        }
+
+        return limits;
     }
 }
 

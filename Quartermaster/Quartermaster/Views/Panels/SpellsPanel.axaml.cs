@@ -25,7 +25,10 @@ public partial class SpellsPanel : UserControl
     public event EventHandler? SpellsChanged;
 
     // UI Controls
-    private TextBlock? _spellsSummaryText;
+    private Border? _spellSlotTableBorder;
+    private Grid? _spellSlotTableGrid;
+    private Border? _knownSpellsListBorder;
+    private StackPanel? _knownSpellsListPanel;
     private TextBlock? _spellSlotSummaryText;
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
@@ -66,7 +69,10 @@ public partial class SpellsPanel : UserControl
         AvaloniaXamlLoader.Load(this);
 
         // Find UI controls
-        _spellsSummaryText = this.FindControl<TextBlock>("SpellsSummaryText");
+        _spellSlotTableBorder = this.FindControl<Border>("SpellSlotTableBorder");
+        _spellSlotTableGrid = this.FindControl<Grid>("SpellSlotTableGrid");
+        _knownSpellsListBorder = this.FindControl<Border>("KnownSpellsListBorder");
+        _knownSpellsListPanel = this.FindControl<StackPanel>("KnownSpellsListPanel");
         _spellSlotSummaryText = this.FindControl<TextBlock>("SpellSlotSummaryText");
         _searchTextBox = this.FindControl<TextBox>("SearchTextBox");
         _clearSearchButton = this.FindControl<Button>("ClearSearchButton");
@@ -310,17 +316,11 @@ public partial class SpellsPanel : UserControl
         // Load all spells from spells.2da
         LoadAllSpells(classEntry.Class);
 
-        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadSpellsForClass: About to ApplyFilters...");
-
         // Apply filters
         ApplyFilters();
 
-        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadSpellsForClass: About to UpdateSummary...");
-
         // Update summary
         UpdateSummary();
-
-        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadSpellsForClass: Done, returning to caller");
     }
 
     private void LoadAllSpells(int classId)
@@ -328,27 +328,16 @@ public partial class SpellsPanel : UserControl
         if (_displayService == null) return;
 
         var allSpellIds = _displayService.GetAllSpellIds();
-        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadAllSpells: Loading {allSpellIds.Count} spells for class {classId}");
 
-        int count = 0;
         foreach (var spellId in allSpellIds)
         {
             var vm = CreateSpellViewModel(spellId, classId);
             if (vm != null)
                 _allSpells.Add(vm);
-            count++;
-            if (count % 100 == 0)
-            {
-                UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadAllSpells: Processed {count}/{allSpellIds.Count} spells");
-            }
         }
-
-        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadAllSpells: Finished loading {_allSpells.Count} valid spells, now sorting...");
 
         // Sort by name
         _allSpells = _allSpells.OrderBy(s => s.SpellName).ToList();
-
-        UnifiedLogger.LogUI(LogLevel.INFO, $"SpellsPanel.LoadAllSpells: Done sorting");
     }
 
     private SpellListViewModel? CreateSpellViewModel(int spellId, int classId)
@@ -732,20 +721,372 @@ public partial class SpellsPanel : UserControl
 
     private void UpdateSummary()
     {
-        var knownCount = _knownSpellIds.Count;
-        var memorizedCount = _memorizedSpellIds.Count;
-        var displayedCount = _displayedSpells.Count;
-        var totalCount = _allSpells.Count;
+        // Update all caster classes summary
+        UpdateAllClassesSummary();
 
-        var filterNote = displayedCount < totalCount
-            ? $" (showing {displayedCount} of {totalCount})"
-            : "";
+        // Update known spells list
+        UpdateKnownSpellsList();
 
-        SetText(_spellsSummaryText,
-            $"Known: {knownCount} | Memorized: {memorizedCount}{filterNote}");
-
-        // Update spell slot summary
+        // Update selected class spell slot summary
         UpdateSpellSlotSummary();
+    }
+
+    /// <summary>
+    /// Updates the spell slot table on the left side.
+    /// Shows a grid with spell levels as rows and caster classes as columns.
+    /// </summary>
+    private void UpdateAllClassesSummary()
+    {
+        if (_spellSlotTableGrid == null || _spellSlotTableBorder == null) return;
+
+        // Clear existing content
+        _spellSlotTableGrid.Children.Clear();
+        _spellSlotTableGrid.ColumnDefinitions.Clear();
+        _spellSlotTableGrid.RowDefinitions.Clear();
+
+        if (_currentCreature == null || _displayService == null)
+        {
+            _spellSlotTableBorder.IsVisible = false;
+            return;
+        }
+
+        var casterClasses = new List<(int classIndex, string className, int classLevel, int[] limits, CreatureClass classEntry, bool isSpontaneous)>();
+
+        // Find all caster classes
+        for (int i = 0; i < _currentCreature.ClassList.Count; i++)
+        {
+            var classEntry = _currentCreature.ClassList[i];
+            var className = _displayService.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
+            var isSpontaneous = _displayService.IsSpontaneousCaster(classEntry.Class);
+
+            // For spontaneous casters, use spells known limit; for prepared casters, use spell slots
+            var limits = isSpontaneous
+                ? _displayService.GetSpellsKnownLimit(classEntry.Class, classEntry.ClassLevel)
+                : _displayService.GetSpellSlots(classEntry.Class, classEntry.ClassLevel);
+
+            // Check if this class has spell slots/limits or has spell data
+            bool hasSpellLimits = limits != null && limits.Any(s => s > 0);
+            bool hasSpellData = classEntry.KnownSpells.Any(list => list.Count > 0) ||
+                                classEntry.MemorizedSpells.Any(list => list.Count > 0);
+
+            if (hasSpellLimits || hasSpellData)
+            {
+                casterClasses.Add((i, className, classEntry.ClassLevel, limits ?? new int[10], classEntry, isSpontaneous));
+            }
+        }
+
+        if (casterClasses.Count == 0)
+        {
+            _spellSlotTableBorder.IsVisible = false;
+            return;
+        }
+
+        _spellSlotTableBorder.IsVisible = true;
+
+        // Find all spell levels that have limits across any class
+        var activeLevels = new List<int>();
+        for (int level = 0; level <= 9; level++)
+        {
+            if (casterClasses.Any(c => c.limits[level] > 0))
+            {
+                activeLevels.Add(level);
+            }
+        }
+
+        if (activeLevels.Count == 0)
+        {
+            _spellSlotTableBorder.IsVisible = false;
+            return;
+        }
+
+        // Build grid structure: first column for level labels, then one column per class
+        // Row 0 = header row with class names
+        // Rows 1+ = spell levels
+
+        // Add column definitions: Label column + one per class
+        _spellSlotTableGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        foreach (var _ in casterClasses)
+        {
+            _spellSlotTableGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+        }
+
+        // Add row definitions: header + one per active level
+        _spellSlotTableGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto)); // Header
+        foreach (var _ in activeLevels)
+        {
+            _spellSlotTableGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        }
+
+        // Add header row - "Lvl" label in first column
+        var lvlHeader = new TextBlock
+        {
+            Text = "Lvl",
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            FontSize = 12,
+            Margin = new Avalonia.Thickness(0, 0, 10, 4),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+        };
+        Grid.SetRow(lvlHeader, 0);
+        Grid.SetColumn(lvlHeader, 0);
+        _spellSlotTableGrid.Children.Add(lvlHeader);
+
+        // Add class name headers
+        for (int col = 0; col < casterClasses.Count; col++)
+        {
+            var (classIndex, className, classLevel, _, _, _) = casterClasses[col];
+            var isSelected = classIndex == _selectedClassIndex;
+
+            var classHeader = new TextBlock
+            {
+                Text = className,
+                FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                FontSize = 12,
+                Margin = new Avalonia.Thickness(4, 0, 4, 4),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Foreground = isSelected
+                    ? new SolidColorBrush(Color.FromRgb(100, 180, 255))
+                    : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
+                      ?? Brushes.White
+            };
+            Grid.SetRow(classHeader, 0);
+            Grid.SetColumn(classHeader, col + 1);
+            _spellSlotTableGrid.Children.Add(classHeader);
+        }
+
+        // Add data rows for each spell level
+        for (int rowIdx = 0; rowIdx < activeLevels.Count; rowIdx++)
+        {
+            int spellLevel = activeLevels[rowIdx];
+            int gridRow = rowIdx + 1; // +1 for header
+
+            // Level label
+            var levelLabel = new TextBlock
+            {
+                Text = spellLevel.ToString(),
+                FontSize = 12,
+                FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                Margin = new Avalonia.Thickness(0, 2, 10, 2),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            Grid.SetRow(levelLabel, gridRow);
+            Grid.SetColumn(levelLabel, 0);
+            _spellSlotTableGrid.Children.Add(levelLabel);
+
+            // Slot/known counts for each class
+            for (int col = 0; col < casterClasses.Count; col++)
+            {
+                var (classIndex, className, _, limits, classEntry, isSpontaneous) = casterClasses[col];
+                int totalLimit = limits[spellLevel];
+
+                // Only count spells that are actual class spells (not feat-based abilities like Barbarian Rage)
+                // Filter to spells that have a valid level for this class in spells.2da
+                int usedCount = 0;
+                foreach (var knownSpell in classEntry.KnownSpells[spellLevel])
+                {
+                    var spellInfo = _displayService.GetSpellInfo(knownSpell.Spell);
+                    int classSpellLevel = spellInfo?.GetLevelForClass(classEntry.Class) ?? -1;
+
+                    // Only count spells that are valid for this class (filter out feat-based abilities)
+                    if (spellInfo != null && classSpellLevel >= 0)
+                    {
+                        usedCount++;
+                    }
+                }
+
+                var isSelected = classIndex == _selectedClassIndex;
+
+                string cellText;
+                IBrush cellColor;
+
+                if (totalLimit <= 0)
+                {
+                    cellText = "-";
+                    cellColor = new SolidColorBrush(Colors.Gray);
+                }
+                else if (usedCount >= totalLimit)
+                {
+                    // Full - show in gold/yellow
+                    cellText = $"{usedCount}/{totalLimit}";
+                    cellColor = new SolidColorBrush(Colors.Gold);
+                }
+                else if (usedCount > 0)
+                {
+                    // Partial - show in green
+                    cellText = $"{usedCount}/{totalLimit}";
+                    cellColor = new SolidColorBrush(Colors.LightGreen);
+                }
+                else
+                {
+                    // Empty - normal color
+                    cellText = $"0/{totalLimit}";
+                    cellColor = isSelected
+                        ? new SolidColorBrush(Color.FromRgb(100, 180, 255))
+                        : this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
+                          ?? new SolidColorBrush(Colors.Gray);
+                }
+
+                var slotCell = new TextBlock
+                {
+                    Text = cellText,
+                    FontSize = 12,
+                    Margin = new Avalonia.Thickness(4, 2, 4, 2),
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    Foreground = cellColor
+                };
+                Grid.SetRow(slotCell, gridRow);
+                Grid.SetColumn(slotCell, col + 1);
+                _spellSlotTableGrid.Children.Add(slotCell);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Updates the known spells list panel below the spell slot table.
+    /// Shows spell names grouped by class and level for ALL caster classes.
+    /// Highlights overlapping spells that appear in multiple classes.
+    /// </summary>
+    private void UpdateKnownSpellsList()
+    {
+        if (_knownSpellsListPanel == null || _knownSpellsListBorder == null) return;
+
+        _knownSpellsListPanel.Children.Clear();
+
+        if (_currentCreature == null || _displayService == null)
+        {
+            _knownSpellsListBorder.IsVisible = false;
+            return;
+        }
+
+        // First pass: collect all known spells and count occurrences across classes
+        var spellOccurrences = new Dictionary<int, List<string>>(); // spellId -> list of class names
+        var casterClasses = new List<(int classIndex, string className, CreatureClass classEntry)>();
+
+        for (int i = 0; i < _currentCreature.ClassList.Count; i++)
+        {
+            var classEntry = _currentCreature.ClassList[i];
+            var className = _displayService.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
+
+            bool hasSpells = classEntry.KnownSpells.Any(list => list.Count > 0);
+            if (!hasSpells) continue;
+
+            casterClasses.Add((i, className, classEntry));
+
+            // Track spell occurrences
+            for (int level = 0; level <= 9; level++)
+            {
+                foreach (var spell in classEntry.KnownSpells[level])
+                {
+                    if (!spellOccurrences.ContainsKey(spell.Spell))
+                        spellOccurrences[spell.Spell] = new List<string>();
+                    spellOccurrences[spell.Spell].Add(className);
+                }
+            }
+        }
+
+        if (casterClasses.Count == 0)
+        {
+            _knownSpellsListBorder.IsVisible = false;
+            return;
+        }
+
+        bool hasAnySpells = false;
+
+        // Build spell list grouped by class, then by level
+        foreach (var (classIndex, className, classEntry) in casterClasses)
+        {
+            bool classHasSpells = false;
+
+            // Check if this class has any spells
+            for (int level = 0; level <= 9; level++)
+            {
+                if (classEntry.KnownSpells[level].Count > 0)
+                {
+                    classHasSpells = true;
+                    break;
+                }
+            }
+
+            if (!classHasSpells) continue;
+
+            hasAnySpells = true;
+            var isSelectedClass = classIndex == _selectedClassIndex;
+
+            // Class header
+            var classHeader = new TextBlock
+            {
+                Text = className,
+                FontWeight = Avalonia.Media.FontWeight.Bold,
+                FontSize = 12,
+                Foreground = isSelectedClass
+                    ? new SolidColorBrush(Color.FromRgb(100, 180, 255))
+                    : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? Brushes.White,
+                Margin = new Avalonia.Thickness(0, hasAnySpells && _knownSpellsListPanel.Children.Count > 0 ? 12 : 0, 0, 6)
+            };
+            _knownSpellsListPanel.Children.Add(classHeader);
+
+            // Spells grouped by level
+            for (int level = 0; level <= 9; level++)
+            {
+                var knownAtLevel = classEntry.KnownSpells[level];
+                if (knownAtLevel.Count == 0) continue;
+
+                // Level header
+                var levelHeader = new TextBlock
+                {
+                    Text = level == 0 ? "  Cantrips" : $"  Level {level}",
+                    FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                    FontSize = 10,
+                    Foreground = new SolidColorBrush(Colors.Gray),
+                    Margin = new Avalonia.Thickness(0, 4, 0, 2)
+                };
+                _knownSpellsListPanel.Children.Add(levelHeader);
+
+                // Spell names
+                foreach (var spell in knownAtLevel)
+                {
+                    var spellName = _displayService.GetSpellName(spell.Spell);
+                    var spellInfo = _displayService.GetSpellInfo(spell.Spell);
+                    int classSpellLevel = spellInfo?.GetLevelForClass(classEntry.Class) ?? -1;
+
+                    // Check if spell appears in multiple classes (overlap)
+                    bool isOverlap = spellOccurrences.TryGetValue(spell.Spell, out var occurrences) && occurrences.Count > 1;
+
+                    // Show spell name with indicators
+                    var displayName = spellName;
+                    IBrush foreground;
+
+                    if (classSpellLevel < 0)
+                    {
+                        // Not a standard class spell (e.g., feat-based ability)
+                        displayName = $"{spellName} *";
+                        foreground = new SolidColorBrush(Colors.Gray);
+                    }
+                    else if (isOverlap)
+                    {
+                        // Spell appears in multiple classes - highlight in gold
+                        displayName = $"{spellName} ⬥";
+                        foreground = new SolidColorBrush(Colors.Gold);
+                    }
+                    else
+                    {
+                        foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? Brushes.White;
+                    }
+
+                    var spellLabel = new TextBlock
+                    {
+                        Text = $"    {displayName}",
+                        FontSize = 11,
+                        Foreground = foreground,
+                        Margin = new Avalonia.Thickness(0, 1, 0, 1)
+                    };
+                    _knownSpellsListPanel.Children.Add(spellLabel);
+                }
+            }
+        }
+
+        _knownSpellsListBorder.IsVisible = hasAnySpells;
     }
 
     private void UpdateSpellSlotSummary()
@@ -821,7 +1162,22 @@ public partial class SpellsPanel : UserControl
         _currentCreature = null;
         _selectedClassIndex = 0;
 
-        SetText(_spellsSummaryText, "No spells loaded");
+        // Hide spell slot table
+        if (_spellSlotTableBorder != null)
+            _spellSlotTableBorder.IsVisible = false;
+        if (_spellSlotTableGrid != null)
+        {
+            _spellSlotTableGrid.Children.Clear();
+            _spellSlotTableGrid.ColumnDefinitions.Clear();
+            _spellSlotTableGrid.RowDefinitions.Clear();
+        }
+
+        // Hide known spells list
+        if (_knownSpellsListBorder != null)
+            _knownSpellsListBorder.IsVisible = false;
+        if (_knownSpellsListPanel != null)
+            _knownSpellsListPanel.Children.Clear();
+
         SetText(_spellSlotSummaryText, "");
 
         if (_noSpellsText != null)
