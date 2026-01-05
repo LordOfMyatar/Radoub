@@ -24,4 +24,9 @@ public class FilterState
     /// Selected base item type index, or null for "All Types".
     /// </summary>
     public int? SelectedBaseItemIndex { get; set; }
+
+    /// <summary>
+    /// Property search string (searches item properties).
+    /// </summary>
+    public string? PropertySearchText { get; set; }
 }

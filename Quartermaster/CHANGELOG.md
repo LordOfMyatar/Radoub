@@ -17,10 +17,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Add item property search to ItemFilterPanel. Search/filter items by their properties.
 
-- [ ] Property search text box (searches property names/values)
-- [ ] Property type dropdown (optional - filter to specific property type)
-- [ ] Works across all item types
-- [ ] Performance acceptable with 500+ items
+#### Added
+
+- **Property Search** in ItemFilterPanel
+  - New "Properties:" text box searches item property strings
+  - Debounced input (300ms) for performance
+  - Case-insensitive search
+  - Clear button to reset property filter
+  - Filter state persisted with other filter settings
+
+#### Use Cases
+
+- Find class-restricted items: search "monk" or "wizard"
+- Find spell items by level: search "level 3"
+- Find items with specific bonuses: search "enhancement" or "+2"
+- Find damage types: search "fire" or "cold"
 
 ---
 
