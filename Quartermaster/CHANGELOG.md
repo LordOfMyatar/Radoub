@@ -13,15 +13,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.28-alpha] - 2026-01-04
 **Branch**: `radoub/issue-557` | **PR**: #772
 
-### Sprint: Spell Filter Extension for Scrolls (#557)
+### Sprint: Item Property Search (#557)
 
-Extend ItemFilterPanel with spell-specific filters for scrolls, wands, and potions.
+Add item property search to ItemFilterPanel. Search/filter items by their properties.
 
-- [ ] Spell Level dropdown (0-9, multi-select)
-- [ ] Spell School filter (Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation)
-- [ ] Caster Class filter (Bard, Cleric, Druid, Paladin, Ranger, Wizard)
-- [ ] Filters only appear for spell-casting items
-- [ ] Performance acceptable with 500+ scroll items
+- [ ] Property search text box (searches property names/values)
+- [ ] Property type dropdown (optional - filter to specific property type)
+- [ ] Works across all item types
+- [ ] Performance acceptable with 500+ items
 
 ---
 
