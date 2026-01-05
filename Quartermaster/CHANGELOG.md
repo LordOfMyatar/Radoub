@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.28-alpha] - 2026-01-04
-**Branch**: `radoub/issue-557` | **PR**: #TBD
+**Branch**: `radoub/issue-557` | **PR**: #772
 
 ### Sprint: Spell Filter Extension for Scrolls (#557)
 
