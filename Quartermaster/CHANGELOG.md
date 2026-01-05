@@ -15,11 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Spell System Polish (#761)
 
-Add spell slots display and enable adding/removing spells from known and memorized lists.
+Enhance SpellsPanel with multi-class spell slot display and polish spell editing workflow.
 
-- [ ] #758 - Add spell slot summary for each caster class
-- [ ] #737 - Add/Remove Known Spells
-- [ ] #738 - Add/Remove Memorized Spells
+- [x] #758 - Add spell slot summary for each caster class
+- [x] #737 - Add/Remove Known Spells (already implemented in #756)
+- [x] #738 - Add/Remove Memorized Spells (already implemented in #756)
+
+#### Added
+
+- **Spell Slots by Class** section showing all caster classes at once
+  - Multi-class characters see spell usage for every caster class simultaneously
+  - Format: `Wizard (10): 0:4/4 | 1:3/4 | 2:2/3 | ...`
+  - Selected class highlighted in blue
+  - Non-caster classes omitted
+  - Updates when spells are added/removed
 
 ---
 
