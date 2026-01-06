@@ -383,6 +383,32 @@ public class ThemeManager
 
             resources["SystemControlForegroundBaseMediumLowBrush"] = borderBrush;
             resources["SystemControlForegroundBaseLowBrush"] = borderBrush;
+
+            // Expander border styling
+            resources["ExpanderHeaderBorderBrush"] = borderBrush;
+            resources["ExpanderContentBorderBrush"] = borderBrush;
+        }
+
+        // Expander styling - use sidebar for header background, background for content
+        if (!string.IsNullOrEmpty(colors.Sidebar))
+        {
+            var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar));
+            resources["ExpanderHeaderBackground"] = sidebarBrush;
+            resources["ExpanderHeaderBackgroundPointerOver"] = sidebarBrush;
+            resources["ExpanderHeaderBackgroundPressed"] = sidebarBrush;
+        }
+        if (!string.IsNullOrEmpty(colors.Background))
+        {
+            var bgBrush = new SolidColorBrush(Color.Parse(colors.Background));
+            resources["ExpanderContentBackground"] = bgBrush;
+        }
+        if (!string.IsNullOrEmpty(colors.Text))
+        {
+            var textBrush = new SolidColorBrush(Color.Parse(colors.Text));
+            resources["ExpanderHeaderForeground"] = textBrush;
+            resources["ExpanderHeaderForegroundPointerOver"] = textBrush;
+            resources["ExpanderHeaderForegroundPressed"] = textBrush;
+            resources["ExpanderChevronForeground"] = textBrush;
         }
 
         // Create Theme-prefixed resources for direct use in XAML
