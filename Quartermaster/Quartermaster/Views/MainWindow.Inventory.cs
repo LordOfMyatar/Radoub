@@ -10,21 +10,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Quartermaster.Views;
 
 /// <summary>
-/// MainWindow partial class for inventory population and item resolution.
-/// Extracted from MainWindow.axaml.cs for maintainability (#582).
+/// MainWindow partial class for inventory population and operations.
+/// Split into partial classes for maintainability.
 /// </summary>
 public partial class MainWindow
 {
-    // Cancellation token for background palette loading
-    private CancellationTokenSource? _paletteLoadCts;
-    private const int PaletteBatchSize = 50;
-
     // Track if inventory was modified (only sync if true)
     private bool _inventoryModified = false;
 
@@ -34,7 +28,6 @@ public partial class MainWindow
     {
         if (_currentCreature == null) return;
 
-        // Clear existing data
         ClearInventoryUI();
 
         // Populate equipment slots from EquipItemList
@@ -45,7 +38,6 @@ public partial class MainWindow
             var slot = EquipmentSlotFactory.GetSlotByFlag(_equipmentSlots, equippedItem.Slot);
             if (slot != null && !string.IsNullOrEmpty(equippedItem.EquipRes))
             {
-                // Create placeholder item from ResRef (full resolution requires game data)
                 var itemVm = CreatePlaceholderItem(equippedItem.EquipRes);
                 slot.EquippedItem = itemVm;
                 UnifiedLogger.LogInventory(LogLevel.INFO, $"Equipped {equippedItem.EquipRes} to {slot.Name}");
@@ -70,145 +62,14 @@ public partial class MainWindow
         // Populate item palette from module directory
         PopulateItemPalette();
 
-        // Reset modification flag after loading
         _inventoryModified = false;
 
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Populated inventory: {_currentCreature.EquipItemList.Count} equipped, {InventoryPanelContent.BackpackItems.Count} in backpack");
     }
 
-    /// <summary>
-    /// Creates an ItemViewModel for a backpack item with full inventory metadata.
-    /// Resolution order: Module directory → Override → HAK → BIF archives.
-    /// Falls back to placeholder data if UTI file not found anywhere.
-    /// </summary>
-    private ItemViewModel CreateBackpackItem(Radoub.Formats.Utc.InventoryItem invItem)
-    {
-        var (item, source) = ResolveUtiFile(invItem.InventoryRes);
-
-        if (item == null)
-        {
-            // Create placeholder for missing UTI
-            item = new UtiFile
-            {
-                TemplateResRef = invItem.InventoryRes,
-                Tag = invItem.InventoryRes
-            };
-            item.LocalizedName.SetString(0, invItem.InventoryRes);
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Created placeholder for UTI: {invItem.InventoryRes}");
-
-            return new ItemViewModel(
-                item,
-                resolvedName: invItem.InventoryRes,
-                baseItemName: "(unknown)",
-                propertiesDisplay: "",
-                invItem.Repos_PosX, invItem.Repos_PosY,
-                invItem.Dropable, invItem.Pickpocketable,
-                source: source
-            );
-        }
-
-        // Use factory for proper name resolution via 2DA/TLK
-        var viewModel = _itemViewModelFactory.CreateBackpackItem(
-            item,
-            invItem.Repos_PosX, invItem.Repos_PosY,
-            invItem.Dropable, invItem.Pickpocketable,
-            source);
-        SetupLazyIconLoading(viewModel);
-        return viewModel;
-    }
-
-    /// <summary>
-    /// Creates an ItemViewModel from a ResRef for equipped items (no grid position needed).
-    /// Resolution order: Module directory → Override → HAK → BIF archives.
-    /// Falls back to placeholder data if UTI file not found anywhere.
-    /// </summary>
-    private ItemViewModel CreatePlaceholderItem(string resRef)
-    {
-        var (item, source) = ResolveUtiFile(resRef);
-
-        if (item == null)
-        {
-            item = new UtiFile
-            {
-                TemplateResRef = resRef,
-                Tag = resRef
-            };
-            item.LocalizedName.SetString(0, resRef);
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Created placeholder for UTI: {resRef}");
-
-            return new ItemViewModel(
-                item,
-                resolvedName: resRef,
-                baseItemName: "(unknown)",
-                propertiesDisplay: "",
-                source: source
-            );
-        }
-
-        var viewModel = _itemViewModelFactory.Create(item, source);
-        SetupLazyIconLoading(viewModel);
-        return viewModel;
-    }
-
-    /// <summary>
-    /// Resolves a UTI file from ResRef, checking module directory first, then game data.
-    /// </summary>
-    private (UtiFile? item, GameResourceSource source) ResolveUtiFile(string resRef)
-    {
-        UtiFile? item = null;
-        var source = GameResourceSource.Bif;
-
-        // 1. Try module directory first (highest priority for module-specific items)
-        if (!string.IsNullOrEmpty(_currentFilePath))
-        {
-            var moduleDir = Path.GetDirectoryName(_currentFilePath);
-            if (moduleDir != null)
-            {
-                var utiPath = Path.Combine(moduleDir, resRef + ".uti");
-                if (File.Exists(utiPath))
-                {
-                    try
-                    {
-                        item = UtiReader.Read(utiPath);
-                        source = GameResourceSource.Module;
-                        UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Loaded UTI from module: {resRef}");
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {resRef} from module: {ex.Message}");
-                    }
-                }
-            }
-        }
-
-        // 2. Try GameDataService (Override → HAK → BIF) if not found in module
-        if (item == null && _gameDataService.IsConfigured)
-        {
-            try
-            {
-                var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
-                if (utiData != null)
-                {
-                    item = UtiReader.Read(utiData);
-                    source = GameResourceSource.Bif;
-                    UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Loaded UTI from game data: {resRef}");
-                }
-            }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {resRef} from game data: {ex.Message}");
-            }
-        }
-
-        return (item, source);
-    }
-
     private void ClearInventoryUI()
     {
-        // Clear inventory panel
         InventoryPanelContent.ClearAll();
-
-        // Update selection state
         HasSelection = false;
     }
 
@@ -218,17 +79,14 @@ public partial class MainWindow
 
     /// <summary>
     /// Handles item dropped on backpack list.
-    /// Supports drops from equipment slots (unequip to backpack).
     /// </summary>
     private void OnBackpackItemDropped(object? sender, Radoub.UI.Controls.ItemDropEventArgs e)
     {
-        // Check for equipped item drag (from equipment slot)
         if (e.DataObject.Contains("EquippedItem"))
         {
             var data = e.DataObject.Get("EquippedItem");
             if (data is ItemViewModel equippedItem)
             {
-                // Find the slot this item is in and unequip it
                 var slot = _equipmentSlots.FirstOrDefault(s => s.EquippedItem == equippedItem);
                 if (slot != null)
                 {
@@ -238,21 +96,17 @@ public partial class MainWindow
                 }
             }
         }
-        // Could add more drop types here (e.g., from palette)
     }
 
     /// <summary>
     /// Handles add to backpack request from palette.
-    /// Creates new ItemViewModels with proper inventory metadata.
     /// </summary>
     private void OnAddToBackpackRequested(object? sender, ItemViewModel[] items)
     {
         foreach (var paletteItem in items)
         {
-            // Assign next available grid position (simple sequential assignment)
             var nextPos = GetNextBackpackPosition();
 
-            // Create a new ItemViewModel with inventory metadata
             var backpackItem = _itemViewModelFactory.CreateBackpackItem(
                 paletteItem.Item,
                 nextPos.x, nextPos.y,
@@ -268,10 +122,6 @@ public partial class MainWindow
         MarkDirty();
     }
 
-    /// <summary>
-    /// Gets the next available grid position for a backpack item.
-    /// Simple algorithm: place items sequentially in a 6-column grid.
-    /// </summary>
     private (ushort x, ushort y) GetNextBackpackPosition()
     {
         const int GridWidth = 6;
@@ -281,7 +131,6 @@ public partial class MainWindow
 
     /// <summary>
     /// Handles equip items request from palette.
-    /// Tries to equip items to appropriate slots based on base item type.
     /// </summary>
     private void OnEquipItemsRequested(object? sender, ItemViewModel[] items)
     {
@@ -289,7 +138,6 @@ public partial class MainWindow
 
         foreach (var item in items)
         {
-            // Find valid slots for this item (bitmask)
             var validSlotsBitmask = validator.GetEquipableSlots(item.BaseItem);
 
             if (validSlotsBitmask == null || validSlotsBitmask == 0)
@@ -299,7 +147,6 @@ public partial class MainWindow
                 continue;
             }
 
-            // Find first empty valid slot
             EquipmentSlotViewModel? targetSlot = null;
             foreach (var slot in _equipmentSlots)
             {
@@ -312,7 +159,6 @@ public partial class MainWindow
 
             if (targetSlot == null)
             {
-                // No empty slot, try to use first valid slot (will replace)
                 foreach (var slot in _equipmentSlots)
                 {
                     if ((validSlotsBitmask.Value & slot.SlotFlag) != 0)
@@ -343,7 +189,6 @@ public partial class MainWindow
 
         var item = slot.EquippedItem;
 
-        // Create backpack item with inventory metadata
         var nextPos = GetNextBackpackPosition();
         var backpackItem = _itemViewModelFactory.CreateBackpackItem(
             item.Item,
@@ -353,10 +198,8 @@ public partial class MainWindow
             item.Source);
         SetupLazyIconLoading(backpackItem);
 
-        // Clear the slot
         slot.EquippedItem = null;
 
-        // Add to backpack
         InventoryPanelContent.AddToBackpack(backpackItem);
         _inventoryModified = true;
         MarkDirty();
@@ -370,8 +213,6 @@ public partial class MainWindow
 
     /// <summary>
     /// Syncs all inventory UI state back to the creature data model.
-    /// Call this before saving to ensure UI changes are persisted.
-    /// Only syncs if inventory was actually modified to prevent data loss.
     /// </summary>
     public void SyncInventoryToCreature()
     {
@@ -390,9 +231,6 @@ public partial class MainWindow
             $"Synced inventory: {_currentCreature.ItemList.Count} backpack, {_currentCreature.EquipItemList.Count} equipped");
     }
 
-    /// <summary>
-    /// Syncs backpack items from UI to creature's ItemList.
-    /// </summary>
     private void SyncBackpackToCreature()
     {
         if (_currentCreature == null) return;
@@ -413,9 +251,6 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>
-    /// Syncs equipped items from UI to creature's EquipItemList.
-    /// </summary>
     private void SyncEquipmentToCreature()
     {
         if (_currentCreature == null) return;
@@ -434,180 +269,6 @@ public partial class MainWindow
                 _currentCreature.EquipItemList.Add(equipItem);
             }
         }
-    }
-
-    #endregion
-
-    #region Item Palette
-
-    /// <summary>
-    /// Starts loading game items (BIF) in background. Called on app startup.
-    /// </summary>
-    public void StartGameItemsLoad()
-    {
-        if (!_gameDataService.IsConfigured)
-            return;
-
-        // Cancel any ongoing background load
-        _paletteLoadCts?.Cancel();
-        _paletteLoadCts = new CancellationTokenSource();
-
-        UnifiedLogger.LogInventory(LogLevel.INFO, "Starting background load for game items...");
-        _ = LoadGameItemsAsync(_paletteLoadCts.Token);
-    }
-
-    /// <summary>
-    /// Populates the item palette from multiple sources:
-    /// 1. Module directory (loose UTI files) - loaded synchronously
-    /// 2. Base game BIF archives - continues loading in background if not already done
-    /// </summary>
-    private void PopulateItemPalette()
-    {
-        var moduleItemCount = 0;
-
-        // 1. Load UTI files from module directory synchronously (fast, small number)
-        if (!string.IsNullOrEmpty(_currentFilePath))
-        {
-            var moduleDir = Path.GetDirectoryName(_currentFilePath);
-            if (!string.IsNullOrEmpty(moduleDir) && Directory.Exists(moduleDir))
-            {
-                var utiFiles = Directory.GetFiles(moduleDir, "*.uti", SearchOption.TopDirectoryOnly);
-                foreach (var utiPath in utiFiles)
-                {
-                    try
-                    {
-                        var item = UtiReader.Read(utiPath);
-                        var viewModel = _itemViewModelFactory.Create(item, GameResourceSource.Module);
-                        SetupLazyIconLoading(viewModel);
-
-                        // Only add if not already in palette (from game data)
-                        if (!InventoryPanelContent.PaletteItems.Any(p => p.ResRef.Equals(viewModel.ResRef, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            InventoryPanelContent.PaletteItems.Add(viewModel);
-                            moduleItemCount++;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        var fileName = Path.GetFileName(utiPath);
-                        UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load UTI {fileName}: {ex.Message}");
-                    }
-                }
-            }
-        }
-
-        if (moduleItemCount > 0)
-        {
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Added {moduleItemCount} module items to palette");
-        }
-    }
-
-    /// <summary>
-    /// Loads game items (Override + BIF) in batches to avoid blocking UI.
-    /// </summary>
-    private async Task LoadGameItemsAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            // Get list of all game resources on background thread
-            var gameResources = await Task.Run(() =>
-                _gameDataService.ListResources(ResourceTypes.Uti).ToList(),
-                cancellationToken);
-
-            // Get existing resrefs to skip duplicates
-            var existingResRefs = new HashSet<string>(
-                InventoryPanelContent.PaletteItems.Select(p => p.ResRef),
-                StringComparer.OrdinalIgnoreCase);
-
-            var batch = new List<ItemViewModel>();
-            var gameItemCount = 0;
-            var totalResources = gameResources.Count;
-
-            foreach (var resourceInfo in gameResources)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-
-                // Skip if we already loaded this from module directory
-                if (existingResRefs.Contains(resourceInfo.ResRef))
-                    continue;
-
-                try
-                {
-                    // Load UTI data on background thread
-                    var utiData = await Task.Run(() =>
-                        _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti),
-                        cancellationToken);
-
-                    if (utiData != null)
-                    {
-                        var item = UtiReader.Read(utiData);
-                        var viewModel = _itemViewModelFactory.Create(item, resourceInfo.Source);
-                        SetupLazyIconLoading(viewModel);
-                        batch.Add(viewModel);
-                        existingResRefs.Add(resourceInfo.ResRef);
-                        gameItemCount++;
-
-                        // Add batch to UI when full
-                        if (batch.Count >= PaletteBatchSize)
-                        {
-                            await AddBatchToUIAsync(batch);
-                            batch.Clear();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to load UTI {resourceInfo.ResRef}: {ex.Message}");
-                }
-            }
-
-            // Add remaining items
-            if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
-            {
-                await AddBatchToUIAsync(batch);
-            }
-
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                UnifiedLogger.LogInventory(LogLevel.INFO, $"Background load complete: {gameItemCount} game items added to palette");
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Palette loading cancelled");
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogInventory(LogLevel.ERROR, $"Error loading game items: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Adds a batch of items to the palette on the UI thread.
-    /// </summary>
-    private async Task AddBatchToUIAsync(List<ItemViewModel> batch)
-    {
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            foreach (var item in batch)
-            {
-                InventoryPanelContent.PaletteItems.Add(item);
-            }
-        });
-    }
-
-    /// <summary>
-    /// Sets up lazy icon loading for an item ViewModel.
-    /// Icons are loaded on first access for virtualized UI performance.
-    /// </summary>
-    private void SetupLazyIconLoading(ItemViewModel itemVm)
-    {
-        if (!_itemIconService.IsGameDataAvailable)
-            return;
-
-        // Use closure to capture the icon service
-        itemVm.SetIconLoader(item => _itemIconService.GetItemIcon(item));
     }
 
     #endregion
