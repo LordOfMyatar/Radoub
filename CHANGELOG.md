@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.23] - 2026-01-05
-**Branch**: `radoub/issue-720` | **PR**: #TBD
+**Branch**: `radoub/issue-720` | **PR**: #783
 
 ### Unified Theme Infrastructure
 
