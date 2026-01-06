@@ -15,6 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.24] - 2026-01-05
+**Branch**: `radoub/issue-762` | **PR**: #TBD
+
+### Sprint: Bug Fixes & Polish
+
+Cross-tool bug fixes for quality-of-life improvements.
+
+- [ ] #754 - Soundset TLK lookup (Quartermaster)
+- [ ] #589 - Item type to icon mapping (Quartermaster)
+- [ ] #703 - Parameter list scrolling discoverability (Parley)
+
+---
+
 ## [0.9.23] - 2026-01-05
 **Branch**: `radoub/issue-720` | **PR**: #783
 
