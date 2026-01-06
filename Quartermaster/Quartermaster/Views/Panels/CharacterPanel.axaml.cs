@@ -258,10 +258,11 @@ public partial class CharacterPanel : UserControl
             }
         }
 
-        // If not found, add it
+        // If not found, add it with proper name lookup
+        var soundSetName = _displayService?.GetSoundSetName(soundSetId) ?? $"Sound Set {soundSetId}";
         _soundSetComboBox.Items.Add(new ComboBoxItem
         {
-            Content = $"Sound Set {soundSetId}",
+            Content = soundSetName,
             Tag = soundSetId
         });
         _soundSetComboBox.SelectedIndex = _soundSetComboBox.Items.Count - 1;
