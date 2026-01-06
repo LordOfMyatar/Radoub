@@ -10,6 +10,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.30-alpha] - 2026-01-05
+**Branch**: `quartermaster/issue-769` | **PR**: #789
+
+### Refactor: Large File Tech Debt (#769)
+
+Split large files into partial classes for improved maintainability and AI readability.
+
+#### MdlAsciiReader (1083 → 6 files ~200 lines each)
+
+- `MdlAsciiReader.cs` - Core parsing, main loop
+- `MdlAsciiReader.NodeParsing.cs` - Node creation and property routing
+- `MdlAsciiReader.TrimeshParsing.cs` - Trimesh/mesh properties
+- `MdlAsciiReader.ListParsing.cs` - Vertex, face, texture, color, weight lists
+- `MdlAsciiReader.TypeParsing.cs` - Light, emitter, reference properties
+- `MdlAsciiReader.AnimationParsing.cs` - Animation data
+- `MdlAsciiReader.Utilities.cs` - Tokenization and parsing helpers
+
+#### MdlBinaryReader (1071 → 7 files ~150 lines each)
+
+- `MdlBinaryReader.cs` - Core parsing, file header
+- `MdlBinaryReader.PointerHelpers.cs` - Memory pointer conversion
+- `MdlBinaryReader.NodeParsing.cs` - Node creation, controllers, children
+- `MdlBinaryReader.MeshParsing.cs` - Mesh/trimesh data
+- `MdlBinaryReader.TypeParsing.cs` - Light, emitter, reference nodes
+- `MdlBinaryReader.DataReading.cs` - Vertex, face, texcoord reading
+- `MdlBinaryReader.AnimationParsing.cs` - Animation data
+- `MdlBinaryReader.Utilities.cs` - Helper methods
+
+#### AppearancePanel (755 → 3 files ~250 lines each)
+
+- `AppearancePanel.axaml.cs` - Fields, constructor, core methods
+- `AppearancePanel.DataLoading.cs` - Data loading from services
+- `AppearancePanel.EventHandlers.cs` - Event wiring and handlers
+
+#### MainWindow.Inventory (614 → 3 files ~200 lines each)
+
+- `MainWindow.Inventory.cs` - UI population, operations, sync
+- `MainWindow.ItemResolution.cs` - UTI file resolution
+- `MainWindow.ItemPalette.cs` - Background palette loading
+
+---
+
 ## [0.1.29-alpha] - 2026-01-04
 **Branch**: `quartermaster/issue-761` | **PR**: #774
 
