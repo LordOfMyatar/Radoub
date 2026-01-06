@@ -25,6 +25,7 @@ Cross-tool bug fixes for quality-of-life improvements.
 - [x] #754 - Soundset TLK lookup (Quartermaster)
 - [x] #589 - Item type to icon mapping (Radoub.UI)
 - [x] #703 - Parameter list scrolling discoverability (Parley)
+- [x] Collapsible script previews with themed Expanders (Parley + Radoub.UI)
 
 ---
 
