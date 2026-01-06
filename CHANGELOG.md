@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.24] - 2026-01-05
-**Branch**: `radoub/issue-762` | **PR**: #TBD
+**Branch**: `radoub/issue-762` | **PR**: #785
 
 ### Sprint: Bug Fixes & Polish
 
