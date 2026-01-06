@@ -23,11 +23,12 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
-  <!-- Copy theme files to output directory -->
+  <!-- Copy theme files to output directory (preserves Themes\ folder structure) -->
   <ItemGroup>
-    <None Include="Themes\*.json">
+    <Content Include="Themes\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+      <Link>Themes\%(Filename)%(Extension)</Link>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

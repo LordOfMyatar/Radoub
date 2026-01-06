@@ -20,7 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Unified Theme Infrastructure
 
-- Unify theme infrastructure across Radoub tools (#720)
+- Add 7 themes to Quartermaster matching Parley/Manifest theme set (#720)
+  - Light, Dark, Fluent Light, VS Code Dark
+  - Accessibility: Deuteranopia, Protanopia, Tritanopia
+- Update csproj to properly copy themes to output Themes\ subdirectory
 
 ---
 
