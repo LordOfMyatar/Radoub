@@ -22,9 +22,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Cross-tool bug fixes for quality-of-life improvements.
 
-- [ ] #754 - Soundset TLK lookup (Quartermaster)
-- [ ] #589 - Item type to icon mapping (Quartermaster)
-- [ ] #703 - Parameter list scrolling discoverability (Parley)
+- [x] #754 - Soundset TLK lookup (Quartermaster)
+- [x] #589 - Item type to icon mapping (Radoub.UI)
+- [x] #703 - Parameter list scrolling discoverability (Parley)
 
 ---
 
