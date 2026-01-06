@@ -11,6 +11,7 @@ using Manifest.Services;
 using Radoub.Formats.Logging;
 using Manifest.Views;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
+using EasterEggService = Radoub.UI.Services.EasterEggService;
 
 namespace Manifest;
 
@@ -22,6 +23,9 @@ public partial class App : Application
 
         // Register this tool's path in shared Radoub settings for cross-tool discovery
         RegisterToolPath();
+
+        // Record tool launch for easter egg tracking
+        EasterEggService.Instance.RecordToolLaunch("Manifest");
 
         // Initialize and discover themes
         ThemeManager.Initialize("Manifest");

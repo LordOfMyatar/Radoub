@@ -14,6 +14,7 @@ using DialogEditor.Plugins;
 using System.ComponentModel;
 using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
+using EasterEggService = Radoub.UI.Services.EasterEggService;
 
 namespace DialogEditor;
 
@@ -42,6 +43,9 @@ public partial class App : Application
 
         // Initialize spell-checking (async, non-blocking)
         _ = SpellCheckService.Instance.InitializeAsync();
+
+        // Record tool launch for easter egg tracking
+        EasterEggService.Instance.RecordToolLaunch("Parley");
 
         // Initialize and discover themes
         ThemeManager.Initialize("Parley");

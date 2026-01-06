@@ -10,6 +10,7 @@ using DialogEditor.Services;
 using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using ThemeManifest = Radoub.UI.Models.ThemeManifest;
+using EasterEggService = Radoub.UI.Services.EasterEggService;
 
 namespace DialogEditor.Views.Controllers
 {
@@ -41,8 +42,11 @@ namespace DialogEditor.Views.Controllers
 
             if (themeComboBox != null)
             {
-                // Populate theme list (hide easter eggs initially)
-                PopulateThemeList(themeComboBox, includeEasterEggs: false);
+                // Check if Sea-Sick easter egg is unlocked (all 3 tools launched)
+                var easterEggUnlocked = EasterEggService.Instance.IsSeaSickUnlocked();
+
+                // Populate theme list (show easter eggs if unlocked)
+                PopulateThemeList(themeComboBox, includeEasterEggs: easterEggUnlocked);
 
                 // Select current theme
                 var themes = (IEnumerable<ThemeManifest>?)themeComboBox.ItemsSource;
@@ -103,6 +107,21 @@ namespace DialogEditor.Views.Controllers
 
         public void OnEasterEggHintClick(object? sender, Avalonia.Input.PointerPressedEventArgs e)
         {
+            var hint = _window.FindControl<TextBlock>("EasterEggHint");
+
+            // Check if easter egg is unlocked
+            if (!EasterEggService.Instance.IsSeaSickUnlocked())
+            {
+                // Show hint about what's needed
+                var missing = EasterEggService.Instance.GetMissingTools();
+                if (hint != null && missing.Count > 0)
+                {
+                    hint.Text = $"🔒 Still missing: {string.Join(", ", missing)}";
+                    hint.Foreground = Avalonia.Media.Brushes.Gray;
+                }
+                return;
+            }
+
             if (_easterEggActivated) return;
 
             _easterEggActivated = true;
@@ -123,10 +142,9 @@ namespace DialogEditor.Views.Controllers
             }
 
             // Update easter egg hint
-            var hint = _window.FindControl<TextBlock>("EasterEggHint");
             if (hint != null)
             {
-                hint.Text = "🍇🍓 You found it! Enjoy the chaos...";
+                hint.Text = "🤢🌊 You found it! Enjoy the chaos...";
                 hint.Foreground = Avalonia.Media.Brushes.DarkOrange;
             }
 

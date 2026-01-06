@@ -6,6 +6,7 @@ using Manifest.Services;
 using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using ThemeManifest = Radoub.UI.Models.ThemeManifest;
+using EasterEggService = Radoub.UI.Services.EasterEggService;
 using Radoub.Dictionary;
 using Radoub.Formats.Settings;
 using System;
@@ -63,7 +64,11 @@ public partial class SettingsWindow : Window
     {
         ThemeComboBox.Items.Clear();
 
-        var themes = ThemeManager.Instance.AvailableThemes;
+        // Check if Sea-Sick easter egg is unlocked (all 3 tools launched)
+        var includeEasterEggs = EasterEggService.Instance.IsSeaSickUnlocked();
+
+        var themes = ThemeManager.Instance.AvailableThemes
+            .Where(t => includeEasterEggs || !t.Plugin.Tags.Contains("easter-egg"));
         var currentThemeId = SettingsService.Instance.CurrentThemeId;
 
         // Group themes: standard first, then accessibility
