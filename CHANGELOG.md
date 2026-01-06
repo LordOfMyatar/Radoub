@@ -15,6 +15,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.23] - 2026-01-05
+**Branch**: `radoub/issue-720` | **PR**: #783
+
+### Unified Theme Infrastructure
+
+- Add 7 themes to Quartermaster matching Parley/Manifest theme set (#720)
+  - Light, Dark, Fluent Light, VS Code Dark
+  - Accessibility: Deuteranopia, Protanopia, Tritanopia
+- Update csproj to properly copy themes to output Themes\ subdirectory
+- Add cross-tool Sea-Sick easter egg theme (replaces Angry Fruit Salad)
+  - Unlocks when all 3 tools (Parley, Manifest, Quartermaster) have been launched
+  - New EasterEggService in Radoub.UI tracks tool launches via `~/Radoub/.easter-eggs.json`
+
+---
+
 ## [0.9.22] - 2026-01-04
 **Branch**: `quartermaster/issue-760` | **PR**: #765
 

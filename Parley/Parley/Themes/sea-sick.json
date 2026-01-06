@@ -1,10 +1,10 @@
 {
   "manifest_version": "1.0",
   "plugin": {
-    "id": "org.parley.theme.angry-fruit-salad",
-    "name": "🍇 Angry Fruit Salad 🍓",
+    "id": "org.radoub.theme.sea-sick",
+    "name": "🤢 Sea-Sick 🌊",
     "version": "1.0.0",
-    "author": "Parley Team (with deep regret)",
+    "author": "Radoub Team (with deep regret)",
     "description": "The worst color combination ever conceived. Use at your own risk. Side effects may include headaches, spontaneous laughter, and questioning your life choices. This theme violates every design principle known to humanity.",
     "type": "theme",
     "tags": ["easter-egg", "comedy", "why", "cursed", "do-not-use"]

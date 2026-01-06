@@ -11,6 +11,7 @@ using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Quartermaster.Views;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
+using EasterEggService = Radoub.UI.Services.EasterEggService;
 
 namespace Quartermaster;
 
@@ -22,6 +23,9 @@ public partial class App : Application
 
         // Register this tool's path in shared Radoub settings
         RegisterToolPath();
+
+        // Record tool launch for easter egg tracking
+        EasterEggService.Instance.RecordToolLaunch("Quartermaster");
 
         // Initialize and discover themes
         ThemeManager.Initialize("Quartermaster");
