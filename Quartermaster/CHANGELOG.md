@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.30-alpha] - 2026-01-05
+**Branch**: `quartermaster/issue-769` | **PR**: #TBD
+
+### Refactor: Large File Tech Debt (#769)
+
+Refactor large files exceeding 500-line threshold for improved maintainability.
+
+#### Targets
+
+- `Radoub.Formats/Mdl/MdlAsciiReader.cs` (913 lines)
+- `Radoub.Formats/Mdl/MdlBinaryReader.cs` (897 lines)
+- `Quartermaster/Views/Panels/AppearancePanel.axaml.cs` (654 lines)
+- `Quartermaster/Views/MainWindow.axaml.cs` (534 lines)
+
+---
+
 ## [0.1.29-alpha] - 2026-01-04
 **Branch**: `quartermaster/issue-761` | **PR**: #774
 
