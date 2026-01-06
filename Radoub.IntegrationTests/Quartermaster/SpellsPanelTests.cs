@@ -54,7 +54,7 @@ public class SpellsPanelTests : QuartermasterTestBase
         steps.Run("Class3 radio exists", () => FindElement("SpellsClass3") != null);
 
         // Summary and action buttons
-        steps.Run("SpellsSummary exists", () => FindElement("SpellsSummary") != null);
+        steps.Run("SpellSlotSummary exists", () => FindElement("SpellSlotSummary") != null);
         steps.Run("ClearSpellList button exists", () => FindElement("ClearSpellListButton") != null);
         steps.Run("SaveSpellList button exists", () => FindElement("SaveSpellListButton") != null);
         steps.Run("LoadSpellList button exists", () => FindElement("LoadSpellListButton") != null);
