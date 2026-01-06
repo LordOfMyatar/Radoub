@@ -426,6 +426,7 @@ public class CreatureDisplayService
     public string GetTailName(byte tailId) => Appearances.GetTailName(tailId);
     public List<(byte Id, string Name)> GetAllWings() => Appearances.GetAllWings();
     public List<(byte Id, string Name)> GetAllTails() => Appearances.GetAllTails();
+    public string GetSoundSetName(ushort soundSetId) => Appearances.GetSoundSetName(soundSetId);
     public List<(ushort Id, string Name)> GetAllSoundSets() => Appearances.GetAllSoundSets();
     public List<(ushort Id, string Name)> GetAllFactions(string? moduleDirectory = null) => Appearances.GetAllFactions(moduleDirectory);
     public string GetPackageName(byte packageId) => Appearances.GetPackageName(packageId);

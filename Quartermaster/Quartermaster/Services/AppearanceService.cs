@@ -305,6 +305,28 @@ public class AppearanceService
     #region Sound Sets
 
     /// <summary>
+    /// Gets the display name for a sound set ID.
+    /// </summary>
+    public string GetSoundSetName(ushort soundSetId)
+    {
+        // Try STRREF for localized name first
+        var strRef = _gameDataService.Get2DAValue("soundset", soundSetId, "STRREF");
+        if (!string.IsNullOrEmpty(strRef) && strRef != "****")
+        {
+            var tlkName = _gameDataService.GetString(strRef);
+            if (!string.IsNullOrEmpty(tlkName))
+                return tlkName;
+        }
+
+        // Fall back to LABEL column
+        var label = _gameDataService.Get2DAValue("soundset", soundSetId, "LABEL");
+        if (!string.IsNullOrEmpty(label) && label != "****")
+            return label;
+
+        return $"Sound Set {soundSetId}";
+    }
+
+    /// <summary>
     /// Gets all sound sets from soundset.2da.
     /// </summary>
     public List<(ushort Id, string Name)> GetAllSoundSets()
@@ -321,19 +343,7 @@ public class AppearanceService
                 continue;
             }
 
-            // Try to get STRREF for localized name
-            var strRef = _gameDataService.Get2DAValue("soundset", i, "STRREF");
-            string displayName;
-            if (!string.IsNullOrEmpty(strRef) && strRef != "****")
-            {
-                var tlkName = _gameDataService.GetString(strRef);
-                displayName = !string.IsNullOrEmpty(tlkName) ? tlkName : label;
-            }
-            else
-            {
-                displayName = label;
-            }
-
+            var displayName = GetSoundSetName((ushort)i);
             soundSets.Add(((ushort)i, displayName));
         }
 

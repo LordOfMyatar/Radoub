@@ -402,7 +402,7 @@
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for condition script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
                                 <ScrollViewer Grid.Row="1" x:Name="ConditionsParamsScrollViewer" MinHeight="40"
-                                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                             VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ConditionsParametersPanel" Margin="5,5,20,5"/>
                                 </ScrollViewer>
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
@@ -424,19 +424,20 @@
                             </Grid>
                         </Border>
 
-                        <TextBlock Text="Conditional Script Preview:" Margin="0,5,0,2"/>
-                        <Border x:Name="ConditionalScriptPreviewGrid" MinHeight="100" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
-                            <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer"
-                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                                <TextBox x:Name="ConditionalScriptPreviewTextBox"
-                                         FontFamily="Consolas"
-                                         Background="Transparent" BorderThickness="0"
-                                         IsReadOnly="True" TextWrapping="NoWrap"
-                                         IsTabStop="False"
-                                         Text="// Conditional script preview will appear here"
-                                         Margin="5"/>
-                            </ScrollViewer>
-                        </Border>
+                        <Expander Header="Conditional Script Preview" IsExpanded="False" Margin="0,5,0,5">
+                            <Border x:Name="ConditionalScriptPreviewGrid" MaxHeight="150" BorderBrush="Gray" BorderThickness="1">
+                                <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer"
+                                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                                    <TextBox x:Name="ConditionalScriptPreviewTextBox"
+                                             FontFamily="Consolas"
+                                             Background="Transparent" BorderThickness="0"
+                                             IsReadOnly="True" TextWrapping="NoWrap"
+                                             IsTabStop="False"
+                                             Text="// Conditional script preview will appear here"
+                                             Margin="5"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Expander>
 
                         <!-- Action Scripts -->
                         <Separator Margin="0,5"/>
@@ -473,7 +474,7 @@
                                 <TextBlock Grid.Row="0" Text="Key-Value pairs for action script"
                                            FontStyle="Italic" Margin="5,5,5,2" Opacity="0.7"/>
                                 <ScrollViewer Grid.Row="1" x:Name="ActionsParamsScrollViewer" MinHeight="40"
-                                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                             VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Disabled">
                                     <StackPanel x:Name="ActionsParametersPanel" Margin="5,5,20,5"/>
                                 </ScrollViewer>
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="5">
@@ -495,19 +496,20 @@
                             </Grid>
                         </Border>
 
-                        <TextBlock Text="Action Script Preview:" Margin="0,5,0,2"/>
-                        <Border x:Name="ActionScriptPreviewGrid" MinHeight="100" MaxHeight="150" BorderBrush="Gray" BorderThickness="1" Margin="0,0,0,5">
-                            <ScrollViewer x:Name="ActionScriptPreviewScrollViewer"
-                                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                                <TextBox x:Name="ActionScriptPreviewTextBox"
-                                         FontFamily="Consolas"
-                                         Background="Transparent" BorderThickness="0"
-                                         IsReadOnly="True" TextWrapping="NoWrap"
-                                         IsTabStop="False"
-                                         Text="// Action script preview will appear here"
-                                         Margin="5"/>
-                            </ScrollViewer>
-                        </Border>
+                        <Expander Header="Action Script Preview" IsExpanded="False" Margin="0,5,0,5">
+                            <Border x:Name="ActionScriptPreviewGrid" MaxHeight="150" BorderBrush="Gray" BorderThickness="1">
+                                <ScrollViewer x:Name="ActionScriptPreviewScrollViewer"
+                                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                                    <TextBox x:Name="ActionScriptPreviewTextBox"
+                                             FontFamily="Consolas"
+                                             Background="Transparent" BorderThickness="0"
+                                             IsReadOnly="True" TextWrapping="NoWrap"
+                                             IsTabStop="False"
+                                             Text="// Action script preview will appear here"
+                                             Margin="5"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Expander>
 
                         </StackPanel>
                     </ScrollViewer>
