@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Resolver;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Tlk;
@@ -180,7 +180,7 @@ public class GameDataService : IGameDataService
 
         if (!settings.HasGamePaths)
         {
-            Debug.WriteLine("[GameDataService] No game paths configured");
+            UnifiedLogger.Log(LogLevel.DEBUG, "No game paths configured", "GameDataService", "GameData");
             return;
         }
 
@@ -238,7 +238,7 @@ public class GameDataService : IGameDataService
         var data = _resolver.FindResource(name, ResourceTypes.TwoDA);
         if (data == null)
         {
-            Debug.WriteLine($"[GameDataService] 2DA not found: {name}");
+            UnifiedLogger.Log(LogLevel.DEBUG, $"2DA not found: {name}", "GameDataService", "GameData");
             return null;
         }
 
@@ -248,7 +248,7 @@ public class GameDataService : IGameDataService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GameDataService] Failed to parse 2DA '{name}': {ex.GetType().Name}: {ex.Message}");
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to parse 2DA '{name}': {ex.GetType().Name}: {ex.Message}", "GameDataService", "GameData");
             return null;
         }
     }
@@ -257,18 +257,18 @@ public class GameDataService : IGameDataService
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path))
         {
-            Debug.WriteLine($"[GameDataService] Base TLK not found: {path}");
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Base TLK not found: {path}", "GameDataService", "GameData");
             return;
         }
 
         try
         {
             _baseTlk = TlkReader.Read(path);
-            Debug.WriteLine($"[GameDataService] Loaded base TLK: {path} ({_baseTlk.Count} strings)");
+            UnifiedLogger.Log(LogLevel.INFO, $"Loaded base TLK: {path} ({_baseTlk.Count} strings)", "GameDataService", "GameData");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GameDataService] Failed to load base TLK '{path}': {ex.GetType().Name}: {ex.Message}");
+            UnifiedLogger.Log(LogLevel.ERROR, $"Failed to load base TLK '{path}': {ex.GetType().Name}: {ex.Message}", "GameDataService", "GameData");
         }
     }
 
@@ -280,11 +280,11 @@ public class GameDataService : IGameDataService
         try
         {
             _customTlk = TlkReader.Read(path);
-            Debug.WriteLine($"[GameDataService] Loaded custom TLK: {path} ({_customTlk.Count} strings)");
+            UnifiedLogger.Log(LogLevel.INFO, $"Loaded custom TLK: {path} ({_customTlk.Count} strings)", "GameDataService", "GameData");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GameDataService] Failed to load custom TLK '{path}': {ex.GetType().Name}: {ex.Message}");
+            UnifiedLogger.Log(LogLevel.ERROR, $"Failed to load custom TLK '{path}': {ex.GetType().Name}: {ex.Message}", "GameDataService", "GameData");
         }
     }
 
