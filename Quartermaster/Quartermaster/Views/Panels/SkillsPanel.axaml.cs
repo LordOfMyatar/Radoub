@@ -297,7 +297,7 @@ public partial class SkillsPanel : BasePanelControl
     private IBrush GetDisabledBrush()
     {
         var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeBorder", ThemeVariant.Default, out var brush) == true
+        if (app?.Resources.TryGetResource("ThemeDisabled", ThemeVariant.Default, out var brush) == true
             && brush is IBrush b)
             return b;
         return DefaultDisabledBrush;

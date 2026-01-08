@@ -11,6 +11,7 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
+using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Mdl;
 using SkiaSharp;
@@ -189,9 +190,9 @@ public class ModelPreviewControl : Control
         if (bounds.Width <= 0 || bounds.Height <= 0)
             return;
 
-        // Draw background
+        // Draw background using theme-aware color
         context.DrawRectangle(
-            new SolidColorBrush(Color.FromRgb(26, 26, 46)),
+            GetBackgroundBrush(),
             null,
             new Rect(0, 0, bounds.Width, bounds.Height));
 
@@ -274,7 +275,7 @@ public class ModelPreviewControl : Control
         var centerX = bounds.Width / 2;
         var centerY = bounds.Height / 2;
 
-        // Draw placeholder text
+        // Draw placeholder text using theme-aware color
         var typeface = new Typeface("Segoe UI");
         var formattedText = new FormattedText(
             "No Model",
@@ -282,11 +283,37 @@ public class ModelPreviewControl : Control
             FlowDirection.LeftToRight,
             typeface,
             16,
-            new SolidColorBrush(Color.FromRgb(106, 106, 138)));
+            GetPlaceholderBrush());
 
         context.DrawText(formattedText,
             new Point(centerX - formattedText.Width / 2, centerY - formattedText.Height / 2));
     }
+
+    #region Theme-Aware Colors
+
+    // Default colors for fallback (dark theme values)
+    private static readonly IBrush DefaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 46));
+    private static readonly IBrush DefaultPlaceholderBrush = new SolidColorBrush(Color.FromRgb(106, 106, 138));
+
+    private IBrush GetBackgroundBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeSidebar", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultBackgroundBrush;
+    }
+
+    private IBrush GetPlaceholderBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeDisabled", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultPlaceholderBrush;
+    }
+
+    #endregion
 
     /// <summary>
     /// Custom SkiaSharp draw operation for 3D model rendering.

@@ -220,8 +220,8 @@
                                                        MinWidth="60" FontSize="10"
                                                        AutomationProperties.AutomationId="SkinColorNumeric"/>
                                         <Border x:Name="SkinColorSwatch" Width="18" Height="18"
-                                                CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
-                                                Background="Gray" VerticalAlignment="Center"/>
+                                                CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                                Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <TextBlock Grid.Row="0" Grid.Column="2" Text="Hair:" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
@@ -233,8 +233,8 @@
                                                        MinWidth="60" FontSize="10"
                                                        AutomationProperties.AutomationId="HairColorNumeric"/>
                                         <Border x:Name="HairColorSwatch" Width="18" Height="18"
-                                                CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
-                                                Background="Gray" VerticalAlignment="Center"/>
+                                                CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                                Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
                                     </StackPanel>
 
                                     <!-- Tattoo 1 / Tattoo 2 -->
@@ -248,8 +248,8 @@
                                                        MinWidth="60" FontSize="10"
                                                        AutomationProperties.AutomationId="Tattoo1ColorNumeric"/>
                                         <Border x:Name="Tattoo1ColorSwatch" Width="18" Height="18"
-                                                CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
-                                                Background="Gray" VerticalAlignment="Center"/>
+                                                CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                                Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <TextBlock Grid.Row="1" Grid.Column="2" Text="Tat 2:" FontSize="11"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
@@ -261,8 +261,8 @@
                                                        MinWidth="60" FontSize="10"
                                                        AutomationProperties.AutomationId="Tattoo2ColorNumeric"/>
                                         <Border x:Name="Tattoo2ColorSwatch" Width="18" Height="18"
-                                                CornerRadius="2" BorderBrush="Gray" BorderThickness="1"
-                                                Background="Gray" VerticalAlignment="Center"/>
+                                                CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                                Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -286,7 +286,7 @@
 
                     <!-- 3D Preview Area -->
                     <Border Grid.Row="1" x:Name="ModelPreviewContainer"
-                            Background="#1A1A2E" Margin="10" CornerRadius="4">
+                            Background="{DynamicResource ThemeSidebar}" Margin="10" CornerRadius="4">
                         <controls:ModelPreviewControl x:Name="ModelPreview"/>
                     </Border>
 

@@ -17,6 +17,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Refactor hardcoded colors throughout Quartermaster to use semantic theme colors for colorblind/accessibility support.
 
+#### Theme Infrastructure
+- Added `Disabled` color to `ThemeColors` model (auto-registered as `ThemeDisabled`)
+- Added `disabled` color to all 8 Quartermaster theme JSON files
+
+#### Fixed Panels
+- FeatsPanel: Status colors (available/known/granted/unavailable) now use theme colors
+- SkillsPanel: Class skill indicators now use theme colors
+- SpellsPanel: Spell status colors now use theme colors
+- AppearancePanel: Color swatches and model preview container now theme-aware
+
+#### Fixed Dialogs
+- SettingsWindow: All border colors now use `ThemeBorder`
+- ColorPickerWindow: Swatch borders and selection highlight now theme-aware
+- FactionPickerWindow: Border and selection styles now theme-aware
+- PackagePickerWindow: Border and selection styles now theme-aware
+
+#### Fixed Controls
+- ModelPreviewControl: Background and placeholder text now use theme colors
+
 ---
 
 ## [0.1.30-alpha] - 2026-01-05

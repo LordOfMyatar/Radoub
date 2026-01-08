@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Quartermaster.Services;
 
 namespace Quartermaster.Views.Dialogs;
@@ -82,7 +83,7 @@ public partial class ColorPickerWindow : Window
             }
             else
             {
-                background = new SolidColorBrush(Colors.Gray);
+                background = GetBorderBrush();
             }
 
             var swatch = new Border
@@ -92,7 +93,7 @@ public partial class ColorPickerWindow : Window
                 Margin = new Thickness(1),
                 CornerRadius = new CornerRadius(2),
                 BorderThickness = new Thickness(1),
-                BorderBrush = new SolidColorBrush(Colors.DarkGray),
+                BorderBrush = GetBorderBrush(),
                 Background = background,
                 Tag = i,
                 Cursor = new Cursor(StandardCursorType.Hand)
@@ -132,21 +133,21 @@ public partial class ColorPickerWindow : Window
         }
         else
         {
-            _currentColorSwatch.Background = new SolidColorBrush(Colors.Gray);
+            _currentColorSwatch.Background = GetBorderBrush();
         }
         _currentColorLabel.Text = $"Index: {index}";
 
         // Update selection highlight
         if (_selectedSwatch != null)
         {
-            _selectedSwatch.BorderBrush = new SolidColorBrush(Colors.Gray);
+            _selectedSwatch.BorderBrush = GetBorderBrush();
             _selectedSwatch.BorderThickness = new Thickness(1);
         }
 
         if (index < _colorSwatches.Count)
         {
             _selectedSwatch = _colorSwatches[index];
-            _selectedSwatch.BorderBrush = new SolidColorBrush(Colors.White);
+            _selectedSwatch.BorderBrush = GetSelectionBrush();
             _selectedSwatch.BorderThickness = new Thickness(2);
         }
     }
@@ -162,4 +163,29 @@ public partial class ColorPickerWindow : Window
         Confirmed = false;
         Close();
     }
+
+    #region Theme-Aware Colors
+
+    private static readonly IBrush DefaultBorderBrush = new SolidColorBrush(Color.Parse("#757575"));
+    private static readonly IBrush DefaultSelectionBrush = new SolidColorBrush(Color.Parse("#FFC107"));
+
+    private IBrush GetBorderBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeBorder", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultBorderBrush;
+    }
+
+    private IBrush GetSelectionBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeAccent", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultSelectionBrush;
+    }
+
+    #endregion
 }
