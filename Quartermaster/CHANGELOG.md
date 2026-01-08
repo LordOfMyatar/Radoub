@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.31-alpha] - 2026-01-07
-**Branch**: `quartermaster/issue-799` | **PR**: #TBD
+**Branch**: `quartermaster/issue-799` | **PR**: #800
 
 ### Refactor: Hardcoded Colors to Theme System (#799)
 
