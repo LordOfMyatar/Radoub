@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.31-alpha] - 2026-01-07
+**Branch**: `quartermaster/issue-799` | **PR**: #TBD
+
+### Refactor: Hardcoded Colors to Theme System (#799)
+
+Refactor hardcoded colors throughout Quartermaster to use semantic theme colors for colorblind/accessibility support.
+
+---
+
 ## [0.1.30-alpha] - 2026-01-05
 **Branch**: `quartermaster/issue-769` | **PR**: #789
 
