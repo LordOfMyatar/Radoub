@@ -11,6 +11,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
@@ -130,7 +131,7 @@ public partial class SettingsWindow : Window
             if (validation != null)
             {
                 validation.Text = "Could not auto-detect installation path";
-                validation.Foreground = Brushes.Orange;
+                validation.Foreground = GetWarningBrush();
             }
         }
     }
@@ -173,7 +174,7 @@ public partial class SettingsWindow : Window
             if (validation != null)
             {
                 validation.Text = "Could not auto-detect user data path";
-                validation.Foreground = Brushes.Orange;
+                validation.Foreground = GetWarningBrush();
             }
         }
     }
@@ -192,7 +193,7 @@ public partial class SettingsWindow : Window
         if (!Directory.Exists(path))
         {
             validation.Text = "Directory does not exist";
-            validation.Foreground = Brushes.Red;
+            validation.Foreground = GetErrorBrush();
             return;
         }
 
@@ -200,12 +201,12 @@ public partial class SettingsWindow : Window
         if (Directory.Exists(dataPath))
         {
             validation.Text = "Valid installation path detected";
-            validation.Foreground = Brushes.Green;
+            validation.Foreground = GetSuccessBrush();
         }
         else
         {
             validation.Text = "Warning: 'data' folder not found - may not be correct path";
-            validation.Foreground = Brushes.Orange;
+            validation.Foreground = GetWarningBrush();
         }
     }
 
@@ -223,7 +224,7 @@ public partial class SettingsWindow : Window
         if (!Directory.Exists(path))
         {
             validation.Text = "Directory does not exist";
-            validation.Foreground = Brushes.Red;
+            validation.Foreground = GetErrorBrush();
             return;
         }
 
@@ -231,12 +232,12 @@ public partial class SettingsWindow : Window
         if (Directory.Exists(modulesPath))
         {
             validation.Text = "Valid user data path detected";
-            validation.Foreground = Brushes.Green;
+            validation.Foreground = GetSuccessBrush();
         }
         else
         {
             validation.Text = "Warning: 'modules' folder not found - may not be correct path";
-            validation.Foreground = Brushes.Orange;
+            validation.Foreground = GetWarningBrush();
         }
     }
 
@@ -565,6 +566,48 @@ public partial class SettingsWindow : Window
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Settings applied successfully");
+    }
+
+    #endregion
+
+    #region Theme-Aware Colors
+
+    // Light theme default colors for fallback
+    private static readonly IBrush DefaultErrorBrush = new SolidColorBrush(Color.Parse("#D32F2F"));
+    private static readonly IBrush DefaultSuccessBrush = new SolidColorBrush(Color.Parse("#388E3C"));
+    private static readonly IBrush DefaultWarningBrush = new SolidColorBrush(Color.Parse("#F57C00"));
+
+    private IBrush GetErrorBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var errorBrush) == true
+            && errorBrush is IBrush brush)
+        {
+            return brush;
+        }
+        return DefaultErrorBrush;
+    }
+
+    private IBrush GetSuccessBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var successBrush) == true
+            && successBrush is IBrush brush)
+        {
+            return brush;
+        }
+        return DefaultSuccessBrush;
+    }
+
+    private IBrush GetWarningBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeWarning", ThemeVariant.Default, out var warningBrush) == true
+            && warningBrush is IBrush brush)
+        {
+            return brush;
+        }
+        return DefaultWarningBrush;
     }
 
     #endregion

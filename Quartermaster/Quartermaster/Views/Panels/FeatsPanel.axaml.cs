@@ -1,7 +1,9 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
@@ -210,24 +212,24 @@ public partial class FeatsPanel : UserControl
             // Unavailable to this class/race
             statusIndicator = "✗";
             statusText = "Unavailable";
-            statusColor = new SolidColorBrush(Colors.Gray);
-            rowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128));
+            statusColor = GetDisabledBrush();
+            rowBackground = GetTransparentRowBackground(statusColor, 20);
             textOpacity = 0.5;
         }
         else if (isAssigned && isGranted)
         {
             statusIndicator = "★";
             statusText = "Granted";
-            statusColor = new SolidColorBrush(Colors.Gold);
-            rowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0));
+            statusColor = GetSelectionBrush();
+            rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
         }
         else if (isAssigned)
         {
             statusIndicator = "✓";
             statusText = "Assigned";
-            statusColor = new SolidColorBrush(Colors.Green);
-            rowBackground = new SolidColorBrush(Color.FromArgb(30, 0, 128, 0));
+            statusColor = GetSuccessBrush();
+            rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
         }
         else if (prereqResult != null && prereqResult.HasPrerequisites && !prereqResult.AllMet)
@@ -235,7 +237,7 @@ public partial class FeatsPanel : UserControl
             // Has unmet prerequisites
             statusIndicator = "⚠";
             statusText = "Prereqs";
-            statusColor = new SolidColorBrush(Colors.Orange);
+            statusColor = GetWarningBrush();
             rowBackground = Brushes.Transparent;
             textOpacity = 0.7;
         }
@@ -244,7 +246,7 @@ public partial class FeatsPanel : UserControl
             // All prerequisites met - available to select
             statusIndicator = "○";
             statusText = "Available";
-            statusColor = new SolidColorBrush(Colors.CornflowerBlue);
+            statusColor = GetInfoBrush();
             rowBackground = Brushes.Transparent;
             textOpacity = 0.8;
         }
@@ -547,6 +549,72 @@ public partial class FeatsPanel : UserControl
         if (block != null)
             block.Text = text;
     }
+
+    #region Theme-Aware Colors
+
+    // Light theme default colors for fallback
+    private static readonly IBrush DefaultDisabledBrush = new SolidColorBrush(Color.Parse("#757575")); // Gray
+    private static readonly IBrush DefaultSuccessBrush = new SolidColorBrush(Color.Parse("#388E3C"));  // Green
+    private static readonly IBrush DefaultWarningBrush = new SolidColorBrush(Color.Parse("#F57C00"));  // Orange
+    private static readonly IBrush DefaultInfoBrush = new SolidColorBrush(Color.Parse("#1976D2"));     // Blue
+    private static readonly IBrush DefaultSelectionBrush = new SolidColorBrush(Color.Parse("#FFC107")); // Gold/Yellow
+
+    private IBrush GetDisabledBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeBorder", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultDisabledBrush;
+    }
+
+    private IBrush GetSuccessBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultSuccessBrush;
+    }
+
+    private IBrush GetWarningBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeWarning", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultWarningBrush;
+    }
+
+    private IBrush GetInfoBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeInfo", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultInfoBrush;
+    }
+
+    private IBrush GetSelectionBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeSelection", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultSelectionBrush;
+    }
+
+    private static IBrush GetTransparentRowBackground(IBrush baseBrush, byte alpha = 30)
+    {
+        if (baseBrush is SolidColorBrush scb)
+        {
+            var c = scb.Color;
+            return new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B));
+        }
+        return Brushes.Transparent;
+    }
+
+    #endregion
 }
 
 public class FeatListViewModel

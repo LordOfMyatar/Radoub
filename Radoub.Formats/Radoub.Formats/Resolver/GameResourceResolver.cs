@@ -1,8 +1,8 @@
-using System.Diagnostics;
 using Radoub.Formats.Bif;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Key;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Tlk;
 
 namespace Radoub.Formats.Resolver;
@@ -260,7 +260,7 @@ public class GameResourceResolver : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GameResourceResolver] Failed to load HAK '{hakPath}': {ex.GetType().Name}: {ex.Message}");
+            UnifiedLogger.Log(LogLevel.ERROR, $"Failed to load HAK '{hakPath}': {ex.GetType().Name}: {ex.Message}", "GameResourceResolver", "Resolver");
             return null;
         }
     }
@@ -337,7 +337,7 @@ public class GameResourceResolver : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GameResourceResolver] Failed to load KEY '{keyPath}': {ex.GetType().Name}: {ex.Message}");
+            UnifiedLogger.Log(LogLevel.ERROR, $"Failed to load KEY '{keyPath}': {ex.GetType().Name}: {ex.Message}", "GameResourceResolver", "Resolver");
         }
     }
 
@@ -355,7 +355,7 @@ public class GameResourceResolver : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GameResourceResolver] Failed to load BIF '{bifPath}': {ex.GetType().Name}: {ex.Message}");
+            UnifiedLogger.Log(LogLevel.ERROR, $"Failed to load BIF '{bifPath}': {ex.GetType().Name}: {ex.Message}", "GameResourceResolver", "Resolver");
             return null;
         }
     }
@@ -407,7 +407,7 @@ public class GameResourceResolver : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GameResourceResolver] Failed to load TLK '{tlkPath}': {ex.GetType().Name}: {ex.Message}");
+            UnifiedLogger.Log(LogLevel.ERROR, $"Failed to load TLK '{tlkPath}': {ex.GetType().Name}: {ex.Message}", "GameResourceResolver", "Resolver");
         }
     }
 
@@ -425,7 +425,7 @@ public class GameResourceResolver : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GameResourceResolver] Failed to load custom TLK '{_config.CustomTlkPath}': {ex.GetType().Name}: {ex.Message}");
+            UnifiedLogger.Log(LogLevel.ERROR, $"Failed to load custom TLK '{_config.CustomTlkPath}': {ex.GetType().Name}: {ex.Message}", "GameResourceResolver", "Resolver");
         }
     }
 

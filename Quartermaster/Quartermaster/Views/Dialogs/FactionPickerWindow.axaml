@@ -43,7 +43,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="{Binding Id}"
-                                       Foreground="Gray" VerticalAlignment="Center"/>
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
                             <TextBlock Grid.Column="1" Text="{Binding Name}"
                                        VerticalAlignment="Center"/>
                         </Grid>
@@ -55,7 +55,7 @@
         <!-- Info text -->
         <TextBlock Grid.Row="2" x:Name="InfoLabel"
                    Text="Factions loaded from repute.fac"
-                   FontSize="11" Foreground="Gray"
+                   FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                    Margin="0,10,0,0"/>
 
         <!-- Buttons -->

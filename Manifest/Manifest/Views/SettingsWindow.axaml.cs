@@ -1,7 +1,9 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Manifest.Services;
 using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
@@ -313,13 +315,13 @@ public partial class SettingsWindow : Window
             RadoubSettings.Instance.BaseGameInstallPath = detectedPath;
             UpdateGamePathValidation();
             GamePathValidationText.Text = "Auto-detected game installation";
-            GamePathValidationText.Foreground = Avalonia.Media.Brushes.Green;
+            GamePathValidationText.Foreground = GetSuccessBrush();
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Game path auto-detected: {SanitizePath(detectedPath)}");
         }
         else
         {
             GamePathValidationText.Text = "Could not auto-detect game path. Please browse manually.";
-            GamePathValidationText.Foreground = Avalonia.Media.Brushes.Orange;
+            GamePathValidationText.Foreground = GetWarningBrush();
             UnifiedLogger.LogApplication(LogLevel.WARN, "Game path auto-detection failed");
         }
     }
@@ -337,8 +339,8 @@ public partial class SettingsWindow : Window
         var result = ResourcePathDetector.ValidateBaseGamePathWithMessage(path);
         GamePathValidationText.Text = result.Message;
         GamePathValidationText.Foreground = result.IsValid
-            ? Avalonia.Media.Brushes.Green
-            : Avalonia.Media.Brushes.Red;
+            ? GetSuccessBrush()
+            : GetErrorBrush();
     }
 
     private static string SanitizePath(string path)
@@ -399,13 +401,13 @@ public partial class SettingsWindow : Window
             RadoubSettings.Instance.NeverwinterNightsPath = detectedPath;
             UpdateUserPathValidation();
             UserPathValidationText.Text = "Auto-detected user documents";
-            UserPathValidationText.Foreground = Avalonia.Media.Brushes.Green;
+            UserPathValidationText.Foreground = GetSuccessBrush();
             UnifiedLogger.LogApplication(LogLevel.INFO, $"User path auto-detected: {SanitizePath(detectedPath)}");
         }
         else
         {
             UserPathValidationText.Text = "Could not auto-detect user path. Please browse manually.";
-            UserPathValidationText.Foreground = Avalonia.Media.Brushes.Orange;
+            UserPathValidationText.Foreground = GetWarningBrush();
             UnifiedLogger.LogApplication(LogLevel.WARN, "User path auto-detection failed");
         }
     }
@@ -423,8 +425,8 @@ public partial class SettingsWindow : Window
         var result = ResourcePathDetector.ValidateGamePathWithMessage(path);
         UserPathValidationText.Text = result.Message;
         UserPathValidationText.Foreground = result.IsValid
-            ? Avalonia.Media.Brushes.Green
-            : Avalonia.Media.Brushes.Red;
+            ? GetSuccessBrush()
+            : GetErrorBrush();
     }
 
     #endregion
@@ -599,6 +601,48 @@ public partial class SettingsWindow : Window
         {
             return IsBundled ? DisplayName : $"{DisplayName} (installed)";
         }
+    }
+
+    #endregion
+
+    #region Theme-Aware Colors
+
+    // Light theme default colors for fallback
+    private static readonly IBrush DefaultErrorBrush = new SolidColorBrush(Color.Parse("#D32F2F"));
+    private static readonly IBrush DefaultSuccessBrush = new SolidColorBrush(Color.Parse("#388E3C"));
+    private static readonly IBrush DefaultWarningBrush = new SolidColorBrush(Color.Parse("#F57C00"));
+
+    private IBrush GetErrorBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var errorBrush) == true
+            && errorBrush is IBrush brush)
+        {
+            return brush;
+        }
+        return DefaultErrorBrush;
+    }
+
+    private IBrush GetSuccessBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var successBrush) == true
+            && successBrush is IBrush brush)
+        {
+            return brush;
+        }
+        return DefaultSuccessBrush;
+    }
+
+    private IBrush GetWarningBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeWarning", ThemeVariant.Default, out var warningBrush) == true
+            && warningBrush is IBrush brush)
+        {
+            return brush;
+        }
+        return DefaultWarningBrush;
     }
 
     #endregion

@@ -1,7 +1,9 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
@@ -391,22 +393,22 @@ public partial class SpellsPanel : UserControl
         if (isBlocked)
         {
             statusText = "Blocked";
-            statusColor = new SolidColorBrush(Colors.Gray);
-            rowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128));
+            statusColor = GetDisabledBrush();
+            rowBackground = GetTransparentRowBackground(statusColor, 20);
             textOpacity = 0.5;
         }
         else if (isMemorized)
         {
             statusText = "Memorized";
-            statusColor = new SolidColorBrush(Colors.Gold);
-            rowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0));
+            statusColor = GetSelectionBrush();
+            rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
         }
         else if (isKnown)
         {
             statusText = "Known";
-            statusColor = new SolidColorBrush(Colors.Green);
-            rowBackground = new SolidColorBrush(Color.FromArgb(30, 0, 128, 0));
+            statusColor = GetSuccessBrush();
+            rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
         }
         else
@@ -577,30 +579,30 @@ public partial class SpellsPanel : UserControl
         if (spell.IsBlocked)
         {
             spell.StatusText = "Blocked";
-            spell.StatusColor = new SolidColorBrush(Colors.Gray);
-            spell.RowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128));
+            spell.StatusColor = GetDisabledBrush();
+            spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 20);
             spell.TextOpacity = 0.5;
         }
         else if (isKnown && isMemorized)
         {
             spell.StatusText = "K + M";
-            spell.StatusColor = new SolidColorBrush(Colors.Gold);
-            spell.RowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0));
+            spell.StatusColor = GetSelectionBrush();
+            spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
         }
         else if (isMemorized)
         {
             // Memorized but not known (edge case - shouldn't happen normally)
             spell.StatusText = "Memorized";
-            spell.StatusColor = new SolidColorBrush(Colors.Gold);
-            spell.RowBackground = new SolidColorBrush(Color.FromArgb(30, 255, 215, 0));
+            spell.StatusColor = GetSelectionBrush();
+            spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
         }
         else if (isKnown)
         {
             spell.StatusText = "Known";
-            spell.StatusColor = new SolidColorBrush(Colors.Green);
-            spell.RowBackground = new SolidColorBrush(Color.FromArgb(30, 0, 128, 0));
+            spell.StatusColor = GetSuccessBrush();
+            spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
         }
         else
@@ -844,9 +846,9 @@ public partial class SpellsPanel : UserControl
                 Margin = new Avalonia.Thickness(4, 0, 4, 4),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Foreground = isSelected
-                    ? new SolidColorBrush(Color.FromRgb(100, 180, 255))
+                    ? GetInfoBrush()
                     : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
-                      ?? Brushes.White
+                      ?? GetDisabledBrush()
             };
             Grid.SetRow(classHeader, 0);
             Grid.SetColumn(classHeader, col + 1);
@@ -902,28 +904,28 @@ public partial class SpellsPanel : UserControl
                 if (totalLimit <= 0)
                 {
                     cellText = "-";
-                    cellColor = new SolidColorBrush(Colors.Gray);
+                    cellColor = GetDisabledBrush();
                 }
                 else if (usedCount >= totalLimit)
                 {
                     // Full - show in gold/yellow
                     cellText = $"{usedCount}/{totalLimit}";
-                    cellColor = new SolidColorBrush(Colors.Gold);
+                    cellColor = GetSelectionBrush();
                 }
                 else if (usedCount > 0)
                 {
                     // Partial - show in green
                     cellText = $"{usedCount}/{totalLimit}";
-                    cellColor = new SolidColorBrush(Colors.LightGreen);
+                    cellColor = GetSuccessBrush();
                 }
                 else
                 {
                     // Empty - normal color
                     cellText = $"0/{totalLimit}";
                     cellColor = isSelected
-                        ? new SolidColorBrush(Color.FromRgb(100, 180, 255))
+                        ? GetInfoBrush()
                         : this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-                          ?? new SolidColorBrush(Colors.Gray);
+                          ?? GetDisabledBrush();
                 }
 
                 var slotCell = new TextBlock
@@ -1020,8 +1022,8 @@ public partial class SpellsPanel : UserControl
                 FontWeight = Avalonia.Media.FontWeight.Bold,
                 FontSize = 12,
                 Foreground = isSelectedClass
-                    ? new SolidColorBrush(Color.FromRgb(100, 180, 255))
-                    : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? Brushes.White,
+                    ? GetInfoBrush()
+                    : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
                 Margin = new Avalonia.Thickness(0, hasAnySpells && _knownSpellsListPanel.Children.Count > 0 ? 12 : 0, 0, 6)
             };
             _knownSpellsListPanel.Children.Add(classHeader);
@@ -1038,7 +1040,7 @@ public partial class SpellsPanel : UserControl
                     Text = level == 0 ? "  Cantrips" : $"  Level {level}",
                     FontWeight = Avalonia.Media.FontWeight.SemiBold,
                     FontSize = 10,
-                    Foreground = new SolidColorBrush(Colors.Gray),
+                    Foreground = GetDisabledBrush(),
                     Margin = new Avalonia.Thickness(0, 4, 0, 2)
                 };
                 _knownSpellsListPanel.Children.Add(levelHeader);
@@ -1061,17 +1063,17 @@ public partial class SpellsPanel : UserControl
                     {
                         // Not a standard class spell (e.g., feat-based ability)
                         displayName = $"{spellName} *";
-                        foreground = new SolidColorBrush(Colors.Gray);
+                        foreground = GetDisabledBrush();
                     }
                     else if (isOverlap)
                     {
                         // Spell appears in multiple classes - highlight in gold
                         displayName = $"{spellName} ⬥";
-                        foreground = new SolidColorBrush(Colors.Gold);
+                        foreground = GetSelectionBrush();
                     }
                     else
                     {
-                        foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? Brushes.White;
+                        foreground = this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush();
                     }
 
                     var spellLabel = new TextBlock
@@ -1213,6 +1215,62 @@ public partial class SpellsPanel : UserControl
         if (block != null)
             block.Text = text;
     }
+
+    #region Theme-Aware Colors
+
+    // Light theme default colors for fallback
+    private static readonly IBrush DefaultDisabledBrush = new SolidColorBrush(Color.Parse("#757575")); // Gray
+    private static readonly IBrush DefaultSuccessBrush = new SolidColorBrush(Color.Parse("#388E3C"));  // Green
+    private static readonly IBrush DefaultInfoBrush = new SolidColorBrush(Color.Parse("#1976D2"));     // Blue
+    private static readonly IBrush DefaultSelectionBrush = new SolidColorBrush(Color.Parse("#FFC107")); // Gold/Yellow
+
+    private IBrush GetDisabledBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeBorder", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultDisabledBrush;
+    }
+
+    private IBrush GetSuccessBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultSuccessBrush;
+    }
+
+    private IBrush GetInfoBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeInfo", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultInfoBrush;
+    }
+
+    private IBrush GetSelectionBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeSelection", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultSelectionBrush;
+    }
+
+    private static IBrush GetTransparentRowBackground(IBrush baseBrush, byte alpha = 30)
+    {
+        if (baseBrush is SolidColorBrush scb)
+        {
+            var c = scb.Color;
+            return new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B));
+        }
+        return Brushes.Transparent;
+    }
+
+    #endregion
 }
 
 /// <summary>
