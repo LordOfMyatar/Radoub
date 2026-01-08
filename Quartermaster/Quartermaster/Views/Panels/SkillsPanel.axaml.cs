@@ -1,7 +1,9 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
@@ -98,12 +100,12 @@ public partial class SkillsPanel : BasePanelControl
             double textOpacity;
             if (isUnavailable)
             {
-                rowBackground = new SolidColorBrush(Color.FromArgb(20, 128, 128, 128));
+                rowBackground = GetTransparentRowBackground(GetDisabledBrush(), 20);
                 textOpacity = 0.5;
             }
             else if (isClassSkill)
             {
-                rowBackground = new SolidColorBrush(Color.FromArgb(30, 100, 149, 237));
+                rowBackground = GetTransparentRowBackground(GetInfoBrush(), 30);
                 textOpacity = 1.0;
             }
             else
@@ -285,6 +287,42 @@ public partial class SkillsPanel : BasePanelControl
             _ => "INT"
         };
     }
+
+    #region Theme-Aware Colors
+
+    // Light theme default colors for fallback
+    private static readonly IBrush DefaultDisabledBrush = new SolidColorBrush(Color.Parse("#757575")); // Gray
+    private static readonly IBrush DefaultInfoBrush = new SolidColorBrush(Color.Parse("#1976D2"));     // Blue
+
+    private IBrush GetDisabledBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeBorder", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultDisabledBrush;
+    }
+
+    private IBrush GetInfoBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeInfo", ThemeVariant.Default, out var brush) == true
+            && brush is IBrush b)
+            return b;
+        return DefaultInfoBrush;
+    }
+
+    private static IBrush GetTransparentRowBackground(IBrush baseBrush, byte alpha = 30)
+    {
+        if (baseBrush is SolidColorBrush scb)
+        {
+            var c = scb.Color;
+            return new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B));
+        }
+        return Brushes.Transparent;
+    }
+
+    #endregion
 }
 
 public class SkillViewModel

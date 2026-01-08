@@ -572,6 +572,11 @@ public partial class SettingsWindow : Window
 
     #region Theme-Aware Colors
 
+    // Light theme default colors for fallback
+    private static readonly IBrush DefaultErrorBrush = new SolidColorBrush(Color.Parse("#D32F2F"));
+    private static readonly IBrush DefaultSuccessBrush = new SolidColorBrush(Color.Parse("#388E3C"));
+    private static readonly IBrush DefaultWarningBrush = new SolidColorBrush(Color.Parse("#F57C00"));
+
     private IBrush GetErrorBrush()
     {
         var app = Application.Current;
@@ -580,7 +585,7 @@ public partial class SettingsWindow : Window
         {
             return brush;
         }
-        return Brushes.Red;
+        return DefaultErrorBrush;
     }
 
     private IBrush GetSuccessBrush()
@@ -591,7 +596,7 @@ public partial class SettingsWindow : Window
         {
             return brush;
         }
-        return Brushes.Green;
+        return DefaultSuccessBrush;
     }
 
     private IBrush GetWarningBrush()
@@ -602,7 +607,7 @@ public partial class SettingsWindow : Window
         {
             return brush;
         }
-        return Brushes.Orange;
+        return DefaultWarningBrush;
     }
 
     #endregion

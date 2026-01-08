@@ -44,7 +44,7 @@
                 <!-- Legend -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="20,0,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="3">
-                        <TextBlock Text="●" Foreground="CornflowerBlue" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="●" Foreground="{DynamicResource ThemeInfo}" FontSize="12" VerticalAlignment="Center"/>
                         <TextBlock Text="Class" FontSize="11" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
@@ -54,7 +54,7 @@
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="3">
-                        <TextBlock Text="✗" Foreground="CornflowerBlue" FontSize="12" VerticalAlignment="Center" Opacity="0.5"/>
+                        <TextBlock Text="✗" Foreground="{DynamicResource ThemeBorder}" FontSize="12" VerticalAlignment="Center" Opacity="0.5"/>
                         <TextBlock Text="Unavailable" FontSize="11" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
@@ -104,7 +104,7 @@
                                             <!-- Class Skill Indicator -->
                                             <TextBlock Grid.Column="1"
                                                        Text="{Binding ClassSkillIndicator}"
-                                                       Foreground="CornflowerBlue"
+                                                       Foreground="{DynamicResource ThemeInfo}"
                                                        FontSize="10"
                                                        VerticalAlignment="Center"
                                                        HorizontalAlignment="Center"/>

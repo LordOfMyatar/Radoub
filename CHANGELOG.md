@@ -29,9 +29,20 @@ Cross-tool bug fixes for logging privacy and theme standardization.
   - Added GetErrorBrush/GetSuccessBrush/GetWarningBrush helpers to Manifest and Quartermaster
   - Replaced hardcoded Brushes.Red/Green/Orange with theme-aware helpers
   - Ensures colorblind-accessible validation feedback
-- [x] #784 - Refactor hardcoded UI settings to use theme system (partial)
-  - Semantic colors now use theme resources (error/warning/success)
-  - SettingsWindow refactoring deferred to future sprint
+- [x] #784 - Refactor hardcoded UI settings to use theme system
+  - FeatsPanel: status colors (assigned/granted/prereqs/available/unavailable) now theme-aware
+  - SkillsPanel: class skill indicators and row highlights now theme-aware
+  - SpellsPanel: spell slot table colors and status indicators now theme-aware
+  - All dialogs (SettingsWindow, ColorPicker, FactionPicker, PackagePicker) now use theme resources
+  - Added semantic color helpers: GetDisabledBrush, GetSuccessBrush, GetWarningBrush, GetInfoBrush, GetSelectionBrush
+  - Fixed fallback colors to use light theme defaults (#D32F2F, #F57C00, #388E3C, #1976D2, #FFC107)
+  - All hardcoded CornflowerBlue replaced with ThemeInfo (fixes tritanopia colorblind theme)
+  - FontSize hardcoding remains - will address relative sizing in future sprint
+
+### Issues Created During Sprint
+
+- [#798](https://github.com/LordOfMyatar/Radoub/issues/798) - Add SafeMode startup for Manifest and Quartermaster
+- [#799](https://github.com/LordOfMyatar/Radoub/issues/799) - Font size hardcoding (FontSize="10/11" throughout panels)
 
 ---
 
