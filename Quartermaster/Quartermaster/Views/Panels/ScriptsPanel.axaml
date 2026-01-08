@@ -16,7 +16,7 @@
                 <!-- Scripts Summary -->
                 <TextBlock x:Name="ScriptsSummaryText"
                            Text="0 scripts assigned"
-                           FontSize="12"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                 <!-- Scripts List -->
@@ -33,7 +33,7 @@
                                         <!-- Event Name Label -->
                                         <TextBlock Grid.Column="0"
                                                    Text="{Binding EventName}"
-                                                   FontSize="12"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
                                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                    VerticalAlignment="Center"/>
 
@@ -41,7 +41,7 @@
                                         <TextBox Grid.Column="1"
                                                  Text="{Binding ScriptResRef, Mode=TwoWay}"
                                                  FontFamily="Consolas, Courier New, monospace"
-                                                 FontSize="12"
+                                                 FontSize="{DynamicResource FontSizeSmall}"
                                                  Padding="6,4"
                                                  MaxLength="16"
                                                  Watermark="(none)"
@@ -84,7 +84,7 @@
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Conversation" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Conversation" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="140,*,Auto" ColumnSpacing="10">
                             <TextBlock Grid.Column="0" Text="Dialog File:"
@@ -119,7 +119,7 @@
 
                 <!-- Info text -->
                 <TextBlock Text="Script names are limited to 16 characters (Aurora Engine constraint)."
-                           FontSize="11"
+                           FontSize="{DynamicResource FontSizeSmall}"
                            FontStyle="Italic"
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            HorizontalAlignment="Center"

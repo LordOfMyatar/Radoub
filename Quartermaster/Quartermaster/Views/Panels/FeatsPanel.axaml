@@ -17,7 +17,7 @@
             <TextBlock Grid.Row="1"
                        x:Name="FeatsSummaryText"
                        Text="0 feats assigned"
-                       FontSize="12"
+                       FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                        Margin="0,5,0,10"/>
 
@@ -66,23 +66,23 @@
                 <!-- Legend -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="15,0,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="2">
-                        <TextBlock Text="✓" Foreground="{DynamicResource ThemeSuccess}" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <TextBlock Text="Has" FontSize="10" VerticalAlignment="Center"
+                        <TextBlock Text="✓" Foreground="{DynamicResource ThemeSuccess}" FontSize="{DynamicResource FontSizeSmall}" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="Has" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="2">
-                        <TextBlock Text="★" Foreground="{DynamicResource ThemeSelection}" FontSize="11" VerticalAlignment="Center"/>
-                        <TextBlock Text="Granted" FontSize="10" VerticalAlignment="Center"
+                        <TextBlock Text="★" Foreground="{DynamicResource ThemeSelection}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Granted" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="2">
-                        <TextBlock Text="⚠" Foreground="{DynamicResource ThemeWarning}" FontSize="11" VerticalAlignment="Center"/>
-                        <TextBlock Text="Unmet" FontSize="10" VerticalAlignment="Center"
+                        <TextBlock Text="⚠" Foreground="{DynamicResource ThemeWarning}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Unmet" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="2">
-                        <TextBlock Text="✗" Foreground="{DynamicResource ThemeBorder}" FontSize="11" VerticalAlignment="Center"/>
-                        <TextBlock Text="N/A" FontSize="10" VerticalAlignment="Center"
+                        <TextBlock Text="✗" Foreground="{DynamicResource ThemeBorder}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
+                        <TextBlock Text="N/A" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </StackPanel>
@@ -98,12 +98,12 @@
                         CornerRadius="4,4,0,0"
                         Padding="10,8,25,8">
                     <Grid ColumnDefinitions="32,30,*,120,80,60">
-                        <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
-                        <TextBlock Grid.Column="1" Text="" FontWeight="SemiBold" FontSize="11"/>
-                        <TextBlock Grid.Column="2" Text="Feat Name" FontWeight="SemiBold" FontSize="11"/>
-                        <TextBlock Grid.Column="3" Text="Category" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="4" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="5" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                        <TextBlock Grid.Column="1" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                        <TextBlock Grid.Column="2" Text="Feat Name" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                        <TextBlock Grid.Column="3" Text="Category" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="4" Text="Status" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="5" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                     </Grid>
                 </Border>
 
@@ -133,7 +133,7 @@
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding StatusIndicator}"
                                                Foreground="{Binding StatusColor}"
-                                               FontSize="12"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                FontWeight="Bold"
                                                VerticalAlignment="Center"
                                                HorizontalAlignment="Center"/>
@@ -142,13 +142,13 @@
                                     <TextBlock Grid.Column="2"
                                                Text="{Binding FeatName}"
                                                VerticalAlignment="Center"
-                                               FontSize="13"
+                                               FontSize="{DynamicResource FontSizeNormal}"
                                                Opacity="{Binding TextOpacity}"/>
 
                                     <!-- Category -->
                                     <TextBlock Grid.Column="3"
                                                Text="{Binding CategoryName}"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
@@ -156,7 +156,7 @@
                                     <!-- Assigned/Granted Status -->
                                     <TextBlock Grid.Column="4"
                                                Text="{Binding StatusText}"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{Binding StatusColor}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
@@ -165,7 +165,7 @@
                                     <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
                                         <Button Content="+"
                                                 Width="24" Height="24"
-                                                FontSize="14" FontWeight="Bold"
+                                                FontSize="{DynamicResource FontSizeNormal}" FontWeight="Bold"
                                                 Padding="0"
                                                 IsVisible="{Binding CanAdd}"
                                                 Tag="{Binding FeatId}"
@@ -173,7 +173,7 @@
                                                 AutomationProperties.AutomationId="AddFeatButton"/>
                                         <Button Content="−"
                                                 Width="24" Height="24"
-                                                FontSize="14" FontWeight="Bold"
+                                                FontSize="{DynamicResource FontSizeNormal}" FontWeight="Bold"
                                                 Padding="0"
                                                 IsVisible="{Binding CanRemove}"
                                                 Tag="{Binding FeatId}"
@@ -225,7 +225,7 @@
                                                        VerticalAlignment="Center"/>
                                             <TextBlock Grid.Column="1"
                                                        Text="{Binding CasterLevelDisplay}"
-                                                       FontSize="11"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        VerticalAlignment="Center"/>
                                         </Grid>

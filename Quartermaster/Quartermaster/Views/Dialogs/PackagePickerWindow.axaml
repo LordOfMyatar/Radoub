@@ -55,7 +55,7 @@
         <!-- Info text -->
         <TextBlock Grid.Row="2" x:Name="InfoLabel"
                    Text="Packages loaded from packages.2da"
-                   FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                    Margin="0,10,0,0"/>
 
         <!-- Buttons -->

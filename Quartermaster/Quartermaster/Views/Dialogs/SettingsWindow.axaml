@@ -30,7 +30,7 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Base Game Installation Path (Optional)" FontWeight="Bold"/>
                                 <TextBlock Text="Path to Neverwinter Nights game installation (e.g., Steam: steamapps\common\Neverwinter Nights)"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox x:Name="BaseGamePathTextBox" Grid.Column="0"
@@ -41,7 +41,7 @@
                                            Margin="5,0,0,0" Padding="10,5"/>
                                 </Grid>
 
-                                <TextBlock x:Name="BaseGamePathValidation" Foreground="{DynamicResource ThemeSuccess}" FontSize="11"/>
+                                <TextBlock x:Name="BaseGamePathValidation" Foreground="{DynamicResource ThemeSuccess}" FontSize="{DynamicResource FontSizeSmall}"/>
                             </StackPanel>
                         </Border>
 
@@ -50,7 +50,7 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Text="User Data Directory Path" FontWeight="Bold"/>
                                 <TextBlock Text="Path to user data directory (Documents\Neverwinter Nights - contains modules, custom sounds, etc.)"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox x:Name="GamePathTextBox" Grid.Column="0"
@@ -61,7 +61,7 @@
                                            Margin="5,0,0,0" Padding="10,5"/>
                                 </Grid>
 
-                                <TextBlock x:Name="GamePathValidation" Foreground="{DynamicResource ThemeSuccess}" FontSize="11"/>
+                                <TextBlock x:Name="GamePathValidation" Foreground="{DynamicResource ThemeSuccess}" FontSize="{DynamicResource FontSizeSmall}"/>
                             </StackPanel>
                         </Border>
 
@@ -69,8 +69,8 @@
                         <Border BorderBrush="{DynamicResource ThemeInfo}" BorderThickness="1" Padding="10" CornerRadius="5"
                                Background="{DynamicResource ThemeSidebar}"  Opacity="0.5">
                             <StackPanel Spacing="5">
-                                <TextBlock Text="Platform-Specific Default Paths:" FontWeight="Bold" FontSize="12"/>
-                                <TextBlock x:Name="PlatformPathsInfo" TextWrapping="Wrap" FontSize="11"/>
+                                <TextBlock Text="Platform-Specific Default Paths:" FontWeight="Bold" FontSize="{DynamicResource FontSizeSmall}"/>
+                                <TextBlock x:Name="PlatformPathsInfo" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -86,7 +86,7 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Theme" FontWeight="Bold"/>
                                 <TextBlock Text="Choose a color theme for Quartermaster."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                                 <ComboBox x:Name="ThemeComboBox"
                                          SelectionChanged="OnThemeComboBoxChanged"
@@ -100,7 +100,7 @@
                                        Background="{DynamicResource ThemeBackground}">
                                     <StackPanel Spacing="5">
                                         <TextBlock x:Name="ThemeNameText" FontWeight="Bold"/>
-                                        <TextBlock x:Name="ThemeDescriptionText" TextWrapping="Wrap" FontSize="11"/>
+                                        <TextBlock x:Name="ThemeDescriptionText" TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}"/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -156,7 +156,7 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Log Level" FontWeight="Bold"/>
                                 <TextBlock Text="Set the minimum log level for messages to be recorded."
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <ComboBox x:Name="LogLevelComboBox" SelectionChanged="OnLogLevelChanged"/>
                             </StackPanel>
                         </Border>
@@ -166,7 +166,7 @@
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Log Retention" FontWeight="Bold"/>
                                 <TextBlock Text="Number of recent sessions to keep (default: 3)"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Slider x:Name="LogRetentionSlider" Grid.Column="0"
                                            Minimum="1" Maximum="10" Value="3"

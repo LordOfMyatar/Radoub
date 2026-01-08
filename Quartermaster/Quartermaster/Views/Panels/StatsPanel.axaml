@@ -21,19 +21,19 @@
                         Padding="15"
                         AutomationProperties.AutomationId="AbilityScoresSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Ability Scores" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Ability Scores" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <!-- Column Headers -->
                         <Grid ColumnDefinitions="100,80,60,60,60">
-                            <TextBlock Grid.Column="0" Text="Ability" FontWeight="SemiBold" FontSize="11"
+                            <TextBlock Grid.Column="0" Text="Ability" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="1" Text="Base" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="1" Text="Base" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="2" Text="Racial" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="2" Text="Racial" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="3" Text="Total" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="3" Text="Total" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="4" Text="Bonus" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="4" Text="Bonus" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </Grid>
 
@@ -41,11 +41,11 @@
                         <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="StrRow">
                             <TextBlock Grid.Column="0" Text="Strength" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="StrBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="12"
+                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
                                            AutomationProperties.AutomationId="StrBaseNumeric"/>
                             <TextBlock x:Name="StrRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="StrTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="StrTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="StrBonus" Grid.Column="4" Text="+0" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
@@ -53,11 +53,11 @@
                         <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="DexRow">
                             <TextBlock Grid.Column="0" Text="Dexterity" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="DexBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="12"
+                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
                                            AutomationProperties.AutomationId="DexBaseNumeric"/>
                             <TextBlock x:Name="DexRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="DexTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="DexTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="DexBonus" Grid.Column="4" Text="+0" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
@@ -65,11 +65,11 @@
                         <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="ConRow">
                             <TextBlock Grid.Column="0" Text="Constitution" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="ConBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="12"
+                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
                                            AutomationProperties.AutomationId="ConBaseNumeric"/>
                             <TextBlock x:Name="ConRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="ConTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="ConTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="ConBonus" Grid.Column="4" Text="+0" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
@@ -77,11 +77,11 @@
                         <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="IntRow">
                             <TextBlock Grid.Column="0" Text="Intelligence" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="IntBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="12"
+                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
                                            AutomationProperties.AutomationId="IntBaseNumeric"/>
                             <TextBlock x:Name="IntRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="IntTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="IntTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="IntBonus" Grid.Column="4" Text="+0" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
@@ -89,11 +89,11 @@
                         <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="WisRow">
                             <TextBlock Grid.Column="0" Text="Wisdom" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="WisBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="12"
+                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
                                            AutomationProperties.AutomationId="WisBaseNumeric"/>
                             <TextBlock x:Name="WisRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="WisTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="WisTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="WisBonus" Grid.Column="4" Text="+0" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
@@ -101,11 +101,11 @@
                         <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="ChaRow">
                             <TextBlock Grid.Column="0" Text="Charisma" VerticalAlignment="Center"/>
                             <NumericUpDown x:Name="ChaBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="12"
+                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
                                            AutomationProperties.AutomationId="ChaBaseNumeric"/>
                             <TextBlock x:Name="ChaRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="ChaTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="ChaTotal" Grid.Column="3" Text="10" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="ChaBonus" Grid.Column="4" Text="+0" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
                     </StackPanel>
@@ -118,28 +118,28 @@
                         Padding="15"
                         AutomationProperties.AutomationId="HitPointsSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Hit Points" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Hit Points" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="*,*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="BaseHpDisplay">
-                                <TextBlock Text="Base HP" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock Text="Base HP" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <NumericUpDown x:Name="BaseHpNumeric" Value="0" Minimum="1" Maximum="9999" Increment="1"
-                                               FormatString="0" FontSize="14" MinWidth="90"
+                                               FormatString="0" FontSize="{DynamicResource FontSizeNormal}" MinWidth="90"
                                                AutomationProperties.AutomationId="BaseHpNumeric"
                                                ToolTip.Tip="Hit points from dice rolls (excluding Con bonus)"/>
-                                <TextBlock x:Name="BaseHpNote" Text="(dice rolls)" FontSize="10"
+                                <TextBlock x:Name="BaseHpNote" Text="(dice rolls)" FontSize="{DynamicResource FontSizeXSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="ConBonusDisplay">
-                                <TextBlock Text="Con Bonus" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="ConHpBonus" Text="+0" FontSize="18" FontWeight="Bold"/>
-                                <TextBlock x:Name="ConBonusNote" Text="(Con × levels)" FontSize="10"
+                                <TextBlock Text="Con Bonus" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="ConHpBonus" Text="+0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
+                                <TextBlock x:Name="ConBonusNote" Text="(Con × levels)" FontSize="{DynamicResource FontSizeXSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2" AutomationProperties.AutomationId="MaxHpDisplay">
-                                <TextBlock Text="Max HP" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="MaxHpValue" Text="0" FontSize="18" FontWeight="Bold"/>
-                                <TextBlock Text="(Base + Con)" FontSize="10"
+                                <TextBlock Text="Max HP" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="MaxHpValue" Text="0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
+                                <TextBlock Text="(Base + Con)" FontSize="{DynamicResource FontSizeXSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                         </Grid>
@@ -153,31 +153,31 @@
                         Padding="15"
                         AutomationProperties.AutomationId="ArmorClassSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Armor Class" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Armor Class" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="*,*,*,*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="NaturalAcDisplay">
-                                <TextBlock Text="Natural AC" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock Text="Natural AC" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <NumericUpDown x:Name="NaturalAcNumeric" Value="0" Minimum="0" Maximum="255" Increment="1"
-                                               FormatString="0" FontSize="14" MinWidth="70"
+                                               FormatString="0" FontSize="{DynamicResource FontSizeNormal}" MinWidth="70"
                                                AutomationProperties.AutomationId="NaturalAcNumeric"
                                                ToolTip.Tip="Natural armor class bonus"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="BaseAcDisplay">
-                                <TextBlock Text="Base" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock Text="10" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock Text="Base" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock Text="10" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2" Margin="0,0,10,0" AutomationProperties.AutomationId="DexAcDisplay">
-                                <TextBlock Text="Dex Bonus" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="DexAcValue" Text="+0" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock Text="Dex Bonus" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="DexAcValue" Text="+0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
                             </StackPanel>
                             <StackPanel Grid.Column="3" Margin="0,0,10,0" AutomationProperties.AutomationId="SizeModDisplay">
-                                <TextBlock Text="Size Mod" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="SizeModValue" Text="+0" FontSize="18" FontWeight="Bold"/>
+                                <TextBlock Text="Size Mod" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="SizeModValue" Text="+0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
                             </StackPanel>
                             <StackPanel Grid.Column="4" AutomationProperties.AutomationId="TotalAcDisplay">
-                                <TextBlock Text="Total AC" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="TotalAcValue" Text="10" FontSize="18" FontWeight="Bold"
+                                <TextBlock Text="Total AC" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="TotalAcValue" Text="10" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"
                                            Foreground="{DynamicResource SystemAccentColor}"/>
                             </StackPanel>
                         </Grid>
@@ -191,23 +191,23 @@
                         Padding="15"
                         AutomationProperties.AutomationId="CombatStatsSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Combat" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Combat" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="BabDisplay">
-                                <TextBlock Text="Base Attack" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <TextBlock x:Name="BabValue" Text="+0" FontSize="18" FontWeight="Bold"/>
-                                <TextBlock x:Name="BabBreakdown" Text="" FontSize="10"
+                                <TextBlock Text="Base Attack" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="BabValue" Text="+0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
+                                <TextBlock x:Name="BabBreakdown" Text="" FontSize="{DynamicResource FontSizeXSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
-                                <TextBlock Text="Challenge Rating" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock Text="Challenge Rating" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <NumericUpDown x:Name="CrValueNumeric" Value="0" Minimum="0" Maximum="100" Increment="0.25"
-                                               FormatString="0.##" FontSize="14" MinWidth="80"
+                                               FormatString="0.##" FontSize="{DynamicResource FontSizeNormal}" MinWidth="80"
                                                AutomationProperties.AutomationId="CrValueNumeric"
                                                ToolTip.Tip="Base Challenge Rating"/>
                                 <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
-                                    <TextBlock Text="Adjust:" FontSize="10" VerticalAlignment="Center"
+                                    <TextBlock Text="Adjust:" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <NumericUpDown x:Name="CRAdjustNumeric"
                                                    Minimum="-100"
@@ -215,7 +215,7 @@
                                                    Increment="1"
                                                    FormatString="0"
                                                    MinWidth="70"
-                                                   FontSize="11"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
                                                    AutomationProperties.AutomationId="CRAdjustNumeric"
                                                    ToolTip.Tip="Manual adjustment to Challenge Rating"/>
                                 </StackPanel>
@@ -231,17 +231,17 @@
                         Padding="15"
                         AutomationProperties.AutomationId="SavingThrowsSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Saving Throws" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Saving Throws" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <!-- Column Headers -->
                         <Grid ColumnDefinitions="100,60,60,60">
-                            <TextBlock Grid.Column="0" Text="Save" FontWeight="SemiBold" FontSize="11"
+                            <TextBlock Grid.Column="0" Text="Save" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="1" Text="Base" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="1" Text="Base" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="2" Text="Ability" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="2" Text="Ability" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="3" Text="Total" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="3" Text="Total" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </Grid>
 
@@ -251,7 +251,7 @@
                             <TextBlock x:Name="FortBase" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="FortAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="FortTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="FortTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- Reflex Row -->
@@ -260,7 +260,7 @@
                             <TextBlock x:Name="RefBase" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="RefAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="RefTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="RefTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- Will Row -->
@@ -269,7 +269,7 @@
                             <TextBlock x:Name="WillBase" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             <TextBlock x:Name="WillAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="WillTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="WillTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
                     </StackPanel>
                 </Border>
