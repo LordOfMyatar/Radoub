@@ -22,9 +22,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Cross-tool bug fixes for logging privacy and theme standardization.
 
-- [ ] #767 - UnifiedLogger missing path sanitization (bug)
-- [ ] #787 - Standardize validation colors across tools
-- [ ] #784 - Refactor hardcoded UI settings to use theme system
+- [x] #767 - UnifiedLogger missing path sanitization (bug)
+  - Replaced Debug.WriteLine with UnifiedLogger.Log in GameDataService and GameResourceResolver
+  - All path logging now uses automatic sanitization via PrivacyHelper
+- [x] #787 - Standardize validation colors across tools
+  - Added GetErrorBrush/GetSuccessBrush/GetWarningBrush helpers to Manifest and Quartermaster
+  - Replaced hardcoded Brushes.Red/Green/Orange with theme-aware helpers
+  - Ensures colorblind-accessible validation feedback
+- [x] #784 - Refactor hardcoded UI settings to use theme system (partial)
+  - Semantic colors now use theme resources (error/warning/success)
+  - SettingsWindow refactoring deferred to future sprint
 
 ---
 
