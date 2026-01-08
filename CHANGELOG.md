@@ -15,6 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.25] - 2026-01-07
+**Branch**: `radoub/issue-796` | **PR**: #TBD
+
+### Sprint: Bug Fixes & Theme Cleanup
+
+Cross-tool bug fixes for logging privacy and theme standardization.
+
+- [ ] #767 - UnifiedLogger missing path sanitization (bug)
+- [ ] #787 - Standardize validation colors across tools
+- [ ] #784 - Refactor hardcoded UI settings to use theme system
+
+---
+
 ## [0.9.24] - 2026-01-05
 **Branch**: `radoub/issue-762` | **PR**: #785
 
