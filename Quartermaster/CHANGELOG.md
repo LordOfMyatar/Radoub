@@ -20,6 +20,12 @@ Refactor hardcoded colors throughout Quartermaster to use semantic theme colors 
 #### Theme Infrastructure
 - Added `Disabled` color to `ThemeColors` model (auto-registered as `ThemeDisabled`)
 - Added `disabled` color to all 8 Quartermaster theme JSON files
+- Added derived font size resources: `FontSizeXSmall`, `FontSizeSmall`, `FontSizeNormal`, `FontSizeMedium`, `FontSizeLarge`, `FontSizeXLarge`, `FontSizeTitle`
+
+#### Font Size Accessibility
+- Panel headers now use `FontSizeXLarge` (scales with theme font size setting)
+- Settings/Appearance headers use `FontSizeLarge`
+- DialogHelper About dialog uses `FontSizeTitle`
 
 #### Fixed Panels
 - FeatsPanel: Status colors (available/known/granted/unavailable) now use theme colors

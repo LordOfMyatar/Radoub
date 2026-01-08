@@ -10,7 +10,7 @@
             <StackPanel Spacing="20">
                 <!-- Header -->
                 <TextBlock Text="Event Scripts"
-                           FontSize="20"
+                           FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
                 <!-- Scripts Summary -->

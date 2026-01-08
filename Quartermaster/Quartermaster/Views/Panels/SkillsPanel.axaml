@@ -10,7 +10,7 @@
             <!-- Header -->
             <TextBlock Grid.Row="0"
                        Text="Skills"
-                       FontSize="20"
+                       FontSize="{DynamicResource FontSizeXLarge}"
                        FontWeight="Bold"/>
 
             <!-- Skills Summary -->

@@ -10,7 +10,7 @@
             <StackPanel Spacing="20">
                 <!-- Header -->
                 <TextBlock Text="Classes &amp; Levels"
-                           FontSize="20"
+                           FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
                 <!-- Classes Section - 8 slots per Beamdog EE -->

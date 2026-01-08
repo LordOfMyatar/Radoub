@@ -10,7 +10,7 @@
             <StackPanel Spacing="20">
                 <!-- Header -->
                 <TextBlock Text="Character Statistics"
-                           FontSize="20"
+                           FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"
                            AutomationProperties.AutomationId="StatsPanelHeader"/>
 

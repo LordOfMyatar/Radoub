@@ -10,7 +10,7 @@
             <StackPanel Spacing="20" Margin="20,20,50,20">
                 <!-- Header -->
                 <TextBlock Text="Advanced Properties"
-                           FontSize="20"
+                           FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
                 <!-- Blueprint/Identity Section -->

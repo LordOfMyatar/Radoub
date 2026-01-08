@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Styling;
 using System.Threading.Tasks;
 
 namespace Quartermaster.Views.Helpers;
@@ -107,7 +109,7 @@ public static class DialogHelper
         panel.Children.Add(new TextBlock
         {
             Text = "Quartermaster",
-            FontSize = 24,
+            FontSize = GetTitleFontSize(),
             FontWeight = Avalonia.Media.FontWeight.Bold
         });
         panel.Children.Add(new TextBlock { Text = "Creature and Inventory Editor" });
@@ -130,5 +132,17 @@ public static class DialogHelper
 
         dialog.Content = panel;
         dialog.Show(parent);
+    }
+
+    /// <summary>
+    /// Gets the title font size from theme resources, with fallback.
+    /// </summary>
+    private static double GetTitleFontSize()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("FontSizeTitle", ThemeVariant.Default, out var size) == true
+            && size is double fontSize)
+            return fontSize;
+        return 24; // Default fallback
     }
 }

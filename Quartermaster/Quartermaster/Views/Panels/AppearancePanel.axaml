@@ -15,7 +15,7 @@
                 <StackPanel Spacing="15" Margin="15">
                     <!-- Header -->
                     <TextBlock Text="Appearance"
-                               FontSize="18"
+                               FontSize="{DynamicResource FontSizeLarge}"
                                FontWeight="Bold"/>
 
                     <!-- Model Selection Section -->
