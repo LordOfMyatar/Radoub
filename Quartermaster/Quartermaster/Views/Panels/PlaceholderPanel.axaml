@@ -10,15 +10,15 @@
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
             <TextBlock x:Name="SectionTitle"
                        Text="Section"
-                       FontSize="24"
+                       FontSize="{DynamicResource FontSizeTitle}"
                        FontWeight="Bold"
                        HorizontalAlignment="Center"/>
             <TextBlock Text="Coming Soon"
-                       FontSize="16"
+                       FontSize="{DynamicResource FontSizeMedium}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                        HorizontalAlignment="Center"/>
             <TextBlock Text="This section is not yet implemented."
-                       FontSize="12"
+                       FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                        HorizontalAlignment="Center"/>
         </StackPanel>

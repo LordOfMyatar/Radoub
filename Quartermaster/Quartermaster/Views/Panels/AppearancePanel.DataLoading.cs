@@ -236,7 +236,7 @@ public partial class AppearancePanel
         }
         else
         {
-            swatch.Background = new SolidColorBrush(Colors.Gray);
+            // Fallback uses theme border color (set in XAML, no need to override)
         }
     }
 

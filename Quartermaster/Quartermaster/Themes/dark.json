@@ -25,6 +25,7 @@
     "warning": "#CCA700",
     "success": "#89D185",
     "info": "#75BEFF",
+    "disabled": "#6E6E6E",
     "title_bar": "#3A3A3A",
     "title_bar_foreground": "#D4D4D4",
     "button_primary": "#007ACC",

@@ -26,6 +26,7 @@
     "warning": "#0000FF",
     "success": "#FF0000",
     "info": "#FF00FF",
+    "disabled": "#FFFF00",
     "title_bar": "#FF6600",
     "title_bar_foreground": "#00FF00",
     "button_primary": "#FF6600",

@@ -10,7 +10,7 @@
             <StackPanel Spacing="20" Margin="20,20,50,20">
                 <!-- Header -->
                 <TextBlock Text="Advanced Properties"
-                           FontSize="20"
+                           FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
                 <!-- Blueprint/Identity Section -->
@@ -20,7 +20,7 @@
                         Padding="15"
                         x:Name="BlueprintSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <StackPanel Spacing="8">
                             <!-- Blueprint ResRef (UTC only - hidden for BIC) -->
@@ -34,7 +34,7 @@
                                          AutomationProperties.AutomationId="TemplateResRefTextBox"
                                          ToolTip.Tip="Read-only. Use File > Rename to change."/>
                                 <Button Grid.Column="2" x:Name="CopyResRefButton"
-                                        Content="Copy" Padding="8,2" FontSize="11"
+                                        Content="Copy" Padding="8,2" FontSize="{DynamicResource FontSizeSmall}"
                                         AutomationProperties.AutomationId="CopyResRefButton"
                                         ToolTip.Tip="Copy ResRef to clipboard"/>
                             </Grid>
@@ -48,7 +48,7 @@
                                          FontFamily="Consolas, Courier New, monospace"
                                          AutomationProperties.AutomationId="TagTextBox"/>
                                 <Button Grid.Column="2" x:Name="CopyTagButton"
-                                        Content="Copy" Padding="8,2" FontSize="11"
+                                        Content="Copy" Padding="8,2" FontSize="{DynamicResource FontSizeSmall}"
                                         AutomationProperties.AutomationId="CopyTagButton"
                                         ToolTip.Tip="Copy Tag to clipboard"/>
                             </Grid>
@@ -77,7 +77,7 @@
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Flags" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Flags" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <WrapPanel Orientation="Horizontal">
                             <CheckBox x:Name="PlotCheckBox" Content="Plot" Margin="0,0,15,8"/>
@@ -97,7 +97,7 @@
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Behavior" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Behavior" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Faction:"

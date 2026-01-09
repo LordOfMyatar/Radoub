@@ -22,7 +22,7 @@
                     <StackPanel>
                         <TextBlock Text="Spell Slots"
                                    FontWeight="SemiBold"
-                                   FontSize="14"
+                                   FontSize="{DynamicResource FontSizeNormal}"
                                    Margin="0,0,0,10"/>
                         <!-- Dynamic table grid will be added here -->
                         <Grid x:Name="SpellSlotTableGrid">
@@ -44,7 +44,7 @@
                     <StackPanel>
                         <TextBlock Text="Known Spells"
                                    FontWeight="SemiBold"
-                                   FontSize="14"
+                                   FontSize="{DynamicResource FontSizeNormal}"
                                    Margin="0,0,0,10"/>
                         <!-- Scrollable list of known spells grouped by level -->
                         <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
@@ -61,7 +61,7 @@
                 <!-- Header -->
                 <TextBlock Grid.Row="0"
                            Text="Spells"
-                           FontSize="20"
+                           FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
                 <!-- Class Radio Buttons (Class 1-8) -->
@@ -73,7 +73,7 @@
                 <StackPanel>
                     <TextBlock Text="Caster Class"
                                FontWeight="SemiBold"
-                               FontSize="12"
+                               FontSize="{DynamicResource FontSizeSmall}"
                                Margin="0,0,0,8"/>
                     <StackPanel x:Name="ClassRadioPanel" Orientation="Horizontal" Spacing="5">
                         <RadioButton x:Name="ClassRadio1" GroupName="CasterClass" Content="Class 1"
@@ -105,7 +105,7 @@
                     <!-- Spell Slot Summary -->
                     <TextBlock x:Name="SpellSlotSummaryText"
                                Text=""
-                               FontSize="11"
+                               FontSize="{DynamicResource FontSizeSmall}"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                TextWrapping="Wrap"
                                Margin="0,10,0,0"
@@ -196,18 +196,18 @@
                         CornerRadius="4,4,0,0"
                         Padding="10,8,25,8">
                     <Grid ColumnDefinitions="32,35,35,*,60,100,80,80">
-                        <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="K" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                        <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="K" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    ToolTip.Tip="Known - Spell is in spellbook/learned"/>
-                        <TextBlock Grid.Column="2" Text="M" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                        <TextBlock Grid.Column="2" Text="M" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    x:Name="MemorizedHeader"
                                    ToolTip.Tip="Memorized - Spell is prepared for casting (disabled for spontaneous casters)"/>
-                        <TextBlock Grid.Column="3" Text="Spell Name" FontWeight="SemiBold" FontSize="11"/>
-                        <TextBlock Grid.Column="4" Text="Level" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="5" Text="School" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="6" Text="Innate" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"
+                        <TextBlock Grid.Column="3" Text="Spell Name" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                        <TextBlock Grid.Column="4" Text="Level" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="5" Text="School" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="6" Text="Innate" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    ToolTip.Tip="Innate Spell Level"/>
-                        <TextBlock Grid.Column="7" Text="Status" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Column="7" Text="Status" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                     </Grid>
                 </Border>
 
@@ -256,20 +256,20 @@
                                     <TextBlock Grid.Column="3"
                                                Text="{Binding SpellName}"
                                                VerticalAlignment="Center"
-                                               FontSize="13"
+                                               FontSize="{DynamicResource FontSizeNormal}"
                                                Opacity="{Binding TextOpacity}"/>
 
                                     <!-- Spell Level -->
                                     <TextBlock Grid.Column="4"
                                                Text="{Binding SpellLevelDisplay}"
-                                               FontSize="12"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
 
                                     <!-- School -->
                                     <TextBlock Grid.Column="5"
                                                Text="{Binding SchoolName}"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
@@ -277,7 +277,7 @@
                                     <!-- Innate Level -->
                                     <TextBlock Grid.Column="6"
                                                Text="{Binding InnateLevelDisplay}"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
@@ -285,7 +285,7 @@
                                     <!-- Status -->
                                     <TextBlock Grid.Column="7"
                                                Text="{Binding StatusText}"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{Binding StatusColor}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
@@ -333,7 +333,7 @@
                                        TextWrapping="Wrap"/>
                             <TextBlock Text="(Read-only in this version)"
                                        FontStyle="Italic"
-                                       FontSize="11"
+                                       FontSize="{DynamicResource FontSizeSmall}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        Margin="0,5,0,0"/>
                         </StackPanel>

@@ -10,7 +10,7 @@
             <StackPanel Spacing="20">
                 <!-- Header -->
                 <TextBlock Text="Classes &amp; Levels"
-                           FontSize="20"
+                           FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
                 <!-- Classes Section - 8 slots per Beamdog EE -->
@@ -20,10 +20,10 @@
                         Padding="15">
                     <StackPanel Spacing="10">
                         <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Grid.Column="0" Text="Character Classes" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Grid.Column="0" Text="Character Classes" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
                             <TextBlock Grid.Column="1" x:Name="TotalLevelText"
                                        Text="Total Level: 0"
-                                       FontSize="12"
+                                       FontSize="{DynamicResource FontSizeSmall}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </Grid>
 
@@ -38,7 +38,7 @@
                                             <!-- Slot Number -->
                                             <TextBlock Grid.Column="0"
                                                        Text="{Binding SlotNumber}"
-                                                       FontSize="11"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                        VerticalAlignment="Center"
                                                        Width="20"/>
@@ -47,12 +47,12 @@
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding ClassName}"
                                                            FontWeight="SemiBold"
-                                                           FontSize="14"/>
+                                                           FontSize="{DynamicResource FontSizeNormal}"/>
                                                 <TextBlock Text="{Binding ClassInfoDisplay}"
-                                                           FontSize="11"
+                                                           FontSize="{DynamicResource FontSizeSmall}"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                                 <TextBlock Text="{Binding ClassFeatures}"
-                                                           FontSize="10"
+                                                           FontSize="{DynamicResource FontSizeXSmall}"
                                                            FontStyle="Italic"
                                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                            TextWrapping="Wrap"/>
@@ -61,7 +61,7 @@
                                             <!-- Level Display -->
                                             <TextBlock Grid.Column="2"
                                                        Text="{Binding LevelDisplay}"
-                                                       FontSize="18"
+                                                       FontSize="{DynamicResource FontSizeLarge}"
                                                        FontWeight="Bold"
                                                        VerticalAlignment="Center"
                                                        Margin="10,0"/>
@@ -70,10 +70,10 @@
                                             <StackPanel Grid.Column="3" Orientation="Horizontal"
                                                         VerticalAlignment="Center">
                                                 <Button Content="-" Width="24" Height="24"
-                                                        FontSize="12" IsEnabled="False"
+                                                        FontSize="{DynamicResource FontSizeSmall}" IsEnabled="False"
                                                         ToolTip.Tip="Level editing coming soon"/>
                                                 <Button Content="+" Width="24" Height="24"
-                                                        FontSize="12" IsEnabled="False" Margin="2,0,0,0"
+                                                        FontSize="{DynamicResource FontSizeSmall}" IsEnabled="False" Margin="2,0,0,0"
                                                         ToolTip.Tip="Level editing coming soon"/>
                                             </StackPanel>
                                         </Grid>
@@ -91,8 +91,8 @@
                                 Padding="10"
                                 ToolTip.Tip="Class editing coming in a future sprint">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="+" FontSize="14" VerticalAlignment="Center"/>
-                                <TextBlock Text="Add Class" FontSize="14" VerticalAlignment="Center"/>
+                                <TextBlock Text="+" FontSize="{DynamicResource FontSizeNormal}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Add Class" FontSize="{DynamicResource FontSizeNormal}" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
@@ -112,14 +112,14 @@
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Alignment" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Alignment" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
                             <!-- Alignment Name -->
                             <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,15">
                                 <TextBlock x:Name="AlignmentName"
                                            Text="True Neutral"
-                                           FontSize="18"
+                                           FontSize="{DynamicResource FontSizeLarge}"
                                            FontWeight="Bold"
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
@@ -127,16 +127,16 @@
                             <!-- Good-Evil (0=Evil, 100=Good) -->
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                                 <Grid ColumnDefinitions="Auto,*,Auto">
-                                    <TextBlock Grid.Column="0" Text="Evil" FontSize="11"
+                                    <TextBlock Grid.Column="0" Text="Evil" FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" x:Name="GoodEvilValue"
                                                Text="50"
-                                               FontSize="12"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                FontWeight="SemiBold"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="Good" FontSize="11"
+                                    <TextBlock Grid.Column="2" Text="Good" FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
@@ -149,16 +149,16 @@
                             <!-- Lawful-Chaotic (0=Chaotic, 100=Lawful) -->
                             <StackPanel Grid.Row="1" Grid.Column="1">
                                 <Grid ColumnDefinitions="Auto,*,Auto">
-                                    <TextBlock Grid.Column="0" Text="Chaotic" FontSize="11"
+                                    <TextBlock Grid.Column="0" Text="Chaotic" FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" x:Name="LawChaosValue"
                                                Text="50"
-                                               FontSize="12"
+                                               FontSize="{DynamicResource FontSizeSmall}"
                                                FontWeight="SemiBold"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="Lawful" FontSize="11"
+                                    <TextBlock Grid.Column="2" Text="Lawful" FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                VerticalAlignment="Center"/>
                                 </Grid>
@@ -177,7 +177,7 @@
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Levelup Settings" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Levelup Settings" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Default Package:"

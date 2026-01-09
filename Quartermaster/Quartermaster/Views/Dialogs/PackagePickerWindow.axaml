@@ -10,12 +10,12 @@
     <Window.Styles>
         <!-- Dark mode selection visibility fix -->
         <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTitleBarForeground}"/>
         </Style>
         <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTitleBarForeground}"/>
         </Style>
     </Window.Styles>
 
@@ -31,7 +31,7 @@
         <TextBlock Grid.Row="0" Text="Auto-Levelup Packages" FontWeight="SemiBold" Margin="0,0,0,10"/>
 
         <!-- Packages List -->
-        <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" Padding="5">
+        <Border Grid.Row="1" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="5">
             <ListBox x:Name="PackagesListBox"
                      AutomationProperties.AutomationId="PackagesListBox"
                      SelectionChanged="OnPackageSelected">
@@ -55,7 +55,7 @@
         <!-- Info text -->
         <TextBlock Grid.Row="2" x:Name="InfoLabel"
                    Text="Packages loaded from packages.2da"
-                   FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                    Margin="0,10,0,0"/>
 
         <!-- Buttons -->

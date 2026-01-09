@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.31-alpha] - 2026-01-07
+**Branch**: `quartermaster/issue-799` | **PR**: #800
+
+### Refactor: Hardcoded Colors to Theme System (#799)
+
+Refactor hardcoded colors throughout Quartermaster to use semantic theme colors for colorblind/accessibility support.
+
+#### Theme Infrastructure
+- Added `Disabled` color to `ThemeColors` model (auto-registered as `ThemeDisabled`)
+- Added `disabled` color to all 8 Quartermaster theme JSON files
+- Added derived font size resources: `FontSizeXSmall`, `FontSizeSmall`, `FontSizeNormal`, `FontSizeMedium`, `FontSizeLarge`, `FontSizeXLarge`, `FontSizeTitle`
+
+#### Font Size Accessibility
+- Panel headers now use `FontSizeXLarge` (scales with theme font size setting)
+- Settings/Appearance headers use `FontSizeLarge`
+- DialogHelper About dialog uses `FontSizeTitle`
+
+#### Fixed Panels
+- FeatsPanel: Status colors (available/known/granted/unavailable) now use theme colors
+- SkillsPanel: Class skill indicators now use theme colors
+- SpellsPanel: Spell status colors now use theme colors
+- AppearancePanel: Color swatches and model preview container now theme-aware
+
+#### Fixed Dialogs
+- SettingsWindow: All border colors now use `ThemeBorder`
+- ColorPickerWindow: Swatch borders and selection highlight now theme-aware
+- FactionPickerWindow: Border and selection styles now theme-aware
+- PackagePickerWindow: Border and selection styles now theme-aware
+
+#### Fixed Controls
+- ModelPreviewControl: Background and placeholder text now use theme colors
+
+---
+
 ## [0.1.30-alpha] - 2026-01-05
 **Branch**: `quartermaster/issue-769` | **PR**: #789
 

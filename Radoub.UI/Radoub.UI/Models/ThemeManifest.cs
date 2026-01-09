@@ -120,6 +120,9 @@ public class ThemeColors
     [JsonPropertyName("info")]
     public string? Info { get; set; }
 
+    [JsonPropertyName("disabled")]
+    public string? Disabled { get; set; }
+
     // Tree view colors (Parley, Manifest)
     [JsonPropertyName("tree_entry")]
     public string? TreeEntry { get; set; }

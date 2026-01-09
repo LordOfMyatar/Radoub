@@ -26,7 +26,7 @@
         </StackPanel>
 
         <!-- Color Grid -->
-        <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" Padding="5">
+        <Border Grid.Row="1" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="5">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl x:Name="ColorGrid" AutomationProperties.AutomationId="ColorGrid">
                     <ItemsControl.ItemsPanel>
@@ -41,7 +41,7 @@
         <!-- Info text -->
         <TextBlock Grid.Row="2" x:Name="InfoLabel"
                    Text="176 colors available"
-                   FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                    Margin="0,10,0,0"/>
 
         <!-- Buttons -->

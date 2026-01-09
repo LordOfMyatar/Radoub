@@ -10,14 +10,14 @@
             <!-- Header -->
             <TextBlock Grid.Row="0"
                        Text="Skills"
-                       FontSize="20"
+                       FontSize="{DynamicResource FontSizeXLarge}"
                        FontWeight="Bold"/>
 
             <!-- Skills Summary -->
             <TextBlock Grid.Row="1"
                        x:Name="SkillsSummaryText"
                        Text="0 skills with ranks"
-                       FontSize="12"
+                       FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                        Margin="0,5,0,10"/>
 
@@ -44,18 +44,18 @@
                 <!-- Legend -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="20,0,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="3">
-                        <TextBlock Text="●" Foreground="{DynamicResource ThemeInfo}" FontSize="12" VerticalAlignment="Center"/>
-                        <TextBlock Text="Class" FontSize="11" VerticalAlignment="Center"
+                        <TextBlock Text="●" Foreground="{DynamicResource ThemeInfo}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Class" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="3">
-                        <TextBlock Text="○" FontSize="12" VerticalAlignment="Center"/>
-                        <TextBlock Text="Cross-class" FontSize="11" VerticalAlignment="Center"
+                        <TextBlock Text="○" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
+                        <TextBlock Text="Cross-class" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="3">
-                        <TextBlock Text="✗" Foreground="{DynamicResource ThemeBorder}" FontSize="12" VerticalAlignment="Center" Opacity="0.5"/>
-                        <TextBlock Text="Unavailable" FontSize="11" VerticalAlignment="Center"
+                        <TextBlock Text="✗" Foreground="{DynamicResource ThemeBorder}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center" Opacity="0.5"/>
+                        <TextBlock Text="Unavailable" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
                 </StackPanel>
@@ -72,13 +72,13 @@
                         <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                 Padding="10,8,25,8">
                             <Grid ColumnDefinitions="32,25,*,50,50,50,70">
-                                <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="11"/>
-                                <TextBlock Grid.Column="1" Text="" FontWeight="SemiBold" FontSize="11"/>
-                                <TextBlock Grid.Column="2" Text="Skill" FontWeight="SemiBold" FontSize="11"/>
-                                <TextBlock Grid.Column="3" Text="Ability" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="Rank" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="5" Text="Total" FontWeight="SemiBold" FontSize="11" HorizontalAlignment="Center"/>
-                                <TextBlock Grid.Column="6" Text="" FontWeight="SemiBold" FontSize="11"/>
+                                <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                                <TextBlock Grid.Column="1" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                                <TextBlock Grid.Column="2" Text="Skill" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                                <TextBlock Grid.Column="3" Text="Ability" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="Rank" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="5" Text="Total" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="6" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
                             </Grid>
                         </Border>
 
@@ -105,7 +105,7 @@
                                             <TextBlock Grid.Column="1"
                                                        Text="{Binding ClassSkillIndicator}"
                                                        Foreground="{DynamicResource ThemeInfo}"
-                                                       FontSize="10"
+                                                       FontSize="{DynamicResource FontSizeXSmall}"
                                                        VerticalAlignment="Center"
                                                        HorizontalAlignment="Center"/>
 
@@ -113,12 +113,12 @@
                                             <TextBlock Grid.Column="2"
                                                        Text="{Binding SkillName}"
                                                        VerticalAlignment="Center"
-                                                       FontSize="13"/>
+                                                       FontSize="{DynamicResource FontSizeNormal}"/>
 
                                             <!-- Key Ability -->
                                             <TextBlock Grid.Column="3"
                                                        Text="{Binding KeyAbility}"
-                                                       FontSize="11"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
@@ -126,7 +126,7 @@
                                             <!-- Rank Value -->
                                             <TextBlock Grid.Column="4"
                                                        Text="{Binding RanksDisplay}"
-                                                       FontSize="13"
+                                                       FontSize="{DynamicResource FontSizeNormal}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
 
@@ -134,7 +134,7 @@
                                             <TextBlock Grid.Column="5"
                                                        Text="{Binding TotalDisplay}"
                                                        FontWeight="SemiBold"
-                                                       FontSize="13"
+                                                       FontSize="{DynamicResource FontSizeNormal}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
 
@@ -146,12 +146,12 @@
                                                         VerticalAlignment="Center">
                                                 <Button Content="-"
                                                         Width="24" Height="24"
-                                                        FontSize="12"
+                                                        FontSize="{DynamicResource FontSizeSmall}"
                                                         IsEnabled="False"
                                                         ToolTip.Tip="Decrease rank (editing not yet implemented)"/>
                                                 <Button Content="+"
                                                         Width="24" Height="24"
-                                                        FontSize="12"
+                                                        FontSize="{DynamicResource FontSizeSmall}"
                                                         IsEnabled="False"
                                                         ToolTip.Tip="Increase rank (editing not yet implemented)"/>
                                             </StackPanel>
@@ -174,7 +174,7 @@
             <!-- Footer -->
             <TextBlock Grid.Row="4"
                        Text="Skill editing will be implemented in a future sprint."
-                       FontSize="12"
+                       FontSize="{DynamicResource FontSizeSmall}"
                        FontStyle="Italic"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                        HorizontalAlignment="Center"

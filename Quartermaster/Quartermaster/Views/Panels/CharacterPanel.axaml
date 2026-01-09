@@ -10,7 +10,7 @@
             <StackPanel Spacing="20" Margin="20,20,50,20">
                 <!-- Header -->
                 <TextBlock Text="Character"
-                           FontSize="20"
+                           FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
                 <!-- Name Section -->
@@ -19,7 +19,7 @@
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Name" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Name" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="First Name:"
@@ -45,7 +45,7 @@
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Race:"
@@ -78,7 +78,7 @@
                         CornerRadius="4"
                         Padding="15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Voice &amp; Dialog" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Voice &amp; Dialog" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Sound Set:"
@@ -123,7 +123,7 @@
                         Padding="15"
                         IsVisible="False">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Player Character" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Player Character" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <Grid ColumnDefinitions="Auto,*,20,Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
                             <!-- Experience -->
@@ -161,7 +161,7 @@
                         Padding="15"
                         IsVisible="False">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Biography" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="Biography" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
                         <TextBox x:Name="BiographyTextBox"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"

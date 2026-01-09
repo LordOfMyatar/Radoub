@@ -228,11 +228,8 @@ public class ThemeManager
                 ApplyColors(app.Resources, theme.Colors);
             }
 
-            // Apply custom fonts to resource dictionary
-            if (theme.Fonts != null)
-            {
-                ApplyFonts(app.Resources, theme.Fonts);
-            }
+            // Apply font sizes (with defaults if not specified in theme)
+            ApplyFonts(app.Resources, theme.Fonts ?? new ThemeFonts());
 
             // Apply custom spacing to resource dictionary
             if (theme.Spacing != null)
@@ -482,10 +479,18 @@ public class ThemeManager
             }
         }
 
-        if (fonts.Size.HasValue && fonts.Size.Value > 0)
-        {
-            resources["GlobalFontSize"] = (double)fonts.Size.Value;
-        }
+        // Use theme's font size or default to 14
+        var baseSize = (fonts.Size.HasValue && fonts.Size.Value > 0) ? (double)fonts.Size.Value : 14.0;
+        resources["GlobalFontSize"] = baseSize;
+
+        // Derived font sizes for UI hierarchy (all scale with base size)
+        resources["FontSizeXSmall"] = Math.Max(8, baseSize - 4);   // 10 @ base 14
+        resources["FontSizeSmall"] = Math.Max(9, baseSize - 3);    // 11 @ base 14
+        resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
+        resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
+        resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14
+        resources["FontSizeXLarge"] = baseSize + 6;                 // 20 @ base 14
+        resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
 
         if (!string.IsNullOrEmpty(fonts.Monospace))
         {
