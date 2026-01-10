@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor;
 
@@ -40,6 +41,11 @@ sealed class Program
     private const uint GENERIC_WRITE = 0x40000000;
     private const uint FILE_SHARE_WRITE = 0x00000002;
     private const uint OPEN_EXISTING = 3;
+
+    /// <summary>
+    /// SafeMode service instance - available to App.axaml.cs for applying resets
+    /// </summary>
+    public static SafeModeService? SafeMode { get; private set; }
 
     /// <summary>
     /// Attach to parent console for CLI output on Windows
@@ -105,11 +111,12 @@ sealed class Program
             return CommandLineService.ExportScreenplayAsync(options.FilePath, options.OutputFile).GetAwaiter().GetResult();
         }
 
-        // Safe mode: backup user config folder to start fresh
-        // This must happen BEFORE SettingsService is initialized
+        // SafeMode: Reset visual settings to defaults (theme, fonts, flowview)
+        // and clear caches/plugin data. This must happen BEFORE SettingsService is initialized.
         if (options.SafeMode)
         {
-            BackupConfigForSafeMode();
+            SafeMode = new SafeModeService("Parley");
+            SafeMode.ActivateSafeMode(clearParameterCache: true, clearPluginData: true);
         }
 
         // Initialize unified logging (must happen before any logging calls)
@@ -123,40 +130,6 @@ sealed class Program
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
-    }
-
-    /// <summary>
-    /// Backup user config folder for safe mode (clean slate approach)
-    /// Renames ~/Radoub/Parley to ~/Radoub/Parley.safemode so app starts with defaults
-    /// </summary>
-    private static void BackupConfigForSafeMode()
-    {
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        // New location: ~/Radoub/Parley (matches toolset structure)
-        var parleyDir = Path.Combine(userProfile, "Radoub", "Parley");
-        var backupDir = Path.Combine(userProfile, "Radoub", "Parley.safemode");
-
-        try
-        {
-            if (Directory.Exists(parleyDir))
-            {
-                // Remove old backup if exists
-                if (Directory.Exists(backupDir))
-                {
-                    Directory.Delete(backupDir, recursive: true);
-                }
-
-                // Rename current config to backup
-                Directory.Move(parleyDir, backupDir);
-                Console.Error.WriteLine($"Safe mode: Config backed up to ~/Radoub/Parley.safemode");
-                Console.Error.WriteLine("To restore: delete ~/Radoub/Parley and rename ~/Radoub/Parley.safemode to ~/Radoub/Parley");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Safe mode warning: Could not backup config: {ex.Message}");
-            // Continue anyway - safe mode will still use defaults if config can't be loaded
-        }
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.

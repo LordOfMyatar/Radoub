@@ -26,6 +26,12 @@ public static class CommandLineService
                     options.ShowHelp = true;
                     break;
 
+                case "--safemode":
+                case "--safe-mode":
+                case "-s":
+                    options.SafeMode = true;
+                    break;
+
                 case "--file":
                 case "-f":
                     if (i + 1 < args.Length)
@@ -56,12 +62,14 @@ public static class CommandLineService
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --file, -f <path>  Open the specified UTC/BIC file");
+        Console.WriteLine("  --safemode, -s     Start in SafeMode (reset theme and fonts to defaults)");
         Console.WriteLine("  --help, -h         Show this help message");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  Quartermaster                     Start with empty editor");
         Console.WriteLine("  Quartermaster creature.utc        Open creature.utc");
         Console.WriteLine("  Quartermaster --file player.bic   Open player.bic");
+        Console.WriteLine("  Quartermaster --safemode          Start with default visual settings");
     }
 }
 
@@ -69,4 +77,9 @@ public class CommandLineOptions
 {
     public bool ShowHelp { get; set; }
     public string? FilePath { get; set; }
+
+    /// <summary>
+    /// Start in SafeMode - reset visual settings to defaults
+    /// </summary>
+    public bool SafeMode { get; set; }
 }

@@ -10,6 +10,7 @@ using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Quartermaster.Views;
+using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
 
@@ -24,13 +25,34 @@ public partial class App : Application
         // Register this tool's path in shared Radoub settings
         RegisterToolPath();
 
+        // Check for SafeMode
+        var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
+
+        if (isSafeMode)
+        {
+            // SafeMode: Reset visual settings to safe defaults
+            ApplySafeModeDefaults();
+            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
+        }
+
         // Record tool launch for easter egg tracking
         EasterEggService.Instance.RecordToolLaunch("Quartermaster");
 
         // Initialize and discover themes
         ThemeManager.Initialize("Quartermaster");
         ThemeManager.Instance.DiscoverThemes();
-        var themeId = SettingsService.Instance.CurrentThemeId;
+
+        string themeId;
+        if (isSafeMode)
+        {
+            // SafeMode forces light theme
+            themeId = "org.quartermaster.theme.light";
+        }
+        else
+        {
+            themeId = SettingsService.Instance.CurrentThemeId;
+        }
+
         if (!ThemeManager.Instance.ApplyTheme(themeId))
         {
             // Fallback to light theme
@@ -38,13 +60,58 @@ public partial class App : Application
         }
 
         // Apply font overrides from settings
-        ApplyFontSettings();
+        if (isSafeMode)
+        {
+            ApplySafeModeFontSettings();
+        }
+        else
+        {
+            ApplyFontSettings();
+        }
 
         // Subscribe to settings changes
         SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
 
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
+    }
+
+    /// <summary>
+    /// Apply SafeMode defaults to settings - resets theme and fonts.
+    /// </summary>
+    private void ApplySafeModeDefaults()
+    {
+        // Reset theme to light
+        SettingsService.Instance.CurrentThemeId = "org.quartermaster.theme.light";
+
+        // Reset fonts to system defaults
+        SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
+        SettingsService.Instance.FontFamily = SafeModeService.DefaultFontFamily;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default");
+    }
+
+    /// <summary>
+    /// Apply SafeMode font settings (system defaults).
+    /// </summary>
+    private void ApplySafeModeFontSettings()
+    {
+        if (Resources != null)
+        {
+            var baseSize = SafeModeService.DefaultFontSize;
+
+            Resources["GlobalFontSize"] = baseSize;
+            Resources["FontSizeXSmall"] = Math.Max(8, baseSize - 4);
+            Resources["FontSizeSmall"] = Math.Max(9, baseSize - 3);
+            Resources["FontSizeNormal"] = baseSize;
+            Resources["FontSizeMedium"] = baseSize + 2;
+            Resources["FontSizeLarge"] = baseSize + 4;
+            Resources["FontSizeXLarge"] = baseSize + 6;
+            Resources["FontSizeTitle"] = baseSize + 10;
+            Resources["GlobalFontFamily"] = FontFamily.Default;
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied SafeMode font settings");
+        }
     }
 
     public override void OnFrameworkInitializationCompleted()

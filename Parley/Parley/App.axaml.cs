@@ -13,6 +13,7 @@ using DialogEditor.Services;
 using DialogEditor.Plugins;
 using System.ComponentModel;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
 
@@ -31,14 +32,14 @@ public partial class App : Application
         _ = System.Threading.Tasks.Task.Run(CleanupSoundBrowserTempFiles);
 
         // Check for safe mode (command line)
-        // Note: Safe mode already backed up config folder in Program.cs,
-        // so SettingsService will use factory defaults (no config file exists)
-        var isSafeMode = CommandLineService.Options.SafeMode;
+        var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
 
         if (isSafeMode)
         {
+            // SafeMode: Reset visual settings to safe defaults
+            ApplySafeModeDefaults();
             PluginSettingsService.Instance.SafeMode = true;
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Safe mode enabled - using factory defaults");
+            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
         }
 
         // Initialize spell-checking (async, non-blocking)
@@ -51,10 +52,19 @@ public partial class App : Application
         ThemeManager.Initialize("Parley");
         ThemeManager.Instance.DiscoverThemes();
 
-        var themeId = SettingsService.Instance.CurrentThemeId;
-        if (string.IsNullOrEmpty(themeId))
+        string themeId;
+        if (isSafeMode)
         {
-            themeId = "org.parley.theme.light"; // Default if not set
+            // SafeMode forces light theme
+            themeId = "org.parley.theme.light";
+        }
+        else
+        {
+            themeId = SettingsService.Instance.CurrentThemeId;
+            if (string.IsNullOrEmpty(themeId))
+            {
+                themeId = "org.parley.theme.light"; // Default if not set
+            }
         }
 
         if (!ThemeManager.Instance.ApplyTheme(themeId))
@@ -63,15 +73,42 @@ public partial class App : Application
             ThemeManager.Instance.ApplyTheme("org.parley.theme.light");
         }
 
-        // Apply font size and family from settings
-        ApplyFontSize(SettingsService.Instance.FontSize);
-        ApplyFontFamily(SettingsService.Instance.FontFamily);
+        // Apply font size and family from settings (or defaults if SafeMode)
+        if (isSafeMode)
+        {
+            ApplyFontSize(SafeModeService.DefaultFontSize);
+            ApplyFontFamily(SafeModeService.DefaultFontFamily);
+        }
+        else
+        {
+            ApplyFontSize(SettingsService.Instance.FontSize);
+            ApplyFontFamily(SettingsService.Instance.FontFamily);
+        }
 
         // Apply scrollbar auto-hide preference (Issue #63)
         ApplyScrollbarAutoHide(SettingsService.Instance.AllowScrollbarAutoHide);
 
         // Subscribe to settings changes
         SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+    }
+
+    /// <summary>
+    /// Apply SafeMode defaults to settings - resets theme, fonts, and flowview.
+    /// </summary>
+    private void ApplySafeModeDefaults()
+    {
+        // Reset theme to light
+        SettingsService.Instance.CurrentThemeId = "org.parley.theme.light";
+
+        // Reset fonts to system defaults
+        SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
+        SettingsService.Instance.FontFamily = SafeModeService.DefaultFontFamily;
+
+        // Disable FlowView (can cause issues)
+        SettingsService.Instance.FlowchartVisible = false;
+        SettingsService.Instance.FlowchartWindowOpen = false;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default, FlowView disabled");
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -81,6 +118,27 @@ public partial class App : Application
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
+
+            // Check if SafeMode is active - show dialog before main window
+            var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
+            if (isSafeMode)
+            {
+                var dialog = new SafeModeDialog();
+                dialog.ShowDialog(null!);
+
+                if (!dialog.ShouldContinue)
+                {
+                    // User chose to exit
+                    desktop.Shutdown();
+                    return;
+                }
+
+                // Apply optional cleanup choices
+                if (dialog.ClearScrap && Program.SafeMode != null)
+                {
+                    Program.SafeMode.ClearScrapData();
+                }
+            }
 
             // Don't set DataContext here - MainWindow sets its own ViewModel in constructor
             desktop.MainWindow = new MainWindow();

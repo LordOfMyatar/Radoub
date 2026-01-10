@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="280"
+        x:Class="DialogEditor.Views.SafeModeDialog"
+        Title="SafeMode Recovery - Parley"
+        Width="450" Height="280"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header with info icon -->
+        <TextBlock Grid.Row="0" Text="SafeMode Recovery"
+                   FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+
+        <!-- Status message -->
+        <TextBlock Grid.Row="1" TextWrapping="Wrap" Margin="0,0,0,15">
+            <Run Text="Visual settings have been reset to defaults:"/>
+            <LineBreak/>
+            <Run Text="  - Theme: Light"/>
+            <LineBreak/>
+            <Run Text="  - Fonts: System default"/>
+            <LineBreak/>
+            <Run Text="  - FlowView: Disabled"/>
+            <LineBreak/>
+            <Run Text="  - Parameter cache: Cleared"/>
+            <LineBreak/>
+            <Run Text="  - Plugin data: Reset"/>
+        </TextBlock>
+
+        <!-- Optional cleanup section -->
+        <TextBlock Grid.Row="2" Text="Optional additional cleanup:" Margin="0,0,0,10"/>
+
+        <!-- Checkboxes for optional cleanup -->
+        <StackPanel Grid.Row="3" Spacing="8">
+            <CheckBox x:Name="ClearScrapCheckBox"
+                      Content="Clear scrap (deleted nodes history)"
+                      ToolTip.Tip="Removes the history of deleted dialog nodes that can be restored from the Scrap panel"/>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                   Spacing="10" Margin="0,20,0,0">
+            <Button Content="Exit" Click="OnExitClick" Width="80" Padding="10,5"
+                    ToolTip.Tip="Exit without launching Parley"/>
+            <Button Content="Continue" Click="OnContinueClick" Width="100" Padding="10,5"
+                    Classes="accent"/>
+        </StackPanel>
+    </Grid>
+</Window>
