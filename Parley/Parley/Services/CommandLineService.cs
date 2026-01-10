@@ -65,7 +65,7 @@ namespace DialogEditor.Services
                 {
                     options.ShowHelp = true;
                 }
-                else if (arg == "--safe-mode" || arg == "-s")
+                else if (arg == "--safe-mode" || arg == "--safemode" || arg == "-s")
                 {
                     options.SafeMode = true;
                 }
@@ -104,13 +104,13 @@ Usage: Parley [options] [file.dlg]
 
 Options:
   -h, --help          Show this help message
-  -s, --safe-mode     Start in safe mode (no themes, no plugins)
+  -s, --safemode      Start in SafeMode (reset theme/fonts, clear caches)
   --screenplay        Export dialog as screenplay text and exit
   -o, --output FILE   Output file for screenplay (default: stdout)
 
 Examples:
   Parley dialog.dlg           Open dialog.dlg in editor
-  Parley --safe-mode          Start editor in safe mode
+  Parley --safemode           Start in SafeMode with default settings
   Parley --screenplay test.dlg    Export dialog as screenplay
   Parley --screenplay -o out.txt dialog.dlg   Export to file
 ");

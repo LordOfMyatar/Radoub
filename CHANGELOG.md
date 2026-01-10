@@ -15,6 +15,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.26] - 2026-01-10
+**Branch**: `radoub/issue-798` | **PR**: #838
+
+### Feat: SafeMode Infrastructure (#798)
+
+Implement proper SafeMode across all tools - reset fonts/themes to defaults and clear caches on startup (not a full preferences reset).
+
+#### Shared
+- [x] Added SafeModeService to Radoub.UI for common SafeMode logic
+
+#### Parley
+- [x] Refactored SafeMode from "rename prefs folder" to true safe mode
+- [x] Auto-resets: theme to Light, fonts to system defaults, FlowView disabled
+- [x] Auto-clears: parameter cache, plugin data
+- [x] Shows SafeMode dialog with optional scrap cleanup
+- [x] Removed abandoned flowchart-view plugin directory
+
+#### Manifest
+- [x] Added `--safemode` / `-s` command line argument
+- [x] Auto-resets: theme to Light, fonts to system defaults
+- [x] Settings persisted so SafeMode changes are saved
+
+#### Quartermaster
+- [x] Added `--safemode` / `-s` command line argument
+- [x] Auto-resets: theme to Light, fonts to system defaults
+- [x] Settings persisted so SafeMode changes are saved
+
+---
+
 ## [0.9.25] - 2026-01-07
 **Branch**: `radoub/issue-796` | **PR**: #797
 

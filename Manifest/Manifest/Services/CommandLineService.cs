@@ -27,6 +27,11 @@ public class CommandLineOptions
     /// Show help and exit
     /// </summary>
     public bool ShowHelp { get; set; }
+
+    /// <summary>
+    /// Start in SafeMode - reset visual settings to defaults
+    /// </summary>
+    public bool SafeMode { get; set; }
 }
 
 /// <summary>
@@ -56,6 +61,10 @@ public static class CommandLineService
             if (arg == "--help" || arg == "-h" || arg == "/?")
             {
                 options.ShowHelp = true;
+            }
+            else if (arg == "--safemode" || arg == "-s" || arg == "--safe-mode")
+            {
+                options.SafeMode = true;
             }
             else if ((arg == "--file" || arg == "-f") && i + 1 < args.Length)
             {
@@ -99,6 +108,7 @@ Usage: Manifest [options] [file.jrl]
 
 Options:
   -h, --help              Show this help message
+  -s, --safemode          Start in SafeMode (reset theme and fonts to defaults)
   -f, --file <path>       Path to JRL file to open
   -q, --quest <tag>       Quest tag to navigate to after opening
   -e, --entry <id>        Entry ID to select (requires --quest)
@@ -106,6 +116,7 @@ Options:
 Examples:
   Manifest module.jrl                    Open journal file
   Manifest --file module.jrl             Same as above
+  Manifest --safemode                    Start with default visual settings
   Manifest module.jrl --quest my_quest   Open and navigate to quest
   Manifest module.jrl -q my_quest -e 100 Open, navigate to quest, select entry 100
 ");

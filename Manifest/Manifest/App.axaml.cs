@@ -10,6 +10,7 @@ using Avalonia.Markup.Xaml;
 using Manifest.Services;
 using Radoub.Formats.Logging;
 using Manifest.Views;
+using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
 
@@ -24,13 +25,34 @@ public partial class App : Application
         // Register this tool's path in shared Radoub settings for cross-tool discovery
         RegisterToolPath();
 
+        // Check for SafeMode
+        var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
+
+        if (isSafeMode)
+        {
+            // SafeMode: Reset visual settings to safe defaults
+            ApplySafeModeDefaults();
+            UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
+        }
+
         // Record tool launch for easter egg tracking
         EasterEggService.Instance.RecordToolLaunch("Manifest");
 
         // Initialize and discover themes
         ThemeManager.Initialize("Manifest");
         ThemeManager.Instance.DiscoverThemes();
-        var themeId = SettingsService.Instance.CurrentThemeId;
+
+        string themeId;
+        if (isSafeMode)
+        {
+            // SafeMode forces light theme
+            themeId = "org.manifest.theme.light";
+        }
+        else
+        {
+            themeId = SettingsService.Instance.CurrentThemeId;
+        }
+
         if (!ThemeManager.Instance.ApplyTheme(themeId))
         {
             // Fallback to light theme
@@ -38,7 +60,14 @@ public partial class App : Application
         }
 
         // Apply font overrides from settings (after theme)
-        ApplyFontSettings();
+        if (isSafeMode)
+        {
+            ApplySafeModeFontSettings();
+        }
+        else
+        {
+            ApplyFontSettings();
+        }
 
         // Subscribe to settings changes for dynamic theme/font updates
         SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
@@ -48,6 +77,34 @@ public partial class App : Application
 
         // Initialize spell-checking (async, non-blocking)
         _ = SpellCheckService.Instance.InitializeAsync();
+    }
+
+    /// <summary>
+    /// Apply SafeMode defaults to settings - resets theme and fonts.
+    /// </summary>
+    private void ApplySafeModeDefaults()
+    {
+        // Reset theme to light
+        SettingsService.Instance.CurrentThemeId = "org.manifest.theme.light";
+
+        // Reset fonts to system defaults
+        SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
+        SettingsService.Instance.FontFamily = SafeModeService.DefaultFontFamily;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default");
+    }
+
+    /// <summary>
+    /// Apply SafeMode font settings (system defaults).
+    /// </summary>
+    private void ApplySafeModeFontSettings()
+    {
+        if (Resources != null)
+        {
+            Resources["GlobalFontSize"] = SafeModeService.DefaultFontSize;
+            Resources["GlobalFontFamily"] = FontFamily.Default;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied SafeMode font settings");
+        }
     }
 
     public override void OnFrameworkInitializationCompleted()
