@@ -174,5 +174,15 @@ namespace DialogEditor.Views
         {
             FlowchartPanelControl.SelectNode(dialogNode);
         }
+
+        /// <summary>
+        /// Sets the keyboard shortcut manager for the embedded panel.
+        /// #809: Enables keyboard parity with TreeView in floating window.
+        /// </summary>
+        public KeyboardShortcutManager? ShortcutManager
+        {
+            get => FlowchartPanelControl.ShortcutManager;
+            set => FlowchartPanelControl.ShortcutManager = value;
+        }
     }
 }

@@ -504,10 +504,17 @@ namespace DialogEditor.Views
             }
         }
 
-        private void OnSoundDoubleClicked(object? sender, RoutedEventArgs e)
+        private async void OnSoundDoubleClicked(object? sender, RoutedEventArgs e)
         {
             if (_selectedSound != null)
             {
+                // #827: Warn if stereo file selected
+                if (_selectedSoundInfo != null && !_selectedSoundInfo.IsMono)
+                {
+                    var proceed = await ShowStereoWarningAsync(_selectedSoundInfo.FileName);
+                    if (!proceed) return;
+                }
+
                 _soundService.AddRecentSound(_selectedSound);
                 Close(Path.GetFileNameWithoutExtension(_selectedSound));
             }
@@ -590,10 +597,17 @@ namespace DialogEditor.Views
             }
         }
 
-        private void OnOkClick(object? sender, RoutedEventArgs e)
+        private async void OnOkClick(object? sender, RoutedEventArgs e)
         {
             if (_selectedSound != null)
             {
+                // #827: Warn if stereo file selected
+                if (_selectedSoundInfo != null && !_selectedSoundInfo.IsMono)
+                {
+                    var proceed = await ShowStereoWarningAsync(_selectedSoundInfo.FileName);
+                    if (!proceed) return;
+                }
+
                 _soundService.AddRecentSound(_selectedSound);
                 Close(Path.GetFileNameWithoutExtension(_selectedSound));
                 return;
@@ -602,5 +616,73 @@ namespace DialogEditor.Views
         }
 
         private void OnCancelClick(object? sender, RoutedEventArgs e) => Close(null);
+
+        #region Stereo Warning (#827)
+
+        /// <summary>
+        /// Shows warning dialog when user selects a stereo sound file.
+        /// Returns true if user wants to proceed, false to cancel.
+        /// </summary>
+        private async Task<bool> ShowStereoWarningAsync(string fileName)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Stereo sound selected: '{fileName}' - showing confirmation dialog");
+
+            var dialog = new Window
+            {
+                Title = "Stereo Sound Warning",
+                Width = 450,
+                SizeToContent = SizeToContent.Height,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false
+            };
+
+            var panel = new StackPanel { Margin = new Avalonia.Thickness(20) };
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = $"Sound file '{fileName}' is stereo.\n\n" +
+                       "NWN conversation audio requires mono files.\n" +
+                       "Stereo sounds may play incorrectly in-game.\n\n" +
+                       "Assign anyway?",
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                Margin = new Avalonia.Thickness(0, 0, 0, 20)
+            });
+
+            var buttonPanel = new StackPanel
+            {
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Spacing = 10
+            };
+
+            var result = false;
+
+            var yesButton = new Button { Content = "Assign Anyway", Width = 120 };
+            yesButton.Click += (s, args) =>
+            {
+                result = true;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"User chose to assign stereo sound: '{fileName}'");
+                dialog.Close();
+            };
+
+            var noButton = new Button { Content = "Cancel", Width = 80 };
+            noButton.Click += (s, args) =>
+            {
+                result = false;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"User cancelled stereo sound assignment: '{fileName}'");
+                dialog.Close();
+            };
+
+            buttonPanel.Children.Add(yesButton);
+            buttonPanel.Children.Add(noButton);
+            panel.Children.Add(buttonPanel);
+            dialog.Content = panel;
+
+            await dialog.ShowDialog(this);
+            return result;
+        }
+
+        #endregion
     }
 }

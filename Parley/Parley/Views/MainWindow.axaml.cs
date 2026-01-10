@@ -144,7 +144,8 @@ namespace DialogEditor.Views
                 populatePropertiesPanel: PopulatePropertiesPanel,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
-                setIsSettingSelectionProgrammatically: value => _uiState.IsSettingSelectionProgrammatically = value);
+                setIsSettingSelectionProgrammatically: value => _uiState.IsSettingSelectionProgrammatically = value,
+                shortcutManager: _services.KeyboardShortcuts); // #809: Enable keyboard shortcuts in FlowView
 
             _controllers.TreeView = new TreeViewUIController(
                 window: this,
@@ -659,10 +660,17 @@ namespace DialogEditor.Views
                 var file = await storageProvider.SaveFilePickerAsync(options);
                 if (file != null)
                 {
+                    var filePath = file.Path.LocalPath;
+
+                    // #826: Validate filename length for Aurora Engine
+                    if (!await _controllers.FileMenu.ValidateFilenameAsync(filePath))
+                    {
+                        return false;
+                    }
+
                     // CRITICAL FIX: Save current node properties before saving file
                     SaveCurrentNodeProperties();
 
-                    var filePath = file.Path.LocalPath;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving file as: {UnifiedLogger.SanitizePath(filePath)}");
                     var success = await _viewModel.SaveDialogAsync(filePath);
 

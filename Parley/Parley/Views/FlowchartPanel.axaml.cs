@@ -18,6 +18,7 @@ namespace DialogEditor.Views
     /// <summary>
     /// Reusable flowchart panel that can be embedded in MainWindow or FlowchartWindow.
     /// Handles graph rendering, zoom controls, and node click events.
+    /// #809: Now forwards keyboard shortcuts to parent window for feature parity with TreeView.
     /// </summary>
     public partial class FlowchartPanel : UserControl
     {
@@ -31,6 +32,19 @@ namespace DialogEditor.Views
         private bool _isPanning;
         private Point _panStartPoint;
         private Vector _panStartOffset;
+
+        // #809: Keyboard shortcut handler for forwarding to parent window
+        private KeyboardShortcutManager? _shortcutManager;
+
+        /// <summary>
+        /// Sets the keyboard shortcut manager for forwarding shortcuts to the parent window.
+        /// #809: Enables keyboard parity with TreeView.
+        /// </summary>
+        public KeyboardShortcutManager? ShortcutManager
+        {
+            get => _shortcutManager;
+            set => _shortcutManager = value;
+        }
 
         /// <summary>
         /// Raised when a flowchart node is clicked.
@@ -103,6 +117,19 @@ namespace DialogEditor.Views
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
                     _viewModel.HandleExternalCollapseEvent(e);
+                });
+            }
+
+            // #809: Refresh FlowView on structural changes (add/delete/move/undo/redo)
+            if (e.ChangeType == DialogChangeType.NodeAdded ||
+                e.ChangeType == DialogChangeType.NodeDeleted ||
+                e.ChangeType == DialogChangeType.NodeMoved ||
+                e.ChangeType == DialogChangeType.DialogRefreshed)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _viewModel.RefreshGraph();
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"FlowView refreshed due to {e.ChangeType}");
                 });
             }
         }
@@ -202,6 +229,7 @@ namespace DialogEditor.Views
 
         private void OnKeyDown(object? sender, KeyEventArgs e)
         {
+            // #809: Handle zoom shortcuts locally
             if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
             {
                 switch (e.Key)
@@ -210,17 +238,34 @@ namespace DialogEditor.Views
                     case Key.OemPlus:
                         SetZoom(_currentZoom + ZoomStep);
                         e.Handled = true;
-                        break;
+                        return;
                     case Key.Subtract:
                     case Key.OemMinus:
                         SetZoom(_currentZoom - ZoomStep);
                         e.Handled = true;
-                        break;
+                        return;
                     case Key.D0:
                     case Key.NumPad0:
                         SetZoom(1.0);
                         e.Handled = true;
-                        break;
+                        return;
+                }
+            }
+
+            // #809: Forward other shortcuts to parent window's shortcut manager
+            if (_shortcutManager != null)
+            {
+                // Try tunneling shortcuts first (Ctrl+Z/Y for undo/redo, Ctrl+Shift+Up/Down for move)
+                if (_shortcutManager.HandlePreviewKeyDown(e))
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                // Then try bubbling shortcuts
+                if (_shortcutManager.HandleKeyDown(e))
+                {
+                    e.Handled = true;
                 }
             }
         }

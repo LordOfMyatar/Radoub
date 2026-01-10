@@ -10,6 +10,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.111-alpha] - 2026-01-10
+**Branch**: `parley/issue-856` | **PR**: #857
+
+### Sprint: Validation & Polish (#856)
+
+- [x] #826 - Validate DLG Filename Length on Save
+- [x] #827 - Validate Sound Files Are Mono on Assignment
+- [x] #809 - FlowView keyboard shortcuts parity with TreeView
+
+#### #826 - Filename Length Validation
+
+Blocks saving DLG files with names exceeding Aurora Engine's 16-character limit.
+
+| Save Point | Behavior |
+|------------|----------|
+| New File | Validates before creating |
+| Save | Shows error dialog, prompts Save As |
+| Save As | Validates before saving |
+| Auto-save | Skips with status bar warning |
+
+Error dialog shows filename, length, and maximum allowed.
+
+#### #827 - Sound File Mono Validation
+
+Shows confirmation dialog when assigning stereo WAV files to conversation nodes.
+NWN conversation audio requires mono; stereo plays incorrectly in-game.
+User can proceed anyway (for post-processing workflows) or cancel.
+
+#### #809 - FlowView Keyboard Shortcuts
+
+FlowView now supports all TreeView keyboard shortcuts:
+
+| Shortcut | Action |
+|----------|--------|
+| Ctrl+D | Add Smart Node |
+| Ctrl+Shift+D | Add Sibling Node |
+| Ctrl+R | Add Context-Aware Reply |
+| Delete | Delete Node |
+| Ctrl+C/X/V/L | Copy/Cut/Paste/Link |
+| Ctrl+Z/Y | Undo/Redo |
+| Ctrl+Shift+Up/Down | Move Node Up/Down |
+| Ctrl+J | Go to Parent Node |
+
+Works in embedded (side-by-side), tabbed, and floating window modes.
+
+FlowView now auto-refreshes on structural changes (add/delete/move/undo/redo).
+
+---
+
 ## [0.1.110-alpha] - 2026-01-02
 **Branch**: `parley/issue-723` | **PR**: #724
 

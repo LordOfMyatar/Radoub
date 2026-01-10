@@ -37,6 +37,7 @@ namespace Parley.Views.Helpers
         private readonly Action _saveCurrentNodeProperties;
         private readonly Func<bool> _getIsSettingSelectionProgrammatically;
         private readonly Action<bool> _setIsSettingSelectionProgrammatically;
+        private readonly KeyboardShortcutManager _shortcutManager; // #809: For FlowView keyboard parity
 
         // Track whether embedded/tabbed panels have been wired up
         private bool _embeddedFlowchartWired = false;
@@ -52,7 +53,8 @@ namespace Parley.Views.Helpers
             Action<TreeViewSafeNode> populatePropertiesPanel,
             Action saveCurrentNodeProperties,
             Func<bool> getIsSettingSelectionProgrammatically,
-            Action<bool> setIsSettingSelectionProgrammatically)
+            Action<bool> setIsSettingSelectionProgrammatically,
+            KeyboardShortcutManager shortcutManager)
         {
             _window = window;
             _controls = controls;
@@ -64,6 +66,7 @@ namespace Parley.Views.Helpers
             _saveCurrentNodeProperties = saveCurrentNodeProperties;
             _getIsSettingSelectionProgrammatically = getIsSettingSelectionProgrammatically;
             _setIsSettingSelectionProgrammatically = setIsSettingSelectionProgrammatically;
+            _shortcutManager = shortcutManager;
         }
 
         private MainViewModel ViewModel => _getViewModel();
@@ -84,6 +87,7 @@ namespace Parley.Views.Helpers
                     {
                         var w = new FlowchartWindow();
                         w.NodeClicked += OnFlowchartNodeClicked;
+                        w.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         return w;
                     });
 
@@ -187,10 +191,11 @@ namespace Parley.Views.Helpers
                     splitter.IsVisible = true;
                     border.IsVisible = true;
 
-                    // Wire up node click handler if not already done
+                    // Wire up node click handler and keyboard shortcuts if not already done
                     if (!_embeddedFlowchartWired)
                     {
                         panel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
+                        panel.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         _embeddedFlowchartWired = true;
                     }
 
@@ -228,10 +233,11 @@ namespace Parley.Views.Helpers
                 {
                     tab.IsVisible = true;
 
-                    // Wire up node click handler if not already done
+                    // Wire up node click handler and keyboard shortcuts if not already done
                     if (!_tabbedFlowchartWired)
                     {
                         panel.NodeClicked += OnTabbedFlowchartNodeClicked;
+                        panel.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         _tabbedFlowchartWired = true;
                     }
 
