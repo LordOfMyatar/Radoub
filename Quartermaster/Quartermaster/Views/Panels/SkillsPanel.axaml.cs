@@ -43,6 +43,23 @@ public partial class SkillsPanel : BasePanelControl
     public SkillsPanel()
     {
         InitializeComponent();
+
+        // Subscribe to theme changes to refresh color-dependent bindings
+        SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+    }
+
+    private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
+        {
+            // Theme changed - notify all view models to refresh color bindings
+            foreach (var skill in _allSkills)
+            {
+                skill.NotifyColorChanged();
+            }
+            // Also refresh the skill points table which uses theme colors
+            UpdateSkillPointsTable();
+        }
     }
 
     private void InitializeComponent()
@@ -774,6 +791,15 @@ public class SkillViewModel : System.ComponentModel.INotifyPropertyChanged
     }
 
     public bool HasGameIcon => _iconService != null && _iconService.IsGameDataAvailable;
+
+    /// <summary>
+    /// Called when the theme changes to notify bindings that color properties need refresh.
+    /// </summary>
+    public void NotifyColorChanged()
+    {
+        OnPropertyChanged(nameof(ModifierColor));
+        OnPropertyChanged(nameof(RowBackground));
+    }
 
     public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 

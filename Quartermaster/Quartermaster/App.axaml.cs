@@ -79,8 +79,21 @@ public partial class App : Application
 
         if (Resources != null)
         {
-            Resources["GlobalFontSize"] = settings.FontSize;
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {settings.FontSize}pt");
+            var baseSize = (double)settings.FontSize;
+
+            // Update base font size
+            Resources["GlobalFontSize"] = baseSize;
+
+            // Update derived font sizes (must match ThemeManager.ApplyFontSettings logic)
+            Resources["FontSizeXSmall"] = Math.Max(8, baseSize - 4);   // 10 @ base 14
+            Resources["FontSizeSmall"] = Math.Max(9, baseSize - 3);    // 11 @ base 14
+            Resources["FontSizeNormal"] = baseSize;                     // 14 @ base 14
+            Resources["FontSizeMedium"] = baseSize + 2;                 // 16 @ base 14
+            Resources["FontSizeLarge"] = baseSize + 4;                  // 18 @ base 14
+            Resources["FontSizeXLarge"] = baseSize + 6;                 // 20 @ base 14
+            Resources["FontSizeTitle"] = baseSize + 10;                 // 24 @ base 14
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {settings.FontSize}pt (derived sizes updated)");
         }
 
         if (!string.IsNullOrEmpty(settings.FontFamily) && Resources != null)
