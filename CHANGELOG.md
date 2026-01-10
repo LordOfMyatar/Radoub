@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.26] - 2026-01-10
-**Branch**: `radoub/issue-798` | **PR**: #TBD
+**Branch**: `radoub/issue-798` | **PR**: #838
 
 ### Feat: SafeMode Infrastructure (#798)
 
