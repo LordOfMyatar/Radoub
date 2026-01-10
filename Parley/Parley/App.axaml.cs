@@ -113,7 +113,7 @@ public partial class App : Application
         UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default, FlowView disabled");
     }
 
-    public override async void OnFrameworkInitializationCompleted()
+    public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -121,29 +121,34 @@ public partial class App : Application
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
 
-            // Check if SafeMode is active - show dialog before main window
+            // Don't set DataContext here - MainWindow sets its own ViewModel in constructor
+            var mainWindow = new MainWindow();
+            desktop.MainWindow = mainWindow;
+
+            // Check if SafeMode is active - show dialog after main window is set
             var isSafeMode = Program.SafeMode?.SafeModeActive ?? false;
             if (isSafeMode)
             {
-                var dialog = new SafeModeDialog();
-                await dialog.ShowDialog<object?>(null!);
-
-                if (!dialog.ShouldContinue)
+                // Show SafeMode dialog once the window is loaded
+                mainWindow.Opened += async (_, _) =>
                 {
-                    // User chose to exit
-                    desktop.Shutdown();
-                    return;
-                }
+                    var dialog = new SafeModeDialog();
+                    await dialog.ShowDialog<object?>(mainWindow);
 
-                // Apply optional cleanup choices
-                if (dialog.ClearScrap && Program.SafeMode != null)
-                {
-                    Program.SafeMode.ClearScrapData();
-                }
+                    if (!dialog.ShouldContinue)
+                    {
+                        // User chose to exit
+                        desktop.Shutdown();
+                        return;
+                    }
+
+                    // Apply optional cleanup choices
+                    if (dialog.ClearScrap && Program.SafeMode != null)
+                    {
+                        Program.SafeMode.ClearScrapData();
+                    }
+                };
             }
-
-            // Don't set DataContext here - MainWindow sets its own ViewModel in constructor
-            desktop.MainWindow = new MainWindow();
         }
 
         base.OnFrameworkInitializationCompleted();
