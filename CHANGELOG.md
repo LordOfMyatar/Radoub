@@ -15,6 +15,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.26] - 2026-01-10
+**Branch**: `radoub/issue-798` | **PR**: #TBD
+
+### Feat: SafeMode Infrastructure (#798)
+
+Implement proper SafeMode across all tools - reset fonts/themes to defaults and clear caches on startup (not a full preferences reset).
+
+#### Parley
+- [ ] Refactor existing SafeMode from "rename prefs folder" to true safe mode
+- [ ] Reset fonts and themes to default
+- [ ] Clear cache and scrap directories
+- [ ] Remove unused plugin infrastructure
+
+#### Manifest
+- [ ] Add --safemode command line argument
+- [ ] Reset fonts and themes to default on SafeMode
+- [ ] Clear caches
+- [ ] Display SafeMode active notification
+
+#### Quartermaster
+- [ ] Add --safemode command line argument
+- [ ] Reset fonts and themes to default on SafeMode
+- [ ] Clear caches
+- [ ] Display SafeMode active notification
+
+---
+
 ## [0.9.25] - 2026-01-07
 **Branch**: `radoub/issue-796` | **PR**: #797
 
