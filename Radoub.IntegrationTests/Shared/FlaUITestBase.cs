@@ -70,9 +70,11 @@ public abstract class FlaUITestBase : IDisposable
 
         // Pre-seed Parley settings with test-friendly defaults
         // SideBySide layout is most stable for automated testing (no separate windows)
+        // Enable HAK Files in Sound Browser to use our test HAK
         var parleySettings = @"{
   ""FlowchartLayout"": ""SideBySide"",
-  ""FlowchartVisible"": false
+  ""FlowchartVisible"": false,
+  ""SoundBrowserIncludeHakFiles"": true
 }";
         File.WriteAllText(Path.Combine(parleySettingsDir, "ParleySettings.json"), parleySettings);
 
@@ -83,6 +85,14 @@ public abstract class FlaUITestBase : IDisposable
         // Pre-seed Quartermaster settings with test-friendly defaults
         var quartermasterSettings = @"{}";
         File.WriteAllText(Path.Combine(quartermasterSettingsDir, "QuartermasterSettings.json"), quartermasterSettings);
+
+        // Pre-seed RadoubSettings with test data paths (for Sound Browser, etc.)
+        // These paths point to our test data which includes HAK files with sounds
+        var radoubSettings = $@"{{
+  ""NeverwinterNightsPath"": ""{TestPaths.TestGameRoot.Replace("\\", "\\\\")}"",
+  ""CurrentModulePath"": ""{TestPaths.TestModuleDirectory.Replace("\\", "\\\\")}""
+}}";
+        File.WriteAllText(Path.Combine(_isolatedSettingsDir, "RadoubSettings.json"), radoubSettings);
 
         var processInfo = new ProcessStartInfo
         {

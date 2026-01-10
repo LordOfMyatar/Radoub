@@ -76,6 +76,41 @@ public static class TestPaths
     /// </summary>
     public static string GetQuartermasterTestFile(string filename) => Path.Combine(QuartermasterTestFiles, filename);
 
+    #region Integration Test Data (Spoofed NWN Environment)
+
+    /// <summary>
+    /// Gets the root TestData directory containing spoofed NWN environment.
+    /// </summary>
+    public static string TestDataRoot => Path.Combine(RepoRoot, "Radoub.IntegrationTests", "TestData");
+
+    /// <summary>
+    /// Gets the spoofed NWN game root directory (simulates NWN installation).
+    /// Contains: hak/ folder with test HAK files.
+    /// </summary>
+    public static string TestGameRoot => Path.Combine(TestDataRoot, "GameRoot");
+
+    /// <summary>
+    /// Gets the test HAK directory within the spoofed game root.
+    /// </summary>
+    public static string TestHakDirectory => Path.Combine(TestGameRoot, "hak");
+
+    /// <summary>
+    /// Gets a specific test HAK file path.
+    /// </summary>
+    public static string GetTestHakFile(string filename) => Path.Combine(TestHakDirectory, filename);
+
+    /// <summary>
+    /// Gets the test module directory (unpacked module with dlg, utc, scripts, etc.).
+    /// </summary>
+    public static string TestModuleDirectory => Path.Combine(TestDataRoot, "TestModule");
+
+    /// <summary>
+    /// Gets a specific file from the test module.
+    /// </summary>
+    public static string GetTestModuleFile(string filename) => Path.Combine(TestModuleDirectory, filename);
+
+    #endregion
+
     /// <summary>
     /// Creates a temporary directory for test output.
     /// Call Cleanup() when done.
