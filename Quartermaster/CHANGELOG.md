@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.32-alpha] - 2026-01-09
+**Branch**: `quartermaster/issue-734` | **PR**: #TBD
+
+### Feat: Edit Skill Ranks (#734)
+
+Enable skill rank editing via +/- buttons with validation against class skill maximums.
+
+---
+
 ## [0.1.31-alpha] - 2026-01-07
 **Branch**: `quartermaster/issue-799` | **PR**: #800
 
