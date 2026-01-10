@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Enable skill rank editing via +/- buttons with validation against class skill maximums.
 
+#### Skill Editing
+- +/- buttons now functional for each skill row
+- Max ranks enforced: class skills = level+3, cross-class = (level+3)/2
+- Buttons disable appropriately at min (0) and max rank limits
+- Changes immediately update UtcFile.SkillList for save
+- SkillsChanged event marks document dirty
+
+#### UI Improvements
+- Summary displays character level and max rank limits
+- Tooltips show current max rank or reason for disabled state
+- Theme-aware button sizing (MinWidth/MinHeight instead of fixed)
+- Footer shows max rank formula reference
+
 ---
 
 ## [0.1.31-alpha] - 2026-01-07

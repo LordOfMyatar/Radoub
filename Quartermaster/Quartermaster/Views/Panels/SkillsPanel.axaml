@@ -138,22 +138,28 @@
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
 
-                                            <!-- Placeholder for +/- buttons (future editing) -->
+                                            <!-- +/- buttons for rank editing -->
                                             <StackPanel Grid.Column="6"
                                                         Orientation="Horizontal"
                                                         Spacing="2"
                                                         HorizontalAlignment="Right"
                                                         VerticalAlignment="Center">
                                                 <Button Content="-"
-                                                        Width="24" Height="24"
+                                                        MinWidth="24" MinHeight="24"
+                                                        Padding="4,2"
                                                         FontSize="{DynamicResource FontSizeSmall}"
-                                                        IsEnabled="False"
-                                                        ToolTip.Tip="Decrease rank (editing not yet implemented)"/>
+                                                        IsEnabled="{Binding CanDecrement}"
+                                                        Tag="{Binding}"
+                                                        Click="OnDecrementClick"
+                                                        ToolTip.Tip="{Binding DecrementTooltip}"/>
                                                 <Button Content="+"
-                                                        Width="24" Height="24"
+                                                        MinWidth="24" MinHeight="24"
+                                                        Padding="4,2"
                                                         FontSize="{DynamicResource FontSizeSmall}"
-                                                        IsEnabled="False"
-                                                        ToolTip.Tip="Increase rank (editing not yet implemented)"/>
+                                                        IsEnabled="{Binding CanIncrement}"
+                                                        Tag="{Binding}"
+                                                        Click="OnIncrementClick"
+                                                        ToolTip.Tip="{Binding IncrementTooltip}"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -171,9 +177,10 @@
                 </ScrollViewer>
             </Border>
 
-            <!-- Footer -->
+            <!-- Footer with guidance -->
             <TextBlock Grid.Row="4"
-                       Text="Skill editing will be implemented in a future sprint."
+                       x:Name="FooterText"
+                       Text="Max ranks: Class skill = Level+3, Cross-class = (Level+3)/2"
                        FontSize="{DynamicResource FontSizeSmall}"
                        FontStyle="Italic"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"

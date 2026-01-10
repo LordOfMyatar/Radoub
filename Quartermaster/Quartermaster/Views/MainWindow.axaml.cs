@@ -124,6 +124,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize skills panel with display service for 2DA/TLK lookups
         SkillsPanelContent.SetDisplayService(_creatureDisplayService);
         SkillsPanelContent.SetIconService(_itemIconService);
+        SkillsPanelContent.SkillsChanged += (s, e) => MarkDirty();
 
         // Initialize spells panel with display service for 2DA/TLK lookups
         SpellsPanelContent.SetDisplayService(_creatureDisplayService);

@@ -7,6 +7,7 @@ using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -17,6 +18,12 @@ public partial class SkillsPanel : BasePanelControl
 {
     private CreatureDisplayService? _displayService;
     private ItemIconService? _itemIconService;
+    private bool _isLoading;
+
+    /// <summary>
+    /// Raised when the user modifies skill ranks.
+    /// </summary>
+    public event EventHandler? SkillsChanged;
 
     private TextBlock? _skillsSummaryText;
     private ItemsControl? _skillsList;
@@ -28,6 +35,7 @@ public partial class SkillsPanel : BasePanelControl
     private List<SkillViewModel> _allSkills = new();
     private HashSet<int> _classSkillIds = new();
     private HashSet<int> _unavailableSkillIds = new();
+    private int _totalLevel;
 
     public SkillsPanel()
     {
@@ -54,6 +62,28 @@ public partial class SkillsPanel : BasePanelControl
             _trainedOnlyCheckBox.IsCheckedChanged += (s, e) => ApplySortAndFilter();
     }
 
+    private void OnIncrementClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is SkillViewModel skill)
+        {
+            if (skill.CanIncrement)
+            {
+                skill.Ranks++;
+            }
+        }
+    }
+
+    private void OnDecrementClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is SkillViewModel skill)
+        {
+            if (skill.CanDecrement)
+            {
+                skill.Ranks--;
+            }
+        }
+    }
+
     public void SetDisplayService(CreatureDisplayService displayService)
     {
         _displayService = displayService;
@@ -67,6 +97,8 @@ public partial class SkillsPanel : BasePanelControl
 
     public override void LoadCreature(UtcFile? creature)
     {
+        _isLoading = true;
+
         _skills.Clear();
         _allSkills.Clear();
         _classSkillIds.Clear();
@@ -76,8 +108,12 @@ public partial class SkillsPanel : BasePanelControl
         if (creature == null || creature.SkillList.Count == 0)
         {
             ClearPanel();
+            _isLoading = false;
             return;
         }
+
+        // Calculate total character level for max rank calculation
+        _totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
 
         if (_displayService != null)
         {
@@ -94,7 +130,9 @@ public partial class SkillsPanel : BasePanelControl
             var isUnavailable = _unavailableSkillIds.Contains(i);
 
             var abilityModifier = GetAbilityModifier(creature, keyAbility);
-            var total = ranks + abilityModifier;
+
+            // Calculate max ranks: class skill = level + 3, cross-class = (level + 3) / 2
+            var maxRanks = isClassSkill ? _totalLevel + 3 : (_totalLevel + 3) / 2;
 
             IBrush rowBackground;
             double textOpacity;
@@ -119,17 +157,20 @@ public partial class SkillsPanel : BasePanelControl
                 SkillId = i,
                 SkillName = skillName,
                 KeyAbility = keyAbility,
-                Ranks = ranks,
-                RanksDisplay = ranks.ToString(),
                 AbilityModifier = abilityModifier,
-                Total = total,
-                TotalDisplay = total.ToString(),
                 IsClassSkill = isClassSkill,
                 IsUnavailable = isUnavailable,
+                MaxRanks = maxRanks,
                 ClassSkillIndicator = isUnavailable ? "✗" : (isClassSkill ? "●" : "○"),
                 RowBackground = rowBackground,
                 TextOpacity = textOpacity
             };
+
+            // Set ranks after MaxRanks is set so CanIncrement/CanDecrement calculate correctly
+            vm.Ranks = ranks;
+
+            // Wire up change handler
+            vm.OnRanksChanged = OnSkillRanksChanged;
 
             vm.SetIconService(_itemIconService);
             _allSkills.Add(vm);
@@ -140,6 +181,25 @@ public partial class SkillsPanel : BasePanelControl
 
         if (_noSkillsText != null)
             _noSkillsText.IsVisible = false;
+
+        _isLoading = false;
+    }
+
+    private void OnSkillRanksChanged(SkillViewModel skill, int newRanks)
+    {
+        if (_isLoading || CurrentCreature == null) return;
+
+        // Update the UtcFile's skill list
+        if (skill.SkillId < CurrentCreature.SkillList.Count)
+        {
+            CurrentCreature.SkillList[skill.SkillId] = (byte)newRanks;
+        }
+
+        // Update summary
+        UpdateSummary();
+
+        // Notify that skills changed (for dirty tracking)
+        SkillsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private int GetAbilityModifier(UtcFile creature, string keyAbility)
@@ -164,6 +224,7 @@ public partial class SkillsPanel : BasePanelControl
         _allSkills.Clear();
         _classSkillIds.Clear();
         _unavailableSkillIds.Clear();
+        _totalLevel = 0;
         CurrentCreature = null;
         SetText(_skillsSummaryText, "0 skills with ranks");
         if (_noSkillsText != null)
@@ -206,8 +267,12 @@ public partial class SkillsPanel : BasePanelControl
         var displayedCount = _skills.Count;
         var filterNote = displayedCount < _allSkills.Count ? $" (showing {displayedCount})" : "";
 
+        // Include character level and max rank info in summary
+        var maxClassSkillRank = _totalLevel + 3;
+        var maxCrossClassRank = (_totalLevel + 3) / 2;
+
         SetText(_skillsSummaryText,
-            $"{skillsWithRanks} skills with ranks ({totalRanks} total) | {classSkillCount} class skills{filterNote}");
+            $"Level {_totalLevel}: {skillsWithRanks} skills with ranks ({totalRanks} total) | Max: {maxClassSkillRank} class / {maxCrossClassRank} cross{filterNote}");
     }
 
     private string GetSkillName(int skillId)
@@ -325,25 +390,132 @@ public partial class SkillsPanel : BasePanelControl
     #endregion
 }
 
-public class SkillViewModel
+/// <summary>
+/// View model for a skill in the skills list.
+/// Supports rank editing via +/- buttons with max rank validation.
+/// </summary>
+public class SkillViewModel : System.ComponentModel.INotifyPropertyChanged
 {
     private Bitmap? _iconBitmap;
     private bool _iconLoaded = false;
     private ItemIconService? _iconService;
+    private int _ranks;
+    private int _total;
+    private IBrush _rowBackground = Brushes.Transparent;
+    private double _textOpacity = 1.0;
 
     public int SkillId { get; set; }
     public string SkillName { get; set; } = "";
     public string KeyAbility { get; set; } = "";
-    public int Ranks { get; set; }
-    public string RanksDisplay { get; set; } = "0";
     public int AbilityModifier { get; set; }
-    public int Total { get; set; }
-    public string TotalDisplay { get; set; } = "0";
     public bool IsClassSkill { get; set; }
     public bool IsUnavailable { get; set; }
     public string ClassSkillIndicator { get; set; } = "○";
-    public IBrush RowBackground { get; set; } = Brushes.Transparent;
-    public double TextOpacity { get; set; } = 1.0;
+
+    /// <summary>
+    /// Maximum ranks allowed for this skill based on character level and class skill status.
+    /// Class skill: level + 3, Cross-class: (level + 3) / 2
+    /// </summary>
+    public int MaxRanks { get; set; }
+
+    /// <summary>
+    /// Current skill ranks (modifiable).
+    /// </summary>
+    public int Ranks
+    {
+        get => _ranks;
+        set
+        {
+            if (_ranks != value)
+            {
+                _ranks = value;
+                OnPropertyChanged(nameof(Ranks));
+                OnPropertyChanged(nameof(RanksDisplay));
+                OnPropertyChanged(nameof(CanIncrement));
+                OnPropertyChanged(nameof(CanDecrement));
+                UpdateTotal();
+                OnRanksChanged?.Invoke(this, value);
+            }
+        }
+    }
+
+    public string RanksDisplay => Ranks.ToString();
+
+    public int Total
+    {
+        get => _total;
+        private set
+        {
+            if (_total != value)
+            {
+                _total = value;
+                OnPropertyChanged(nameof(Total));
+                OnPropertyChanged(nameof(TotalDisplay));
+            }
+        }
+    }
+
+    public string TotalDisplay => Total.ToString();
+
+    public IBrush RowBackground
+    {
+        get => _rowBackground;
+        set
+        {
+            if (_rowBackground != value)
+            {
+                _rowBackground = value;
+                OnPropertyChanged(nameof(RowBackground));
+            }
+        }
+    }
+
+    public double TextOpacity
+    {
+        get => _textOpacity;
+        set
+        {
+            if (System.Math.Abs(_textOpacity - value) > 0.001)
+            {
+                _textOpacity = value;
+                OnPropertyChanged(nameof(TextOpacity));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the + button should be enabled (ranks &lt; max and not unavailable).
+    /// </summary>
+    public bool CanIncrement => !IsUnavailable && Ranks < MaxRanks;
+
+    /// <summary>
+    /// Whether the - button should be enabled (ranks &gt; 0 and not unavailable).
+    /// </summary>
+    public bool CanDecrement => !IsUnavailable && Ranks > 0;
+
+    /// <summary>
+    /// Tooltip for the + button showing max rank info.
+    /// </summary>
+    public string IncrementTooltip => IsUnavailable
+        ? "Skill unavailable to this character"
+        : (Ranks >= MaxRanks ? $"At max ranks ({MaxRanks})" : $"Increase rank (max: {MaxRanks})");
+
+    /// <summary>
+    /// Tooltip for the - button.
+    /// </summary>
+    public string DecrementTooltip => IsUnavailable
+        ? "Skill unavailable to this character"
+        : (Ranks <= 0 ? "Already at minimum (0)" : "Decrease rank");
+
+    /// <summary>
+    /// Callback when ranks change. Args: (SkillViewModel skill, int newRanks)
+    /// </summary>
+    public Action<SkillViewModel, int>? OnRanksChanged { get; set; }
+
+    private void UpdateTotal()
+    {
+        Total = Ranks + AbilityModifier;
+    }
 
     public void SetIconService(ItemIconService? iconService)
     {
@@ -372,8 +544,17 @@ public class SkillViewModel
         {
             _iconBitmap = value;
             _iconLoaded = true;
+            OnPropertyChanged(nameof(IconBitmap));
+            OnPropertyChanged(nameof(HasGameIcon));
         }
     }
 
     public bool HasGameIcon => _iconService != null && _iconService.IsGameDataAvailable;
+
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+    }
 }
