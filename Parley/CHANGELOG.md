@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Validation & Polish (#856)
 
 - [x] #826 - Validate DLG Filename Length on Save
-- [ ] #827 - Validate Sound Files Are Mono on Assignment
+- [x] #827 - Validate Sound Files Are Mono on Assignment
 - [ ] #809 - FlowView keyboard shortcuts parity with TreeView
 
 #### #826 - Filename Length Validation
@@ -31,6 +31,12 @@ Blocks saving DLG files with names exceeding Aurora Engine's 16-character limit.
 | Auto-save | Skips with status bar warning |
 
 Error dialog shows filename, length, and maximum allowed.
+
+#### #827 - Sound File Mono Validation
+
+Shows confirmation dialog when assigning stereo WAV files to conversation nodes.
+NWN conversation audio requires mono; stereo plays incorrectly in-game.
+User can proceed anyway (for post-processing workflows) or cancel.
 
 ---
 
