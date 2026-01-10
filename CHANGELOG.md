@@ -35,6 +35,7 @@ Create self-contained test environment enabling full integration testing without
 #### Changed (Radoub.IntegrationTests)
 - **Sound Browser test enabled** - previously skipped due to missing game resources (#701)
 - Sound Browser test updated to use AutomationId-based window detection (matches Creature Picker pattern)
+- **Creature tag browsing test added** - validates Creature Picker loads UTCs from TestModule
 
 #### Test Data Contents
 | Path | Contents |
