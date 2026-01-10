@@ -15,6 +15,19 @@ Validate the current PR is ready to merge. Runs tests, checks code quality, veri
 
 ## Workflow
 
+### Step 0: Check for Uncommitted Changes
+
+```bash
+git status --porcelain
+```
+
+**If output is not empty**:
+- ⚠️ STOP and warn: "Uncommitted changes detected. Commit or stash before running pre-merge."
+- List the uncommitted files
+- Do not proceed with checklist
+
+This prevents running pre-merge with local changes that aren't reflected in the PR.
+
 ### Step 1: Get PR Info (single gh call)
 
 ```bash
