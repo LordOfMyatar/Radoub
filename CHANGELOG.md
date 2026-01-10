@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.28] - 2026-01-10
-**Branch**: `radoub/issue-860` | **PR**: #TBD
+**Branch**: `radoub/issue-860` | **PR**: #861
 
 ### Sprint: Accessibility & Cross-Platform (#860)
 
