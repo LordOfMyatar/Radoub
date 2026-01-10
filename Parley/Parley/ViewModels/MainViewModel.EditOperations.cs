@@ -73,6 +73,8 @@ namespace DialogEditor.ViewModels
                         RestoreTreeState(savedTreeState);
                         // Clear restoring flag after tree state is fully restored
                         _undoRedoService.SetRestoring(false);
+                        // #809: Notify FlowView to refresh after undo
+                        DialogChangeEventBus.Instance.PublishDialogRefreshed("Undo");
                     }, global::Avalonia.Threading.DispatcherPriority.Loaded);
                 });
 
@@ -132,6 +134,8 @@ namespace DialogEditor.ViewModels
                         RestoreTreeState(savedTreeState);
                         // Clear restoring flag after tree state is fully restored
                         _undoRedoService.SetRestoring(false);
+                        // #809: Notify FlowView to refresh after redo
+                        DialogChangeEventBus.Instance.PublishDialogRefreshed("Redo");
                     }, global::Avalonia.Threading.DispatcherPriority.Loaded);
                 });
 

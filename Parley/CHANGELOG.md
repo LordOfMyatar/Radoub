@@ -55,6 +55,8 @@ FlowView now supports all TreeView keyboard shortcuts:
 
 Works in embedded (side-by-side), tabbed, and floating window modes.
 
+FlowView now auto-refreshes on structural changes (add/delete/move/undo/redo).
+
 ---
 
 ## [0.1.110-alpha] - 2026-01-02

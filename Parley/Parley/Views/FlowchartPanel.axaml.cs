@@ -119,6 +119,19 @@ namespace DialogEditor.Views
                     _viewModel.HandleExternalCollapseEvent(e);
                 });
             }
+
+            // #809: Refresh FlowView on structural changes (add/delete/move/undo/redo)
+            if (e.ChangeType == DialogChangeType.NodeAdded ||
+                e.ChangeType == DialogChangeType.NodeDeleted ||
+                e.ChangeType == DialogChangeType.NodeMoved ||
+                e.ChangeType == DialogChangeType.DialogRefreshed)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _viewModel.RefreshGraph();
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"FlowView refreshed due to {e.ChangeType}");
+                });
+            }
         }
 
         private void OnThemeApplied(object? sender, EventArgs e)
