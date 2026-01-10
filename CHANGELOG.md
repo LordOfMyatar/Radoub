@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.28] - 2026-01-10
+**Branch**: `radoub/issue-860` | **PR**: #TBD
+
+### Sprint: Accessibility & Cross-Platform (#860)
+
+Cross-platform polish: responsive breakpoints, consistent emoji rendering, and colorblind-friendly status indicators.
+
+#### Work Items
+- [ ] #822 - Responsive breakpoint handling for small screens
+- [ ] #821 - Consistent emoji rendering across platforms
+- [ ] #824 - Icons/text for colorblind users on status indicators
+
+---
+
 ## [0.9.27] - 2026-01-10
 **Branch**: `radoub/issue-722` | **PR**: #844
 
