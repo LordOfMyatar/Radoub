@@ -9,11 +9,11 @@
 
     <Grid x:Name="InventoryGrid">
         <Grid.ColumnDefinitions>
-            <!-- Left: Equipment + Backpack -->
-            <ColumnDefinition Width="350" MinWidth="250"/>
+            <!-- Left: Equipment + Backpack - reduced for 1024x768 support -->
+            <ColumnDefinition Width="300" MinWidth="200"/>
             <ColumnDefinition Width="5"/>
             <!-- Right: Item Palette -->
-            <ColumnDefinition Width="*" MinWidth="300"/>
+            <ColumnDefinition Width="*" MinWidth="250"/>
         </Grid.ColumnDefinitions>
 
         <!-- Left Panel: Equipment Slots + Backpack -->

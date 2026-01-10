@@ -23,13 +23,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Cross-platform polish: responsive breakpoints, consistent emoji rendering, and colorblind-friendly status indicators.
 
 #### Work Items
-- [ ] #822 - Responsive breakpoint handling for small screens
+- [x] #822 - Responsive breakpoint handling for small screens
 - [ ] #821 - Consistent emoji rendering across platforms
 - [x] #824 - Icons/text for colorblind users on status indicators
 
 #### Added
 - **StatusIndicatorHelper** in Radoub.UI - Unicode icons (checkmark, X, warning, info) for colorblind-accessible validation messages
 - All SettingsWindow path validations now show icons alongside color (WCAG 2.1 1.4.1 compliance)
+
+#### Changed
+- **Responsive layouts** for 1024x768 support:
+  - Parley: Main panel uses proportional widths (2*/1*) instead of fixed 800px; speaker row uses WrapPanel
+  - Manifest: Category/Entry properties use WrapPanel and flexible widths
+  - Quartermaster: SpellsPanel class radios and filters use WrapPanel; reduced minimum widths for panels
 
 ---
 

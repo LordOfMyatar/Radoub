@@ -85,10 +85,10 @@
         <Grid x:Name="MainGrid">
             <Grid.ColumnDefinitions>
                 <!-- Sidebar -->
-                <ColumnDefinition Width="200" MinWidth="150" MaxWidth="300"/>
+                <ColumnDefinition Width="200" MinWidth="140" MaxWidth="300"/>
                 <ColumnDefinition Width="5"/>
-                <!-- Content Area -->
-                <ColumnDefinition Width="*" MinWidth="400"/>
+                <!-- Content Area - reduced minimum for 1024x768 support -->
+                <ColumnDefinition Width="*" MinWidth="300"/>
             </Grid.ColumnDefinitions>
 
             <!-- Sidebar -->
