@@ -144,7 +144,8 @@ namespace DialogEditor.Views
                 populatePropertiesPanel: PopulatePropertiesPanel,
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
-                setIsSettingSelectionProgrammatically: value => _uiState.IsSettingSelectionProgrammatically = value);
+                setIsSettingSelectionProgrammatically: value => _uiState.IsSettingSelectionProgrammatically = value,
+                shortcutManager: _services.KeyboardShortcuts); // #809: Enable keyboard shortcuts in FlowView
 
             _controllers.TreeView = new TreeViewUIController(
                 window: this,

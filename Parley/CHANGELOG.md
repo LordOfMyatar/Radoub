@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [x] #826 - Validate DLG Filename Length on Save
 - [x] #827 - Validate Sound Files Are Mono on Assignment
-- [ ] #809 - FlowView keyboard shortcuts parity with TreeView
+- [x] #809 - FlowView keyboard shortcuts parity with TreeView
 
 #### #826 - Filename Length Validation
 
@@ -37,6 +37,23 @@ Error dialog shows filename, length, and maximum allowed.
 Shows confirmation dialog when assigning stereo WAV files to conversation nodes.
 NWN conversation audio requires mono; stereo plays incorrectly in-game.
 User can proceed anyway (for post-processing workflows) or cancel.
+
+#### #809 - FlowView Keyboard Shortcuts
+
+FlowView now supports all TreeView keyboard shortcuts:
+
+| Shortcut | Action |
+|----------|--------|
+| Ctrl+D | Add Smart Node |
+| Ctrl+Shift+D | Add Sibling Node |
+| Ctrl+R | Add Context-Aware Reply |
+| Delete | Delete Node |
+| Ctrl+C/X/V/L | Copy/Cut/Paste/Link |
+| Ctrl+Z/Y | Undo/Redo |
+| Ctrl+Shift+Up/Down | Move Node Up/Down |
+| Ctrl+J | Go to Parent Node |
+
+Works in embedded (side-by-side), tabbed, and floating window modes.
 
 ---
 
