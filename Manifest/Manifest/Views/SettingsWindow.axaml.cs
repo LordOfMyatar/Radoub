@@ -6,6 +6,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Manifest.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using ThemeManifest = Radoub.UI.Models.ThemeManifest;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
@@ -314,13 +315,13 @@ public partial class SettingsWindow : Window
             GamePathTextBox.Text = detectedPath;
             RadoubSettings.Instance.BaseGameInstallPath = detectedPath;
             UpdateGamePathValidation();
-            GamePathValidationText.Text = "Auto-detected game installation";
+            GamePathValidationText.Text = StatusIndicatorHelper.FormatValidation("Auto-detected game installation", true);
             GamePathValidationText.Foreground = GetSuccessBrush();
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Game path auto-detected: {SanitizePath(detectedPath)}");
         }
         else
         {
-            GamePathValidationText.Text = "Could not auto-detect game path. Please browse manually.";
+            GamePathValidationText.Text = StatusIndicatorHelper.FormatWarning("Could not auto-detect game path. Please browse manually.");
             GamePathValidationText.Foreground = GetWarningBrush();
             UnifiedLogger.LogApplication(LogLevel.WARN, "Game path auto-detection failed");
         }
@@ -337,7 +338,7 @@ public partial class SettingsWindow : Window
         }
 
         var result = ResourcePathDetector.ValidateBaseGamePathWithMessage(path);
-        GamePathValidationText.Text = result.Message;
+        GamePathValidationText.Text = StatusIndicatorHelper.FormatValidation(result.Message, result.IsValid);
         GamePathValidationText.Foreground = result.IsValid
             ? GetSuccessBrush()
             : GetErrorBrush();
@@ -400,13 +401,13 @@ public partial class SettingsWindow : Window
             UserPathTextBox.Text = detectedPath;
             RadoubSettings.Instance.NeverwinterNightsPath = detectedPath;
             UpdateUserPathValidation();
-            UserPathValidationText.Text = "Auto-detected user documents";
+            UserPathValidationText.Text = StatusIndicatorHelper.FormatValidation("Auto-detected user documents", true);
             UserPathValidationText.Foreground = GetSuccessBrush();
             UnifiedLogger.LogApplication(LogLevel.INFO, $"User path auto-detected: {SanitizePath(detectedPath)}");
         }
         else
         {
-            UserPathValidationText.Text = "Could not auto-detect user path. Please browse manually.";
+            UserPathValidationText.Text = StatusIndicatorHelper.FormatWarning("Could not auto-detect user path. Please browse manually.");
             UserPathValidationText.Foreground = GetWarningBrush();
             UnifiedLogger.LogApplication(LogLevel.WARN, "User path auto-detection failed");
         }
@@ -423,7 +424,7 @@ public partial class SettingsWindow : Window
         }
 
         var result = ResourcePathDetector.ValidateGamePathWithMessage(path);
-        UserPathValidationText.Text = result.Message;
+        UserPathValidationText.Text = StatusIndicatorHelper.FormatValidation(result.Message, result.IsValid);
         UserPathValidationText.Foreground = result.IsValid
             ? GetSuccessBrush()
             : GetErrorBrush();

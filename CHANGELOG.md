@@ -25,7 +25,11 @@ Cross-platform polish: responsive breakpoints, consistent emoji rendering, and c
 #### Work Items
 - [ ] #822 - Responsive breakpoint handling for small screens
 - [ ] #821 - Consistent emoji rendering across platforms
-- [ ] #824 - Icons/text for colorblind users on status indicators
+- [x] #824 - Icons/text for colorblind users on status indicators
+
+#### Added
+- **StatusIndicatorHelper** in Radoub.UI - Unicode icons (checkmark, X, warning, info) for colorblind-accessible validation messages
+- All SettingsWindow path validations now show icons alongside color (WCAG 2.1 1.4.1 compliance)
 
 ---
 
