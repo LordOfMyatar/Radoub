@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.27] - 2026-01-10
-**Branch**: `radoub/issue-722` | **PR**: #TBD
+**Branch**: `radoub/issue-722` | **PR**: #844
 
 ### Feat: Minimal Test Module for Cross-Platform Integration Testing (#722)
 
