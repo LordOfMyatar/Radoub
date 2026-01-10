@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.111-alpha] - 2026-01-10
+**Branch**: `parley/issue-701` | **PR**: #TBD
+
+### Fix: Sound Browser test needs module context (#701)
+
+Sound Browser test fails because the browser requires game/module context to find sounds.
+
+---
+
 ## [0.1.110-alpha] - 2026-01-02
 **Branch**: `parley/issue-723` | **PR**: #724
 
