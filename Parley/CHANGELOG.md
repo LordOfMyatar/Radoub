@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.111-alpha] - 2026-01-10
-**Branch**: `parley/issue-701` | **PR**: #TBD
+**Branch**: `parley/issue-701` | **PR**: #846
 
 ### Fix: Sound Browser test needs module context (#701)
 
