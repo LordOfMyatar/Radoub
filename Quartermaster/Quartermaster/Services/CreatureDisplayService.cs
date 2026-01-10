@@ -148,6 +148,46 @@ public class CreatureDisplayService
         };
     }
 
+    /// <summary>
+    /// Gets the base skill points per level for a class (from SkillPointBase column in classes.2da).
+    /// </summary>
+    public int GetClassSkillPointBase(int classId)
+    {
+        var skillPointBase = _gameDataService.Get2DAValue("classes", classId, "SkillPointBase");
+        if (!string.IsNullOrEmpty(skillPointBase) && skillPointBase != "****" && int.TryParse(skillPointBase, out int points))
+        {
+            return points;
+        }
+
+        // Fallback to hardcoded values
+        return classId switch
+        {
+            0 => 4,  // Barbarian
+            1 => 6,  // Bard
+            2 => 2,  // Cleric
+            3 => 4,  // Druid
+            4 => 2,  // Fighter
+            5 => 4,  // Monk
+            6 => 2,  // Paladin
+            7 => 6,  // Ranger
+            8 => 8,  // Rogue
+            9 => 2,  // Sorcerer
+            10 => 2, // Wizard
+            11 => 6, // Shadowdancer
+            12 => 4, // Harper Scout
+            13 => 4, // Arcane Archer
+            14 => 4, // Assassin
+            15 => 2, // Blackguard
+            16 => 2, // Champion of Torm
+            17 => 2, // Weapon Master
+            18 => 2, // Pale Master
+            19 => 4, // Shifter
+            20 => 2, // Dwarven Defender
+            21 => 2, // Dragon Disciple
+            _ => 2   // Default
+        };
+    }
+
     #endregion
 
     #region Racial Modifiers

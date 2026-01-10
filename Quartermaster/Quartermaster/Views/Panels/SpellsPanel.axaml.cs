@@ -64,6 +64,21 @@ public partial class SpellsPanel : UserControl
     public SpellsPanel()
     {
         InitializeComponent();
+
+        // Subscribe to theme changes to refresh color-dependent view models
+        SettingsService.Instance.PropertyChanged += OnSettingsPropertyChanged;
+    }
+
+    private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
+        {
+            // Theme changed - reload creature to refresh colors
+            if (_currentCreature != null)
+            {
+                LoadCreature(_currentCreature);
+            }
+        }
     }
 
     private void InitializeComponent()
@@ -752,6 +767,10 @@ public partial class SpellsPanel : UserControl
             return;
         }
 
+        // Get theme-aware font sizes
+        var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
+        var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
+
         var casterClasses = new List<(int classIndex, string className, int classLevel, int[] limits, CreatureClass classEntry, bool isSpontaneous)>();
 
         // Find all caster classes
@@ -824,7 +843,7 @@ public partial class SpellsPanel : UserControl
         {
             Text = "Lvl",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
-            FontSize = 12,
+            FontSize = smallFontSize,
             Margin = new Avalonia.Thickness(0, 0, 10, 4),
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
         };
@@ -842,7 +861,7 @@ public partial class SpellsPanel : UserControl
             {
                 Text = className,
                 FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                FontSize = 12,
+                FontSize = smallFontSize,
                 Margin = new Avalonia.Thickness(4, 0, 4, 4),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Foreground = isSelected
@@ -865,7 +884,7 @@ public partial class SpellsPanel : UserControl
             var levelLabel = new TextBlock
             {
                 Text = spellLevel.ToString(),
-                FontSize = 12,
+                FontSize = smallFontSize,
                 FontWeight = Avalonia.Media.FontWeight.SemiBold,
                 Margin = new Avalonia.Thickness(0, 2, 10, 2),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
@@ -931,7 +950,7 @@ public partial class SpellsPanel : UserControl
                 var slotCell = new TextBlock
                 {
                     Text = cellText,
-                    FontSize = 12,
+                    FontSize = smallFontSize,
                     Margin = new Avalonia.Thickness(4, 2, 4, 2),
                     HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
@@ -960,6 +979,11 @@ public partial class SpellsPanel : UserControl
             _knownSpellsListBorder.IsVisible = false;
             return;
         }
+
+        // Get theme-aware font sizes
+        var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
+        var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
+        var xsmallFontSize = this.FindResource("FontSizeXSmall") as double? ?? 10;
 
         // First pass: collect all known spells and count occurrences across classes
         var spellOccurrences = new Dictionary<int, List<string>>(); // spellId -> list of class names
@@ -1020,7 +1044,7 @@ public partial class SpellsPanel : UserControl
             {
                 Text = className,
                 FontWeight = Avalonia.Media.FontWeight.Bold,
-                FontSize = 12,
+                FontSize = smallFontSize,
                 Foreground = isSelectedClass
                     ? GetInfoBrush()
                     : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
@@ -1039,7 +1063,7 @@ public partial class SpellsPanel : UserControl
                 {
                     Text = level == 0 ? "  Cantrips" : $"  Level {level}",
                     FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                    FontSize = 10,
+                    FontSize = xsmallFontSize,
                     Foreground = GetDisabledBrush(),
                     Margin = new Avalonia.Thickness(0, 4, 0, 2)
                 };
@@ -1079,7 +1103,7 @@ public partial class SpellsPanel : UserControl
                     var spellLabel = new TextBlock
                     {
                         Text = $"    {displayName}",
-                        FontSize = 11,
+                        FontSize = smallFontSize,
                         Foreground = foreground,
                         Margin = new Avalonia.Thickness(0, 1, 0, 1)
                     };

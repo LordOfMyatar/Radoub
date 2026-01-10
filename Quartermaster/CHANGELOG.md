@@ -10,6 +10,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.32-alpha] - 2026-01-09
+**Branch**: `quartermaster/issue-734` | **PR**: #804
+
+### Feat: Edit Skill Ranks (#734)
+
+Enable skill rank editing via +/- buttons with validation against class skill maximums.
+
+#### Skill Editing
+- +/- buttons now functional for each skill row
+- Max ranks enforced: class skills = level+3, cross-class = (level+3)/2
+- Buttons disable appropriately at min (0) and max rank limits
+- Changes immediately update UtcFile.SkillList for save
+- SkillsChanged event marks document dirty
+
+#### UI Improvements
+- Added "Mod" column showing ability modifier (+X/-X format) with color coding
+- Added skill points summary table (left panel) showing:
+  - Base skill points per class from 2DA (SkillPointBase column)
+  - Points per level calculation (base + INT modifier)
+  - Total points spent vs estimated available
+  - Warning color when over-allocated
+- Summary displays character level and max rank limits
+- Tooltips show current max rank or reason for disabled state
+- Theme-aware sizing throughout (no hardcoded font sizes)
+- Wider columns for better readability
+- Footer shows max rank formula reference
+
+---
+
 ## [0.1.31-alpha] - 2026-01-07
 **Branch**: `quartermaster/issue-799` | **PR**: #800
 
