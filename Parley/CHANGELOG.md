@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.111-alpha] - 2026-01-10
+**Branch**: `parley/issue-856` | **PR**: #TBD
+
+### Sprint: Validation & Polish (#856)
+
+- [ ] #826 - Validate DLG Filename Length on Save
+- [ ] #827 - Validate Sound Files Are Mono on Assignment
+- [ ] #809 - FlowView keyboard shortcuts parity with TreeView
+
+---
+
 ## [0.1.110-alpha] - 2026-01-02
 **Branch**: `parley/issue-723` | **PR**: #724
 
