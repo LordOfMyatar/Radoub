@@ -15,6 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.27] - 2026-01-10
+**Branch**: `radoub/issue-722` | **PR**: #TBD
+
+### Feat: Minimal Test Module for Cross-Platform Integration Testing (#722)
+
+Create self-contained test environment enabling full integration testing without a real NWN installation.
+
+---
+
 ## [0.9.26] - 2026-01-10
 **Branch**: `radoub/issue-798` | **PR**: #838
 
