@@ -15,9 +15,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Validation & Polish (#856)
 
-- [ ] #826 - Validate DLG Filename Length on Save
+- [x] #826 - Validate DLG Filename Length on Save
 - [ ] #827 - Validate Sound Files Are Mono on Assignment
 - [ ] #809 - FlowView keyboard shortcuts parity with TreeView
+
+#### #826 - Filename Length Validation
+
+Blocks saving DLG files with names exceeding Aurora Engine's 16-character limit.
+
+| Save Point | Behavior |
+|------------|----------|
+| New File | Validates before creating |
+| Save | Shows error dialog, prompts Save As |
+| Save As | Validates before saving |
+| Auto-save | Skips with status bar warning |
+
+Error dialog shows filename, length, and maximum allowed.
 
 ---
 

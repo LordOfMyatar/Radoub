@@ -659,10 +659,17 @@ namespace DialogEditor.Views
                 var file = await storageProvider.SaveFilePickerAsync(options);
                 if (file != null)
                 {
+                    var filePath = file.Path.LocalPath;
+
+                    // #826: Validate filename length for Aurora Engine
+                    if (!await _controllers.FileMenu.ValidateFilenameAsync(filePath))
+                    {
+                        return false;
+                    }
+
                     // CRITICAL FIX: Save current node properties before saving file
                     SaveCurrentNodeProperties();
 
-                    var filePath = file.Path.LocalPath;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Saving file as: {UnifiedLogger.SanitizePath(filePath)}");
                     var success = await _viewModel.SaveDialogAsync(filePath);
 

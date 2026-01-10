@@ -23,9 +23,15 @@ namespace Parley.Views.Helpers
     /// 2. Recent files menu population
     /// 3. File dialog coordination
     /// 4. Module info display updates
+    /// 5. Filename validation for Aurora Engine constraints (#826)
     /// </summary>
     public class FileMenuController
     {
+        /// <summary>
+        /// Aurora Engine maximum filename length (excluding extension).
+        /// Documented in CLAUDE.md under "Aurora Engine File Naming Constraints".
+        /// </summary>
+        private const int MaxAuroraFilenameLength = 16;
         private readonly Window _window;
         private readonly SafeControlFinder _controls;
         private readonly Func<MainViewModel> _getViewModel;
@@ -104,6 +110,13 @@ namespace Parley.Views.Helpers
                 if (file != null)
                 {
                     var filePath = file.Path.LocalPath;
+
+                    // #826: Validate filename length for Aurora Engine
+                    if (!await ValidateFilenameAsync(filePath))
+                    {
+                        return;
+                    }
+
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Creating new dialog at: {UnifiedLogger.SanitizePath(filePath)}");
 
                     // Create blank dialog
@@ -197,6 +210,14 @@ namespace Parley.Views.Helpers
         {
             if (string.IsNullOrEmpty(ViewModel.CurrentFileName))
             {
+                await _showSaveAsDialogAsync();
+                return;
+            }
+
+            // #826: Validate filename length for Aurora Engine
+            if (!await ValidateFilenameAsync(ViewModel.CurrentFileName))
+            {
+                // Prompt Save As to allow user to choose a shorter filename
                 await _showSaveAsDialogAsync();
                 return;
             }
@@ -536,6 +557,70 @@ namespace Parley.Views.Helpers
 
             await dialog.ShowDialog(_window);
             return result;
+        }
+
+        #endregion
+
+        #region Filename Validation (#826)
+
+        /// <summary>
+        /// Validates filename length for Aurora Engine compatibility.
+        /// Returns true if valid, false if blocked.
+        /// Shows error dialog if filename exceeds 16 characters.
+        /// </summary>
+        public async Task<bool> ValidateFilenameAsync(string filePath)
+        {
+            var filename = Path.GetFileNameWithoutExtension(filePath);
+            if (filename.Length <= MaxAuroraFilenameLength)
+            {
+                return true;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.WARN,
+                $"Filename '{filename}' is {filename.Length} characters, exceeds Aurora Engine limit of {MaxAuroraFilenameLength}");
+
+            await ShowFilenameTooLongError(filename);
+            return false;
+        }
+
+        /// <summary>
+        /// Shows error dialog for filename exceeding Aurora Engine limit.
+        /// </summary>
+        private async Task ShowFilenameTooLongError(string filename)
+        {
+            var dialog = new Window
+            {
+                Title = "Filename Too Long",
+                MinWidth = 450,
+                MaxWidth = 550,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                CanResize = false
+            };
+
+            var panel = new StackPanel { Margin = new Thickness(20) };
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = $"Filename '{filename}' is {filename.Length} characters.\n\n" +
+                       $"Aurora Engine maximum is {MaxAuroraFilenameLength} characters.\n\n" +
+                       "The game cannot load files with longer names.",
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                MaxWidth = 510,
+                Margin = new Thickness(0, 0, 0, 20)
+            });
+
+            var okButton = new Button
+            {
+                Content = "OK",
+                Width = 80,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+            };
+            okButton.Click += (s, e) => dialog.Close();
+            panel.Children.Add(okButton);
+
+            dialog.Content = panel;
+            await dialog.ShowDialog(_window);
         }
 
         #endregion

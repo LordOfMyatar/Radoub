@@ -414,6 +414,15 @@ namespace DialogEditor.Views
                     return;
                 }
 
+                // #826: Skip auto-save if filename exceeds Aurora Engine limit
+                var filename = System.IO.Path.GetFileNameWithoutExtension(_viewModel.CurrentFileName);
+                if (filename.Length > 16)
+                {
+                    _viewModel.StatusMessage = $"⚠ Filename '{filename}' too long ({filename.Length} chars, max 16). Use Save As to rename.";
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Auto-save skipped: filename '{filename}' exceeds 16 char limit");
+                    return;
+                }
+
                 try
                 {
                     // Phase 1 Step 4: Enhanced save status indicators
