@@ -25,9 +25,16 @@ Enable skill rank editing via +/- buttons with validation against class skill ma
 - SkillsChanged event marks document dirty
 
 #### UI Improvements
+- Added "Mod" column showing ability modifier (+X/-X format) with color coding
+- Added skill points summary table (left panel) showing:
+  - Base skill points per class from 2DA (SkillPointBase column)
+  - Points per level calculation (base + INT modifier)
+  - Total points spent vs estimated available
+  - Warning color when over-allocated
 - Summary displays character level and max rank limits
 - Tooltips show current max rank or reason for disabled state
-- Theme-aware button sizing (MinWidth/MinHeight instead of fixed)
+- Theme-aware sizing throughout (no hardcoded font sizes)
+- Wider columns for better readability
 - Footer shows max rank formula reference
 
 ---

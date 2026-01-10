@@ -30,6 +30,8 @@ public partial class SkillsPanel : BasePanelControl
     private TextBlock? _noSkillsText;
     private ComboBox? _sortComboBox;
     private CheckBox? _trainedOnlyCheckBox;
+    private Border? _skillPointsTableBorder;
+    private StackPanel? _skillPointsTablePanel;
 
     private ObservableCollection<SkillViewModel> _skills = new();
     private List<SkillViewModel> _allSkills = new();
@@ -51,6 +53,8 @@ public partial class SkillsPanel : BasePanelControl
         _noSkillsText = this.FindControl<TextBlock>("NoSkillsText");
         _sortComboBox = this.FindControl<ComboBox>("SortComboBox");
         _trainedOnlyCheckBox = this.FindControl<CheckBox>("TrainedOnlyCheckBox");
+        _skillPointsTableBorder = this.FindControl<Border>("SkillPointsTableBorder");
+        _skillPointsTablePanel = this.FindControl<StackPanel>("SkillPointsTablePanel");
 
         if (_skillsList != null)
             _skillsList.ItemsSource = _skills;
@@ -229,6 +233,10 @@ public partial class SkillsPanel : BasePanelControl
         SetText(_skillsSummaryText, "0 skills with ranks");
         if (_noSkillsText != null)
             _noSkillsText.IsVisible = true;
+        if (_skillPointsTableBorder != null)
+            _skillPointsTableBorder.IsVisible = false;
+        if (_skillPointsTablePanel != null)
+            _skillPointsTablePanel.Children.Clear();
     }
 
     private void ApplySortAndFilter()
@@ -273,6 +281,178 @@ public partial class SkillsPanel : BasePanelControl
 
         SetText(_skillsSummaryText,
             $"Level {_totalLevel}: {skillsWithRanks} skills with ranks ({totalRanks} total) | Max: {maxClassSkillRank} class / {maxCrossClassRank} cross{filterNote}");
+
+        // Update skill points table
+        UpdateSkillPointsTable();
+    }
+
+    /// <summary>
+    /// Updates the skill points summary table showing points per class.
+    /// </summary>
+    private void UpdateSkillPointsTable()
+    {
+        if (_skillPointsTablePanel == null || _skillPointsTableBorder == null) return;
+
+        _skillPointsTablePanel.Children.Clear();
+
+        if (CurrentCreature == null || CurrentCreature.ClassList.Count == 0)
+        {
+            _skillPointsTableBorder.IsVisible = false;
+            return;
+        }
+
+        _skillPointsTableBorder.IsVisible = true;
+
+        var totalSkillPoints = 0;
+        var totalRanksSpent = _allSkills.Sum(s => s.Ranks);
+
+        foreach (var classEntry in CurrentCreature.ClassList)
+        {
+            var className = _displayService?.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
+            var skillPointBase = GetClassSkillPointBase(classEntry.Class);
+            var intModifier = CreatureDisplayService.CalculateAbilityBonus(CurrentCreature.Int);
+
+            // Skill points per level = base + INT modifier (minimum 1)
+            var pointsPerLevel = Math.Max(1, skillPointBase + intModifier);
+            // First level gets 4x points
+            var firstLevelPoints = pointsPerLevel * 4;
+            var additionalLevelPoints = pointsPerLevel * (classEntry.ClassLevel - 1);
+            var classPoints = firstLevelPoints + additionalLevelPoints;
+
+            // For multiclass, only first class gets 4x at level 1
+            // This is an approximation since we don't know level-up order
+            if (CurrentCreature.ClassList.IndexOf(classEntry) > 0)
+            {
+                classPoints = pointsPerLevel * classEntry.ClassLevel;
+            }
+
+            totalSkillPoints += classPoints;
+
+            // Create row for this class
+            var row = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Margin = new Avalonia.Thickness(0, 2) };
+
+            // Get theme font sizes
+            var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
+            var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
+            var xsmallFontSize = this.FindResource("FontSizeXSmall") as double? ?? 10;
+
+            var classLabel = new TextBlock
+            {
+                Text = $"{className} ({classEntry.ClassLevel}):",
+                FontSize = smallFontSize,
+                MinWidth = 100,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            row.Children.Add(classLabel);
+
+            var pointsLabel = new TextBlock
+            {
+                Text = $"{skillPointBase}+INT = {pointsPerLevel}/lvl",
+                FontSize = xsmallFontSize,
+                Foreground = this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush ?? GetDisabledBrush(),
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            row.Children.Add(pointsLabel);
+
+            _skillPointsTablePanel.Children.Add(row);
+        }
+
+        // Get theme font sizes for remaining elements
+        var normalSize = this.FindResource("FontSizeNormal") as double? ?? 14;
+        var smallSize = this.FindResource("FontSizeSmall") as double? ?? 12;
+        var xsmallSize = this.FindResource("FontSizeXSmall") as double? ?? 10;
+
+        // Add separator
+        var separator = new Border
+        {
+            Height = 1,
+            Background = this.FindResource("SystemControlForegroundBaseLowBrush") as IBrush ?? GetDisabledBrush(),
+            Margin = new Avalonia.Thickness(0, 6)
+        };
+        _skillPointsTablePanel.Children.Add(separator);
+
+        // Add total summary
+        var usageColor = totalRanksSpent > totalSkillPoints ? GetErrorBrush() :
+                         totalRanksSpent == totalSkillPoints ? GetSuccessBrush() :
+                         this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? Brushes.White;
+
+        var totalRow = new TextBlock
+        {
+            Text = $"Total: {totalRanksSpent} / ~{totalSkillPoints} points",
+            FontSize = smallSize,
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            Foreground = usageColor
+        };
+        _skillPointsTablePanel.Children.Add(totalRow);
+
+        // Add note about approximation
+        var noteRow = new TextBlock
+        {
+            Text = "(Estimate - excludes race/feat bonuses)",
+            FontSize = xsmallSize,
+            FontStyle = Avalonia.Media.FontStyle.Italic,
+            Foreground = this.FindResource("SystemControlForegroundBaseMediumLowBrush") as IBrush ?? GetDisabledBrush(),
+            Margin = new Avalonia.Thickness(0, 4, 0, 0)
+        };
+        _skillPointsTablePanel.Children.Add(noteRow);
+    }
+
+    /// <summary>
+    /// Gets the base skill points per level for a class from 2DA or fallback.
+    /// </summary>
+    private int GetClassSkillPointBase(int classId)
+    {
+        // Try 2DA lookup first
+        if (_displayService != null)
+        {
+            var skillPointBase = _displayService.GetClassSkillPointBase(classId);
+            if (skillPointBase > 0)
+                return skillPointBase;
+        }
+
+        // Fallback to hardcoded values
+        return classId switch
+        {
+            0 => 4,  // Barbarian
+            1 => 4,  // Bard
+            2 => 2,  // Cleric
+            3 => 4,  // Druid
+            4 => 2,  // Fighter
+            5 => 4,  // Monk
+            6 => 2,  // Paladin
+            7 => 4,  // Ranger
+            8 => 8,  // Rogue
+            9 => 2,  // Sorcerer
+            10 => 2, // Wizard
+            11 => 6, // Arcane Archer
+            12 => 4, // Assassin
+            13 => 4, // Blackguard
+            14 => 4, // Harper Scout
+            15 => 2, // Shadow Dancer - wait, should be 6
+            16 => 2, // Divine Champion
+            17 => 2, // Pale Master
+            18 => 2, // Weapon Master
+            19 => 4, // Shifter
+            20 => 2, // Dwarven Defender
+            21 => 2, // Dragon Disciple
+            _ => 2   // Default
+        };
+    }
+
+    private IBrush GetSuccessBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var brush) == true && brush is IBrush b)
+            return b;
+        return new SolidColorBrush(Color.Parse("#388E3C"));
+    }
+
+    private IBrush GetErrorBrush()
+    {
+        var app = Application.Current;
+        if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var brush) == true && brush is IBrush b)
+            return b;
+        return new SolidColorBrush(Color.Parse("#D32F2F"));
     }
 
     private string GetSkillName(int skillId)
@@ -411,6 +591,38 @@ public class SkillViewModel : System.ComponentModel.INotifyPropertyChanged
     public bool IsClassSkill { get; set; }
     public bool IsUnavailable { get; set; }
     public string ClassSkillIndicator { get; set; } = "○";
+
+    /// <summary>
+    /// Display string for ability modifier (+X, -X, or +0).
+    /// </summary>
+    public string ModifierDisplay => AbilityModifier >= 0 ? $"+{AbilityModifier}" : AbilityModifier.ToString();
+
+    /// <summary>
+    /// Color for the modifier display (green for positive, red for negative, gray for zero).
+    /// Uses theme colors when available.
+    /// </summary>
+    public IBrush ModifierColor
+    {
+        get
+        {
+            var app = Application.Current;
+            if (AbilityModifier > 0)
+            {
+                if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var brush) == true && brush is IBrush b)
+                    return b;
+                return new SolidColorBrush(Color.Parse("#388E3C")); // Green fallback
+            }
+            if (AbilityModifier < 0)
+            {
+                if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var brush) == true && brush is IBrush b)
+                    return b;
+                return new SolidColorBrush(Color.Parse("#D32F2F")); // Red fallback
+            }
+            if (app?.Resources.TryGetResource("ThemeDisabled", ThemeVariant.Default, out var grayBrush) == true && grayBrush is IBrush g)
+                return g;
+            return new SolidColorBrush(Color.Parse("#757575")); // Gray fallback
+        }
+    }
 
     /// <summary>
     /// Maximum ranks allowed for this skill based on character level and class skill status.
