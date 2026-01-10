@@ -38,7 +38,9 @@ public partial class App : Application
         {
             // SafeMode: Reset visual settings to safe defaults
             ApplySafeModeDefaults();
-            PluginSettingsService.Instance.SafeMode = true;
+            // Note: Don't access PluginSettingsService.Instance here - we deleted the file
+            // and accessing it would recreate it. The plugin system will handle SafeMode
+            // when it initializes later.
             UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
         }
 
@@ -111,7 +113,7 @@ public partial class App : Application
         UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode: Reset theme to light, fonts to default, FlowView disabled");
     }
 
-    public override void OnFrameworkInitializationCompleted()
+    public override async void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -124,7 +126,7 @@ public partial class App : Application
             if (isSafeMode)
             {
                 var dialog = new SafeModeDialog();
-                dialog.ShowDialog(null!);
+                await dialog.ShowDialog<object?>(null!);
 
                 if (!dialog.ShouldContinue)
                 {
