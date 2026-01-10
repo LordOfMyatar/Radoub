@@ -30,6 +30,7 @@ public partial class SkillsPanel : BasePanelControl
     private TextBlock? _noSkillsText;
     private ComboBox? _sortComboBox;
     private CheckBox? _trainedOnlyCheckBox;
+    private CheckBox? _hideUnavailableCheckBox;
     private Border? _skillPointsTableBorder;
     private StackPanel? _skillPointsTablePanel;
 
@@ -53,6 +54,7 @@ public partial class SkillsPanel : BasePanelControl
         _noSkillsText = this.FindControl<TextBlock>("NoSkillsText");
         _sortComboBox = this.FindControl<ComboBox>("SortComboBox");
         _trainedOnlyCheckBox = this.FindControl<CheckBox>("TrainedOnlyCheckBox");
+        _hideUnavailableCheckBox = this.FindControl<CheckBox>("HideUnavailableCheckBox");
         _skillPointsTableBorder = this.FindControl<Border>("SkillPointsTableBorder");
         _skillPointsTablePanel = this.FindControl<StackPanel>("SkillPointsTablePanel");
 
@@ -64,6 +66,9 @@ public partial class SkillsPanel : BasePanelControl
 
         if (_trainedOnlyCheckBox != null)
             _trainedOnlyCheckBox.IsCheckedChanged += (s, e) => ApplySortAndFilter();
+
+        if (_hideUnavailableCheckBox != null)
+            _hideUnavailableCheckBox.IsCheckedChanged += (s, e) => ApplySortAndFilter();
     }
 
     private void OnIncrementClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -246,10 +251,17 @@ public partial class SkillsPanel : BasePanelControl
 
         var filtered = _allSkills.AsEnumerable();
 
+        // Filter: Trained Only
         bool trainedOnly = _trainedOnlyCheckBox?.IsChecked ?? false;
         if (trainedOnly)
             filtered = filtered.Where(s => s.Ranks > 0);
 
+        // Filter: Hide Unavailable
+        bool hideUnavailable = _hideUnavailableCheckBox?.IsChecked ?? false;
+        if (hideUnavailable)
+            filtered = filtered.Where(s => !s.IsUnavailable);
+
+        // Sort
         int sortIndex = _sortComboBox?.SelectedIndex ?? 0;
         filtered = sortIndex switch
         {

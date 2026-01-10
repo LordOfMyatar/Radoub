@@ -48,7 +48,7 @@
                        Margin="0,5,0,10"/>
 
             <!-- Sort and Filter Controls -->
-            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,10">
+            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,0,0,10">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="Sort by:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="SortComboBox"
@@ -65,10 +65,18 @@
                           x:Name="TrainedOnlyCheckBox"
                           Content="Trained Only"
                           VerticalAlignment="Center"
+                          Margin="0,0,10,0"
                           AutomationProperties.AutomationId="SkillsTrainedOnlyCheck"/>
 
+                <CheckBox Grid.Column="3"
+                          x:Name="HideUnavailableCheckBox"
+                          Content="Hide Unavailable"
+                          VerticalAlignment="Center"
+                          ToolTip.Tip="Hide skills this character cannot use (e.g., Perform for non-Bards)"
+                          AutomationProperties.AutomationId="SkillsHideUnavailableCheck"/>
+
                 <!-- Legend -->
-                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="20,0,0,0">
+                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="10" Margin="20,0,0,0">
                     <StackPanel Orientation="Horizontal" Spacing="3">
                         <TextBlock Text="●" Foreground="{DynamicResource ThemeInfo}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
                         <TextBlock Text="Class" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"
