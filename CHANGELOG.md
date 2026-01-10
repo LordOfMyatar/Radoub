@@ -22,6 +22,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Create self-contained test environment enabling full integration testing without a real NWN installation.
 
+#### Added (Radoub.IntegrationTests)
+- **TestData folder structure** with spoofed NWN environment:
+  - `TestData/GameRoot/hak/test1.hak` - Test HAK with valid WAV sounds
+  - `TestData/TestModule/` - Unpacked module with dlg, utc, scripts, etc.
+- **TestPaths extensions** for test data access:
+  - `TestDataRoot`, `TestGameRoot`, `TestHakDirectory`, `TestModuleDirectory`
+  - `GetTestHakFile()`, `GetTestModuleFile()` helpers
+- **FlaUITestBase** pre-seeds RadoubSettings with test data paths
+- **ParleySettings** pre-seeds `SoundBrowserIncludeHakFiles: true` for HAK testing
+
+#### Changed (Radoub.IntegrationTests)
+- **Sound Browser test enabled** - previously skipped due to missing game resources (#701)
+- Sound Browser test updated to use AutomationId-based window detection (matches Creature Picker pattern)
+
+#### Test Data Contents
+| Path | Contents |
+|------|----------|
+| `TestData/GameRoot/hak/` | `test1.hak` (test1.wav + failtest.wav) |
+| `TestData/TestModule/` | eay.dlg, bandit002.utc, strength.nss, module.jrl, etc. |
+
 ---
 
 ## [0.9.26] - 2026-01-10

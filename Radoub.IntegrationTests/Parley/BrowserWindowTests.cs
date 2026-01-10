@@ -16,10 +16,10 @@ public class BrowserWindowTests : ParleyTestBase
 
     /// <summary>
     /// Test that clicking Browse sound button opens the Sound Browser window.
-    /// Skipped: Sound Browser requires game resources (ambient/music WAVs from BIFs or HAKs).
-    /// These files are too large to include in test data. See #701.
+    /// Uses test HAK with minimal WAV files (test1.hak in TestData).
+    /// Previously skipped - enabled by #722 with test data infrastructure.
     /// </summary>
-    [Fact(Skip = "Requires game sound resources (BIF/HAK) - see #701")]
+    [Fact]
     [Trait("Category", "Browser")]
     public void BrowseSoundButton_OpensSoundBrowserWindow()
     {
@@ -62,22 +62,56 @@ public class BrowserWindowTests : ParleyTestBase
 
         steps.Run("Sound Browser window opens", () =>
         {
-            var popup = FindPopupByTitle("Sound Browser");
-            return popup != null;
+            // Try both title search and AutomationId search
+            // Avalonia popups may not appear in GetAllTopLevelWindows
+            for (int i = 0; i < 15; i++)
+            {
+                var popup = FindPopupByTitle("Sound Browser", maxRetries: 1);
+                if (popup != null) return true;
+
+                // Also try searching desktop for the window by AutomationId
+                var desktop = Automation?.GetDesktop();
+                var browserWindow = desktop?.FindFirstDescendant(cf => cf.ByAutomationId("SoundBrowserWindow"));
+                if (browserWindow != null) return true;
+
+                Thread.Sleep(300);
+            }
+            return false;
         });
 
         steps.Run("Sound Browser has list box", () =>
         {
-            var popup = FindPopupByTitle("Sound Browser");
-            var listBox = popup?.FindFirstDescendant(cf => cf.ByAutomationId("SoundListBox"));
+            // Search desktop for the browser window
+            var desktop = Automation?.GetDesktop();
+            var browserWindow = desktop?.FindFirstDescendant(cf => cf.ByAutomationId("SoundBrowserWindow"));
+            if (browserWindow == null)
+            {
+                browserWindow = FindPopupByTitle("Sound Browser");
+            }
+            var listBox = browserWindow?.FindFirstDescendant(cf => cf.ByAutomationId("SoundListBox"));
             return listBox != null;
         });
 
         steps.Run("Close Sound Browser", () =>
         {
-            var popup = FindPopupByTitle("Sound Browser");
-            popup?.Close();
-            Thread.Sleep(300);
+            // Try to find and close via popup helper first
+            var popup = FindPopupByTitle("Sound Browser", maxRetries: 1);
+            if (popup != null)
+            {
+                popup.Close();
+                Thread.Sleep(300);
+                return true;
+            }
+
+            // Fallback: find by AutomationId and send close via pattern
+            var desktop = Automation?.GetDesktop();
+            var browserWindow = desktop?.FindFirstDescendant(cf => cf.ByAutomationId("SoundBrowserWindow"));
+            if (browserWindow != null)
+            {
+                var windowPattern = browserWindow.Patterns.Window.PatternOrDefault;
+                windowPattern?.Close();
+                Thread.Sleep(300);
+            }
             return true;
         });
 
