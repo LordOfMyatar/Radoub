@@ -149,6 +149,21 @@ public class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets the hit die for a class (from HitDie column in classes.2da).
+    /// </summary>
+    public string GetClassHitDie(int classId)
+    {
+        var hitDie = _gameDataService.Get2DAValue("classes", classId, "HitDie");
+        if (!string.IsNullOrEmpty(hitDie) && hitDie != "****" && int.TryParse(hitDie, out int die))
+        {
+            return $"d{die}";
+        }
+
+        // Fallback to generic value
+        return $"d8";
+    }
+
+    /// <summary>
     /// Gets the base skill points per level for a class (from SkillPointBase column in classes.2da).
     /// </summary>
     public int GetClassSkillPointBase(int classId)
