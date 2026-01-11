@@ -1,0 +1,88 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Quartermaster.Views.Dialogs.ClassPickerWindow"
+        Title="Select Class"
+        AutomationProperties.AutomationId="ClassPickerWindow"
+        Width="450" Height="500"
+        MinWidth="350" MinHeight="300"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTitleBarForeground}"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource ThemeAccent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTitleBarForeground}"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Select a Class" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+        <!-- Filter -->
+        <CheckBox Grid.Row="1" x:Name="PlayerClassesOnlyCheckBox"
+                  Content="Show player classes only"
+                  IsChecked="True"
+                  Margin="0,0,0,10"
+                  AutomationProperties.AutomationId="PlayerClassesOnlyCheckBox"/>
+
+        <!-- Classes List -->
+        <Border Grid.Row="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="5">
+            <ListBox x:Name="ClassesListBox"
+                     AutomationProperties.AutomationId="ClassesListBox"
+                     SelectionChanged="OnClassSelected">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Id}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="{Binding MaxLevelDisplay}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <!-- Info text -->
+        <TextBlock Grid.Row="3" x:Name="InfoLabel"
+                   Text="Classes loaded from classes.2da"
+                   FontSize="{DynamicResource FontSizeSmall}"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   Margin="0,10,0,0"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Spacing="10" Margin="0,15,0,0">
+            <Button x:Name="OkButton" Content="OK" Width="80"
+                    IsEnabled="False" Click="OnOkClick"
+                    AutomationProperties.AutomationId="OkButton"/>
+            <Button x:Name="CancelButton" Content="Cancel" Width="80"
+                    Click="OnCancelClick"
+                    AutomationProperties.AutomationId="CancelButton"/>
+        </StackPanel>
+    </Grid>
+</Window>
