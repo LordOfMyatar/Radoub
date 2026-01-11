@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.33-alpha] - 2026-01-11
+**Branch**: `quartermaster/issue-864` | **PR**: #TBD
+
+### Sprint: Classes Panel Prerequisites (#864)
+
+Establish prerequisites for Classes Panel MVP implementation.
+
+#### Work Items
+- [ ] #790 - Audit: Remove hardcoded game data (2DA compliance)
+- [ ] #733 - Edit Levelup Package (packages.2da integration)
+- [ ] #825 - Export Character Sheet (PDF/Text)
+
+---
+
 ## [0.1.32-alpha] - 2026-01-09
 **Branch**: `quartermaster/issue-734` | **PR**: #804
 
