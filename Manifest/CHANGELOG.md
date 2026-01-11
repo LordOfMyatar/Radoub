@@ -18,8 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Get Manifest to release-ready state with unit test coverage and responsive UI fixes.
 
 - [ ] #848 - Add SettingsService and TlkService unit tests
-- [ ] #806 - Priority/XP controls overflow on narrow panels
-- [ ] #805 - Fixed-width form fields don't scale on different screen sizes
+- [x] #806 - Priority/XP controls overflow on narrow panels (already fixed in #822)
+- [x] #805 - Fixed-width form fields don't scale on different screen sizes (already fixed in #822)
 - [x] #840 - Use symbols/icons for search and browse buttons
 
 ---
