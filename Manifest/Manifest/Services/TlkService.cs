@@ -41,6 +41,19 @@ public class TlkService : IDisposable
         }
     }
 
+    /// <summary>
+    /// Reset for testing - allows re-initialization.
+    /// Only for use in test teardown.
+    /// </summary>
+    public static void ResetForTesting()
+    {
+        lock (_lock)
+        {
+            _instance?.Dispose();
+            _instance = null;
+        }
+    }
+
     private TlkService()
     {
         // Subscribe to settings changes to invalidate cache
