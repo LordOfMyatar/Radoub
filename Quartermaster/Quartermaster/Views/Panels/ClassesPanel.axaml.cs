@@ -101,8 +101,10 @@ public partial class ClassesPanel : BasePanelControl
     {
         if (CurrentCreature == null) return;
 
-        _classSlots.Clear();
         int totalLevel = CalculateTotalLevel();
+
+        // Rebuild the collection
+        var newSlots = new ObservableCollection<ClassSlotViewModel>();
 
         for (int i = 0; i < CurrentCreature.ClassList.Count && i < MaxClassSlots; i++)
         {
@@ -122,8 +124,13 @@ public partial class ClassesPanel : BasePanelControl
                 TotalLevel = totalLevel
             };
 
-            _classSlots.Add(vm);
+            newSlots.Add(vm);
         }
+
+        // Replace collection and rebind to force UI refresh
+        _classSlots = newSlots;
+        if (_classSlotsList != null)
+            _classSlotsList.ItemsSource = _classSlots;
 
         UpdateTotalLevelDisplay(totalLevel);
 
