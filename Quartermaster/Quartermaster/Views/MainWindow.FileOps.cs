@@ -115,6 +115,61 @@ public partial class MainWindow
         Close();
     }
 
+    private async void OnExportTextClick(object? sender, RoutedEventArgs e)
+    {
+        await ExportCharacterSheet(isMarkdown: false);
+    }
+
+    private async void OnExportMarkdownClick(object? sender, RoutedEventArgs e)
+    {
+        await ExportCharacterSheet(isMarkdown: true);
+    }
+
+    #endregion
+
+    #region Export Operations
+
+    private async Task ExportCharacterSheet(bool isMarkdown)
+    {
+        if (_currentCreature == null) return;
+
+        var extension = isMarkdown ? ".md" : ".txt";
+        var filterName = isMarkdown ? "Markdown Files" : "Text Files";
+        var defaultName = Path.GetFileNameWithoutExtension(_currentFilePath ?? "character") + "_sheet" + extension;
+
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export Character Sheet",
+            DefaultExtension = extension,
+            SuggestedFileName = defaultName,
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType(filterName) { Patterns = new[] { "*" + extension } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            }
+        });
+
+        if (file == null) return;
+
+        try
+        {
+            var sheetService = new CharacterSheetService(_creatureDisplayService);
+            var content = isMarkdown
+                ? sheetService.GenerateMarkdownSheet(_currentCreature, _currentFilePath)
+                : sheetService.GenerateTextSheet(_currentCreature, _currentFilePath);
+
+            await File.WriteAllTextAsync(file.Path.LocalPath, content);
+
+            UpdateStatus($"Exported: {Path.GetFileName(file.Path.LocalPath)}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Exported character sheet: {UnifiedLogger.SanitizePath(file.Path.LocalPath)}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export character sheet: {ex.Message}");
+            await ShowErrorDialog("Export Error", $"Failed to export character sheet:\n{ex.Message}");
+        }
+    }
+
     #endregion
 
     #region File Operations
