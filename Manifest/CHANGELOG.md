@@ -20,7 +20,7 @@ Get Manifest to release-ready state with unit test coverage and responsive UI fi
 - [ ] #848 - Add SettingsService and TlkService unit tests
 - [ ] #806 - Priority/XP controls overflow on narrow panels
 - [ ] #805 - Fixed-width form fields don't scale on different screen sizes
-- [ ] #840 - Use symbols/icons for search and browse buttons
+- [x] #840 - Use symbols/icons for search and browse buttons
 
 ---
 
