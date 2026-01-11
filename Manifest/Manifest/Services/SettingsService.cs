@@ -17,7 +17,36 @@ namespace Manifest.Services
     /// </summary>
     public class SettingsService : INotifyPropertyChanged
     {
-        public static SettingsService Instance { get; } = new SettingsService();
+        private static SettingsService? _instance;
+        private static readonly object _lock = new();
+
+        public static SettingsService Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    lock (_lock)
+                    {
+                        _instance ??= new SettingsService();
+                    }
+                }
+                return _instance;
+            }
+        }
+
+        /// <summary>
+        /// Reset for testing - allows re-initialization with different settings.
+        /// Only for use in test teardown.
+        /// </summary>
+        public static void ResetForTesting()
+        {
+            lock (_lock)
+            {
+                _instance = null;
+                _settingsDirectory = null;
+            }
+        }
 
         /// <summary>
         /// Shared settings for game paths and TLK configuration.
