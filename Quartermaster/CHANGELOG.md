@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.34-alpha] - 2026-01-11
+**Branch**: `quartermaster/issue-791` | **PR**: #869
+
+### Feat: Classes Panel MVP - Add Class & Level-Up (#791)
+
+Implementation of Classes Panel MVP (Approach D - Phase 1). Add-only workflow: level-up and add class functionality without level-down or class removal.
+
+#### Features
+- Wire up + button click handlers for level-up
+- Add Class button with ClassPickerWindow
+- Level constraint validation (40 total, MaxLevel per class)
+- BAB and save recalculation on level-up
+- Total level display with cap warning
+
+---
+
 ## [0.1.33-alpha] - 2026-01-11
 **Branch**: `quartermaster/issue-864` | **PR**: #865
 

@@ -66,15 +66,21 @@
                                                        VerticalAlignment="Center"
                                                        Margin="10,0"/>
 
-                                            <!-- +/- Placeholder (disabled) -->
+                                            <!-- Level +/- Buttons -->
                                             <StackPanel Grid.Column="3" Orientation="Horizontal"
                                                         VerticalAlignment="Center">
                                                 <Button Content="-" Width="24" Height="24"
-                                                        FontSize="{DynamicResource FontSizeSmall}" IsEnabled="False"
-                                                        ToolTip.Tip="Level editing coming soon"/>
+                                                        FontSize="{DynamicResource FontSizeSmall}"
+                                                        IsEnabled="False"
+                                                        ToolTip.Tip="Level-down coming in Phase 2"/>
                                                 <Button Content="+" Width="24" Height="24"
-                                                        FontSize="{DynamicResource FontSizeSmall}" IsEnabled="False" Margin="2,0,0,0"
-                                                        ToolTip.Tip="Level editing coming soon"/>
+                                                        FontSize="{DynamicResource FontSizeSmall}"
+                                                        Margin="2,0,0,0"
+                                                        Tag="{Binding SlotIndex}"
+                                                        Click="OnLevelUpClick"
+                                                        IsEnabled="{Binding CanLevelUp}"
+                                                        ToolTip.Tip="{Binding LevelUpTooltip}"
+                                                        AutomationProperties.AutomationId="{Binding LevelUpButtonId}"/>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -82,14 +88,14 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!-- Add Class Placeholder -->
+                        <!-- Add Class Button -->
                         <Button x:Name="AddClassButton"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center"
-                                IsEnabled="False"
                                 Margin="0,3"
                                 Padding="10"
-                                ToolTip.Tip="Class editing coming in a future sprint">
+                                Click="OnAddClassClick"
+                                AutomationProperties.AutomationId="AddClassButton">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="+" FontSize="{DynamicResource FontSizeNormal}" VerticalAlignment="Center"/>
                                 <TextBlock Text="Add Class" FontSize="{DynamicResource FontSizeNormal}" VerticalAlignment="Center"/>

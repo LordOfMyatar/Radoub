@@ -116,6 +116,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ClassesPanelContent.SetDisplayService(_creatureDisplayService);
         ClassesPanelContent.AlignmentChanged += (s, e) => MarkDirty();
         ClassesPanelContent.PackageChanged += (s, e) => MarkDirty();
+        ClassesPanelContent.ClassesChanged += OnClassesChanged;
 
         // Initialize feats panel with display service for 2DA/TLK lookups
         FeatsPanelContent.SetDisplayService(_creatureDisplayService);
@@ -380,6 +381,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             // The inventory panel handles its own deletion
             UnifiedLogger.LogUI(LogLevel.DEBUG, "Delete clicked on inventory section");
+        }
+    }
+
+    private void OnClassesChanged(object? sender, EventArgs e)
+    {
+        // Mark document as dirty
+        MarkDirty();
+
+        // Refresh stats panel to show updated saves and character summary
+        if (_currentCreature != null)
+        {
+            StatsPanelContent.LoadCreature(_currentCreature);
+            UpdateCharacterHeader();
         }
     }
 

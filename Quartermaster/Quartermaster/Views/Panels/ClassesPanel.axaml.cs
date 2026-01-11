@@ -1,6 +1,8 @@
 using System;
+using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Quartermaster.Views.Dialogs;
@@ -12,6 +14,7 @@ namespace Quartermaster.Views.Panels;
 public partial class ClassesPanel : BasePanelControl
 {
     private const int MaxClassSlots = 8; // Beamdog EE supports 8 classes
+    private const int MaxTotalLevel = 40; // NWN level cap
 
     private CreatureDisplayService? _displayService;
 
@@ -32,6 +35,7 @@ public partial class ClassesPanel : BasePanelControl
 
     public event EventHandler? AlignmentChanged;
     public event EventHandler? PackageChanged;
+    public event EventHandler? ClassesChanged;
 
     public ClassesPanel()
     {
@@ -84,13 +88,30 @@ public partial class ClassesPanel : BasePanelControl
             return;
         }
 
-        _classSlots.Clear();
-        int totalLevel = 0;
+        RefreshClassSlots();
 
-        for (int i = 0; i < creature.ClassList.Count && i < MaxClassSlots; i++)
+        LoadAlignment(creature.GoodEvil, creature.LawfulChaotic);
+
+        SetText(_packageText, _displayService?.GetPackageName(creature.StartingPackage) ?? $"Package {creature.StartingPackage}");
+
+        IsLoading = false;
+    }
+
+    private void RefreshClassSlots()
+    {
+        if (CurrentCreature == null) return;
+
+        int totalLevel = CalculateTotalLevel();
+
+        // Rebuild the collection
+        var newSlots = new ObservableCollection<ClassSlotViewModel>();
+
+        for (int i = 0; i < CurrentCreature.ClassList.Count && i < MaxClassSlots; i++)
         {
-            var creatureClass = creature.ClassList[i];
-            _classSlots.Add(new ClassSlotViewModel
+            var creatureClass = CurrentCreature.ClassList[i];
+            var classMaxLevel = _displayService?.GetClassMaxLevel(creatureClass.Class) ?? 0;
+
+            var vm = new ClassSlotViewModel
             {
                 SlotIndex = i,
                 ClassId = creatureClass.Class,
@@ -98,24 +119,54 @@ public partial class ClassesPanel : BasePanelControl
                 Level = creatureClass.ClassLevel,
                 HitDie = GetClassHitDie(creatureClass.Class),
                 SkillPoints = GetClassSkillPoints(creatureClass.Class),
-                ClassFeatures = GetClassFeatures(creatureClass.Class)
-            });
-            totalLevel += creatureClass.ClassLevel;
+                ClassFeatures = GetClassFeatures(creatureClass.Class),
+                ClassMaxLevel = classMaxLevel,
+                TotalLevel = totalLevel
+            };
+
+            newSlots.Add(vm);
         }
 
-        SetText(_totalLevelText, $"Total Level: {totalLevel}");
+        // Replace collection and rebind to force UI refresh
+        _classSlots = newSlots;
+        if (_classSlotsList != null)
+            _classSlotsList.ItemsSource = _classSlots;
+
+        UpdateTotalLevelDisplay(totalLevel);
 
         if (_addClassButton != null)
-            _addClassButton.IsVisible = creature.ClassList.Count < MaxClassSlots;
+        {
+            // Can add class if: less than 8 classes AND total level < 40
+            _addClassButton.IsVisible = CurrentCreature.ClassList.Count < MaxClassSlots;
+            _addClassButton.IsEnabled = totalLevel < MaxTotalLevel;
+            if (totalLevel >= MaxTotalLevel)
+                _addClassButton.SetValue(ToolTip.TipProperty, "Cannot add class: level cap reached (40)");
+            else if (CurrentCreature.ClassList.Count >= MaxClassSlots)
+                _addClassButton.SetValue(ToolTip.TipProperty, "Cannot add class: maximum 8 classes");
+            else
+                _addClassButton.SetValue(ToolTip.TipProperty, null);
+        }
 
         if (_noClassesText != null)
-            _noClassesText.IsVisible = creature.ClassList.Count == 0;
+            _noClassesText.IsVisible = CurrentCreature.ClassList.Count == 0;
+    }
 
-        LoadAlignment(creature.GoodEvil, creature.LawfulChaotic);
+    private int CalculateTotalLevel()
+    {
+        if (CurrentCreature == null) return 0;
 
-        SetText(_packageText, _displayService?.GetPackageName(creature.StartingPackage) ?? $"Package {creature.StartingPackage}");
+        int total = 0;
+        foreach (var c in CurrentCreature.ClassList)
+            total += c.ClassLevel;
+        return total;
+    }
 
-        IsLoading = false;
+    private void UpdateTotalLevelDisplay(int totalLevel)
+    {
+        if (totalLevel >= MaxTotalLevel)
+            SetText(_totalLevelText, $"Total Level: {totalLevel} (CAP)");
+        else
+            SetText(_totalLevelText, $"Total Level: {totalLevel}");
     }
 
     public override void ClearPanel()
@@ -126,7 +177,10 @@ public partial class ClassesPanel : BasePanelControl
         SetText(_totalLevelText, "Total Level: 0");
 
         if (_addClassButton != null)
+        {
             _addClassButton.IsVisible = true;
+            _addClassButton.IsEnabled = true;
+        }
 
         if (_noClassesText != null)
             _noClassesText.IsVisible = true;
@@ -134,6 +188,123 @@ public partial class ClassesPanel : BasePanelControl
         LoadAlignment(50, 50);
         SetText(_packageText, "None");
     }
+
+    #region Level-Up and Add Class
+
+    private void OnLevelUpClick(object? sender, RoutedEventArgs e)
+    {
+        if (IsLoading || CurrentCreature == null || _displayService == null) return;
+
+        if (sender is Button button && button.Tag is int slotIndex)
+        {
+            LevelUp(slotIndex);
+        }
+    }
+
+    private void LevelUp(int slotIndex)
+    {
+        if (CurrentCreature == null || _displayService == null) return;
+        if (slotIndex < 0 || slotIndex >= CurrentCreature.ClassList.Count) return;
+
+        var totalLevel = CalculateTotalLevel();
+        if (totalLevel >= MaxTotalLevel) return; // At cap
+
+        var creatureClass = CurrentCreature.ClassList[slotIndex];
+        var classMaxLevel = _displayService.GetClassMaxLevel(creatureClass.Class);
+
+        // Check prestige class max level
+        if (classMaxLevel > 0 && creatureClass.ClassLevel >= classMaxLevel) return;
+
+        // Increment level
+        creatureClass.ClassLevel++;
+
+        // Recalculate derived stats
+        RecalculateDerivedStats();
+
+        // Refresh UI
+        RefreshClassSlots();
+
+        // Fire change event
+        ClassesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async void OnAddClassClick(object? sender, RoutedEventArgs e)
+    {
+        if (IsLoading || CurrentCreature == null || _displayService == null) return;
+
+        var totalLevel = CalculateTotalLevel();
+        if (totalLevel >= MaxTotalLevel) return;
+        if (CurrentCreature.ClassList.Count >= MaxClassSlots) return;
+
+        var allClasses = _displayService.GetAllClasses();
+        var picker = new ClassPickerWindow(allClasses);
+
+        var parentWindow = this.VisualRoot as Window;
+        if (parentWindow != null)
+        {
+            await picker.ShowDialog(parentWindow);
+        }
+
+        if (picker.Confirmed && picker.SelectedClassId.HasValue)
+        {
+            AddClass(picker.SelectedClassId.Value);
+        }
+    }
+
+    private void AddClass(int classId)
+    {
+        if (CurrentCreature == null || _displayService == null) return;
+
+        // Check if class already exists on creature
+        foreach (var c in CurrentCreature.ClassList)
+        {
+            if (c.Class == classId)
+            {
+                // Class already exists - just level it up instead
+                var existingIndex = CurrentCreature.ClassList.IndexOf(c);
+                LevelUp(existingIndex);
+                return;
+            }
+        }
+
+        // Add new class at level 1
+        var newClass = new CreatureClass
+        {
+            Class = classId,
+            ClassLevel = 1
+        };
+
+        CurrentCreature.ClassList.Add(newClass);
+
+        // Recalculate derived stats
+        RecalculateDerivedStats();
+
+        // Refresh UI
+        RefreshClassSlots();
+
+        // Fire change event
+        ClassesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RecalculateDerivedStats()
+    {
+        if (CurrentCreature == null || _displayService == null) return;
+
+        // Recalculate BAB
+        var newBab = _displayService.CalculateBaseAttackBonus(CurrentCreature);
+        // BAB is not stored directly in UTC - it's calculated at runtime by the game
+        // But we need to update the display in StatsPanel
+
+        // Recalculate saves
+        var newSaves = _displayService.CalculateBaseSavingThrows(CurrentCreature);
+        CurrentCreature.FortBonus = (short)newSaves.Fortitude;
+        CurrentCreature.RefBonus = (short)newSaves.Reflex;
+        CurrentCreature.WillBonus = (short)newSaves.Will;
+    }
+
+    #endregion
+
+    #region Alignment
 
     private void LoadAlignment(byte goodEvil, byte lawChaotic)
     {
@@ -163,27 +334,6 @@ public partial class ClassesPanel : BasePanelControl
         AlignmentChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private async void OnPackagePickerClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        if (CurrentCreature == null || _displayService == null) return;
-
-        var packages = _displayService.GetAllPackages();
-        var picker = new PackagePickerWindow(packages, CurrentCreature.StartingPackage);
-
-        var parentWindow = this.VisualRoot as Window;
-        if (parentWindow != null)
-        {
-            await picker.ShowDialog(parentWindow);
-        }
-
-        if (picker.Confirmed && picker.SelectedPackageId.HasValue)
-        {
-            CurrentCreature.StartingPackage = picker.SelectedPackageId.Value;
-            SetText(_packageText, _displayService.GetPackageName(picker.SelectedPackageId.Value));
-            PackageChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
     private static string GetAlignmentName(byte goodEvil, byte lawChaotic)
     {
         var geAxis = goodEvil switch
@@ -205,6 +355,35 @@ public partial class ClassesPanel : BasePanelControl
 
         return $"{lcAxis} {geAxis}";
     }
+
+    #endregion
+
+    #region Package
+
+    private async void OnPackagePickerClick(object? sender, RoutedEventArgs e)
+    {
+        if (CurrentCreature == null || _displayService == null) return;
+
+        var packages = _displayService.GetAllPackages();
+        var picker = new PackagePickerWindow(packages, CurrentCreature.StartingPackage);
+
+        var parentWindow = this.VisualRoot as Window;
+        if (parentWindow != null)
+        {
+            await picker.ShowDialog(parentWindow);
+        }
+
+        if (picker.Confirmed && picker.SelectedPackageId.HasValue)
+        {
+            CurrentCreature.StartingPackage = picker.SelectedPackageId.Value;
+            SetText(_packageText, _displayService.GetPackageName(picker.SelectedPackageId.Value));
+            PackageChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
 
     private string GetClassName(int classId)
     {
@@ -253,10 +432,14 @@ public partial class ClassesPanel : BasePanelControl
             _ => ""
         };
     }
+
+    #endregion
 }
 
-public class ClassSlotViewModel
+public class ClassSlotViewModel : INotifyPropertyChanged
 {
+    private const int MaxTotalLevel = 40;
+
     public int SlotIndex { get; set; }
     public string SlotNumber => $"{SlotIndex + 1}.";
     public int ClassId { get; set; }
@@ -266,6 +449,16 @@ public class ClassSlotViewModel
     public string HitDie { get; set; } = "";
     public int SkillPoints { get; set; }
     public string ClassFeatures { get; set; } = "";
+
+    /// <summary>
+    /// Maximum level for this class (0 = no max for base classes, 10 for most prestige).
+    /// </summary>
+    public int ClassMaxLevel { get; set; }
+
+    /// <summary>
+    /// Current total level across all classes.
+    /// </summary>
+    public int TotalLevel { get; set; }
 
     public string ClassInfoDisplay
     {
@@ -279,4 +472,43 @@ public class ClassSlotViewModel
             return string.Join(" | ", parts);
         }
     }
+
+    /// <summary>
+    /// Whether this class slot can be leveled up.
+    /// </summary>
+    public bool CanLevelUp
+    {
+        get
+        {
+            // Can't level up if at total level cap
+            if (TotalLevel >= MaxTotalLevel) return false;
+
+            // Can't level up if at class max level (prestige classes)
+            if (ClassMaxLevel > 0 && Level >= ClassMaxLevel) return false;
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Tooltip explaining why level-up is disabled (if applicable).
+    /// </summary>
+    public string LevelUpTooltip
+    {
+        get
+        {
+            if (TotalLevel >= MaxTotalLevel)
+                return "Cannot level up: character at level cap (40)";
+            if (ClassMaxLevel > 0 && Level >= ClassMaxLevel)
+                return $"Cannot level up: {ClassName} max level is {ClassMaxLevel}";
+            return $"Level up {ClassName}";
+        }
+    }
+
+    /// <summary>
+    /// Automation ID for the level-up button.
+    /// </summary>
+    public string LevelUpButtonId => $"LevelUp_Class{SlotIndex}";
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }

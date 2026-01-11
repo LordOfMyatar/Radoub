@@ -203,6 +203,63 @@ public class CreatureDisplayService
         };
     }
 
+    /// <summary>
+    /// Gets all classes from classes.2da.
+    /// </summary>
+    public List<ClassInfo> GetAllClasses()
+    {
+        var classes = new List<ClassInfo>();
+
+        for (int i = 0; i < 256; i++)
+        {
+            var label = _gameDataService.Get2DAValue("classes", i, "Label");
+            if (string.IsNullOrEmpty(label) || label == "****")
+            {
+                // Stop after a reasonable gap if we've found enough classes
+                if (classes.Count > 20 && i > 50)
+                    break;
+                continue;
+            }
+
+            var name = GetClassName(i);
+            var playerClass = _gameDataService.Get2DAValue("classes", i, "PlayerClass");
+            var isPlayerClass = playerClass == "1";
+            var maxLevel = GetClassMaxLevel(i);
+
+            classes.Add(new ClassInfo
+            {
+                Id = i,
+                Name = name,
+                IsPlayerClass = isPlayerClass,
+                MaxLevel = maxLevel
+            });
+        }
+
+        // Sort: player classes first, then by name
+        classes.Sort((a, b) =>
+        {
+            if (a.IsPlayerClass != b.IsPlayerClass)
+                return b.IsPlayerClass.CompareTo(a.IsPlayerClass);
+            return string.Compare(a.Name, b.Name, System.StringComparison.OrdinalIgnoreCase);
+        });
+
+        return classes;
+    }
+
+    /// <summary>
+    /// Gets the maximum level for a class (from MaxLevel column in classes.2da).
+    /// Returns 0 if no maximum (base classes), or the max level for prestige classes.
+    /// </summary>
+    public int GetClassMaxLevel(int classId)
+    {
+        var maxLevel = _gameDataService.Get2DAValue("classes", classId, "MaxLevel");
+        if (!string.IsNullOrEmpty(maxLevel) && maxLevel != "****" && int.TryParse(maxLevel, out int max))
+        {
+            return max;
+        }
+        return 0; // No maximum
+    }
+
     #endregion
 
     #region Racial Modifiers
@@ -437,6 +494,108 @@ public class CreatureDisplayService
         return stats;
     }
 
+    /// <summary>
+    /// Calculates base saving throws from class levels.
+    /// </summary>
+    public SavingThrows CalculateBaseSavingThrows(UtcFile creature)
+    {
+        var saves = new SavingThrows();
+
+        foreach (var creatureClass in creature.ClassList)
+        {
+            var classSaves = GetClassSaves(creatureClass.Class, creatureClass.ClassLevel);
+            saves.Fortitude += classSaves.Fortitude;
+            saves.Reflex += classSaves.Reflex;
+            saves.Will += classSaves.Will;
+        }
+
+        return saves;
+    }
+
+    /// <summary>
+    /// Gets the saving throws for a specific class and level.
+    /// </summary>
+    public SavingThrows GetClassSaves(int classId, int classLevel)
+    {
+        var saves = new SavingThrows();
+        if (classLevel <= 0)
+            return saves;
+
+        var saveTable = _gameDataService.Get2DAValue("classes", classId, "SavingThrowTable");
+        if (string.IsNullOrEmpty(saveTable) || saveTable == "****")
+        {
+            return EstimateSaves(classId, classLevel);
+        }
+
+        // 2DA row index is level - 1
+        var fortValue = _gameDataService.Get2DAValue(saveTable, classLevel - 1, "FortSave");
+        var refValue = _gameDataService.Get2DAValue(saveTable, classLevel - 1, "RefSave");
+        var willValue = _gameDataService.Get2DAValue(saveTable, classLevel - 1, "WillSave");
+
+        if (!string.IsNullOrEmpty(fortValue) && fortValue != "****" && int.TryParse(fortValue, out int fort))
+            saves.Fortitude = fort;
+        else
+            saves.Fortitude = EstimateSaves(classId, classLevel).Fortitude;
+
+        if (!string.IsNullOrEmpty(refValue) && refValue != "****" && int.TryParse(refValue, out int refSave))
+            saves.Reflex = refSave;
+        else
+            saves.Reflex = EstimateSaves(classId, classLevel).Reflex;
+
+        if (!string.IsNullOrEmpty(willValue) && willValue != "****" && int.TryParse(willValue, out int will))
+            saves.Will = will;
+        else
+            saves.Will = EstimateSaves(classId, classLevel).Will;
+
+        return saves;
+    }
+
+    /// <summary>
+    /// Estimates saving throws when 2DA tables are not available.
+    /// Good save = 2 + level/2, Poor save = level/3
+    /// </summary>
+    private static SavingThrows EstimateSaves(int classId, int classLevel)
+    {
+        // Determine save progressions per class (good = true, poor = false)
+        var (fortGood, refGood, willGood) = classId switch
+        {
+            0 => (true, false, false),   // Barbarian: Fort good
+            1 => (false, true, true),    // Bard: Ref/Will good
+            2 => (true, false, true),    // Cleric: Fort/Will good
+            3 => (true, false, true),    // Druid: Fort/Will good
+            4 => (true, false, false),   // Fighter: Fort good
+            5 => (true, true, true),     // Monk: All good
+            6 => (true, false, false),   // Paladin: Fort good
+            7 => (true, true, false),    // Ranger: Fort/Ref good
+            8 => (false, true, false),   // Rogue: Ref good
+            9 => (false, false, true),   // Sorcerer: Will good
+            10 => (false, false, true),  // Wizard: Will good
+            11 => (false, true, false),  // Shadowdancer: Ref good
+            12 => (false, true, true),   // Harper Scout: Ref/Will good
+            13 => (true, true, false),   // Arcane Archer: Fort/Ref good
+            14 => (false, true, false),  // Assassin: Ref good
+            15 => (true, false, false),  // Blackguard: Fort good
+            16 => (true, false, true),   // Champion of Torm: Fort/Will good
+            17 => (false, true, false),  // Weapon Master: Ref good
+            18 => (false, false, true),  // Pale Master: Will good
+            19 => (true, true, true),    // Shifter: All good (per NWN2, varies)
+            20 => (true, false, true),   // Dwarven Defender: Fort/Will good
+            21 => (true, false, true),   // Dragon Disciple: Fort/Will good
+            27 => (true, false, true),   // Purple Dragon Knight: Fort/Will good
+            _ => (false, false, false)
+        };
+
+        int GoodSave(int level) => 2 + level / 2;
+        int PoorSave(int level) => level / 3;
+
+        return new SavingThrows
+        {
+            Fortitude = fortGood ? GoodSave(classLevel) : PoorSave(classLevel),
+            Reflex = refGood ? GoodSave(classLevel) : PoorSave(classLevel),
+            Will = willGood ? GoodSave(classLevel) : PoorSave(classLevel)
+        };
+    }
+
     #endregion
 
     #region Delegation Methods (for backward compatibility)
@@ -521,4 +680,29 @@ public class RacialModifiers
     public int Int { get; set; }
     public int Wis { get; set; }
     public int Cha { get; set; }
+}
+
+/// <summary>
+/// Holds class information from classes.2da.
+/// </summary>
+public class ClassInfo
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public bool IsPlayerClass { get; set; }
+    /// <summary>
+    /// Maximum level allowed in this class (0 = no maximum, applies to base classes).
+    /// Prestige classes typically have MaxLevel of 10.
+    /// </summary>
+    public int MaxLevel { get; set; }
+}
+
+/// <summary>
+/// Holds saving throw values.
+/// </summary>
+public class SavingThrows
+{
+    public int Fortitude { get; set; }
+    public int Reflex { get; set; }
+    public int Will { get; set; }
 }
