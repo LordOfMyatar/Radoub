@@ -38,10 +38,10 @@
                                     Grid.Column="0"
                                     Watermark="C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights"
                                     TextChanged="OnGamePathTextChanged"/>
-                            <Button Grid.Column="1" Content="📁" ToolTip.Tip="Browse for game folder"
-                                   Click="OnBrowseGamePath" Margin="5,0,0,0" Width="32"/>
-                            <Button Grid.Column="2" Content="🔍" ToolTip.Tip="Auto-detect game path"
-                                   Click="OnAutoDetectGamePath" Margin="5,0,0,0" Width="32"/>
+                            <Button Grid.Column="1" Content="Browse..." ToolTip.Tip="Browse for game folder"
+                                   Click="OnBrowseGamePath" Margin="5,0,0,0" Padding="10,5"/>
+                            <Button Grid.Column="2" Content="Detect" ToolTip.Tip="Auto-detect game path"
+                                   Click="OnAutoDetectGamePath" Margin="5,0,0,0" Padding="10,5"/>
                         </Grid>
                         <TextBlock x:Name="GamePathValidationText"
                                   FontSize="11"
@@ -54,10 +54,10 @@
                                     Grid.Column="0"
                                     Watermark="~/Documents/Neverwinter Nights"
                                     TextChanged="OnUserPathTextChanged"/>
-                            <Button Grid.Column="1" Content="📁" ToolTip.Tip="Browse for user folder"
-                                   Click="OnBrowseUserPath" Margin="5,0,0,0" Width="32"/>
-                            <Button Grid.Column="2" Content="🔍" ToolTip.Tip="Auto-detect user path"
-                                   Click="OnAutoDetectUserPath" Margin="5,0,0,0" Width="32"/>
+                            <Button Grid.Column="1" Content="Browse..." ToolTip.Tip="Browse for user folder"
+                                   Click="OnBrowseUserPath" Margin="5,0,0,0" Padding="10,5"/>
+                            <Button Grid.Column="2" Content="Detect" ToolTip.Tip="Auto-detect user path"
+                                   Click="OnAutoDetectUserPath" Margin="5,0,0,0" Padding="10,5"/>
                         </Grid>
                         <TextBlock x:Name="UserPathValidationText"
                                   FontSize="11"
