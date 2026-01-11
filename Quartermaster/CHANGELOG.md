@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.35-alpha] - 2026-01-11
-**Branch**: `quartermaster/sprint-630-871-870` | **PR**: #TBD
+**Branch**: `quartermaster/sprint-630-871-870` | **PR**: #872
 
 ### Sprint: Level-Up Resource Tracking (#630, #871, #870)
 
