@@ -416,6 +416,14 @@ msgBox.Show();
 ShowToastNotification("Plugin started", 3000);
 ```
 
+**Button Labeling Standards**:
+- **Browse buttons**: Use "Browse..." or "..." (ellipsis indicates dialog will open)
+- **Action buttons**: Use verb describing action (e.g., "Save", "Export", "Add")
+- **Position**: Browse buttons should be immediately adjacent to their associated field, not right-aligned away from it
+- **Consistency**: All tools must follow the same button labeling patterns
+
+See [#868](https://github.com/LordOfMyatar/Radoub/issues/868) for standardization audit.
+
 ---
 
 ## Aurora Engine File Naming Constraints
