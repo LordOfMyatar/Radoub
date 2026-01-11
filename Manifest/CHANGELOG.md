@@ -20,7 +20,7 @@ Get Manifest to release-ready state with unit test coverage and responsive UI fi
 - [x] #848 - Add SettingsService and TlkService unit tests (14 + 14 = 28 tests)
 - [x] #806 - Priority/XP controls overflow on narrow panels (already fixed in #822)
 - [x] #805 - Fixed-width form fields don't scale on different screen sizes (already fixed in #822)
-- [x] #840 - Use Browse.../Detect buttons (consistent with Parley/Quartermaster)
+- [x] #840 - Use Unicode symbols (…/⌕) for browse/detect buttons (per #821)
 
 ---
 
