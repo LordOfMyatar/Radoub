@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.33-alpha] - 2026-01-11
-**Branch**: `quartermaster/issue-864` | **PR**: #TBD
+**Branch**: `quartermaster/issue-864` | **PR**: #865
 
 ### Sprint: Classes Panel Prerequisites (#864)
 
