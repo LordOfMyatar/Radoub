@@ -539,6 +539,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         e.Handled = true;
                     }
                     break;
+                case Key.E:
+                    if (HasFile)
+                    {
+                        _ = ExportCharacterSheet(isMarkdown: false);
+                        e.Handled = true;
+                    }
+                    break;
             }
         }
         else if (e.KeyModifiers == KeyModifiers.None)

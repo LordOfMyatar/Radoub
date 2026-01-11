@@ -46,6 +46,11 @@
                 <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
                 <MenuItem Header="Save _As..." Click="OnSaveAsClick" InputGesture="Ctrl+Shift+S" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
                 <Separator/>
+                <MenuItem Header="_Export Character Sheet">
+                    <MenuItem Header="Export as _Text..." Click="OnExportTextClick" InputGesture="Ctrl+Shift+E" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                    <MenuItem Header="Export as _Markdown..." Click="OnExportMarkdownClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="_Close" Click="OnCloseFileClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
             </MenuItem>

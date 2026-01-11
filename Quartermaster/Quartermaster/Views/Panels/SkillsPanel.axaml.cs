@@ -427,45 +427,11 @@ public partial class SkillsPanel : BasePanelControl
     }
 
     /// <summary>
-    /// Gets the base skill points per level for a class from 2DA or fallback.
+    /// Gets the base skill points per level for a class from 2DA via service.
     /// </summary>
     private int GetClassSkillPointBase(int classId)
     {
-        // Try 2DA lookup first
-        if (_displayService != null)
-        {
-            var skillPointBase = _displayService.GetClassSkillPointBase(classId);
-            if (skillPointBase > 0)
-                return skillPointBase;
-        }
-
-        // Fallback to hardcoded values
-        return classId switch
-        {
-            0 => 4,  // Barbarian
-            1 => 4,  // Bard
-            2 => 2,  // Cleric
-            3 => 4,  // Druid
-            4 => 2,  // Fighter
-            5 => 4,  // Monk
-            6 => 2,  // Paladin
-            7 => 4,  // Ranger
-            8 => 8,  // Rogue
-            9 => 2,  // Sorcerer
-            10 => 2, // Wizard
-            11 => 6, // Arcane Archer
-            12 => 4, // Assassin
-            13 => 4, // Blackguard
-            14 => 4, // Harper Scout
-            15 => 2, // Shadow Dancer - wait, should be 6
-            16 => 2, // Divine Champion
-            17 => 2, // Pale Master
-            18 => 2, // Weapon Master
-            19 => 4, // Shifter
-            20 => 2, // Dwarven Defender
-            21 => 2, // Dragon Disciple
-            _ => 2   // Default
-        };
+        return _displayService?.GetClassSkillPointBase(classId) ?? 2;
     }
 
     private IBrush GetSuccessBrush()
@@ -486,80 +452,12 @@ public partial class SkillsPanel : BasePanelControl
 
     private string GetSkillName(int skillId)
     {
-        if (_displayService != null)
-            return _displayService.GetSkillName(skillId);
-
-        return skillId switch
-        {
-            0 => "Animal Empathy",
-            1 => "Concentration",
-            2 => "Disable Trap",
-            3 => "Discipline",
-            4 => "Heal",
-            5 => "Hide",
-            6 => "Listen",
-            7 => "Lore",
-            8 => "Move Silently",
-            9 => "Open Lock",
-            10 => "Parry",
-            11 => "Perform",
-            12 => "Persuade",
-            13 => "Pick Pocket",
-            14 => "Search",
-            15 => "Set Trap",
-            16 => "Spellcraft",
-            17 => "Spot",
-            18 => "Taunt",
-            19 => "Use Magic Device",
-            20 => "Appraise",
-            21 => "Tumble",
-            22 => "Craft Trap",
-            23 => "Bluff",
-            24 => "Intimidate",
-            25 => "Craft Armor",
-            26 => "Craft Weapon",
-            27 => "Ride",
-            _ => $"Skill {skillId}"
-        };
+        return _displayService?.GetSkillName(skillId) ?? $"Skill {skillId}";
     }
 
     private string GetSkillKeyAbility(int skillId)
     {
-        if (_displayService != null)
-            return _displayService.GetSkillKeyAbility(skillId);
-
-        return skillId switch
-        {
-            0 => "CHA",
-            1 => "CON",
-            2 => "INT",
-            3 => "STR",
-            4 => "WIS",
-            5 => "DEX",
-            6 => "WIS",
-            7 => "INT",
-            8 => "DEX",
-            9 => "DEX",
-            10 => "DEX",
-            11 => "CHA",
-            12 => "CHA",
-            13 => "DEX",
-            14 => "INT",
-            15 => "DEX",
-            16 => "INT",
-            17 => "WIS",
-            18 => "CHA",
-            19 => "CHA",
-            20 => "INT",
-            21 => "DEX",
-            22 => "INT",
-            23 => "CHA",
-            24 => "CHA",
-            25 => "INT",
-            26 => "INT",
-            27 => "DEX",
-            _ => "INT"
-        };
+        return _displayService?.GetSkillKeyAbility(skillId) ?? "INT";
     }
 
     #region Theme-Aware Colors

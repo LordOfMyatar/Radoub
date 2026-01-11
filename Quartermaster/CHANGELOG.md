@@ -10,6 +10,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.33-alpha] - 2026-01-11
+**Branch**: `quartermaster/issue-864` | **PR**: #865
+
+### Sprint: Classes Panel Prerequisites (#864)
+
+Establish prerequisites for Classes Panel MVP implementation.
+
+#### Work Items
+- [x] #790 - Audit: Remove hardcoded game data (2DA compliance)
+- [x] #733 - Edit Levelup Package (packages.2da integration) - *Already implemented*
+- [x] #825 - Export Character Sheet (Text/Markdown)
+
+#### 2DA Compliance (#790)
+
+Refactored UI panels to use service methods instead of duplicated hardcoded fallbacks.
+
+**CreatureDisplayService**
+- Added `GetClassHitDie()` method - reads HitDie column from classes.2da
+
+**ClassesPanel.axaml.cs**
+- Removed 90+ lines of hardcoded class data (names, hit dice, skill points)
+- Now delegates to CreatureDisplayService for all class lookups
+- Class features text retained as acceptable hardcoding (display-only flavor text not in 2DA)
+
+**SkillsPanel.axaml.cs**
+- Removed 70+ lines of hardcoded skill data (names, key abilities, skill points)
+- Now delegates to SkillService via CreatureDisplayService
+
+**Pattern established**: Services (CreatureDisplayService, SkillService, FeatService) try 2DA first with minimal fallbacks. UI panels must use services - no duplicate fallback code.
+
+#### Character Sheet Export (#825)
+
+New CharacterSheetService generates formatted character sheets for reference.
+
+**Features**
+- Export to plain text (.txt) with ASCII formatting
+- Export to Markdown (.md) with tables
+- File > Export Character Sheet menu with submenu options
+- Ctrl+Shift+E keyboard shortcut for quick text export
+
+**Content Includes**
+- Identity (name, race, gender, alignment, deity, subrace, tag, resref)
+- Class progression with hit dice and skill points per level
+- Ability scores with racial modifiers
+- Combat statistics (HP, AC, BAB, saves)
+- Skills with ranks, key ability, and class skill indicator
+- Feats grouped by category (Combat, Active, Defensive, Magical, Class/Racial)
+- Spells known by class and level (caster classes only)
+- Equipment slots with item resrefs
+- Scripts (UTC only, not shown for BIC player files)
+- Gold and XP (BIC files only)
+
+---
+
 ## [0.1.32-alpha] - 2026-01-09
 **Branch**: `quartermaster/issue-734` | **PR**: #804
 

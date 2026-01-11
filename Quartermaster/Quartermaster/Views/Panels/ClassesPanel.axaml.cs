@@ -208,102 +208,23 @@ public partial class ClassesPanel : BasePanelControl
 
     private string GetClassName(int classId)
     {
-        if (_displayService != null)
-            return _displayService.GetClassName(classId);
-
-        return classId switch
-        {
-            0 => "Barbarian",
-            1 => "Bard",
-            2 => "Cleric",
-            3 => "Druid",
-            4 => "Fighter",
-            5 => "Monk",
-            6 => "Paladin",
-            7 => "Ranger",
-            8 => "Rogue",
-            9 => "Sorcerer",
-            10 => "Wizard",
-            11 => "Shadowdancer",
-            12 => "Harper Scout",
-            13 => "Arcane Archer",
-            14 => "Assassin",
-            15 => "Blackguard",
-            16 => "Champion of Torm",
-            17 => "Weapon Master",
-            18 => "Pale Master",
-            19 => "Shifter",
-            20 => "Dwarven Defender",
-            21 => "Dragon Disciple",
-            27 => "Purple Dragon Knight",
-            _ => $"Class {classId}"
-        };
+        return _displayService?.GetClassName(classId) ?? $"Class {classId}";
     }
 
     private string GetClassHitDie(int classId)
     {
-        return classId switch
-        {
-            0 => "d12",
-            1 => "d6",
-            2 => "d8",
-            3 => "d8",
-            4 => "d10",
-            5 => "d8",
-            6 => "d10",
-            7 => "d10",
-            8 => "d6",
-            9 => "d4",
-            10 => "d4",
-            11 => "d8",
-            12 => "d6",
-            13 => "d8",
-            14 => "d6",
-            15 => "d10",
-            16 => "d10",
-            17 => "d10",
-            18 => "d6",
-            19 => "d8",
-            20 => "d10",
-            21 => "d6",
-            27 => "d10",
-            _ => "d8"
-        };
+        return _displayService?.GetClassHitDie(classId) ?? "d8";
     }
 
     private int GetClassSkillPoints(int classId)
     {
-        return classId switch
-        {
-            0 => 4,
-            1 => 4,
-            2 => 2,
-            3 => 4,
-            4 => 2,
-            5 => 4,
-            6 => 2,
-            7 => 4,
-            8 => 8,
-            9 => 2,
-            10 => 2,
-            11 => 6,
-            12 => 4,
-            13 => 4,
-            14 => 4,
-            15 => 2,
-            16 => 2,
-            17 => 2,
-            18 => 2,
-            19 => 4,
-            20 => 2,
-            21 => 2,
-            27 => 2,
-            _ => 2
-        };
+        return _displayService?.GetClassSkillPointBase(classId) ?? 2;
     }
 
-    private string GetClassFeatures(int classId)
+    private static string GetClassFeatures(int classId)
     {
+        // Class features are descriptive summaries not stored in 2DA.
+        // This is acceptable hardcoding - it's display-only flavor text.
         return classId switch
         {
             0 => "Rage, Fast Movement",
