@@ -24,12 +24,12 @@ Cross-platform polish: responsive breakpoints, consistent emoji rendering, and c
 
 #### Work Items
 - [x] #822 - Responsive breakpoint handling for small screens
-- [~] #821 - Consistent emoji rendering across platforms (foundation added, incremental migration pending)
+- [x] #821 - Consistent emoji rendering across platforms
 - [x] #824 - Icons/text for colorblind users on status indicators
 
 #### Added
 - **StatusIndicatorHelper** in Radoub.UI - Unicode icons (checkmark, X, warning, info) for colorblind-accessible validation messages
-- **IconConstants** in Radoub.UI - Cross-platform Unicode icon characters for toolbar buttons (foundation for #821)
+- **IconConstants** in Radoub.UI - Cross-platform Unicode icon characters for toolbar buttons
 - All SettingsWindow path validations now show icons alongside color (WCAG 2.1 1.4.1 compliance)
 
 #### Changed
@@ -37,9 +37,10 @@ Cross-platform polish: responsive breakpoints, consistent emoji rendering, and c
   - Parley: Main panel uses proportional widths (2*/1*) instead of fixed 800px; speaker row uses WrapPanel
   - Manifest: Category/Entry properties use WrapPanel and flexible widths
   - Quartermaster: SpellsPanel class radios and filters use WrapPanel; reduced minimum widths for panels
-
-#### Notes
-- #821 (emoji icons) is a larger effort best done incrementally. IconConstants provides the foundation; individual tool migrations can follow in future sprints.
+- **Replaced all emoji icons with Unicode symbols** for consistent cross-platform rendering:
+  - Toolbar buttons: Removed emoji, using text or simple symbols (+, ✖, ▼, ▶)
+  - Warning icons: ⚠️ → ⚠
+  - Quartermaster nav: Emoji → Unicode symbols (☺, ○, ⚔, ≡, ★, ◎, ✦, ■, ⚙, ☰)
 
 ---
 

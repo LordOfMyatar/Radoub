@@ -42,12 +42,12 @@
         <!-- Toolbar -->
         <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1" Padding="5,3">
             <StackPanel Orientation="Horizontal" Spacing="5">
-                <Button Content="📂 Open" Click="OnOpenClick" ToolTip.Tip="Open Journal (Ctrl+O)" Padding="8,4"/>
-                <Button Content="💾 Save" Click="OnSaveClick" ToolTip.Tip="Save Journal (Ctrl+S)" IsEnabled="{Binding HasFile}" Padding="8,4"/>
+                <Button Content="Open" Click="OnOpenClick" ToolTip.Tip="Open Journal (Ctrl+O)" Padding="8,4"/>
+                <Button Content="Save" Click="OnSaveClick" ToolTip.Tip="Save Journal (Ctrl+S)" IsEnabled="{Binding HasFile}" Padding="8,4"/>
                 <Separator Width="1" Margin="5,0" Background="{DynamicResource SystemBaseMediumLowColor}"/>
-                <Button Content="📁+ Category" Click="OnAddCategoryClick" ToolTip.Tip="Add Category (Ctrl+Shift+N)" IsEnabled="{Binding HasFile}" Padding="8,4"/>
-                <Button Content="📄+ Entry" Click="OnAddEntryClick" ToolTip.Tip="Add Entry (Ctrl+E)" IsEnabled="{Binding CanAddEntry}" Padding="8,4"/>
-                <Button Content="🗑 Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Delete)" IsEnabled="{Binding HasSelection}" Padding="8,4"/>
+                <Button Content="+ Category" Click="OnAddCategoryClick" ToolTip.Tip="Add Category (Ctrl+Shift+N)" IsEnabled="{Binding HasFile}" Padding="8,4"/>
+                <Button Content="+ Entry" Click="OnAddEntryClick" ToolTip.Tip="Add Entry (Ctrl+E)" IsEnabled="{Binding CanAddEntry}" Padding="8,4"/>
+                <Button Content="✖ Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Delete)" IsEnabled="{Binding HasSelection}" Padding="8,4"/>
             </StackPanel>
         </Border>
 
