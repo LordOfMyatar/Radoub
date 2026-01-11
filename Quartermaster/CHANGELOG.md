@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.35-alpha] - 2026-01-11
+**Branch**: `quartermaster/sprint-630-871-870` | **PR**: #TBD
+
+### Sprint: Level-Up Resource Tracking (#630, #871, #870)
+
+Resource calculation and tracking for level-up workflow.
+
+#### Work Items
+- [ ] #870 - Track Ability Score Increases from Leveling
+- [ ] #871 - Calculate Available Resources on Level-Up (HP, Skills, Feats, Spells)
+- [ ] #630 - Feats Panel Filter & UX Tuning
+
+---
+
 ## [0.1.34-alpha] - 2026-01-11
 **Branch**: `quartermaster/issue-791` | **PR**: #869
 
