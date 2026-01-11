@@ -45,7 +45,7 @@
                         ToolTip.Tip="Collapse all nodes"
                         Click="OnCollapseAllClick">
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                        <TextBlock Text="📁" FontSize="12"/>
+                        <TextBlock Text="▶" FontSize="12"/>
                         <TextBlock Text="Collapse All" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
@@ -53,7 +53,7 @@
                         ToolTip.Tip="Expand all nodes"
                         Click="OnExpandAllClick">
                     <StackPanel Orientation="Horizontal" Spacing="4">
-                        <TextBlock Text="📂" FontSize="12"/>
+                        <TextBlock Text="▼" FontSize="12"/>
                         <TextBlock Text="Expand All" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>

@@ -7,6 +7,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Views.Controllers
 {
@@ -422,7 +423,7 @@ namespace DialogEditor.Views.Controllers
             if (validation == null) return;
 
             var result = ResourcePathHelper.ValidateGamePathWithMessage(path);
-            validation.Text = result.Message;
+            validation.Text = StatusIndicatorHelper.FormatValidation(result.Message, result.IsValid);
             validation.Foreground = result.IsValid ? _getSuccessBrush() : _getErrorBrush();
         }
 
@@ -432,7 +433,7 @@ namespace DialogEditor.Views.Controllers
             if (validation == null) return;
 
             var result = ResourcePathHelper.ValidateBaseGamePathWithMessage(path);
-            validation.Text = result.Message;
+            validation.Text = StatusIndicatorHelper.FormatValidation(result.Message, result.IsValid);
             validation.Foreground = result.IsValid ? _getSuccessBrush() : _getErrorBrush();
         }
 
@@ -442,7 +443,7 @@ namespace DialogEditor.Views.Controllers
             if (validation == null) return;
 
             var result = ResourcePathHelper.ValidateModulePathWithMessage(path);
-            validation.Text = result.Message;
+            validation.Text = StatusIndicatorHelper.FormatValidation(result.Message, result.IsValid);
             validation.Foreground = result.IsValid ? _getSuccessBrush() : _getErrorBrush();
         }
 

@@ -84,9 +84,11 @@ public partial class AppearancePanel
 
     private void OnColorValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
     {
-        if (_isLoading || _currentCreature == null) return;
+        if (_isLoading || _currentCreature == null || !e.NewValue.HasValue) return;
 
-        var value = (byte)(e.NewValue ?? 0);
+        // Clamp to valid byte range (0-175 per AXAML, but enforce 0-255 for safety)
+        var rawValue = (int)Math.Clamp(e.NewValue.Value, 0, 255);
+        var value = (byte)rawValue;
 
         if (sender == _skinColorNumeric)
         {

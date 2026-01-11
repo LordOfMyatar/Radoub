@@ -167,9 +167,11 @@
         <!-- DRAGON: Grid layout only - tree data binding in TreeView below -->
         <Grid Grid.Row="3" Grid.RowSpan="3" x:Name="MainContentGrid">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="800" MinWidth="500"/>  <!-- Tree+Text area -->
+                <!-- Tree+Text area - use proportional width for 1024x768 support -->
+                <ColumnDefinition Width="2*" MinWidth="400"/>
                 <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="*" MinWidth="350"/>  <!-- Properties area -->
+                <!-- Properties area - reduced minimum for small screens -->
+                <ColumnDefinition Width="*" MinWidth="280"/>
                 <ColumnDefinition Width="0"/>  <!-- Flowchart splitter (hidden by default, index 3) -->
                 <ColumnDefinition Width="0"/>  <!-- Embedded flowchart (hidden by default, index 4) -->
             </Grid.ColumnDefinitions>
@@ -189,11 +191,11 @@
                         <DockPanel>
                             <!-- Tree Control Buttons -->
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
-                                <Button Name="ExpandAllButton" Content="📂 Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
-                                <Button Name="CollapseAllButton" Content="📁 Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                                <Button Name="ExpandAllButton" Content="▼ Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                                <Button Name="CollapseAllButton" Content="▶ Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
                                 <Separator Width="1" Margin="5,0"/>
-                                <Button Name="AddNodeButton" Content="➕ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
-                                <Button Name="DeleteNodeButton" Content="🗑 Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
+                                <Button Name="AddNodeButton" Content="+ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
+                                <Button Name="DeleteNodeButton" Content="✖ Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
                             </StackPanel>
 
                             <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
@@ -245,7 +247,7 @@
                                     <TreeDataTemplate DataType="models:TreeViewSafeNode" ItemsSource="{Binding Children}">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                             <!-- Issue #484: Warning icon for unreachable siblings (respects ShowDialogWarnings setting) -->
-                                            <TextBlock Text="⚠️"
+                                            <TextBlock Text="⚠"
                                                        ToolTip.Tip="Unreachable: A prior sibling NPC entry has no condition script"
                                                        VerticalAlignment="Center"
                                                        Margin="0,0,2,0">
@@ -291,55 +293,47 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Node Text" FontWeight="Bold" Margin="0,0,0,5"/>
 
-                    <!-- Speaker field at top of text panel -->
+                    <!-- Speaker field at top of text panel - WrapPanel for responsive layout -->
                     <!-- DRAGON: Do not modify x:Name attributes or OnFieldLostFocus handler -->
-                    <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="5"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="5"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="5"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Speaker:" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox x:Name="SpeakerTextBox" Grid.Column="1" MaxLength="15"
-                                 TextWrapping="NoWrap" AcceptsReturn="False"
-                                 TabIndex="30"
-                                 GotFocus="OnFieldGotFocus"
-                                 LostFocus="OnFieldLostFocus"/>
-                        <ComboBox x:Name="RecentCreatureTagsComboBox" Grid.Column="3"
-                                  MinWidth="80" MaxWidth="120"
-                                  TabIndex="31"
+                    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10" Orientation="Horizontal">
+                        <!-- Speaker selection group -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,10,4">
+                            <TextBlock Text="Speaker:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBox x:Name="SpeakerTextBox" Width="130" MaxLength="15"
+                                     TextWrapping="NoWrap" AcceptsReturn="False"
+                                     TabIndex="30"
+                                     GotFocus="OnFieldGotFocus"
+                                     LostFocus="OnFieldLostFocus"/>
+                        </StackPanel>
+                        <ComboBox x:Name="RecentCreatureTagsComboBox"
+                                  MinWidth="70" MaxWidth="100"
+                                  TabIndex="31" Margin="0,0,5,4"
                                   PlaceholderText="Recent..."
                                   SelectionChanged="OnRecentCreatureTagSelected">
                             <!-- Populated dynamically -->
                         </ComboBox>
-                        <Button x:Name="BrowseCreatureButton" Grid.Column="5" Content="Browse..."
-                                TabIndex="32"
-                                MinWidth="55" Padding="5,0" Click="OnBrowseCreatureClick"/>
+                        <Button x:Name="BrowseCreatureButton" Content="Browse..."
+                                TabIndex="32" Margin="0,0,10,4"
+                                MinWidth="50" Padding="4,0" Click="OnBrowseCreatureClick"/>
 
-                        <!-- NPC Speaker Visual Preferences (Issue #16, #36) -->
-                        <TextBlock Grid.Column="7" Text="Shape:" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                        <ComboBox x:Name="SpeakerShapeComboBox" Grid.Column="8" MinWidth="90"
-                                 TabIndex="33"
-                                 SelectionChanged="OnSpeakerShapeChanged">
-                            <!-- Populated in code-behind -->
-                        </ComboBox>
-                        <TextBlock Grid.Column="10" Text="Color:" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                        <ComboBox x:Name="SpeakerColorComboBox" Grid.Column="11" MinWidth="90"
-                                 TabIndex="34"
-                                 SelectionChanged="OnSpeakerColorChanged">
-                            <!-- Populated in code-behind -->
-                        </ComboBox>
-                    </Grid>
+                        <!-- NPC Speaker Visual Preferences (Issue #16, #36) - wraps on narrow screens -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,10,4">
+                            <TextBlock Text="Shape:" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                            <ComboBox x:Name="SpeakerShapeComboBox" MinWidth="80"
+                                     TabIndex="33"
+                                     SelectionChanged="OnSpeakerShapeChanged">
+                                <!-- Populated in code-behind -->
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Color:" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                            <ComboBox x:Name="SpeakerColorComboBox" MinWidth="80"
+                                     TabIndex="34"
+                                     SelectionChanged="OnSpeakerColorChanged">
+                                <!-- Populated in code-behind -->
+                            </ComboBox>
+                        </StackPanel>
+                    </WrapPanel>
 
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <!-- Tab order: Ctrl+D lands here (1), then scripts, then back to speaker row -->

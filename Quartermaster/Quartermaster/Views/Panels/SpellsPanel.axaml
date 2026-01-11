@@ -75,32 +75,33 @@
                                FontWeight="SemiBold"
                                FontSize="{DynamicResource FontSizeSmall}"
                                Margin="0,0,0,8"/>
-                    <StackPanel x:Name="ClassRadioPanel" Orientation="Horizontal" Spacing="5">
+                    <!-- WrapPanel allows class radios to flow to multiple lines on narrow screens -->
+                    <WrapPanel x:Name="ClassRadioPanel" Orientation="Horizontal">
                         <RadioButton x:Name="ClassRadio1" GroupName="CasterClass" Content="Class 1"
-                                     IsChecked="True" IsEnabled="False"
+                                     IsChecked="True" IsEnabled="False" Margin="0,0,8,4"
                                      AutomationProperties.AutomationId="SpellsClass1"/>
                         <RadioButton x:Name="ClassRadio2" GroupName="CasterClass" Content="Class 2"
-                                     IsEnabled="False"
+                                     IsEnabled="False" Margin="0,0,8,4"
                                      AutomationProperties.AutomationId="SpellsClass2"/>
                         <RadioButton x:Name="ClassRadio3" GroupName="CasterClass" Content="Class 3"
-                                     IsEnabled="False"
+                                     IsEnabled="False" Margin="0,0,8,4"
                                      AutomationProperties.AutomationId="SpellsClass3"/>
                         <RadioButton x:Name="ClassRadio4" GroupName="CasterClass" Content="Class 4"
-                                     IsEnabled="False"
+                                     IsEnabled="False" Margin="0,0,8,4"
                                      AutomationProperties.AutomationId="SpellsClass4"/>
                         <RadioButton x:Name="ClassRadio5" GroupName="CasterClass" Content="Class 5"
-                                     IsEnabled="False"
+                                     IsEnabled="False" Margin="0,0,8,4"
                                      AutomationProperties.AutomationId="SpellsClass5"/>
                         <RadioButton x:Name="ClassRadio6" GroupName="CasterClass" Content="Class 6"
-                                     IsEnabled="False"
+                                     IsEnabled="False" Margin="0,0,8,4"
                                      AutomationProperties.AutomationId="SpellsClass6"/>
                         <RadioButton x:Name="ClassRadio7" GroupName="CasterClass" Content="Class 7"
-                                     IsEnabled="False"
+                                     IsEnabled="False" Margin="0,0,8,4"
                                      AutomationProperties.AutomationId="SpellsClass7"/>
                         <RadioButton x:Name="ClassRadio8" GroupName="CasterClass" Content="Class 8"
-                                     IsEnabled="False"
+                                     IsEnabled="False" Margin="0,0,8,4"
                                      AutomationProperties.AutomationId="SpellsClass8"/>
-                    </StackPanel>
+                    </WrapPanel>
 
                     <!-- Spell Slot Summary -->
                     <TextBlock x:Name="SpellSlotSummaryText"
@@ -113,13 +114,12 @@
                 </StackPanel>
             </Border>
 
-            <!-- Filter Toolbar -->
-            <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,0,0,10">
+            <!-- Filter Toolbar - uses WrapPanel for responsive wrapping on narrow screens -->
+            <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
                 <!-- Search Box -->
-                <Grid Grid.Column="0" ColumnDefinitions="*,Auto">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,15,8" MinWidth="200">
                     <TextBox x:Name="SearchTextBox"
                              Watermark="Search spells..."
-                             MinWidth="200"
                              AutomationProperties.AutomationId="SpellsSearchBox"/>
                     <Button Grid.Column="1"
                             x:Name="ClearSearchButton"
@@ -131,11 +131,11 @@
                 </Grid>
 
                 <!-- Spell Level Filter -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,15,8">
                     <TextBlock Text="Level:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="LevelFilterComboBox"
                               SelectedIndex="0"
-                              MinWidth="100"
+                              MinWidth="90"
                               AutomationProperties.AutomationId="SpellsLevelFilter">
                         <ComboBoxItem Content="All Levels"/>
                         <ComboBoxItem Content="Level 0"/>
@@ -152,11 +152,11 @@
                 </StackPanel>
 
                 <!-- Spell School Filter -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,15,8">
                     <TextBlock Text="School:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="SchoolFilterComboBox"
                               SelectedIndex="0"
-                              MinWidth="140"
+                              MinWidth="120"
                               AutomationProperties.AutomationId="SpellsSchoolFilter">
                         <ComboBoxItem Content="All Schools"/>
                         <ComboBoxItem Content="Abjuration"/>
@@ -171,11 +171,11 @@
                 </StackPanel>
 
                 <!-- Status Filter -->
-                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
                     <TextBlock Text="Status:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="StatusFilterComboBox"
                               SelectedIndex="0"
-                              MinWidth="120"
+                              MinWidth="100"
                               AutomationProperties.AutomationId="SpellsStatusFilter">
                         <ComboBoxItem Content="All Spells"/>
                         <ComboBoxItem Content="Known Only"/>
@@ -184,7 +184,7 @@
                         <ComboBoxItem Content="Blocked"/>
                     </ComboBox>
                 </StackPanel>
-            </Grid>
+            </WrapPanel>
 
             <!-- Spells List -->
             <Grid Grid.Row="3" RowDefinitions="Auto,*,Auto,Auto">

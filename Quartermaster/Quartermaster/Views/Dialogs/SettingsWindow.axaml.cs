@@ -15,6 +15,7 @@ using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using ThemeManifest = Radoub.UI.Models.ThemeManifest;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
@@ -130,7 +131,7 @@ public partial class SettingsWindow : Window
             var validation = this.FindControl<TextBlock>("BaseGamePathValidation");
             if (validation != null)
             {
-                validation.Text = "Could not auto-detect installation path";
+                validation.Text = StatusIndicatorHelper.FormatWarning("Could not auto-detect installation path");
                 validation.Foreground = GetWarningBrush();
             }
         }
@@ -173,7 +174,7 @@ public partial class SettingsWindow : Window
             var validation = this.FindControl<TextBlock>("GamePathValidation");
             if (validation != null)
             {
-                validation.Text = "Could not auto-detect user data path";
+                validation.Text = StatusIndicatorHelper.FormatWarning("Could not auto-detect user data path");
                 validation.Foreground = GetWarningBrush();
             }
         }
@@ -192,7 +193,7 @@ public partial class SettingsWindow : Window
 
         if (!Directory.Exists(path))
         {
-            validation.Text = "Directory does not exist";
+            validation.Text = StatusIndicatorHelper.FormatValidation("Directory does not exist", false);
             validation.Foreground = GetErrorBrush();
             return;
         }
@@ -200,12 +201,12 @@ public partial class SettingsWindow : Window
         var dataPath = Path.Combine(path, "data");
         if (Directory.Exists(dataPath))
         {
-            validation.Text = "Valid installation path detected";
+            validation.Text = StatusIndicatorHelper.FormatValidation("Valid installation path detected", true);
             validation.Foreground = GetSuccessBrush();
         }
         else
         {
-            validation.Text = "Warning: 'data' folder not found - may not be correct path";
+            validation.Text = StatusIndicatorHelper.FormatWarning("'data' folder not found - may not be correct path");
             validation.Foreground = GetWarningBrush();
         }
     }
@@ -223,7 +224,7 @@ public partial class SettingsWindow : Window
 
         if (!Directory.Exists(path))
         {
-            validation.Text = "Directory does not exist";
+            validation.Text = StatusIndicatorHelper.FormatValidation("Directory does not exist", false);
             validation.Foreground = GetErrorBrush();
             return;
         }
@@ -231,12 +232,12 @@ public partial class SettingsWindow : Window
         var modulesPath = Path.Combine(path, "modules");
         if (Directory.Exists(modulesPath))
         {
-            validation.Text = "Valid user data path detected";
+            validation.Text = StatusIndicatorHelper.FormatValidation("Valid user data path detected", true);
             validation.Foreground = GetSuccessBrush();
         }
         else
         {
-            validation.Text = "Warning: 'modules' folder not found - may not be correct path";
+            validation.Text = StatusIndicatorHelper.FormatWarning("'modules' folder not found - may not be correct path");
             validation.Foreground = GetWarningBrush();
         }
     }

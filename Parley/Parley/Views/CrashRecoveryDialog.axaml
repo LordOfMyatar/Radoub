@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
 
         <!-- Warning Icon and Header -->
-        <TextBlock Grid.Row="0" Text="⚠️ Parley crashed during your last session"
+        <TextBlock Grid.Row="0" Text="⚠ Parley crashed during your last session"
                    FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
 
         <!-- Info Text -->

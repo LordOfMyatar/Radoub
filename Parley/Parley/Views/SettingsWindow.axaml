@@ -280,7 +280,7 @@
                                          Content="Show unreachable sibling warnings"
                                          Checked="OnSimulatorShowWarningsChanged"
                                          Unchecked="OnSimulatorShowWarningsChanged"/>
-                                <TextBlock Text="Displays ⚠️ icons next to NPC entries that will never be reached because a prior sibling has no condition script"
+                                <TextBlock Text="Displays ⚠ icons next to NPC entries that will never be reached because a prior sibling has no condition script"
                                           TextWrapping="Wrap" FontSize="11" Foreground="Gray" Margin="25,0,0,0"/>
                             </StackPanel>
                         </Border>
