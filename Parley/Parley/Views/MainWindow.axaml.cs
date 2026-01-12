@@ -1115,6 +1115,55 @@ namespace DialogEditor.Views
         }
 
 
+        private async void OnInsertTokenClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var tokenWindow = new TokenSelectorWindow();
+                var result = await tokenWindow.ShowDialog<bool?>(this);
+
+                if (result == true && !string.IsNullOrEmpty(tokenWindow.SelectedToken))
+                {
+                    var textBox = this.FindControl<TextBox>("TextTextBox");
+                    if (textBox != null)
+                    {
+                        // Insert token at cursor position (or replace selection)
+                        var selStart = textBox.SelectionStart;
+                        var selLength = textBox.SelectionEnd - textBox.SelectionStart;
+                        var currentText = textBox.Text ?? "";
+
+                        string newText;
+                        int newCursorPos;
+
+                        if (selLength > 0)
+                        {
+                            // Replace selection
+                            newText = currentText.Remove(selStart, selLength).Insert(selStart, tokenWindow.SelectedToken);
+                            newCursorPos = selStart + tokenWindow.SelectedToken.Length;
+                        }
+                        else
+                        {
+                            // Insert at cursor
+                            newText = currentText.Insert(selStart, tokenWindow.SelectedToken);
+                            newCursorPos = selStart + tokenWindow.SelectedToken.Length;
+                        }
+
+                        textBox.Text = newText;
+                        textBox.SelectionStart = newCursorPos;
+                        textBox.SelectionEnd = newCursorPos;
+                        textBox.Focus();
+
+                        // Trigger auto-save
+                        AutoSaveProperty("TextTextBox");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _viewModel.StatusMessage = $"Error inserting token: {ex.Message}";
+            }
+        }
+
         private void OnRecentCreatureTagSelected(object? sender, SelectionChangedEventArgs e)
         {
             try
