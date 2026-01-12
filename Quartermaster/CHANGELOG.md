@@ -18,9 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Resource calculation and tracking for level-up workflow.
 
 #### Work Items
-- [ ] #870 - Track Ability Score Increases from Leveling
-- [ ] #871 - Calculate Available Resources on Level-Up (HP, Skills, Feats, Spells)
-- [ ] #630 - Feats Panel Filter & UX Tuning
+- [x] #870 - Track Ability Score Increases from Leveling
+- [x] #871 - Calculate Available Resources on Level-Up (HP, Skills, Feats, Spells)
+- [x] #630 - Feats Panel Filter & UX Tuning
 
 ---
 
