@@ -200,21 +200,37 @@ public static class ColorTokenEncoder
     }
 
     /// <summary>
-    /// Common predefined colors for convenience.
+    /// Common predefined colors for NWN color tokens.
+    /// Values use 254 instead of 255 and 32 instead of 0 to avoid ASCII control characters.
     /// </summary>
     public static class Colors
     {
-        public static (byte R, byte G, byte B) Red => (255, 0, 0);
-        public static (byte R, byte G, byte B) Green => (0, 255, 0);
-        public static (byte R, byte G, byte B) Blue => (0, 0, 255);
-        public static (byte R, byte G, byte B) Yellow => (255, 255, 0);
-        public static (byte R, byte G, byte B) Cyan => (0, 255, 255);
-        public static (byte R, byte G, byte B) Magenta => (255, 0, 255);
-        public static (byte R, byte G, byte B) White => (255, 255, 255);
-        public static (byte R, byte G, byte B) Black => (0, 0, 0);
-        public static (byte R, byte G, byte B) Orange => (255, 165, 0);
-        public static (byte R, byte G, byte B) Gold => (255, 215, 0);
-        public static (byte R, byte G, byte B) Purple => (128, 0, 128);
-        public static (byte R, byte G, byte B) Pink => (255, 192, 203);
+        // Primary colors
+        public static (byte R, byte G, byte B) Red => (254, 32, 32);
+        public static (byte R, byte G, byte B) Green => (32, 254, 32);
+        public static (byte R, byte G, byte B) Blue => (32, 32, 254);
+        public static (byte R, byte G, byte B) Cyan => (32, 254, 254);
+        public static (byte R, byte G, byte B) Magenta => (254, 32, 254);
+        public static (byte R, byte G, byte B) Yellow => (254, 254, 32);
+
+        // Dark variants (using 165 for mid-tone)
+        public static (byte R, byte G, byte B) DarkRed => (165, 32, 32);
+        public static (byte R, byte G, byte B) DarkGreen => (32, 165, 32);
+        public static (byte R, byte G, byte B) DarkBlue => (32, 32, 165);
+        public static (byte R, byte G, byte B) DarkCyan => (32, 165, 165);
+        public static (byte R, byte G, byte B) DarkMagenta => (165, 32, 165);
+        public static (byte R, byte G, byte B) DarkYellow => (165, 165, 32);
+
+        // Neutrals
+        public static (byte R, byte G, byte B) Black => (32, 32, 32);
+        public static (byte R, byte G, byte B) DarkGrey => (140, 140, 140);
+        public static (byte R, byte G, byte B) Grey => (165, 165, 165);
+        public static (byte R, byte G, byte B) White => (254, 254, 254);
+
+        // Special colors
+        public static (byte R, byte G, byte B) Orange => (254, 165, 32);
+        public static (byte R, byte G, byte B) DarkOrange => (254, 140, 32);
+        public static (byte R, byte G, byte B) Brown => (218, 165, 35);
+        public static (byte R, byte G, byte B) DarkBrown => (194, 134, 32);
     }
 }

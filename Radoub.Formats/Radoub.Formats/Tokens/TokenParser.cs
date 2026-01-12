@@ -288,6 +288,7 @@ public class UserColorConfig
     /// <summary>
     /// Create a default configuration with common colors.
     /// Uses CUSTOM1000 as close tag and CUSTOM1001+ for colors.
+    /// Hex values match actual NWN RGB encoding (254→FE, 165→A5, 140→8C, 32→20).
     /// </summary>
     public static UserColorConfig CreateDefault()
     {
@@ -299,22 +300,44 @@ public class UserColorConfig
                 ["Red"] = "<CUSTOM1001>",
                 ["Green"] = "<CUSTOM1002>",
                 ["Blue"] = "<CUSTOM1003>",
-                ["Yellow"] = "<CUSTOM1004>",
-                ["Orange"] = "<CUSTOM1005>",
-                ["Purple"] = "<CUSTOM1006>",
-                ["Cyan"] = "<CUSTOM1007>",
-                ["Gold"] = "<CUSTOM1008>"
+                ["Cyan"] = "<CUSTOM1004>",
+                ["Magenta"] = "<CUSTOM1005>",
+                ["Yellow"] = "<CUSTOM1006>",
+                ["Black"] = "<CUSTOM1007>",
+                ["Dark Red"] = "<CUSTOM1008>",
+                ["Dark Green"] = "<CUSTOM1009>",
+                ["Dark Blue"] = "<CUSTOM1010>",
+                ["Dark Cyan"] = "<CUSTOM1011>",
+                ["Dark Magenta"] = "<CUSTOM1012>",
+                ["Dark Yellow"] = "<CUSTOM1013>",
+                ["Grey"] = "<CUSTOM1014>",
+                ["Orange"] = "<CUSTOM1015>",
+                ["Dark Orange"] = "<CUSTOM1016>",
+                ["Brown"] = "<CUSTOM1017>",
+                ["Dark Brown"] = "<CUSTOM1018>",
+                ["Dark Grey"] = "<CUSTOM1019>"
             },
             ColorHexValues = new Dictionary<string, string>
             {
-                ["Red"] = "#FF0000",
-                ["Green"] = "#00FF00",
-                ["Blue"] = "#0000FF",
-                ["Yellow"] = "#FFFF00",
-                ["Orange"] = "#FFA500",
-                ["Purple"] = "#800080",
-                ["Cyan"] = "#00FFFF",
-                ["Gold"] = "#FFD700"
+                ["Red"] = "#FE2020",
+                ["Green"] = "#20FE20",
+                ["Blue"] = "#2020FE",
+                ["Cyan"] = "#20FEFE",
+                ["Magenta"] = "#FE20FE",
+                ["Yellow"] = "#FEFE20",
+                ["Black"] = "#202020",
+                ["Dark Red"] = "#A52020",
+                ["Dark Green"] = "#20A520",
+                ["Dark Blue"] = "#2020A5",
+                ["Dark Cyan"] = "#20A5A5",
+                ["Dark Magenta"] = "#A520A5",
+                ["Dark Yellow"] = "#A5A520",
+                ["Grey"] = "#A5A5A5",
+                ["Orange"] = "#FEA520",
+                ["Dark Orange"] = "#FE8C20",
+                ["Brown"] = "#DAA523",
+                ["Dark Brown"] = "#C28620",
+                ["Dark Grey"] = "#8C8C8C"
             }
         };
     }

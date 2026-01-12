@@ -457,6 +457,9 @@ namespace DialogEditor.Views
         // Issue #478: F6 to open conversation simulator
         void IKeyboardShortcutHandler.OnOpenConversationSimulator() => OnConversationSimulatorClick(null, null!);
 
+        // Text editing - Issue #753: Insert token (Ctrl+T)
+        void IKeyboardShortcutHandler.OnInsertToken() => OnInsertTokenClick(null, null!);
+
         #endregion
 
         private void OnAddContextAwareReply(object? sender, RoutedEventArgs e)

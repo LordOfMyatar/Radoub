@@ -46,6 +46,7 @@ namespace DialogEditor.Services
             _ctrlShortcuts[Key.E] = handler.OnExpandSubnodes;
             _ctrlShortcuts[Key.W] = handler.OnCollapseSubnodes;
             _ctrlShortcuts[Key.J] = handler.OnGoToParentNode; // Issue #149: Jump from link to parent
+            _ctrlShortcuts[Key.T] = handler.OnInsertToken; // Issue #753: Insert token
 
             // Ctrl+Shift shortcuts
             _ctrlShiftShortcuts[Key.D] = handler.OnAddSiblingNode; // Issue #150: Add sibling node
@@ -196,6 +197,9 @@ namespace DialogEditor.Services
             shortcuts.Add("F5 - Open Flowchart");
             shortcuts.Add("F6 - Open Conversation Simulator");
 
+            // Text editing
+            shortcuts.Add("Ctrl+T - Insert Token");
+
             return shortcuts;
         }
     }
@@ -242,5 +246,8 @@ namespace DialogEditor.Services
         // View operations
         void OnOpenFlowchart(); // Issue #339: F5 to open flowchart
         void OnOpenConversationSimulator(); // Issue #478: F6 to open conversation simulator
+
+        // Text editing
+        void OnInsertToken(); // Issue #753: Insert token (Ctrl+T)
     }
 }
