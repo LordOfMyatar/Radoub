@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.112-alpha] - 2026-01-11
+**Branch**: `parley/issue-475` | **PR**: #TBD
+
+### Sprint: Scrap System Overhaul (#475, #476)
+
+- [ ] #476 - Fix legacy entries showing as sub-items after reload
+- [ ] #475 - TreeView for hierarchical scrap display
+
+---
+
 ## [0.1.111-alpha] - 2026-01-10
 **Branch**: `parley/issue-856` | **PR**: #857
 
