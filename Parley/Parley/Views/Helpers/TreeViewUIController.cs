@@ -360,7 +360,6 @@ namespace Parley.Views.Helpers
 
             var treeView = sender as TreeView;
             var newSelectedNode = treeView?.SelectedItem as TreeViewSafeNode;
-
             var currentSelectedNode = _getSelectedNode();
 
             // Skip if selection hasn't actually changed (prevents duplicate processing)

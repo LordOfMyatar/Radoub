@@ -82,7 +82,7 @@ public class NavigationTests : ParleyTestBase
             tab?.Click();
             Thread.Sleep(200);
             // After clicking Scrap tab, scrap list should be visible
-            return FindElement("ScrapListBox") != null;
+            return FindElement("ScrapTreeView") != null;
         });
 
         // Return to Scripts tab

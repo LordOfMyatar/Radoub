@@ -120,7 +120,9 @@ namespace DialogEditor.Views
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"🔄 RefreshTreeDisplayPreserveState: Selected node text = '{selectedNodeText?.Substring(0, System.Math.Min(30, selectedNodeText?.Length ?? 0))}...'");
 
             // Force refresh by re-populating
-            _viewModel.PopulateDialogNodes();
+            // Issue #882: Pass skipAutoSelect=true to prevent ROOT auto-selection during refresh
+            // Selection will be restored by RestoreSelection below
+            _viewModel.PopulateDialogNodes(skipAutoSelect: true);
             UnifiedLogger.LogApplication(LogLevel.DEBUG, "🔄 RefreshTreeDisplayPreserveState: PopulateDialogNodes completed");
 
             // Restore expansion state and selection after UI updates

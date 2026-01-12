@@ -10,6 +10,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.113-alpha] - 2026-01-12
+**Branch**: `parley/issue-753` | **PR**: #878
+
+### Sprint: Color Token & Variable Support (#753, #481)
+
+- [x] #753 - Color Token Support (shared infrastructure)
+- [x] #481 - Custom and built-in variable support in Conversation Simulator
+- [x] #882 - Fix ROOT auto-selection during tree refresh
+
+#### #753 - Color Token Support
+
+Added NWN color token parsing and rendering infrastructure:
+- Parse `<c###>` format color tags (RGB as ASCII characters)
+- Support `</c>` close tags
+- TokenParser in Radoub.Formats for shared use
+- TokenTextBlock Avalonia control for rendering colored text
+- Token Selector dialog with Standard, Highlight, and Color tabs
+- **Ctrl+T** keyboard shortcut for quick token insertion
+- User-configurable color definitions via `~/Radoub/token-colors.json`
+
+#### #481 - Variable Support
+
+Conversation Simulator now renders NWN tokens with color:
+- TokenTextBlock displays colored NPC dialog text
+- Standard tokens (`<FullName>`, `<FirstName>`, etc.) shown in preview
+- Highlight tokens (`<StartAction>`, `<StartCheck>`) with color preview
+
+#### #882 - Focus Fix
+
+Fixed focus jumping to ROOT during tree refresh:
+- Selection now preserved when tabbing between property fields
+- Token insertion works correctly from any node
+
+---
+
 ## [0.1.112-alpha] - 2026-01-11
 **Branch**: `parley/issue-475` | **PR**: #876
 

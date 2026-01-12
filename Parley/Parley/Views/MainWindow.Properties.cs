@@ -335,7 +335,10 @@ namespace DialogEditor.Views
         // FIELD-LEVEL AUTO-SAVE: Save property when field loses focus
         private void OnFieldLostFocus(object? sender, RoutedEventArgs e)
         {
-            if (_selectedNode == null || _uiState.IsPopulatingProperties) return;
+            if (_selectedNode == null || _selectedNode is TreeViewRootNode || _uiState.IsPopulatingProperties) return;
+
+            // Skip auto-save during token insertion (token handler saves directly to avoid focus jump)
+            if (_uiState.IsInsertingToken) return;
 
             var control = sender as Control;
             if (control == null) return;
