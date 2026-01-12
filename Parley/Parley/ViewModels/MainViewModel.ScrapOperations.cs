@@ -12,7 +12,7 @@ namespace DialogEditor.ViewModels
     {
         /// <summary>
         /// Restore a node from the scrap back to the dialog.
-        /// Automatically restores entire batch if entry is a batch root with children.
+        /// Restores the selected entry and its children (subtree restore).
         /// </summary>
         public bool RestoreFromScrap(string entryId, TreeViewSafeNode? selectedParent)
         {
@@ -20,14 +20,13 @@ namespace DialogEditor.ViewModels
 
             SaveUndoState("Restore from Scrap");
 
-            // Check if this is a batch root with children - if so, restore entire batch
             var entry = _scrapManager.GetEntryById(entryId);
             RestoreResult result;
 
-            if (entry != null && entry.IsBatchRoot && entry.ChildCount > 0)
+            if (entry != null && entry.Children.Count > 0)
             {
-                // Restore entire batch (node + all children/orphans)
-                result = _scrapManager.RestoreBatchFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
+                // Restore entry and its children (subtree)
+                result = _scrapManager.RestoreSubtreeFromScrap(entryId, CurrentDialog, selectedParent, _indexManager);
             }
             else
             {
@@ -54,6 +53,15 @@ namespace DialogEditor.ViewModels
             OnPropertyChanged(nameof(ScrapCount));
             OnPropertyChanged(nameof(ScrapTabHeader));
             UpdateScrapBadgeVisibility();
+        }
+
+        /// <summary>
+        /// Swap NPC/PC roles for the selected scrap entry and its children.
+        /// </summary>
+        public bool SwapScrapRoles()
+        {
+            if (SelectedScrapEntry == null) return false;
+            return _scrapManager.SwapRoles(SelectedScrapEntry);
         }
 
         /// <summary>

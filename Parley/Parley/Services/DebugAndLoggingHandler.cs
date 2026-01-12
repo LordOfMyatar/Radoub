@@ -227,6 +227,31 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
+        /// Swap NPC/PC roles for the selected scrap entry and its children.
+        /// Entries become Replies and vice versa.
+        /// </summary>
+        public void SwapScrapRoles()
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "SwapScrapRoles called");
+
+            if (_viewModel.SelectedScrapEntry == null)
+            {
+                _viewModel.StatusMessage = "Select a scrap entry to swap roles";
+                return;
+            }
+
+            var swapped = _viewModel.SwapScrapRoles();
+            if (swapped)
+            {
+                _viewModel.StatusMessage = "Swapped NPC/PC roles - ready to restore";
+            }
+            else
+            {
+                _viewModel.StatusMessage = "Failed to swap roles";
+            }
+        }
+
+        /// <summary>
         /// Shows confirmation dialog and clears all scrap entries if confirmed
         /// </summary>
         public async Task ClearScrapAsync(Window owner)

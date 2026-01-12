@@ -464,7 +464,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Update the visible scrap entries for a specific file.
-        /// Only shows batch roots to avoid UI clutter from subtree entries.
+        /// Builds hierarchical tree structure for TreeView display.
         /// </summary>
         public void UpdateScrapEntriesForFile(string? filePath)
         {
@@ -479,16 +479,41 @@ namespace DialogEditor.Services
 
             var sanitizedPath = SanitizePath(filePath);
 
-            // Only show batch roots for the current file (hide child entries)
-            // Child entries are still in _scrapData for restoration
-            foreach (var entry in _scrapData.Entries
-                .Where(e => e.FilePath == sanitizedPath && e.IsBatchRoot)
+            // Get all entries for this file
+            var fileEntries = _scrapData.Entries
+                .Where(e => e.FilePath == sanitizedPath)
+                .ToList();
+
+            // Build tree structure: batch roots with children populated
+            foreach (var rootEntry in fileEntries
+                .Where(e => e.IsBatchRoot)
                 .OrderByDescending(e => e.Timestamp))
             {
-                ScrapEntries.Add(entry);
+                // Clear and rebuild children collection
+                rootEntry.Children.Clear();
+                BuildChildrenRecursive(rootEntry, fileEntries);
+                ScrapEntries.Add(rootEntry);
             }
 
-            ScrapCountChanged?.Invoke(this, ScrapEntries.Count);
+            ScrapCountChanged?.Invoke(this, GetScrapCount(filePath));
+        }
+
+        /// <summary>
+        /// Recursively build children for a scrap entry from the batch.
+        /// </summary>
+        private void BuildChildrenRecursive(ScrapEntry parent, List<ScrapEntry> allEntries)
+        {
+            var children = allEntries
+                .Where(e => e.ParentEntryId == parent.Id)
+                .OrderBy(e => e.OriginalIndex)
+                .ToList();
+
+            foreach (var child in children)
+            {
+                child.Children.Clear();
+                BuildChildrenRecursive(child, allEntries);
+                parent.Children.Add(child);
+            }
         }
 
         /// <summary>
@@ -831,6 +856,318 @@ namespace DialogEditor.Services
             };
         }
 
+        /// <summary>
+        /// Restores a selected entry and all its descendants from scrap.
+        /// Unlike RestoreBatchFromScrap, this only restores the selected subtree, not the entire batch.
+        /// </summary>
+        public RestoreResult RestoreSubtreeFromScrap(string entryId, Dialog? dialog, TreeViewSafeNode? selectedParent, IndexManager? indexManager)
+        {
+            var rootEntry = GetEntryById(entryId);
+            if (rootEntry == null)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "Entry not found in scrap"
+                };
+            }
+
+            // Collect all entries in the subtree (root + descendants)
+            var subtreeEntries = new List<ScrapEntry> { rootEntry };
+            CollectDescendants(rootEntry, subtreeEntries);
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Restoring subtree with {subtreeEntries.Count} nodes from scrap");
+
+            if (dialog == null)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "No dialog loaded"
+                };
+            }
+
+            if (selectedParent == null)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "Select a location in the tree to restore to"
+                };
+            }
+
+            // Deserialize root node for validation
+            var rootNode = DeserializeNode(rootEntry.SerializedNode);
+            if (rootNode == null)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "Failed to deserialize node"
+                };
+            }
+
+            // Validate root node can be placed at selected location
+            if (selectedParent is TreeViewRootNode && rootNode.Type != DialogNodeType.Entry)
+            {
+                return new RestoreResult
+                {
+                    Success = false,
+                    StatusMessage = "Only NPC Entry nodes can be restored to root level"
+                };
+            }
+
+            if (!(selectedParent is TreeViewRootNode) && selectedParent?.OriginalNode != null)
+            {
+                var parentNode = selectedParent.OriginalNode;
+                if (rootNode.Type == DialogNodeType.Entry && parentNode.Type == DialogNodeType.Entry)
+                {
+                    return new RestoreResult
+                    {
+                        Success = false,
+                        StatusMessage = "NPC Entry nodes cannot be children of other NPC Entry nodes"
+                    };
+                }
+            }
+
+            // Build mapping from entry ID to restored node
+            var entryToNode = new Dictionary<string, DialogNode>();
+
+            // First pass: restore all nodes to their respective lists
+            foreach (var scrapEntry in subtreeEntries)
+            {
+                var node = DeserializeNode(scrapEntry.SerializedNode);
+                if (node == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Failed to deserialize node in subtree: {scrapEntry.NodeText}");
+                    continue;
+                }
+
+                // Add to appropriate list
+                if (node.Type == DialogNodeType.Entry)
+                {
+                    dialog.Entries.Add(node);
+                }
+                else
+                {
+                    dialog.Replies.Add(node);
+                }
+
+                entryToNode[scrapEntry.Id] = node;
+            }
+
+            // Second pass: reconstruct parent-child relationships
+            foreach (var scrapEntry in subtreeEntries)
+            {
+                if (!entryToNode.TryGetValue(scrapEntry.Id, out var node))
+                    continue;
+
+                var nodeIndex = (uint)dialog.GetNodeIndex(node, node.Type);
+
+                // Create pointer to this node
+                var ptr = new DialogPtr
+                {
+                    Node = node,
+                    Type = node.Type,
+                    Index = nodeIndex,
+                    IsLink = false,
+                    ScriptAppears = "",
+                    ConditionParams = new Dictionary<string, string>(),
+                    Comment = "[Restored from scrap]",
+                    Parent = dialog
+                };
+
+                // Determine parent
+                if (scrapEntry.Id == rootEntry.Id)
+                {
+                    // This is the subtree root - add under selected parent
+                    if (selectedParent is TreeViewRootNode)
+                    {
+                        ptr.IsStart = true;
+                        dialog.Starts.Add(ptr);
+                    }
+                    else
+                    {
+                        selectedParent!.OriginalNode.Pointers.Add(ptr);
+                        selectedParent.IsExpanded = true;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(scrapEntry.ParentEntryId) &&
+                         entryToNode.TryGetValue(scrapEntry.ParentEntryId, out var parentNode))
+                {
+                    // Add as child of the parent node in the subtree
+                    parentNode.Pointers.Add(ptr);
+                }
+                else
+                {
+                    // Orphan in subtree - add under subtree root
+                    if (entryToNode.TryGetValue(rootEntry.Id, out var subtreeRoot))
+                    {
+                        subtreeRoot.Pointers.Add(ptr);
+                    }
+                }
+
+                // Register the pointer
+                dialog.LinkRegistry.RegisterLink(ptr);
+            }
+
+            // Recalculate indices
+            indexManager?.RecalculatePointerIndices(dialog);
+
+            // Remove only the restored entries from scrap
+            foreach (var entry in subtreeEntries)
+            {
+                _scrapData.Entries.Remove(entry);
+            }
+
+            // Check if batch root needs to be updated (if we restored a partial subtree)
+            var batchId = rootEntry.DeletionBatchId;
+            if (!string.IsNullOrEmpty(batchId))
+            {
+                UpdateBatchAfterPartialRestore(batchId);
+            }
+
+            SaveScrapData();
+            UpdateScrapEntriesForFile(GetCurrentFilePath());
+
+            var message = $"Restored subtree ({subtreeEntries.Count} node{(subtreeEntries.Count > 1 ? "s" : "")})";
+            UnifiedLogger.LogApplication(LogLevel.INFO, message);
+
+            return new RestoreResult
+            {
+                Success = true,
+                StatusMessage = message,
+                RestoredNode = entryToNode.TryGetValue(rootEntry.Id, out var restored) ? restored : null
+            };
+        }
+
+        /// <summary>
+        /// Recursively collect all descendants of an entry using its Children collection.
+        /// </summary>
+        private void CollectDescendants(ScrapEntry parent, List<ScrapEntry> results)
+        {
+            foreach (var child in parent.Children)
+            {
+                results.Add(child);
+                CollectDescendants(child, results);
+            }
+        }
+
+        /// <summary>
+        /// Update batch structure after a partial restore (when only some entries were restored).
+        /// If the batch root was restored, promote another entry to be the new root.
+        /// </summary>
+        private void UpdateBatchAfterPartialRestore(string batchId)
+        {
+            var remainingEntries = _scrapData.Entries
+                .Where(e => e.DeletionBatchId == batchId)
+                .ToList();
+
+            if (remainingEntries.Count == 0)
+                return; // Entire batch was restored
+
+            // Check if we need to promote a new batch root
+            var hasRoot = remainingEntries.Any(e => e.IsBatchRoot);
+            if (!hasRoot && remainingEntries.Count > 0)
+            {
+                // Promote the first remaining entry without a parent in the batch as new root
+                var newRoot = remainingEntries.FirstOrDefault(e =>
+                    string.IsNullOrEmpty(e.ParentEntryId) ||
+                    !remainingEntries.Any(r => r.Id == e.ParentEntryId));
+
+                if (newRoot != null)
+                {
+                    newRoot.IsBatchRoot = true;
+                    newRoot.ChildCount = remainingEntries.Count - 1;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Promoted new batch root: {newRoot.NodeText}");
+                }
+            }
+            else if (hasRoot)
+            {
+                // Update the existing root's child count
+                var root = remainingEntries.First(e => e.IsBatchRoot);
+                root.ChildCount = remainingEntries.Count - 1;
+            }
+        }
+
+        /// <summary>
+        /// Get the current file path from the first entry in ScrapEntries.
+        /// Used for refreshing after partial restore.
+        /// </summary>
+        private string GetCurrentFilePath()
+        {
+            return ScrapEntries.FirstOrDefault()?.FilePath ?? "";
+        }
+
+        /// <summary>
+        /// Swap NPC/PC roles for a scrap entry and all its children.
+        /// Entry nodes become Reply nodes and vice versa.
+        /// </summary>
+        public bool SwapRoles(ScrapEntry entry)
+        {
+            if (entry == null) return false;
+
+            try
+            {
+                // Collect all entries to swap (entry + descendants)
+                var entriesToSwap = new List<ScrapEntry> { entry };
+                CollectDescendants(entry, entriesToSwap);
+
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Swapping roles for {entriesToSwap.Count} node(s)");
+
+                foreach (var scrapEntry in entriesToSwap)
+                {
+                    SwapEntryRole(scrapEntry);
+                }
+
+                SaveScrapData();
+                UpdateScrapEntriesForFile(GetCurrentFilePath());
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR,
+                    $"Failed to swap roles: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Swap the role of a single scrap entry (Entry ↔ Reply).
+        /// Updates both the metadata and the serialized node.
+        /// </summary>
+        private void SwapEntryRole(ScrapEntry entry)
+        {
+            // Swap the NodeType display
+            var wasEntry = entry.NodeType == "Entry";
+            entry.NodeType = wasEntry ? "Reply" : "Entry";
+
+            // Also swap the underlying serialized node
+            try
+            {
+                var node = DeserializeNode(entry.SerializedNode);
+                if (node != null)
+                {
+                    // Swap the actual node type
+                    node.Type = wasEntry ? DialogNodeType.Reply : DialogNodeType.Entry;
+                    entry.SerializedNode = SerializeNode(node);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN,
+                    $"Failed to swap serialized node: {ex.Message}");
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Swapped: {entry.NodeText} -> {entry.NodeType}");
+        }
+
         private void UpdateScrapEntries()
         {
             // INTERNAL USE ONLY - Called during initialization before any file is loaded.
@@ -1008,13 +1345,17 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Migrates legacy scrap entries that don't have batch tracking fields set.
-        /// Legacy entries (pre-0.1.78) didn't have IsBatchRoot, so they need to be
-        /// marked as batch roots to appear in the filtered UI.
+        /// Migrates and repairs scrap entries with inconsistent batch tracking.
+        /// - Legacy entries (pre-0.1.78) without DeletionBatchId are treated as batch roots
+        /// - Entries with ParentEntryId should never be batch roots (#476 fix)
+        /// - Ensures each batch has exactly one root
         /// </summary>
         private void MigrateLegacyEntries(ScrapData data)
         {
             var migrated = 0;
+            var repaired = 0;
+
+            // First pass: fix legacy entries without batch ID
             foreach (var entry in data.Entries)
             {
                 // Legacy entries won't have DeletionBatchId set
@@ -1027,10 +1368,53 @@ namespace DialogEditor.Services
                 }
             }
 
+            // Second pass: fix inconsistent batch roots (#476)
+            // Entries with ParentEntryId are children, never roots
+            foreach (var entry in data.Entries)
+            {
+                if (!string.IsNullOrEmpty(entry.ParentEntryId) && entry.IsBatchRoot)
+                {
+                    entry.IsBatchRoot = false;
+                    repaired++;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Fixed child entry incorrectly marked as root: {entry.NodeText}");
+                }
+            }
+
+            // Third pass: ensure each batch has a root
+            var batches = data.Entries
+                .Where(e => !string.IsNullOrEmpty(e.DeletionBatchId))
+                .GroupBy(e => e.DeletionBatchId);
+
+            foreach (var batch in batches)
+            {
+                if (!batch.Any(e => e.IsBatchRoot))
+                {
+                    // Find the entry with no parent in this batch
+                    var newRoot = batch.FirstOrDefault(e =>
+                        string.IsNullOrEmpty(e.ParentEntryId) ||
+                        !batch.Any(b => b.Id == e.ParentEntryId));
+
+                    if (newRoot != null)
+                    {
+                        newRoot.IsBatchRoot = true;
+                        newRoot.ChildCount = batch.Count() - 1;
+                        repaired++;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"Assigned batch root: {newRoot.NodeText}");
+                    }
+                }
+            }
+
             if (migrated > 0)
             {
                 UnifiedLogger.LogApplication(LogLevel.INFO,
                     $"Migrated {migrated} legacy scrap entries to batch format");
+            }
+            if (repaired > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Repaired {repaired} scrap entries with inconsistent batch tracking");
             }
         }
 
@@ -1188,5 +1572,24 @@ namespace DialogEditor.Services
                 return Timestamp.ToString("yyyy-MM-dd");
             }
         }
+
+        /// <summary>
+        /// Children of this entry within the same deletion batch.
+        /// Populated by ScrapManager.BuildScrapTree() for TreeView display.
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<ScrapEntry> Children { get; } = new ObservableCollection<ScrapEntry>();
+
+        /// <summary>
+        /// Whether this entry is expanded in the TreeView.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsExpanded { get; set; } = false;
+
+        /// <summary>
+        /// Color for node type display (matches dialog tree styling).
+        /// </summary>
+        [JsonIgnore]
+        public string NodeColor => NodeType == "Entry" ? "#2196F3" : "#4CAF50";
     }
 }

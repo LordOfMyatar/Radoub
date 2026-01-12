@@ -786,6 +786,11 @@ namespace DialogEditor.Views
             await _services.DebugLogging.ClearScrapAsync(this);
         }
 
+        private void OnSwapRolesClick(object? sender, RoutedEventArgs e)
+        {
+            _services.DebugLogging.SwapScrapRoles();
+        }
+
         private void HideDebugConsoleByDefault()
         {
             try

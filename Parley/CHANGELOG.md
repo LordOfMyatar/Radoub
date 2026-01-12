@@ -15,8 +15,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Scrap System Overhaul (#475, #476)
 
-- [ ] #476 - Fix legacy entries showing as sub-items after reload
-- [ ] #475 - TreeView for hierarchical scrap display
+- [x] #476 - Fix legacy entries showing as sub-items after reload
+- [x] #475 - TreeView for hierarchical scrap display
+
+#### #476 - Legacy Entries Fix
+
+Fixed scrap entries with `ParentEntryId` incorrectly marked as batch roots after reload.
+The migration logic now validates and repairs batch structure on load:
+- Children are never marked as roots
+- Each batch is guaranteed to have exactly one root
+- Root promotion logic handles partial restores
+
+#### #475 - TreeView Hierarchical Display
+
+Replaced flat ListBox with TreeView for scrap panel:
+- Expandable tree shows parent-child relationships
+- Selective node restoration: restore any node and its descendants
+- Partial restore promotes remaining entries to new batch roots
+- Visual hierarchy with proper indentation
+
+**New Features**:
+- **Swap Roles**: Convert NPC↔PC for selected node chain before restoring
+  - Useful for fixing accidentally swapped dialog roles
+  - Recursively swaps all descendants
+
+| Button | Action |
+|--------|--------|
+| Restore | Restores selected node and children to dialog tree |
+| Swap Roles | Swaps Entry↔Reply types for selected subtree |
+| Clear All | Removes all scrap entries |
 
 ---
 
