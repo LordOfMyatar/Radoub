@@ -706,13 +706,13 @@
                                     Margin="5,0,0,0"/>
                             <TextBlock Text="(Auto-clears after 30 days)"
                                       VerticalAlignment="Center"
-                                      Foreground="Gray"
+                                      Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                       FontSize="11"
                                       Margin="10,0,0,0"/>
                         </StackPanel>
 
                         <!-- Scrap Tree (#475: Hierarchical display for deleted node batches) -->
-                        <Border BorderBrush="Gray" BorderThickness="1" Padding="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
                             <TreeView x:Name="ScrapTreeView"
                                       ItemsSource="{Binding ScrapEntries}"
                                       SelectedItem="{Binding SelectedScrapEntry, Mode=TwoWay}"
@@ -726,10 +726,10 @@
                                         <Setter Property="Cursor" Value="Hand"/>
                                     </Style>
                                     <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
-                                        <Setter Property="Background" Value="#20FFFFFF"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}"/>
                                     </Style>
                                     <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
-                                        <Setter Property="Background" Value="#30007ACC"/>
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListAccentLowBrush}"/>
                                     </Style>
                                 </TreeView.Styles>
                                 <TreeView.DataTemplates>
@@ -737,21 +737,22 @@
                                         <Border Padding="4,2">
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
+                                                    <!-- Node type uses accent color, node text uses theme foreground -->
                                                     <TextBlock Text="{Binding NodeTypeDisplay}"
                                                               FontWeight="Bold"
-                                                              Foreground="{Binding NodeColor}"
+                                                              Foreground="{DynamicResource SystemAccentColor}"
                                                               Margin="0,0,8,0"/>
                                                     <TextBlock Text="{Binding NodeText}"
                                                               TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                     <TextBlock Text="{Binding Speaker}"
-                                                              Foreground="Gray"
+                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                               FontSize="11"
                                                               Margin="0,0,8,0"
                                                               IsVisible="{Binding Speaker, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                                     <TextBlock Text="{Binding TimeAgo}"
-                                                              Foreground="Gray"
+                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                               FontSize="11"
                                                               FontStyle="Italic"/>
                                                 </StackPanel>

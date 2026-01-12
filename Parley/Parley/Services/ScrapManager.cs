@@ -1585,11 +1585,5 @@ namespace DialogEditor.Services
         /// </summary>
         [JsonIgnore]
         public bool IsExpanded { get; set; } = false;
-
-        /// <summary>
-        /// Color for node type display (matches dialog tree styling).
-        /// </summary>
-        [JsonIgnore]
-        public string NodeColor => NodeType == "Entry" ? "#2196F3" : "#4CAF50";
     }
 }
