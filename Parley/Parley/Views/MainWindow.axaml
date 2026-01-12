@@ -688,6 +688,15 @@
                                     Click="OnRestoreScrapClick"
                                     Padding="8,3"
                                     MinWidth="70"
+                                    ToolTip.Tip="Restore selected node (and children) to dialog"
+                                    IsEnabled="{Binding CanRestoreFromScrap}"/>
+                            <Button x:Name="SwapRolesButton"
+                                    Content="Swap Roles"
+                                    Click="OnSwapRolesClick"
+                                    Padding="8,3"
+                                    MinWidth="80"
+                                    Margin="5,0,0,0"
+                                    ToolTip.Tip="Swap NPC/PC roles for selected node chain before restoring"
                                     IsEnabled="{Binding CanRestoreFromScrap}"/>
                             <Button x:Name="ClearScrapButton"
                                     Content="Clear All"
@@ -697,36 +706,38 @@
                                     Margin="5,0,0,0"/>
                             <TextBlock Text="(Auto-clears after 30 days)"
                                       VerticalAlignment="Center"
-                                      Foreground="Gray"
+                                      Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                       FontSize="11"
                                       Margin="10,0,0,0"/>
                         </StackPanel>
 
-                        <!-- Scrap List -->
-                        <Border BorderBrush="Gray" BorderThickness="1" Padding="5">
-                            <ListBox x:Name="ScrapListBox"
-                                     ItemsSource="{Binding ScrapEntries}"
-                                     SelectedItem="{Binding SelectedScrapEntry}"
-                                     Background="Transparent"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                <ListBox.Styles>
-                                    <Style Selector="ListBoxItem">
+                        <!-- Scrap Tree (#475: Hierarchical display for deleted node batches) -->
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
+                            <TreeView x:Name="ScrapTreeView"
+                                      ItemsSource="{Binding ScrapEntries}"
+                                      SelectedItem="{Binding SelectedScrapEntry, Mode=TwoWay}"
+                                      Background="Transparent"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <TreeView.Styles>
+                                    <Style Selector="TreeViewItem">
+                                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                                         <Setter Property="Padding" Value="4,2"/>
                                         <Setter Property="Cursor" Value="Hand"/>
                                     </Style>
-                                    <Style Selector="ListBoxItem:pointerover">
-                                        <Setter Property="Background" Value="#20FFFFFF"/>
+                                    <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}"/>
                                     </Style>
-                                    <Style Selector="ListBoxItem:selected">
-                                        <Setter Property="Background" Value="#30007ACC"/>
+                                    <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+                                        <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListAccentLowBrush}"/>
                                     </Style>
-                                </ListBox.Styles>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
+                                </TreeView.Styles>
+                                <TreeView.DataTemplates>
+                                    <TreeDataTemplate DataType="services:ScrapEntry" ItemsSource="{Binding Children}">
                                         <Border Padding="4,2">
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
+                                                    <!-- Node type uses accent color, node text uses theme foreground -->
                                                     <TextBlock Text="{Binding NodeTypeDisplay}"
                                                               FontWeight="Bold"
                                                               Foreground="{DynamicResource SystemAccentColor}"
@@ -735,25 +746,21 @@
                                                               TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                    <TextBlock Text="{Binding HierarchyInfo}"
-                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                              FontSize="11"
-                                                              Margin="0,0,8,0"/>
                                                     <TextBlock Text="{Binding Speaker}"
-                                                              Foreground="Gray"
+                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                               FontSize="11"
                                                               Margin="0,0,8,0"
                                                               IsVisible="{Binding Speaker, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                                     <TextBlock Text="{Binding TimeAgo}"
-                                                              Foreground="Gray"
+                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                               FontSize="11"
                                                               FontStyle="Italic"/>
                                                 </StackPanel>
                                             </StackPanel>
                                         </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                                    </TreeDataTemplate>
+                                </TreeView.DataTemplates>
+                            </TreeView>
                         </Border>
                     </DockPanel>
                 </TabItem>
