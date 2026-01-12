@@ -620,6 +620,9 @@ public class CreatureDisplayService
     public FeatInfo GetFeatInfo(int featId) => Feats.GetFeatInfo(featId);
     public HashSet<int> GetClassGrantedFeatIds(int classId) => Feats.GetClassGrantedFeatIds(classId);
     public HashSet<int> GetCombinedGrantedFeatIds(UtcFile creature) => Feats.GetCombinedGrantedFeatIds(creature);
+    public HashSet<int> GetRaceGrantedFeatIds(byte raceId) => Feats.GetRaceGrantedFeatIds(raceId);
+    public int GetFeatGrantingClass(UtcFile creature, int featId) => Feats.GetFeatGrantingClass(creature, featId);
+    public bool IsFeatGrantedByRace(UtcFile creature, int featId) => Feats.IsFeatGrantedByRace(creature, featId);
     public bool IsFeatAvailable(UtcFile creature, int featId) => Feats.IsFeatAvailable(creature, featId);
     public HashSet<int> GetUnavailableFeatIds(UtcFile creature, IEnumerable<int> allFeatIds) => Feats.GetUnavailableFeatIds(creature, allFeatIds);
     public FeatPrerequisites GetFeatPrerequisites(int featId) => Feats.GetFeatPrerequisites(featId);

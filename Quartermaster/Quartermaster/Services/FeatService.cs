@@ -180,6 +180,8 @@ public class FeatService
     public HashSet<int> GetCombinedGrantedFeatIds(UtcFile creature)
     {
         var result = new HashSet<int>();
+
+        // Add class-granted feats
         foreach (var creatureClass in creature.ClassList)
         {
             var classFeats = GetClassGrantedFeatIds(creatureClass.Class);
@@ -188,7 +190,70 @@ public class FeatService
                 result.Add(featId);
             }
         }
+
+        // Add racial feats
+        var racialFeats = GetRaceGrantedFeatIds(creature.Race);
+        foreach (var featId in racialFeats)
+        {
+            result.Add(featId);
+        }
+
         return result;
+    }
+
+    /// <summary>
+    /// Gets the set of feat IDs granted by a race.
+    /// Reads from race feat tables referenced in racialtypes.2da.
+    /// Unlike class feat tables, ALL feats in a racial feat table are automatically granted.
+    /// </summary>
+    public HashSet<int> GetRaceGrantedFeatIds(byte raceId)
+    {
+        var result = new HashSet<int>();
+
+        var featTable = _gameDataService.Get2DAValue("racialtypes", raceId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return result;
+
+        for (int row = 0; row < 100; row++)
+        {
+            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (int.TryParse(featIndexStr, out int featId))
+            {
+                // All feats in a racial feat table are automatically granted to that race
+                result.Add(featId);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Gets the class ID that grants a specific feat to a creature.
+    /// Returns the first matching class ID, or -1 if no class grants this feat.
+    /// </summary>
+    public int GetFeatGrantingClass(UtcFile creature, int featId)
+    {
+        foreach (var creatureClass in creature.ClassList)
+        {
+            var classFeats = GetClassGrantedFeatIds(creatureClass.Class);
+            if (classFeats.Contains(featId))
+            {
+                return creatureClass.Class;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Checks if a feat is granted by a creature's race.
+    /// </summary>
+    public bool IsFeatGrantedByRace(UtcFile creature, int featId)
+    {
+        var racialFeats = GetRaceGrantedFeatIds(creature.Race);
+        return racialFeats.Contains(featId);
     }
 
     /// <summary>
