@@ -180,6 +180,8 @@ public class FeatService
     public HashSet<int> GetCombinedGrantedFeatIds(UtcFile creature)
     {
         var result = new HashSet<int>();
+
+        // Add class-granted feats
         foreach (var creatureClass in creature.ClassList)
         {
             var classFeats = GetClassGrantedFeatIds(creatureClass.Class);
@@ -188,7 +190,70 @@ public class FeatService
                 result.Add(featId);
             }
         }
+
+        // Add racial feats
+        var racialFeats = GetRaceGrantedFeatIds(creature.Race);
+        foreach (var featId in racialFeats)
+        {
+            result.Add(featId);
+        }
+
         return result;
+    }
+
+    /// <summary>
+    /// Gets the set of feat IDs granted by a race.
+    /// Reads from race feat tables referenced in racialtypes.2da.
+    /// Unlike class feat tables, ALL feats in a racial feat table are automatically granted.
+    /// </summary>
+    public HashSet<int> GetRaceGrantedFeatIds(byte raceId)
+    {
+        var result = new HashSet<int>();
+
+        var featTable = _gameDataService.Get2DAValue("racialtypes", raceId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return result;
+
+        for (int row = 0; row < 100; row++)
+        {
+            var featIndexStr = _gameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (int.TryParse(featIndexStr, out int featId))
+            {
+                // All feats in a racial feat table are automatically granted to that race
+                result.Add(featId);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Gets the class ID that grants a specific feat to a creature.
+    /// Returns the first matching class ID, or -1 if no class grants this feat.
+    /// </summary>
+    public int GetFeatGrantingClass(UtcFile creature, int featId)
+    {
+        foreach (var creatureClass in creature.ClassList)
+        {
+            var classFeats = GetClassGrantedFeatIds(creatureClass.Class);
+            if (classFeats.Contains(featId))
+            {
+                return creatureClass.Class;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Checks if a feat is granted by a creature's race.
+    /// </summary>
+    public bool IsFeatGrantedByRace(UtcFile creature, int featId)
+    {
+        var racialFeats = GetRaceGrantedFeatIds(creature.Race);
+        return racialFeats.Contains(featId);
     }
 
     /// <summary>
@@ -497,6 +562,88 @@ public class FeatService
 
         return result;
     }
+
+    /// <summary>
+    /// Calculates the expected number of choosable feats for a creature based on level and class.
+    /// Does NOT include automatically granted feats (those are in GetCombinedGrantedFeatIds).
+    /// </summary>
+    public ExpectedFeatInfo GetExpectedFeatCount(UtcFile creature)
+    {
+        var result = new ExpectedFeatInfo();
+        int totalLevel = creature.ClassList.Sum(c => c.ClassLevel);
+
+        // Base feats from character level: 1 at level 1, +1 every 3 levels thereafter
+        // Formula: 1 + floor((level - 1) / 3)
+        result.BaseFeats = 1 + (totalLevel - 1) / 3;
+
+        // Racial bonus feat (Human gets +1)
+        result.RacialBonusFeats = GetRacialBonusFeatCount(creature.Race);
+
+        // Class bonus feats from each class's BonusFeatsTable
+        foreach (var classEntry in creature.ClassList)
+        {
+            int classBonusFeats = GetClassBonusFeatCount(classEntry.Class, classEntry.ClassLevel);
+            result.ClassBonusFeats += classBonusFeats;
+        }
+
+        result.TotalExpected = result.BaseFeats + result.RacialBonusFeats + result.ClassBonusFeats;
+        return result;
+    }
+
+    /// <summary>
+    /// Gets the number of bonus feats a race grants at character creation.
+    /// Human = 1 (Quick to Master racial trait), others = 0.
+    /// </summary>
+    private int GetRacialBonusFeatCount(byte raceId)
+    {
+        // Check racialtypes.2da for ExtraFeatsAtFirstLevel or similar
+        var extraFeats = _gameDataService.Get2DAValue("racialtypes", raceId, "ExtraFeatsAtFirstLevel");
+        if (!string.IsNullOrEmpty(extraFeats) && extraFeats != "****" && int.TryParse(extraFeats, out int bonus))
+            return bonus;
+
+        // Fallback: Human (raceId 6) gets 1 extra feat
+        return raceId == 6 ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Gets the number of bonus feats granted by a class up to a given level.
+    /// Reads from cls_bfeat_*.2da (BonusFeatsTable column in classes.2da).
+    /// </summary>
+    private int GetClassBonusFeatCount(int classId, int classLevel)
+    {
+        var bfeatTable = _gameDataService.Get2DAValue("classes", classId, "BonusFeatsTable");
+        if (string.IsNullOrEmpty(bfeatTable) || bfeatTable == "****")
+            return 0;
+
+        int bonusCount = 0;
+        for (int level = 1; level <= classLevel; level++)
+        {
+            // BonusFeatsTable rows are 0-indexed, level 1 = row 0
+            var bonus = _gameDataService.Get2DAValue(bfeatTable, level - 1, "Bonus");
+            if (bonus == "1")
+                bonusCount++;
+        }
+
+        return bonusCount;
+    }
+}
+
+/// <summary>
+/// Breakdown of expected choosable feats for a creature.
+/// </summary>
+public class ExpectedFeatInfo
+{
+    /// <summary>Base feats from character level (1 + floor((level-1)/3))</summary>
+    public int BaseFeats { get; set; }
+
+    /// <summary>Racial bonus feats (Human = 1)</summary>
+    public int RacialBonusFeats { get; set; }
+
+    /// <summary>Class bonus feats from BonusFeatsTable</summary>
+    public int ClassBonusFeats { get; set; }
+
+    /// <summary>Total expected choosable feats</summary>
+    public int TotalExpected { get; set; }
 }
 
 /// <summary>

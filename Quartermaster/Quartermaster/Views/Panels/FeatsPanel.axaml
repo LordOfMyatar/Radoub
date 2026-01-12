@@ -6,7 +6,36 @@
              x:Class="Quartermaster.Views.Panels.FeatsPanel">
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20,20,20,20">
-        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <!-- Main layout: Assigned Feats List on left, Feat Browser on right -->
+        <Grid ColumnDefinitions="Auto,*">
+
+            <!-- LEFT COLUMN: Assigned Feats by Class -->
+            <Border Grid.Column="0"
+                    x:Name="AssignedFeatsListBorder"
+                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    CornerRadius="4"
+                    Padding="10"
+                    Margin="0,0,15,0"
+                    MinWidth="180"
+                    MaxHeight="500"
+                    IsVisible="False"
+                    AutomationProperties.AutomationId="AssignedFeatsListSection">
+                <StackPanel>
+                    <TextBlock Text="Assigned Feats"
+                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource FontSizeNormal}"
+                               Margin="0,0,0,10"/>
+                    <!-- Scrollable list of assigned feats grouped by class -->
+                    <ScrollViewer MaxHeight="450" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="AssignedFeatsListPanel">
+                            <!-- Dynamically populated with feat names grouped by class -->
+                        </StackPanel>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+
+            <!-- RIGHT COLUMN: Original feat panel content -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,*,Auto">
             <!-- Header -->
             <TextBlock Grid.Row="0"
                        Text="Feats"
@@ -22,12 +51,11 @@
                        Margin="0,5,0,10"/>
 
             <!-- Search and Filter Controls -->
-            <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,10">
+            <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
                 <!-- Search Box -->
-                <Grid Grid.Column="0" ColumnDefinitions="*,Auto">
+                <Grid ColumnDefinitions="*,Auto" Margin="0,0,15,8" MinWidth="200">
                     <TextBox x:Name="SearchTextBox"
                              Watermark="Search feats..."
-                             MinWidth="200"
                              AutomationProperties.AutomationId="FeatsSearchBox"/>
                     <Button Grid.Column="1"
                             x:Name="ClearSearchButton"
@@ -39,54 +67,52 @@
                 </Grid>
 
                 <!-- Category Filter -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" Margin="15,0,0,0">
-                    <TextBlock Text="Filter:" VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,15,8">
+                    <TextBlock Text="Category:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="CategoryFilterComboBox"
                               SelectedIndex="0"
-                              MinWidth="150"
+                              MinWidth="120"
                               AutomationProperties.AutomationId="FeatsCategoryFilter">
-                        <ComboBoxItem Content="All Feats"/>
+                        <ComboBoxItem Content="All Categories"/>
                         <ComboBoxItem Content="Combat"/>
                         <ComboBoxItem Content="Active Combat"/>
                         <ComboBoxItem Content="Defensive"/>
                         <ComboBoxItem Content="Magical"/>
                         <ComboBoxItem Content="Class/Racial"/>
                         <ComboBoxItem Content="Other"/>
-                        <ComboBoxItem Content="Assigned Only"/>
-                        <ComboBoxItem Content="Granted Only"/>
-                        <ComboBoxItem Content="Unassigned Only"/>
-                        <ComboBoxItem Content="Available Only"/>
-                        <ComboBoxItem Content="Unavailable Only"/>
-                        <ComboBoxItem Content="Prereqs Met"/>
-                        <ComboBoxItem Content="Prereqs Unmet"/>
-                        <ComboBoxItem Content="Has Prereqs"/>
                     </ComboBox>
                 </StackPanel>
 
-                <!-- Legend -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="15,0,0,0">
-                    <StackPanel Orientation="Horizontal" Spacing="2">
-                        <TextBlock Text="✓" Foreground="{DynamicResource ThemeSuccess}" FontSize="{DynamicResource FontSizeSmall}" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <TextBlock Text="Has" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="2">
-                        <TextBlock Text="★" Foreground="{DynamicResource ThemeSelection}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
-                        <TextBlock Text="Granted" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="2">
-                        <TextBlock Text="⚠" Foreground="{DynamicResource ThemeWarning}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
-                        <TextBlock Text="Unmet" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="2">
-                        <TextBlock Text="✗" Foreground="{DynamicResource ThemeBorder}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
-                        <TextBlock Text="N/A" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                    </StackPanel>
+                <!-- Status Filter (checkboxes for multi-select) -->
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                    <TextBlock Text="Status:" VerticalAlignment="Center"/>
+                    <CheckBox x:Name="ShowAssignedCheckBox"
+                              Content="Assigned"
+                              IsChecked="True"
+                              VerticalAlignment="Center"
+                              AutomationProperties.AutomationId="FeatsShowAssigned"/>
+                    <CheckBox x:Name="ShowGrantedCheckBox"
+                              Content="Granted"
+                              IsChecked="True"
+                              VerticalAlignment="Center"
+                              AutomationProperties.AutomationId="FeatsShowGranted"/>
+                    <CheckBox x:Name="ShowAvailableCheckBox"
+                              Content="Available"
+                              IsChecked="True"
+                              VerticalAlignment="Center"
+                              AutomationProperties.AutomationId="FeatsShowAvailable"/>
+                    <CheckBox x:Name="ShowPrereqsUnmetCheckBox"
+                              Content="Prereqs Unmet"
+                              IsChecked="True"
+                              VerticalAlignment="Center"
+                              AutomationProperties.AutomationId="FeatsShowPrereqsUnmet"/>
+                    <CheckBox x:Name="ShowUnavailableCheckBox"
+                              Content="Unavailable"
+                              IsChecked="False"
+                              VerticalAlignment="Center"
+                              AutomationProperties.AutomationId="FeatsShowUnavailable"/>
                 </StackPanel>
-            </Grid>
+            </WrapPanel>
 
             <!-- Feats List -->
             <Grid Grid.Row="3" RowDefinitions="Auto,*,Auto,Auto">
@@ -97,13 +123,13 @@
                         BorderThickness="1,1,1,0"
                         CornerRadius="4,4,0,0"
                         Padding="10,8,25,8">
-                    <Grid ColumnDefinitions="32,30,*,120,80,60">
+                    <Grid ColumnDefinitions="32,35,*,120,100">
                         <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
-                        <TextBlock Grid.Column="1" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
+                        <TextBlock Grid.Column="1" Text="Has" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
+                                   ToolTip.Tip="Feat is assigned to creature"/>
                         <TextBlock Grid.Column="2" Text="Feat Name" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
                         <TextBlock Grid.Column="3" Text="Category" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                         <TextBlock Grid.Column="4" Text="Status" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="5" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                     </Grid>
                 </Border>
 
@@ -119,7 +145,7 @@
                             <Border Background="{Binding RowBackground}"
                                     Padding="10,6,10,6"
                                     ToolTip.Tip="{Binding Description}">
-                                <Grid ColumnDefinitions="32,30,*,120,80,60">
+                                <Grid ColumnDefinitions="32,35,*,120,100">
                                     <!-- Icon -->
                                     <Image Grid.Column="0"
                                            Source="{Binding IconBitmap}"
@@ -129,14 +155,14 @@
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center"/>
 
-                                    <!-- Status Indicator -->
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding StatusIndicator}"
-                                               Foreground="{Binding StatusColor}"
-                                               FontSize="{DynamicResource FontSizeSmall}"
-                                               FontWeight="Bold"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Center"/>
+                                    <!-- Assigned Checkbox -->
+                                    <CheckBox Grid.Column="1"
+                                              IsChecked="{Binding IsAssigned}"
+                                              IsEnabled="{Binding CanToggle}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              ToolTip.Tip="{Binding AssignedTooltip}"
+                                              AutomationProperties.AutomationId="FeatAssignedCheckbox"/>
 
                                     <!-- Feat Name -->
                                     <TextBlock Grid.Column="2"
@@ -153,33 +179,13 @@
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
 
-                                    <!-- Assigned/Granted Status -->
+                                    <!-- Status -->
                                     <TextBlock Grid.Column="4"
                                                Text="{Binding StatusText}"
                                                FontSize="{DynamicResource FontSizeSmall}"
                                                Foreground="{Binding StatusColor}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"/>
-
-                                    <!-- Add/Remove Buttons -->
-                                    <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
-                                        <Button Content="+"
-                                                Width="24" Height="24"
-                                                FontSize="{DynamicResource FontSizeNormal}" FontWeight="Bold"
-                                                Padding="0"
-                                                IsVisible="{Binding CanAdd}"
-                                                Tag="{Binding FeatId}"
-                                                ToolTip.Tip="Add feat"
-                                                AutomationProperties.AutomationId="AddFeatButton"/>
-                                        <Button Content="−"
-                                                Width="24" Height="24"
-                                                FontSize="{DynamicResource FontSizeNormal}" FontWeight="Bold"
-                                                Padding="0"
-                                                IsVisible="{Binding CanRemove}"
-                                                Tag="{Binding FeatId}"
-                                                ToolTip.Tip="Remove feat"
-                                                AutomationProperties.AutomationId="RemoveFeatButton"/>
-                                    </StackPanel>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -242,6 +248,7 @@
                     </ScrollViewer>
                 </Border>
             </Expander>
+            </Grid>
         </Grid>
     </Border>
 </UserControl>

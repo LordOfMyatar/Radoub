@@ -7,7 +7,7 @@
 
     <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="20">
+            <StackPanel Spacing="20" Margin="0,0,15,0">
                 <!-- Header -->
                 <TextBlock Text="Character Statistics"
                            FontSize="{DynamicResource FontSizeXLarge}"
@@ -21,7 +21,26 @@
                         Padding="15"
                         AutomationProperties.AutomationId="AbilityScoresSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Ability Scores" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Grid.Column="0" Text="Ability Scores" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+                            <TextBlock Grid.Column="1" x:Name="AbilityPointsSummary"
+                                       Text=""
+                                       FontSize="{DynamicResource FontSizeNormal}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0"
+                                       AutomationProperties.AutomationId="AbilityPointsSummary"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="(?)"
+                                       FontSize="{DynamicResource FontSizeSmall}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"
+                                       Cursor="Help"
+                                       ToolTip.Tip="Level Points is a best-guess estimate. NWN doesn't store original ability scores, so we can only definitively track points that raised abilities above 18. Characters created with Aurora's leveling wizard will be more accurate."
+                                       AutomationProperties.AutomationId="AbilityPointsInfoIcon"/>
+                        </Grid>
 
                         <!-- Column Headers -->
                         <Grid ColumnDefinitions="100,80,60,60,60">
@@ -118,7 +137,16 @@
                         Padding="15"
                         AutomationProperties.AutomationId="HitPointsSection">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Hit Points" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Grid.Column="0" Text="Hit Points" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+                            <TextBlock Grid.Column="1" x:Name="ExpectedHpSummary"
+                                       Text=""
+                                       FontSize="{DynamicResource FontSizeNormal}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       AutomationProperties.AutomationId="ExpectedHpSummary"/>
+                        </Grid>
 
                         <Grid ColumnDefinitions="*,*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="BaseHpDisplay">
@@ -202,22 +230,30 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
                                 <TextBlock Text="Challenge Rating" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <NumericUpDown x:Name="CrValueNumeric" Value="0" Minimum="0" Maximum="100" Increment="0.25"
-                                               FormatString="0.##" FontSize="{DynamicResource FontSizeNormal}" MinWidth="80"
-                                               AutomationProperties.AutomationId="CrValueNumeric"
-                                               ToolTip.Tip="Base Challenge Rating"/>
-                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,5,0,0">
-                                    <TextBlock Text="Adjust:" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                    <NumericUpDown x:Name="CRAdjustNumeric"
-                                                   Minimum="-100"
-                                                   Maximum="100"
-                                                   Increment="1"
-                                                   FormatString="0"
-                                                   MinWidth="70"
-                                                   FontSize="{DynamicResource FontSizeSmall}"
-                                                   AutomationProperties.AutomationId="CRAdjustNumeric"
-                                                   ToolTip.Tip="Manual adjustment to Challenge Rating"/>
+                                <TextBlock x:Name="CrTotalDisplay" Text="0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"
+                                           AutomationProperties.AutomationId="CrTotalDisplay"
+                                           ToolTip.Tip="Total Challenge Rating (Calculated + Adjustment)"/>
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <TextBlock Text="Calc:" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                        <TextBlock x:Name="CrValueDisplay" Text="0" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"
+                                                   AutomationProperties.AutomationId="CrValueDisplay"
+                                                   ToolTip.Tip="Calculated Challenge Rating (read-only)"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="3">
+                                        <TextBlock Text="Adj:" FontSize="{DynamicResource FontSizeXSmall}" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                        <NumericUpDown x:Name="CRAdjustNumeric"
+                                                       Minimum="-100"
+                                                       Maximum="100"
+                                                       Increment="1"
+                                                       FormatString="0"
+                                                       MinWidth="60"
+                                                       FontSize="{DynamicResource FontSizeSmall}"
+                                                       AutomationProperties.AutomationId="CRAdjustNumeric"
+                                                       ToolTip.Tip="Manual adjustment to Challenge Rating"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
