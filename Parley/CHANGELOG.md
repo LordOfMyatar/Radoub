@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.113-alpha] - 2026-01-11
-**Branch**: `parley/issue-753` | **PR**: #TBD
+**Branch**: `parley/issue-753` | **PR**: #878
 
 ### Sprint: Color Token & Variable Support (#753, #481)
 
