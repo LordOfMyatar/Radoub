@@ -74,11 +74,18 @@ namespace DialogEditor.Views
 
         private void OnTabSelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
+            // Guard against calls before UI is initialized
+            if (TokenTabControl == null || TokenOutputTextBox == null)
+                return;
             UpdateTokenOutput();
         }
 
         private void OnStandardTokenSelected(object? sender, SelectionChangedEventArgs e)
         {
+            // Guard against calls before UI is initialized
+            if (StandardTokenListBox == null || StandardExampleText == null || StandardExampleResult == null)
+                return;
+
             var token = StandardTokenListBox.SelectedItem as string;
             if (token != null)
             {
@@ -132,24 +139,38 @@ namespace DialogEditor.Views
 
         private void OnHighlightTypeChanged(object? sender, RoutedEventArgs e)
         {
+            // Guard against calls before UI is initialized
+            if (ActionRadio == null || HighlightRadio == null)
+                return;
             UpdateHighlightPreview();
             UpdateTokenOutput();
         }
 
         private void OnHighlightTextChanged(object? sender, TextChangedEventArgs e)
         {
+            // Guard against calls before UI is initialized
+            if (ActionTextBox == null)
+                return;
             UpdateHighlightPreview();
             UpdateTokenOutput();
         }
 
         private void OnSkillCheckChanged(object? sender, SelectionChangedEventArgs e)
         {
+            // Guard against calls before UI is initialized
+            if (SkillCheckComboBox == null)
+                return;
             UpdateHighlightPreview();
             UpdateTokenOutput();
         }
 
         private void UpdateHighlightPreview()
         {
+            // Guard against calls before UI is initialized
+            if (ActionRadio == null || HighlightRadio == null || ActionTextBox == null ||
+                SkillCheckComboBox == null || HighlightPreviewRaw == null || HighlightPreviewFormatted == null)
+                return;
+
             string type;
             string content;
             string color;
@@ -185,6 +206,10 @@ namespace DialogEditor.Views
 
         private void OnColorSelected(object? sender, SelectionChangedEventArgs e)
         {
+            // Guard against calls before UI is initialized
+            if (ColorListBox == null || ColorPreviewRaw == null || ColorPreviewSample == null)
+                return;
+
             var item = ColorListBox.SelectedItem as ColorListItem;
             if (item != null)
             {
@@ -197,6 +222,12 @@ namespace DialogEditor.Views
 
         private void UpdateTokenOutput()
         {
+            // Guard against calls before UI is initialized
+            if (TokenTabControl == null || TokenOutputTextBox == null ||
+                StandardTokenListBox == null || ActionRadio == null || HighlightRadio == null ||
+                ActionTextBox == null || SkillCheckComboBox == null || ColorListBox == null)
+                return;
+
             var tabIndex = TokenTabControl.SelectedIndex;
 
             switch (tabIndex)

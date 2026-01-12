@@ -108,6 +108,8 @@ namespace DialogEditor.Controls
         public TokenTextBlock()
         {
             _parser = new TokenParser();
+            // Ensure Inlines collection exists
+            Inlines ??= new InlineCollection();
         }
 
         static TokenTextBlock()
@@ -126,7 +128,13 @@ namespace DialogEditor.Controls
 
         private void UpdateInlines()
         {
-            Inlines?.Clear();
+            // Inlines may be null during initialization
+            if (Inlines == null)
+            {
+                return;
+            }
+
+            Inlines.Clear();
 
             var text = TokenText;
             if (string.IsNullOrEmpty(text))
@@ -134,14 +142,15 @@ namespace DialogEditor.Controls
                 return;
             }
 
-            if (Inlines == null)
+            // Parser may be null if called before constructor
+            if (_parser == null)
             {
-                return;
+                _parser = new TokenParser();
             }
 
             try
             {
-                var segments = _parser?.Parse(text) ?? new List<TokenSegment>();
+                var segments = _parser.Parse(text);
 
                 foreach (var segment in segments)
                 {
