@@ -164,6 +164,56 @@ public class CreatureDisplayService
     }
 
     /// <summary>
+    /// Gets the numeric hit die value for a class (from HitDie column in classes.2da).
+    /// </summary>
+    public int GetClassHitDieValue(int classId)
+    {
+        var hitDie = _gameDataService.Get2DAValue("classes", classId, "HitDie");
+        if (!string.IsNullOrEmpty(hitDie) && hitDie != "****" && int.TryParse(hitDie, out int die))
+        {
+            return die;
+        }
+        return 8; // Default
+    }
+
+    /// <summary>
+    /// Calculates expected HP range for a creature based on class hit dice.
+    /// Returns (minHP, avgHP, maxHP) from dice rolls alone (not including CON).
+    /// </summary>
+    public (int Min, int Avg, int Max) CalculateExpectedHpRange(UtcFile creature)
+    {
+        int minHp = 0;
+        int maxHp = 0;
+
+        foreach (var classEntry in creature.ClassList)
+        {
+            int hitDie = GetClassHitDieValue(classEntry.Class);
+            int classLevel = classEntry.ClassLevel;
+
+            // First level gets max hit die, subsequent levels roll
+            if (classLevel >= 1)
+            {
+                // First level of first class gets max
+                if (minHp == 0 && maxHp == 0)
+                {
+                    minHp = hitDie;
+                    maxHp = hitDie;
+                    classLevel--;
+                }
+
+                // Remaining levels: min=1 per level, max=hitDie per level
+                minHp += classLevel * 1; // Minimum roll is 1
+                maxHp += classLevel * hitDie;
+            }
+        }
+
+        // Average is midpoint
+        int avgHp = (minHp + maxHp) / 2;
+
+        return (minHp, avgHp, maxHp);
+    }
+
+    /// <summary>
     /// Gets the base skill points per level for a class (from SkillPointBase column in classes.2da).
     /// </summary>
     public int GetClassSkillPointBase(int classId)

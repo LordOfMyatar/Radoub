@@ -485,8 +485,25 @@ public partial class FeatsPanel : UserControl
             ? $" (showing {displayedCount} of {totalAvailable})"
             : "";
 
+        // Calculate expected choosable feats (not including granted)
+        var selectedCount = assignedCount - grantedCount; // Manually chosen feats
+        string expectedNote = "";
+        if (_currentCreature != null && _displayService != null)
+        {
+            var expectedInfo = _displayService.Feats.GetExpectedFeatCount(_currentCreature);
+            int expected = expectedInfo.TotalExpected;
+            int diff = selectedCount - expected;
+
+            if (diff > 0)
+                expectedNote = $" | Chosen: {selectedCount}/{expected} (+{diff})";
+            else if (diff < 0)
+                expectedNote = $" | Chosen: {selectedCount}/{expected} ({diff} available)";
+            else
+                expectedNote = $" | Chosen: {selectedCount}/{expected}";
+        }
+
         SetText(_featsSummaryText,
-            $"{assignedCount} assigned ({grantedCount} granted) | {unavailableCount} unavailable{filterNote}");
+            $"{assignedCount} assigned ({grantedCount} granted){expectedNote} | {unavailableCount} unavailable{filterNote}");
 
         // Update the left-side assigned feats list
         UpdateAssignedFeatsList();
