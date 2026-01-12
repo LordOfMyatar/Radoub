@@ -337,6 +337,9 @@ namespace DialogEditor.Views
         {
             if (_selectedNode == null || _uiState.IsPopulatingProperties) return;
 
+            // Skip auto-save during token insertion (token handler saves directly to avoid focus jump)
+            if (_uiState.IsInsertingToken) return;
+
             var control = sender as Control;
             if (control == null) return;
 

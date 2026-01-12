@@ -1117,50 +1117,65 @@ namespace DialogEditor.Views
 
         private async void OnInsertTokenClick(object? sender, RoutedEventArgs e)
         {
+            // Set flag to suppress tree refresh during token insertion
+            _uiState.IsInsertingToken = true;
             try
             {
+                // Capture cursor position BEFORE opening dialog (OnFieldLostFocus fires when button clicked)
+                var textBox = this.FindControl<TextBox>("TextTextBox");
+                var savedSelStart = textBox?.SelectionStart ?? 0;
+                var savedSelEnd = textBox?.SelectionEnd ?? 0;
+                var savedText = textBox?.Text ?? "";
+
                 var tokenWindow = new TokenSelectorWindow();
-                var result = await tokenWindow.ShowDialog<bool?>(this);
+                var result = await tokenWindow.ShowDialog<bool>(this);
 
-                if (result == true && !string.IsNullOrEmpty(tokenWindow.SelectedToken))
+                if (result && !string.IsNullOrEmpty(tokenWindow.SelectedToken) && textBox != null)
                 {
-                    var textBox = this.FindControl<TextBox>("TextTextBox");
-                    if (textBox != null)
+                    // Use saved values since focus was lost when dialog opened
+                    var selStart = savedSelStart;
+                    var selLength = savedSelEnd - savedSelStart;
+                    var currentText = savedText;
+
+                    string newText;
+                    int newCursorPos;
+
+                    if (selLength > 0)
                     {
-                        // Insert token at cursor position (or replace selection)
-                        var selStart = textBox.SelectionStart;
-                        var selLength = textBox.SelectionEnd - textBox.SelectionStart;
-                        var currentText = textBox.Text ?? "";
-
-                        string newText;
-                        int newCursorPos;
-
-                        if (selLength > 0)
-                        {
-                            // Replace selection
-                            newText = currentText.Remove(selStart, selLength).Insert(selStart, tokenWindow.SelectedToken);
-                            newCursorPos = selStart + tokenWindow.SelectedToken.Length;
-                        }
-                        else
-                        {
-                            // Insert at cursor
-                            newText = currentText.Insert(selStart, tokenWindow.SelectedToken);
-                            newCursorPos = selStart + tokenWindow.SelectedToken.Length;
-                        }
-
-                        textBox.Text = newText;
-                        textBox.SelectionStart = newCursorPos;
-                        textBox.SelectionEnd = newCursorPos;
-                        textBox.Focus();
-
-                        // Trigger auto-save
-                        AutoSaveProperty("TextTextBox");
+                        // Replace selection
+                        newText = currentText.Remove(selStart, selLength).Insert(selStart, tokenWindow.SelectedToken);
+                        newCursorPos = selStart + tokenWindow.SelectedToken.Length;
                     }
+                    else
+                    {
+                        // Insert at cursor
+                        newText = currentText.Insert(selStart, tokenWindow.SelectedToken);
+                        newCursorPos = selStart + tokenWindow.SelectedToken.Length;
+                    }
+
+                    textBox.Text = newText;
+
+                    // Save directly to node without tree refresh (avoids focus jump)
+                    if (_selectedNode?.OriginalNode?.Text != null)
+                    {
+                        _selectedNode.OriginalNode.Text.Strings[0] = newText;
+                        _viewModel.HasUnsavedChanges = true;
+                        _viewModel.StatusMessage = "Text updated with token";
+                    }
+
+                    // Restore cursor position and focus
+                    textBox.SelectionStart = newCursorPos;
+                    textBox.SelectionEnd = newCursorPos;
+                    textBox.Focus();
                 }
             }
             catch (Exception ex)
             {
                 _viewModel.StatusMessage = $"Error inserting token: {ex.Message}";
+            }
+            finally
+            {
+                _uiState.IsInsertingToken = false;
             }
         }
 

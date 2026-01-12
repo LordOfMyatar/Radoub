@@ -24,6 +24,12 @@ public class UiStateManager
     public bool IsSettingSelectionProgrammatically { get; set; }
 
     /// <summary>
+    /// True when inserting a token via the Token Selector dialog.
+    /// Suppresses tree refresh during the operation to prevent focus jump.
+    /// </summary>
+    public bool IsInsertingToken { get; set; }
+
+    /// <summary>
     /// Begins a property population operation.
     /// Use with try/finally to ensure EndPropertiesPopulation is called.
     /// </summary>
