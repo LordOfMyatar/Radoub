@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.113-alpha] - 2026-01-11
+**Branch**: `parley/issue-753` | **PR**: #TBD
+
+### Sprint: Color Token & Variable Support (#753, #481)
+
+- [ ] #753 - Color Token Support (shared infrastructure)
+- [ ] #481 - Custom and in-built variable support in Conversation Simulator
+
+---
+
 ## [0.1.112-alpha] - 2026-01-11
 **Branch**: `parley/issue-475` | **PR**: #876
 
