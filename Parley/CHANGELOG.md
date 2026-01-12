@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.112-alpha] - 2026-01-11
-**Branch**: `parley/issue-475` | **PR**: #TBD
+**Branch**: `parley/issue-475` | **PR**: #876
 
 ### Sprint: Scrap System Overhaul (#475, #476)
 
