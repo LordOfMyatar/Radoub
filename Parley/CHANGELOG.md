@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.114-alpha] - 2026-01-12
+**Branch**: `parley/issue-887` | **PR**: #TBD
+
+### Sprint: Token System Completion (#883, #880, #877)
+
+- [ ] #883 - Token insertion should auto-add spacing
+- [ ] #880 - Token system documentation
+- [ ] #877 - TreeView text coloring - reduce rainbow effect
+
+---
+
 ## [0.1.113-alpha] - 2026-01-12
 **Branch**: `parley/issue-753` | **PR**: #878
 
