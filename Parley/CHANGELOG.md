@@ -15,9 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Token System Completion (#883, #880, #877)
 
-- [ ] #883 - Token insertion should auto-add spacing
-- [ ] #880 - Token system documentation
-- [ ] #877 - TreeView text coloring - reduce rainbow effect
+- [x] #883 - Token insertion auto-adds space before (not after) when needed
+- [x] #880 - Token system documentation (in NonPublic, pending review)
+- [x] #877 - TreeView text coloring - speaker tags colored, dialog text uses theme
 
 ---
 
