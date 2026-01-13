@@ -23,8 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Build testing infrastructure and address high-priority test gaps. Includes token system test coverage.
 
 #### Work Items
-- [ ] #855 - Test: Create shared test utilities project (foundation)
-- [ ] #853 - Test: Add tool-level file round-trip tests
+- [x] #855 - Test: Create shared test utilities project (foundation)
+- [x] #853 - Test: Add tool-level file round-trip tests
 - [ ] #849 - Test: Add CreatureDisplayService unit tests
 - [ ] #847 - Test: Add FlowView ↔ TreeView synchronization tests
 - [ ] #892 - Add missing token system tests (UserColorConfigLoader, edge cases)
