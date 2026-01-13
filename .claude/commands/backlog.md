@@ -32,7 +32,7 @@ Collect in ONE interaction:
 ### Step 1: Fetch Issues (Single Query)
 
 ```bash
-gh issue list --state open --limit 50 --json number,title,labels,updatedAt,body,milestone
+gh issue list --state open --limit 100 --json number,title,labels,updatedAt,body,milestone
 ```
 
 Filter by tool label if `--tool` specified.
@@ -242,5 +242,6 @@ Save output to `NonPublic/backlog.md` (clobber each run).
 **Prioritization:**
 1. Blockers first (issues blocking other work)
 2. User-facing bugs over internal cleanup
-3. Natural groupings over isolated tasks
-4. Balance visible progress with foundation work
+3. Aging issues
+4. Natural groupings over isolated tasks
+5. Balance visible progress with foundation work
