@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.114-alpha] - 2026-01-12
+**Branch**: `parley/issue-887` | **PR**: #888
+
+### Sprint: Token System Completion (#883, #880, #877)
+
+- [x] #883 - Token insertion auto-adds space before (not after) when needed
+- [x] #880 - Token system documentation (in NonPublic, pending review)
+- [x] #877 - TreeView text coloring - speaker tags colored, dialog text uses theme
+
+---
+
 ## [0.1.113-alpha] - 2026-01-12
 **Branch**: `parley/issue-753` | **PR**: #878
 

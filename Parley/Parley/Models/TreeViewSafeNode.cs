@@ -199,6 +199,32 @@ namespace DialogEditor.Models
             (_originalNode?.Type == DialogNodeType.Entry ? "Owner" : "PC");
         public virtual string TypeDisplay => _originalNode?.Type == DialogNodeType.Entry ? "Owner" : "PC";
 
+        /// <summary>
+        /// Issue #877: Speaker tag only (e.g., "[NPC]" or "[PC]") for colored display.
+        /// </summary>
+        public virtual string SpeakerTag => $"[{Speaker}]";
+
+        /// <summary>
+        /// Issue #877: Dialog text only (without speaker tag) for theme-colored display.
+        /// </summary>
+        public virtual string DialogText
+        {
+            get
+            {
+                if (_originalNode == null) return "[CONTINUE]";
+
+                // Issue #353: Empty terminal nodes show [END DIALOG] instead of [CONTINUE]
+                if (string.IsNullOrEmpty(_originalNode.DisplayText))
+                {
+                    bool isTerminal = _originalNode.Pointers == null ||
+                                      !_originalNode.Pointers.Any(p => p.Node != null);
+                    return isTerminal ? "[END DIALOG]" : "[CONTINUE]";
+                }
+
+                return _originalNode.DisplayText;
+            }
+        }
+
         // Node color for tree view display
         public virtual string NodeColor
         {
@@ -445,6 +471,8 @@ namespace DialogEditor.Models
         }
 
         public override string DisplayText => "ROOT";
+        public override string SpeakerTag => "";  // No speaker tag for ROOT
+        public override string DialogText => "ROOT";
         public override string NodeColor => "Gray";
         public bool IsRoot => true;
         public Dialog Dialog => _dialog;
@@ -467,6 +495,8 @@ namespace DialogEditor.Models
         }
 
         public override string DisplayText => "Loading...";
+        public override string SpeakerTag => "";  // No speaker tag for placeholder
+        public override string DialogText => "Loading...";
         public override string NodeColor => "Gray";
         public override ObservableCollection<TreeViewSafeNode>? Children => null;
         public override bool HasChildren => false;

@@ -265,10 +265,12 @@
                                                   Stretch="Uniform"
                                                   VerticalAlignment="Center"
                                                   Margin="0,2,0,0"/>
-                                            <!-- Node text -->
-                                            <TextBlock Text="{Binding DisplayText}"
-                                                       TextWrapping="Wrap"
+                                            <!-- Issue #877: Speaker tag (colored) + dialog text (theme color) -->
+                                            <TextBlock Text="{Binding SpeakerTag}"
                                                        Foreground="{Binding NodeColor}"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding DialogText}"
+                                                       TextWrapping="Wrap"
                                                        VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </TreeDataTemplate>
