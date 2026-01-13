@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.114-alpha] - 2026-01-12
-**Branch**: `parley/issue-887` | **PR**: #TBD
+**Branch**: `parley/issue-887` | **PR**: #888
 
 ### Sprint: Token System Completion (#883, #880, #877)
 
