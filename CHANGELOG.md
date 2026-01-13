@@ -15,6 +15,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.29] - 2026-01-12
+**Branch**: `radoub/issue-886` | **PR**: #894
+
+### Sprint: Testing Foundation (#886, #892)
+
+Build testing infrastructure and address high-priority test gaps. Includes token system test coverage.
+
+#### Work Items
+- [x] #855 - Test: Create shared test utilities project (foundation)
+- [x] #853 - Test: Add tool-level file round-trip tests
+- [x] #849 - Test: Add CreatureDisplayService unit tests
+- [x] #847 - Test: Add FlowView ↔ TreeView synchronization tests
+- [x] #892 - Add missing token system tests (UserColorConfigLoader, edge cases)
+
+---
+
 ## [0.9.28] - 2026-01-10
 **Branch**: `radoub/issue-860` | **PR**: #861
 
