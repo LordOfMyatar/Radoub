@@ -1143,17 +1143,25 @@ namespace DialogEditor.Views
                     string newText;
                     int newCursorPos;
 
+                    // Determine if we need a space before the token
+                    // Add space if: not at start, and previous char is not whitespace
+                    var needsSpaceBefore = selStart > 0 &&
+                        !char.IsWhiteSpace(currentText[selStart - 1]);
+                    var tokenToInsert = needsSpaceBefore
+                        ? " " + tokenWindow.SelectedToken
+                        : tokenWindow.SelectedToken;
+
                     if (selLength > 0)
                     {
                         // Replace selection
-                        newText = currentText.Remove(selStart, selLength).Insert(selStart, tokenWindow.SelectedToken);
-                        newCursorPos = selStart + tokenWindow.SelectedToken.Length;
+                        newText = currentText.Remove(selStart, selLength).Insert(selStart, tokenToInsert);
+                        newCursorPos = selStart + tokenToInsert.Length;
                     }
                     else
                     {
                         // Insert at cursor
-                        newText = currentText.Insert(selStart, tokenWindow.SelectedToken);
-                        newCursorPos = selStart + tokenWindow.SelectedToken.Length;
+                        newText = currentText.Insert(selStart, tokenToInsert);
+                        newCursorPos = selStart + tokenToInsert.Length;
                     }
 
                     textBox.Text = newText;
