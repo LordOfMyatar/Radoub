@@ -99,7 +99,7 @@
                                     Opacity="{Binding IsLink, Converter={x:Static models:FlowchartLinkOpacityConverter.Instance}}">
                                 <!-- Context menu for FlowView parity with TreeView (#461) -->
                                 <Border.ContextMenu>
-                                    <ContextMenu>
+                                    <ContextMenu DataContext="{Binding}">
                                         <MenuItem Header="Add Node" InputGesture="Ctrl+D" Tag="AddNode"/>
                                         <MenuItem Header="Add Sibling Node" InputGesture="Ctrl+Shift+D" Tag="AddSiblingNode"/>
                                         <MenuItem Header="Delete Node" InputGesture="Delete" Tag="DeleteNode"/>
@@ -108,6 +108,9 @@
                                         <MenuItem Header="Copy Node" InputGesture="Ctrl+C" Tag="CopyNode"/>
                                         <MenuItem Header="Paste" InputGesture="Ctrl+V" Tag="PasteNode"/>
                                         <MenuItem Header="Paste as Link" InputGesture="Ctrl+L" Tag="PasteAsLink"/>
+                                        <Separator/>
+                                        <MenuItem Header="Move Up" InputGesture="Ctrl+Shift+Up" Tag="MoveUp"/>
+                                        <MenuItem Header="Move Down" InputGesture="Ctrl+Shift+Down" Tag="MoveDown"/>
                                         <Separator/>
                                         <MenuItem Header="Expand Subnodes" InputGesture="Ctrl+E" Tag="ExpandSubnodes"/>
                                         <MenuItem Header="Collapse Subnodes" InputGesture="Ctrl+W" Tag="CollapseSubnodes"/>

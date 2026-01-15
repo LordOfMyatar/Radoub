@@ -885,6 +885,12 @@ namespace DialogEditor.Views
                 case "CollapseSubnodes":
                     OnCollapseSubnodesClick(null, null!);
                     break;
+                case "MoveUp":
+                    OnMoveNodeUpClick(null, null!);
+                    break;
+                case "MoveDown":
+                    OnMoveNodeDownClick(null, null!);
+                    break;
                 case "GoToLinkTarget":
                 case "GoToParent":
                     OnGoToParentNodeClick(null, null!);

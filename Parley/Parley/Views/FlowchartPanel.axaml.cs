@@ -121,8 +121,20 @@ namespace DialogEditor.Views
         {
             if (e.Source is MenuItem menuItem && menuItem.Tag is string action)
             {
-                // Find the FlowchartNode from the context menu's DataContext
-                var contextMenu = menuItem.Parent as ContextMenu;
+                // Find the ContextMenu by walking up the parent chain
+                Control? current = menuItem;
+                ContextMenu? contextMenu = null;
+                while (current != null)
+                {
+                    if (current is ContextMenu cm)
+                    {
+                        contextMenu = cm;
+                        break;
+                    }
+                    current = current.Parent as Control;
+                }
+
+                // Get the FlowchartNode from the context menu's DataContext
                 if (contextMenu?.DataContext is FlowchartNode node)
                 {
                     UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart context menu: {action} on node {node.Id}");
@@ -133,6 +145,10 @@ namespace DialogEditor.Views
 
                     // Raise the context menu action event
                     ContextMenuAction?.Invoke(this, new FlowchartContextMenuEventArgs(action, node));
+                }
+                else
+                {
+                    UnifiedLogger.LogUI(LogLevel.WARN, $"Flowchart context menu: {action} - no FlowchartNode found in DataContext");
                 }
             }
         }

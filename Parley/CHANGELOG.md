@@ -21,7 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Added configurable "Flowchart Node Text" setting in UI Settings (1-6 lines, default 3)
 - [x] #461 - FlowView context menu parity with TreeView
   - Added right-click context menu to flowchart nodes
-  - Menu includes: Add Node, Add Sibling, Delete, Cut/Copy/Paste, Paste as Link, Expand/Collapse, Go to Parent/Link Target
+  - Menu includes: Add Node, Add Sibling, Delete, Cut/Copy/Paste, Paste as Link, Move Up/Down, Expand/Collapse, Go to Parent/Link Target
   - Actions route to same handlers as TreeView for consistent behavior
 
 ---
