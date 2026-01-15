@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.116-alpha] - 2026-01-15
+**Branch**: `parley/issue-898` | **PR**: #900
+
+### Sprint: Theme & Accessibility Fixes (#811, #812, #814)
+
+- [x] #811 - Hardcoded Gray colors break theme consistency
+  - Replaced all `Foreground="Gray"` with `{DynamicResource SystemControlForegroundBaseMediumBrush}`
+  - Replaced all `BorderBrush="Gray"` with theme-aware resources
+  - Replaced all `Background="Gray"` on GridSplitters
+  - Files updated: MainWindow, AboutWindow, SettingsWindow, CreaturePickerWindow, ParameterBrowserWindow, QuestBrowserWindow, SoundBrowserWindow, TokenSelectorWindow, ScriptBrowserWindow, CrashRecoveryDialog
+- [x] #812 - FlowchartPanel lacks focus indicator
+  - Added focus border that highlights with SystemAccentColor when panel has keyboard focus
+  - Uses `:focus-within` pseudo-class for consistent Avalonia styling
+- [x] #814 - Properties panel MinWidth too restrictive for small screens
+  - Already fixed in #822 (1024x768 support) - MinWidth is 280
+
+---
+
 ## [0.1.115-alpha] - 2026-01-14
 **Branch**: `parley/issue-891` | **PR**: #896
 
