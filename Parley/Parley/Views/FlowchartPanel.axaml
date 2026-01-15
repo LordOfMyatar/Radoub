@@ -97,6 +97,27 @@
                                     MinWidth="120"
                                     MaxWidth="200"
                                     Opacity="{Binding IsLink, Converter={x:Static models:FlowchartLinkOpacityConverter.Instance}}">
+                                <!-- Context menu for FlowView parity with TreeView (#461) -->
+                                <Border.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Add Node" InputGesture="Ctrl+D" Tag="AddNode"/>
+                                        <MenuItem Header="Add Sibling Node" InputGesture="Ctrl+Shift+D" Tag="AddSiblingNode"/>
+                                        <MenuItem Header="Delete Node" InputGesture="Delete" Tag="DeleteNode"/>
+                                        <Separator/>
+                                        <MenuItem Header="Cut Node" InputGesture="Ctrl+X" Tag="CutNode"/>
+                                        <MenuItem Header="Copy Node" InputGesture="Ctrl+C" Tag="CopyNode"/>
+                                        <MenuItem Header="Paste" InputGesture="Ctrl+V" Tag="PasteNode"/>
+                                        <MenuItem Header="Paste as Link" InputGesture="Ctrl+L" Tag="PasteAsLink"/>
+                                        <Separator/>
+                                        <MenuItem Header="Expand Subnodes" InputGesture="Ctrl+E" Tag="ExpandSubnodes"/>
+                                        <MenuItem Header="Collapse Subnodes" InputGesture="Ctrl+W" Tag="CollapseSubnodes"/>
+                                        <Separator/>
+                                        <MenuItem Header="Go to Link Target" InputGesture="Ctrl+J" Tag="GoToLinkTarget"
+                                                  IsVisible="{Binding IsLink}"/>
+                                        <MenuItem Header="Go to Parent Node" InputGesture="Ctrl+J" Tag="GoToParent"
+                                                  IsVisible="{Binding !IsLink}"/>
+                                    </ContextMenu>
+                                </Border.ContextMenu>
                                 <Border.Background>
                                     <MultiBinding Converter="{x:Static models:FlowchartNodeBackgroundConverter.Instance}">
                                         <Binding Path="NodeType"/>

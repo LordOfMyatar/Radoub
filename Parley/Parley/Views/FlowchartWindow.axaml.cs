@@ -23,12 +23,20 @@ namespace DialogEditor.Views
         /// </summary>
         public event EventHandler<FlowchartNode?>? NodeClicked;
 
+        /// <summary>
+        /// Raised when a context menu action is requested (#461).
+        /// </summary>
+        public event EventHandler<FlowchartContextMenuEventArgs>? ContextMenuAction;
+
         public FlowchartWindow()
         {
             InitializeComponent();
 
             // Forward node click events from the panel
             FlowchartPanelControl.NodeClicked += (sender, node) => NodeClicked?.Invoke(this, node);
+
+            // Forward context menu action events from the panel (#461)
+            FlowchartPanelControl.ContextMenuAction += (sender, args) => ContextMenuAction?.Invoke(this, args);
 
             // Restore window position after window opens (Screens not available in constructor)
             Opened += async (s, e) => await RestoreWindowPositionAsync();

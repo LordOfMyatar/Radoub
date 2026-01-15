@@ -23,6 +23,7 @@ using ThemeManager = Radoub.UI.Services.ThemeManager;
 using DialogEditor.Parsers;
 using Parley.Services;
 using Parley.Views.Helpers;
+using DialogEditor.Views;
 
 namespace DialogEditor.Views
 {
@@ -132,7 +133,8 @@ namespace DialogEditor.Views
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
                 setIsSettingSelectionProgrammatically: value => _uiState.IsSettingSelectionProgrammatically = value,
-                shortcutManager: _services.KeyboardShortcuts); // #809: Enable keyboard shortcuts in FlowView
+                shortcutManager: _services.KeyboardShortcuts, // #809: Enable keyboard shortcuts in FlowView
+                onContextMenuAction: OnFlowchartContextMenuAction); // #461: Context menu parity
 
             _controllers.TreeView = new TreeViewUIController(
                 window: this,
@@ -845,6 +847,53 @@ namespace DialogEditor.Views
         private async void OnExportFlowchartSvgClick(object? sender, RoutedEventArgs e) => await _controllers.Flowchart.ExportToSvgAsync();
 
         private void UpdateEmbeddedFlowchartAfterLoad() => _controllers.Flowchart.UpdateAfterLoad();
+
+        /// <summary>
+        /// Handles context menu actions from FlowchartPanel (#461).
+        /// Routes actions to the appropriate existing handlers.
+        /// </summary>
+        private void OnFlowchartContextMenuAction(FlowchartContextMenuEventArgs e)
+        {
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"MainWindow handling flowchart context action: {e.Action}");
+
+            switch (e.Action)
+            {
+                case "AddNode":
+                    OnAddSmartNodeClick(null, null!);
+                    break;
+                case "AddSiblingNode":
+                    OnAddSiblingNodeClick(null, null!);
+                    break;
+                case "DeleteNode":
+                    OnDeleteNodeClick(null, null!);
+                    break;
+                case "CutNode":
+                    OnCutNodeClick(null, null!);
+                    break;
+                case "CopyNode":
+                    OnCopyNodeClick(null, null!);
+                    break;
+                case "PasteNode":
+                    OnPasteAsDuplicateClick(null, null!);
+                    break;
+                case "PasteAsLink":
+                    OnPasteAsLinkClick(null, null!);
+                    break;
+                case "ExpandSubnodes":
+                    OnExpandSubnodesClick(null, null!);
+                    break;
+                case "CollapseSubnodes":
+                    OnCollapseSubnodesClick(null, null!);
+                    break;
+                case "GoToLinkTarget":
+                case "GoToParent":
+                    OnGoToParentNodeClick(null, null!);
+                    break;
+                default:
+                    UnifiedLogger.LogUI(LogLevel.WARN, $"Unknown flowchart context action: {e.Action}");
+                    break;
+            }
+        }
 
         // Conversation Simulator handler - Issue #478
         private void OnConversationSimulatorClick(object? sender, RoutedEventArgs e)

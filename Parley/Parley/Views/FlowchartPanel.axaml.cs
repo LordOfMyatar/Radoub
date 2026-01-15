@@ -16,6 +16,21 @@ using DialogEditor.ViewModels;
 namespace DialogEditor.Views
 {
     /// <summary>
+    /// Event args for context menu actions in FlowchartPanel (#461).
+    /// </summary>
+    public class FlowchartContextMenuEventArgs : EventArgs
+    {
+        public string Action { get; }
+        public FlowchartNode Node { get; }
+
+        public FlowchartContextMenuEventArgs(string action, FlowchartNode node)
+        {
+            Action = action;
+            Node = node;
+        }
+    }
+
+    /// <summary>
     /// Reusable flowchart panel that can be embedded in MainWindow or FlowchartWindow.
     /// Handles graph rendering, zoom controls, and node click events.
     /// #809: Now forwards keyboard shortcuts to parent window for feature parity with TreeView.
@@ -51,6 +66,12 @@ namespace DialogEditor.Views
         /// The FlowchartNode parameter contains the clicked node with context (IsLink, OriginalPointer, etc.)
         /// </summary>
         public event EventHandler<FlowchartNode?>? NodeClicked;
+
+        /// <summary>
+        /// Raised when a context menu action is requested (#461).
+        /// The string parameter is the action name (e.g., "AddNode", "DeleteNode").
+        /// </summary>
+        public event EventHandler<FlowchartContextMenuEventArgs>? ContextMenuAction;
 
         /// <summary>
         /// Gets the ViewModel for external access (e.g., selection sync)
@@ -91,6 +112,29 @@ namespace DialogEditor.Views
 
             // Re-fit when viewport size changes (if in fit mode)
             FlowchartScrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
+
+            // Context menu handling (#461)
+            FlowchartGraphPanel.AddHandler(MenuItem.ClickEvent, OnContextMenuItemClick);
+        }
+
+        private void OnContextMenuItemClick(object? sender, RoutedEventArgs e)
+        {
+            if (e.Source is MenuItem menuItem && menuItem.Tag is string action)
+            {
+                // Find the FlowchartNode from the context menu's DataContext
+                var contextMenu = menuItem.Parent as ContextMenu;
+                if (contextMenu?.DataContext is FlowchartNode node)
+                {
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart context menu: {action} on node {node.Id}");
+
+                    // Ensure the node is selected before the action
+                    _viewModel.SelectedNodeId = node.Id;
+                    NodeClicked?.Invoke(this, node);
+
+                    // Raise the context menu action event
+                    ContextMenuAction?.Invoke(this, new FlowchartContextMenuEventArgs(action, node));
+                }
+            }
         }
 
         private void OnScrollViewerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)

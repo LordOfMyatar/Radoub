@@ -19,7 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Replaced character-based truncation with line-based display using `MaxLines`
   - Added tooltip showing full text on hover for truncated nodes
   - Added configurable "Flowchart Node Text" setting in UI Settings (1-6 lines, default 3)
-- [ ] #461 - FlowView context menu parity with TreeView
+- [x] #461 - FlowView context menu parity with TreeView
+  - Added right-click context menu to flowchart nodes
+  - Menu includes: Add Node, Add Sibling, Delete, Cut/Copy/Paste, Paste as Link, Expand/Collapse, Go to Parent/Link Target
+  - Actions route to same handlers as TreeView for consistent behavior
 
 ---
 
