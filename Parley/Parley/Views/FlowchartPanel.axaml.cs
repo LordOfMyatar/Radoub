@@ -505,7 +505,7 @@ namespace DialogEditor.Views
                     return;
                 }
 
-                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node clicked: {clickedNode.Id} - {clickedNode.ShortText} (IsLink: {clickedNode.IsLink})");
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node clicked: {clickedNode.Id} - {clickedNode.DisplayText} (IsLink: {clickedNode.IsLink})");
 
                 // Directly set selection to the clicked node's ID (not by DialogNode lookup)
                 // This ensures link nodes get selected, not their targets

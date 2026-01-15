@@ -126,11 +126,14 @@
                                                FontSize="10"
                                                FontWeight="Bold"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                    <!-- Node text -->
-                                    <TextBlock Text="{Binding ShortText}"
+                                    <!-- Node text - uses MaxLines for truncation with ellipsis (#813) -->
+                                    <TextBlock Text="{Binding DisplayText}"
                                                FontSize="11"
                                                TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxLines="{Binding DataContext.NodeMaxLines, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                MaxWidth="180"
+                                               ToolTip.Tip="{Binding Text}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                     <!-- Indicators for conditions/actions/collapse -->
                                     <StackPanel Orientation="Horizontal" Spacing="4">

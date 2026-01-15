@@ -29,6 +29,9 @@ namespace DialogEditor.Services
         // Scrollbar settings
         private bool _allowScrollbarAutoHide = false; // Default: always visible
 
+        // Flowchart node display settings (#813)
+        private int _flowchartNodeMaxLines = 3; // 1-6 lines, default 3
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
@@ -51,7 +54,8 @@ namespace DialogEditor.Services
             bool isDarkTheme,
             string? currentThemeId,
             string flowchartLayout,
-            bool allowScrollbarAutoHide)
+            bool allowScrollbarAutoHide,
+            int flowchartNodeMaxLines = 3)
         {
             _fontSize = Math.Max(8, Math.Min(24, fontSize));
             _fontFamily = fontFamily ?? "";
@@ -71,6 +75,7 @@ namespace DialogEditor.Services
 
             _flowchartLayout = flowchartLayout ?? "Floating";
             _allowScrollbarAutoHide = allowScrollbarAutoHide;
+            _flowchartNodeMaxLines = Math.Max(1, Math.Min(6, flowchartNodeMaxLines));
         }
 
         public double FontSize
@@ -156,6 +161,24 @@ namespace DialogEditor.Services
                 {
                     SettingsChanged?.Invoke();
                     OnPropertyChanged(nameof(AllowScrollbarAutoHide));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Maximum lines to display in flowchart nodes before truncation (#813).
+        /// Range: 1-6 lines, default 3.
+        /// </summary>
+        public int FlowchartNodeMaxLines
+        {
+            get => _flowchartNodeMaxLines;
+            set
+            {
+                var clampedValue = Math.Max(1, Math.Min(6, value));
+                if (SetProperty(ref _flowchartNodeMaxLines, clampedValue))
+                {
+                    SettingsChanged?.Invoke();
+                    UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart node max lines set to {clampedValue}");
                 }
             }
         }

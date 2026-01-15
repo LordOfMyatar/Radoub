@@ -297,8 +297,8 @@ namespace DialogEditor.Services
                     sb.AppendLine($"      <text x=\"10\" y=\"18\" font-size=\"10\" font-weight=\"bold\" fill=\"#666\">{EscapeXml(node.Speaker)}</text>");
                 }
 
-                // Node text (truncated)
-                var displayText = node.ShortText ?? "";
+                // Node text (truncated for SVG export)
+                var displayText = node.DisplayText ?? "";
                 if (displayText.Length > 30) displayText = displayText.Substring(0, 27) + "...";
                 sb.AppendLine($"      <text x=\"10\" y=\"38\" font-size=\"11\" fill=\"#333\">{EscapeXml(displayText)}</text>");
 

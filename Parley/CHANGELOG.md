@@ -15,7 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Flowchart UX Polish (#813, #461)
 
-- [ ] #813 - Flowchart node text truncation without tooltip
+- [x] #813 - Flowchart node text truncation without tooltip
+  - Replaced character-based truncation with line-based display using `MaxLines`
+  - Added tooltip showing full text on hover for truncated nodes
+  - Added configurable "Flowchart Node Text" setting in UI Settings (1-6 lines, default 3)
 - [ ] #461 - FlowView context menu parity with TreeView
 
 ---

@@ -68,6 +68,19 @@ namespace DialogEditor.Views.Controllers
                 spellCheckEnabledCheckBox.IsChecked = settings.SpellCheckEnabled;
             }
 
+            // Flowchart node max lines (#813)
+            var flowchartNodeMaxLinesSlider = _window.FindControl<Slider>("FlowchartNodeMaxLinesSlider");
+            var flowchartNodeMaxLinesLabel = _window.FindControl<TextBlock>("FlowchartNodeMaxLinesLabel");
+            if (flowchartNodeMaxLinesSlider != null)
+            {
+                flowchartNodeMaxLinesSlider.Value = settings.FlowchartNodeMaxLines;
+            }
+            if (flowchartNodeMaxLinesLabel != null)
+            {
+                var lines = settings.FlowchartNodeMaxLines;
+                flowchartNodeMaxLinesLabel.Text = lines == 1 ? "1 line" : $"{lines} lines";
+            }
+
             var externalEditorPathTextBox = _window.FindControl<TextBox>("ExternalEditorPathTextBox");
             if (externalEditorPathTextBox != null)
             {
@@ -178,6 +191,22 @@ namespace DialogEditor.Views.Controllers
             if (checkbox != null)
             {
                 SettingsService.Instance.SpellCheckEnabled = checkbox.IsChecked == true;
+            }
+        }
+
+        public void OnFlowchartNodeMaxLinesChanged(object? sender, RangeBaseValueChangedEventArgs e)
+        {
+            var flowchartNodeMaxLinesLabel = _window.FindControl<TextBlock>("FlowchartNodeMaxLinesLabel");
+            if (flowchartNodeMaxLinesLabel != null && sender is Slider slider)
+            {
+                var lines = (int)slider.Value;
+                flowchartNodeMaxLinesLabel.Text = lines == 1 ? "1 line" : $"{lines} lines";
+            }
+
+            if (!_isInitializing() && sender is Slider s)
+            {
+                SettingsService.Instance.FlowchartNodeMaxLines = (int)s.Value;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Flowchart node max lines: {(int)s.Value}");
             }
         }
 

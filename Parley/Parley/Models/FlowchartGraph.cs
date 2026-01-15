@@ -127,23 +127,20 @@ namespace DialogEditor.Models
         }
 
         /// <summary>
-        /// Short display text (truncated to ~30 chars for flowchart display)
+        /// Display text for flowchart nodes. Returns full text - truncation handled by XAML MaxLines.
         /// </summary>
-        public string ShortText
+        public string DisplayText
         {
             get
             {
                 if (string.IsNullOrEmpty(Text))
                     return IsLink ? $"→ {LinkTargetId}" : "[empty]";
 
-                const int maxLength = 30;
-                return Text.Length <= maxLength
-                    ? Text
-                    : Text.Substring(0, maxLength - 3) + "...";
+                return Text;
             }
         }
 
-        public override string ToString() => $"{NodeType}:{Id} - {ShortText}";
+        public override string ToString() => $"{NodeType}:{Id} - {DisplayText}";
 
         public override bool Equals(object? obj)
         {

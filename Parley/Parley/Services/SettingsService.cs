@@ -741,6 +741,16 @@ namespace DialogEditor.Services
             set => UISettingsService.Instance.AllowScrollbarAutoHide = value;
         }
 
+        /// <summary>
+        /// Maximum lines to display in flowchart nodes before truncation (#813).
+        /// Range: 1-6 lines, default 3.
+        /// </summary>
+        public int FlowchartNodeMaxLines
+        {
+            get => UISettingsService.Instance.FlowchartNodeMaxLines;
+            set => UISettingsService.Instance.FlowchartNodeMaxLines = value;
+        }
+
         // NPC Speaker Visual Preferences (Issue #16, #36, #179)
         // Now delegates to SpeakerPreferencesService for storage in separate file
         public Dictionary<string, SpeakerPreferences> NpcSpeakerPreferences
@@ -951,7 +961,8 @@ namespace DialogEditor.Services
                             settings.IsDarkTheme,
                             settings.CurrentThemeId,
                             settings.FlowchartLayout ?? "Floating",
-                            settings.AllowScrollbarAutoHide);
+                            settings.AllowScrollbarAutoHide,
+                            settings.FlowchartNodeMaxLines);
 
                         // Flowchart window settings (#377)
                         _flowchartWindowLeft = settings.FlowchartWindowLeft;
@@ -1078,6 +1089,7 @@ namespace DialogEditor.Services
                     FlowchartPanelWidth = FlowchartPanelWidth,
                     FlowchartVisible = FlowchartVisible,
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
+                    FlowchartNodeMaxLines = FlowchartNodeMaxLines, // Issue #813
                     // Issue #179: NpcSpeakerPreferences moved to SpeakerPreferences.json
                     // Keep NpcSpeakerPreferences = null to avoid saving back to main settings
                     EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
@@ -1232,6 +1244,7 @@ namespace DialogEditor.Services
             public double FlowchartPanelWidth { get; set; } = 400;
             public bool FlowchartVisible { get; set; } = false;
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
+            public int FlowchartNodeMaxLines { get; set; } = 3; // Issue #813: 1-6 lines, default 3
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
             public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON
             public bool ShowDeleteConfirmation { get; set; } = true; // Issue #14: Default ON
