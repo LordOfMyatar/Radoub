@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.116-alpha] - 2026-01-15
+**Branch**: `parley/issue-898` | **PR**: #TBD
+
+### Sprint: Theme & Accessibility Fixes (#811, #812, #814)
+
+- [ ] #811 - Hardcoded Gray colors break theme consistency
+- [ ] #812 - FlowchartPanel lacks focus indicator
+- [ ] #814 - Properties panel MinWidth too restrictive for small screens
+
+---
+
 ## [0.1.115-alpha] - 2026-01-14
 **Branch**: `parley/issue-891` | **PR**: #896
 
