@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.115-alpha] - 2026-01-14
+**Branch**: `parley/issue-891` | **PR**: #TBD
+
+### Sprint: Code Cleanup & Performance (#891, #841)
+
+- [ ] #891 - Remove plugin infrastructure to reduce code complexity
+- [ ] #841 - Evaluate script caching strategy
+
+---
+
 ## [0.1.114-alpha] - 2026-01-12
 **Branch**: `parley/issue-887` | **PR**: #888
 
