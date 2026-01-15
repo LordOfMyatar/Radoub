@@ -10,7 +10,6 @@ using Avalonia.Media;
 using DialogEditor.ViewModels;
 using DialogEditor.Views;
 using DialogEditor.Services;
-using DialogEditor.Plugins;
 using System.ComponentModel;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
@@ -38,9 +37,6 @@ public partial class App : Application
         {
             // SafeMode: Reset visual settings to safe defaults
             ApplySafeModeDefaults();
-            // Note: Don't access PluginSettingsService.Instance here - we deleted the file
-            // and accessing it would recreate it. The plugin system will handle SafeMode
-            // when it initializes later.
             UnifiedLogger.LogApplication(LogLevel.INFO, "SafeMode enabled - visual settings reset to defaults");
         }
 

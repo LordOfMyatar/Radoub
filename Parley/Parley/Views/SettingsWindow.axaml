@@ -463,41 +463,6 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Plugins Tab -->
-            <TabItem Header="Plugins">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="10" Spacing="15">
-                        <!-- Plugin List -->
-                        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" CornerRadius="5">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Installed Plugins" FontWeight="Bold"/>
-                                <TextBlock Text="Enable or disable plugins. Changes apply on next restart."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
-
-                                <ListBox x:Name="PluginsListBox" MinHeight="200" MaxHeight="400"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Safe Mode -->
-                        <Border BorderBrush="Orange" BorderThickness="1" Padding="10" CornerRadius="5"
-                               Background="Orange" Opacity="0.2">
-                            <StackPanel Spacing="8">
-                                <CheckBox x:Name="SafeModeCheckBox" Content="Disable all plugins on next launch (Safe Mode)"
-                                         FontWeight="Bold" Checked="OnSafeModeChanged" Unchecked="OnSafeModeChanged"/>
-                                <TextBlock Text="Use this if a plugin is causing issues. All plugins will be disabled on the next startup."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Actions -->
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <Button Content="Open Plugins Folder" Click="OnOpenPluginsFolderClick" Padding="10,5"/>
-                            <Button Content="Refresh Plugin List" Click="OnRefreshPluginsClick" Padding="10,5"/>
-                        </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-
             <!-- Dictionaries Tab -->
             <TabItem Header="Dictionaries">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

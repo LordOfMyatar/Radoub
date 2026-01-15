@@ -1,5 +1,4 @@
 using DialogEditor.Services;
-using DialogEditor.Plugins;
 using Parley.Services;
 
 namespace Parley.Views.Helpers
@@ -13,10 +12,6 @@ namespace Parley.Views.Helpers
         // Core services
         public AudioService Audio { get; }
         public CreatureService Creature { get; }
-
-        // Plugin services
-        public PluginManager Plugin { get; }
-        public PluginPanelManager PluginPanel { get; set; } = null!;
 
         // Property services
         public PropertyPanelPopulator PropertyPopulator { get; set; } = null!;
@@ -32,7 +27,6 @@ namespace Parley.Views.Helpers
         // Window services
         public DebugAndLoggingHandler DebugLogging { get; set; } = null!;
         public WindowPersistenceManager WindowPersistence { get; set; } = null!;
-        public PluginSelectionSyncHelper PluginSelectionSync { get; set; } = null!;
 
         // TreeView and dialog services
         public TreeViewDragDropService DragDrop { get; }
@@ -43,7 +37,6 @@ namespace Parley.Views.Helpers
             // Services with no dependencies
             Audio = new AudioService();
             Creature = new CreatureService();
-            Plugin = new PluginManager();
             KeyboardShortcuts = new KeyboardShortcutManager();
             DragDrop = new TreeViewDragDropService();
         }

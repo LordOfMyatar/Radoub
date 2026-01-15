@@ -127,7 +127,6 @@
                         <MenuItem Header="Export as _SVG..." Click="OnExportFlowchartSvgClick"/>
                     </MenuItem>
                 </MenuItem>
-                <MenuItem Header="_Plugin Panels" Name="PluginPanelsMenuItem" Click="OnPluginPanelsClick"/>
                 <MenuItem Header="_Conversation Simulator" Click="OnConversationSimulatorClick" InputGesture="F6"/>
                 <Separator/>
                 <MenuItem Header="_Logging">

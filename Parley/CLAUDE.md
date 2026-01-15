@@ -30,8 +30,7 @@ Parley/
 │   ├── Models/ (Dialog, DialogNode, DialogPtr)
 │   ├── Services/ (DialogFileService, SoundService, ScriptService, etc.)
 │   ├── Handlers/ (UI event handlers)
-│   ├── Themes/ (JSON theme files)
-│   └── Plugins/ (plugin manifests)
+│   └── Themes/ (JSON theme files)
 ├── Parley.Tests/ (unit tests)
 └── TestingTools/ (debug/analysis tools)
 ```

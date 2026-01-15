@@ -22,8 +22,6 @@
     <AssemblyName>Parley</AssemblyName>
     <RootNamespace>DialogEditor</RootNamespace>
 
-    <!-- Plugin deployment - set to false for bundle releases without plugin support -->
-    <IncludePlugins Condition="'$(IncludePlugins)' == ''">true</IncludePlugins>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,25 +34,6 @@
     <None Include="Themes\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <!-- Copy Official Plugins to output directory (only when IncludePlugins=true) -->
-  <ItemGroup Condition="'$(IncludePlugins)' == 'true'">
-    <None Include="Plugins\Official\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <!-- Copy Python plugin SDK to output directory (only when IncludePlugins=true) -->
-  <ItemGroup Condition="'$(IncludePlugins)' == 'true'">
-    <None Include="..\Python\parley_plugin\**\*" Exclude="..\Python\parley_plugin\**\__pycache__\**">
-      <Link>Python\parley_plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Protobuf Include="Plugins\Protos\plugin.proto" GrpcServices="Both" />
   </ItemGroup>
 
   <ItemGroup>
@@ -82,18 +61,11 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="System.Text.Json" Version="10.0.1" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.76.0" />
-    <PackageReference Include="Grpc.AspNetCore.Server" Version="2.76.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.76.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Google.Protobuf" Version="3.33.3" />
     <!-- Graph layout for native flowchart view (cross-platform) -->
     <PackageReference Include="AvaloniaGraphControl" Version="0.7.0" />
     <!-- Text-to-Speech for Windows (Sprint #479) -->
     <PackageReference Include="System.Speech" Version="9.0.0" Condition="'$(RuntimeIdentifier)' == 'win-x64' Or '$(RuntimeIdentifier)' == 'win-arm64' Or $([MSBuild]::IsOSPlatform('Windows'))" />
-    <!-- WebView for CEF-based browser embedding (plugin documentation, help) -->
+    <!-- WebView for CEF-based browser embedding (documentation, help) -->
     <!-- Architecture-specific packages: x64 vs ARM64 (CEF natives are platform-specific) -->
     <!-- Using RuntimeInformation.OSArchitecture for native builds (GitHub Actions macos-latest is ARM64) -->
   </ItemGroup>
