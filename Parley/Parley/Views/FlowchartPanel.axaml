@@ -99,25 +99,25 @@
                                     Opacity="{Binding IsLink, Converter={x:Static models:FlowchartLinkOpacityConverter.Instance}}">
                                 <!-- Context menu for FlowView parity with TreeView (#461) -->
                                 <Border.ContextMenu>
-                                    <ContextMenu DataContext="{Binding}">
-                                        <MenuItem Header="Add Node" InputGesture="Ctrl+D" Tag="AddNode"/>
-                                        <MenuItem Header="Add Sibling Node" InputGesture="Ctrl+Shift+D" Tag="AddSiblingNode"/>
-                                        <MenuItem Header="Delete Node" InputGesture="Delete" Tag="DeleteNode"/>
+                                    <ContextMenu DataContext="{Binding}" x:Name="NodeContextMenu" Opened="OnContextMenuOpened">
+                                        <MenuItem Header="Add Node" InputGesture="Ctrl+D" Tag="AddNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Add Sibling Node" InputGesture="Ctrl+Shift+D" Tag="AddSiblingNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Delete Node" InputGesture="Delete" Tag="DeleteNode" Click="OnContextMenuItemClick"/>
                                         <Separator/>
-                                        <MenuItem Header="Cut Node" InputGesture="Ctrl+X" Tag="CutNode"/>
-                                        <MenuItem Header="Copy Node" InputGesture="Ctrl+C" Tag="CopyNode"/>
-                                        <MenuItem Header="Paste" InputGesture="Ctrl+V" Tag="PasteNode"/>
-                                        <MenuItem Header="Paste as Link" InputGesture="Ctrl+L" Tag="PasteAsLink"/>
+                                        <MenuItem Header="Cut Node" InputGesture="Ctrl+X" Tag="CutNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Copy Node" InputGesture="Ctrl+C" Tag="CopyNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Paste" InputGesture="Ctrl+V" Tag="PasteNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Paste as Link" InputGesture="Ctrl+L" Tag="PasteAsLink" Click="OnContextMenuItemClick"/>
                                         <Separator/>
-                                        <MenuItem Header="Move Up" InputGesture="Ctrl+Shift+Up" Tag="MoveUp"/>
-                                        <MenuItem Header="Move Down" InputGesture="Ctrl+Shift+Down" Tag="MoveDown"/>
+                                        <MenuItem Header="Move Up" InputGesture="Ctrl+Shift+Up" Tag="MoveUp" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Move Down" InputGesture="Ctrl+Shift+Down" Tag="MoveDown" Click="OnContextMenuItemClick"/>
                                         <Separator/>
-                                        <MenuItem Header="Expand Subnodes" InputGesture="Ctrl+E" Tag="ExpandSubnodes"/>
-                                        <MenuItem Header="Collapse Subnodes" InputGesture="Ctrl+W" Tag="CollapseSubnodes"/>
+                                        <MenuItem Header="Expand Subnodes" InputGesture="Ctrl+E" Tag="ExpandSubnodes" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Collapse Subnodes" InputGesture="Ctrl+W" Tag="CollapseSubnodes" Click="OnContextMenuItemClick"/>
                                         <Separator/>
-                                        <MenuItem Header="Go to Link Target" InputGesture="Ctrl+J" Tag="GoToLinkTarget"
+                                        <MenuItem Header="Go to Link Target" InputGesture="Ctrl+J" Tag="GoToLinkTarget" Click="OnContextMenuItemClick"
                                                   IsVisible="{Binding IsLink}"/>
-                                        <MenuItem Header="Go to Parent Node" InputGesture="Ctrl+J" Tag="GoToParent"
+                                        <MenuItem Header="Go to Parent Node" InputGesture="Ctrl+J" Tag="GoToParent" Click="OnContextMenuItemClick"
                                                   IsVisible="{Binding !IsLink}"/>
                                     </ContextMenu>
                                 </Border.ContextMenu>

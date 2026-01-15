@@ -113,43 +113,48 @@ namespace DialogEditor.Views
             // Re-fit when viewport size changes (if in fit mode)
             FlowchartScrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
 
-            // Context menu handling (#461)
-            FlowchartGraphPanel.AddHandler(MenuItem.ClickEvent, OnContextMenuItemClick);
+            // Context menu click handlers are attached via XAML Click events (#461)
+        }
+
+        // Track the current node for context menu actions
+        private FlowchartNode? _contextMenuNode;
+
+        /// <summary>
+        /// Called when context menu opens - captures the FlowchartNode from the Border's DataContext.
+        /// </summary>
+        private void OnContextMenuOpened(object? sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu contextMenu)
+            {
+                // The ContextMenu's DataContext should be bound to the FlowchartNode
+                _contextMenuNode = contextMenu.DataContext as FlowchartNode;
+                if (_contextMenuNode != null)
+                {
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Context menu opened for node: {_contextMenuNode.Id}");
+                }
+                else
+                {
+                    UnifiedLogger.LogUI(LogLevel.WARN, "Context menu opened but no FlowchartNode in DataContext");
+                }
+            }
         }
 
         private void OnContextMenuItemClick(object? sender, RoutedEventArgs e)
         {
-            if (e.Source is MenuItem menuItem && menuItem.Tag is string action)
+            if (sender is MenuItem menuItem && menuItem.Tag is string action && _contextMenuNode != null)
             {
-                // Find the ContextMenu by walking up the parent chain
-                Control? current = menuItem;
-                ContextMenu? contextMenu = null;
-                while (current != null)
-                {
-                    if (current is ContextMenu cm)
-                    {
-                        contextMenu = cm;
-                        break;
-                    }
-                    current = current.Parent as Control;
-                }
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart context menu: {action} on node {_contextMenuNode.Id}");
 
-                // Get the FlowchartNode from the context menu's DataContext
-                if (contextMenu?.DataContext is FlowchartNode node)
-                {
-                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart context menu: {action} on node {node.Id}");
+                // Ensure the node is selected before the action
+                _viewModel.SelectedNodeId = _contextMenuNode.Id;
+                NodeClicked?.Invoke(this, _contextMenuNode);
 
-                    // Ensure the node is selected before the action
-                    _viewModel.SelectedNodeId = node.Id;
-                    NodeClicked?.Invoke(this, node);
-
-                    // Raise the context menu action event
-                    ContextMenuAction?.Invoke(this, new FlowchartContextMenuEventArgs(action, node));
-                }
-                else
-                {
-                    UnifiedLogger.LogUI(LogLevel.WARN, $"Flowchart context menu: {action} - no FlowchartNode found in DataContext");
-                }
+                // Raise the context menu action event
+                ContextMenuAction?.Invoke(this, new FlowchartContextMenuEventArgs(action, _contextMenuNode));
+            }
+            else if (_contextMenuNode == null)
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, $"Flowchart context menu: action requested but no node captured");
             }
         }
 
