@@ -21,7 +21,6 @@ using DialogEditor.Services;
 using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using DialogEditor.Parsers;
-using DialogEditor.Plugins;
 using Parley.Services;
 using Parley.Views.Helpers;
 
@@ -70,10 +69,6 @@ namespace DialogEditor.Views
         /// </summary>
         private void InitializeServices()
         {
-            // Plugin panel requires window reference
-            _services.PluginPanel = new PluginPanelManager(this);
-            _services.PluginPanel.SetPluginManager(_services.Plugin);
-
             // Property services
             _services.PropertyPopulator = new PropertyPanelPopulator(this);
             _services.PropertyAutoSave = new PropertyAutoSaveService(
@@ -115,14 +110,6 @@ namespace DialogEditor.Views
             _services.WindowPersistence = new WindowPersistenceManager(
                 window: this,
                 findControl: this.FindControl<Control>);
-            _services.PluginSelectionSync = new PluginSelectionSyncHelper(
-                viewModel: _viewModel,
-                findControl: this.FindControl<Control>,
-                getSelectedNode: () => _selectedNode,
-                setSelectedTreeItem: node =>
-                {
-                    _controls.WithControl<TreeView>("DialogTreeView", tv => tv.SelectedItem = node);
-                });
 
             // TreeView and dialog services
             _services.DragDrop.DropCompleted += OnDragDropCompleted;
@@ -158,8 +145,7 @@ namespace DialogEditor.Views
                 saveCurrentNodeProperties: SaveCurrentNodeProperties,
                 clearAllFields: () => _services.PropertyPopulator.ClearAllFields(),
                 getIsSettingSelectionProgrammatically: () => _uiState.IsSettingSelectionProgrammatically,
-                syncSelectionToFlowcharts: node => _controllers.Flowchart.SyncSelectionToFlowcharts(node),
-                updatePluginSelectionSync: () => _services.PluginSelectionSync.UpdateDialogContextSelectedNode());
+                syncSelectionToFlowcharts: node => _controllers.Flowchart.SyncSelectionToFlowcharts(node));
 
             _controllers.ScriptBrowser = new ScriptBrowserController(
                 window: this,
@@ -255,20 +241,13 @@ namespace DialogEditor.Views
         }
 
         /// <summary>
-        /// Handles window opened event - restores state and starts plugins.
+        /// Handles window opened event - restores state.
         /// </summary>
         private async void OnWindowOpened(object? sender, EventArgs e)
         {
             await _services.WindowPersistence.RestoreWindowPositionAsync();
             PopulateRecentFilesMenu();
             await _services.WindowPersistence.HandleStartupFileAsync(_viewModel);
-
-            var startedPlugins = await _services.Plugin.StartEnabledPluginsAsync();
-            if (startedPlugins.Count > 0)
-            {
-                _viewModel.StatusMessage = $"Plugins active: {string.Join(", ", startedPlugins)}";
-                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Started plugins: {string.Join(", ", startedPlugins)}");
-            }
 
             if (SettingsService.Instance.FlowchartVisible)
             {
@@ -589,12 +568,6 @@ namespace DialogEditor.Views
             _controllers.ScriptBrowser.CloseActiveScriptBrowser();
             _controllers.ParameterBrowser.CloseActiveParameterBrowser();
 
-            // Close plugin panel windows (Epic 3 / #225)
-            _services.PluginPanel.Dispose();
-
-            // Dispose plugin selection sync helper (Epic 40 Phase 3 / #234)
-            _services.PluginSelectionSync.Dispose();
-
             // Save window position on close
             _services.WindowPersistence.SaveWindowPosition();
         }
@@ -856,42 +829,6 @@ namespace DialogEditor.Views
 
         // Font size is now managed via Settings window only (removed from View menu in #368)
 
-        private void OnPluginPanelsClick(object? sender, RoutedEventArgs e)
-        {
-            // Debug: Log all registered panels
-            var allPanels = DialogEditor.Plugins.Services.PluginUIService.GetAllRegisteredPanels().ToList();
-            UnifiedLogger.LogPlugin(LogLevel.INFO, $"OnPluginPanelsClick: {allPanels.Count} registered panels total");
-            foreach (var p in allPanels)
-            {
-                UnifiedLogger.LogPlugin(LogLevel.INFO, $"  Panel: {p.FullPanelId}, PanelId={p.PanelId}, PluginId={p.PluginId}");
-            }
-
-            var closedPanels = _services.PluginPanel.GetClosedPanels().ToList();
-            UnifiedLogger.LogPlugin(LogLevel.INFO, $"OnPluginPanelsClick: {closedPanels.Count} closed panels");
-
-            if (closedPanels.Count == 0)
-            {
-                if (allPanels.Count == 0)
-                {
-                    _viewModel.StatusMessage = "No plugin panels registered (plugin may not have started)";
-                }
-                else
-                {
-                    _viewModel.StatusMessage = "All plugin panels are already open";
-                }
-                return;
-            }
-
-            // Reopen all closed panels
-            foreach (var panel in closedPanels)
-            {
-                UnifiedLogger.LogPlugin(LogLevel.INFO, $"Reopening panel: {panel.FullPanelId}");
-                _services.PluginPanel.ReopenPanel(panel);
-            }
-
-            _viewModel.StatusMessage = $"Reopened {closedPanels.Count} plugin panel(s)";
-        }
-
         // Flowchart menu handlers - delegate to FlowchartManager (#457)
         private void OnFlowchartClick(object? sender, RoutedEventArgs e) => _controllers.Flowchart.OpenFloatingFlowchart();
 
@@ -943,7 +880,7 @@ namespace DialogEditor.Views
                 // Issue #343: Use WindowLifecycleManager for Settings window
                 _windows.ShowOrActivate(
                     WindowKeys.Settings,
-                    () => new SettingsWindow(pluginManager: _services.Plugin),
+                    () => new SettingsWindow(),
                     OnSettingsWindowClosed);
             }
             catch (Exception ex)
@@ -967,7 +904,7 @@ namespace DialogEditor.Views
                 // Open preferences with Resource Paths tab selected (tab 0)
                 _windows.ShowOrActivate(
                     WindowKeys.Settings,
-                    () => new SettingsWindow(initialTab: 0, pluginManager: _services.Plugin),
+                    () => new SettingsWindow(initialTab: 0),
                     OnSettingsWindowClosed);
             }
             catch (Exception ex)
@@ -991,7 +928,7 @@ namespace DialogEditor.Views
                 // Open preferences with Logging tab selected (tab 2)
                 _windows.ShowOrActivate(
                     WindowKeys.Settings,
-                    () => new SettingsWindow(initialTab: 2, pluginManager: _services.Plugin),
+                    () => new SettingsWindow(initialTab: 2),
                     OnSettingsWindowClosed);
             }
             catch (Exception ex)
@@ -1619,9 +1556,9 @@ namespace DialogEditor.Views
             {
                 var selectedNode = _viewModel.SelectedTreeNode;
                 // Only handle non-ROOT programmatic selection
-                // Skip if selection came from TreeView or plugin sync (flags set by respective handlers)
+                // Skip if selection came from TreeView (flag set by respective handler)
                 if (selectedNode != null && !(selectedNode is TreeViewRootNode) &&
-                    !_uiState.IsSettingSelectionProgrammatically && !_services.PluginSelectionSync.IsSettingSelectionProgrammatically)
+                    !_uiState.IsSettingSelectionProgrammatically)
                 {
                     UnifiedLogger.LogApplication(LogLevel.DEBUG,
                         $"View: SelectedTreeNode changed to '{selectedNode.DisplayText}', scheduling selection");

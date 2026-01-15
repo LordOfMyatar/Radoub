@@ -16,6 +16,25 @@ namespace DialogEditor.Services
     {
         public static ScriptService Instance { get; } = new ScriptService();
 
+        /// <summary>
+        /// Cache entry for script content with file modification tracking.
+        /// </summary>
+        private class ScriptCacheEntry
+        {
+            public string Content { get; set; }
+            public string? FilePath { get; set; }
+            public DateTime FileLastModified { get; set; }
+            public bool IsFromBif { get; set; }
+
+            public ScriptCacheEntry(string content, string? filePath, DateTime lastModified, bool isFromBif = false)
+            {
+                Content = content;
+                FilePath = filePath;
+                FileLastModified = lastModified;
+                IsFromBif = isFromBif;
+            }
+        }
+
         private class CacheEntry<T>
         {
             public T Value { get; set; }
@@ -28,7 +47,7 @@ namespace DialogEditor.Services
             }
         }
 
-        private Dictionary<string, CacheEntry<string>> _scriptCache = new Dictionary<string, CacheEntry<string>>();
+        private Dictionary<string, ScriptCacheEntry> _scriptCache = new Dictionary<string, ScriptCacheEntry>();
         private Dictionary<string, CacheEntry<ScriptParameterDeclarations>> _parameterCache = new Dictionary<string, CacheEntry<ScriptParameterDeclarations>>();
         private readonly ScriptParameterParser _parameterParser = new ScriptParameterParser();
 
@@ -98,7 +117,8 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Gets the content of a script by name
+        /// Gets the content of a script by name.
+        /// Cache is validated against file modification time - if file changed, cache is refreshed.
         /// </summary>
         /// <param name="scriptName">Name of the script (without .nss extension)</param>
         /// <returns>Script content or null if not found</returns>
@@ -109,26 +129,58 @@ namespace DialogEditor.Services
 
             try
             {
-                // Check cache first (session-duration cache, no expiry)
                 var cacheKey = scriptName.ToLower();
+
+                // Check cache with timestamp validation
                 if (_scriptCache.TryGetValue(cacheKey, out var cachedEntry))
                 {
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        $"ScriptService: Returning cached script content for '{scriptName}' ({cachedEntry.Value.Length} bytes)");
-                    return cachedEntry.Value;
+                    // BIF-sourced scripts never change - always return cached
+                    if (cachedEntry.IsFromBif)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"ScriptService: Returning cached BIF script for '{scriptName}' ({cachedEntry.Content.Length} bytes)");
+                        return cachedEntry.Content;
+                    }
+
+                    // File-based scripts: validate timestamp
+                    if (!string.IsNullOrEmpty(cachedEntry.FilePath) && File.Exists(cachedEntry.FilePath))
+                    {
+                        var currentModified = File.GetLastWriteTimeUtc(cachedEntry.FilePath);
+                        if (currentModified == cachedEntry.FileLastModified)
+                        {
+                            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                                $"ScriptService: Returning cached script for '{scriptName}' ({cachedEntry.Content.Length} bytes)");
+                            return cachedEntry.Content;
+                        }
+
+                        // File was modified - invalidate cache (including parameter cache)
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"ScriptService: Script '{scriptName}' was modified externally, refreshing cache");
+                        _scriptCache.Remove(cacheKey);
+                        _parameterCache.Remove(cacheKey);
+                    }
+                    else if (!string.IsNullOrEmpty(cachedEntry.FilePath))
+                    {
+                        // File was deleted - invalidate cache
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"ScriptService: Script file for '{scriptName}' no longer exists, invalidating cache");
+                        _scriptCache.Remove(cacheKey);
+                        _parameterCache.Remove(cacheKey);
+                    }
                 }
 
                 // Search for script in known locations
-                var scriptContent = await SearchForScriptAsync(scriptName);
+                var result = await SearchForScriptWithMetadataAsync(scriptName);
 
-                if (scriptContent != null)
+                if (result != null)
                 {
-                    _scriptCache[cacheKey] = new CacheEntry<string>(scriptContent);
+                    _scriptCache[cacheKey] = result;
                     UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                        $"ScriptService: Cached script content for '{scriptName}' ({scriptContent.Length} bytes)");
+                        $"ScriptService: Cached script for '{scriptName}' ({result.Content.Length} bytes, from {(result.IsFromBif ? "BIF" : "file")})");
+                    return result.Content;
                 }
 
-                return scriptContent;
+                return null;
             }
             catch (Exception ex)
             {
@@ -138,9 +190,9 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Searches for a script file in the configured game and module directories
+        /// Searches for a script file and returns cache entry with metadata for timestamp validation.
         /// </summary>
-        private async Task<string?> SearchForScriptAsync(string scriptName)
+        private async Task<ScriptCacheEntry?> SearchForScriptWithMetadataAsync(string scriptName)
         {
             var scriptFileName = scriptName.EndsWith(".nss", StringComparison.OrdinalIgnoreCase)
                 ? scriptName
@@ -168,7 +220,9 @@ namespace DialogEditor.Services
 
                     try
                     {
-                        return await File.ReadAllTextAsync(scriptFile);
+                        var content = await File.ReadAllTextAsync(scriptFile);
+                        var lastModified = File.GetLastWriteTimeUtc(scriptFile);
+                        return new ScriptCacheEntry(content, scriptFile, lastModified, isFromBif: false);
                     }
                     catch (Exception ex)
                     {
@@ -182,7 +236,7 @@ namespace DialogEditor.Services
             if (builtInContent != null)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found built-in script '{scriptName}' in game BIF files");
-                return builtInContent;
+                return new ScriptCacheEntry(builtInContent, null, DateTime.MinValue, isFromBif: true);
             }
 
             UnifiedLogger.LogApplication(LogLevel.WARN, $"Script '{scriptName}' not found in any configured path or game files");

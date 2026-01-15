@@ -10,6 +10,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.115-alpha] - 2026-01-14
+**Branch**: `parley/issue-891` | **PR**: #896
+
+### Sprint: Testing Foundation (#891, #841)
+
+#### #891 - Remove Plugin Infrastructure
+
+Removed the unused Python plugin system to reduce code complexity:
+- Removed gRPC service (Grpc.Net.Client, Grpc.AspNetCore.Server, Google.Protobuf)
+- Removed plugin discovery, lifecycle management, and security enforcement
+- Removed Python SDK and example plugins
+- Removed plugin-related settings tab and UI components
+- Removed plugin security tests (MaliciousPluginTests, SandboxTests, etc.)
+- Cleaned up DialogContextService (removed plugin-only events)
+
+**Files Removed**: ~50 files including Plugins/, Python/, and related tests
+
+#### #841 - Script Cache Timestamp Validation
+
+Added file modification time validation to script content cache:
+- Cache now tracks source file path and last modified timestamp
+- On cache hit, validates file hasn't been modified since caching
+- If file modified externally, cache is automatically refreshed
+- BIF-sourced scripts (game built-ins) bypass validation (never change)
+- Parameter cache also invalidated when source script changes
+
+---
+
 ## [0.1.114-alpha] - 2026-01-12
 **Branch**: `parley/issue-887` | **PR**: #888
 

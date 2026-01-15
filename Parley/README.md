@@ -27,7 +27,6 @@ See [Known Issues](https://github.com/LordOfMyatar/Radoub/issues?q=is%3Aissue+is
 - Native flowchart view (View → Flowchart or F5)
 - Sound and script browsers with parameter preview
 - Color-coded NPCs for multi-NPC conversations
-- Python plugin system (process-isolated, gRPC)
 - Cross-platform (Windows, Linux, macOS)
 - Themes and accessibility options (dark mode, font scaling)
 
@@ -66,7 +65,6 @@ Requires [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
 
 - [Architecture](https://github.com/LordOfMyatar/Radoub/wiki/Parley-Developer-Architecture) - Code organization
 - [Testing Guide](https://github.com/LordOfMyatar/Radoub/wiki/Parley-Developer-Testing) - How to run and write tests
-- [Plugin Development](https://github.com/LordOfMyatar/Radoub/wiki/Plugin-Development) - Create Python plugins
 
 ---
 

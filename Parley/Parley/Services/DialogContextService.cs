@@ -6,8 +6,7 @@ namespace DialogEditor.Services
 {
     /// <summary>
     /// Singleton service providing access to the current dialog context.
-    /// Used by plugin services to query dialog state without direct ViewModel coupling.
-    /// Epic 3 / Issue #227
+    /// Used by services to query dialog state without direct ViewModel coupling.
     /// </summary>
     public class DialogContextService
     {
@@ -17,7 +16,6 @@ namespace DialogEditor.Services
         private Dialog? _currentDialog;
         private string? _currentFileName;
         private string? _currentFilePath;
-        private string? _selectedNodeId;
 
         /// <summary>
         /// Current loaded dialog (may be null if no dialog is open)
@@ -51,42 +49,17 @@ namespace DialogEditor.Services
         }
 
         /// <summary>
-        /// Currently selected node ID in the tree view
-        /// </summary>
-        public string? SelectedNodeId
-        {
-            get => _selectedNodeId;
-            set
-            {
-                _selectedNodeId = value;
-                NodeSelectionChanged?.Invoke(this, EventArgs.Empty);
-            }
-        }
-
-        /// <summary>
         /// Event fired when dialog changes (load, close, modify)
         /// </summary>
         public event EventHandler? DialogChanged;
 
         /// <summary>
-        /// Manually notify that dialog content has changed (for plugin refresh requests #235).
-        /// Call this to force plugins to re-fetch dialog structure.
+        /// Manually notify that dialog content has changed.
         /// </summary>
         public void NotifyDialogChanged()
         {
             DialogChanged?.Invoke(this, EventArgs.Empty);
         }
-
-        /// <summary>
-        /// Event fired when selected node changes
-        /// </summary>
-        public event EventHandler? NodeSelectionChanged;
-
-        /// <summary>
-        /// Event fired when a plugin requests node selection (Epic 40 Phase 3 / #234).
-        /// The View layer subscribes to this to update the TreeView selection.
-        /// </summary>
-        public event EventHandler<NodeSelectionRequestedEventArgs>? NodeSelectionRequested;
 
         /// <summary>
         /// Get dialog structure as nodes and links for flowchart visualization.
@@ -293,72 +266,7 @@ namespace DialogEditor.Services
             }
         }
 
-        /// <summary>
-        /// Request selection of a node from a plugin (Epic 40 Phase 3 / #234).
-        /// Raises NodeSelectionRequested event for the View layer to handle.
-        /// </summary>
-        /// <param name="nodeId">Node ID to select (e.g., "entry_0", "reply_3")</param>
-        /// <returns>True if request was raised, false if invalid node ID</returns>
-        public bool RequestNodeSelection(string nodeId)
-        {
-            if (string.IsNullOrEmpty(nodeId) || _currentDialog == null)
-                return false;
-
-            // Validate node ID format and existence
-            if (!IsValidNodeId(nodeId))
-                return false;
-
-            // Raise event for View layer to handle the actual selection
-            NodeSelectionRequested?.Invoke(this, new NodeSelectionRequestedEventArgs(nodeId));
-            return true;
-        }
-
-        /// <summary>
-        /// Validate that a node ID exists in the current dialog.
-        /// </summary>
-        private bool IsValidNodeId(string nodeId)
-        {
-            if (_currentDialog == null)
-                return false;
-
-            // Parse node ID format: "entry_N", "reply_N", "root", "link_X_Y"
-            if (nodeId == "root")
-                return true;
-
-            if (nodeId.StartsWith("entry_"))
-            {
-                if (int.TryParse(nodeId.Substring(6), out int index))
-                    return index >= 0 && index < _currentDialog.Entries.Count;
-            }
-            else if (nodeId.StartsWith("reply_"))
-            {
-                if (int.TryParse(nodeId.Substring(6), out int index))
-                    return index >= 0 && index < _currentDialog.Replies.Count;
-            }
-            else if (nodeId.StartsWith("link_"))
-            {
-                // Link nodes are virtual - they reference existing entries/replies
-                // Format: "link_parentIndex_targetIndex"
-                return true; // Accept link nodes as valid
-            }
-
-            return false;
-        }
-
         private DialogContextService() { }
-    }
-
-    /// <summary>
-    /// Event args for node selection requests from plugins (Epic 40 Phase 3 / #234)
-    /// </summary>
-    public class NodeSelectionRequestedEventArgs : EventArgs
-    {
-        public string NodeId { get; }
-
-        public NodeSelectionRequestedEventArgs(string nodeId)
-        {
-            NodeId = nodeId;
-        }
     }
 
     /// <summary>

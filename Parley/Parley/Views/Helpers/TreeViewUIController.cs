@@ -39,7 +39,6 @@ namespace Parley.Views.Helpers
         private readonly Action _clearAllFields;
         private readonly Func<bool> _getIsSettingSelectionProgrammatically;
         private readonly Action<DialogNode?> _syncSelectionToFlowcharts;
-        private readonly Action _updatePluginSelectionSync;
 
         // Track current drop indicator target for cleanup
         private TreeViewItem? _currentDropIndicatorItem;
@@ -56,8 +55,7 @@ namespace Parley.Views.Helpers
             Action saveCurrentNodeProperties,
             Action clearAllFields,
             Func<bool> getIsSettingSelectionProgrammatically,
-            Action<DialogNode?> syncSelectionToFlowcharts,
-            Action updatePluginSelectionSync)
+            Action<DialogNode?> syncSelectionToFlowcharts)
         {
             _window = window;
             _controls = controls;
@@ -70,7 +68,6 @@ namespace Parley.Views.Helpers
             _clearAllFields = clearAllFields;
             _getIsSettingSelectionProgrammatically = getIsSettingSelectionProgrammatically;
             _syncSelectionToFlowcharts = syncSelectionToFlowcharts;
-            _updatePluginSelectionSync = updatePluginSelectionSync;
         }
 
         private MainViewModel ViewModel => _getViewModel();
@@ -381,9 +378,6 @@ namespace Parley.Views.Helpers
             // Update ViewModel's selected tree node for Restore button enabling and bindings
             // Always update - the flags prevent View→ViewModel→View feedback loops elsewhere
             ViewModel.SelectedTreeNode = newSelectedNode;
-
-            // Update DialogContextService.SelectedNodeId for plugin sync (Epic 40 Phase 3 / #234)
-            _updatePluginSelectionSync();
 
             // Sync selection to flowchart (Epic #325 Sprint 3 - bidirectional sync)
             // Issue #457: Use FlowchartManager for sync

@@ -10,7 +10,6 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
-using DialogEditor.Plugins;
 using DialogEditor.Services;
 using DialogEditor.Views.Controllers;
 using Radoub.Formats.Logging;
@@ -25,21 +24,20 @@ namespace DialogEditor.Views
         private ResourcePathsController? _resourcePathsController;
         private ThemeSettingsController? _themeSettingsController;
         private DictionarySettingsController? _dictionarySettingsController;
-        private PluginSettingsController? _pluginSettingsController;
         private UISettingsController? _uiSettingsController;
         private LoggingSettingsController? _loggingSettingsController;
         private AutoSaveSettingsController? _autoSaveSettingsController;
         private ParameterCacheController? _parameterCacheController;
 
         // Parameterless constructor for XAML/Avalonia runtime
-        public SettingsWindow() : this(0, null)
+        public SettingsWindow() : this(0)
         {
         }
 
-        public SettingsWindow(int initialTab = 0, PluginManager? pluginManager = null)
+        public SettingsWindow(int initialTab = 0)
         {
             InitializeComponent();
-            InitializeControllers(pluginManager);
+            InitializeControllers();
             LoadSettings();
             _isInitializing = false;
 
@@ -72,7 +70,7 @@ namespace DialogEditor.Views
             AvaloniaXamlLoader.Load(this);
         }
 
-        private void InitializeControllers(PluginManager? pluginManager)
+        private void InitializeControllers()
         {
             _resourcePathsController = new ResourcePathsController(
                 this, () => _isInitializing, GetErrorBrush, GetSuccessBrush);
@@ -82,9 +80,6 @@ namespace DialogEditor.Views
 
             _dictionarySettingsController = new DictionarySettingsController(
                 this, () => _isInitializing);
-
-            _pluginSettingsController = new PluginSettingsController(
-                this, () => _isInitializing, pluginManager);
 
             _uiSettingsController = new UISettingsController(
                 this, () => _isInitializing);
@@ -105,7 +100,6 @@ namespace DialogEditor.Views
             _resourcePathsController?.LoadSettings();
             _themeSettingsController?.LoadSettings();
             _dictionarySettingsController?.LoadSettings();
-            _pluginSettingsController?.LoadSettings();
             _uiSettingsController?.LoadSettings();
             _loggingSettingsController?.LoadSettings();
             _autoSaveSettingsController?.LoadSettings();
@@ -265,19 +259,6 @@ namespace DialogEditor.Views
 
         private void OnRefreshDictionariesClick(object? sender, RoutedEventArgs e)
             => _dictionarySettingsController?.OnRefreshDictionariesClick(sender, e);
-
-        #endregion
-
-        #region Plugin Settings Handlers (delegated to controller)
-
-        private void OnSafeModeChanged(object? sender, RoutedEventArgs e)
-            => _pluginSettingsController?.OnSafeModeChanged(sender, e);
-
-        private void OnOpenPluginsFolderClick(object? sender, RoutedEventArgs e)
-            => _pluginSettingsController?.OnOpenPluginsFolderClick(sender, e);
-
-        private void OnRefreshPluginsClick(object? sender, RoutedEventArgs e)
-            => _pluginSettingsController?.OnRefreshPluginsClick(sender, e);
 
         #endregion
 
