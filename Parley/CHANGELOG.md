@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.117-alpha] - 2026-01-15
-**Branch**: `parley/issue-899` | **PR**: #TBD
+**Branch**: `parley/issue-899` | **PR**: #902
 
 ### Sprint: Flowchart UX Polish (#812, #813, #461)
 
