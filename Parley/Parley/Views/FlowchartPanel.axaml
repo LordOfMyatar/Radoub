@@ -14,8 +14,20 @@
         <Style Selector="agc|Connection">
             <Setter Property="Brush" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
+
+        <!-- Focus indicator for FlowchartPanel (#812) -->
+        <Style Selector="UserControl:focus-within Border#FocusBorder">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        <Style Selector="UserControl:not(:focus-within) Border#FocusBorder">
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
     </UserControl.Styles>
 
+    <!-- Focus border wraps the entire control (#812) -->
+    <Border x:Name="FocusBorder" CornerRadius="2">
     <Grid RowDefinitions="Auto,*,Auto">
         <!-- Toolbar with zoom controls -->
         <Border Grid.Row="0"
@@ -181,4 +193,5 @@
                        VerticalAlignment="Center"/>
         </Border>
     </Grid>
+    </Border>
 </UserControl>

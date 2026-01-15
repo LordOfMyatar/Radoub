@@ -20,7 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Replaced all `BorderBrush="Gray"` with theme-aware resources
   - Replaced all `Background="Gray"` on GridSplitters
   - Files updated: MainWindow, AboutWindow, SettingsWindow, CreaturePickerWindow, ParameterBrowserWindow, QuestBrowserWindow, SoundBrowserWindow, TokenSelectorWindow, ScriptBrowserWindow, CrashRecoveryDialog
-- [ ] #812 - FlowchartPanel lacks focus indicator
+- [x] #812 - FlowchartPanel lacks focus indicator
+  - Added focus border that highlights with SystemAccentColor when panel has keyboard focus
+  - Uses `:focus-within` pseudo-class for consistent Avalonia styling
 - [ ] #814 - Properties panel MinWidth too restrictive for small screens
 
 ---
