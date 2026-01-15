@@ -80,6 +80,9 @@ namespace DialogEditor.Views
             // Listen for settings changes to refresh colors (#340)
             SettingsService.Instance.PropertyChanged += OnSettingsChanged;
 
+            // Listen for UI settings changes (#813: FlowchartNodeMaxLines)
+            UISettingsService.Instance.PropertyChanged += OnUISettingsChanged;
+
             // Listen for theme changes to refresh colors (#141)
             ThemeManager.Instance.ThemeApplied += OnThemeApplied;
 
@@ -165,6 +168,22 @@ namespace DialogEditor.Views
                     // This triggers DataTemplate re-evaluation with updated colors
                     _viewModel.RefreshGraph();
                     UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart colors refreshed due to {e.PropertyName} change");
+                });
+            }
+        }
+
+        private void OnUISettingsChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // Refresh when flowchart node max lines changes (#813)
+            if (e.PropertyName == nameof(UISettingsService.FlowchartNodeMaxLines))
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    // Notify that NodeMaxLines changed so bindings update
+                    _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeMaxLines));
+                    // Also refresh the graph to re-render nodes
+                    _viewModel.RefreshGraph();
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart refreshed due to NodeMaxLines change");
                 });
             }
         }

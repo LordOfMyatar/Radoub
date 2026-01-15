@@ -47,6 +47,11 @@ namespace DialogEditor.ViewModels
         public int NodeMaxLines => UISettingsService.Instance.FlowchartNodeMaxLines;
 
         /// <summary>
+        /// Notifies that a property has changed. Used by FlowchartPanel to trigger refresh on settings change.
+        /// </summary>
+        public new void OnPropertyChanged(string propertyName) => base.OnPropertyChanged(propertyName);
+
+        /// <summary>
         /// Update the flowchart to display the given dialog
         /// </summary>
         /// <param name="dialog">The dialog to display</param>
