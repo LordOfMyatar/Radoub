@@ -23,7 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] #812 - FlowchartPanel lacks focus indicator
   - Added focus border that highlights with SystemAccentColor when panel has keyboard focus
   - Uses `:focus-within` pseudo-class for consistent Avalonia styling
-- [ ] #814 - Properties panel MinWidth too restrictive for small screens
+- [x] #814 - Properties panel MinWidth too restrictive for small screens
+  - Already fixed in #822 (1024x768 support) - MinWidth is 280
 
 ---
 
