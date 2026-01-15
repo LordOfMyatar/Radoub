@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.117-alpha] - 2026-01-15
+**Branch**: `parley/issue-899` | **PR**: #TBD
+
+### Sprint: Flowchart UX Polish (#812, #813, #461)
+
+- [ ] #812 - FlowchartPanel lacks focus indicator
+- [ ] #813 - Flowchart node text truncation without tooltip
+- [ ] #461 - FlowView context menu parity with TreeView
+
+---
+
 ## [0.1.116-alpha] - 2026-01-15
 **Branch**: `parley/issue-898` | **PR**: #900
 
