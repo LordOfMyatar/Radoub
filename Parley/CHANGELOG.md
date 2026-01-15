@@ -15,7 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Theme & Accessibility Fixes (#811, #812, #814)
 
-- [ ] #811 - Hardcoded Gray colors break theme consistency
+- [x] #811 - Hardcoded Gray colors break theme consistency
+  - Replaced all `Foreground="Gray"` with `{DynamicResource SystemControlForegroundBaseMediumBrush}`
+  - Replaced all `BorderBrush="Gray"` with theme-aware resources
+  - Replaced all `Background="Gray"` on GridSplitters
+  - Files updated: MainWindow, AboutWindow, SettingsWindow, CreaturePickerWindow, ParameterBrowserWindow, QuestBrowserWindow, SoundBrowserWindow, TokenSelectorWindow, ScriptBrowserWindow, CrashRecoveryDialog
 - [ ] #812 - FlowchartPanel lacks focus indicator
 - [ ] #814 - Properties panel MinWidth too restrictive for small screens
 

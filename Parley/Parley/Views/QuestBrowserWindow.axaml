@@ -53,7 +53,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Quest List (Left) -->
-            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -73,7 +73,7 @@
                                 <StackPanel Orientation="Vertical" Margin="2">
                                     <TextBlock Text="{Binding Tag}" FontWeight="Bold"/>
                                     <TextBlock Text="{Binding DisplayName}"
-                                               Foreground="Gray"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                FontSize="11"
                                                TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
@@ -87,7 +87,7 @@
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
 
             <!-- Entry List (Right) -->
-            <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -146,7 +146,7 @@
                 <TextBlock x:Name="EntryPreviewTextBlock"
                            Text="Select an entry to preview its text"
                            TextWrapping="Wrap"
-                           Foreground="Gray"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                            FontStyle="Italic"/>
             </ScrollViewer>
         </Border>

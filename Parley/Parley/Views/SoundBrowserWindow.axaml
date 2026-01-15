@@ -76,7 +76,7 @@
                        Text=""
                        VerticalAlignment="Center"
                        FontSize="10"
-                       Foreground="Gray"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                        TextTrimming="CharacterEllipsis"
                        MaxWidth="150"/>
         </StackPanel>
@@ -130,7 +130,7 @@
         </Grid>
 
         <!-- Sound Files List -->
-        <Border Grid.Row="3" BorderBrush="Gray" BorderThickness="1" Padding="5">
+        <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -171,7 +171,7 @@
                     <TextBlock x:Name="CurrentSoundLabel"
                                Text=""
                                VerticalAlignment="Center"
-                               Foreground="Gray"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                TextWrapping="Wrap"
                                MaxWidth="350"/>
                 </StackPanel>

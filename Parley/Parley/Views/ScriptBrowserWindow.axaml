@@ -112,7 +112,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Script List -->
-            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -136,11 +136,11 @@
             </Border>
 
             <!-- Splitter -->
-            <GridSplitter Grid.Column="1" Width="5" Background="LightGray"
+            <GridSplitter Grid.Column="1" Width="5" Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                           ResizeDirection="Columns"/>
 
             <!-- Script Preview Pane -->
-            <Border Grid.Column="2" BorderBrush="Gray" BorderThickness="1" Padding="5">
+            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
