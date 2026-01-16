@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.31] - 2026-01-15
-**Branch**: `radoub/issue-558` | **PR**: #TBD
+**Branch**: `radoub/issue-558` | **PR**: #910
 
 ### Sprint: Merchant Editor MVP (#558)
 
