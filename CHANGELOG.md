@@ -27,7 +27,7 @@ Quick wins to clean up small bugs and tech debt across multiple tools.
 - [x] #597 - Bug: Recent files menu doesn't refresh in realtime (Parley)
 - [x] #802 - Bug: Dialog file field appears in both panels (Quartermaster)
 - [x] #807 - Status bar file path truncation without ellipsis (Manifest)
-- [ ] #819 - Disabled Undo/Redo menu items lack explanation (Quartermaster)
+- [x] #819 - Disabled Undo/Redo menu items lack explanation (Quartermaster)
 
 ---
 

@@ -55,12 +55,12 @@
                 <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False"/>
-                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False"/>
+                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
+                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
                 <Separator/>
-                <MenuItem Header="Cu_t" InputGesture="Ctrl+X" IsEnabled="False"/>
-                <MenuItem Header="_Copy" InputGesture="Ctrl+C" IsEnabled="False"/>
-                <MenuItem Header="_Paste" InputGesture="Ctrl+V" IsEnabled="False"/>
+                <MenuItem Header="Cu_t" InputGesture="Ctrl+X" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
+                <MenuItem Header="_Copy" InputGesture="Ctrl+C" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
+                <MenuItem Header="_Paste" InputGesture="Ctrl+V" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
                 <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
             </MenuItem>
             <MenuItem Header="_View">
