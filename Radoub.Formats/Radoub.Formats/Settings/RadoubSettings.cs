@@ -72,6 +72,7 @@ public class RadoubSettings : INotifyPropertyChanged
     private string _parleyPath = "";
     private string _manifestPath = "";
     private string _quartermasterPath = "";
+    private string _fencePath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -190,6 +191,15 @@ public class RadoubSettings : INotifyPropertyChanged
     {
         get => _quartermasterPath;
         set { if (SetProperty(ref _quartermasterPath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Path to Fence.exe. Auto-set when Fence runs.
+    /// </summary>
+    public string FencePath
+    {
+        get => _fencePath;
+        set { if (SetProperty(ref _fencePath, value ?? "")) SaveSettings(); }
     }
 
     /// <summary>
@@ -337,6 +347,7 @@ public class RadoubSettings : INotifyPropertyChanged
                     _parleyPath = ExpandPath(data.ParleyPath ?? "");
                     _manifestPath = ExpandPath(data.ManifestPath ?? "");
                     _quartermasterPath = ExpandPath(data.QuartermasterPath ?? "");
+                    _fencePath = ExpandPath(data.FencePath ?? "");
                 }
             }
         }
@@ -367,7 +378,8 @@ public class RadoubSettings : INotifyPropertyChanged
                 // Tool paths
                 ParleyPath = ContractPath(_parleyPath),
                 ManifestPath = ContractPath(_manifestPath),
-                QuartermasterPath = ContractPath(_quartermasterPath)
+                QuartermasterPath = ContractPath(_quartermasterPath),
+                FencePath = ContractPath(_fencePath)
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -441,5 +453,6 @@ public class RadoubSettings : INotifyPropertyChanged
         public string? ParleyPath { get; set; }
         public string? ManifestPath { get; set; }
         public string? QuartermasterPath { get; set; }
+        public string? FencePath { get; set; }
     }
 }

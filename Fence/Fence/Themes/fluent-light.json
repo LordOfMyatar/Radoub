@@ -1,0 +1,47 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.fence.theme.fluent-light",
+    "name": "Fluent Light",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Microsoft Fluent Design inspired light theme",
+    "type": "theme",
+    "tags": ["official", "light", "fluent"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "standard",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#FAFAFA",
+    "sidebar": "#F3F3F3",
+    "text": "#1A1A1A",
+    "selection": "#005FB8",
+    "border": "#E5E5E5",
+    "accent": "#005FB8",
+    "error": "#C42B1C",
+    "warning": "#9D5D00",
+    "success": "#0F7B0F",
+    "info": "#005FB8",
+    "disabled": "#8A8A8A",
+    "title_bar": "#F3F3F3",
+    "title_bar_foreground": "#1A1A1A",
+    "button_primary": "#005FB8",
+    "button_secondary": "#8A8A8A",
+    "button_hover": "#0067C0"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Cascadia Code",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 32
+  }
+}

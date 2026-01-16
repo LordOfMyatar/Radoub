@@ -1,0 +1,135 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="550" d:DesignHeight="500"
+        x:Class="MerchantEditor.Views.SettingsWindow"
+        Title="Settings - Fence"
+        Width="550" Height="500"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Settings" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold" Margin="0,0,0,10"/>
+
+        <!-- Settings Content -->
+        <TabControl x:Name="SettingsTabControl" Grid.Row="1">
+            <!-- Resource Paths Tab -->
+            <TabItem Header="Resource Paths">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="10" Spacing="15">
+                        <!-- Base Game Installation Path -->
+                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Base Game Installation Path (Optional)" FontWeight="Bold"/>
+                                <TextBlock Text="Path to Neverwinter Nights game installation (e.g., Steam: steamapps\common\Neverwinter Nights)"
+                                          TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBox x:Name="BaseGamePathTextBox" Grid.Column="0"
+                                            Watermark="C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights"/>
+                                    <Button Grid.Column="1" Content="Browse..." Click="OnBrowseBaseGamePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                    <Button Grid.Column="2" Content="Auto-Detect" Click="OnAutoDetectBaseGamePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                </Grid>
+
+                                <TextBlock x:Name="BaseGamePathValidation" Foreground="{DynamicResource ThemeSuccess}" FontSize="{DynamicResource FontSizeSmall}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- User Data Directory Path -->
+                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="User Data Directory Path" FontWeight="Bold"/>
+                                <TextBlock Text="Path to user data directory (Documents\Neverwinter Nights - contains modules, custom items, etc.)"
+                                          TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBox x:Name="GamePathTextBox" Grid.Column="0"
+                                            Watermark="C:\Users\[user]\Documents\Neverwinter Nights"/>
+                                    <Button Grid.Column="1" Content="Browse..." Click="OnBrowseGamePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                    <Button Grid.Column="2" Content="Auto-Detect" Click="OnAutoDetectGamePathClick"
+                                           Margin="5,0,0,0" Padding="10,5"/>
+                                </Grid>
+
+                                <TextBlock x:Name="GamePathValidation" Foreground="{DynamicResource ThemeSuccess}" FontSize="{DynamicResource FontSizeSmall}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- UI Settings Tab -->
+            <TabItem Header="UI Settings">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="10" Spacing="15">
+                        <!-- Theme -->
+                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Theme" FontWeight="Bold"/>
+                                <TextBlock Text="Choose a color theme for Fence."
+                                          TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                <ComboBox x:Name="ThemeComboBox"
+                                         SelectionChanged="OnThemeComboBoxChanged"
+                                         HorizontalAlignment="Stretch"
+                                         MinWidth="300"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Font Settings -->
+                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Font Settings" FontWeight="Bold"/>
+
+                                <!-- Font Size -->
+                                <TextBlock Text="Font Size" FontWeight="Normal"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider x:Name="FontSizeSlider" Grid.Column="0"
+                                           Minimum="8" Maximum="24" Value="14"
+                                           TickFrequency="1" IsSnapToTickEnabled="True"
+                                           ValueChanged="OnFontSizeChanged"/>
+                                    <TextBlock x:Name="FontSizeLabel" Grid.Column="1"
+                                              Text="14" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </Grid>
+
+                                <!-- Font Family -->
+                                <TextBlock Text="Font Family" FontWeight="Normal" Margin="0,10,0,0"/>
+                                <ComboBox x:Name="FontFamilyComboBox"
+                                         SelectionChanged="OnFontFamilyChanged"
+                                         HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" FontFamily="{Binding}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <!-- Font Preview -->
+                                <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" Margin="0,10,0,0" CornerRadius="3">
+                                    <TextBlock x:Name="FontPreviewText"
+                                              Text="The quick brown fox jumps over the lazy dog. 1234567890"
+                                              TextWrapping="Wrap"
+                                              HorizontalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- Close Button -->
+        <Button Grid.Row="2" Content="Close" Click="OnCloseClick"
+               HorizontalAlignment="Right" Margin="0,10,0,0" Padding="20,8"/>
+    </Grid>
+</Window>
