@@ -15,7 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Refactor: Tech debt - Large files needing refactoring (#719)
 
-- TBD
+**SettingsService refactoring** (1,404 → 1,274 lines):
+- Extracted `WindowLayoutService` for window position, panel layout, and flowchart window settings
+- SettingsService now delegates window-related properties to WindowLayoutService
+- Removed plugin migration code (PluginSettings.json) - plugin infrastructure removed in v0.1.115
+- Follows same service extraction pattern as RecentFilesService and UISettingsService
 
 ---
 
