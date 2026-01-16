@@ -20,7 +20,8 @@ Fence - Merchant Editor for Neverwinter Nights. Part of Epic #555.
 #### Added
 - **Project scaffold** - Avalonia UI application with theming and logging
 - **MainWindow** - Two-panel layout with Store Inventory and Item Palette
-- **Store Properties panel** - Name, Tag, pricing settings, black market, restrictions
+- **Store Properties panel** - Name, Tag, pricing settings, black market flags
+- **Buy Restrictions** - WillOnlyBuy/WillNotBuy as collapsible checkbox panel with base item types from baseitems.2da
 - **Store Inventory** - DataGrid display with search/filter, infinite checkbox
 - **Item Palette** - Item browser with type filtering
 - **File operations** - Open/Save UTM files, recent files menu

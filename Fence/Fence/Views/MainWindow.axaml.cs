@@ -6,6 +6,7 @@ using Avalonia.Platform.Storage;
 using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utm;
 using System;
@@ -24,8 +25,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string? _currentFilePath;
     private bool _isDirty;
 
+    private readonly BaseItemTypeService _baseItemTypeService;
+    private readonly IGameDataService? _gameDataService;
+
     public ObservableCollection<StoreItemViewModel> StoreItems { get; } = new();
     public ObservableCollection<PaletteItemViewModel> PaletteItems { get; } = new();
+    public ObservableCollection<SelectableBaseItemTypeViewModel> SelectableBaseItemTypes { get; } = new();
 
     public bool HasFile => _currentStore != null;
     public bool HasSelection => StoreInventoryGrid?.SelectedItems?.Count > 0;
@@ -36,6 +41,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
         DataContext = this;
+
+        // Initialize game data service and base item type service
+        _gameDataService = CreateGameDataService();
+        _baseItemTypeService = new BaseItemTypeService(_gameDataService);
+
+        // Load base item types for buy restrictions
+        LoadBaseItemTypes();
 
         // Restore window position from settings
         RestoreWindowPosition();
@@ -70,6 +82,41 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Fence MainWindow initialized");
+    }
+
+    private IGameDataService? CreateGameDataService()
+    {
+        try
+        {
+            var settings = RadoubSettings.Instance;
+            if (!settings.HasGamePaths)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Game paths not configured");
+                return null;
+            }
+
+            // Use default constructor which reads from RadoubSettings
+            return new GameDataService();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to create GameDataService: {ex.Message}");
+            return null;
+        }
+    }
+
+    private void LoadBaseItemTypes()
+    {
+        SelectableBaseItemTypes.Clear();
+
+        var types = _baseItemTypeService.GetBaseItemTypes();
+        foreach (var type in types)
+        {
+            SelectableBaseItemTypes.Add(new SelectableBaseItemTypeViewModel(type.BaseItemIndex, type.DisplayName));
+        }
+
+        ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
     }
 
     private void RestoreWindowPosition()
@@ -213,6 +260,53 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         LimitedGoldCheck.IsChecked = _currentStore.StoreGold >= 0;
         StoreGoldBox.Value = Math.Max(0, _currentStore.StoreGold);
+
+        // Populate buy restrictions
+        PopulateBuyRestrictions();
+    }
+
+    private void PopulateBuyRestrictions()
+    {
+        if (_currentStore == null) return;
+
+        // Clear all selections first
+        foreach (var item in SelectableBaseItemTypes)
+        {
+            item.IsSelected = false;
+        }
+
+        // Determine mode and populate
+        if (_currentStore.WillNotBuy.Count > 0)
+        {
+            // WillNotBuy mode (takes precedence per spec)
+            WillNotBuyRadio.IsChecked = true;
+            foreach (var baseItemIndex in _currentStore.WillNotBuy)
+            {
+                var item = SelectableBaseItemTypes.FirstOrDefault(t => t.BaseItemIndex == baseItemIndex);
+                if (item != null)
+                {
+                    item.IsSelected = true;
+                }
+            }
+        }
+        else if (_currentStore.WillOnlyBuy.Count > 0)
+        {
+            // WillOnlyBuy mode
+            WillOnlyBuyRadio.IsChecked = true;
+            foreach (var baseItemIndex in _currentStore.WillOnlyBuy)
+            {
+                var item = SelectableBaseItemTypes.FirstOrDefault(t => t.BaseItemIndex == baseItemIndex);
+                if (item != null)
+                {
+                    item.IsSelected = true;
+                }
+            }
+        }
+        else
+        {
+            // No restrictions
+            BuyAllRadio.IsChecked = true;
+        }
     }
 
     private void PopulateStoreInventory()
@@ -319,6 +413,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _currentStore.MaxBuyPrice = (MaxBuyPriceCheck.IsChecked ?? false) ? (int)(MaxBuyPriceBox.Value ?? 0) : -1;
         _currentStore.StoreGold = (LimitedGoldCheck.IsChecked ?? false) ? (int)(StoreGoldBox.Value ?? 0) : -1;
 
+        // Update buy restrictions
+        UpdateBuyRestrictions();
+
         // Update inventory from view model
         _currentStore.StoreList.Clear();
         var groupedItems = StoreItems.GroupBy(i => i.PanelId);
@@ -334,6 +431,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 });
             }
             _currentStore.StoreList.Add(panel);
+        }
+    }
+
+    private void UpdateBuyRestrictions()
+    {
+        if (_currentStore == null) return;
+
+        _currentStore.WillOnlyBuy.Clear();
+        _currentStore.WillNotBuy.Clear();
+
+        if (BuyAllRadio.IsChecked == true)
+        {
+            // No restrictions - both lists empty
+        }
+        else if (WillOnlyBuyRadio.IsChecked == true)
+        {
+            // Store selected items in WillOnlyBuy
+            foreach (var item in SelectableBaseItemTypes.Where(t => t.IsSelected))
+            {
+                _currentStore.WillOnlyBuy.Add(item.BaseItemIndex);
+            }
+        }
+        else if (WillNotBuyRadio.IsChecked == true)
+        {
+            // Store selected items in WillNotBuy
+            foreach (var item in SelectableBaseItemTypes.Where(t => t.IsSelected))
+            {
+                _currentStore.WillNotBuy.Add(item.BaseItemIndex);
+            }
         }
     }
 
@@ -365,6 +491,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         MaxBuyPriceBox.Value = 0;
         LimitedGoldCheck.IsChecked = false;
         StoreGoldBox.Value = 0;
+
+        // Clear buy restrictions
+        BuyAllRadio.IsChecked = true;
+        foreach (var item in SelectableBaseItemTypes)
+        {
+            item.IsSelected = false;
+        }
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e)
@@ -531,6 +664,53 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnDeleteClick(object? sender, RoutedEventArgs e)
     {
         OnRemoveFromStore(sender, e);
+    }
+
+    #endregion
+
+    #region Buy Restrictions
+
+    private void OnBuyModeChanged(object? sender, RoutedEventArgs e)
+    {
+        // When mode changes to "Buy All", clear selections
+        if (BuyAllRadio.IsChecked == true)
+        {
+            foreach (var item in SelectableBaseItemTypes)
+            {
+                item.IsSelected = false;
+            }
+        }
+
+        _isDirty = true;
+        UpdateTitle();
+    }
+
+    private void OnSelectAllTypes(object? sender, RoutedEventArgs e)
+    {
+        foreach (var item in SelectableBaseItemTypes)
+        {
+            item.IsSelected = true;
+        }
+
+        _isDirty = true;
+        UpdateTitle();
+    }
+
+    private void OnClearAllTypes(object? sender, RoutedEventArgs e)
+    {
+        foreach (var item in SelectableBaseItemTypes)
+        {
+            item.IsSelected = false;
+        }
+
+        _isDirty = true;
+        UpdateTitle();
+    }
+
+    private void OnItemTypeCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        _isDirty = true;
+        UpdateTitle();
     }
 
     #endregion
