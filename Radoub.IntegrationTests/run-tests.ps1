@@ -6,11 +6,12 @@
 #   .\run-tests.ps1 -Tool Quartermaster       # Quartermaster + shared library tests
 #   .\run-tests.ps1 -Tool Parley -SkipShared  # Parley tests only (no shared)
 #   .\run-tests.ps1 -Tool Manifest -UnitOnly  # Manifest unit tests only
+#   .\run-tests.ps1 -Tool Fence               # Fence + shared library tests
 #   .\run-tests.ps1 -UnitOnly                 # All unit tests, no UI tests
 #   .\run-tests.ps1 -TechDebt                 # Include tech debt scan (large files)
 
 param(
-    [ValidateSet("Parley", "Quartermaster", "Manifest")]
+    [ValidateSet("Parley", "Quartermaster", "Manifest", "Fence")]
     [string]$Tool,
     [switch]$SkipShared,
     [switch]$UIOnly,
@@ -47,7 +48,7 @@ function Invoke-PrivacyScan {
     Write-Host "`n=== Privacy Scan ===" -ForegroundColor Magenta
     Write-Host "Checking for hardcoded paths..." -ForegroundColor Yellow
 
-    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest", "Quartermaster")
+    $searchDirs = @("Parley", "Radoub.Formats", "Radoub.UI", "Radoub.Dictionary", "Manifest", "Quartermaster", "Fence")
 
     $patterns = @(
         'C:\\Users\\[A-Za-z]',
@@ -136,12 +137,13 @@ $toolUnitTests = @{
     "Parley" = @{ Name = "Parley.Tests"; Path = "Parley\Parley.Tests" }
     "Manifest" = @{ Name = "Manifest.Tests"; Path = "Manifest\Manifest.Tests" }
     "Quartermaster" = @{ Name = "Quartermaster.Tests"; Path = "Quartermaster\Quartermaster.Tests" }
+    "Fence" = @{ Name = "Fence.Tests"; Path = "Fence\Fence.Tests" }
 }
 
 $toolUiTests = @{
     "Parley" = @{ Name = "Radoub.IntegrationTests.Parley"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Parley" }
     "Quartermaster" = @{ Name = "Radoub.IntegrationTests.Quartermaster"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Quartermaster" }
-    # Manifest has no UI tests currently
+    # Manifest and Fence have no UI tests currently
 }
 
 # Build test list based on parameters

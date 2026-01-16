@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
@@ -9,16 +10,43 @@ namespace MerchantEditor.Services;
 
 /// <summary>
 /// Service for resolving item data from UTI files.
+/// Resolution order: Module directory → Override → HAK → BIF archives.
 /// Provides caching to avoid repeated file reads.
 /// </summary>
 public class ItemResolutionService
 {
     private readonly IGameDataService? _gameDataService;
     private readonly Dictionary<string, ResolvedItemData> _cache = new(StringComparer.OrdinalIgnoreCase);
+    private string? _moduleDirectory;
 
     public ItemResolutionService(IGameDataService? gameDataService)
     {
         _gameDataService = gameDataService;
+
+        // Log configuration status on creation
+        if (_gameDataService == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "ItemResolutionService: GameDataService is null - BIF lookup disabled");
+        }
+        else if (!_gameDataService.IsConfigured)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "ItemResolutionService: GameDataService not configured - BIF lookup disabled");
+        }
+        else
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO, "ItemResolutionService: GameDataService configured - BIF lookup enabled");
+        }
+    }
+
+    /// <summary>
+    /// Sets the current file path to enable module-local item resolution.
+    /// Items in the same directory as the UTM file take precedence.
+    /// </summary>
+    public void SetCurrentFilePath(string? filePath)
+    {
+        _moduleDirectory = string.IsNullOrEmpty(filePath) ? null : Path.GetDirectoryName(filePath);
+        ClearCache(); // Clear cache when file context changes
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"ItemResolutionService: Module directory set to: {_moduleDirectory ?? "(none)"}");
     }
 
     /// <summary>
@@ -73,23 +101,53 @@ public class ItemResolutionService
 
     private ResolvedItemData? LoadItemData(string resRef)
     {
-        if (_gameDataService == null || !_gameDataService.IsConfigured)
+        UtiFile? uti = null;
+
+        // 1. Try module directory first (highest priority for module-specific items)
+        if (!string.IsNullOrEmpty(_moduleDirectory))
         {
+            var utiPath = Path.Combine(_moduleDirectory, resRef + ".uti");
+            if (File.Exists(utiPath))
+            {
+                try
+                {
+                    uti = UtiReader.Read(utiPath);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded UTI from module: {resRef}");
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load UTI {resRef} from module: {ex.Message}");
+                }
+            }
+        }
+
+        // 2. Try GameDataService (Override → HAK → BIF) if not found in module
+        if (uti == null && _gameDataService != null && _gameDataService.IsConfigured)
+        {
+            try
+            {
+                var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
+                if (utiData != null)
+                {
+                    uti = UtiReader.Read(utiData);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded UTI from game data: {resRef}");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load UTI {resRef} from game data: {ex.Message}");
+            }
+        }
+
+        // 3. Return fallback if UTI not found anywhere
+        if (uti == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UTI not found in module or game data: {resRef}");
             return CreateFallbackData(resRef);
         }
 
         try
         {
-            // Try to find the UTI resource
-            var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
-            if (utiData == null)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UTI not found: {resRef}");
-                return CreateFallbackData(resRef);
-            }
-
-            // Parse the UTI
-            var uti = UtiReader.Read(utiData);
 
             // Get display name
             var displayName = uti.LocalizedName.GetDefault();

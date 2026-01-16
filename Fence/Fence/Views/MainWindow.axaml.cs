@@ -91,18 +91,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             var settings = RadoubSettings.Instance;
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Fence: Checking game paths configuration...");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  HasGamePaths: {settings.HasGamePaths}");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  BaseGameInstallPath: {settings.BaseGameInstallPath ?? "(not set)"}");
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  NeverwinterNightsPath: {settings.NeverwinterNightsPath ?? "(not set)"}");
+
             if (!settings.HasGamePaths)
             {
-                UnifiedLogger.LogApplication(LogLevel.WARN, "Game paths not configured");
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Fence: Game paths not configured - configure in Settings to enable BIF lookup");
                 return null;
             }
 
             // Use default constructor which reads from RadoubSettings
-            return new GameDataService();
+            var service = new GameDataService();
+
+            if (service.IsConfigured)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Fence: GameDataService initialized successfully - BIF lookup enabled");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "Fence: GameDataService created but not configured - check game path settings");
+            }
+
+            return service;
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to create GameDataService: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Fence: Failed to create GameDataService: {ex.Message}");
             return null;
         }
     }
@@ -220,6 +237,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _currentStore = UtmReader.Read(filePath);
             _currentFilePath = filePath;
             _isDirty = false;
+
+            // Update item resolution service with current file context for module-local items
+            _itemResolutionService.SetCurrentFilePath(filePath);
 
             // Update UI
             PopulateStoreProperties();
@@ -479,6 +499,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _currentStore = null;
         _currentFilePath = null;
         _isDirty = false;
+
+        // Clear item resolution context
+        _itemResolutionService.SetCurrentFilePath(null);
 
         StoreItems.Clear();
         ClearStoreProperties();
