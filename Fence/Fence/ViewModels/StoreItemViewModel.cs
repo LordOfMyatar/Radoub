@@ -9,6 +9,7 @@ namespace MerchantEditor.ViewModels;
 public class StoreItemViewModel : INotifyPropertyChanged
 {
     private string _resRef = string.Empty;
+    private string _tag = string.Empty;
     private string _displayName = string.Empty;
     private bool _infinite;
     private int _panelId;
@@ -22,6 +23,12 @@ public class StoreItemViewModel : INotifyPropertyChanged
     {
         get => _resRef;
         set { if (_resRef != value) { _resRef = value; OnPropertyChanged(); } }
+    }
+
+    public string Tag
+    {
+        get => _tag;
+        set { if (_tag != value) { _tag = value; OnPropertyChanged(); } }
     }
 
     public string DisplayName

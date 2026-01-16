@@ -215,7 +215,8 @@
                             <DataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="∞" Width="40" Binding="{Binding Infinite}"/>
                                 <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Tag" Width="100" Binding="{Binding Tag}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="ResRef" Width="100" Binding="{Binding ResRef}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Sell" Width="60" Binding="{Binding SellPrice}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Buy" Width="60" Binding="{Binding BuyPrice}" IsReadOnly="True"/>

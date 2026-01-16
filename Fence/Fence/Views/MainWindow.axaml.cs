@@ -351,6 +351,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 StoreItems.Add(new StoreItemViewModel
                 {
                     ResRef = item.InventoryRes,
+                    Tag = resolved?.Tag ?? item.InventoryRes,
                     DisplayName = resolved?.DisplayName ?? item.InventoryRes,
                     Infinite = item.Infinite,
                     PanelId = panel.PanelId,

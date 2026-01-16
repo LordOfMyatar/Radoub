@@ -148,13 +148,8 @@ public class ItemResolutionService
 
         try
         {
-
-            // Get display name
-            var displayName = uti.LocalizedName.GetDefault();
-            if (string.IsNullOrEmpty(displayName))
-            {
-                displayName = resRef;
-            }
+            // Get display name with full resolution chain
+            var displayName = ResolveDisplayName(uti, resRef);
 
             // Get base item type name
             var baseItemTypeName = GetBaseItemTypeName(uti.BaseItem);
@@ -165,6 +160,7 @@ public class ItemResolutionService
             return new ResolvedItemData
             {
                 ResRef = resRef,
+                Tag = uti.Tag,
                 DisplayName = displayName,
                 BaseItemType = uti.BaseItem,
                 BaseItemTypeName = baseItemTypeName,
@@ -179,6 +175,29 @@ public class ItemResolutionService
             UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to parse UTI {resRef}: {ex.Message}");
             return CreateFallbackData(resRef);
         }
+    }
+
+    private string ResolveDisplayName(UtiFile uti, string resRef)
+    {
+        // 1. Try localized name string first
+        var defaultString = uti.LocalizedName.GetDefault();
+        if (!string.IsNullOrEmpty(defaultString))
+            return defaultString;
+
+        // 2. Fall back to TLK reference if LocalizedName has a StrRef
+        if (uti.LocalizedName.StrRef != 0xFFFFFFFF && _gameDataService != null)
+        {
+            var tlkString = _gameDataService.GetString(uti.LocalizedName.StrRef);
+            if (!string.IsNullOrEmpty(tlkString))
+                return tlkString;
+        }
+
+        // 3. Fall back to ResRef from UTI
+        if (!string.IsNullOrEmpty(uti.TemplateResRef))
+            return uti.TemplateResRef;
+
+        // 4. Final fallback to the resRef we were looking for
+        return resRef;
     }
 
     private string GetBaseItemTypeName(int baseItemIndex)
@@ -228,6 +247,7 @@ public class ItemResolutionService
         return new ResolvedItemData
         {
             ResRef = resRef,
+            Tag = resRef,
             DisplayName = resRef,
             BaseItemType = -1,
             BaseItemTypeName = "Unknown",
@@ -245,6 +265,7 @@ public class ItemResolutionService
 public class ResolvedItemData
 {
     public required string ResRef { get; init; }
+    public required string Tag { get; init; }
     public required string DisplayName { get; init; }
     public required int BaseItemType { get; init; }
     public required string BaseItemTypeName { get; init; }
