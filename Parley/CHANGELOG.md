@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.118-alpha] - 2026-01-15
+**Branch**: `parley/issue-897` | **PR**: #TBD
+
+### Enhancement: Remove unused WebView dependency (#897)
+
+- [ ] Remove WebViewControl packages from Parley.csproj
+- [ ] Verify build succeeds and tests pass
+- [ ] Measure binary size reduction
+
+---
+
 ## [0.1.117-alpha] - 2026-01-15
 **Branch**: `parley/issue-899` | **PR**: #902
 
