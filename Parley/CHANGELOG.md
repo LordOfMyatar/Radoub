@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.119-alpha] - 2026-01-15
+**Branch**: `radoub/issue-908` | **PR**: #909
+
+### Fix: Recent files menu doesn't refresh in realtime (#597)
+
+- Added `_populateRecentFilesMenu()` call after `LoadDialogAsync` in File > Open
+- Added `_populateRecentFilesMenu()` call after loading recent files (moves selected file to top)
+- Recent files menu now updates immediately when files are opened
+
+---
+
 ## [0.1.118-alpha] - 2026-01-15
 **Branch**: `parley/issue-897` | **PR**: #904
 

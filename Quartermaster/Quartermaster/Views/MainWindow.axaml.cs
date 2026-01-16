@@ -108,7 +108,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Initialize character panel with display service
         CharacterPanelContent.SetDisplayService(_creatureDisplayService);
-        CharacterPanelContent.SetConversationResolver(ResolveConversationPath);
+        CharacterPanelContent.SetGameDataService(_gameDataService);
         CharacterPanelContent.CharacterChanged += (s, e) => MarkDirty();
 
         // Initialize classes panel with display service for 2DA/TLK lookups
@@ -145,8 +145,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.FlagsChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.BehaviorChanged += (s, e) => MarkDirty();
 
-        // Initialize scripts panel with conversation resolver and game data service
-        ScriptsPanelContent.SetConversationResolver(ResolveConversationPath);
+        // Initialize scripts panel with game data service
         ScriptsPanelContent.SetGameDataService(_gameDataService);
         ScriptsPanelContent.ScriptsChanged += (s, e) => MarkDirty();
 

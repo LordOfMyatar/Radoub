@@ -1,9 +1,12 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Radoub.Formats.Bic;
+using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
+using Radoub.UI.Views;
 
 namespace Quartermaster.Views.Panels;
 
@@ -35,7 +38,8 @@ public partial class CharacterPanel : UserControl
     private UtcFile? _currentCreature;
     private bool _isLoading;
     private bool _isBicFile;
-    private Func<string, string?>? _conversationResolver;
+    private string? _currentFilePath;
+    private IGameDataService? _gameDataService;
 
     public event EventHandler? CharacterChanged;
 
@@ -85,6 +89,8 @@ public partial class CharacterPanel : UserControl
             _soundSetComboBox.SelectionChanged += OnSelectionChanged;
         if (_conversationTextBox != null)
             _conversationTextBox.TextChanged += OnTextChanged;
+        if (_browseConversationButton != null)
+            _browseConversationButton.Click += OnBrowseConversationClick;
         if (_clearConversationButton != null)
             _clearConversationButton.Click += OnClearConversationClick;
 
@@ -106,9 +112,14 @@ public partial class CharacterPanel : UserControl
         LoadSoundSetData();
     }
 
-    public void SetConversationResolver(Func<string, string?> resolver)
+    public void SetGameDataService(IGameDataService? gameDataService)
     {
-        _conversationResolver = resolver;
+        _gameDataService = gameDataService;
+    }
+
+    public void SetCurrentFilePath(string? filePath)
+    {
+        _currentFilePath = filePath;
     }
 
     /// <summary>
@@ -343,7 +354,21 @@ public partial class CharacterPanel : UserControl
         }
     }
 
-    private void OnClearConversationClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void OnBrowseConversationClick(object? sender, RoutedEventArgs e)
+    {
+        var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
+        var browser = new DialogBrowserWindow(context);
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is Window parentWindow)
+        {
+            var result = await browser.ShowDialog<string?>(parentWindow);
+            if (!string.IsNullOrEmpty(result) && _conversationTextBox != null)
+                _conversationTextBox.Text = result;
+        }
+    }
+
+    private void OnClearConversationClick(object? sender, RoutedEventArgs e)
     {
         if (_conversationTextBox != null)
             _conversationTextBox.Text = "";

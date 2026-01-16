@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.13.1-alpha] - 2026-01-15
+**Branch**: `radoub/issue-908` | **PR**: #909
+
+### Fix: Status bar file path truncation (#807)
+
+- Added `TextTrimming="CharacterEllipsis"` to FilePathText in status bar
+- Long file paths now show ellipsis when truncated
+
+---
+
 ## [0.13.0-alpha] - 2026-01-10
 **Branch**: `manifest/issue-859` | **PR**: #862
 

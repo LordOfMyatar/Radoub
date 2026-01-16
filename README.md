@@ -94,11 +94,43 @@ Each tool has its own installation instructions. See individual tool README file
 
 ## Development
 
+### Building
+
+**Prerequisites**: .NET 9.0 SDK
+
+```bash
+# Clone the repository
+git clone https://github.com/LordOfMyatar/Radoub.git
+cd Radoub
+
+# Build all tools at once
+dotnet build Radoub.sln
+
+# Or build individual tools
+dotnet build Parley/Parley.sln
+dotnet build Manifest/Manifest/Manifest.csproj
+dotnet build Quartermaster/Quartermaster/Quartermaster.csproj
+```
+
+**Note**: `Radoub.sln` excludes `Radoub.IntegrationTests` (Windows-only FlaUI UI tests).
+
+### Testing
+
+```bash
+# Windows (includes UI tests)
+./Radoub.IntegrationTests/run-tests.ps1
+
+# Linux/macOS (unit tests only)
+./Radoub.IntegrationTests/run-tests.sh
+```
+
+### Project Structure
+
 This is a multi-tool repository. Each tool maintains its own:
 - Development documentation
-- Build instructions
+- CHANGELOG
 - Testing protocols
-- Issue tracking
+- Issue tracking (with tool labels)
 
 **For Contributors**: See [CLAUDE.md](CLAUDE.md) for project guidance and [About/](About/) for development history.
 

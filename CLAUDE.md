@@ -32,6 +32,7 @@ Radoub/
 ├── LICENSE
 ├── CHANGELOG.md (repo-level changes)
 ├── CLAUDE.md (this file - repo-level guidance)
+├── Radoub.sln (builds all tools; excludes Windows-only integration tests)
 ├── .gitignore
 ├── .claude/commands/ (slash commands for Claude Code)
 ├── Documentation/ (Aurora Engine format specs - shared across tools)
@@ -68,6 +69,27 @@ Radoub/
 ---
 
 ## Working with Multiple Tools
+
+### Building
+
+**Root-level solution**: Use `Radoub.sln` to build all tools at once:
+
+```bash
+# Build all tools (excludes Windows-only integration tests)
+dotnet build Radoub.sln
+
+# Build with release configuration
+dotnet build Radoub.sln --configuration Release
+```
+
+**Individual tool builds**:
+```bash
+dotnet build Parley/Parley.sln
+dotnet build Manifest/Manifest/Manifest.csproj
+dotnet build Quartermaster/Quartermaster/Quartermaster.csproj
+```
+
+**Note**: `Radoub.IntegrationTests` is excluded from `Radoub.sln` because it targets `net9.0-windows` (FlaUI requires Windows).
 
 ### Tool-Specific Work
 

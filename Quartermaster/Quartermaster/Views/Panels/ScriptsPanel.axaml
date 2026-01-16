@@ -78,45 +78,6 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Conversation Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        Padding="15">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Conversation" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
-
-                        <Grid ColumnDefinitions="140,*,Auto" ColumnSpacing="10">
-                            <TextBlock Grid.Column="0" Text="Dialog File:"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBox Grid.Column="1" x:Name="ConversationTextBox"
-                                     Text=""
-                                     FontFamily="Consolas, Courier New, monospace"
-                                     MaxLength="16"
-                                     Watermark="(none)"
-                                     AutomationProperties.AutomationId="ConversationTextBox"/>
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
-                                <Button x:Name="BrowseConversationButton"
-                                        Content="..."
-                                        Padding="8,4"
-                                        ToolTip.Tip="Browse dialogs"
-                                        AutomationProperties.AutomationId="BrowseConversationButton"/>
-                                <Button x:Name="ClearConversationButton"
-                                        Content="✕"
-                                        Padding="8,4"
-                                        ToolTip.Tip="Clear conversation"
-                                        AutomationProperties.AutomationId="ClearConversationButton"/>
-                                <Button x:Name="OpenInParleyButton"
-                                        Content="Open in Parley"
-                                        Padding="10,5"
-                                        IsVisible="False"
-                                        AutomationProperties.AutomationId="OpenInParleyButton"/>
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
                 <!-- Info text -->
                 <TextBlock Text="Script names are limited to 16 characters (Aurora Engine constraint)."
                            FontSize="{DynamicResource FontSizeSmall}"

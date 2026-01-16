@@ -3,16 +3,12 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Quartermaster.ViewModels;
-using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
-using Radoub.Formats.Settings;
 using Radoub.Formats.Utc;
 using Radoub.UI.Views;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 
 namespace Quartermaster.Views.Panels;
@@ -22,15 +18,10 @@ public partial class ScriptsPanel : BasePanelControl
     private TextBlock? _scriptsSummaryText;
     private ItemsControl? _scriptsList;
     private TextBlock? _noScriptsText;
-    private TextBox? _conversationTextBox;
-    private Button? _browseConversationButton;
-    private Button? _clearConversationButton;
-    private Button? _openInParleyButton;
 
     private ObservableCollection<ScriptViewModel> _scripts = new();
     private string? _currentFilePath;
     private IGameDataService? _gameDataService;
-    private Func<string, string?>? _resolveConversationPath;
 
     public event EventHandler? ScriptsChanged;
 
@@ -46,28 +37,12 @@ public partial class ScriptsPanel : BasePanelControl
         _scriptsSummaryText = this.FindControl<TextBlock>("ScriptsSummaryText");
         _scriptsList = this.FindControl<ItemsControl>("ScriptsList");
         _noScriptsText = this.FindControl<TextBlock>("NoScriptsText");
-        _conversationTextBox = this.FindControl<TextBox>("ConversationTextBox");
-        _browseConversationButton = this.FindControl<Button>("BrowseConversationButton");
-        _clearConversationButton = this.FindControl<Button>("ClearConversationButton");
-        _openInParleyButton = this.FindControl<Button>("OpenInParleyButton");
 
         if (_scriptsList != null)
         {
             _scriptsList.ItemsSource = _scripts;
             _scriptsList.AddHandler(Button.ClickEvent, OnScriptButtonClick);
         }
-
-        if (_conversationTextBox != null)
-            _conversationTextBox.TextChanged += OnConversationTextChanged;
-
-        if (_browseConversationButton != null)
-            _browseConversationButton.Click += OnBrowseConversationClick;
-
-        if (_clearConversationButton != null)
-            _clearConversationButton.Click += OnClearConversationClick;
-
-        if (_openInParleyButton != null)
-            _openInParleyButton.Click += OnOpenInParleyClick;
     }
 
     public void SetGameDataService(IGameDataService? gameDataService)
@@ -78,11 +53,6 @@ public partial class ScriptsPanel : BasePanelControl
     public void SetCurrentFilePath(string? filePath)
     {
         _currentFilePath = filePath;
-    }
-
-    public void SetConversationResolver(Func<string, string?> resolver)
-    {
-        _resolveConversationPath = resolver;
     }
 
     public override void LoadCreature(UtcFile? creature)
@@ -113,10 +83,6 @@ public partial class ScriptsPanel : BasePanelControl
         AddScript("OnUserDefined", creature.ScriptUserDefine, nameof(UtcFile.ScriptUserDefine));
 
         UpdateSummary();
-
-        SetTextBox(_conversationTextBox, creature.Conversation ?? "");
-        UpdateParleyButtonVisibility();
-
         DeferLoadingReset();
     }
 
@@ -207,47 +173,6 @@ public partial class ScriptsPanel : BasePanelControl
         }
     }
 
-    private void OnConversationTextChanged(object? sender, TextChangedEventArgs e)
-    {
-        if (IsLoading || CurrentCreature == null || _conversationTextBox == null)
-            return;
-
-        CurrentCreature.Conversation = _conversationTextBox.Text ?? "";
-        UpdateParleyButtonVisibility();
-        ScriptsChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private async void OnBrowseConversationClick(object? sender, RoutedEventArgs e)
-    {
-        var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
-        var browser = new DialogBrowserWindow(context);
-
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is Window parentWindow)
-        {
-            var result = await browser.ShowDialog<string?>(parentWindow);
-            if (!string.IsNullOrEmpty(result) && _conversationTextBox != null)
-                _conversationTextBox.Text = result;
-        }
-    }
-
-    private void OnClearConversationClick(object? sender, RoutedEventArgs e)
-    {
-        if (_conversationTextBox != null)
-            _conversationTextBox.Text = "";
-    }
-
-    private void UpdateParleyButtonVisibility()
-    {
-        if (_openInParleyButton == null || _conversationTextBox == null)
-            return;
-
-        var hasConversation = !string.IsNullOrEmpty(_conversationTextBox.Text);
-        var parleyConfigured = !string.IsNullOrEmpty(RadoubSettings.Instance.ParleyPath)
-                               && File.Exists(RadoubSettings.Instance.ParleyPath);
-        _openInParleyButton.IsVisible = hasConversation && parleyConfigured;
-    }
-
     private void UpdateSummary()
     {
         var assignedCount = _scripts.Count(s => !string.IsNullOrEmpty(s.ScriptResRef));
@@ -269,55 +194,8 @@ public partial class ScriptsPanel : BasePanelControl
 
         if (_noScriptsText != null)
             _noScriptsText.IsVisible = true;
-        if (_conversationTextBox != null)
-            _conversationTextBox.Text = "";
-        if (_openInParleyButton != null)
-            _openInParleyButton.IsVisible = false;
 
         IsLoading = false;
-    }
-
-    private void OnOpenInParleyClick(object? sender, RoutedEventArgs e)
-    {
-        var conversation = _conversationTextBox?.Text;
-        if (string.IsNullOrEmpty(conversation))
-            return;
-
-        var parleyPath = RadoubSettings.Instance.ParleyPath;
-        if (string.IsNullOrEmpty(parleyPath) || !File.Exists(parleyPath))
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, "Parley path not configured or not found");
-            return;
-        }
-
-        string? dialogPath = null;
-        if (_resolveConversationPath != null)
-            dialogPath = _resolveConversationPath(conversation);
-
-        try
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = parleyPath,
-                UseShellExecute = false
-            };
-
-            if (!string.IsNullOrEmpty(dialogPath) && File.Exists(dialogPath))
-            {
-                startInfo.ArgumentList.Add(dialogPath);
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Opening {conversation}.dlg in Parley");
-            }
-            else
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching Parley (dialog file {conversation}.dlg not found locally)");
-            }
-
-            Process.Start(startInfo);
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to launch Parley: {ex.Message}");
-        }
     }
 }
 

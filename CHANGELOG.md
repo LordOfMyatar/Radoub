@@ -15,6 +15,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.30] - 2026-01-15
+**Branch**: `radoub/issue-908` | **PR**: #909
+
+### Sprint: Backlog Cleanup (#908)
+
+Quick wins to clean up small bugs and tech debt across multiple tools.
+
+#### Work Items
+- [x] #662 - Docs: Update Radoub.sln documentation (tech-debt)
+- [x] #597 - Bug: Recent files menu doesn't refresh in realtime (Parley)
+- [x] #802 - Bug: Dialog file field appears in both panels (Quartermaster)
+- [x] #807 - Status bar file path truncation without ellipsis (Manifest)
+- [x] #819 - Disabled Undo/Redo menu items lack explanation (Quartermaster)
+
+---
+
 ## [0.9.29] - 2026-01-12
 **Branch**: `radoub/issue-886` | **PR**: #894
 
