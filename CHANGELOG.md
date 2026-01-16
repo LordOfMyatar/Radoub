@@ -15,6 +15,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.31] - 2026-01-15
+**Branch**: `radoub/issue-558` | **PR**: #TBD
+
+### Sprint: Merchant Editor MVP (#558)
+
+Part of Epic #555 (Merchant Editor Tool).
+
+Assemble components into working Merchant Editor. Reuses shared inventory components from Creature Editor.
+
+#### Work Items
+- [ ] Store Properties panel (Name, Tag, pricing, stolen goods, identify)
+- [ ] Five inventory tabs with shared ItemListView
+- [ ] Merchant-specific features (Infinite checkbox, calculated prices)
+- [ ] Restrictions editor (WillOnlyBuy/WillNotBuy)
+- [ ] Store templates (save/load)
+- [ ] File operations (Open/Save UTM, dirty state tracking)
+
+---
+
 ## [0.9.30] - 2026-01-15
 **Branch**: `radoub/issue-908` | **PR**: #909
 
