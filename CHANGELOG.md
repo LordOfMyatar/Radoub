@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Quick wins to clean up small bugs and tech debt across multiple tools.
 
 #### Work Items
-- [ ] #662 - Docs: Update Radoub.sln documentation (tech-debt)
+- [x] #662 - Docs: Update Radoub.sln documentation (tech-debt)
 - [x] #597 - Bug: Recent files menu doesn't refresh in realtime (Parley)
 - [x] #802 - Bug: Dialog file field appears in both panels (Quartermaster)
 - [x] #807 - Status bar file path truncation without ellipsis (Manifest)
