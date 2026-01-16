@@ -26,7 +26,7 @@ Quick wins to clean up small bugs and tech debt across multiple tools.
 - [ ] #662 - Docs: Update Radoub.sln documentation (tech-debt)
 - [x] #597 - Bug: Recent files menu doesn't refresh in realtime (Parley)
 - [x] #802 - Bug: Dialog file field appears in both panels (Quartermaster)
-- [ ] #807 - Status bar file path truncation without ellipsis (Manifest)
+- [x] #807 - Status bar file path truncation without ellipsis (Manifest)
 - [ ] #819 - Disabled Undo/Redo menu items lack explanation (Quartermaster)
 
 ---

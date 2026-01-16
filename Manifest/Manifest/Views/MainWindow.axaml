@@ -63,7 +63,7 @@
                 <TextBlock x:Name="StatusText" Grid.Column="0" Text="Ready"/>
                 <TextBlock x:Name="CountsText" Grid.Column="1" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
                 <TextBlock x:Name="TlkStatusText" Grid.Column="2" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
-                <TextBlock x:Name="FilePathText" Grid.Column="3" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <TextBlock x:Name="FilePathText" Grid.Column="3" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0" TextTrimming="CharacterEllipsis"/>
             </Grid>
         </Border>
 
