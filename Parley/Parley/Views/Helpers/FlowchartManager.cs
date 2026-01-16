@@ -38,6 +38,7 @@ namespace Parley.Views.Helpers
         private readonly Func<bool> _getIsSettingSelectionProgrammatically;
         private readonly Action<bool> _setIsSettingSelectionProgrammatically;
         private readonly KeyboardShortcutManager _shortcutManager; // #809: For FlowView keyboard parity
+        private readonly Action<FlowchartContextMenuEventArgs>? _onContextMenuAction; // #461: Context menu parity
 
         // Track whether embedded/tabbed panels have been wired up
         private bool _embeddedFlowchartWired = false;
@@ -54,7 +55,8 @@ namespace Parley.Views.Helpers
             Action saveCurrentNodeProperties,
             Func<bool> getIsSettingSelectionProgrammatically,
             Action<bool> setIsSettingSelectionProgrammatically,
-            KeyboardShortcutManager shortcutManager)
+            KeyboardShortcutManager shortcutManager,
+            Action<FlowchartContextMenuEventArgs>? onContextMenuAction = null)
         {
             _window = window;
             _controls = controls;
@@ -67,6 +69,7 @@ namespace Parley.Views.Helpers
             _getIsSettingSelectionProgrammatically = getIsSettingSelectionProgrammatically;
             _setIsSettingSelectionProgrammatically = setIsSettingSelectionProgrammatically;
             _shortcutManager = shortcutManager;
+            _onContextMenuAction = onContextMenuAction;
         }
 
         private MainViewModel ViewModel => _getViewModel();
@@ -87,6 +90,7 @@ namespace Parley.Views.Helpers
                     {
                         var w = new FlowchartWindow();
                         w.NodeClicked += OnFlowchartNodeClicked;
+                        w.ContextMenuAction += OnFlowchartContextMenuAction; // #461: Context menu parity
                         w.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         return w;
                     });
@@ -195,6 +199,7 @@ namespace Parley.Views.Helpers
                     if (!_embeddedFlowchartWired)
                     {
                         panel.NodeClicked += OnEmbeddedFlowchartNodeClicked;
+                        panel.ContextMenuAction += OnFlowchartContextMenuAction; // #461: Context menu parity
                         panel.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         _embeddedFlowchartWired = true;
                     }
@@ -237,6 +242,7 @@ namespace Parley.Views.Helpers
                     if (!_tabbedFlowchartWired)
                     {
                         panel.NodeClicked += OnTabbedFlowchartNodeClicked;
+                        panel.ContextMenuAction += OnFlowchartContextMenuAction; // #461: Context menu parity
                         panel.ShortcutManager = _shortcutManager; // #809: Enable keyboard shortcuts
                         _tabbedFlowchartWired = true;
                     }
@@ -591,6 +597,21 @@ namespace Parley.Views.Helpers
         {
             // Reuse the same logic as the floating window
             OnFlowchartNodeClicked(sender, flowchartNode);
+        }
+
+        /// <summary>
+        /// Handles context menu actions from any flowchart panel (#461).
+        /// Routes actions to the MainWindow via the callback.
+        /// </summary>
+        private void OnFlowchartContextMenuAction(object? sender, FlowchartContextMenuEventArgs e)
+        {
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart context menu action: {e.Action} on node {e.Node.Id}");
+
+            // First, select the node in TreeView to ensure operations target the correct node
+            OnFlowchartNodeClicked(sender, e.Node);
+
+            // Then route the action to MainWindow
+            _onContextMenuAction?.Invoke(e);
         }
 
         /// <summary>

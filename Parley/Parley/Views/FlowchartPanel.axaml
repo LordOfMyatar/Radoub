@@ -97,6 +97,30 @@
                                     MinWidth="120"
                                     MaxWidth="200"
                                     Opacity="{Binding IsLink, Converter={x:Static models:FlowchartLinkOpacityConverter.Instance}}">
+                                <!-- Context menu for FlowView parity with TreeView (#461) -->
+                                <Border.ContextMenu>
+                                    <ContextMenu DataContext="{Binding}" x:Name="NodeContextMenu" Opened="OnContextMenuOpened">
+                                        <MenuItem Header="Add Node" InputGesture="Ctrl+D" Tag="AddNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Add Sibling Node" InputGesture="Ctrl+Shift+D" Tag="AddSiblingNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Delete Node" InputGesture="Delete" Tag="DeleteNode" Click="OnContextMenuItemClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Cut Node" InputGesture="Ctrl+X" Tag="CutNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Copy Node" InputGesture="Ctrl+C" Tag="CopyNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Paste" InputGesture="Ctrl+V" Tag="PasteNode" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Paste as Link" InputGesture="Ctrl+L" Tag="PasteAsLink" Click="OnContextMenuItemClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Move Up" InputGesture="Ctrl+Shift+Up" Tag="MoveUp" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Move Down" InputGesture="Ctrl+Shift+Down" Tag="MoveDown" Click="OnContextMenuItemClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Expand Subnodes" InputGesture="Ctrl+E" Tag="ExpandSubnodes" Click="OnContextMenuItemClick"/>
+                                        <MenuItem Header="Collapse Subnodes" InputGesture="Ctrl+W" Tag="CollapseSubnodes" Click="OnContextMenuItemClick"/>
+                                        <Separator/>
+                                        <MenuItem Header="Go to Link Target" InputGesture="Ctrl+J" Tag="GoToLinkTarget" Click="OnContextMenuItemClick"
+                                                  IsVisible="{Binding IsLink}"/>
+                                        <MenuItem Header="Go to Parent Node" InputGesture="Ctrl+J" Tag="GoToParent" Click="OnContextMenuItemClick"
+                                                  IsVisible="{Binding !IsLink}"/>
+                                    </ContextMenu>
+                                </Border.ContextMenu>
                                 <Border.Background>
                                     <MultiBinding Converter="{x:Static models:FlowchartNodeBackgroundConverter.Instance}">
                                         <Binding Path="NodeType"/>
@@ -126,11 +150,14 @@
                                                FontSize="10"
                                                FontWeight="Bold"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                    <!-- Node text -->
-                                    <TextBlock Text="{Binding ShortText}"
+                                    <!-- Node text - uses MaxLines for truncation with ellipsis (#813) -->
+                                    <TextBlock Text="{Binding DisplayText}"
                                                FontSize="11"
                                                TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxLines="{Binding DataContext.NodeMaxLines, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                MaxWidth="180"
+                                               ToolTip.Tip="{Binding Text}"
                                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                                     <!-- Indicators for conditions/actions/collapse -->
                                     <StackPanel Orientation="Horizontal" Spacing="4">

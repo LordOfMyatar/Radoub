@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.117-alpha] - 2026-01-15
+**Branch**: `parley/issue-899` | **PR**: #902
+
+### Sprint: Flowchart UX Polish (#813, #461)
+
+- [x] #813 - Flowchart node text truncation without tooltip
+  - Replaced character-based truncation with line-based display using `MaxLines`
+  - Added tooltip showing full text on hover for truncated nodes
+  - Added configurable "Flowchart Node Text" setting in UI Settings (1-6 lines, default 3)
+- [x] #461 - FlowView context menu parity with TreeView
+  - Added right-click context menu to flowchart nodes
+  - Menu includes: Add Node, Add Sibling, Delete, Cut/Copy/Paste, Paste as Link, Move Up/Down, Expand/Collapse, Go to Parent/Link Target
+  - Actions route to same handlers as TreeView for consistent behavior
+
+---
+
 ## [0.1.116-alpha] - 2026-01-15
 **Branch**: `parley/issue-898` | **PR**: #900
 

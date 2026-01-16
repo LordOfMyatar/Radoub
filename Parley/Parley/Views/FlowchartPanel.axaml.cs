@@ -16,6 +16,21 @@ using DialogEditor.ViewModels;
 namespace DialogEditor.Views
 {
     /// <summary>
+    /// Event args for context menu actions in FlowchartPanel (#461).
+    /// </summary>
+    public class FlowchartContextMenuEventArgs : EventArgs
+    {
+        public string Action { get; }
+        public FlowchartNode Node { get; }
+
+        public FlowchartContextMenuEventArgs(string action, FlowchartNode node)
+        {
+            Action = action;
+            Node = node;
+        }
+    }
+
+    /// <summary>
     /// Reusable flowchart panel that can be embedded in MainWindow or FlowchartWindow.
     /// Handles graph rendering, zoom controls, and node click events.
     /// #809: Now forwards keyboard shortcuts to parent window for feature parity with TreeView.
@@ -53,6 +68,12 @@ namespace DialogEditor.Views
         public event EventHandler<FlowchartNode?>? NodeClicked;
 
         /// <summary>
+        /// Raised when a context menu action is requested (#461).
+        /// The string parameter is the action name (e.g., "AddNode", "DeleteNode").
+        /// </summary>
+        public event EventHandler<FlowchartContextMenuEventArgs>? ContextMenuAction;
+
+        /// <summary>
         /// Gets the ViewModel for external access (e.g., selection sync)
         /// </summary>
         public FlowchartPanelViewModel ViewModel => _viewModel;
@@ -80,6 +101,9 @@ namespace DialogEditor.Views
             // Listen for settings changes to refresh colors (#340)
             SettingsService.Instance.PropertyChanged += OnSettingsChanged;
 
+            // Listen for UI settings changes (#813: FlowchartNodeMaxLines)
+            UISettingsService.Instance.PropertyChanged += OnUISettingsChanged;
+
             // Listen for theme changes to refresh colors (#141)
             ThemeManager.Instance.ThemeApplied += OnThemeApplied;
 
@@ -88,6 +112,50 @@ namespace DialogEditor.Views
 
             // Re-fit when viewport size changes (if in fit mode)
             FlowchartScrollViewer.PropertyChanged += OnScrollViewerPropertyChanged;
+
+            // Context menu click handlers are attached via XAML Click events (#461)
+        }
+
+        // Track the current node for context menu actions
+        private FlowchartNode? _contextMenuNode;
+
+        /// <summary>
+        /// Called when context menu opens - captures the FlowchartNode from the Border's DataContext.
+        /// </summary>
+        private void OnContextMenuOpened(object? sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu contextMenu)
+            {
+                // The ContextMenu's DataContext should be bound to the FlowchartNode
+                _contextMenuNode = contextMenu.DataContext as FlowchartNode;
+                if (_contextMenuNode != null)
+                {
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"Context menu opened for node: {_contextMenuNode.Id}");
+                }
+                else
+                {
+                    UnifiedLogger.LogUI(LogLevel.WARN, "Context menu opened but no FlowchartNode in DataContext");
+                }
+            }
+        }
+
+        private void OnContextMenuItemClick(object? sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Tag is string action && _contextMenuNode != null)
+            {
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart context menu: {action} on node {_contextMenuNode.Id}");
+
+                // Ensure the node is selected before the action
+                _viewModel.SelectedNodeId = _contextMenuNode.Id;
+                NodeClicked?.Invoke(this, _contextMenuNode);
+
+                // Raise the context menu action event
+                ContextMenuAction?.Invoke(this, new FlowchartContextMenuEventArgs(action, _contextMenuNode));
+            }
+            else if (_contextMenuNode == null)
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, $"Flowchart context menu: action requested but no node captured");
+            }
         }
 
         private void OnScrollViewerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -165,6 +233,22 @@ namespace DialogEditor.Views
                     // This triggers DataTemplate re-evaluation with updated colors
                     _viewModel.RefreshGraph();
                     UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart colors refreshed due to {e.PropertyName} change");
+                });
+            }
+        }
+
+        private void OnUISettingsChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // Refresh when flowchart node max lines changes (#813)
+            if (e.PropertyName == nameof(UISettingsService.FlowchartNodeMaxLines))
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    // Notify that NodeMaxLines changed so bindings update
+                    _viewModel.OnPropertyChanged(nameof(FlowchartPanelViewModel.NodeMaxLines));
+                    // Also refresh the graph to re-render nodes
+                    _viewModel.RefreshGraph();
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, "Flowchart refreshed due to NodeMaxLines change");
                 });
             }
         }
@@ -505,7 +589,7 @@ namespace DialogEditor.Views
                     return;
                 }
 
-                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node clicked: {clickedNode.Id} - {clickedNode.ShortText} (IsLink: {clickedNode.IsLink})");
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Flowchart node clicked: {clickedNode.Id} - {clickedNode.DisplayText} (IsLink: {clickedNode.IsLink})");
 
                 // Directly set selection to the clicked node's ID (not by DialogNode lookup)
                 // This ensures link nodes get selected, not their targets

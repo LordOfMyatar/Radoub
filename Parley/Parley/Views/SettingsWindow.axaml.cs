@@ -273,6 +273,9 @@ namespace DialogEditor.Views
         private void OnAllowScrollbarAutoHideChanged(object? sender, RoutedEventArgs e)
             => _uiSettingsController?.OnAllowScrollbarAutoHideChanged(sender, e);
 
+        private void OnFlowchartNodeMaxLinesChanged(object? sender, RangeBaseValueChangedEventArgs e)
+            => _uiSettingsController?.OnFlowchartNodeMaxLinesChanged(sender, e);
+
         private void OnEnableNpcTagColoringChanged(object? sender, RoutedEventArgs e)
             => _uiSettingsController?.OnEnableNpcTagColoringChanged(sender, e);
 
