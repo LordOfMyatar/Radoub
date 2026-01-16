@@ -22,7 +22,8 @@ Fence - Merchant Editor for Neverwinter Nights. Part of Epic #555.
 - **MainWindow** - Two-panel layout with Store Inventory and Item Palette
 - **Store Properties panel** - Name, Tag, pricing settings, black market flags
 - **Buy Restrictions** - WillOnlyBuy/WillNotBuy as collapsible checkbox panel with base item types from baseitems.2da
-- **Store Inventory** - DataGrid display with search/filter, infinite checkbox
+- **Store Inventory** - DataGrid display with search/filter, infinite checkbox, resolved item names/types/prices from UTI files
+- **Item Resolution** - ItemResolutionService loads UTI files via GameDataService, calculates sell/buy prices from markup/markdown
 - **Item Palette** - Item browser with type filtering
 - **File operations** - Open/Save UTM files, recent files menu
 - **Double-click transfer** - Double-click to add/remove items from store

@@ -125,11 +125,11 @@ dialog.Show(this);
 - [x] File operations
 - [x] Double-click transfer
 - [x] Settings window
+- [x] WillOnlyBuy/WillNotBuy checkboxes
+- [x] Item name resolution from UTI files
+- [x] Price calculation based on markup/markdown
 
 ### TODO
-- [ ] Item name resolution from UTI files
-- [ ] Price calculation based on markup/markdown
-- [ ] WillOnlyBuy/WillNotBuy checkboxes
 - [ ] Item palette population from game data
 - [ ] Search/filter implementation
 - [ ] Unit tests

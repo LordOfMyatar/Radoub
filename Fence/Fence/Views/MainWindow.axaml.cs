@@ -26,6 +26,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private bool _isDirty;
 
     private readonly BaseItemTypeService _baseItemTypeService;
+    private readonly ItemResolutionService _itemResolutionService;
     private readonly IGameDataService? _gameDataService;
 
     public ObservableCollection<StoreItemViewModel> StoreItems { get; } = new();
@@ -42,9 +43,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         DataContext = this;
 
-        // Initialize game data service and base item type service
+        // Initialize game data service and related services
         _gameDataService = CreateGameDataService();
         _baseItemTypeService = new BaseItemTypeService(_gameDataService);
+        _itemResolutionService = new ItemResolutionService(_gameDataService);
 
         // Load base item types for buy restrictions
         LoadBaseItemTypes();
@@ -315,25 +317,34 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (_currentStore == null) return;
 
+        // Get current markup/markdown for price calculations
+        var markUp = (int)(SellMarkupBox.Value ?? 100);
+        var markDown = (int)(BuyMarkdownBox.Value ?? 50);
+
         foreach (var panel in _currentStore.StoreList)
         {
             foreach (var item in panel.Items)
             {
+                // Resolve item data from UTI
+                var resolved = _itemResolutionService.ResolveItem(item.InventoryRes);
+
                 StoreItems.Add(new StoreItemViewModel
                 {
                     ResRef = item.InventoryRes,
-                    DisplayName = item.InventoryRes, // TODO: resolve from UTI
+                    DisplayName = resolved?.DisplayName ?? item.InventoryRes,
                     Infinite = item.Infinite,
                     PanelId = panel.PanelId,
-                    BaseItemType = "Unknown", // TODO: resolve from UTI
-                    SellPrice = 0, // TODO: calculate
-                    BuyPrice = 0   // TODO: calculate
+                    BaseItemType = resolved?.BaseItemTypeName ?? "Unknown",
+                    SellPrice = resolved?.CalculateSellPrice(markUp) ?? 0,
+                    BuyPrice = resolved?.CalculateBuyPrice(markDown) ?? 0
                 });
             }
         }
 
         StoreInventoryGrid.ItemsSource = StoreItems;
         UpdateItemCount();
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Populated {StoreItems.Count} store items");
     }
 
     private async void OnSaveClick(object? sender, RoutedEventArgs e)
