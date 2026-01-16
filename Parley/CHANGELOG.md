@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.118-alpha] - 2026-01-15
-**Branch**: `parley/issue-897` | **PR**: #TBD
+**Branch**: `parley/issue-897` | **PR**: #904
 
 ### Enhancement: Remove unused WebView dependency (#897)
 
