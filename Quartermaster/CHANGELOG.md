@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.37-alpha] - 2026-01-16
+**Branch**: `quartermaster/issue-778` | **PR**: #912
+
+### Refactor: SpellsPanel.axaml.cs Tech Debt (#778)
+
+Refactor SpellsPanel.axaml.cs for improved maintainability (1232 lines).
+
+---
+
 ## [0.1.36-alpha] - 2026-01-15
 **Branch**: `radoub/issue-908` | **PR**: #909
 
