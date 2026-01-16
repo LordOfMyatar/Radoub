@@ -29,6 +29,7 @@ Fence/
 │   ├── App.axaml[.cs]
 │   ├── Services/
 │   │   ├── CommandLineService.cs
+│   │   ├── ItemResolutionService.cs
 │   │   └── SettingsService.cs
 │   ├── Views/
 │   │   ├── MainWindow.axaml[.cs]
@@ -116,22 +117,24 @@ dialog.Show(this);
 
 ## Current Status
 
-### Implemented
+### Phase 1 (Complete)
 - [x] Project scaffold with theming
-- [x] UTM file loading
+- [x] UTM file loading and display
 - [x] Store properties editing
-- [x] Inventory display
-- [x] Item palette (structure only)
-- [x] File operations
-- [x] Double-click transfer
+- [x] Inventory display with Tag column
+- [x] Item palette population from BIF archives
+- [x] Item name resolution (LocalizedName → TLK StrRef → ResRef fallback)
 - [x] Settings window
 - [x] WillOnlyBuy/WillNotBuy checkboxes
-- [x] Item name resolution from UTI files
 - [x] Price calculation based on markup/markdown
 
-### TODO
-- [ ] Item palette population from game data
-- [ ] Search/filter implementation
+### Phase 2 (TODO)
+- [ ] Create new store (File → New)
+- [ ] Add/remove items between palette and store
+- [ ] Search/filter for both grids
+- [ ] Type filter dropdown
+- [ ] Standard/Custom content checkboxes
+- [ ] Double-click transfer
 - [ ] Unit tests
 
 ---
