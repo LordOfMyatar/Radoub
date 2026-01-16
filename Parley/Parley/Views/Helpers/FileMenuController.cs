@@ -192,6 +192,9 @@ namespace Parley.Views.Helpers
                     // Update module info bar
                     UpdateModuleInfo(filePath);
 
+                    // Refresh recent files menu (#597)
+                    _populateRecentFilesMenu();
+
                     // Update embedded flowchart if in side-by-side mode
                     _updateEmbeddedFlowchartAfterLoad();
                 }
@@ -306,6 +309,9 @@ namespace Parley.Views.Helpers
 
                     // Update module info bar
                     UpdateModuleInfo(filePath);
+
+                    // Refresh recent files menu to move this file to top (#597)
+                    _populateRecentFilesMenu();
 
                     // Update embedded flowchart
                     _updateEmbeddedFlowchartAfterLoad();
