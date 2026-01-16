@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.37-alpha] - 2026-01-16
-**Branch**: `quartermaster/issue-778` | **PR**: #TBD
+**Branch**: `quartermaster/issue-778` | **PR**: #912
 
 ### Refactor: SpellsPanel.axaml.cs Tech Debt (#778)
 
