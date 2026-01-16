@@ -15,9 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Enhancement: Remove unused WebView dependency (#897)
 
-- [ ] Remove WebViewControl packages from Parley.csproj
-- [ ] Verify build succeeds and tests pass
-- [ ] Measure binary size reduction
+- Removed `WebViewControl-Avalonia` and `WebViewControl-Avalonia-ARM64` packages from Parley.csproj
+- Binary size reduced from ~359 MB to ~38 MB (89% reduction)
 
 ---
 
