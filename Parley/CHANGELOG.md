@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.118-alpha] - 2026-01-15
+**Branch**: `parley/issue-897` | **PR**: #904
+
+### Enhancement: Remove unused WebView dependency (#897)
+
+- Removed `WebViewControl-Avalonia` and `WebViewControl-Avalonia-ARM64` packages from Parley.csproj
+- Binary size reduced from ~359 MB to ~38 MB (89% reduction)
+
+---
+
 ## [0.1.117-alpha] - 2026-01-15
 **Branch**: `parley/issue-899` | **PR**: #902
 

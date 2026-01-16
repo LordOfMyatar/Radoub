@@ -65,17 +65,6 @@
     <PackageReference Include="AvaloniaGraphControl" Version="0.7.0" />
     <!-- Text-to-Speech for Windows (Sprint #479) -->
     <PackageReference Include="System.Speech" Version="9.0.0" Condition="'$(RuntimeIdentifier)' == 'win-x64' Or '$(RuntimeIdentifier)' == 'win-arm64' Or $([MSBuild]::IsOSPlatform('Windows'))" />
-    <!-- WebView for CEF-based browser embedding (documentation, help) -->
-    <!-- Architecture-specific packages: x64 vs ARM64 (CEF natives are platform-specific) -->
-    <!-- Using RuntimeInformation.OSArchitecture for native builds (GitHub Actions macos-latest is ARM64) -->
-  </ItemGroup>
-
-  <!-- WebView packages - include BOTH x64 and ARM64 packages unconditionally
-       The packages contain RID-specific native libs that MSBuild resolves at build time
-       Conditional package refs don't work because RID isn't set during restore -->
-  <ItemGroup>
-    <PackageReference Include="WebViewControl-Avalonia" Version="3.120.11" />
-    <PackageReference Include="WebViewControl-Avalonia-ARM64" Version="3.120.11" />
   </ItemGroup>
 
   <ItemGroup>
