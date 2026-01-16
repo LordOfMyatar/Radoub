@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.36-alpha] - 2026-01-15
+**Branch**: `radoub/issue-908` | **PR**: #909
+
+### Fix: Dialog file field appears in both panels (#802)
+
+- Removed duplicate Conversation section from ScriptsPanel (now only in CharacterPanel)
+- Added browse button functionality to CharacterPanel's conversation field
+- CharacterPanel now receives GameDataService and file path for dialog browsing
+
+---
+
 ## [0.1.35-alpha] - 2026-01-11
 **Branch**: `quartermaster/sprint-630-871-870` | **PR**: #872
 

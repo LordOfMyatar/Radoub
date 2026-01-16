@@ -219,7 +219,8 @@ public partial class MainWindow
 
             _currentFilePath = filePath;
 
-            // Update scripts panel with current file context for script browsing
+            // Update panels with current file context for dialog/script browsing
+            CharacterPanelContent.SetCurrentFilePath(_currentFilePath);
             ScriptsPanelContent.SetCurrentFilePath(_currentFilePath);
 
             // Update advanced panel with module directory for faction loading
@@ -338,7 +339,8 @@ public partial class MainWindow
         _isDirty = false;
         _isBicFile = false;
 
-        // Clear scripts panel context
+        // Clear panel file contexts
+        CharacterPanelContent.SetCurrentFilePath(null);
         ScriptsPanelContent.SetCurrentFilePath(null);
 
         ClearInventoryUI();
