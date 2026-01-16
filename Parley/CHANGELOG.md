@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.120-alpha] - 2026-01-16
-**Branch**: `parley/issue-719` | **PR**: #TBD
+**Branch**: `parley/issue-719` | **PR**: #913
 
 ### Refactor: Tech debt - Large files needing refactoring (#719)
 
