@@ -10,7 +10,7 @@ Review open issues and plan next sprint. Combines light hygiene check with sprin
 
 **Options:**
 - No args: Review all open issues, generate sprint options
-- `--tool parley|radoub|manifest|quartermaster`: Filter by tool
+- `--tool parley|radoub|manifest|quartermaster|fence`: Filter by tool
 - `--full`: Include detailed grooming (label fixes, title standardization)
 - `#N`: Focus on specific epic's issues
 
@@ -164,7 +164,7 @@ gh project item-add [PROJECT_NUMBER] --owner LordOfMyatar --url https://github.c
 | Tool | Project | Number |
 |------|---------|--------|
 | parley | Parley | 2 |
-| radoub, quartermaster, manifest | Radoub | 3 |
+| radoub, quartermaster, manifest, fence | Radoub | 3 |
 
 **Project IDs for status update:**
 - Parley: `--project-id PVT_kwHOAotjYs4BHFCR --field-id PVTSSF_lAHOAotjYs4BHFCRzg37-KA --single-select-option-id 47fc9ee4`

@@ -49,6 +49,7 @@ git diff main...HEAD --name-only
 | `Parley/**` only | Parley | No |
 | `Manifest/**` only | Manifest | No |
 | `Quartermaster/**` only | Quartermaster | No |
+| `Fence/**` only | Fence | No |
 | `Radoub.*/**` | All affected | Yes |
 | Multiple tools | All affected | Yes |
 
@@ -126,7 +127,7 @@ The `|| true` handles case where PR is already ready.
 
 ```powershell
 .\Radoub.IntegrationTests\run-tests.ps1
-    -Tool [Parley|Quartermaster|Manifest]
+    -Tool [Parley|Quartermaster|Manifest|Fence]
     -SkipShared      # Skip Radoub.* tests
     -UnitOnly        # Skip UI tests (default for pre-merge)
     -TechDebt        # Include large file scan

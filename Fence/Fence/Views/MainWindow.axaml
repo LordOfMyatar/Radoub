@@ -1,0 +1,307 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="MerchantEditor.Views.MainWindow"
+        x:Name="MainWindowInstance"
+        Title="Fence - Merchant Editor"
+        Width="1200" Height="800"
+        MinWidth="900" MinHeight="600"
+        KeyDown="OnWindowKeyDown">
+
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
+                <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
+                <Separator/>
+                <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="Save _As..." Click="OnSaveAsClick" InputGesture="Ctrl+Shift+S" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <Separator/>
+                <MenuItem Header="_Close" Click="OnCloseFileClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="E_xit" Click="OnExitClick" InputGesture="Alt+F4"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" InputGesture="Ctrl+Z" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
+                <MenuItem Header="_Redo" InputGesture="Ctrl+Y" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
+                <Separator/>
+                <MenuItem Header="_Delete Selected" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About Fence" Click="OnAboutClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0" Padding="5,2"
+                AutomationProperties.AutomationId="StatusBar">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="StatusText" Grid.Column="0" Text="Ready" AutomationProperties.AutomationId="StatusText"/>
+                <TextBlock x:Name="ItemCountText" Grid.Column="1" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <TextBlock x:Name="FilePathText" Grid.Column="2" Text="" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid x:Name="MainGrid" Margin="8">
+            <Grid.RowDefinitions>
+                <!-- Store Properties -->
+                <RowDefinition Height="Auto"/>
+                <!-- Buy Restrictions (collapsible) -->
+                <RowDefinition Height="Auto"/>
+                <!-- Inventory and Palette -->
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Store Properties Panel -->
+            <Border Grid.Row="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,8"
+                    AutomationProperties.AutomationId="StorePropertiesPanel">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Row 0: Name, Tag, ResRef -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="StoreNameBox" AutomationProperties.AutomationId="StoreNameBox"/>
+
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Tag:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Grid.Row="0" Grid.Column="4" x:Name="StoreTagBox" AutomationProperties.AutomationId="StoreTagBox"/>
+
+                    <TextBlock Grid.Row="0" Grid.Column="6" Text="ResRef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Grid.Row="0" Grid.Column="7" x:Name="StoreResRefBox" IsReadOnly="True" AutomationProperties.AutomationId="StoreResRefBox"/>
+
+                    <!-- Row 1: Pricing -->
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Sell Markup %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="SellMarkupBox" Minimum="0" Maximum="1000" Value="100" Margin="0,8,0,0" AutomationProperties.AutomationId="SellMarkupBox"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="3" Text="Buy Markdown %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="4" x:Name="BuyMarkdownBox" Minimum="0" Maximum="100" Value="50" Margin="0,8,0,0" AutomationProperties.AutomationId="BuyMarkdownBox"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="6" Text="Identify Price:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="7" x:Name="IdentifyPriceBox" Minimum="-1" Maximum="100000" Value="100" Margin="0,8,0,0" AutomationProperties.AutomationId="IdentifyPriceBox"/>
+
+                    <!-- Row 2: Flags -->
+                    <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="8" Margin="0,8,0,0" Orientation="Horizontal">
+                        <CheckBox x:Name="BlackMarketCheck" Content="Buy Stolen Goods" Margin="0,0,16,0" AutomationProperties.AutomationId="BlackMarketCheck"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
+                            <TextBlock Text="(Markdown: " VerticalAlignment="Center"/>
+                            <NumericUpDown x:Name="BlackMarketMarkdownBox" Width="80" Minimum="0" Maximum="100" Value="25" IsEnabled="{Binding IsChecked, ElementName=BlackMarketCheck}" AutomationProperties.AutomationId="BlackMarketMarkdownBox"/>
+                            <TextBlock Text="%)" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <CheckBox x:Name="MaxBuyPriceCheck" Content="Max Buy Price:" Margin="0,0,8,0" AutomationProperties.AutomationId="MaxBuyPriceCheck"/>
+                        <NumericUpDown x:Name="MaxBuyPriceBox" Width="100" Minimum="0" Maximum="1000000" Value="0" IsEnabled="{Binding IsChecked, ElementName=MaxBuyPriceCheck}" AutomationProperties.AutomationId="MaxBuyPriceBox"/>
+                        <CheckBox x:Name="LimitedGoldCheck" Content="Limited Gold:" Margin="16,0,8,0" AutomationProperties.AutomationId="LimitedGoldCheck"/>
+                        <NumericUpDown x:Name="StoreGoldBox" Width="100" Minimum="0" Maximum="10000000" Value="0" IsEnabled="{Binding IsChecked, ElementName=LimitedGoldCheck}" AutomationProperties.AutomationId="StoreGoldBox"/>
+                    </WrapPanel>
+                </Grid>
+            </Border>
+
+            <!-- Buy Restrictions Panel -->
+            <Expander Grid.Row="1" Header="Buy Restrictions" IsExpanded="False" Margin="0,0,0,8"
+                      AutomationProperties.AutomationId="BuyRestrictionsExpander">
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Mode Selection -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
+                            <RadioButton x:Name="BuyAllRadio" Content="Buy All Item Types" GroupName="BuyMode" IsChecked="True"
+                                         Checked="OnBuyModeChanged" AutomationProperties.AutomationId="BuyAllRadio"/>
+                            <RadioButton x:Name="WillOnlyBuyRadio" Content="Will Only Buy Selected" GroupName="BuyMode"
+                                         Checked="OnBuyModeChanged" AutomationProperties.AutomationId="WillOnlyBuyRadio"/>
+                            <RadioButton x:Name="WillNotBuyRadio" Content="Will Not Buy Selected" GroupName="BuyMode"
+                                         Checked="OnBuyModeChanged" AutomationProperties.AutomationId="WillNotBuyRadio"/>
+                        </StackPanel>
+
+                        <!-- Helper Buttons -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8"
+                                    IsVisible="{Binding !IsChecked, ElementName=BuyAllRadio}">
+                            <Button Content="Select All" Click="OnSelectAllTypes" AutomationProperties.AutomationId="SelectAllTypesButton"/>
+                            <Button Content="Clear All" Click="OnClearAllTypes" AutomationProperties.AutomationId="ClearAllTypesButton"/>
+                        </StackPanel>
+
+                        <!-- Item Type Checkboxes -->
+                        <ScrollViewer Grid.Row="2" MaxHeight="200" IsVisible="{Binding !IsChecked, ElementName=BuyAllRadio}">
+                            <ItemsControl x:Name="ItemTypeCheckboxes" AutomationProperties.AutomationId="ItemTypeCheckboxes">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding DisplayName}"
+                                                  IsChecked="{Binding IsSelected}"
+                                                  Width="180" Margin="0,2,8,2"
+                                                  Checked="OnItemTypeCheckChanged"
+                                                  Unchecked="OnItemTypeCheckChanged"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Expander>
+
+            <!-- Store Inventory and Item Palette -->
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <!-- Store Inventory -->
+                    <ColumnDefinition Width="*" MinWidth="300"/>
+                    <ColumnDefinition Width="5"/>
+                    <!-- Item Palette -->
+                    <ColumnDefinition Width="*" MinWidth="300"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Store Inventory Panel -->
+                <Border Grid.Column="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4"
+                        AutomationProperties.AutomationId="StoreInventoryPanel">
+                    <DockPanel>
+                        <!-- Header -->
+                        <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="8">
+                            <TextBlock Text="Store Inventory" FontWeight="Bold"/>
+                        </Border>
+
+                        <!-- Search/Filter Bar -->
+                        <Border DockPanel.Dock="Top" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" x:Name="StoreSearchBox" Watermark="Search items..." AutomationProperties.AutomationId="StoreSearchBox"/>
+                                <Button Grid.Column="1" Content="X" Width="28" Margin="4,0,0,0" Click="OnClearStoreSearch" AutomationProperties.AutomationId="ClearStoreSearchButton"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Action Buttons (must dock before DataGrid fills remaining space) -->
+                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Remove" Click="OnRemoveFromStore" AutomationProperties.AutomationId="RemoveFromStoreButton"/>
+                                <Button Content="Set Infinite" Click="OnSetInfinite" AutomationProperties.AutomationId="SetInfiniteButton"/>
+                                <Button Content="Clear Infinite" Click="OnClearInfinite" AutomationProperties.AutomationId="ClearInfiniteButton"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Item List (fills remaining space - must be last in DockPanel) -->
+                        <DataGrid x:Name="StoreInventoryGrid"
+                                  AutoGenerateColumns="False"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  IsReadOnly="False"
+                                  SelectionMode="Extended"
+                                  GridLinesVisibility="Horizontal"
+                                  AutomationProperties.AutomationId="StoreInventoryGrid">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="∞" Width="40" Binding="{Binding Infinite}"/>
+                                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Tag" Width="100" Binding="{Binding Tag}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="ResRef" Width="100" Binding="{Binding ResRef}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Sell" Width="60" Binding="{Binding SellPrice}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Buy" Width="60" Binding="{Binding BuyPrice}" IsReadOnly="True"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <!-- Splitter -->
+                <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                              Background="{DynamicResource SystemBaseMediumLowColor}"
+                              AutomationProperties.AutomationId="MainSplitter"/>
+
+                <!-- Item Palette Panel -->
+                <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4"
+                        AutomationProperties.AutomationId="ItemPalettePanel">
+                    <DockPanel>
+                        <!-- Header -->
+                        <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="8">
+                            <TextBlock Text="Item Palette" FontWeight="Bold"/>
+                        </Border>
+
+                        <!-- Filter Bar -->
+                        <Border DockPanel.Dock="Top" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1">
+                            <StackPanel Spacing="4">
+                                <!-- Search -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" x:Name="PaletteSearchBox" Watermark="Search items..." AutomationProperties.AutomationId="PaletteSearchBox"/>
+                                    <Button Grid.Column="1" Content="X" Width="28" Margin="4,0,0,0" Click="OnClearPaletteSearch" AutomationProperties.AutomationId="ClearPaletteSearchButton"/>
+                                </Grid>
+
+                                <!-- Source Filter -->
+                                <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <CheckBox x:Name="StandardItemsCheck" Content="Standard" IsChecked="True" Margin="0,0,12,0" AutomationProperties.AutomationId="StandardItemsCheck"/>
+                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="True" AutomationProperties.AutomationId="CustomItemsCheck"/>
+                                </WrapPanel>
+
+                                <!-- Type Filter -->
+                                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                    <TextBlock Text="Type:" VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="ItemTypeFilter" Width="200" AutomationProperties.AutomationId="ItemTypeFilter"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Action Buttons (must dock before DataGrid fills remaining space) -->
+                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Add to Store" Click="OnAddToStore" AutomationProperties.AutomationId="AddToStoreButton"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Item List (fills remaining space - must be last in DockPanel) -->
+                        <DataGrid x:Name="ItemPaletteGrid"
+                                  AutoGenerateColumns="False"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  IsReadOnly="True"
+                                  SelectionMode="Extended"
+                                  GridLinesVisibility="Horizontal"
+                                  AutomationProperties.AutomationId="ItemPaletteGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}"/>
+                                <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
+                                <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}"/>
+                                <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>

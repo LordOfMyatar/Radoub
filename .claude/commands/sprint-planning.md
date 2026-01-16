@@ -8,7 +8,7 @@ Help plan the next sprint by reviewing open issues, PRs, and current work.
 
 Before analyzing issues, collect these answers in ONE interaction:
 
-1. **Tool Focus** (optional): "Focus on a specific tool? [all/parley/radoub/manifest/quartermaster]"
+1. **Tool Focus** (optional): "Focus on a specific tool? [all/parley/radoub/manifest/quartermaster/fence]"
 2. **Create Issues**: "After planning, auto-create sprint issues on GitHub?" [y/n/ask-after]"
 3. **Project Board**: "Add created sprints to project boards?" [y/n]"
 
@@ -304,6 +304,7 @@ After creating a sprint issue, add it to the appropriate project board.
 | `radoub` or `[Radoub]` | Radoub | 3 |
 | `quartermaster` or `[Quartermaster]` | Radoub | 3 |
 | `manifest` or `[Manifest]` | Radoub | 3 |
+| `fence` or `[Fence]` | Radoub | 3 |
 
 ### Add Sprint to Project and Set In Progress
 
