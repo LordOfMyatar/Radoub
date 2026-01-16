@@ -8,7 +8,7 @@ Start a new branch for any GitHub issue - automatically detects item type and ap
 
 Before initializing, collect these answers in ONE interaction (after fetching issue details):
 
-1. **Tool Confirmation** (if ambiguous): "Which tool is this for? [parley/radoub/manifest/quartermaster]"
+1. **Tool Confirmation** (if ambiguous): "Which tool is this for? [parley/radoub/manifest/quartermaster/fence]"
 2. **Epic Handling** (if epic detected): "This is an epic. Options: [run-research/continue-anyway/cancel]"
 
 After collecting answers, proceed through all steps (branch, CHANGELOG, commit, PR, project board) without further prompts.
@@ -304,6 +304,7 @@ Common label patterns:
 | `radoub` or `[Radoub]` | Radoub | 3 |
 | `quartermaster` or `[Quartermaster]` | Radoub | 3 |
 | `manifest` or `[Manifest]` | Radoub | 3 |
+| `fence` or `[Fence]` | Radoub | 3 |
 
 ### Add Sprint/Epic to Project and Set In Progress
 

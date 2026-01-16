@@ -74,6 +74,9 @@ git log --oneline -20 --all | head -20
 
 **Tool Prefixes:**
 - `[Parley]` - Dialog editor issues
+- `[Manifest]` - Journal editor issues
+- `[Quartermaster]` - Creature/inventory editor issues
+- `[Fence]` - Merchant editor issues
 - `[Radoub]` - Cross-tool/infrastructure issues
 - `[Radoub.Formats]` - Shared library issues
 
@@ -257,9 +260,10 @@ Apply recommendations? [y/n/manual]
 
 ### Tool Labels
 - `parley` - Dialog editor
+- `manifest` - Journal editor
+- `quartermaster` - Creature/inventory editor
+- `fence` - Merchant editor
 - `radoub` - Cross-tool infrastructure
-- `manifest` - Journal Editor
-- `quartermaster` - Character Editor
 
 ### Type Labels
 - `bug` - Something isn't working
@@ -313,6 +317,7 @@ Apply recommendations? [y/n/manual]
 | `radoub` or `[Radoub]` | Radoub | 3 |
 | `quartermaster` or `[Quartermaster]` | Radoub | 3 |
 | `manifest` or `[Manifest]` | Radoub | 3 |
+| `fence` or `[Fence]` | Radoub | 3 |
 
 ### Add Sprint/Epic to Project
 
