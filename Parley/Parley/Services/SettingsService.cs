@@ -64,27 +64,11 @@ namespace DialogEditor.Services
         private static string SettingsFilePath => Path.Combine(SettingsDirectory, "ParleySettings.json");
         private static string LegacySettingsFilePath => Path.Combine(LegacySettingsDirectory, "ParleySettings.json");
         private const int DefaultMaxRecentFiles = 10;
-        
-        // Window settings
-        private double _windowLeft = 100;
-        private double _windowTop = 100;
-        private double _windowWidth = 1200;
-        private double _windowHeight = 800;
-        private bool _windowMaximized = false;
 
-        // Panel layout settings - GridSplitter positions (#108)
-        private double _leftPanelWidth = 800; // Tree+Text area width (default ~67% at 1200px window)
-        private double _topLeftPanelHeight = 400; // Dialog tree height (default 2* of left panels)
+        // Window settings - DELEGATED to WindowLayoutService (#719)
+        // Panel layout settings - DELEGATED to WindowLayoutService (#719)
+        // Flowchart window settings - DELEGATED to WindowLayoutService (#719)
 
-        // Flowchart window settings (#377)
-        private double _flowchartWindowLeft = 100;
-        private double _flowchartWindowTop = 100;
-        private double _flowchartWindowWidth = 800;
-        private double _flowchartWindowHeight = 600;
-        private bool _flowchartWindowOpen = false; // Was flowchart open when app closed?
-        private double _flowchartPanelWidth = 400; // Width of embedded flowchart panel (SideBySide mode)
-        private bool _flowchartVisible = false; // Is flowchart visible (any mode)?
-        
         // Game settings - DELEGATED to shared RadoubSettings (#412)
         // These properties now delegate to RadoubSettings.Instance for cross-tool sharing
         // Only _modulePaths remains Parley-specific (recent module history)
@@ -147,6 +131,7 @@ namespace DialogEditor.Services
             // Subscribe to delegated services for save notifications (#719)
             RecentFilesService.Instance.SettingsChanged += SaveSettings;
             UISettingsService.Instance.SettingsChanged += SaveSettings;
+            WindowLayoutService.Instance.SettingsChanged += SaveSettings;
 
             // Migrate from legacy ~/Parley to new ~/Radoub/Parley location (#472)
             MigrateLegacySettingsFolder();
@@ -193,11 +178,11 @@ namespace DialogEditor.Services
                 Console.WriteLine($"[Parley] Migrating settings from ~/Parley to ~/Radoub/Parley...");
 
                 // Migrate settings files from legacy folder to new folder
+                // 2026-01-16: Removed PluginSettings.json - plugin infrastructure removed in v0.1.115
                 var settingsToMigrate = new[]
                 {
                     "ParleySettings.json",
-                    "SpeakerPreferences.json",
-                    "PluginSettings.json"
+                    "SpeakerPreferences.json"
                 };
 
                 foreach (var fileName in settingsToMigrate)
@@ -364,48 +349,48 @@ namespace DialogEditor.Services
             set => RecentFilesService.Instance.MaxRecentFiles = value;
         }
         
-        // Window properties
+        // Window properties - DELEGATED to WindowLayoutService (#719)
         public double WindowLeft
         {
-            get => _windowLeft;
-            set { if (SetProperty(ref _windowLeft, value)) SaveSettings(); }
-        }
-        
-        public double WindowTop
-        {
-            get => _windowTop;
-            set { if (SetProperty(ref _windowTop, value)) SaveSettings(); }
-        }
-        
-        public double WindowWidth
-        {
-            get => _windowWidth;
-            set { if (SetProperty(ref _windowWidth, Math.Max(400, value))) SaveSettings(); }
-        }
-        
-        public double WindowHeight
-        {
-            get => _windowHeight;
-            set { if (SetProperty(ref _windowHeight, Math.Max(300, value))) SaveSettings(); }
-        }
-        
-        public bool WindowMaximized
-        {
-            get => _windowMaximized;
-            set { if (SetProperty(ref _windowMaximized, value)) SaveSettings(); }
+            get => WindowLayoutService.Instance.WindowLeft;
+            set => WindowLayoutService.Instance.WindowLeft = value;
         }
 
-        // Panel layout properties
+        public double WindowTop
+        {
+            get => WindowLayoutService.Instance.WindowTop;
+            set => WindowLayoutService.Instance.WindowTop = value;
+        }
+
+        public double WindowWidth
+        {
+            get => WindowLayoutService.Instance.WindowWidth;
+            set => WindowLayoutService.Instance.WindowWidth = value;
+        }
+
+        public double WindowHeight
+        {
+            get => WindowLayoutService.Instance.WindowHeight;
+            set => WindowLayoutService.Instance.WindowHeight = value;
+        }
+
+        public bool WindowMaximized
+        {
+            get => WindowLayoutService.Instance.WindowMaximized;
+            set => WindowLayoutService.Instance.WindowMaximized = value;
+        }
+
+        // Panel layout properties - DELEGATED to WindowLayoutService (#719)
         public double LeftPanelWidth
         {
-            get => _leftPanelWidth;
-            set { if (SetProperty(ref _leftPanelWidth, Math.Max(350, value))) SaveSettings(); }
+            get => WindowLayoutService.Instance.LeftPanelWidth;
+            set => WindowLayoutService.Instance.LeftPanelWidth = value;
         }
 
         public double TopLeftPanelHeight
         {
-            get => _topLeftPanelHeight;
-            set { if (SetProperty(ref _topLeftPanelHeight, Math.Max(150, value))) SaveSettings(); }
+            get => WindowLayoutService.Instance.TopLeftPanelHeight;
+            set => WindowLayoutService.Instance.TopLeftPanelHeight = value;
         }
 
         // UI properties - DELEGATED to UISettingsService (#719)
@@ -448,47 +433,47 @@ namespace DialogEditor.Services
             set => UISettingsService.Instance.FlowchartLayout = value;
         }
 
-        // Flowchart Window Properties (#377)
+        // Flowchart Window Properties - DELEGATED to WindowLayoutService (#719)
         public double FlowchartWindowLeft
         {
-            get => _flowchartWindowLeft;
-            set { if (SetProperty(ref _flowchartWindowLeft, value)) SaveSettings(); }
+            get => WindowLayoutService.Instance.FlowchartWindowLeft;
+            set => WindowLayoutService.Instance.FlowchartWindowLeft = value;
         }
 
         public double FlowchartWindowTop
         {
-            get => _flowchartWindowTop;
-            set { if (SetProperty(ref _flowchartWindowTop, value)) SaveSettings(); }
+            get => WindowLayoutService.Instance.FlowchartWindowTop;
+            set => WindowLayoutService.Instance.FlowchartWindowTop = value;
         }
 
         public double FlowchartWindowWidth
         {
-            get => _flowchartWindowWidth;
-            set { if (SetProperty(ref _flowchartWindowWidth, Math.Max(200, value))) SaveSettings(); }
+            get => WindowLayoutService.Instance.FlowchartWindowWidth;
+            set => WindowLayoutService.Instance.FlowchartWindowWidth = value;
         }
 
         public double FlowchartWindowHeight
         {
-            get => _flowchartWindowHeight;
-            set { if (SetProperty(ref _flowchartWindowHeight, Math.Max(150, value))) SaveSettings(); }
+            get => WindowLayoutService.Instance.FlowchartWindowHeight;
+            set => WindowLayoutService.Instance.FlowchartWindowHeight = value;
         }
 
         public bool FlowchartWindowOpen
         {
-            get => _flowchartWindowOpen;
-            set { if (SetProperty(ref _flowchartWindowOpen, value)) SaveSettings(); }
+            get => WindowLayoutService.Instance.FlowchartWindowOpen;
+            set => WindowLayoutService.Instance.FlowchartWindowOpen = value;
         }
 
         public double FlowchartPanelWidth
         {
-            get => _flowchartPanelWidth;
-            set { if (SetProperty(ref _flowchartPanelWidth, Math.Max(200, value))) SaveSettings(); }
+            get => WindowLayoutService.Instance.FlowchartPanelWidth;
+            set => WindowLayoutService.Instance.FlowchartPanelWidth = value;
         }
 
         public bool FlowchartVisible
         {
-            get => _flowchartVisible;
-            set { if (SetProperty(ref _flowchartVisible, value)) SaveSettings(); }
+            get => WindowLayoutService.Instance.FlowchartVisible;
+            set => WindowLayoutService.Instance.FlowchartVisible = value;
         }
 
         // Game Settings Properties - DELEGATED to shared RadoubSettings (#412)
@@ -941,18 +926,22 @@ namespace DialogEditor.Services
                             ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>()),
                             settings.MaxRecentFiles);
 
-                        // Load window settings
-                        _windowLeft = settings.WindowLeft;
-                        _windowTop = settings.WindowTop;
-                        _windowWidth = Math.Max(400, settings.WindowWidth);
-                        _windowHeight = Math.Max(300, settings.WindowHeight);
-                        _windowMaximized = settings.WindowMaximized;
-
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded window position from settings: Left={_windowLeft}, Top={_windowTop}, Width={_windowWidth}, Height={_windowHeight}");
-
-                        // Load panel layout settings
-                        _leftPanelWidth = Math.Max(350, settings.LeftPanelWidth);
-                        _topLeftPanelHeight = Math.Max(150, settings.TopLeftPanelHeight);
+                        // Initialize WindowLayoutService (#719)
+                        WindowLayoutService.Instance.Initialize(
+                            settings.WindowLeft,
+                            settings.WindowTop,
+                            settings.WindowWidth,
+                            settings.WindowHeight,
+                            settings.WindowMaximized,
+                            settings.LeftPanelWidth,
+                            settings.TopLeftPanelHeight,
+                            settings.FlowchartWindowLeft,
+                            settings.FlowchartWindowTop,
+                            settings.FlowchartWindowWidth,
+                            settings.FlowchartWindowHeight,
+                            settings.FlowchartWindowOpen,
+                            settings.FlowchartPanelWidth,
+                            settings.FlowchartVisible);
 
                         // Initialize UISettingsService (#719)
                         UISettingsService.Instance.Initialize(
@@ -963,15 +952,6 @@ namespace DialogEditor.Services
                             settings.FlowchartLayout ?? "Floating",
                             settings.AllowScrollbarAutoHide,
                             settings.FlowchartNodeMaxLines);
-
-                        // Flowchart window settings (#377)
-                        _flowchartWindowLeft = settings.FlowchartWindowLeft;
-                        _flowchartWindowTop = settings.FlowchartWindowTop;
-                        _flowchartWindowWidth = Math.Max(200, settings.FlowchartWindowWidth);
-                        _flowchartWindowHeight = Math.Max(150, settings.FlowchartWindowHeight);
-                        _flowchartWindowOpen = settings.FlowchartWindowOpen;
-                        _flowchartPanelWidth = Math.Max(200, settings.FlowchartPanelWidth);
-                        _flowchartVisible = settings.FlowchartVisible;
 
                         // Issue #179: Migrate speaker preferences to separate file
                         // Store temporarily for migration, then clear from main settings
