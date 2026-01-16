@@ -202,7 +202,16 @@
                             </Grid>
                         </Border>
 
-                        <!-- Item List -->
+                        <!-- Action Buttons (must dock before DataGrid fills remaining space) -->
+                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Remove" Click="OnRemoveFromStore" AutomationProperties.AutomationId="RemoveFromStoreButton"/>
+                                <Button Content="Set Infinite" Click="OnSetInfinite" AutomationProperties.AutomationId="SetInfiniteButton"/>
+                                <Button Content="Clear Infinite" Click="OnClearInfinite" AutomationProperties.AutomationId="ClearInfiniteButton"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Item List (fills remaining space - must be last in DockPanel) -->
                         <DataGrid x:Name="StoreInventoryGrid"
                                   AutoGenerateColumns="False"
                                   CanUserReorderColumns="True"
@@ -222,15 +231,6 @@
                                 <DataGridTextColumn Header="Buy" Width="60" Binding="{Binding BuyPrice}" IsReadOnly="True"/>
                             </DataGrid.Columns>
                         </DataGrid>
-
-                        <!-- Action Buttons -->
-                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Content="Remove" Click="OnRemoveFromStore" AutomationProperties.AutomationId="RemoveFromStoreButton"/>
-                                <Button Content="Set Infinite" Click="OnSetInfinite" AutomationProperties.AutomationId="SetInfiniteButton"/>
-                                <Button Content="Clear Infinite" Click="OnClearInfinite" AutomationProperties.AutomationId="ClearInfiniteButton"/>
-                            </StackPanel>
-                        </Border>
                     </DockPanel>
                 </Border>
 
@@ -275,7 +275,14 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Item List -->
+                        <!-- Action Buttons (must dock before DataGrid fills remaining space) -->
+                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Add to Store" Click="OnAddToStore" AutomationProperties.AutomationId="AddToStoreButton"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Item List (fills remaining space - must be last in DockPanel) -->
                         <DataGrid x:Name="ItemPaletteGrid"
                                   AutoGenerateColumns="False"
                                   CanUserReorderColumns="True"
@@ -292,13 +299,6 @@
                                 <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}"/>
                             </DataGrid.Columns>
                         </DataGrid>
-
-                        <!-- Action Buttons -->
-                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Content="Add to Store" Click="OnAddToStore" AutomationProperties.AutomationId="AddToStoreButton"/>
-                            </StackPanel>
-                        </Border>
                     </DockPanel>
                 </Border>
             </Grid>
