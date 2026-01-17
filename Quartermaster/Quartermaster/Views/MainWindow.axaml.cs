@@ -10,6 +10,7 @@ using Quartermaster.Views.Helpers;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
 using System;
 using System.Collections.ObjectModel;
@@ -36,6 +37,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly CreatureDisplayService _creatureDisplayService;
     private readonly ItemViewModelFactory _itemViewModelFactory;
     private readonly ItemIconService _itemIconService;
+    private readonly AudioService _audioService;
 
     // Equipment slots collection (shared with InventoryPanel)
     private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
@@ -62,6 +64,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _creatureDisplayService = new CreatureDisplayService(_gameDataService);
         _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
         _itemIconService = new ItemIconService(_gameDataService);
+        _audioService = new AudioService();
 
         if (_gameDataService.IsConfigured)
         {
@@ -109,6 +112,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize character panel with display service
         CharacterPanelContent.SetDisplayService(_creatureDisplayService);
         CharacterPanelContent.SetGameDataService(_gameDataService);
+        CharacterPanelContent.SetAudioService(_audioService);
         CharacterPanelContent.CharacterChanged += (s, e) => MarkDirty();
 
         // Initialize classes panel with display service for 2DA/TLK lookups
@@ -364,6 +368,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         else
         {
             SaveWindowPosition();
+            _audioService.Dispose();
             _gameDataService.Dispose();
         }
     }
