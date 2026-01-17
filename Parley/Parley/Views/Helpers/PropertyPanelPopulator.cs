@@ -88,7 +88,7 @@ namespace Parley.Views.Helpers
         /// Populates speaker field and related controls.
         /// PC nodes have read-only speaker field.
         /// </summary>
-        public void PopulateSpeaker(DialogNode dialogNode)
+        public void PopulateSpeaker(DialogNode dialogNode, CreatureService? creatureService = null)
         {
             var speakerTextBox = _window.FindControl<TextBox>("SpeakerTextBox");
             var recentCreatureComboBox = _window.FindControl<ComboBox>("RecentCreatureTagsComboBox");
@@ -124,6 +124,55 @@ namespace Parley.Views.Helpers
 
             // Populate NPC speaker visual preferences (Issue #16, #36)
             PopulateSpeakerVisualPreferences(dialogNode);
+
+            // Populate soundset info (Issue #786)
+            PopulateSoundsetInfo(dialogNode, isPC, creatureService);
+        }
+
+        /// <summary>
+        /// Populates soundset info from creature tag lookup (#786).
+        /// Shows soundset name and gender for NPC speakers with creatures.
+        /// </summary>
+        private void PopulateSoundsetInfo(DialogNode dialogNode, bool isPC, CreatureService? creatureService)
+        {
+            var soundsetInfoTextBlock = _window.FindControl<TextBlock>("SoundsetInfoTextBlock");
+            if (soundsetInfoTextBlock == null)
+                return;
+
+            // Clear for PC nodes or empty speaker
+            if (isPC || string.IsNullOrWhiteSpace(dialogNode.Speaker))
+            {
+                soundsetInfoTextBlock.Text = "";
+                return;
+            }
+
+            // Try to look up creature by speaker tag
+            if (creatureService == null || !creatureService.HasCachedCreatures)
+            {
+                soundsetInfoTextBlock.Text = "";
+                return;
+            }
+
+            var creature = creatureService.GetCreatureByTag(dialogNode.Speaker);
+            if (creature == null)
+            {
+                soundsetInfoTextBlock.Text = $"Creature '{dialogNode.Speaker}' not found in module";
+                return;
+            }
+
+            // Show soundset info if available
+            if (!string.IsNullOrEmpty(creature.SoundSetSummary))
+            {
+                soundsetInfoTextBlock.Text = $"Soundset: {creature.SoundSetSummary}";
+            }
+            else if (creature.SoundSetFile == ushort.MaxValue)
+            {
+                soundsetInfoTextBlock.Text = "No soundset assigned";
+            }
+            else
+            {
+                soundsetInfoTextBlock.Text = $"Soundset ID: {creature.SoundSetFile} (not in soundset.2da)";
+            }
         }
 
         /// <summary>
@@ -584,6 +633,11 @@ namespace Parley.Views.Helpers
             var isChildTextBlock = _window.FindControl<TextBlock>("IsChildTextBlock");
             if (isChildTextBlock != null)
                 isChildTextBlock.Text = "";
+
+            // Issue #786: Clear soundset info
+            var soundsetInfoTextBlock = _window.FindControl<TextBlock>("SoundsetInfoTextBlock");
+            if (soundsetInfoTextBlock != null)
+                soundsetInfoTextBlock.Text = "";
 
             // Issue #178: Clear script preview TextBoxes
             var conditionalPreview = _window.FindControl<TextBox>("ConditionalScriptPreviewTextBox");

@@ -39,6 +39,7 @@ __pycache__/
 .venv/
 venv/
 /.claude/settings.local.json
+/.claude/cache/
 NonPublic
 TestOutput
 /Radoub.IntegrationTests/TestOutput

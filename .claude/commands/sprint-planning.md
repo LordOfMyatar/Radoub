@@ -9,8 +9,9 @@ Help plan the next sprint by reviewing open issues, PRs, and current work.
 Before analyzing issues, collect these answers in ONE interaction:
 
 1. **Tool Focus** (optional): "Focus on a specific tool? [all/parley/radoub/manifest/quartermaster/fence]"
-2. **Create Issues**: "After planning, auto-create sprint issues on GitHub?" [y/n/ask-after]"
-3. **Project Board**: "Add created sprints to project boards?" [y/n]"
+2. **Refresh Cache**: "Force refresh GitHub data? [y/n]" (default: use cache if fresh)
+3. **Create Issues**: "After planning, auto-create sprint issues on GitHub?" [y/n/ask-after]"
+4. **Project Board**: "Add created sprints to project boards?" [y/n]"
 
 After collecting answers, proceed through all analysis and output without further prompts. If "ask-after" selected for issue creation, prompt once at the end.
 
@@ -37,21 +38,26 @@ After collecting answers, proceed through all analysis and output without furthe
 
 ## Instructions
 
-1. **Check Current State**
+1. **Ensure Cache is Fresh**
+   ```bash
+   # Auto-refresh if cache is stale (>4 hours) or missing
+   pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
+   ```
+
+2. **Check Current State**
    - Run `git status` to see current branch and changes
    - Run `git log --oneline -5` to see recent commits
    - Check for any uncommitted work
 
-2. **Review GitHub Issues**
-   - List open issues with age: `gh issue list --state open --limit 30 --json number,title,labels,updatedAt`
+3. **Load GitHub Data from Cache**
+   Read from `.claude/cache/github-data.json`:
+   - `issues` array: all open issues with labels, body, dates, project status
+   - `pullRequests` array: open PRs with review state, branch names
+   - `summary` object: pre-calculated hygiene stats
    - Calculate days since last update for each issue
    - Flag stale issues (15+ days without activity)
    - Group by epic label when present
    - Note blocked/blocking relationships
-
-3. **Review Open PRs**
-   - List open PRs: `gh pr list --state open`
-   - Check PR status and review state
 
 4. **Check Active Sprints/Epics**
    - Read `Parley/CHANGELOG.md` for active work

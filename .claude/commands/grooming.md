@@ -9,8 +9,9 @@ Review open issues for formatting, labeling, and relevance. Ensures issues stay 
 Before reviewing issues, collect these answers in ONE interaction:
 
 1. **Auto-Fix Mode**: "Auto-apply obvious fixes (add tool labels, standardize titles)?" [y/n/ask-each]
-2. **Stale Handling**: "For stale issues (15+ days), should I check if they were resolved by recent PRs?" [y/n]
-3. **Project Board**: "Add sprints/epics to project boards automatically?" [y/n]
+2. **Refresh Cache**: "Force refresh GitHub data? [y/n]" (default: use cache if fresh)
+3. **Stale Handling**: "For stale issues (15+ days), should I check if they were resolved by recent PRs?" [y/n]
+4. **Project Board**: "Add sprints/epics to project boards automatically?" [y/n]
 
 If "ask-each" is selected for Auto-Fix, the command will prompt for each issue. Otherwise, proceed autonomously.
 
@@ -25,11 +26,13 @@ If "ask-each" is selected for Auto-Fix, the command will prompt for each issue. 
 - `#[number]`: Review specific issue
 - `--tool parley|radoub`: Filter by tool
 - `--label [name]`: Filter by label
+- `--refresh`: Force cache refresh before review
 
 **Examples:**
 - `/grooming` - Review all open issues
 - `/grooming #123` - Review specific issue
 - `/grooming --tool parley` - Review Parley issues only
+- `/grooming --refresh` - Force fresh data from GitHub
 
 ## Grooming Checklist
 
@@ -149,11 +152,24 @@ gh issue list --state open --label sprint --json number,title
 
 When running `/grooming` without args:
 
-### Step 1: Fetch All Open Issues
+### Step 0: Ensure Cache is Fresh
 
 ```bash
-gh issue list --state open --limit 100 --json number,title,labels,updatedAt,body
+# Auto-refresh if cache is stale (>4 hours) or missing
+pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
 ```
+
+If user requested force refresh:
+```bash
+pwsh -File .claude/scripts/Refresh-GitHubCache.ps1 -Force
+```
+
+### Step 1: Load Issues from Cache
+
+Read from `.claude/cache/github-data.json`:
+- `issues` array: all open issues with labels, body, dates, author, project status
+- `summary` object: pre-calculated counts for missing labels, stale issues
+- Filter by tool label or specific issue number if requested
 
 ### Step 2: Categorize Issues
 

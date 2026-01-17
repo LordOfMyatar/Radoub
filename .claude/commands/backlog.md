@@ -12,6 +12,7 @@ Review open issues and plan next sprint. Combines light hygiene check with sprin
 - No args: Review all open issues, generate sprint options
 - `--tool parley|radoub|manifest|quartermaster|fence`: Filter by tool
 - `--full`: Include detailed grooming (label fixes, title standardization)
+- `--refresh`: Force cache refresh before review
 - `#N`: Focus on specific epic's issues
 
 **Examples:**
@@ -19,6 +20,7 @@ Review open issues and plan next sprint. Combines light hygiene check with sprin
 - `/backlog --tool quartermaster` - Quartermaster issues only
 - `/backlog #544` - Focus on epic #544
 - `/backlog --full` - Include detailed grooming pass
+- `/backlog --refresh` - Force fresh data from GitHub
 
 ## Upfront Questions
 
@@ -29,13 +31,26 @@ Collect in ONE interaction:
 
 ## Workflow
 
-### Step 1: Fetch Issues (Single Query)
+### Step 0: Ensure Cache is Fresh
 
 ```bash
-gh issue list --state open --limit 100 --json number,title,labels,updatedAt,body,milestone
+# Auto-refresh if cache is stale (>4 hours) or missing
+pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
 ```
 
-Filter by tool label if `--tool` specified.
+If `--refresh` flag is passed, force refresh:
+```bash
+pwsh -File .claude/scripts/Refresh-GitHubCache.ps1 -Force
+```
+
+### Step 1: Load Issues from Cache
+
+Read from `.claude/cache/github-data.json`:
+- `issues` array contains all open issues with labels, body, dates, project status
+- `summary` object has pre-calculated hygiene stats
+- Filter by tool label if `--tool` specified
+
+The cache contains everything needed - no additional API calls required.
 
 ### Step 2: Quick Hygiene Summary
 

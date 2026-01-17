@@ -30,9 +30,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Shows informative messages: "MP3 audio with .wav extension - works in NWN"
 - Validates MP3 frame sync bytes for accurate detection
 
+#### Enhancement: NPC soundset preview from creature tag (#786)
+
+- Shows soundset name and gender below speaker field for NPC dialog nodes
+- Looks up creature by speaker tag from cached UTC files
+- Extracts `SoundSetFile` field from UTC and resolves via `soundset.2da`
+- Extended `TwoDAService` to support soundset.2da lookups with caching
+- Shows informative messages when creature not found or soundset unavailable
+
 ---
 
-- #786 - Preview NPC soundset compatibility from creature tag
 - #915 - Display NPC portrait for selected speaker
 
 ---

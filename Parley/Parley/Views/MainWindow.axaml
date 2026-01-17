@@ -347,6 +347,13 @@
                         </StackPanel>
                     </WrapPanel>
 
+                    <!-- NPC Soundset Preview (Issue #786) - shows soundset info for creature tag -->
+                    <TextBlock x:Name="SoundsetInfoTextBlock" DockPanel.Dock="Top"
+                               Margin="0,0,0,8"
+                               FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               ToolTip.Tip="Creature's soundset from soundset.2da"/>
+
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <!-- Tab order: Ctrl+D lands here (1), then scripts, then back to speaker row -->
                     <controls:SpellCheckTextBox x:Name="TextTextBox" AcceptsReturn="True"
