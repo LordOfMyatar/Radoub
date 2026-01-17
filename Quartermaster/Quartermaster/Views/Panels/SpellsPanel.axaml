@@ -92,51 +92,53 @@
                 </StackPanel>
             </Border>
 
-            <!-- Filter Toolbar - uses WrapPanel for responsive wrapping on narrow screens -->
-            <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+            <!-- Filter Toolbar - WrapPanel allows filters to flow to multiple lines on narrow screens -->
+            <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,5">
                 <!-- Search Box -->
-                <Grid ColumnDefinitions="*,Auto" Margin="0,0,15,8" MinWidth="200">
-                    <TextBox x:Name="SearchTextBox"
-                             Watermark="Search spells..."
-                             AutomationProperties.AutomationId="SpellsSearchBox"/>
-                    <Button Grid.Column="1"
-                            x:Name="ClearSearchButton"
-                            Content="✕"
-                            Width="28" Height="28"
-                            Margin="5,0,0,0"
-                            ToolTip.Tip="Clear search"
-                            AutomationProperties.AutomationId="SpellsClearSearch"/>
-                </Grid>
+                <Border Margin="0,0,10,5">
+                    <Grid ColumnDefinitions="*,Auto" MinWidth="180" MaxWidth="250">
+                        <TextBox x:Name="SearchTextBox"
+                                 Watermark="Search spells..."
+                                 AutomationProperties.AutomationId="SpellsSearchBox"/>
+                        <Button Grid.Column="1"
+                                x:Name="ClearSearchButton"
+                                Content="✕"
+                                Width="28" Height="28"
+                                Margin="5,0,0,0"
+                                ToolTip.Tip="Clear search"
+                                AutomationProperties.AutomationId="SpellsClearSearch"/>
+                    </Grid>
+                </Border>
 
                 <!-- Spell Level Filter -->
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,15,8">
+                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,10,5">
                     <TextBlock Text="Level:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="LevelFilterComboBox"
                               SelectedIndex="0"
-                              MinWidth="90"
+                              MinWidth="80"
                               AutomationProperties.AutomationId="SpellsLevelFilter">
-                        <ComboBoxItem Content="All Levels"/>
-                        <ComboBoxItem Content="Level 0"/>
-                        <ComboBoxItem Content="Level 1"/>
-                        <ComboBoxItem Content="Level 2"/>
-                        <ComboBoxItem Content="Level 3"/>
-                        <ComboBoxItem Content="Level 4"/>
-                        <ComboBoxItem Content="Level 5"/>
-                        <ComboBoxItem Content="Level 6"/>
-                        <ComboBoxItem Content="Level 7"/>
-                        <ComboBoxItem Content="Level 8"/>
-                        <ComboBoxItem Content="Level 9"/>
+                        <ComboBoxItem Content="All"/>
+                        <ComboBoxItem Content="0"/>
+                        <ComboBoxItem Content="1"/>
+                        <ComboBoxItem Content="2"/>
+                        <ComboBoxItem Content="3"/>
+                        <ComboBoxItem Content="4"/>
+                        <ComboBoxItem Content="5"/>
+                        <ComboBoxItem Content="6"/>
+                        <ComboBoxItem Content="7"/>
+                        <ComboBoxItem Content="8"/>
+                        <ComboBoxItem Content="9"/>
                     </ComboBox>
                 </StackPanel>
 
                 <!-- Spell School Filter -->
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,15,8">
+                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,10,5">
                     <TextBlock Text="School:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="SchoolFilterComboBox"
                               SelectedIndex="0"
-                              MinWidth="120"
+                              MinWidth="100"
                               AutomationProperties.AutomationId="SpellsSchoolFilter">
-                        <ComboBoxItem Content="All Schools"/>
+                        <ComboBoxItem Content="All"/>
                         <ComboBoxItem Content="Abjuration"/>
                         <ComboBoxItem Content="Conjuration"/>
                         <ComboBoxItem Content="Divination"/>
@@ -149,15 +151,15 @@
                 </StackPanel>
 
                 <!-- Status Filter -->
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,5">
                     <TextBlock Text="Status:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="StatusFilterComboBox"
                               SelectedIndex="0"
-                              MinWidth="100"
+                              MinWidth="90"
                               AutomationProperties.AutomationId="SpellsStatusFilter">
-                        <ComboBoxItem Content="All Spells"/>
-                        <ComboBoxItem Content="Known Only"/>
-                        <ComboBoxItem Content="Memorized Only"/>
+                        <ComboBoxItem Content="All"/>
+                        <ComboBoxItem Content="Known"/>
+                        <ComboBoxItem Content="Memorized"/>
                         <ComboBoxItem Content="Available"/>
                         <ComboBoxItem Content="Blocked"/>
                     </ComboBox>
