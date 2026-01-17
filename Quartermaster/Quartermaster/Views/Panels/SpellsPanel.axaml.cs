@@ -31,6 +31,8 @@ public partial class SpellsPanel : UserControl
     private Grid? _spellSlotTableGrid;
     private Border? _knownSpellsListBorder;
     private StackPanel? _knownSpellsListPanel;
+    private Border? _memorizedSpellsTableBorder;
+    private Grid? _memorizedSpellsTableGrid;
     private TextBlock? _spellSlotSummaryText;
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
@@ -85,6 +87,8 @@ public partial class SpellsPanel : UserControl
         _spellSlotTableGrid = this.FindControl<Grid>("SpellSlotTableGrid");
         _knownSpellsListBorder = this.FindControl<Border>("KnownSpellsListBorder");
         _knownSpellsListPanel = this.FindControl<StackPanel>("KnownSpellsListPanel");
+        _memorizedSpellsTableBorder = this.FindControl<Border>("MemorizedSpellsTableBorder");
+        _memorizedSpellsTableGrid = this.FindControl<Grid>("MemorizedSpellsTableGrid");
         _spellSlotSummaryText = this.FindControl<TextBlock>("SpellSlotSummaryText");
         _searchTextBox = this.FindControl<TextBox>("SearchTextBox");
         _clearSearchButton = this.FindControl<Button>("ClearSearchButton");
@@ -296,6 +300,16 @@ public partial class SpellsPanel : UserControl
             _knownSpellsListBorder.IsVisible = false;
         if (_knownSpellsListPanel != null)
             _knownSpellsListPanel.Children.Clear();
+
+        // Hide memorized spells table
+        if (_memorizedSpellsTableBorder != null)
+            _memorizedSpellsTableBorder.IsVisible = false;
+        if (_memorizedSpellsTableGrid != null)
+        {
+            _memorizedSpellsTableGrid.Children.Clear();
+            _memorizedSpellsTableGrid.ColumnDefinitions.Clear();
+            _memorizedSpellsTableGrid.RowDefinitions.Clear();
+        }
 
         SetText(_spellSlotSummaryText, "");
 

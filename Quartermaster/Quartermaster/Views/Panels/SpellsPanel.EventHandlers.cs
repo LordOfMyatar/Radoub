@@ -264,4 +264,20 @@ public partial class SpellsPanel
         // Update summary
         UpdateSummary();
     }
+
+    private void OnIncrementMemorizedClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is SpellListViewModel spell)
+        {
+            OnSpellMemorizedCountChanged(spell, 1);
+        }
+    }
+
+    private void OnDecrementMemorizedClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is SpellListViewModel spell)
+        {
+            OnSpellMemorizedCountChanged(spell, -1);
+        }
+    }
 }

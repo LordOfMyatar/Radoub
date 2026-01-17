@@ -38,7 +38,7 @@
                         Padding="10"
                         Margin="0,10,0,0"
                         MinWidth="180"
-                        MaxHeight="400"
+                        MaxHeight="300"
                         IsVisible="False"
                         AutomationProperties.AutomationId="KnownSpellsListSection">
                     <StackPanel>
@@ -47,11 +47,32 @@
                                    FontSize="{DynamicResource FontSizeNormal}"
                                    Margin="0,0,0,10"/>
                         <!-- Scrollable list of known spells grouped by level -->
-                        <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer MaxHeight="250" VerticalScrollBarVisibility="Auto">
                             <StackPanel x:Name="KnownSpellsListPanel">
                                 <!-- Dynamically populated with spell names grouped by level -->
                             </StackPanel>
                         </ScrollViewer>
+                    </StackPanel>
+                </Border>
+
+                <!-- Memorized Spells Table -->
+                <Border x:Name="MemorizedSpellsTableBorder"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="0,10,0,0"
+                        MinWidth="180"
+                        IsVisible="False"
+                        AutomationProperties.AutomationId="MemorizedSpellsTableSection">
+                    <StackPanel>
+                        <TextBlock Text="Memorized Spells"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeNormal}"
+                                   Margin="0,0,0,10"/>
+                        <!-- Dynamic table grid showing memorized spell counts by level -->
+                        <Grid x:Name="MemorizedSpellsTableGrid">
+                            <!-- Columns and rows populated dynamically -->
+                        </Grid>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -231,24 +252,27 @@
                                                 Spacing="2"
                                                 IsVisible="{Binding !IsSpontaneousCaster}">
                                         <Button Content="-"
-                                                Width="20" Height="20"
+                                                Width="22" Height="22"
                                                 Padding="0"
-                                                FontSize="12"
-                                                Command="{Binding DecrementMemorizedCommand}"
+                                                FontSize="14"
+                                                FontWeight="Bold"
+                                                Click="OnDecrementMemorizedClick"
                                                 IsEnabled="{Binding CanDecrementMemorized}"
                                                 ToolTip.Tip="Remove one memorization"
                                                 AutomationProperties.AutomationId="SpellMemorizedMinus"/>
                                         <TextBlock Text="{Binding MemorizedCountDisplay}"
-                                                   Width="20"
+                                                   Width="24"
                                                    TextAlignment="Center"
                                                    VerticalAlignment="Center"
-                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   FontSize="{DynamicResource FontSizeNormal}"
+                                                   FontWeight="Bold"
                                                    Foreground="{Binding MemorizedCountColor}"/>
                                         <Button Content="+"
-                                                Width="20" Height="20"
+                                                Width="22" Height="22"
                                                 Padding="0"
-                                                FontSize="12"
-                                                Command="{Binding IncrementMemorizedCommand}"
+                                                FontSize="14"
+                                                FontWeight="Bold"
+                                                Click="OnIncrementMemorizedClick"
                                                 IsEnabled="{Binding CanIncrementMemorized}"
                                                 ToolTip.Tip="Add one memorization"
                                                 AutomationProperties.AutomationId="SpellMemorizedPlus"/>
