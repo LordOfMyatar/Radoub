@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using DialogEditor.Models;
 using DialogEditor.Services;
@@ -131,46 +133,74 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Populates creature info from tag lookup (#786 soundset, #915 portrait).
-        /// Shows portrait and soundset info for NPC speakers with creatures.
+        /// Shows portrait image and soundset info for NPC speakers with creatures.
         /// </summary>
         private void PopulateSoundsetInfo(DialogNode dialogNode, bool isPC, CreatureService? creatureService)
         {
             var soundsetInfoTextBlock = _window.FindControl<TextBlock>("SoundsetInfoTextBlock");
-            if (soundsetInfoTextBlock == null)
-                return;
+            var portraitBorder = _window.FindControl<Border>("PortraitBorder");
+            var portraitImage = _window.FindControl<Image>("PortraitImage");
 
-            // Clear for PC nodes or empty speaker
+            // Clear portrait for PC nodes or empty speaker
             if (isPC || string.IsNullOrWhiteSpace(dialogNode.Speaker))
             {
-                soundsetInfoTextBlock.Text = "";
+                if (soundsetInfoTextBlock != null)
+                    soundsetInfoTextBlock.Text = "";
+                if (portraitBorder != null)
+                    portraitBorder.IsVisible = false;
                 return;
             }
 
             // Try to look up creature by speaker tag
             if (creatureService == null || !creatureService.HasCachedCreatures)
             {
-                soundsetInfoTextBlock.Text = "";
+                if (soundsetInfoTextBlock != null)
+                    soundsetInfoTextBlock.Text = "";
+                if (portraitBorder != null)
+                    portraitBorder.IsVisible = false;
                 return;
             }
 
             var creature = creatureService.GetCreatureByTag(dialogNode.Speaker);
             if (creature == null)
             {
-                soundsetInfoTextBlock.Text = $"Creature '{dialogNode.Speaker}' not found in module";
+                if (soundsetInfoTextBlock != null)
+                    soundsetInfoTextBlock.Text = $"Creature '{dialogNode.Speaker}' not found in module";
+                if (portraitBorder != null)
+                    portraitBorder.IsVisible = false;
                 return;
             }
 
-            // Build info string with portrait and soundset (#786, #915)
+            // Load and display portrait image (#915)
+            if (portraitBorder != null && portraitImage != null)
+            {
+                Bitmap? portrait = null;
+
+                // Try to load portrait by ResRef
+                if (!string.IsNullOrEmpty(creature.PortraitResRef))
+                {
+                    portrait = PortraitService.Instance.LoadPortrait(creature.PortraitResRef, 's');
+                }
+
+                if (portrait != null)
+                {
+                    portraitImage.Source = portrait;
+                    portraitBorder.IsVisible = true;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded portrait for {creature.Tag}: {creature.PortraitResRef}");
+                }
+                else
+                {
+                    portraitBorder.IsVisible = false;
+                }
+            }
+
+            // Build info string with soundset (#786)
             var infoParts = new List<string>();
 
-            // Portrait info (#915)
-            if (!string.IsNullOrEmpty(creature.PortraitResRef))
+            // Show creature name
+            if (!string.IsNullOrEmpty(creature.DisplayName))
             {
-                infoParts.Add($"Portrait: {creature.PortraitResRef}");
-            }
-            else if (creature.PortraitId > 0)
-            {
-                infoParts.Add($"Portrait ID: {creature.PortraitId}");
+                infoParts.Add(creature.DisplayName);
             }
 
             // Soundset info (#786)
@@ -184,13 +214,16 @@ namespace Parley.Views.Helpers
             }
 
             // Display combined info
-            if (infoParts.Count > 0)
+            if (soundsetInfoTextBlock != null)
             {
-                soundsetInfoTextBlock.Text = string.Join(" | ", infoParts);
-            }
-            else
-            {
-                soundsetInfoTextBlock.Text = $"Creature: {creature.DisplayName}";
+                if (infoParts.Count > 0)
+                {
+                    soundsetInfoTextBlock.Text = string.Join(" | ", infoParts);
+                }
+                else
+                {
+                    soundsetInfoTextBlock.Text = $"Tag: {creature.Tag}";
+                }
             }
         }
 
@@ -653,10 +686,14 @@ namespace Parley.Views.Helpers
             if (isChildTextBlock != null)
                 isChildTextBlock.Text = "";
 
-            // Issue #786: Clear soundset info
+            // Issue #786, #915: Clear soundset info and portrait
             var soundsetInfoTextBlock = _window.FindControl<TextBlock>("SoundsetInfoTextBlock");
             if (soundsetInfoTextBlock != null)
                 soundsetInfoTextBlock.Text = "";
+
+            var portraitBorder = _window.FindControl<Border>("PortraitBorder");
+            if (portraitBorder != null)
+                portraitBorder.IsVisible = false;
 
             // Issue #178: Clear script preview TextBoxes
             var conditionalPreview = _window.FindControl<TextBox>("ConditionalScriptPreviewTextBox");

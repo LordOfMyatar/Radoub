@@ -186,7 +186,8 @@ namespace DialogEditor.Views
                 updateEmbeddedFlowchartAfterLoad: () => _controllers.Flowchart.UpdateAfterLoad(),
                 clearFlowcharts: () => _controllers.Flowchart.ClearAll(),
                 getParameterUIManager: () => _services.ParameterUI,
-                showSaveAsDialogAsync: ShowSaveAsDialogAsync);
+                showSaveAsDialogAsync: ShowSaveAsDialogAsync,
+                scanCreaturesForModule: ScanCreaturesForModuleAsync);
 
             _controllers.EditMenu = new EditMenuController(
                 window: this,
@@ -257,6 +258,28 @@ namespace DialogEditor.Views
             if (SettingsService.Instance.FlowchartVisible)
             {
                 _controllers.Flowchart.RestoreOnStartup();
+            }
+
+            // Initialize portrait service with game data path (#915)
+            InitializePortraitService();
+        }
+
+        /// <summary>
+        /// Initializes portrait service with game data paths for portrait loading (#915).
+        /// </summary>
+        private void InitializePortraitService()
+        {
+            var settings = SettingsService.Instance;
+            var basePath = settings.BaseGameInstallPath;
+
+            if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
+            {
+                var dataPath = Path.Combine(basePath, "data");
+                if (Directory.Exists(dataPath))
+                {
+                    PortraitService.Instance.SetGameDataPath(dataPath);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait service initialized with game data path");
+                }
             }
         }
 
@@ -1301,6 +1324,49 @@ namespace DialogEditor.Views
 
         // Issue #5: LoadCreaturesFromModuleDirectory removed - creature loading now done lazily
         // in ResourceBrowserManager.BrowseCreatureAsync when user opens the creature picker
+
+        /// <summary>
+        /// Scans creatures in the module directory for portrait/soundset lookup (#786, #915).
+        /// Called automatically when a dialog file is loaded.
+        /// </summary>
+        private async Task ScanCreaturesForModuleAsync(string moduleDirectory)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(moduleDirectory) || !Directory.Exists(moduleDirectory))
+                    return;
+
+                // Skip if creatures already scanned for this directory
+                if (_services.Creature.HasCachedCreatures)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Creatures already cached, skipping scan");
+                    return;
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Scanning creatures for portrait/soundset lookup: {UnifiedLogger.SanitizePath(moduleDirectory)}");
+
+                // Get game data path for 2DA lookups
+                var settings = SettingsService.Instance;
+                string? gameDataPath = null;
+                var basePath = settings.BaseGameInstallPath;
+                if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
+                {
+                    var dataPath = Path.Combine(basePath, "data");
+                    if (Directory.Exists(dataPath))
+                        gameDataPath = dataPath;
+                }
+
+                var creatures = await _services.Creature.ScanCreaturesAsync(moduleDirectory, gameDataPath);
+                if (creatures.Count > 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Cached {creatures.Count} creatures for portrait/soundset lookup");
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Error scanning creatures: {ex.Message}");
+            }
+        }
 
         // Module info - delegated to FileMenuController (#466)
         private void UpdateModuleInfo(string dialogFilePath)

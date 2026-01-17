@@ -42,6 +42,7 @@ namespace Parley.Views.Helpers
         private readonly Action _clearFlowcharts;
         private readonly Func<ScriptParameterUIManager> _getParameterUIManager;
         private readonly Func<Task<bool>> _showSaveAsDialogAsync;
+        private readonly Func<string, Task>? _scanCreaturesForModule;
 
         public FileMenuController(
             Window window,
@@ -53,7 +54,8 @@ namespace Parley.Views.Helpers
             Action updateEmbeddedFlowchartAfterLoad,
             Action clearFlowcharts,
             Func<ScriptParameterUIManager> getParameterUIManager,
-            Func<Task<bool>> showSaveAsDialogAsync)
+            Func<Task<bool>> showSaveAsDialogAsync,
+            Func<string, Task>? scanCreaturesForModule = null)
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _controls = controls ?? throw new ArgumentNullException(nameof(controls));
@@ -65,6 +67,7 @@ namespace Parley.Views.Helpers
             _clearFlowcharts = clearFlowcharts ?? throw new ArgumentNullException(nameof(clearFlowcharts));
             _getParameterUIManager = getParameterUIManager ?? throw new ArgumentNullException(nameof(getParameterUIManager));
             _showSaveAsDialogAsync = showSaveAsDialogAsync ?? throw new ArgumentNullException(nameof(showSaveAsDialogAsync));
+            _scanCreaturesForModule = scanCreaturesForModule;
         }
 
         private MainViewModel ViewModel => _getViewModel();
@@ -197,6 +200,16 @@ namespace Parley.Views.Helpers
 
                     // Update embedded flowchart if in side-by-side mode
                     _updateEmbeddedFlowchartAfterLoad();
+
+                    // Scan creatures for portrait/soundset display (#786, #915)
+                    if (_scanCreaturesForModule != null)
+                    {
+                        var moduleDir = Path.GetDirectoryName(filePath);
+                        if (!string.IsNullOrEmpty(moduleDir))
+                        {
+                            _ = _scanCreaturesForModule(moduleDir);
+                        }
+                    }
                 }
             }
             catch (Exception ex)

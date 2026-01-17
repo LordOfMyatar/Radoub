@@ -348,11 +348,22 @@
                     </WrapPanel>
 
                     <!-- NPC Creature Info (Issue #786 soundset, #915 portrait) -->
-                    <TextBlock x:Name="SoundsetInfoTextBlock" DockPanel.Dock="Top"
-                               Margin="0,0,0,8"
-                               FontSize="11"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               ToolTip.Tip="Portrait and soundset info from creature lookup"/>
+                    <StackPanel x:Name="CreatureInfoPanel" DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <!-- Portrait thumbnail -->
+                        <Border x:Name="PortraitBorder" Width="48" Height="48" Margin="0,0,8,0"
+                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                BorderThickness="1" CornerRadius="2"
+                                IsVisible="False"
+                                ToolTip.Tip="NPC Portrait">
+                            <Image x:Name="PortraitImage" Stretch="UniformToFill"/>
+                        </Border>
+                        <!-- Soundset and info text -->
+                        <TextBlock x:Name="SoundsetInfoTextBlock"
+                                   VerticalAlignment="Center"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   ToolTip.Tip="Portrait and soundset info from creature lookup"/>
+                    </StackPanel>
 
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <!-- Tab order: Ctrl+D lands here (1), then scripts, then back to speaker row -->
