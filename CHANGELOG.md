@@ -13,12 +13,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.9.32] - 2026-01-16
+**Branch**: `parley/issue-916` | **PR**: #918
+
 ### Added
 
 - `/cache` skill for GitHub data cache management
 - GraphQL-based cache refresh script (`.claude/scripts/Refresh-GitHubCache.ps1`)
 - Cache data extraction script with views (`.claude/scripts/Get-CacheData.ps1`)
 - `--refresh` option to `/backlog`, `/sprint-planning`, `/grooming` skills
+- SSF file parser (`SsfReader`, `SsfFile`, `SsfEntry`) to Radoub.Formats
+- Soundset access methods to `IGameDataService` (`GetSoundset`, `GetSoundsetByResRef`)
+- Shared `AudioService` in Radoub.UI for cross-tool audio playback
 
 ### Changed
 
