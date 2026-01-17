@@ -131,7 +131,9 @@ namespace DialogEditor.Services
                             _setStatusMessage("Loading creatures...");
                             UnifiedLogger.LogApplication(LogLevel.INFO, $"Lazy loading creatures from: {UnifiedLogger.SanitizePath(moduleDirectory)}");
 
-                            creatures = await _creatureService.ScanCreaturesAsync(moduleDirectory);
+                            // Pass game data directory for 2DA lookups (portraits.2da, soundset.2da, classes.2da)
+                            var gameDataPath = GetGameDataPath();
+                            creatures = await _creatureService.ScanCreaturesAsync(moduleDirectory, gameDataPath);
 
                             if (creatures.Count > 0)
                             {
@@ -238,5 +240,42 @@ namespace DialogEditor.Services
         /// Gets recent creature tags for external access
         /// </summary>
         public IReadOnlyList<string> GetRecentCreatureTags() => _recentCreatureTags.AsReadOnly();
+
+        /// <summary>
+        /// Gets the game data path for 2DA file lookups.
+        /// Searches for data folder containing 2DA files.
+        /// </summary>
+        private static string? GetGameDataPath()
+        {
+            var settings = SettingsService.Instance;
+            var basePath = settings.BaseGameInstallPath;
+
+            if (string.IsNullOrEmpty(basePath) || !Directory.Exists(basePath))
+                return null;
+
+            // NWN:EE stores 2DA files in data/ folder
+            var dataPath = Path.Combine(basePath, "data");
+            if (Directory.Exists(dataPath))
+            {
+                // Verify 2DA files exist
+                var has2DA = Directory.GetFiles(dataPath, "*.2da", SearchOption.TopDirectoryOnly).Length > 0;
+                if (has2DA)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Game data path: {UnifiedLogger.SanitizePath(dataPath)}");
+                    return dataPath;
+                }
+            }
+
+            // Fallback: check if 2DA files are in base path directly
+            var baseDirHas2DA = Directory.GetFiles(basePath, "*.2da", SearchOption.TopDirectoryOnly).Length > 0;
+            if (baseDirHas2DA)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Game data path (base): {UnifiedLogger.SanitizePath(basePath)}");
+                return basePath;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "No 2DA files found in game data path");
+            return null;
+        }
     }
 }

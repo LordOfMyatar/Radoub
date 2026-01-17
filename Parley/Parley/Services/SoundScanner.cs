@@ -153,6 +153,7 @@ namespace DialogEditor.Services
                                 FileName = sound.FileName,
                                 FullPath = sound.FullPath,
                                 IsMono = sound.IsMono,
+                                ChannelUnknown = sound.ChannelUnknown,
                                 Source = sound.Source,
                                 HakPath = sound.HakPath,
                                 ErfEntry = sound.ErfEntry
@@ -181,7 +182,8 @@ namespace DialogEditor.Services
                     {
                         FileName = fileName,
                         FullPath = hakPath,
-                        IsMono = true, // Assume mono until verified
+                        IsMono = true, // Default value, but ChannelUnknown indicates not verified
+                        ChannelUnknown = true, // Channel status unknown until validated
                         Source = hakFileName,
                         HakPath = hakPath,
                         ErfEntry = resource
@@ -305,7 +307,8 @@ namespace DialogEditor.Services
                         {
                             FileName = fileName,
                             FullPath = bifPath,
-                            IsMono = true, // Assume mono until verified
+                            IsMono = true, // Default value, but ChannelUnknown indicates not verified
+                            ChannelUnknown = true, // Channel status unknown until validated
                             Source = $"BIF:{bifName}",
                             BifInfo = new BifSoundInfo
                             {

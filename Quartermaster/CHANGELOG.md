@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.38-alpha] - 2026-01-16
+**Branch**: `parley/issue-916` | **PR**: #918
+
+### Enhancement: Portrait display and soundset preview (#916)
+
+- Character portrait now displays in the sidebar when a creature is loaded
+- Uses `ImageService.GetPortrait()` which loads from BIF archives
+- Shows "No Portrait" placeholder when portrait unavailable
+- Added soundset preview controls to Voice & Dialog section
+- Dropdown allows selecting sound type (Hello, Goodbye, Attack, Death, etc.)
+- Play button loads sound from SSF and plays via AudioService
+
+---
+
 ## [0.1.37-alpha] - 2026-01-16
 **Branch**: `quartermaster/issue-778` | **PR**: #912
 

@@ -202,6 +202,57 @@ jobs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
+    - name: Extract Changelog Highlights
+      id: highlights
+      shell: bash
+      run: |
+        # Check for manually curated release notes first (created by /release command)
+        if [ -f "release-notes.md" ]; then
+          echo "Using curated release-notes.md"
+          cp release-notes.md highlights.md
+        else
+          # Fallback: auto-extract from tool changelogs
+          extract_changelog_section() {
+            local file="$1"
+            local tool_name="$2"
+
+            if [ ! -f "$file" ]; then
+              echo "### $tool_name"
+              echo "_No changelog found_"
+              echo ""
+              return
+            fi
+
+            # Find the first versioned section (skip [Unreleased])
+            local section=$(awk '
+              /^## \[[0-9]/ { if (found) exit; found=1; next }
+              found && /^## \[/ { exit }
+              found { print }
+            ' "$file")
+
+            if [ -n "$section" ]; then
+              echo "### $tool_name"
+              # Extract just the key points - lines starting with - or ###
+              echo "$section" | grep -E "^(###|- \[?x?\]?)" | head -15 | sed 's/^### /#### /'
+              echo ""
+            fi
+          }
+
+          {
+            echo "## Highlights"
+            echo ""
+            extract_changelog_section "Parley/CHANGELOG.md" "Parley"
+            extract_changelog_section "Manifest/CHANGELOG.md" "Manifest"
+          } > highlights.md
+        fi
+
+        # Store as multiline output
+        {
+          echo 'highlights<<EOF'
+          cat highlights.md
+          echo 'EOF'
+        } >> $GITHUB_OUTPUT
+
     - name: Download all artifacts
       uses: actions/download-artifact@v7
       with:
@@ -222,6 +273,8 @@ jobs:
           # Radoub ${{ steps.version.outputs.version }}
 
           Bundled release containing Parley and Manifest editors with shared runtime.
+
+          ${{ steps.highlights.outputs.highlights }}
 
           ## Downloads
 

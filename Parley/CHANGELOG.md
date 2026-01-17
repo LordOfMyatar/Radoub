@@ -10,6 +10,78 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.121-alpha] - 2026-01-16
+**Branch**: `parley/issue-916` | **PR**: #918
+
+### Sprint: Animation & Audio Features (#916)
+
+#### Fix: Sound play button in Main Window (#895)
+
+- Created `SoundPlaybackService` to handle sound playback from all sources
+- Main Window now searches loose files, HAK archives, and BIF archives
+- Play button disables during playback, re-enables when stopped
+- Shows source label (e.g., "(from HAK)") in status bar
+- Properly subscribes to `PlaybackStopped` event for UI state management
+
+#### Enhancement: Sound validation for non-standard WAV files (#858)
+
+- Detects MP3 audio with .wav extension (common NWN modding technique)
+- Detects BMU V1.0 music files with .wav extension
+- Shows informative messages: "MP3 audio with .wav extension - works in NWN"
+- Validates MP3 frame sync bytes for accurate detection
+
+#### Enhancement: NPC soundset preview from creature tag (#786)
+
+- Shows soundset name and gender below speaker field for NPC dialog nodes
+- Looks up creature by speaker tag from cached UTC files
+- Extracts `SoundSetFile` field from UTC and resolves via `soundset.2da`
+- Extended `TwoDAService` to support soundset.2da lookups with caching
+- Shows informative messages when creature not found or soundset unavailable
+
+#### Enhancement: Display NPC portrait for selected speaker (#915)
+
+- Shows portrait ResRef below speaker field for NPC dialog nodes
+- Extracts `PortraitId` from UTC and resolves via `portraits.2da`
+- Extended `TwoDAService` to support portraits.2da lookups with caching
+- Combined with soundset display: "Portrait: po_elara | Soundset: vs_female_f (Female)"
+- Graceful fallback when portrait or creature unavailable
+
+#### Fix: Mono filter shows stereo sounds from HAK/BIF archives
+
+- HAK/BIF sounds now marked as "channel unknown" until validated on selection
+- Mono filter includes unknown-channel sounds (shown with `[?ch]` indicator)
+- When sound is selected and validated, channel status updates and indicator removed
+- File count shows "X unverified" when mono filter active with archive sounds
+- Prevents filtering out potentially valid mono sounds from archives
+
+#### Fix: 2DA lookups not working for portrait/soundset display
+
+- `ResourceBrowserManager` now passes game data path to `CreatureService.ScanCreaturesAsync`
+- Added `GetGameDataPath()` helper to locate 2DA files in game installation
+- Enables portrait and soundset resolution from `portraits.2da` and `soundset.2da`
+
+#### Fix: Portrait/soundset not showing on initial node selection
+
+- Creature scan now refreshes selected node properties after completion
+- Previously, creature scan was fire-and-forget, completing after initial node selection
+- Portrait and soundset info now displays immediately when dialog loads
+
+#### Fix: Portrait loading from BIF archives
+
+- Added `GameDataService` and `ImageService` to MainWindowServices for BIF archive access
+- Portrait loading now uses `ImageService.GetPortrait()` which reads from BIF archives
+- Previously, `PortraitService` only searched loose .tga files which don't exist in NWN:EE
+
+#### Enhancement: Soundset preview play button
+
+- Added SSF file parser (`SsfReader`, `SsfFile`, `SsfEntry`) to Radoub.Formats
+- Added soundset playback support to `IGameDataService` (`GetSoundset`, `GetSoundsetByResRef`)
+- Preview panel appears below soundset info when NPC has a valid soundset
+- Dropdown allows selecting sound type (Hello, Goodbye, Attack, Death, etc.)
+- Play button loads sound from SSF and plays via `SoundPlaybackService`
+
+---
+
 ## [0.1.120-alpha] - 2026-01-16
 **Branch**: `parley/issue-719` | **PR**: #913
 

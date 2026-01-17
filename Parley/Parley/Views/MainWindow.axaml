@@ -578,6 +578,42 @@
                                        Margin="0,0,0,10"
                                        TextWrapping="Wrap"/>
 
+                            <!-- NPC Info (Issue #786 soundset, #915 portrait, #916 soundset preview) -->
+                            <StackPanel x:Name="CreatureInfoPanel" Margin="0,0,0,10">
+                                <Separator Margin="0,5"/>
+                                <TextBlock Text="NPC Info:" FontWeight="Bold" Margin="0,5,0,5"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <!-- Portrait (NWN medium portraits are 64x100 usable area) -->
+                                    <Border x:Name="PortraitBorder"
+                                            Width="64" Height="100"
+                                            Margin="0,0,10,0"
+                                            VerticalAlignment="Top"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                            BorderThickness="1"
+                                            IsVisible="False"
+                                            ToolTip.Tip="NPC Portrait">
+                                        <Image x:Name="PortraitImage" Stretch="Uniform"/>
+                                    </Border>
+                                    <!-- Soundset info and preview -->
+                                    <StackPanel Orientation="Vertical" VerticalAlignment="Top">
+                                        <TextBlock x:Name="SoundsetInfoTextBlock"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                   TextWrapping="Wrap"
+                                                   MaxWidth="150"
+                                                   ToolTip.Tip="Soundset info from creature lookup"/>
+                                        <!-- Soundset preview controls -->
+                                        <StackPanel x:Name="SoundsetPreviewPanel" Orientation="Horizontal" Margin="0,8,0,0" IsVisible="False">
+                                            <ComboBox x:Name="SoundsetTypeComboBox" Width="100" Height="24" FontSize="11"
+                                                      ToolTip.Tip="Select sound type to preview"/>
+                                            <Button x:Name="SoundsetPlayButton" Content="Play" Width="40" Height="24" Margin="4,0,0,0"
+                                                    FontSize="11" Click="OnSoundsetPlayClick"
+                                                    ToolTip.Tip="Play selected soundset sound"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+
                             <!-- Animation and Audio -->
                             <Separator Margin="0,5"/>
                             <TextBlock Text="Animation &amp; Audio:" FontWeight="Bold" Margin="0,5,0,5"/>

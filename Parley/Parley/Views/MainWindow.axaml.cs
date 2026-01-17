@@ -13,20 +13,33 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using DialogEditor.ViewModels;
 using DialogEditor.Models;
 using DialogEditor.Utils;
 using DialogEditor.Services;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using DialogEditor.Parsers;
 using Parley.Services;
 using Parley.Views.Helpers;
 using DialogEditor.Views;
+using Radoub.Formats.Ssf;
 
 namespace DialogEditor.Views
 {
+    /// <summary>
+    /// Item for the soundset type dropdown (#916).
+    /// </summary>
+    public class SoundsetTypeItem
+    {
+        public string Name { get; set; } = "";
+        public SsfSoundType SoundType { get; set; }
+        public override string ToString() => Name;
+    }
+
     public partial class MainWindow : Window, IKeyboardShortcutHandler
     {
         private readonly MainViewModel _viewModel;
@@ -72,6 +85,9 @@ namespace DialogEditor.Views
         {
             // Property services
             _services.PropertyPopulator = new PropertyPanelPopulator(this);
+            _services.PropertyPopulator.SetImageService(_services.ImageService);
+            _services.PropertyPopulator.SetGameDataService(_services.GameData);
+            _services.PropertyPopulator.SetCurrentSoundsetId = id => _currentSoundsetId = id;
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
                 refreshTreeDisplay: RefreshTreeDisplayPreserveState,
@@ -115,6 +131,9 @@ namespace DialogEditor.Views
             // TreeView and dialog services
             _services.DragDrop.DropCompleted += OnDragDropCompleted;
             _services.Dialog = new DialogFactory(this);
+
+            // Sound playback - Issue #895
+            _services.SoundPlayback.PlaybackStopped += OnSoundPlaybackStopped;
         }
 
         /// <summary>
@@ -183,7 +202,8 @@ namespace DialogEditor.Views
                 updateEmbeddedFlowchartAfterLoad: () => _controllers.Flowchart.UpdateAfterLoad(),
                 clearFlowcharts: () => _controllers.Flowchart.ClearAll(),
                 getParameterUIManager: () => _services.ParameterUI,
-                showSaveAsDialogAsync: ShowSaveAsDialogAsync);
+                showSaveAsDialogAsync: ShowSaveAsDialogAsync,
+                scanCreaturesForModule: ScanCreaturesForModuleAsync);
 
             _controllers.EditMenu = new EditMenuController(
                 window: this,
@@ -254,6 +274,28 @@ namespace DialogEditor.Views
             if (SettingsService.Instance.FlowchartVisible)
             {
                 _controllers.Flowchart.RestoreOnStartup();
+            }
+
+            // Initialize portrait service with game data path (#915)
+            InitializePortraitService();
+        }
+
+        /// <summary>
+        /// Initializes portrait service with game data paths for portrait loading (#915).
+        /// </summary>
+        private void InitializePortraitService()
+        {
+            var settings = SettingsService.Instance;
+            var basePath = settings.BaseGameInstallPath;
+
+            if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
+            {
+                var dataPath = Path.Combine(basePath, "data");
+                if (Directory.Exists(dataPath))
+                {
+                    PortraitService.Instance.SetGameDataPath(dataPath);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait service initialized with game data path");
+                }
             }
         }
 
@@ -561,7 +603,12 @@ namespace DialogEditor.Views
         {
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
-            _services.Audio.Dispose();
+
+            // Unsubscribe from events
+            _services.SoundPlayback.PlaybackStopped -= OnSoundPlaybackStopped;
+
+            // Dispose services (handles Audio and SoundPlayback)
+            _services.Dispose();
 
             // Issue #343: Close all managed windows (Settings, Flowchart)
             _windows.CloseAll();
@@ -1294,6 +1341,55 @@ namespace DialogEditor.Views
         // Issue #5: LoadCreaturesFromModuleDirectory removed - creature loading now done lazily
         // in ResourceBrowserManager.BrowseCreatureAsync when user opens the creature picker
 
+        /// <summary>
+        /// Scans creatures in the module directory for portrait/soundset lookup (#786, #915).
+        /// Called automatically when a dialog file is loaded.
+        /// </summary>
+        private async Task ScanCreaturesForModuleAsync(string moduleDirectory)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(moduleDirectory) || !Directory.Exists(moduleDirectory))
+                    return;
+
+                // Skip if creatures already scanned for this directory
+                if (_services.Creature.HasCachedCreatures)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Creatures already cached, skipping scan");
+                    return;
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Scanning creatures for portrait/soundset lookup: {UnifiedLogger.SanitizePath(moduleDirectory)}");
+
+                // Get game data path for 2DA lookups
+                var settings = SettingsService.Instance;
+                string? gameDataPath = null;
+                var basePath = settings.BaseGameInstallPath;
+                if (!string.IsNullOrEmpty(basePath) && Directory.Exists(basePath))
+                {
+                    var dataPath = Path.Combine(basePath, "data");
+                    if (Directory.Exists(dataPath))
+                        gameDataPath = dataPath;
+                }
+
+                var creatures = await _services.Creature.ScanCreaturesAsync(moduleDirectory, gameDataPath);
+                if (creatures.Count > 0)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Cached {creatures.Count} creatures for portrait/soundset lookup");
+
+                    // Refresh the selected node's properties to show portrait/soundset (#786, #915, #916)
+                    if (_selectedNode != null)
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() => PopulatePropertiesPanel(_selectedNode));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Error scanning creatures: {ex.Message}");
+            }
+        }
+
         // Module info - delegated to FileMenuController (#466)
         private void UpdateModuleInfo(string dialogFilePath)
             => _controllers.FileMenu.UpdateModuleInfo(dialogFilePath);
@@ -1302,7 +1398,10 @@ namespace DialogEditor.Views
             => _controllers.FileMenu.ClearModuleInfo();
 
 
-        private void OnPlaySoundClick(object? sender, RoutedEventArgs e)
+        /// <summary>
+        /// Plays sound from property panel. Issue #895 fix: Now searches HAK/BIF archives too.
+        /// </summary>
+        private async void OnPlaySoundClick(object? sender, RoutedEventArgs e)
         {
             var soundTextBox = this.FindControl<TextBox>("SoundTextBox");
             var soundFileName = soundTextBox?.Text?.Trim();
@@ -1313,26 +1412,133 @@ namespace DialogEditor.Views
                 return;
             }
 
-            try
+            // Disable play button during playback
+            var playButton = this.FindControl<Button>("PlaySoundButton");
+            if (playButton != null) playButton.IsEnabled = false;
+
+            _viewModel.StatusMessage = $"Loading: {soundFileName}...";
+
+            var result = await _services.SoundPlayback.PlaySoundAsync(soundFileName);
+
+            if (result.Success)
             {
-                // Find the sound file in game paths
-                var soundPath = FindSoundFile(soundFileName);
-                if (soundPath == null)
+                _viewModel.StatusMessage = $"Playing: {soundFileName}{result.SourceLabel}";
+            }
+            else
+            {
+                _viewModel.StatusMessage = $"⚠ {result.ErrorMessage}";
+                if (playButton != null) playButton.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Handles playback stopped event to re-enable play button.
+        /// </summary>
+        private void OnSoundPlaybackStopped(object? sender, EventArgs e)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                var playButton = this.FindControl<Button>("PlaySoundButton");
+                if (playButton != null) playButton.IsEnabled = true;
+
+                var soundsetPlayButton = this.FindControl<Button>("SoundsetPlayButton");
+                if (soundsetPlayButton != null) soundsetPlayButton.IsEnabled = true;
+
+                // Clear "Playing" message if it's still showing
+                if (_viewModel.StatusMessage?.StartsWith("Playing:") == true)
                 {
-                    _viewModel.StatusMessage = $"⚠ Sound file not found: {soundFileName}";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound file not found: {soundFileName}");
+                    _viewModel.StatusMessage = "";
+                }
+            });
+        }
+
+        // Current soundset ID for play button (#916)
+        private ushort _currentSoundsetId = ushort.MaxValue;
+
+        /// <summary>
+        /// Plays a sound from the NPC's soundset (#916).
+        /// </summary>
+        private async void OnSoundsetPlayClick(object? sender, RoutedEventArgs e)
+        {
+            var typeCombo = this.FindControl<ComboBox>("SoundsetTypeComboBox");
+            var playButton = this.FindControl<Button>("SoundsetPlayButton");
+
+            if (typeCombo?.SelectedItem is not SoundsetTypeItem selectedType)
+            {
+                _viewModel.StatusMessage = "Select a sound type to play";
+                return;
+            }
+
+            if (_currentSoundsetId == ushort.MaxValue)
+            {
+                _viewModel.StatusMessage = "No soundset available";
+                return;
+            }
+
+            // Get the soundset
+            var ssf = _services.GameData.GetSoundset(_currentSoundsetId);
+            if (ssf == null)
+            {
+                _viewModel.StatusMessage = $"Cannot load soundset ID {_currentSoundsetId}";
+                return;
+            }
+
+            // Get the sound entry
+            var entry = ssf.GetEntry(selectedType.SoundType);
+            if (entry == null || !entry.HasSound)
+            {
+                _viewModel.StatusMessage = $"No sound for '{selectedType.Name}'";
+                return;
+            }
+
+            // Disable play button during playback
+            if (playButton != null) playButton.IsEnabled = false;
+
+            _viewModel.StatusMessage = $"Loading: {entry.ResRef}...";
+
+            // First try SoundPlaybackService (handles loose files, HAK, and cached BIF)
+            var result = await _services.SoundPlayback.PlaySoundAsync(entry.ResRef);
+
+            if (result.Success)
+            {
+                _viewModel.StatusMessage = $"Playing: {entry.ResRef}{result.SourceLabel}";
+                return;
+            }
+
+            // Fallback: Try loading directly from GameDataService (BIF archives)
+            // This works even when SoundBrowserIncludeBifFiles is disabled
+            var soundData = _services.GameData.FindResource(entry.ResRef, ResourceTypes.Wav);
+            if (soundData != null)
+            {
+                // Log first bytes for format diagnosis
+                var headerBytes = soundData.Length >= 16 ? soundData[..16] : soundData;
+                var hex = BitConverter.ToString(headerBytes).Replace("-", " ");
+                var ascii = new string(headerBytes.Select(b => b >= 32 && b < 127 ? (char)b : '.').ToArray());
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Found sound in BIF: {entry.ResRef} ({soundData.Length} bytes) - Header: {hex} | {ascii}");
+                try
+                {
+                    // Extract to temp file and play
+                    var tempPath = Path.Combine(Path.GetTempPath(), $"ssf_{entry.ResRef}.wav");
+                    await File.WriteAllBytesAsync(tempPath, soundData);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Wrote temp file: {tempPath}");
+                    _services.Audio.Play(tempPath);
+                    _viewModel.StatusMessage = $"Playing: {entry.ResRef} (from BIF)";
                     return;
                 }
-
-                _services.Audio.Play(soundPath);
-                _viewModel.StatusMessage = $"Playing: {soundFileName}";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Playing sound: {soundPath}");
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to play BIF sound '{entry.ResRef}': {ex.GetType().Name}: {ex.Message}");
+                    _viewModel.StatusMessage = $"Error: {ex.Message}";
+                    if (playButton != null) playButton.IsEnabled = true;
+                }
             }
-            catch (Exception ex)
+            else
             {
-                _viewModel.StatusMessage = $"❌ Error playing sound: {ex.Message}";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to play sound: {ex.Message}");
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound not found in GameDataService: {entry.ResRef}");
             }
+
+            _viewModel.StatusMessage = $"Sound not found: {entry.ResRef}";
+            if (playButton != null) playButton.IsEnabled = true;
         }
 
         // OnConversationSettingChanged moved to MainWindow.Properties.cs
@@ -1368,57 +1574,7 @@ namespace DialogEditor.Views
         private void OnClearQuestEntryClick(object? sender, RoutedEventArgs e) =>
             _controllers.Quest.OnClearQuestEntryClick(sender, e);
 
-        /// <summary>
-        /// Find a sound file by searching all configured paths and categories.
-        /// Same logic as SoundBrowserWindow for consistency.
-        /// </summary>
-        private string? FindSoundFile(string filename)
-        {
-            // Add extension if not present
-            if (!filename.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) &&
-                !filename.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
-            {
-                filename += ".wav"; // NWN default is WAV
-            }
-
-            var categories = new[] { "ambient", "dialog", "music", "soundset", "amb", "dlg", "mus", "sts" };
-            var basePaths = new List<string>();
-
-            // Add user Documents path
-            var userPath = SettingsService.Instance.NeverwinterNightsPath;
-            if (!string.IsNullOrEmpty(userPath) && System.IO.Directory.Exists(userPath))
-            {
-                basePaths.Add(userPath);
-            }
-
-            // Add game installation path + data subdirectory
-            var installPath = SettingsService.Instance.BaseGameInstallPath;
-            if (!string.IsNullOrEmpty(installPath) && System.IO.Directory.Exists(installPath))
-            {
-                basePaths.Add(installPath);
-
-                var dataPath = System.IO.Path.Combine(installPath, "data");
-                if (System.IO.Directory.Exists(dataPath))
-                {
-                    basePaths.Add(dataPath);
-                }
-            }
-
-            // Search all combinations
-            foreach (var basePath in basePaths)
-            {
-                foreach (var category in categories)
-                {
-                    var soundPath = System.IO.Path.Combine(basePath, category, filename);
-                    if (System.IO.File.Exists(soundPath))
-                    {
-                        return soundPath;
-                    }
-                }
-            }
-
-            return null;
-        }
+        // FindSoundFile removed - replaced by SoundPlaybackService (Issue #895)
 
         private void OnBrowseConditionalScriptClick(object? sender, RoutedEventArgs e)
             => _controllers.ScriptBrowser.OnBrowseConditionalScriptClick();

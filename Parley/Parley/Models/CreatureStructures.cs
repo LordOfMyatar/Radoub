@@ -17,6 +17,48 @@ namespace DialogEditor.Models
         public ushort PortraitId { get; set; } = 0;
 
         /// <summary>
+        /// Resolved portrait resref from portraits.2da.
+        /// Populated by CreatureService after parsing (#915).
+        /// </summary>
+        public string? PortraitResRef { get; set; }
+
+        /// <summary>
+        /// Index into soundset.2da for creature's voice/soundset.
+        /// Used to preview NPC soundset compatibility (#786).
+        /// </summary>
+        public ushort SoundSetFile { get; set; } = ushort.MaxValue;
+
+        /// <summary>
+        /// Resolved soundset label/name from soundset.2da.
+        /// Populated by CreatureService after parsing.
+        /// </summary>
+        public string? SoundSetName { get; set; }
+
+        /// <summary>
+        /// Soundset gender ("Male" or "Female") from soundset.2da.
+        /// </summary>
+        public string? SoundSetGender { get; set; }
+
+        /// <summary>
+        /// Soundset ResRef for SSF file lookup.
+        /// </summary>
+        public string? SoundSetResRef { get; set; }
+
+        /// <summary>
+        /// Summary text for soundset display in UI.
+        /// Format: "Soundset: {name} ({gender})" or null if no soundset.
+        /// </summary>
+        public string? SoundSetSummary
+        {
+            get
+            {
+                if (SoundSetFile == ushort.MaxValue || string.IsNullOrEmpty(SoundSetName))
+                    return null;
+                return $"{SoundSetName} ({SoundSetGender ?? "?"})";
+            }
+        }
+
+        /// <summary>
         /// ClassList from UTC file.
         /// Original spec says "up to 3" but NWN 1.69+ may support more.
         /// Real-world validation required.

@@ -80,7 +80,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Voice &amp; Dialog" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Sound Set:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
@@ -88,11 +88,24 @@
                                       HorizontalAlignment="Stretch"
                                       AutomationProperties.AutomationId="SoundSetComboBox"/>
 
-                            <!-- Conversation row - hidden for BIC files -->
-                            <TextBlock Grid.Row="1" Grid.Column="0" x:Name="ConversationLabel" Text="Conversation:"
+                            <!-- Soundset preview (#916) -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Preview:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <Grid Grid.Row="1" Grid.Column="1" x:Name="ConversationRow" ColumnDefinitions="*,Auto" ColumnSpacing="5">
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                <ComboBox x:Name="SoundsetTypeComboBox" Width="120" Height="28"
+                                          ToolTip.Tip="Select sound type to preview"
+                                          AutomationProperties.AutomationId="SoundsetTypeComboBox"/>
+                                <Button x:Name="SoundsetPlayButton" Content="Play" Padding="8,4"
+                                        ToolTip.Tip="Play selected soundset sound"
+                                        AutomationProperties.AutomationId="SoundsetPlayButton"/>
+                            </StackPanel>
+
+                            <!-- Conversation row - hidden for BIC files -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" x:Name="ConversationLabel" Text="Conversation:"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <Grid Grid.Row="2" Grid.Column="1" x:Name="ConversationRow" ColumnDefinitions="*,Auto" ColumnSpacing="5">
                                 <TextBox Grid.Column="0" x:Name="ConversationTextBox"
                                          FontFamily="Consolas, Courier New, monospace"
                                          MaxLength="16"

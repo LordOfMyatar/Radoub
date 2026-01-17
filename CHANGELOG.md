@@ -15,6 +15,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.32] - 2026-01-16
+**Branch**: `parley/issue-916` | **PR**: #918
+
+### Added
+
+- `/cache` skill for GitHub data cache management
+- GraphQL-based cache refresh script (`.claude/scripts/Refresh-GitHubCache.ps1`)
+- Cache data extraction script with views (`.claude/scripts/Get-CacheData.ps1`)
+- `--refresh` option to `/backlog`, `/sprint-planning`, `/grooming` skills
+- SSF file parser (`SsfReader`, `SsfFile`, `SsfEntry`) to Radoub.Formats
+- Soundset access methods to `IGameDataService` (`GetSoundset`, `GetSoundsetByResRef`)
+- Shared `AudioService` in Radoub.UI for cross-tool audio playback
+
+### Changed
+
+- `/backlog`, `/sprint-planning`, `/grooming` now read from local cache instead of making multiple API calls
+- Cache auto-refreshes every 4 hours; manual refresh available via `/cache refresh`
+- Skills use compact list view (~25KB) instead of full cache (~220KB) to reduce context size
+
+### Enhancement: Release workflow with curated highlights (#893)
+
+Updated `/release` command and all release workflows to support curated release highlights.
+
+**Workflow changes:**
+- All workflows check for `release-notes.md` first (curated by `/release` command)
+- Falls back to auto-extracting from CHANGELOG if no curated notes exist
+- Auto-extraction parses latest versioned section, extracts headers and bullet points
+
+**`/release` command changes:**
+- Now presents numbered list of changelog items for the version being released
+- User selects which items are "highlights" to feature prominently
+- Remaining items summarized as "Other Changes" with link to full changelog
+- Generates `release-notes.md` file consumed by workflow
+
+---
+
 ## [0.9.31] - 2026-01-15
 **Branch**: `radoub/issue-558` | **PR**: #910
 

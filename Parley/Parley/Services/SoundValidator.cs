@@ -154,6 +154,7 @@ namespace DialogEditor.Services
 
         /// <summary>
         /// Analyze WAV file format details.
+        /// Issue #858: Enhanced detection for non-standard formats common in NWN modding.
         /// </summary>
         private static WavFormatInfo AnalyzeWavFile(string filePath)
         {
@@ -171,8 +172,11 @@ namespace DialogEditor.Services
             // Check RIFF signature
             if (bytes[0] != 'R' || bytes[1] != 'I' || bytes[2] != 'F' || bytes[3] != 'F')
             {
+                // Not a standard WAV - check for known NWN-compatible formats
+                var detectedFormat = DetectNonWavFormat(bytes);
                 info.IsValidWav = false;
-                info.InvalidReason = "No RIFF header - not a standard WAV file";
+                info.InvalidReason = detectedFormat;
+                info.DetectedFormat = detectedFormat;
                 return info;
             }
 
@@ -211,6 +215,48 @@ namespace DialogEditor.Services
             return info;
         }
 
+        /// <summary>
+        /// Detect non-WAV audio formats that are commonly used in NWN modding.
+        /// Issue #858: Returns descriptive message for known formats.
+        /// </summary>
+        private static string DetectNonWavFormat(byte[] bytes)
+        {
+            // Check for BMU V1.0 header (NWN music format)
+            // "BMU V1.0" = 0x42, 0x4D, 0x55, 0x20, 0x56, 0x31, 0x2E, 0x30
+            if (bytes.Length >= 8 &&
+                bytes[0] == 'B' && bytes[1] == 'M' && bytes[2] == 'U' && bytes[3] == ' ' &&
+                bytes[4] == 'V' && bytes[5] == '1' && bytes[6] == '.' && bytes[7] == '0')
+            {
+                return "BMU V1.0 music file with .wav extension - works in NWN";
+            }
+
+            // Check for ID3v2 header (MP3 with metadata)
+            // ID3 tag starts with "ID3"
+            if (bytes.Length >= 3 && bytes[0] == 'I' && bytes[1] == 'D' && bytes[2] == '3')
+            {
+                return "MP3 audio (ID3 tag) with .wav extension - works in NWN";
+            }
+
+            // Check for MP3 frame sync (0xFF 0xFB, 0xFF 0xFA, 0xFF 0xF3, 0xFF 0xF2)
+            // First byte is always 0xFF, second byte has upper 3 bits set (0xE0 mask)
+            if (bytes.Length >= 2 && bytes[0] == 0xFF && (bytes[1] & 0xE0) == 0xE0)
+            {
+                // Validate it's likely an MP3 by checking MPEG version and layer bits
+                int version = (bytes[1] >> 3) & 0x03;
+                int layer = (bytes[1] >> 1) & 0x03;
+
+                // Valid MPEG versions: 0=2.5, 2=2, 3=1 (1 is reserved)
+                // Valid layers: 1=III, 2=II, 3=I (0 is reserved)
+                if (version != 1 && layer != 0)
+                {
+                    return "MP3 audio with .wav extension - works in NWN";
+                }
+            }
+
+            // Unknown format
+            return "Unknown format - no RIFF header (may not work in NWN)";
+        }
+
         private class WavFormatInfo
         {
             public ushort AudioFormat { get; set; }
@@ -220,6 +266,11 @@ namespace DialogEditor.Services
             public bool IsValidWav { get; set; } = true;
             public bool HasFmtChunk { get; set; }
             public string InvalidReason { get; set; } = "";
+            /// <summary>
+            /// Detected format for non-WAV files (e.g., "MP3 audio with .wav extension")
+            /// Issue #858
+            /// </summary>
+            public string DetectedFormat { get; set; } = "";
         }
     }
 

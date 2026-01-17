@@ -1,4 +1,5 @@
 using Radoub.Formats.Services;
+using Radoub.Formats.Ssf;
 using Radoub.Formats.TwoDA;
 
 namespace Radoub.TestUtilities.Mocks;
@@ -76,6 +77,16 @@ public class MockGameDataService : IGameDataService
     {
         return Enumerable.Empty<GameResourceInfo>();
     }
+
+    #endregion
+
+    #region Soundset Access
+
+    public SsfFile? GetSoundset(int soundsetId) => null;
+
+    public SsfFile? GetSoundsetByResRef(string resRef) => null;
+
+    public string? GetSoundsetResRef(int soundsetId) => null;
 
     #endregion
 

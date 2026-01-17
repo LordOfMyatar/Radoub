@@ -132,6 +132,9 @@ namespace DialogEditor.Parsers
                 // Extract PortraitId (WORD)
                 creature.PortraitId = rootStruct.GetFieldValue<ushort>("PortraitId", (ushort)0);
 
+                // Extract SoundSetFile (WORD) - Index into soundset.2da (#786)
+                creature.SoundSetFile = rootStruct.GetFieldValue<ushort>("SoundSetFile", ushort.MaxValue);
+
                 // Extract ClassList (List, StructID 2)
                 // Note: Original spec says "up to 3" but NWN 1.69+ may support more
                 var classListField = rootStruct.GetField("ClassList");

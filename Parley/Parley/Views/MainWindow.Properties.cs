@@ -143,7 +143,7 @@ namespace DialogEditor.Views
 
             // Populate all node properties using helper
             _services.PropertyPopulator.PopulateNodeType(dialogNode);
-            _services.PropertyPopulator.PopulateSpeaker(dialogNode);
+            _services.PropertyPopulator.PopulateSpeaker(dialogNode, _services.Creature);
             _services.PropertyPopulator.PopulateBasicProperties(dialogNode, node);
             _services.PropertyPopulator.PopulateAnimation(dialogNode);
             _services.PropertyPopulator.PopulateIsChildIndicator(node);

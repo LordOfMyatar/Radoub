@@ -1,5 +1,7 @@
+using System;
 using DialogEditor.Services;
 using Parley.Services;
+using Radoub.Formats.Services;
 
 namespace Parley.Views.Helpers
 {
@@ -7,11 +9,16 @@ namespace Parley.Views.Helpers
     /// Container for MainWindow's service dependencies.
     /// Reduces field count and provides organized access to services.
     /// </summary>
-    public class MainWindowServices
+    public class MainWindowServices : IDisposable
     {
         // Core services
         public AudioService Audio { get; }
+        public SoundPlaybackService SoundPlayback { get; }
         public CreatureService Creature { get; }
+
+        // Game data services for BIF/TLK lookups (#916)
+        public IGameDataService GameData { get; }
+        public IImageService ImageService { get; }
 
         // Property services
         public PropertyPanelPopulator PropertyPopulator { get; set; } = null!;
@@ -36,9 +43,20 @@ namespace Parley.Views.Helpers
         {
             // Services with no dependencies
             Audio = new AudioService();
+            SoundPlayback = new SoundPlaybackService(Audio);
             Creature = new CreatureService();
             KeyboardShortcuts = new KeyboardShortcutManager();
             DragDrop = new TreeViewDragDropService();
+
+            // Game data services for portrait loading from BIF archives (#916)
+            GameData = new GameDataService();
+            ImageService = new ImageService(GameData);
+        }
+
+        public void Dispose()
+        {
+            SoundPlayback?.Dispose();
+            Audio?.Dispose();
         }
     }
 }

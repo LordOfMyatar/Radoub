@@ -325,7 +325,10 @@ namespace DialogEditor.Views
             var soundsToDisplay = _allSounds.ToList();
             var monoOnly = MonoOnlyCheckBox?.IsChecked == true;
             if (monoOnly)
-                soundsToDisplay = soundsToDisplay.Where(s => s.IsMono).ToList();
+            {
+                // Include sounds that are mono OR have unknown channel status (archive sounds not yet validated)
+                soundsToDisplay = soundsToDisplay.Where(s => s.IsMono || s.ChannelUnknown).ToList();
+            }
 
             var searchText = SearchBox?.Text?.ToLowerInvariant();
             if (!string.IsNullOrWhiteSpace(searchText))
@@ -350,12 +353,18 @@ namespace DialogEditor.Views
 
             if (!sound.IsValidWav)
                 return ($"❌ {baseName}{sourceInfo} [invalid]", ErrorBrush);
-            if (!sound.IsMono)
+            if (!sound.IsMono && !sound.ChannelUnknown)
                 return ($"⚠️ {baseName}{sourceInfo} [stereo]", WarningBrush);
             if (sound.IsFromHak)
-                return ($"📦 {baseName}{sourceInfo}", HakBrush);
+            {
+                var channelHint = sound.ChannelUnknown ? " [?ch]" : "";
+                return ($"📦 {baseName}{sourceInfo}{channelHint}", HakBrush);
+            }
             if (sound.IsFromBif)
-                return ($"🎮 {baseName}{sourceInfo}", ForegroundBrush);
+            {
+                var channelHint = sound.ChannelUnknown ? " [?ch]" : "";
+                return ($"🎮 {baseName}{sourceInfo}{channelHint}", ForegroundBrush);
+            }
             return ($"{baseName}{sourceInfo}", ForegroundBrush);
         }
 
@@ -363,7 +372,8 @@ namespace DialogEditor.Views
         {
             var hakCount = _filteredSounds.Count(s => s.IsFromHak);
             var bifCount = _filteredSounds.Count(s => s.IsFromBif);
-            var stereoCount = _filteredSounds.Count(s => !s.IsMono);
+            var stereoCount = _filteredSounds.Count(s => !s.IsMono && !s.ChannelUnknown);
+            var unknownChannelCount = _filteredSounds.Count(s => s.ChannelUnknown);
             var invalidCount = _filteredSounds.Count(s => !s.IsValidWav);
             var countText = $"{count} sound{(count == 1 ? "" : "s")}";
 
@@ -371,6 +381,7 @@ namespace DialogEditor.Views
             if (bifCount > 0) details.Add($"{bifCount} from BIF");
             if (hakCount > 0) details.Add($"{hakCount} from HAK");
             if (!monoOnly && stereoCount > 0) details.Add($"{stereoCount} stereo");
+            if (monoOnly && unknownChannelCount > 0) details.Add($"{unknownChannelCount} unverified");
             if (invalidCount > 0) details.Add($"{invalidCount} invalid");
 
             if (details.Count > 0)

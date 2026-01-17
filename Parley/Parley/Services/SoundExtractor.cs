@@ -49,6 +49,7 @@ namespace DialogEditor.Services
                 {
                     var validation = SoundValidator.Validate(tempPath, isVoiceOrSfx: true, skipFilenameCheck: true);
                     soundInfo.IsMono = validation.IsMono;
+                    soundInfo.ChannelUnknown = false; // Now verified
                     soundInfo.IsValidWav = validation.IsValidWav;
                     soundInfo.InvalidWavReason = validation.InvalidWavReason;
 
@@ -135,6 +136,7 @@ namespace DialogEditor.Services
                 {
                     var validation = SoundValidator.Validate(tempPath, isVoiceOrSfx: true, skipFilenameCheck: true);
                     soundInfo.IsMono = validation.IsMono;
+                    soundInfo.ChannelUnknown = false; // Now verified
                     soundInfo.IsValidWav = validation.IsValidWav;
                     soundInfo.InvalidWavReason = validation.InvalidWavReason;
 

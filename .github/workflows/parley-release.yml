@@ -220,6 +220,48 @@ jobs:
       id: gitversion
       uses: gittools/actions/gitversion/execute@v4
 
+    - name: Extract Changelog Highlights
+      id: highlights
+      shell: bash
+      run: |
+        # Check for manually curated release notes first (created by /release command)
+        if [ -f "release-notes.md" ]; then
+          echo "Using curated release-notes.md"
+          cp release-notes.md highlights.md
+        elif [ -f "Parley/CHANGELOG.md" ]; then
+          # Fallback: auto-extract from changelog
+          # Find the first versioned section (skip [Unreleased])
+          section=$(awk '
+            /^## \[[0-9]/ { if (found) exit; found=1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' "Parley/CHANGELOG.md")
+
+          if [ -n "$section" ]; then
+            {
+              echo "## What's New"
+              echo ""
+              # Extract key points - lines starting with - or ###
+              echo "$section" | grep -E "^(###|- \[?x?\]?)" | head -15 | sed 's/^### /#### /'
+            } > highlights.md
+          else
+            echo "## What's New" > highlights.md
+            echo "" >> highlights.md
+            echo "_See CHANGELOG.md for details_" >> highlights.md
+          fi
+        else
+          echo "## What's New" > highlights.md
+          echo "" >> highlights.md
+          echo "_See CHANGELOG.md for details_" >> highlights.md
+        fi
+
+        # Store as multiline output
+        {
+          echo 'highlights<<EOF'
+          cat highlights.md
+          echo 'EOF'
+        } >> $GITHUB_OUTPUT
+
     - name: Download all artifacts
       uses: actions/download-artifact@v7
       with:
@@ -240,6 +282,8 @@ jobs:
           # Parley ${{ steps.gitversion.outputs.semVer }}
 
           Dialog editor for Neverwinter Nights `.dlg` files.
+
+          ${{ steps.highlights.outputs.highlights }}
 
           ## Downloads
 

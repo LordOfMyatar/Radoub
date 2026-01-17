@@ -2,6 +2,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Resolver;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Ssf;
 using Radoub.Formats.Tlk;
 using Radoub.Formats.TwoDA;
 
@@ -134,7 +135,16 @@ public class GameDataService : IGameDataService
     public byte[]? FindResource(string resRef, ushort resourceType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _resolver?.FindResource(resRef, resourceType);
+
+        if (_resolver == null)
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"FindResource({resRef}, {resourceType}): resolver is null", "GameDataService", "GameData");
+            return null;
+        }
+
+        var result = _resolver.FindResource(resRef, resourceType);
+        UnifiedLogger.Log(LogLevel.DEBUG, $"FindResource({resRef}, {resourceType}): {(result != null ? $"{result.Length} bytes" : "not found")}", "GameDataService", "GameData");
+        return result;
     }
 
     public IEnumerable<GameResourceInfo> ListResources(ushort resourceType)
@@ -178,18 +188,28 @@ public class GameDataService : IGameDataService
     {
         var settings = RadoubSettings.Instance;
 
+        UnifiedLogger.Log(LogLevel.INFO, $"InitializeFromSettings: HasGamePaths={settings.HasGamePaths}, " +
+            $"BaseGameInstallPath='{settings.BaseGameInstallPath ?? "(null)"}', " +
+            $"NeverwinterNightsPath='{settings.NeverwinterNightsPath ?? "(null)"}'", "GameDataService", "GameData");
+
         if (!settings.HasGamePaths)
         {
-            UnifiedLogger.Log(LogLevel.DEBUG, "No game paths configured", "GameDataService", "GameData");
+            UnifiedLogger.Log(LogLevel.WARN, "No game paths configured - BIF lookup disabled", "GameDataService", "GameData");
             return;
         }
 
         var config = BuildConfig(settings);
+        UnifiedLogger.Log(LogLevel.INFO, $"BuildConfig: GameDataPath='{config.GameDataPath ?? "(null)"}', " +
+            $"KeyFilePath='{config.KeyFilePath ?? "(null)"}', " +
+            $"OverridePath='{config.OverridePath ?? "(null)"}'", "GameDataService", "GameData");
+
         _resolver = new GameResourceResolver(config);
 
         // Load TLK
         var tlkPath = settings.GetTlkPath(settings.EffectiveLanguage, settings.PreferredGender);
         LoadBaseTlk(tlkPath);
+
+        UnifiedLogger.Log(LogLevel.INFO, $"GameDataService initialized: IsConfigured={IsConfigured}", "GameDataService", "GameData");
     }
 
     private static GameResourceConfig BuildConfig(RadoubSettings settings)
@@ -301,6 +321,59 @@ public class GameDataService : IGameDataService
 
     #endregion
 
+    #region Soundset Access
+
+    private readonly Dictionary<string, SsfFile?> _ssfCache = new(StringComparer.OrdinalIgnoreCase);
+
+    public SsfFile? GetSoundset(int soundsetId)
+    {
+        var resRef = GetSoundsetResRef(soundsetId);
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        return GetSoundsetByResRef(resRef);
+    }
+
+    public SsfFile? GetSoundsetByResRef(string resRef)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        lock (_lock)
+        {
+            if (_ssfCache.TryGetValue(resRef, out var cached))
+                return cached;
+
+            // Load SSF from game resources (ResourceTypes.Ssf = 2060)
+            var data = FindResource(resRef, ResourceTypes.Ssf);
+            SsfFile? ssf = null;
+
+            if (data != null)
+            {
+                ssf = SsfReader.Read(data);
+                if (ssf != null)
+                {
+                    UnifiedLogger.LogParser(LogLevel.DEBUG, $"Loaded soundset: {resRef}");
+                }
+            }
+
+            _ssfCache[resRef] = ssf;
+            return ssf;
+        }
+    }
+
+    public string? GetSoundsetResRef(int soundsetId)
+    {
+        if (soundsetId < 0)
+            return null;
+
+        return Get2DAValue("soundset", soundsetId, "RESREF");
+    }
+
+    #endregion
+
     #region IDisposable
 
     public void Dispose()
@@ -313,6 +386,7 @@ public class GameDataService : IGameDataService
         _baseTlk = null;
         _customTlk = null;
         _twoDACache.Clear();
+        _ssfCache.Clear();
         _disposed = true;
 
         GC.SuppressFinalize(this);

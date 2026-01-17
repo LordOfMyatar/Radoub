@@ -1,11 +1,18 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Radoub.Formats.Bic;
+using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Ssf;
 using Radoub.Formats.Utc;
+using Radoub.UI.Services;
 using Radoub.UI.Views;
 
 namespace Quartermaster.Views.Panels;
@@ -25,6 +32,11 @@ public partial class CharacterPanel : UserControl
     // Conversation row visibility controls
     private TextBlock? _conversationLabel;
     private Grid? _conversationRow;
+
+    // Soundset preview controls (#916)
+    private ComboBox? _soundsetTypeComboBox;
+    private Button? _soundsetPlayButton;
+    private AudioService? _audioService;
 
     // BIC-specific controls
     private Border? _playerCharacterSection;
@@ -66,6 +78,10 @@ public partial class CharacterPanel : UserControl
         _conversationLabel = this.FindControl<TextBlock>("ConversationLabel");
         _conversationRow = this.FindControl<Grid>("ConversationRow");
 
+        // Soundset preview controls (#916)
+        _soundsetTypeComboBox = this.FindControl<ComboBox>("SoundsetTypeComboBox");
+        _soundsetPlayButton = this.FindControl<Button>("SoundsetPlayButton");
+
         // BIC-specific controls
         _playerCharacterSection = this.FindControl<Border>("PlayerCharacterSection");
         _biographySection = this.FindControl<Border>("BiographySection");
@@ -93,6 +109,12 @@ public partial class CharacterPanel : UserControl
             _browseConversationButton.Click += OnBrowseConversationClick;
         if (_clearConversationButton != null)
             _clearConversationButton.Click += OnClearConversationClick;
+
+        // Wire up soundset preview (#916)
+        if (_soundsetPlayButton != null)
+            _soundsetPlayButton.Click += OnSoundsetPlayClick;
+        if (_soundsetTypeComboBox != null)
+            InitializeSoundsetTypeComboBox();
 
         // Wire up events - BIC-specific fields
         if (_experienceTextBox != null)
@@ -401,4 +423,126 @@ public partial class CharacterPanel : UserControl
         if (_biographyTextBox != null)
             _biographyTextBox.Text = "";
     }
+
+    #region Soundset Preview (#916)
+
+    /// <summary>
+    /// Sets the audio service for soundset preview playback.
+    /// </summary>
+    public void SetAudioService(AudioService? service)
+    {
+        _audioService = service;
+        if (_audioService != null)
+        {
+            _audioService.PlaybackStopped += OnPlaybackStopped;
+        }
+    }
+
+    /// <summary>
+    /// Item for the soundset type dropdown.
+    /// </summary>
+    private class SoundsetTypeItem
+    {
+        public string Name { get; set; } = "";
+        public SsfSoundType SoundType { get; set; }
+        public override string ToString() => Name;
+    }
+
+    private void InitializeSoundsetTypeComboBox()
+    {
+        if (_soundsetTypeComboBox == null) return;
+
+        var items = new List<SoundsetTypeItem>
+        {
+            new() { Name = "Hello", SoundType = SsfSoundType.Hello },
+            new() { Name = "Goodbye", SoundType = SsfSoundType.Goodbye },
+            new() { Name = "Yes", SoundType = SsfSoundType.Yes },
+            new() { Name = "No", SoundType = SsfSoundType.No },
+            new() { Name = "Attack", SoundType = SsfSoundType.Attack },
+            new() { Name = "Battlecry", SoundType = SsfSoundType.Battlecry1 },
+            new() { Name = "Taunt", SoundType = SsfSoundType.Taunt },
+            new() { Name = "Death", SoundType = SsfSoundType.Death },
+            new() { Name = "Laugh", SoundType = SsfSoundType.Laugh },
+            new() { Name = "Selected", SoundType = SsfSoundType.Selected },
+        };
+
+        _soundsetTypeComboBox.ItemsSource = items;
+        _soundsetTypeComboBox.SelectedIndex = 0; // Hello
+    }
+
+    private async void OnSoundsetPlayClick(object? sender, RoutedEventArgs e)
+    {
+        if (_soundsetTypeComboBox?.SelectedItem is not SoundsetTypeItem selectedType)
+            return;
+
+        if (_currentCreature == null || _gameDataService == null || _audioService == null)
+            return;
+
+        var soundsetId = _currentCreature.SoundSetFile;
+        if (soundsetId == ushort.MaxValue)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "No soundset assigned to creature");
+            return;
+        }
+
+        // Get the soundset
+        var ssf = _gameDataService.GetSoundset(soundsetId);
+        if (ssf == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Cannot load soundset ID {soundsetId}");
+            return;
+        }
+
+        // Get the sound entry
+        var entry = ssf.GetEntry(selectedType.SoundType);
+        if (entry == null || !entry.HasSound)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"No sound for '{selectedType.Name}' in soundset {soundsetId}");
+            return;
+        }
+
+        // Disable play button during playback
+        if (_soundsetPlayButton != null) _soundsetPlayButton.IsEnabled = false;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Playing soundset sound: {entry.ResRef}");
+
+        try
+        {
+            // Load sound from GameDataService (BIF archives)
+            var soundData = _gameDataService.FindResource(entry.ResRef, ResourceTypes.Wav);
+            if (soundData != null)
+            {
+                // Log first bytes for format diagnosis
+                var headerBytes = soundData.Length >= 16 ? soundData[..16] : soundData;
+                var hex = BitConverter.ToString(headerBytes).Replace("-", " ");
+                var ascii = new string(headerBytes.Select(b => b >= 32 && b < 127 ? (char)b : '.').ToArray());
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Found sound in BIF: {entry.ResRef} ({soundData.Length} bytes) - Header: {hex} | {ascii}");
+                // Extract to temp file and play
+                var tempPath = Path.Combine(Path.GetTempPath(), $"ssf_{entry.ResRef}.wav");
+                await File.WriteAllBytesAsync(tempPath, soundData);
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Wrote temp file: {tempPath}");
+                _audioService.Play(tempPath);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Playing: {entry.ResRef} (from BIF)");
+                return;
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound not found in GameDataService: {entry.ResRef}");
+            if (_soundsetPlayButton != null) _soundsetPlayButton.IsEnabled = true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to play sound '{entry.ResRef}': {ex.GetType().Name}: {ex.Message}");
+            if (_soundsetPlayButton != null) _soundsetPlayButton.IsEnabled = true;
+        }
+    }
+
+    private void OnPlaybackStopped(object? sender, EventArgs e)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (_soundsetPlayButton != null) _soundsetPlayButton.IsEnabled = true;
+        });
+    }
+
+    #endregion
 }

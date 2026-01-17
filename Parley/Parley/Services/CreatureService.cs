@@ -68,6 +68,12 @@ namespace DialogEditor.Services
                             // Populate class names from classes.2da
                             PopulateClassNames(creature);
 
+                            // Populate soundset info from soundset.2da (#786)
+                            PopulateSoundsetInfo(creature);
+
+                            // Populate portrait info from portraits.2da (#915)
+                            PopulatePortraitInfo(creature);
+
                             // Cache by Tag (case-insensitive lookup)
                             var key = creature.Tag.ToLowerInvariant();
 
@@ -156,6 +162,38 @@ namespace DialogEditor.Services
             {
                 var className = _twoDAService.GetClassName(creatureClass.ClassId);
                 creatureClass.ClassName = className; // Will be null if not found (DisplayText handles fallback)
+            }
+        }
+
+        /// <summary>
+        /// Populate soundset info for a creature from soundset.2da (#786).
+        /// </summary>
+        private void PopulateSoundsetInfo(CreatureInfo creature)
+        {
+            if (creature.SoundSetFile == ushort.MaxValue)
+                return; // No soundset assigned
+
+            var soundset = _twoDAService.GetSoundset(creature.SoundSetFile);
+            if (soundset != null)
+            {
+                creature.SoundSetName = soundset.DisplayName;
+                creature.SoundSetGender = soundset.Gender;
+                creature.SoundSetResRef = soundset.ResRef;
+            }
+        }
+
+        /// <summary>
+        /// Populate portrait info for a creature from portraits.2da (#915).
+        /// </summary>
+        private void PopulatePortraitInfo(CreatureInfo creature)
+        {
+            if (creature.PortraitId == 0)
+                return; // No portrait assigned (0 is typically "no portrait")
+
+            var portraitResRef = _twoDAService.GetPortraitResRef(creature.PortraitId);
+            if (!string.IsNullOrEmpty(portraitResRef))
+            {
+                creature.PortraitResRef = portraitResRef;
             }
         }
 
