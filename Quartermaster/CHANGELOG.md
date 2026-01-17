@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.42-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-885` | **PR**: #TBD
+
+### Sprint: Spells Panel Polish (#885)
+
+- [ ] #816 - Spells panel filter toolbar overflow (priority-high)
+- [ ] #815 - Spells panel class selector overflow (priority-high)
+- [ ] #776 - Support multiple memorizations of same spell
+- [ ] #777 - Add Clear All Spells option
+
+---
+
 ## [0.1.41-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-931` | **PR**: #933
 
