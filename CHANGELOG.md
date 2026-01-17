@@ -15,6 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.33] - 2026-01-16
+**Branch**: `radoub/issue-920` | **PR**: #921
+
+### Refactor: Consolidate Duplicate Services (#920)
+
+- Remove duplicate `AudioService` from Parley (use shared Radoub.UI version)
+- Remove inline `MockGameDataService` from UI tests (use shared Radoub.TestUtilities version)
+
+---
+
 ## [0.9.32] - 2026-01-16
 **Branch**: `parley/issue-916` | **PR**: #918
 

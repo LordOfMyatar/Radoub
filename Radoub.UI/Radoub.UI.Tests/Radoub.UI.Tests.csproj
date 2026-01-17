@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Radoub.UI\Radoub.UI.csproj" />
+    <ProjectReference Include="..\..\Radoub.TestUtilities\Radoub.TestUtilities\Radoub.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>

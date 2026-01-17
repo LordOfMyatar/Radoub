@@ -2,6 +2,7 @@ using System;
 using DialogEditor.Services;
 using Parley.Services;
 using Radoub.Formats.Services;
+using Radoub.UI.Services;
 
 namespace Parley.Views.Helpers
 {
