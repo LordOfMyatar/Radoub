@@ -264,22 +264,49 @@ public partial class SettingsWindow : Window
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
+            // Try Steam registry first
+            try
+            {
+                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Valve\Steam");
+                var steamPath = key?.GetValue("SteamPath") as string;
+                if (!string.IsNullOrEmpty(steamPath))
+                {
+                    var nwnPath = Path.Combine(steamPath, "steamapps", "common", "Neverwinter Nights");
+                    possiblePaths.Add(nwnPath);
+                }
+            }
+            catch
+            {
+                // Registry access failed - continue with hardcoded paths
+            }
+
+            // Common Steam locations
             possiblePaths.AddRange(new[]
             {
                 @"C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights",
                 @"C:\Program Files\Steam\steamapps\common\Neverwinter Nights",
-                @"C:\GOG Games\Neverwinter Nights Enhanced Edition",
-                @"C:\Program Files\Beamdog\Neverwinter Nights"
+                @"D:\SteamLibrary\steamapps\common\Neverwinter Nights",
+                @"E:\SteamLibrary\steamapps\common\Neverwinter Nights"
             });
+
+            // GOG paths
+            possiblePaths.AddRange(new[]
+            {
+                @"C:\Program Files (x86)\GOG Galaxy\Games\Neverwinter Nights Enhanced Edition",
+                @"C:\GOG Games\Neverwinter Nights Enhanced Edition"
+            });
+
+            // Beamdog
+            possiblePaths.Add(@"C:\Program Files\Beamdog\Neverwinter Nights");
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            possiblePaths.AddRange(new[]
-            {
-                Path.Combine(home, ".steam/steam/steamapps/common/Neverwinter Nights"),
-                Path.Combine(home, "GOG Games/Neverwinter Nights")
-            });
+            possiblePaths.Add(Path.Combine(home, ".steam", "steam", "steamapps", "common", "Neverwinter Nights"));
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            possiblePaths.Add("/Applications/Neverwinter Nights.app/Contents/Resources");
         }
 
         foreach (var path in possiblePaths)
@@ -296,28 +323,43 @@ public partial class SettingsWindow : Window
     private string? DetectUserDataPath()
     {
         var possiblePaths = new List<string>();
+        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
+            // Primary: Documents\Neverwinter Nights
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             possiblePaths.Add(Path.Combine(docs, "Neverwinter Nights"));
+
+            // Alternative: User profile\Documents
+            possiblePaths.Add(Path.Combine(userProfile, "Documents", "Neverwinter Nights"));
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            possiblePaths.Add(Path.Combine(home, ".local/share/Neverwinter Nights"));
+            possiblePaths.Add(Path.Combine(userProfile, ".local", "share", "Neverwinter Nights"));
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            possiblePaths.Add(Path.Combine(home, "Library/Application Support/Neverwinter Nights"));
+            possiblePaths.Add(Path.Combine(userProfile, "Library", "Application Support", "Neverwinter Nights"));
         }
 
         foreach (var path in possiblePaths)
         {
+            // Validate by checking for characteristic NWN subdirectories
             if (Directory.Exists(path))
             {
-                return path;
+                var ambientPath = Path.Combine(path, "ambient");
+                var musicPath = Path.Combine(path, "music");
+                if (Directory.Exists(ambientPath) && Directory.Exists(musicPath))
+                {
+                    return path;
+                }
+                // Also accept if modules folder exists (alternative validation)
+                var modulesPath = Path.Combine(path, "modules");
+                if (Directory.Exists(modulesPath))
+                {
+                    return path;
+                }
             }
         }
 
