@@ -1,0 +1,179 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Quartermaster.Views.PortraitBrowserWindow"
+        Title="Portrait Browser"
+        AutomationProperties.AutomationId="PortraitBrowserWindow"
+        Width="700" Height="550"
+        MinWidth="600" MinHeight="450"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark1}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="250"/>
+            <ColumnDefinition Width="10"/>
+            <ColumnDefinition Width="200"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Left Panel: Filters and List -->
+        <Grid Grid.Column="0" Grid.Row="0" Grid.RowSpan="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Filter Row -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" Spacing="10">
+                <TextBlock Text="Race:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="RaceFilterComboBox"
+                          AutomationProperties.AutomationId="RaceFilterComboBox"
+                          Width="100"
+                          SelectionChanged="OnFilterChanged"/>
+                <TextBlock Text="Gender:" VerticalAlignment="Center"/>
+                <ComboBox x:Name="GenderFilterComboBox"
+                          AutomationProperties.AutomationId="GenderFilterComboBox"
+                          Width="80"
+                          SelectionChanged="OnFilterChanged"/>
+            </StackPanel>
+
+            <!-- Search Box -->
+            <Grid Grid.Row="1" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Search:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBox Grid.Column="1" x:Name="SearchBox"
+                         AutomationProperties.AutomationId="PortraitSearchBox"
+                         Watermark="Type to filter portraits..."
+                         TextChanged="OnSearchTextChanged"/>
+                <Button Grid.Column="2" x:Name="ClearSearchButton" Content="Clear" Padding="8,4"
+                        Margin="5,0,0,0"
+                        Click="OnClearSearchClick"/>
+            </Grid>
+
+            <!-- Portrait List -->
+            <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="1" Padding="5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" x:Name="PortraitCountLabel"
+                               Text="0 portraits"
+                               Margin="0,0,0,5"/>
+                    <ListBox Grid.Row="1" x:Name="PortraitListBox"
+                             AutomationProperties.AutomationId="PortraitListBox"
+                             SelectionChanged="OnPortraitSelected"
+                             DoubleTapped="OnPortraitDoubleClicked"/>
+                </Grid>
+            </Border>
+
+            <!-- Selected Portrait Display -->
+            <Border Grid.Row="3"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="1"
+                    Padding="10"
+                    Margin="0,10,0,0"
+                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="Selected:"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <TextBlock Grid.Column="1"
+                               x:Name="SelectedPortraitLabel"
+                               Text="(none)"
+                               VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Right Panel: Preview -->
+        <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="2"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderThickness="1"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Preview"
+                           FontWeight="SemiBold"
+                           Margin="10,10,10,5"/>
+
+                <!-- Portrait Image -->
+                <Border Grid.Row="1" Margin="10"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4">
+                    <Image x:Name="PortraitPreviewImage"
+                           AutomationProperties.AutomationId="PortraitPreviewImage"
+                           Stretch="Uniform"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"/>
+                </Border>
+
+                <!-- Portrait Name -->
+                <TextBlock Grid.Row="2" x:Name="PortraitNameLabel"
+                           Text=""
+                           TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Margin="10,5,10,10"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            </Grid>
+        </Border>
+
+        <!-- Dialog Buttons -->
+        <StackPanel Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,10,0,0"
+                    Spacing="10">
+            <Button Content="OK"
+                    AutomationProperties.AutomationId="PortraitOkButton"
+                    Width="80"
+                    Click="OnOkClick"
+                    IsDefault="True"/>
+            <Button Content="Cancel"
+                    AutomationProperties.AutomationId="PortraitCancelButton"
+                    Width="80"
+                    Click="OnCancelClick"
+                    IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

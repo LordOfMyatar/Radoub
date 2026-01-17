@@ -72,9 +72,16 @@
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="Portrait:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PortraitComboBox"
-                                      HorizontalAlignment="Stretch"
-                                      AutomationProperties.AutomationId="PortraitComboBox"/>
+                            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="5">
+                                <ComboBox Grid.Column="0" x:Name="PortraitComboBox"
+                                          HorizontalAlignment="Stretch"
+                                          AutomationProperties.AutomationId="PortraitComboBox"/>
+                                <Button Grid.Column="1" x:Name="BrowsePortraitButton"
+                                        Content="..."
+                                        Padding="8,4"
+                                        ToolTip.Tip="Browse portraits"
+                                        AutomationProperties.AutomationId="BrowsePortraitButton"/>
+                            </Grid>
                         </Grid>
                     </StackPanel>
                 </Border>

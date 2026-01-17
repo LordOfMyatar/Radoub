@@ -29,6 +29,7 @@ public partial class CharacterPanel : UserControl
     private TextBox? _conversationTextBox;
     private Button? _browseConversationButton;
     private Button? _clearConversationButton;
+    private Button? _browsePortraitButton;
 
     // Conversation row visibility controls
     private TextBlock? _conversationLabel;
@@ -53,6 +54,7 @@ public partial class CharacterPanel : UserControl
     private bool _isBicFile;
     private string? _currentFilePath;
     private IGameDataService? _gameDataService;
+    private ItemIconService? _itemIconService;
 
     public event EventHandler? CharacterChanged;
     public event EventHandler? PortraitChanged;
@@ -76,6 +78,7 @@ public partial class CharacterPanel : UserControl
         _conversationTextBox = this.FindControl<TextBox>("ConversationTextBox");
         _browseConversationButton = this.FindControl<Button>("BrowseConversationButton");
         _clearConversationButton = this.FindControl<Button>("ClearConversationButton");
+        _browsePortraitButton = this.FindControl<Button>("BrowsePortraitButton");
 
         // Conversation row visibility controls
         _conversationLabel = this.FindControl<TextBlock>("ConversationLabel");
@@ -114,6 +117,8 @@ public partial class CharacterPanel : UserControl
             _browseConversationButton.Click += OnBrowseConversationClick;
         if (_clearConversationButton != null)
             _clearConversationButton.Click += OnClearConversationClick;
+        if (_browsePortraitButton != null)
+            _browsePortraitButton.Click += OnBrowsePortraitClick;
 
         // Wire up soundset preview (#916)
         if (_soundsetPlayButton != null)
@@ -143,6 +148,11 @@ public partial class CharacterPanel : UserControl
     public void SetGameDataService(IGameDataService? gameDataService)
     {
         _gameDataService = gameDataService;
+    }
+
+    public void SetItemIconService(ItemIconService? itemIconService)
+    {
+        _itemIconService = itemIconService;
     }
 
     public void SetCurrentFilePath(string? filePath)
@@ -450,6 +460,31 @@ public partial class CharacterPanel : UserControl
     {
         if (_conversationTextBox != null)
             _conversationTextBox.Text = "";
+    }
+
+    private async void OnBrowsePortraitClick(object? sender, RoutedEventArgs e)
+    {
+        if (_gameDataService == null || _itemIconService == null)
+            return;
+
+        var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is Window parentWindow)
+        {
+            var result = await browser.ShowDialog<ushort?>(parentWindow);
+            if (result.HasValue)
+            {
+                SelectPortrait(result.Value);
+                // Trigger change event
+                if (_currentCreature != null)
+                {
+                    _currentCreature.PortraitId = result.Value;
+                    CharacterChanged?.Invoke(this, EventArgs.Empty);
+                    PortraitChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
     }
 
     public void ClearPanel()
