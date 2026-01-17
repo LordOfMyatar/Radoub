@@ -188,7 +188,20 @@ public partial class SpellsPanel
             spell.StatusColor = GetSuccessBrush();
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
-            spell.MemorizedCountColor = GetDisabledBrush();
+            // Use visible foreground for "0" when spell can be memorized
+            if (!spell.IsSpontaneousCaster)
+            {
+                var app = Avalonia.Application.Current;
+                if (app?.Resources.TryGetResource("SystemControlForegroundBaseHighBrush", Avalonia.Styling.ThemeVariant.Default, out var brush) == true
+                    && brush is IBrush b)
+                    spell.MemorizedCountColor = b;
+                else
+                    spell.MemorizedCountColor = GetInfoBrush();
+            }
+            else
+            {
+                spell.MemorizedCountColor = GetDisabledBrush();
+            }
         }
         else
         {

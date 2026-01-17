@@ -302,11 +302,25 @@ public partial class SpellsPanel
     private void UpdateMemorizedCountColor(SpellListViewModel vm)
     {
         if (vm.MemorizedCount > 0)
+        {
+            // Memorized - use gold/selection color (high visibility)
             vm.MemorizedCountColor = GetSelectionBrush();
-        else if (vm.IsKnown && !vm.IsSpontaneousCaster)
-            vm.MemorizedCountColor = GetDisabledBrush();
+        }
+        else if (vm.IsKnown && !vm.IsSpontaneousCaster && !vm.IsBlocked)
+        {
+            // Can memorize but hasn't - use normal foreground for visibility
+            var app = Avalonia.Application.Current;
+            if (app?.Resources.TryGetResource("SystemControlForegroundBaseHighBrush", Avalonia.Styling.ThemeVariant.Default, out var brush) == true
+                && brush is IBrush b)
+                vm.MemorizedCountColor = b;
+            else
+                vm.MemorizedCountColor = GetInfoBrush();
+        }
         else
+        {
+            // Blocked or spontaneous - use disabled
             vm.MemorizedCountColor = GetDisabledBrush();
+        }
     }
 
     /// <summary>
