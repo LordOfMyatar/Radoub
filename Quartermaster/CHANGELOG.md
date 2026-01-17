@@ -19,7 +19,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Filter by race and gender, search by resref name
   - Visual preview of selected portrait
   - Browse button next to portrait dropdown in Character panel
-- [ ] #803 - Add soundset browser with filter and preview playback
+- [x] #803 - Soundset browser with filter and preview playback
+  - Search/filter soundsets by name
+  - Preview panel with sound type selector (Hello, Goodbye, Attack, etc.)
+  - Play/Stop buttons for soundset preview
+  - Browse button next to soundset dropdown in Character panel
 
 ---
 
