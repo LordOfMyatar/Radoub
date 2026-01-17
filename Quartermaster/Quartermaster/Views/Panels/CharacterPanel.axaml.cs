@@ -24,6 +24,7 @@ public partial class CharacterPanel : UserControl
     private ComboBox? _raceComboBox;
     private TextBox? _subraceTextBox;
     private TextBox? _deityTextBox;
+    private ComboBox? _portraitComboBox;
     private ComboBox? _soundSetComboBox;
     private TextBox? _conversationTextBox;
     private Button? _browseConversationButton;
@@ -54,6 +55,7 @@ public partial class CharacterPanel : UserControl
     private IGameDataService? _gameDataService;
 
     public event EventHandler? CharacterChanged;
+    public event EventHandler? PortraitChanged;
 
     public CharacterPanel()
     {
@@ -69,6 +71,7 @@ public partial class CharacterPanel : UserControl
         _raceComboBox = this.FindControl<ComboBox>("RaceComboBox");
         _subraceTextBox = this.FindControl<TextBox>("SubraceTextBox");
         _deityTextBox = this.FindControl<TextBox>("DeityTextBox");
+        _portraitComboBox = this.FindControl<ComboBox>("PortraitComboBox");
         _soundSetComboBox = this.FindControl<ComboBox>("SoundSetComboBox");
         _conversationTextBox = this.FindControl<TextBox>("ConversationTextBox");
         _browseConversationButton = this.FindControl<Button>("BrowseConversationButton");
@@ -101,6 +104,8 @@ public partial class CharacterPanel : UserControl
             _deityTextBox.TextChanged += OnTextChanged;
         if (_raceComboBox != null)
             _raceComboBox.SelectionChanged += OnSelectionChanged;
+        if (_portraitComboBox != null)
+            _portraitComboBox.SelectionChanged += OnPortraitSelectionChanged;
         if (_soundSetComboBox != null)
             _soundSetComboBox.SelectionChanged += OnSelectionChanged;
         if (_conversationTextBox != null)
@@ -131,6 +136,7 @@ public partial class CharacterPanel : UserControl
     {
         _displayService = displayService;
         LoadRaceData();
+        LoadPortraitData();
         LoadSoundSetData();
     }
 
@@ -181,6 +187,18 @@ public partial class CharacterPanel : UserControl
         }
     }
 
+    private void LoadPortraitData()
+    {
+        if (_displayService == null || _portraitComboBox == null) return;
+
+        _portraitComboBox.Items.Clear();
+        var portraits = _displayService.GetAllPortraits();
+        foreach (var (id, name) in portraits)
+        {
+            _portraitComboBox.Items.Add(new ComboBoxItem { Content = name, Tag = id });
+        }
+    }
+
     private void LoadSoundSetData()
     {
         if (_displayService == null || _soundSetComboBox == null) return;
@@ -217,6 +235,7 @@ public partial class CharacterPanel : UserControl
             _subraceTextBox.Text = creature.Subrace ?? "";
         if (_deityTextBox != null)
             _deityTextBox.Text = creature.Deity ?? "";
+        SelectPortrait(creature.PortraitId);
 
         // Voice & Dialog
         SelectSoundSet(creature.SoundSetFile);
@@ -275,6 +294,30 @@ public partial class CharacterPanel : UserControl
             Tag = raceId
         });
         _raceComboBox.SelectedIndex = _raceComboBox.Items.Count - 1;
+    }
+
+    private void SelectPortrait(ushort portraitId)
+    {
+        if (_portraitComboBox == null) return;
+
+        for (int i = 0; i < _portraitComboBox.Items.Count; i++)
+        {
+            if (_portraitComboBox.Items[i] is ComboBoxItem item &&
+                item.Tag is ushort id && id == portraitId)
+            {
+                _portraitComboBox.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // If not found, add it
+        var name = _displayService?.GetPortraitName(portraitId) ?? $"Portrait {portraitId}";
+        _portraitComboBox.Items.Add(new ComboBoxItem
+        {
+            Content = name,
+            Tag = portraitId
+        });
+        _portraitComboBox.SelectedIndex = _portraitComboBox.Items.Count - 1;
     }
 
     private void SelectSoundSet(ushort soundSetId)
@@ -376,6 +419,19 @@ public partial class CharacterPanel : UserControl
         }
     }
 
+    private void OnPortraitSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        if (_portraitComboBox?.SelectedItem is ComboBoxItem item &&
+            item.Tag is ushort portraitId)
+        {
+            _currentCreature.PortraitId = portraitId;
+            CharacterChanged?.Invoke(this, EventArgs.Empty);
+            PortraitChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     private async void OnBrowseConversationClick(object? sender, RoutedEventArgs e)
     {
         var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
@@ -408,6 +464,8 @@ public partial class CharacterPanel : UserControl
             _subraceTextBox.Text = "";
         if (_deityTextBox != null)
             _deityTextBox.Text = "";
+        if (_portraitComboBox != null)
+            _portraitComboBox.SelectedIndex = -1;
         if (_soundSetComboBox != null)
             _soundSetComboBox.SelectedIndex = -1;
         if (_conversationTextBox != null)

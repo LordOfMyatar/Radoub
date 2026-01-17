@@ -114,6 +114,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         CharacterPanelContent.SetGameDataService(_gameDataService);
         CharacterPanelContent.SetAudioService(_audioService);
         CharacterPanelContent.CharacterChanged += (s, e) => MarkDirty();
+        CharacterPanelContent.PortraitChanged += (s, e) => UpdateCharacterHeader();
 
         // Initialize classes panel with display service for 2DA/TLK lookups
         ClassesPanelContent.SetDisplayService(_creatureDisplayService);
@@ -141,7 +142,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AppearancePanelContent.SetModelService(new ModelService(_gameDataService));
         AppearancePanelContent.SetTextureService(new TextureService(_gameDataService));
         AppearancePanelContent.AppearanceChanged += (s, e) => MarkDirty();
-        AppearancePanelContent.PortraitChanged += (s, e) => UpdateCharacterHeader();
 
         // Initialize advanced panel with display service
         AdvancedPanelContent.SetDisplayService(_creatureDisplayService);

@@ -16,9 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Portrait & Character Preview (#922)
 
 - [x] #919 - Add portrait selection/change functionality
-  - Portrait ComboBox in Appearance panel now updates creature's PortraitId
+  - Portrait moved from Appearance panel to Character panel (Identity section)
   - Sidebar portrait display refreshes when portrait is changed
-  - Phenotype selection also wired up to update model preview
+  - Phenotype selection wired up to update model preview
 - [x] #914 - Display NPC portrait in character preview (completed in #916)
 - [x] #768 - Add Sex/Gender column to Appearance panel
   - Added Gender dropdown to Model section (Male/Female options from gender.2da)

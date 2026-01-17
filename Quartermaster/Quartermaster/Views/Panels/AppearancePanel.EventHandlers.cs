@@ -24,9 +24,6 @@ public partial class AppearancePanel
         if (_phenotypeComboBox != null)
             _phenotypeComboBox.SelectionChanged += OnPhenotypeSelectionChanged;
 
-        if (_portraitComboBox != null)
-            _portraitComboBox.SelectionChanged += OnPortraitSelectionChanged;
-
         // Color value changed events
         if (_skinColorNumeric != null)
             _skinColorNumeric.ValueChanged += OnColorValueChanged;
@@ -112,18 +109,6 @@ public partial class AppearancePanel
             _currentCreature.Phenotype = phenotypeId;
             UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    private void OnPortraitSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isLoading || _portraitComboBox?.SelectedItem is not ComboBoxItem item) return;
-
-        if (item.Tag is ushort portraitId && _currentCreature != null)
-        {
-            _currentCreature.PortraitId = portraitId;
-            AppearanceChanged?.Invoke(this, EventArgs.Empty);
-            PortraitChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 

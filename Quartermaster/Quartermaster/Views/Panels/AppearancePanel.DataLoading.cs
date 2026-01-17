@@ -53,9 +53,6 @@ public partial class AppearancePanel
             }
         }
 
-        // Load portraits from 2DA
-        LoadPortraitData();
-
         _isLoading = false;
     }
 
@@ -72,22 +69,6 @@ public partial class AppearancePanel
 
         _genderComboBox.Items.Add(new ComboBoxItem { Content = maleName, Tag = (byte)0 });
         _genderComboBox.Items.Add(new ComboBoxItem { Content = femaleName, Tag = (byte)1 });
-    }
-
-    private void LoadPortraitData()
-    {
-        if (_displayService == null || _portraitComboBox == null) return;
-
-        _portraitComboBox.Items.Clear();
-        var portraits = _displayService.GetAllPortraits();
-        foreach (var (id, name) in portraits)
-        {
-            _portraitComboBox.Items.Add(new ComboBoxItem
-            {
-                Content = name,
-                Tag = id
-            });
-        }
     }
 
     private void LoadBodyPartData()
@@ -344,29 +325,5 @@ public partial class AppearancePanel
             Tag = phenotypeId
         });
         _phenotypeComboBox.SelectedIndex = _phenotypeComboBox.Items.Count - 1;
-    }
-
-    private void SelectPortrait(ushort portraitId)
-    {
-        if (_portraitComboBox == null) return;
-
-        for (int i = 0; i < _portraitComboBox.Items.Count; i++)
-        {
-            if (_portraitComboBox.Items[i] is ComboBoxItem item &&
-                item.Tag is ushort id && id == portraitId)
-            {
-                _portraitComboBox.SelectedIndex = i;
-                return;
-            }
-        }
-
-        // If not found, add it
-        var name = _displayService?.GetPortraitName(portraitId) ?? $"Portrait {portraitId}";
-        _portraitComboBox.Items.Add(new ComboBoxItem
-        {
-            Content = name,
-            Tag = portraitId
-        });
-        _portraitComboBox.SelectedIndex = _portraitComboBox.Items.Count - 1;
     }
 }
