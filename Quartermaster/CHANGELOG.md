@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.42-alpha] - 2026-01-17
-**Branch**: `quartermaster/issue-885` | **PR**: #TBD
+**Branch**: `quartermaster/issue-885` | **PR**: #936
 
 ### Sprint: Spells Panel Polish (#885)
 
