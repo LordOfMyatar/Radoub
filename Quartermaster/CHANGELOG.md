@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.41-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-931` | **PR**: #933
+
+### Sprint: Browsers & Selection UX (#931)
+
+- [x] #928 - Portrait browser with race/gender filtering
+  - Filter by race and gender, search by resref name
+  - Visual preview of selected portrait
+  - Browse button next to portrait dropdown in Character panel
+- [x] #803 - Soundset browser with filter and preview playback
+  - Search/filter soundsets by name and gender (Male/Female/Other)
+  - Preview panel with sound type selector (Hello, Goodbye, Attack, etc.)
+  - Unavailable sound types greyed out with 0.5 opacity
+  - Play/Stop buttons for soundset preview
+  - Browse button next to soundset dropdown in Character panel
+- [x] #928 - Portrait browser mini icons (32x40 thumbnails in WrapPanel grid)
+- [x] CharacterPanel soundset preview: unavailable types greyed out
+
+---
+
 ## [0.1.40-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-922` | **PR**: #927
 

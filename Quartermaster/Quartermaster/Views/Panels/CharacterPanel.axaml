@@ -72,9 +72,16 @@
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="Portrait:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PortraitComboBox"
-                                      HorizontalAlignment="Stretch"
-                                      AutomationProperties.AutomationId="PortraitComboBox"/>
+                            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="5">
+                                <ComboBox Grid.Column="0" x:Name="PortraitComboBox"
+                                          HorizontalAlignment="Stretch"
+                                          AutomationProperties.AutomationId="PortraitComboBox"/>
+                                <Button Grid.Column="1" x:Name="BrowsePortraitButton"
+                                        Content="..."
+                                        Padding="8,4"
+                                        ToolTip.Tip="Browse portraits"
+                                        AutomationProperties.AutomationId="BrowsePortraitButton"/>
+                            </Grid>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -91,9 +98,16 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Sound Set:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="SoundSetComboBox"
-                                      HorizontalAlignment="Stretch"
-                                      AutomationProperties.AutomationId="SoundSetComboBox"/>
+                            <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="5">
+                                <ComboBox Grid.Column="0" x:Name="SoundSetComboBox"
+                                          HorizontalAlignment="Stretch"
+                                          AutomationProperties.AutomationId="SoundSetComboBox"/>
+                                <Button Grid.Column="1" x:Name="BrowseSoundSetButton"
+                                        Content="..."
+                                        Padding="8,4"
+                                        ToolTip.Tip="Browse soundsets"
+                                        AutomationProperties.AutomationId="BrowseSoundSetButton"/>
+                            </Grid>
 
                             <!-- Soundset preview (#916) -->
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Preview:"
@@ -102,7 +116,14 @@
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="5">
                                 <ComboBox x:Name="SoundsetTypeComboBox" Width="120" Height="28"
                                           ToolTip.Tip="Select sound type to preview"
-                                          AutomationProperties.AutomationId="SoundsetTypeComboBox"/>
+                                          AutomationProperties.AutomationId="SoundsetTypeComboBox">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       Opacity="{Binding Opacity}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                                 <Button x:Name="SoundsetPlayButton" Content="Play" Padding="8,4"
                                         ToolTip.Tip="Play selected soundset sound"
                                         AutomationProperties.AutomationId="SoundsetPlayButton"/>

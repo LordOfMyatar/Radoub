@@ -32,8 +32,8 @@ if (-not (Test-Path $CacheDir)) {
     New-Item -ItemType Directory -Path $CacheDir -Force | Out-Null
 }
 
-# Check cache freshness (4 hours = 14400 seconds)
-$MaxAgeSeconds = 4 * 60 * 60
+# Check cache freshness (1 hour = 3600 seconds)
+$MaxAgeSeconds = 1 * 60 * 60
 
 if (-not $Force -and (Test-Path $CacheFile)) {
     $cacheAge = (Get-Date) - (Get-Item $CacheFile).LastWriteTime
@@ -155,7 +155,7 @@ $missingTypeLabel = ($issues | Where-Object {
 $cache = @{
     fetchedAt = $now
     repository = "LordOfMyatar/Radoub"
-    maxAgeHours = 4
+    maxAgeHours = 1
     issues = $issues
     pullRequests = $prs
     summary = @{

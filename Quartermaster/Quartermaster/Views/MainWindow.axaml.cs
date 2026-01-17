@@ -112,6 +112,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize character panel with display service
         CharacterPanelContent.SetDisplayService(_creatureDisplayService);
         CharacterPanelContent.SetGameDataService(_gameDataService);
+        CharacterPanelContent.SetItemIconService(_itemIconService);
         CharacterPanelContent.SetAudioService(_audioService);
         CharacterPanelContent.CharacterChanged += (s, e) => MarkDirty();
         CharacterPanelContent.PortraitChanged += (s, e) => UpdateCharacterHeader();
