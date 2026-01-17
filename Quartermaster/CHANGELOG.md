@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.41-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-931` | **PR**: #TBD
+
+### Sprint: Browsers & Selection UX (#931)
+
+- [ ] #928 - Portrait browser with race/gender/class filtering
+- [ ] #803 - Add soundset browser with filter and preview playback
+
+---
+
 ## [0.1.40-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-922` | **PR**: #927
 
