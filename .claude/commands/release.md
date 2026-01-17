@@ -6,21 +6,32 @@ Create and push a version tag to trigger the GitHub Actions release workflow.
 
 Radoub releases include all tools (Parley, Manifest, Quartermaster) in a single bundle. Individual tool releases are not supported - we release the entire Radoub suite together.
 
+## Versioning Strategy
+
+**Radoub uses a simple incrementing version**: `radoub-vX.Y.Z`
+
+The version is determined by:
+1. Find the last `radoub-v*` tag in git
+2. Increment the patch version (Z) for the new release
+3. User can override to bump minor (Y) or major (X) if needed
+
+This avoids the need for a separate Radoub CHANGELOG - the tool changelogs track what changed, and the radoub version just increments each release.
+
 ## Upfront Questions
 
 **IMPORTANT**: Gather user input in phases, not all at once.
 
 ### Phase 1: Changelog Highlights Selection
 After reading changelogs:
-1. Parse the changelog sections for each tool being released
-2. Present a **numbered list** of all changelog items (bullet points and headers)
+1. Parse unreleased changes from each tool's changelog (entries after last release date)
+2. Present a **numbered list** of all changelog items
 3. Ask user: "Which items are highlights? (Enter numbers, e.g., 1,3,5 or 'all' or 'none')"
 4. Selected items become **Highlights** in release notes
-5. Remaining items are auto-categorized and summarized with link to full changelog
 
 ### Phase 2: Final Confirmation
 1. Show release summary with selected highlights
-2. **Version Confirmation**: "Ready to release Radoub v[version] from commit [hash]? [y/n]"
+2. Show the computed next version (e.g., `radoub-v0.8.4`)
+3. Ask: "Ready to release? [y/n] or specify version bump [patch/minor/major]"
 
 ## Usage
 
@@ -43,9 +54,9 @@ The workflow produces two artifacts:
 
 Before releasing:
 1. All changes committed and pushed to main
-2. CHANGELOGs updated with version sections for all tools with changes
+2. Tool CHANGELOGs updated with version sections
 3. All tests passing
-4. PR merged (if applicable)
+4. PR merged (post-merge is the typical release point)
 
 ## Instructions
 
@@ -58,82 +69,79 @@ Before releasing:
    - Working directory must be clean
    - Confirm latest commit is what we want to release
 
-2. **Determine Version**
-   - Read `CHANGELOG.md` (repo-level) for the Radoub version
-   - Also check tool changelogs for included changes:
-     - `Parley/CHANGELOG.md`
-     - `Manifest/CHANGELOG.md`
-     - `Quartermaster/CHANGELOG.md`
-   - Look for the most recent version section (e.g., `[0.8.3]`)
-   - Confirm the version hasn't been released yet
+2. **Determine Next Version**
+   ```bash
+   # Find last radoub release tag
+   git tag -l "radoub-v*" --sort=-v:refname | head -1
+   ```
+   - If last was `radoub-v0.8.3`, next is `radoub-v0.8.4` (patch bump)
+   - User can request minor bump (0.9.0) or major bump (1.0.0)
 
-3. **Present Changelog Items for Selection**
+3. **Gather Changelog Entries**
 
-   Gather items from repo-level and all tool changelogs for current versions:
+   Find entries in each tool changelog that are newer than the last release:
+   - `Parley/CHANGELOG.md`
+   - `Manifest/CHANGELOG.md`
+   - `Quartermaster/CHANGELOG.md`
+   - `CHANGELOG.md` (repo-level, for shared changes)
+
+   Look for version sections with dates after the last release date.
+
+4. **Present Changelog Items for Selection**
 
    ```
-   ## Changelog Items for Radoub vX.Y.Z
-
-   ### Radoub (shared)
-   1. [###] Feature: Something shared
-   2. [-] Some shared change
+   ## Changes Since Last Release (radoub-v0.8.3)
 
    ### Parley v0.1.120-alpha
-   3. [###] Refactor: Tech debt (#719)
-   4. [-] Extracted WindowLayoutService
+   1. [###] Refactor: Tech debt (#719)
+   2. [-] Extracted WindowLayoutService
 
    ### Quartermaster v0.1.40-alpha
-   5. [###] Sprint: Portrait & Character Preview (#922)
-   6. [-] Portrait moved to Character panel
+   3. [###] Sprint: Portrait & Character Preview (#922)
+   4. [-] Portrait moved to Character panel
+   5. [-] Gender dropdown added
 
-   Which items are highlights? (Enter numbers like 1,3,5 or 'all' or 'none')
+   Which items are highlights? (Enter numbers like 1,3 or 'all' or 'none')
    ```
 
-   - `[###]` prefix = section header
-   - `[-]` prefix = bullet point
-
-4. **Generate Release Notes**
+5. **Generate Release Notes**
 
    Based on selection, create structured release notes:
 
-   **If user selects items 1,3,5:**
    ```markdown
    ## What's New
 
-   - **Feature: Something shared** - description
    - **Parley**: Tech debt refactoring (#719)
    - **Quartermaster**: Portrait & Character Preview (#922)
 
+   ## Tool Versions
+   - Parley: v0.1.120-alpha
+   - Manifest: v0.6.0-alpha
+   - Quartermaster: v0.1.40-alpha
+
    ## Other Changes
 
-   Bug fixes, refactoring, and maintenance. See tool CHANGELOGs for details.
+   See individual tool CHANGELOGs for complete details.
    ```
 
-   **If user selects 'none':**
-   ```markdown
-   ## What's New
-
-   Bug fixes and maintenance release. See tool CHANGELOGs for details.
-   ```
-
-5. **Write Release Notes File**
+6. **Write Release Notes File**
 
    Write the generated notes to `release-notes.md` in repo root.
    This file is read by the workflow during release.
 
-6. **Confirm with User**
+7. **Confirm with User**
    - Show the version and generated highlights
    - Show recent commits that will be included
-   - Ask user to confirm: "Ready to release Radoub [tag]?"
+   - Ask user to confirm: "Ready to release radoub-v0.8.4?"
 
-7. **Create and Push Tag**
+8. **Create and Push Tag**
 
    ```bash
    git tag -a radoub-vX.Y.Z -m "Radoub Release vX.Y.Z"
    git push origin radoub-vX.Y.Z
    ```
 
-8. **Provide Release Link**
+9. **Provide Release Link**
    - `https://github.com/LordOfMyatar/Radoub/actions/workflows/radoub-release.yml`
    - Note: Build takes ~10-15 minutes for all platforms
 
@@ -144,19 +152,20 @@ Before releasing:
 
 - [ ] On main branch
 - [ ] Working directory clean
-- [ ] Radoub CHANGELOG version: [version]
+- [ ] Last release: radoub-v0.8.3 (2026-01-15)
+- [ ] Next version: radoub-v0.8.4
 - [ ] Latest commit: [hash] [message]
 
 ## Tool Versions Included
-- Parley: [version]
-- Manifest: [version]
-- Quartermaster: [version]
+- Parley: v0.1.120-alpha
+- Manifest: v0.6.0-alpha
+- Quartermaster: v0.1.40-alpha
 
-## Commits in this Release
-[list of commits since last radoub tag]
+## Changes Since Last Release
+[list of changelog entries from all tools]
 
 ## Ready to Release?
-Confirm to create tag `radoub-vX.Y.Z` and trigger release build.
+Confirm to create tag `radoub-v0.8.4` and trigger release build.
 ```
 
 ## Safety Checks
