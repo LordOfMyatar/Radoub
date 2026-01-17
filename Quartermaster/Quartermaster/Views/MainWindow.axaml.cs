@@ -141,6 +141,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AppearancePanelContent.SetModelService(new ModelService(_gameDataService));
         AppearancePanelContent.SetTextureService(new TextureService(_gameDataService));
         AppearancePanelContent.AppearanceChanged += (s, e) => MarkDirty();
+        AppearancePanelContent.PortraitChanged += (s, e) => UpdateCharacterHeader();
 
         // Initialize advanced panel with display service
         AdvancedPanelContent.SetDisplayService(_creatureDisplayService);

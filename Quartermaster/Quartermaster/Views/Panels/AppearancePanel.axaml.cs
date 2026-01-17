@@ -18,6 +18,7 @@ public partial class AppearancePanel : UserControl
 {
     // Appearance section
     private ComboBox? _appearanceComboBox;
+    private ComboBox? _genderComboBox;
     private ComboBox? _phenotypeComboBox;
     private ComboBox? _portraitComboBox;
 
@@ -82,6 +83,7 @@ public partial class AppearancePanel : UserControl
     private bool _isLoading;
 
     public event EventHandler? AppearanceChanged;
+    public event EventHandler? PortraitChanged;
 
     public AppearancePanel()
     {
@@ -99,6 +101,7 @@ public partial class AppearancePanel : UserControl
     {
         // Appearance section
         _appearanceComboBox = this.FindControl<ComboBox>("AppearanceComboBox");
+        _genderComboBox = this.FindControl<ComboBox>("GenderComboBox");
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox");
         _portraitComboBox = this.FindControl<ComboBox>("PortraitComboBox");
 
@@ -191,6 +194,7 @@ public partial class AppearancePanel : UserControl
 
         // Appearance - select in combo
         SelectAppearance(creature.AppearanceType);
+        SelectGender(creature.Gender);
         SelectPhenotype(creature.Phenotype);
         SelectPortrait(creature.PortraitId);
 
@@ -210,6 +214,8 @@ public partial class AppearancePanel : UserControl
     {
         if (_appearanceComboBox != null)
             _appearanceComboBox.SelectedIndex = -1;
+        if (_genderComboBox != null)
+            _genderComboBox.SelectedIndex = -1;
         if (_phenotypeComboBox != null)
             _phenotypeComboBox.SelectedIndex = -1;
         if (_portraitComboBox != null)

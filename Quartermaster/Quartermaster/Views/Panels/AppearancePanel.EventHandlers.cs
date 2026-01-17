@@ -18,6 +18,15 @@ public partial class AppearancePanel
         if (_appearanceComboBox != null)
             _appearanceComboBox.SelectionChanged += OnAppearanceSelectionChanged;
 
+        if (_genderComboBox != null)
+            _genderComboBox.SelectionChanged += OnGenderSelectionChanged;
+
+        if (_phenotypeComboBox != null)
+            _phenotypeComboBox.SelectionChanged += OnPhenotypeSelectionChanged;
+
+        if (_portraitComboBox != null)
+            _portraitComboBox.SelectionChanged += OnPortraitSelectionChanged;
+
         // Color value changed events
         if (_skinColorNumeric != null)
             _skinColorNumeric.ValueChanged += OnColorValueChanged;
@@ -79,6 +88,42 @@ public partial class AppearancePanel
             }
 
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnGenderSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _genderComboBox?.SelectedItem is not ComboBoxItem item) return;
+
+        if (item.Tag is byte genderId && _currentCreature != null)
+        {
+            _currentCreature.Gender = genderId;
+            UpdateModelPreview();
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnPhenotypeSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _phenotypeComboBox?.SelectedItem is not ComboBoxItem item) return;
+
+        if (item.Tag is int phenotypeId && _currentCreature != null)
+        {
+            _currentCreature.Phenotype = phenotypeId;
+            UpdateModelPreview();
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnPortraitSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _portraitComboBox?.SelectedItem is not ComboBoxItem item) return;
+
+        if (item.Tag is ushort portraitId && _currentCreature != null)
+        {
+            _currentCreature.PortraitId = portraitId;
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            PortraitChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 

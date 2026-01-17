@@ -26,7 +26,7 @@
                         <StackPanel Spacing="8">
                             <TextBlock Text="Model" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
-                            <Grid ColumnDefinitions="70,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="10">
+                            <Grid ColumnDefinitions="70,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="10">
                                 <!-- Appearance Type -->
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Type:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
@@ -35,19 +35,27 @@
                                           HorizontalAlignment="Stretch" FontSize="{DynamicResource FontSizeSmall}"
                                           AutomationProperties.AutomationId="AppearanceComboBox"/>
 
-                                <!-- Phenotype -->
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Phenotype:"
+                                <!-- Gender -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Gender:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"/>
-                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="PhenotypeComboBox"
+                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="GenderComboBox"
+                                          HorizontalAlignment="Stretch" FontSize="{DynamicResource FontSizeSmall}"
+                                          AutomationProperties.AutomationId="GenderComboBox"/>
+
+                                <!-- Phenotype -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Phenotype:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="PhenotypeComboBox"
                                           HorizontalAlignment="Stretch" FontSize="{DynamicResource FontSizeSmall}"
                                           AutomationProperties.AutomationId="PhenotypeComboBox"/>
 
                                 <!-- Portrait -->
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Portrait:"
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Portrait:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center" FontSize="{DynamicResource FontSizeSmall}"/>
-                                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="PortraitComboBox"
+                                <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PortraitComboBox"
                                           HorizontalAlignment="Stretch" FontSize="{DynamicResource FontSizeSmall}"
                                           AutomationProperties.AutomationId="PortraitComboBox"/>
                             </Grid>
