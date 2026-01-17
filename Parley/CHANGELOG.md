@@ -23,9 +23,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Shows source label (e.g., "(from HAK)") in status bar
 - Properly subscribes to `PlaybackStopped` event for UI state management
 
+#### Enhancement: Sound validation for non-standard WAV files (#858)
+
+- Detects MP3 audio with .wav extension (common NWN modding technique)
+- Detects BMU V1.0 music files with .wav extension
+- Shows informative messages: "MP3 audio with .wav extension - works in NWN"
+- Validates MP3 frame sync bytes for accurate detection
+
 ---
 
-- #858 - Enhance sound validation for non-standard WAV files
 - #786 - Preview NPC soundset compatibility from creature tag
 - #915 - Display NPC portrait for selected speaker
 
