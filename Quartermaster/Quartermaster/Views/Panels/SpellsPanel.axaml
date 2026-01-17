@@ -75,33 +75,11 @@
                                FontWeight="SemiBold"
                                FontSize="{DynamicResource FontSizeSmall}"
                                Margin="0,0,0,8"/>
-                    <!-- WrapPanel allows class radios to flow to multiple lines on narrow screens -->
-                    <WrapPanel x:Name="ClassRadioPanel" Orientation="Horizontal">
-                        <RadioButton x:Name="ClassRadio1" GroupName="CasterClass" Content="Class 1"
-                                     IsChecked="True" IsEnabled="False" Margin="0,0,8,4"
-                                     AutomationProperties.AutomationId="SpellsClass1"/>
-                        <RadioButton x:Name="ClassRadio2" GroupName="CasterClass" Content="Class 2"
-                                     IsEnabled="False" Margin="0,0,8,4"
-                                     AutomationProperties.AutomationId="SpellsClass2"/>
-                        <RadioButton x:Name="ClassRadio3" GroupName="CasterClass" Content="Class 3"
-                                     IsEnabled="False" Margin="0,0,8,4"
-                                     AutomationProperties.AutomationId="SpellsClass3"/>
-                        <RadioButton x:Name="ClassRadio4" GroupName="CasterClass" Content="Class 4"
-                                     IsEnabled="False" Margin="0,0,8,4"
-                                     AutomationProperties.AutomationId="SpellsClass4"/>
-                        <RadioButton x:Name="ClassRadio5" GroupName="CasterClass" Content="Class 5"
-                                     IsEnabled="False" Margin="0,0,8,4"
-                                     AutomationProperties.AutomationId="SpellsClass5"/>
-                        <RadioButton x:Name="ClassRadio6" GroupName="CasterClass" Content="Class 6"
-                                     IsEnabled="False" Margin="0,0,8,4"
-                                     AutomationProperties.AutomationId="SpellsClass6"/>
-                        <RadioButton x:Name="ClassRadio7" GroupName="CasterClass" Content="Class 7"
-                                     IsEnabled="False" Margin="0,0,8,4"
-                                     AutomationProperties.AutomationId="SpellsClass7"/>
-                        <RadioButton x:Name="ClassRadio8" GroupName="CasterClass" Content="Class 8"
-                                     IsEnabled="False" Margin="0,0,8,4"
-                                     AutomationProperties.AutomationId="SpellsClass8"/>
-                    </WrapPanel>
+                    <!-- ComboBox for class selection - works well on any screen size -->
+                    <ComboBox x:Name="ClassComboBox"
+                              HorizontalAlignment="Stretch"
+                              MaxWidth="350"
+                              AutomationProperties.AutomationId="SpellsClassComboBox"/>
 
                     <!-- Spell Slot Summary -->
                     <TextBlock x:Name="SpellSlotSummaryText"
