@@ -47,8 +47,8 @@ public partial class SpellsPanel
 
     private void UpdateClassComboBox(UtcFile creature)
     {
-        _classItems.Clear();
-        int selectedIndex = -1;
+        // Create a new list to ensure ComboBox detects the change
+        var newItems = new List<ClassComboItem>();
         int firstEnabledIndex = -1;
 
         for (int i = 0; i < creature.ClassList.Count && i < 8; i++)
@@ -78,7 +78,7 @@ public partial class SpellsPanel
             // Enable if: detected as caster with spells, OR has actual spell data in creature
             bool isEnabled = (isCaster && maxSpellLevel >= 0) || hasSpellsInData;
 
-            _classItems.Add(new ClassComboItem
+            newItems.Add(new ClassComboItem
             {
                 Index = i,
                 DisplayName = displayName,
@@ -88,17 +88,20 @@ public partial class SpellsPanel
             // Track first enabled class
             if (isEnabled && firstEnabledIndex < 0)
             {
-                firstEnabledIndex = _classItems.Count - 1;
+                firstEnabledIndex = newItems.Count - 1;
             }
         }
 
-        // Update combo box
+        // Replace the items list and update combo box
+        _classItems = newItems;
         if (_classComboBox != null)
         {
+            // Clear and reassign to force refresh
+            _classComboBox.ItemsSource = null;
             _classComboBox.ItemsSource = _classItems;
 
             // Select first enabled caster class, or first class if none enabled
-            selectedIndex = firstEnabledIndex >= 0 ? firstEnabledIndex : (_classItems.Count > 0 ? 0 : -1);
+            int selectedIndex = firstEnabledIndex >= 0 ? firstEnabledIndex : (_classItems.Count > 0 ? 0 : -1);
             if (selectedIndex >= 0)
             {
                 _classComboBox.SelectedIndex = selectedIndex;
