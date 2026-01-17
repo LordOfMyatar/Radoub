@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.40-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-922` | **PR**: #TBD
+
+### Sprint: Portrait & Character Preview (#922)
+
+- [ ] #919 - Add portrait selection/change functionality
+- [ ] #914 - Display NPC portrait in character preview
+- [ ] #768 - Add Sex/Gender column to Appearance panel
+
+---
+
 ## [0.1.39-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-923` | **PR**: #924
 
