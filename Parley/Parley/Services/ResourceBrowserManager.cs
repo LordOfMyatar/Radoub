@@ -7,6 +7,7 @@ using DialogEditor.ViewModels;
 using DialogEditor.Views;
 using System;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;

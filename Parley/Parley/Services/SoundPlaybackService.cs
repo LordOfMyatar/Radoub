@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DialogEditor.Models.Sound;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Services
 {

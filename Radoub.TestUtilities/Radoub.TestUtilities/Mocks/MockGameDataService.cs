@@ -116,6 +116,55 @@ public class MockGameDataService : IGameDataService
     }
 
     /// <summary>
+    /// Set a single 2DA value. Creates the 2DA and column if needed.
+    /// Convenience method for simple test setups.
+    /// </summary>
+    public void Set2DAValue(string twoDAName, int rowIndex, string columnName, string value)
+    {
+        var lowerName = twoDAName.ToLowerInvariant();
+        var lowerCol = columnName.ToLowerInvariant();
+
+        if (!_2daFiles.TryGetValue(lowerName, out var file))
+        {
+            file = new TwoDAFile();
+            _2daFiles[lowerName] = file;
+        }
+
+        // Ensure column exists
+        var colIndex = file.Columns.FindIndex(c => c.Equals(lowerCol, StringComparison.OrdinalIgnoreCase));
+        if (colIndex < 0)
+        {
+            file.Columns.Add(columnName);
+            colIndex = file.Columns.Count - 1;
+        }
+
+        // Ensure rows exist up to rowIndex
+        while (file.Rows.Count <= rowIndex)
+        {
+            var newRow = new TwoDARow { Label = file.Rows.Count.ToString() };
+            // Fill with nulls for existing columns
+            for (int i = 0; i < file.Columns.Count; i++)
+                newRow.Values.Add(null);
+            file.Rows.Add(newRow);
+        }
+
+        // Ensure row has enough values
+        var row = file.Rows[rowIndex];
+        while (row.Values.Count <= colIndex)
+            row.Values.Add(null);
+
+        row.Values[colIndex] = value;
+    }
+
+    /// <summary>
+    /// Set a TLK string. Convenience method for simple test setups.
+    /// </summary>
+    public void SetTlkString(uint strRef, string value)
+    {
+        _tlkStrings[strRef] = value;
+    }
+
+    /// <summary>
     /// Add a TLK string to the mock.
     /// </summary>
     public MockGameDataService WithString(uint strRef, string value)

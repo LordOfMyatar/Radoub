@@ -1,7 +1,6 @@
 using Radoub.Formats.Gff;
-using Radoub.Formats.Services;
-using Radoub.Formats.TwoDA;
 using Radoub.Formats.Uti;
+using Radoub.TestUtilities.Mocks;
 using Radoub.UI.ViewModels;
 using Xunit;
 
@@ -19,7 +18,7 @@ public class ItemViewModelFactoryTests
         };
         item.LocalizedName.SetString(0, "My Sword");
 
-        var mockGameData = new MockGameDataService();
+        var mockGameData = new MockGameDataService(includeSampleData: false);
         var factory = new ItemViewModelFactory(mockGameData);
 
         // Act
@@ -38,7 +37,7 @@ public class ItemViewModelFactoryTests
             TemplateResRef = "fallback_sword"
         };
 
-        var mockGameData = new MockGameDataService();
+        var mockGameData = new MockGameDataService(includeSampleData: false);
         var factory = new ItemViewModelFactory(mockGameData);
 
         // Act
@@ -58,7 +57,7 @@ public class ItemViewModelFactoryTests
             TemplateResRef = "test"
         };
 
-        var mockGameData = new MockGameDataService();
+        var mockGameData = new MockGameDataService(includeSampleData: false);
         mockGameData.Set2DAValue("baseitems", 1, "Name", "12345");
         mockGameData.SetTlkString(12345, "Longsword");
         var factory = new ItemViewModelFactory(mockGameData);
@@ -80,7 +79,7 @@ public class ItemViewModelFactoryTests
             TemplateResRef = "test"
         };
 
-        var mockGameData = new MockGameDataService();
+        var mockGameData = new MockGameDataService(includeSampleData: false);
         mockGameData.Set2DAValue("baseitems", 42, "label", "CustomItem");
         var factory = new ItemViewModelFactory(mockGameData);
 
@@ -101,7 +100,7 @@ public class ItemViewModelFactoryTests
             TemplateResRef = "test"
         };
 
-        var mockGameData = new MockGameDataService();
+        var mockGameData = new MockGameDataService(includeSampleData: false);
         var factory = new ItemViewModelFactory(mockGameData);
 
         // Act
@@ -125,7 +124,7 @@ public class ItemViewModelFactoryTests
             }
         };
 
-        var mockGameData = new MockGameDataService();
+        var mockGameData = new MockGameDataService(includeSampleData: false);
         mockGameData.Set2DAValue("itempropdef", 0, "GameStrRef", "100");
         mockGameData.Set2DAValue("itempropdef", 1, "GameStrRef", "101");
         mockGameData.SetTlkString(100, "Enhancement Bonus");
@@ -151,7 +150,7 @@ public class ItemViewModelFactoryTests
             Properties = new List<ItemProperty>()
         };
 
-        var mockGameData = new MockGameDataService();
+        var mockGameData = new MockGameDataService(includeSampleData: false);
         var factory = new ItemViewModelFactory(mockGameData);
 
         // Act
@@ -172,7 +171,7 @@ public class ItemViewModelFactoryTests
             new UtiFile { TemplateResRef = "item3" }
         };
 
-        var mockGameData = new MockGameDataService();
+        var mockGameData = new MockGameDataService(includeSampleData: false);
         var factory = new ItemViewModelFactory(mockGameData);
 
         // Act
@@ -183,60 +182,5 @@ public class ItemViewModelFactoryTests
         Assert.Equal("item1", viewModels[0].ResRef);
         Assert.Equal("item2", viewModels[1].ResRef);
         Assert.Equal("item3", viewModels[2].ResRef);
-    }
-
-    /// <summary>
-    /// Mock game data service for testing without file system access.
-    /// </summary>
-    private class MockGameDataService : IGameDataService
-    {
-        private readonly Dictionary<(string twoDA, int row, string col), string> _2daValues = new();
-        private readonly Dictionary<uint, string> _tlkStrings = new();
-
-        public void Set2DAValue(string twoDA, int row, string col, string value)
-        {
-            _2daValues[(twoDA.ToLowerInvariant(), row, col.ToLowerInvariant())] = value;
-        }
-
-        public void SetTlkString(uint strRef, string value)
-        {
-            _tlkStrings[strRef] = value;
-        }
-
-        public TwoDAFile? Get2DA(string name) => null;
-
-        public string? Get2DAValue(string twoDAName, int rowIndex, string columnName)
-        {
-            var key = (twoDAName.ToLowerInvariant(), rowIndex, columnName.ToLowerInvariant());
-            return _2daValues.TryGetValue(key, out var value) ? value : null;
-        }
-
-        public bool Has2DA(string name) => false;
-        public void ClearCache() { }
-
-        public string? GetString(uint strRef)
-        {
-            return _tlkStrings.TryGetValue(strRef, out var value) ? value : null;
-        }
-
-        public string? GetString(string? strRefStr)
-        {
-            if (string.IsNullOrEmpty(strRefStr) || strRefStr == "****")
-                return null;
-            if (uint.TryParse(strRefStr, out uint strRef))
-                return GetString(strRef);
-            return null;
-        }
-
-        public bool HasCustomTlk => false;
-        public void SetCustomTlk(string? path) { }
-        public byte[]? FindResource(string resRef, ushort resourceType) => null;
-        public IEnumerable<GameResourceInfo> ListResources(ushort resourceType) => Array.Empty<GameResourceInfo>();
-        public Radoub.Formats.Ssf.SsfFile? GetSoundset(int soundsetId) => null;
-        public Radoub.Formats.Ssf.SsfFile? GetSoundsetByResRef(string resRef) => null;
-        public string? GetSoundsetResRef(int soundsetId) => null;
-        public bool IsConfigured => true;
-        public void ReloadConfiguration() { }
-        public void Dispose() { }
     }
 }
