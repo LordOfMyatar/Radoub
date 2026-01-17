@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
@@ -40,6 +42,7 @@ public partial class CharacterPanel : UserControl
     private ComboBox? _soundsetTypeComboBox;
     private Button? _soundsetPlayButton;
     private AudioService? _audioService;
+    private List<SoundsetTypeItem> _soundsetTypeItems = new();
 
     // BIC-specific controls
     private Border? _playerCharacterSection;
@@ -344,6 +347,7 @@ public partial class CharacterPanel : UserControl
                 item.Tag is ushort id && id == soundSetId)
             {
                 _soundSetComboBox.SelectedIndex = i;
+                UpdateSoundsetTypeAvailability(soundSetId);
                 return;
             }
         }
@@ -356,6 +360,7 @@ public partial class CharacterPanel : UserControl
             Tag = soundSetId
         });
         _soundSetComboBox.SelectedIndex = _soundSetComboBox.Items.Count - 1;
+        UpdateSoundsetTypeAvailability(soundSetId);
     }
 
     private void OnTextChanged(object? sender, TextChangedEventArgs e)
@@ -429,6 +434,7 @@ public partial class CharacterPanel : UserControl
             soundItem.Tag is ushort soundSetId)
         {
             _currentCreature.SoundSetFile = soundSetId;
+            UpdateSoundsetTypeAvailability(soundSetId);
             CharacterChanged?.Invoke(this, EventArgs.Empty);
         }
     }
@@ -560,20 +566,50 @@ public partial class CharacterPanel : UserControl
     }
 
     /// <summary>
-    /// Item for the soundset type dropdown.
+    /// Item for the soundset type dropdown with availability tracking.
     /// </summary>
-    private class SoundsetTypeItem
+    private class SoundsetTypeItem : INotifyPropertyChanged
     {
+        private bool _isAvailable = true;
+
         public string Name { get; set; } = "";
         public SsfSoundType SoundType { get; set; }
-        public override string ToString() => Name;
+
+        public bool IsAvailable
+        {
+            get => _isAvailable;
+            set
+            {
+                if (_isAvailable != value)
+                {
+                    _isAvailable = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(DisplayName));
+                    OnPropertyChanged(nameof(Opacity));
+                }
+            }
+        }
+
+        public string DisplayName => IsAvailable ? Name : $"{Name} (N/A)";
+
+        // Use opacity for theme-aware dimming of unavailable items
+        public double Opacity => IsAvailable ? 1.0 : 0.5;
+
+        public override string ToString() => DisplayName;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
     private void InitializeSoundsetTypeComboBox()
     {
         if (_soundsetTypeComboBox == null) return;
 
-        var items = new List<SoundsetTypeItem>
+        _soundsetTypeItems = new List<SoundsetTypeItem>
         {
             new() { Name = "Hello", SoundType = SsfSoundType.Hello },
             new() { Name = "Goodbye", SoundType = SsfSoundType.Goodbye },
@@ -587,8 +623,79 @@ public partial class CharacterPanel : UserControl
             new() { Name = "Selected", SoundType = SsfSoundType.Selected },
         };
 
-        _soundsetTypeComboBox.ItemsSource = items;
+        _soundsetTypeComboBox.ItemsSource = _soundsetTypeItems;
         _soundsetTypeComboBox.SelectedIndex = 0; // Hello
+        _soundsetTypeComboBox.SelectionChanged += OnSoundsetTypeSelectionChanged;
+    }
+
+    private void OnSoundsetTypeSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        UpdateSoundsetPlayButtonState();
+    }
+
+    private void UpdateSoundsetPlayButtonState()
+    {
+        if (_soundsetPlayButton == null) return;
+
+        if (_currentCreature == null || _currentCreature.SoundSetFile == ushort.MaxValue)
+        {
+            _soundsetPlayButton.IsEnabled = false;
+            return;
+        }
+
+        if (_soundsetTypeComboBox?.SelectedItem is SoundsetTypeItem selectedType)
+        {
+            _soundsetPlayButton.IsEnabled = selectedType.IsAvailable;
+        }
+        else
+        {
+            _soundsetPlayButton.IsEnabled = false;
+        }
+    }
+
+    private void UpdateSoundsetTypeAvailability(ushort soundsetId)
+    {
+        if (_gameDataService == null || _soundsetTypeComboBox == null) return;
+
+        if (soundsetId == ushort.MaxValue)
+        {
+            // No soundset - mark all as available (greyed button handles this)
+            foreach (var item in _soundsetTypeItems)
+                item.IsAvailable = true;
+            return;
+        }
+
+        var ssf = _gameDataService.GetSoundset(soundsetId);
+        if (ssf == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not load soundset {soundsetId} for availability check");
+            return;
+        }
+
+        foreach (var typeItem in _soundsetTypeItems)
+        {
+            var entry = ssf.GetEntry(typeItem.SoundType);
+            typeItem.IsAvailable = entry != null && entry.HasSound;
+        }
+
+        // Force ComboBox to refresh display
+        _soundsetTypeComboBox.ItemsSource = null;
+        _soundsetTypeComboBox.ItemsSource = _soundsetTypeItems;
+
+        // Re-select first available or keep current selection
+        var currentIndex = _soundsetTypeComboBox.SelectedIndex;
+        if (currentIndex >= 0 && currentIndex < _soundsetTypeItems.Count && _soundsetTypeItems[currentIndex].IsAvailable)
+        {
+            _soundsetTypeComboBox.SelectedIndex = currentIndex;
+        }
+        else
+        {
+            // Find first available
+            var firstAvailable = _soundsetTypeItems.FindIndex(t => t.IsAvailable);
+            _soundsetTypeComboBox.SelectedIndex = firstAvailable >= 0 ? firstAvailable : 0;
+        }
+
+        UpdateSoundsetPlayButtonState();
     }
 
     private async void OnSoundsetPlayClick(object? sender, RoutedEventArgs e)

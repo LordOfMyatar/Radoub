@@ -76,7 +76,7 @@
                         Click="OnClearSearchClick"/>
             </Grid>
 
-            <!-- Portrait List -->
+            <!-- Portrait Grid -->
             <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                     BorderThickness="1" Padding="5">
                 <Grid>
@@ -88,10 +88,18 @@
                     <TextBlock Grid.Row="0" x:Name="PortraitCountLabel"
                                Text="0 portraits"
                                Margin="0,0,0,5"/>
-                    <ListBox Grid.Row="1" x:Name="PortraitListBox"
-                             AutomationProperties.AutomationId="PortraitListBox"
-                             SelectionChanged="OnPortraitSelected"
-                             DoubleTapped="OnPortraitDoubleClicked"/>
+                    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <ListBox x:Name="PortraitListBox"
+                                 AutomationProperties.AutomationId="PortraitListBox"
+                                 SelectionChanged="OnPortraitSelected"
+                                 DoubleTapped="OnPortraitDoubleClicked">
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                        </ListBox>
+                    </ScrollViewer>
                 </Grid>
             </Border>
 

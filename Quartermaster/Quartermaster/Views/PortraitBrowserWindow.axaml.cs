@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
@@ -201,17 +204,62 @@ public partial class PortraitBrowserWindow : Window
             .OrderBy(p => p.ResRef)
             .ToList();
 
-        // Populate list
+        // Populate with mini icon items
         foreach (var portrait in _filteredPortraits)
         {
-            _portraitListBox.Items.Add(new ListBoxItem
-            {
-                Content = portrait.ResRef,
-                Tag = portrait
-            });
+            var item = CreatePortraitItem(portrait);
+            _portraitListBox.Items.Add(item);
         }
 
         _portraitCountLabel.Text = $"{_filteredPortraits.Count} portrait{(_filteredPortraits.Count == 1 ? "" : "s")}";
+    }
+
+    private ListBoxItem CreatePortraitItem(PortraitInfo portrait)
+    {
+        // Create mini icon (roughly 50% size = ~32x40 for typical NWN portraits)
+        const int thumbnailWidth = 32;
+        const int thumbnailHeight = 40;
+
+        var image = new Image
+        {
+            Width = thumbnailWidth,
+            Height = thumbnailHeight,
+            Stretch = Stretch.Uniform,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        // Try to load the portrait thumbnail
+        if (_itemIconService != null)
+        {
+            try
+            {
+                var bitmap = _itemIconService.GetPortrait(portrait.ResRef);
+                image.Source = bitmap;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load thumbnail for {portrait.ResRef}: {ex.Message}");
+            }
+        }
+
+        // Wrap image in a border for visual feedback
+        var border = new Border
+        {
+            Child = image,
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brushes.Transparent,
+            Padding = new Thickness(2),
+            Margin = new Thickness(2)
+        };
+        ToolTip.SetTip(border, portrait.ResRef);
+
+        return new ListBoxItem
+        {
+            Content = border,
+            Tag = portrait,
+            Padding = new Thickness(1)
+        };
     }
 
     private void OnFilterChanged(object? sender, SelectionChangedEventArgs e)

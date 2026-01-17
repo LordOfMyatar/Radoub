@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Ssf;
-using Radoub.Formats.Common;
 using Radoub.UI.Services;
 
 namespace Quartermaster.Views;
@@ -26,12 +28,14 @@ public partial class SoundsetBrowserWindow : Window
     private readonly TextBlock _selectedSoundsetLabel;
     private readonly TextBlock _soundsetNameLabel;
     private readonly ComboBox _soundTypeComboBox;
+    private readonly ComboBox _genderFilterComboBox;
     private readonly Button _playButton;
     private readonly Button _stopButton;
 
     private List<SoundsetInfo> _allSoundsets = new();
     private List<SoundsetInfo> _filteredSoundsets = new();
     private SoundsetInfo? _selectedSoundset;
+    private List<SoundTypeItem> _soundTypeItems = new();
 
     /// <summary>
     /// Gets the selected soundset ID, or null if cancelled.
@@ -50,6 +54,7 @@ public partial class SoundsetBrowserWindow : Window
         _selectedSoundsetLabel = this.FindControl<TextBlock>("SelectedSoundsetLabel")!;
         _soundsetNameLabel = this.FindControl<TextBlock>("SoundsetNameLabel")!;
         _soundTypeComboBox = this.FindControl<ComboBox>("SoundTypeComboBox")!;
+        _genderFilterComboBox = this.FindControl<ComboBox>("GenderFilterComboBox")!;
         _playButton = this.FindControl<Button>("PlayButton")!;
         _stopButton = this.FindControl<Button>("StopButton")!;
     }
@@ -66,8 +71,19 @@ public partial class SoundsetBrowserWindow : Window
 
         _audioService.PlaybackStopped += OnPlaybackStopped;
 
+        InitializeGenderFilter();
         InitializeSoundTypes();
         LoadSoundsets();
+    }
+
+    private void InitializeGenderFilter()
+    {
+        _genderFilterComboBox.Items.Clear();
+        _genderFilterComboBox.Items.Add(new ComboBoxItem { Content = "All", Tag = -1 });
+        _genderFilterComboBox.Items.Add(new ComboBoxItem { Content = "Male", Tag = 0 });
+        _genderFilterComboBox.Items.Add(new ComboBoxItem { Content = "Female", Tag = 1 });
+        _genderFilterComboBox.Items.Add(new ComboBoxItem { Content = "Other", Tag = 2 });
+        _genderFilterComboBox.SelectedIndex = 0;
     }
 
     private void InitializeComponent()
@@ -77,7 +93,7 @@ public partial class SoundsetBrowserWindow : Window
 
     private void InitializeSoundTypes()
     {
-        var items = new List<SoundTypeItem>
+        _soundTypeItems = new List<SoundTypeItem>
         {
             new() { Name = "Hello", SoundType = SsfSoundType.Hello },
             new() { Name = "Goodbye", SoundType = SsfSoundType.Goodbye },
@@ -91,7 +107,7 @@ public partial class SoundsetBrowserWindow : Window
             new() { Name = "Selected", SoundType = SsfSoundType.Selected },
         };
 
-        _soundTypeComboBox.ItemsSource = items;
+        _soundTypeComboBox.ItemsSource = _soundTypeItems;
         _soundTypeComboBox.SelectedIndex = 0;
     }
 
@@ -113,11 +129,18 @@ public partial class SoundsetBrowserWindow : Window
 
             var displayName = GetSoundsetDisplayName((ushort)i);
 
+            // Get gender from GENDER column (0=Male, 1=Female, 2+=Other)
+            int gender = -1;
+            var genderStr = _gameDataService.Get2DAValue("soundset", i, "GENDER");
+            if (!string.IsNullOrEmpty(genderStr) && genderStr != "****")
+                int.TryParse(genderStr, out gender);
+
             _allSoundsets.Add(new SoundsetInfo
             {
                 Id = (ushort)i,
                 Label = label,
-                DisplayName = displayName
+                DisplayName = displayName,
+                Gender = gender
             });
         }
 
@@ -152,9 +175,30 @@ public partial class SoundsetBrowserWindow : Window
 
         var searchText = _searchBox?.Text?.ToLowerInvariant() ?? "";
 
+        // Get gender filter value
+        int genderFilter = -1;
+        if (_genderFilterComboBox.SelectedItem is ComboBoxItem genderItem && genderItem.Tag is int gender)
+            genderFilter = gender;
+
         _filteredSoundsets = _allSoundsets
             .Where(s =>
             {
+                // Gender filter: -1 = All, 0 = Male, 1 = Female, 2 = Other (anything >= 2)
+                if (genderFilter >= 0)
+                {
+                    if (genderFilter == 2)
+                    {
+                        // "Other" matches anything that's not 0 (male) or 1 (female)
+                        if (s.Gender == 0 || s.Gender == 1)
+                            return false;
+                    }
+                    else if (s.Gender != genderFilter)
+                    {
+                        return false;
+                    }
+                }
+
+                // Search filter
                 if (!string.IsNullOrEmpty(searchText))
                 {
                     return s.DisplayName.ToLowerInvariant().Contains(searchText) ||
@@ -177,6 +221,11 @@ public partial class SoundsetBrowserWindow : Window
         _soundsetCountLabel.Text = $"{_filteredSoundsets.Count} soundset{(_filteredSoundsets.Count == 1 ? "" : "s")}";
     }
 
+    private void OnGenderFilterChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        UpdateSoundsetList();
+    }
+
     private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
     {
         UpdateSoundsetList();
@@ -194,7 +243,12 @@ public partial class SoundsetBrowserWindow : Window
             _selectedSoundset = soundset;
             _selectedSoundsetLabel.Text = soundset.DisplayName;
             _soundsetNameLabel.Text = $"{soundset.DisplayName}\n(ID: {soundset.Id})";
-            _playButton.IsEnabled = true;
+
+            // Update sound type availability
+            UpdateSoundTypeAvailability(soundset.Id);
+
+            // Enable play button only if currently selected sound type is available
+            UpdatePlayButtonState();
         }
         else
         {
@@ -202,12 +256,79 @@ public partial class SoundsetBrowserWindow : Window
             _selectedSoundsetLabel.Text = "(none)";
             _soundsetNameLabel.Text = "";
             _playButton.IsEnabled = false;
+
+            // Reset all to available when no soundset selected
+            foreach (var typeItem in _soundTypeItems)
+            {
+                typeItem.IsAvailable = true;
+            }
+        }
+    }
+
+    private void UpdateSoundTypeAvailability(ushort soundsetId)
+    {
+        if (_gameDataService == null) return;
+
+        var ssf = _gameDataService.GetSoundset(soundsetId);
+        if (ssf == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not load soundset {soundsetId} for availability check");
+            return;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Checking sound availability for soundset {soundsetId}:");
+
+        foreach (var typeItem in _soundTypeItems)
+        {
+            var entry = ssf.GetEntry(typeItem.SoundType);
+            bool hasSound = entry != null && entry.HasSound;
+            typeItem.IsAvailable = hasSound;
+
+            var resRef = entry?.ResRef ?? "(null)";
+            var strRef = entry?.StringRef ?? 0;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"  {typeItem.Name}: HasSound={hasSound}, ResRef={resRef}, StrRef={strRef}");
+        }
+
+        // Force ComboBox to refresh display
+        _soundTypeComboBox.ItemsSource = null;
+        _soundTypeComboBox.ItemsSource = _soundTypeItems;
+
+        // Re-select first available or keep current selection
+        var currentIndex = _soundTypeComboBox.SelectedIndex;
+        if (currentIndex >= 0 && currentIndex < _soundTypeItems.Count && _soundTypeItems[currentIndex].IsAvailable)
+        {
+            _soundTypeComboBox.SelectedIndex = currentIndex;
+        }
+        else
+        {
+            // Find first available
+            var firstAvailable = _soundTypeItems.FindIndex(t => t.IsAvailable);
+            _soundTypeComboBox.SelectedIndex = firstAvailable >= 0 ? firstAvailable : 0;
+        }
+    }
+
+    private void UpdatePlayButtonState()
+    {
+        if (_selectedSoundset == null)
+        {
+            _playButton.IsEnabled = false;
+            return;
+        }
+
+        if (_soundTypeComboBox.SelectedItem is SoundTypeItem selectedType)
+        {
+            _playButton.IsEnabled = selectedType.IsAvailable;
+        }
+        else
+        {
+            _playButton.IsEnabled = false;
         }
     }
 
     private void OnSoundTypeChanged(object? sender, SelectionChangedEventArgs e)
     {
-        // Sound type changed - no immediate action needed
+        UpdatePlayButtonState();
     }
 
     private async void OnPlayClick(object? sender, RoutedEventArgs e)
@@ -324,12 +445,43 @@ public partial class SoundsetBrowserWindow : Window
         public ushort Id { get; set; }
         public string Label { get; set; } = "";
         public string DisplayName { get; set; } = "";
+        public int Gender { get; set; } = -1; // 0=Male, 1=Female, 2+=Other
     }
 
-    private class SoundTypeItem
+    private class SoundTypeItem : INotifyPropertyChanged
     {
+        private bool _isAvailable = true;
+
         public string Name { get; set; } = "";
         public SsfSoundType SoundType { get; set; }
-        public override string ToString() => Name;
+
+        public bool IsAvailable
+        {
+            get => _isAvailable;
+            set
+            {
+                if (_isAvailable != value)
+                {
+                    _isAvailable = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(DisplayName));
+                    OnPropertyChanged(nameof(Opacity));
+                }
+            }
+        }
+
+        public string DisplayName => IsAvailable ? Name : $"{Name} (N/A)";
+
+        // Use opacity for theme-aware dimming of unavailable items
+        public double Opacity => IsAvailable ? 1.0 : 0.5;
+
+        public override string ToString() => DisplayName;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

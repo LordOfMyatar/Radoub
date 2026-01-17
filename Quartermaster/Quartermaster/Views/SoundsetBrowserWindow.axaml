@@ -31,20 +31,28 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Search Row -->
+        <!-- Filter Row -->
         <Grid Grid.Row="0" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="15"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Text="Search:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <TextBox Grid.Column="1" x:Name="SearchBox"
+            <TextBlock Grid.Column="0" Text="Gender:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <ComboBox Grid.Column="1" x:Name="GenderFilterComboBox"
+                      AutomationProperties.AutomationId="GenderFilterComboBox"
+                      Width="100"
+                      SelectionChanged="OnGenderFilterChanged"/>
+            <TextBlock Grid.Column="3" Text="Search:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <TextBox Grid.Column="4" x:Name="SearchBox"
                      AutomationProperties.AutomationId="SoundsetSearchBox"
                      Watermark="Type to filter soundsets..."
                      TextChanged="OnSearchTextChanged"/>
-            <Button Grid.Column="2" x:Name="ClearSearchButton" Content="Clear" Padding="8,4"
+            <Button Grid.Column="5" x:Name="ClearSearchButton" Content="Clear" Padding="8,4"
                     Margin="5,0,0,0"
                     Click="OnClearSearchClick"/>
         </Grid>
@@ -100,7 +108,14 @@
                         <ComboBox x:Name="SoundTypeComboBox"
                                   AutomationProperties.AutomationId="SoundTypeComboBox"
                                   HorizontalAlignment="Stretch"
-                                  SelectionChanged="OnSoundTypeChanged"/>
+                                  SelectionChanged="OnSoundTypeChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               Opacity="{Binding Opacity}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <Button x:Name="PlayButton"
                                 Content="Play"
                                 AutomationProperties.AutomationId="SoundsetPlayButton"
