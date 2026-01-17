@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.121-alpha] - 2026-01-16
+**Branch**: `parley/issue-916` | **PR**: #TBD
+
+### Sprint: Animation & Audio Features (#916)
+
+- #895 - Fix sound play button in Main Window (bug)
+- #858 - Enhance sound validation for non-standard WAV files
+- #786 - Preview NPC soundset compatibility from creature tag
+- #915 - Display NPC portrait for selected speaker
+
+---
+
 ## [0.1.120-alpha] - 2026-01-16
 **Branch**: `parley/issue-719` | **PR**: #913
 
