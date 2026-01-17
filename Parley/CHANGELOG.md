@@ -54,6 +54,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - File count shows "X unverified" when mono filter active with archive sounds
 - Prevents filtering out potentially valid mono sounds from archives
 
+#### Fix: 2DA lookups not working for portrait/soundset display
+
+- `ResourceBrowserManager` now passes game data path to `CreatureService.ScanCreaturesAsync`
+- Added `GetGameDataPath()` helper to locate 2DA files in game installation
+- Enables portrait and soundset resolution from `portraits.2da` and `soundset.2da`
+
 ---
 
 ## [0.1.120-alpha] - 2026-01-16

@@ -88,16 +88,35 @@ echo "Cache cleared."
 }
 ```
 
-## Integration with Skills
+## Reading Cache Data
 
-Skills should check cache freshness at start:
+The full cache is ~220KB (too large for context). Use `Get-CacheData.ps1` to extract views:
 
 ```bash
-# Auto-refresh if stale or missing
-pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
+# Summary only (~1KB) - just stats
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View summary
+
+# List view (~25KB) - issues without bodies
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View list
+
+# List filtered by tool
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View list -Tool parley
+
+# Single issue with body
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View issue -Number 123
 ```
 
-The script exits immediately if cache is fresh (< 4 hours), so it's safe to call every time.
+## Integration with Skills
+
+Skills should:
+1. Check cache freshness at start:
+   ```bash
+   pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
+   ```
+2. Use `Get-CacheData.ps1 -View list` for batch operations
+3. Use `Get-CacheData.ps1 -View issue -Number N` when body is needed
+
+The refresh script exits immediately if cache is fresh (< 4 hours).
 
 ## Output Format
 

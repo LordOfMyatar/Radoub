@@ -45,12 +45,18 @@ pwsh -File .claude/scripts/Refresh-GitHubCache.ps1 -Force
 
 ### Step 1: Load Issues from Cache
 
-Read from `.claude/cache/github-data.json`:
-- `issues` array contains all open issues with labels, body, dates, project status
-- `summary` object has pre-calculated hygiene stats
-- Filter by tool label if `--tool` specified
+Use the helper script to get a compact view (~25KB instead of 220KB):
 
-The cache contains everything needed - no additional API calls required.
+```bash
+# Get list view (no bodies) - filtered by tool if specified
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View list [-Tool parley]
+
+# Or just summary stats
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View summary
+```
+
+The list view includes: number, title, updatedAt, author, labels (comma-separated).
+Bodies are omitted to reduce context size - fetch individually if needed.
 
 ### Step 2: Quick Hygiene Summary
 

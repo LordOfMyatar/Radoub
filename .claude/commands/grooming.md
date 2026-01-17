@@ -166,10 +166,18 @@ pwsh -File .claude/scripts/Refresh-GitHubCache.ps1 -Force
 
 ### Step 1: Load Issues from Cache
 
-Read from `.claude/cache/github-data.json`:
-- `issues` array: all open issues with labels, body, dates, author, project status
-- `summary` object: pre-calculated counts for missing labels, stale issues
-- Filter by tool label or specific issue number if requested
+Use the helper script to get a compact view (~25KB):
+
+```bash
+# List view for batch grooming
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View list [-Tool parley]
+
+# Single issue with body for deep dive
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View issue -Number 123
+```
+
+List view includes: number, title, updatedAt, author, labels.
+Use issue view when you need the full body for content review.
 
 ### Step 2: Categorize Issues
 

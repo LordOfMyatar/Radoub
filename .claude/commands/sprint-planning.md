@@ -50,14 +50,20 @@ After collecting answers, proceed through all analysis and output without furthe
    - Check for any uncommitted work
 
 3. **Load GitHub Data from Cache**
-   Read from `.claude/cache/github-data.json`:
-   - `issues` array: all open issues with labels, body, dates, project status
-   - `pullRequests` array: open PRs with review state, branch names
-   - `summary` object: pre-calculated hygiene stats
+   Use the helper script to get a compact view (~25KB):
+   ```bash
+   pwsh -File .claude/scripts/Get-CacheData.ps1 -View list [-Tool parley]
+   ```
+   Returns: issues (number, title, updatedAt, author, labels), PRs, summary stats.
    - Calculate days since last update for each issue
    - Flag stale issues (15+ days without activity)
    - Group by epic label when present
    - Note blocked/blocking relationships
+
+   For specific issue details (with body):
+   ```bash
+   pwsh -File .claude/scripts/Get-CacheData.ps1 -View issue -Number 123
+   ```
 
 4. **Check Active Sprints/Epics**
    - Read `Parley/CHANGELOG.md` for active work

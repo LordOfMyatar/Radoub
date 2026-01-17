@@ -17,12 +17,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - `/cache` skill for GitHub data cache management
 - GraphQL-based cache refresh script (`.claude/scripts/Refresh-GitHubCache.ps1`)
+- Cache data extraction script with views (`.claude/scripts/Get-CacheData.ps1`)
 - `--refresh` option to `/backlog`, `/sprint-planning`, `/grooming` skills
 
 ### Changed
 
 - `/backlog`, `/sprint-planning`, `/grooming` now read from local cache instead of making multiple API calls
 - Cache auto-refreshes every 4 hours; manual refresh available via `/cache refresh`
+- Skills use compact list view (~25KB) instead of full cache (~220KB) to reduce context size
 
 ---
 
