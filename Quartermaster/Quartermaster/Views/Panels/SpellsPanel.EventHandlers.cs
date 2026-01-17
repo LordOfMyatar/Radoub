@@ -1,9 +1,12 @@
 using Avalonia.Controls;
 using Avalonia.Media;
 using Quartermaster.ViewModels;
+using Quartermaster.Views.Helpers;
 using Radoub.Formats.Utc;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Quartermaster.Views.Panels;
 
@@ -64,16 +67,13 @@ public partial class SpellsPanel
             }
 
             // Also remove from memorized if it was memorized
-            if (_memorizedSpellIds.Contains(spell.SpellId))
+            if (_memorizedSpellCounts.ContainsKey(spell.SpellId))
             {
-                _memorizedSpellIds.Remove(spell.SpellId);
+                // Remove all memorizations of this spell
+                _memorizedSpellCounts.Remove(spell.SpellId);
                 var memorizedList = classEntry.MemorizedSpells[spell.SpellLevel];
-                var memorized = memorizedList.FirstOrDefault(s => s.Spell == spell.SpellId);
-                if (memorized != null)
-                {
-                    memorizedList.Remove(memorized);
-                }
-                spell.IsMemorized = false;
+                memorizedList.RemoveAll(s => s.Spell == spell.SpellId);
+                spell.MemorizedCount = 0;
             }
         }
 
@@ -89,20 +89,25 @@ public partial class SpellsPanel
 
     private void OnSpellMemorizedChanged(SpellListViewModel spell, bool isNowMemorized)
     {
+        // Legacy handler - redirect to count-based handler
+        OnSpellMemorizedCountChanged(spell, isNowMemorized ? 1 : -spell.MemorizedCount);
+    }
+
+    private void OnSpellMemorizedCountChanged(SpellListViewModel spell, int delta)
+    {
         if (_isLoading || _currentCreature == null) return;
         if (_selectedClassIndex >= _currentCreature.ClassList.Count) return;
 
         var classEntry = _currentCreature.ClassList[_selectedClassIndex];
+        var memorizedList = classEntry.MemorizedSpells[spell.SpellLevel];
+        int currentCount = (_memorizedSpellCounts.TryGetValue(spell.SpellId, out var count) ? count : 0);
 
-        if (isNowMemorized)
+        if (delta > 0)
         {
-            // Add to memorized spells
-            if (!_memorizedSpellIds.Contains(spell.SpellId))
+            // Add memorizations
+            for (int i = 0; i < delta; i++)
             {
-                _memorizedSpellIds.Add(spell.SpellId);
-
-                // Add to model at appropriate spell level
-                classEntry.MemorizedSpells[spell.SpellLevel].Add(new MemorizedSpell
+                memorizedList.Add(new MemorizedSpell
                 {
                     Spell = (ushort)spell.SpellId,
                     SpellFlags = 0x01,
@@ -110,20 +115,30 @@ public partial class SpellsPanel
                     Ready = 1
                 });
             }
+            _memorizedSpellCounts[spell.SpellId] = currentCount + delta;
         }
-        else
+        else if (delta < 0)
         {
-            // Remove from memorized spells
-            _memorizedSpellIds.Remove(spell.SpellId);
-
-            // Remove from model
-            var memorizedList = classEntry.MemorizedSpells[spell.SpellLevel];
-            var existing = memorizedList.FirstOrDefault(s => s.Spell == spell.SpellId);
-            if (existing != null)
+            // Remove memorizations
+            int toRemove = Math.Min(-delta, currentCount);
+            for (int i = 0; i < toRemove; i++)
             {
-                memorizedList.Remove(existing);
+                var existing = memorizedList.FirstOrDefault(s => s.Spell == spell.SpellId);
+                if (existing != null)
+                {
+                    memorizedList.Remove(existing);
+                }
             }
+
+            int newCount = currentCount - toRemove;
+            if (newCount <= 0)
+                _memorizedSpellCounts.Remove(spell.SpellId);
+            else
+                _memorizedSpellCounts[spell.SpellId] = newCount;
         }
+
+        // Update the view model
+        spell.MemorizedCount = _memorizedSpellCounts.TryGetValue(spell.SpellId, out var updatedCount) ? updatedCount : 0;
 
         // Update visual status
         UpdateSpellVisualStatus(spell);
@@ -139,7 +154,7 @@ public partial class SpellsPanel
     {
         // Update status based on new known/memorized state
         bool isKnown = spell.IsKnown;
-        bool isMemorized = _memorizedSpellIds.Contains(spell.SpellId);
+        int memorizedCount = spell.MemorizedCount;
 
         if (spell.IsBlocked)
         {
@@ -147,21 +162,25 @@ public partial class SpellsPanel
             spell.StatusColor = GetDisabledBrush();
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 20);
             spell.TextOpacity = 0.5;
+            spell.MemorizedCountColor = GetDisabledBrush();
         }
-        else if (isKnown && isMemorized)
+        else if (isKnown && memorizedCount > 0)
         {
-            spell.StatusText = "K + M";
+            // Show memorization count if > 1
+            spell.StatusText = memorizedCount > 1 ? $"K + M×{memorizedCount}" : "K + M";
             spell.StatusColor = GetSelectionBrush();
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
+            spell.MemorizedCountColor = GetSelectionBrush();
         }
-        else if (isMemorized)
+        else if (memorizedCount > 0)
         {
             // Memorized but not known (edge case - shouldn't happen normally)
-            spell.StatusText = "Memorized";
+            spell.StatusText = memorizedCount > 1 ? $"M×{memorizedCount}" : "Memorized";
             spell.StatusColor = GetSelectionBrush();
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
+            spell.MemorizedCountColor = GetSelectionBrush();
         }
         else if (isKnown)
         {
@@ -169,6 +188,7 @@ public partial class SpellsPanel
             spell.StatusColor = GetSuccessBrush();
             spell.RowBackground = GetTransparentRowBackground(spell.StatusColor, 30);
             spell.TextOpacity = 1.0;
+            spell.MemorizedCountColor = GetDisabledBrush();
         }
         else
         {
@@ -176,6 +196,72 @@ public partial class SpellsPanel
             spell.StatusColor = Brushes.Transparent;
             spell.RowBackground = Brushes.Transparent;
             spell.TextOpacity = 0.7;
+            spell.MemorizedCountColor = GetDisabledBrush();
         }
+    }
+
+    private async void OnClearSpellListClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_currentCreature == null || _selectedClassIndex >= _currentCreature.ClassList.Count)
+            return;
+
+        var classEntry = _currentCreature.ClassList[_selectedClassIndex];
+        var className = _displayService?.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
+
+        // Count how many spells will be cleared
+        int knownCount = classEntry.KnownSpells.Sum(list => list.Count);
+        int memorizedCount = classEntry.MemorizedSpells.Sum(list => list.Count);
+
+        if (knownCount == 0 && memorizedCount == 0)
+        {
+            // Nothing to clear
+            return;
+        }
+
+        // Show confirmation dialog
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
+        if (parentWindow == null)
+            return;
+
+        var message = $"Clear all spells for {className}?\n\n" +
+                      $"This will remove:\n" +
+                      $"• {knownCount} known spell(s)\n" +
+                      $"• {memorizedCount} memorized spell(s)\n\n" +
+                      "This action cannot be undone.";
+
+        var confirmed = await DialogHelper.ShowConfirmationDialog(parentWindow, "Clear All Spells", message);
+
+        if (!confirmed)
+            return;
+
+        // Clear all spells
+        _isLoading = true;
+
+        // Clear model data
+        for (int level = 0; level <= 9; level++)
+        {
+            classEntry.KnownSpells[level].Clear();
+            classEntry.MemorizedSpells[level].Clear();
+        }
+
+        // Clear tracking sets
+        _knownSpellIds.Clear();
+        _memorizedSpellCounts.Clear();
+
+        // Update all view models
+        foreach (var spell in _allSpells)
+        {
+            spell.IsKnown = false;
+            spell.MemorizedCount = 0;
+            UpdateSpellVisualStatus(spell);
+        }
+
+        _isLoading = false;
+
+        // Notify that spells changed
+        SpellsChanged?.Invoke(this, EventArgs.Empty);
+
+        // Update summary
+        UpdateSummary();
     }
 }

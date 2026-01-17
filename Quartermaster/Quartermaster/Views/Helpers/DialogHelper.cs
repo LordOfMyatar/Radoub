@@ -135,6 +135,72 @@ public static class DialogHelper
     }
 
     /// <summary>
+    /// Shows a Yes/No confirmation dialog with a warning icon.
+    /// </summary>
+    /// <param name="parent">Parent window for centering</param>
+    /// <param name="title">Dialog title</param>
+    /// <param name="message">Dialog message</param>
+    /// <returns>True if user clicked Yes, false otherwise</returns>
+    public static async Task<bool> ShowConfirmationDialog(Window parent, string title, string message)
+    {
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 400,
+            Height = 200,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var result = false;
+
+        var panel = new StackPanel { Margin = new Thickness(20), Spacing = 15 };
+
+        // Warning icon + message
+        var messagePanel = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 10
+        };
+        messagePanel.Children.Add(new TextBlock
+        {
+            Text = "⚠",
+            FontSize = 24,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top
+        });
+        messagePanel.Children.Add(new TextBlock
+        {
+            Text = message,
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            MaxWidth = 320
+        });
+        panel.Children.Add(messagePanel);
+
+        // Buttons
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 10,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+        };
+
+        var yesButton = new Button { Content = "Yes", Width = 80 };
+        yesButton.Click += (s, e) => { result = true; dialog.Close(); };
+
+        var noButton = new Button { Content = "No", Width = 80 };
+        noButton.Click += (s, e) => { result = false; dialog.Close(); };
+
+        buttonPanel.Children.Add(yesButton);
+        buttonPanel.Children.Add(noButton);
+        panel.Children.Add(buttonPanel);
+
+        dialog.Content = panel;
+        await dialog.ShowDialog(parent);
+
+        return result;
+    }
+
+    /// <summary>
     /// Gets the title font size from theme resources, with fallback.
     /// </summary>
     private static double GetTitleFontSize()

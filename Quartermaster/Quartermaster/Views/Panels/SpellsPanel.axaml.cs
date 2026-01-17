@@ -34,6 +34,7 @@ public partial class SpellsPanel : UserControl
     private TextBlock? _spellSlotSummaryText;
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
+    private Button? _clearSpellListButton;
     private ComboBox? _levelFilterComboBox;
     private ComboBox? _schoolFilterComboBox;
     private ComboBox? _statusFilterComboBox;
@@ -50,7 +51,7 @@ public partial class SpellsPanel : UserControl
     private ObservableCollection<SpellListViewModel> _displayedSpells = new();
     private List<SpellListViewModel> _allSpells = new();
     private HashSet<int> _knownSpellIds = new();
-    private HashSet<int> _memorizedSpellIds = new();
+    private Dictionary<int, int> _memorizedSpellCounts = new();  // spellId -> count
     private int _selectedClassIndex = 0;
     private bool _isSpontaneousCaster = false;
 
@@ -113,6 +114,12 @@ public partial class SpellsPanel : UserControl
                 if (_searchTextBox != null)
                     _searchTextBox.Text = "";
             };
+        }
+
+        _clearSpellListButton = this.FindControl<Button>("ClearSpellListButton");
+        if (_clearSpellListButton != null)
+        {
+            _clearSpellListButton.Click += OnClearSpellListClick;
         }
 
         if (_levelFilterComboBox != null)
@@ -270,7 +277,7 @@ public partial class SpellsPanel : UserControl
         _displayedSpells.Clear();
         _allSpells.Clear();
         _knownSpellIds.Clear();
-        _memorizedSpellIds.Clear();
+        _memorizedSpellCounts.Clear();
         _currentCreature = null;
         _selectedClassIndex = 0;
 

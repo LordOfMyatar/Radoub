@@ -175,13 +175,13 @@
                         BorderThickness="1,1,1,0"
                         CornerRadius="4,4,0,0"
                         Padding="10,8,25,8">
-                    <Grid ColumnDefinitions="32,35,35,*,60,100,80,80">
+                    <Grid ColumnDefinitions="32,35,70,*,60,100,80,80">
                         <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                         <TextBlock Grid.Column="1" Text="K" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    ToolTip.Tip="Known - Spell is in spellbook/learned"/>
-                        <TextBlock Grid.Column="2" Text="M" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
+                        <TextBlock Grid.Column="2" Text="Mem" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    x:Name="MemorizedHeader"
-                                   ToolTip.Tip="Memorized - Spell is prepared for casting (disabled for spontaneous casters)"/>
+                                   ToolTip.Tip="Memorized - Number of times spell is prepared (use +/- to adjust)"/>
                         <TextBlock Grid.Column="3" Text="Spell Name" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
                         <TextBlock Grid.Column="4" Text="Level" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                         <TextBlock Grid.Column="5" Text="School" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
@@ -204,7 +204,7 @@
                             <Border Background="{Binding RowBackground}"
                                     Padding="10,6,10,6"
                                     ToolTip.Tip="{Binding Description}">
-                                <Grid ColumnDefinitions="32,35,35,*,60,100,80,80">
+                                <Grid ColumnDefinitions="32,35,70,*,60,100,80,80">
                                     <!-- Icon -->
                                     <Image Grid.Column="0"
                                            Source="{Binding IconBitmap}"
@@ -223,14 +223,44 @@
                                               ToolTip.Tip="{Binding KnownTooltip}"
                                               AutomationProperties.AutomationId="SpellKnownCheckbox"/>
 
-                                    <!-- Memorized checkbox -->
-                                    <CheckBox Grid.Column="2"
-                                              IsChecked="{Binding IsMemorized}"
-                                              IsEnabled="{Binding CanToggleMemorized}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              ToolTip.Tip="{Binding MemorizedTooltip}"
-                                              AutomationProperties.AutomationId="SpellMemorizedCheckbox"/>
+                                    <!-- Memorized count with +/- buttons -->
+                                    <StackPanel Grid.Column="2"
+                                                Orientation="Horizontal"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Spacing="2"
+                                                IsVisible="{Binding !IsSpontaneousCaster}">
+                                        <Button Content="-"
+                                                Width="20" Height="20"
+                                                Padding="0"
+                                                FontSize="12"
+                                                Command="{Binding DecrementMemorizedCommand}"
+                                                IsEnabled="{Binding CanDecrementMemorized}"
+                                                ToolTip.Tip="Remove one memorization"
+                                                AutomationProperties.AutomationId="SpellMemorizedMinus"/>
+                                        <TextBlock Text="{Binding MemorizedCountDisplay}"
+                                                   Width="20"
+                                                   TextAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   Foreground="{Binding MemorizedCountColor}"/>
+                                        <Button Content="+"
+                                                Width="20" Height="20"
+                                                Padding="0"
+                                                FontSize="12"
+                                                Command="{Binding IncrementMemorizedCommand}"
+                                                IsEnabled="{Binding CanIncrementMemorized}"
+                                                ToolTip.Tip="Add one memorization"
+                                                AutomationProperties.AutomationId="SpellMemorizedPlus"/>
+                                    </StackPanel>
+                                    <!-- Spontaneous casters don't memorize - show dash -->
+                                    <TextBlock Grid.Column="2"
+                                               Text="—"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               IsVisible="{Binding IsSpontaneousCaster}"
+                                               ToolTip.Tip="Spontaneous casters don't memorize spells"/>
 
                                     <!-- Spell Name -->
                                     <TextBlock Grid.Column="3"
@@ -320,11 +350,11 @@
                     </Border>
                 </Expander>
 
-                <!-- Spell Actions (placeholder buttons) -->
+                <!-- Spell Actions -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
-                    <Button Content="Clear List"
-                            IsEnabled="False"
-                            ToolTip.Tip="Clear class spell list (not yet implemented)"
+                    <Button x:Name="ClearSpellListButton"
+                            Content="Clear All"
+                            ToolTip.Tip="Clear all known and memorized spells for selected class"
                             AutomationProperties.AutomationId="ClearSpellListButton"/>
                     <Button Content="Save List"
                             IsEnabled="False"

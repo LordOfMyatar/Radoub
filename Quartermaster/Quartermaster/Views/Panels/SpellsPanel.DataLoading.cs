@@ -15,7 +15,7 @@ public partial class SpellsPanel
         _displayedSpells.Clear();
         _allSpells.Clear();
         _knownSpellIds.Clear();
-        _memorizedSpellIds.Clear();
+        _memorizedSpellCounts.Clear();
         _currentCreature = creature;
         _selectedClassIndex = 0;
 
@@ -115,7 +115,7 @@ public partial class SpellsPanel
         _displayedSpells.Clear();
         _allSpells.Clear();
         _knownSpellIds.Clear();
-        _memorizedSpellIds.Clear();
+        _memorizedSpellCounts.Clear();
         _isSpontaneousCaster = false;
 
         if (_currentCreature == null || _displayService == null)
@@ -146,12 +146,16 @@ public partial class SpellsPanel
             }
         }
 
-        // Populate memorized spell IDs from parsed MemorizedList0-9
+        // Populate memorized spell counts from parsed MemorizedList0-9
+        // Same spell can appear multiple times (memorized in multiple slots)
         for (int level = 0; level < 10; level++)
         {
             foreach (var spell in classEntry.MemorizedSpells[level])
             {
-                _memorizedSpellIds.Add(spell.Spell);
+                if (_memorizedSpellCounts.ContainsKey(spell.Spell))
+                    _memorizedSpellCounts[spell.Spell]++;
+                else
+                    _memorizedSpellCounts[spell.Spell] = 1;
             }
         }
 
@@ -188,6 +192,7 @@ public partial class SpellsPanel
 
         var spellName = _displayService.GetSpellName(spellId);
         var spellInfo = _displayService.GetSpellInfo(spellId);
+        var memorizedCount = (_memorizedSpellCounts.TryGetValue(spellId, out var cnt) ? cnt : 0);
 
         if (spellInfo == null)
         {
@@ -203,14 +208,15 @@ public partial class SpellsPanel
                 School = SpellSchool.Unknown,
                 SchoolName = "Unknown",
                 IsKnown = _knownSpellIds.Contains(spellId),
-                IsMemorized = _memorizedSpellIds.Contains(spellId),
+                MemorizedCount = memorizedCount,
                 IsBlocked = false,
                 IsSpontaneousCaster = _isSpontaneousCaster,
                 BlockedReason = "",
                 Description = spellName
             };
             fallbackVm.OnKnownChanged = OnSpellKnownChanged;
-            fallbackVm.OnMemorizedChanged = OnSpellMemorizedChanged;
+            fallbackVm.OnMemorizedCountChanged = OnSpellMemorizedCountChanged;
+            UpdateMemorizedCountColor(fallbackVm);
             LoadSpellIcon(fallbackVm);
             return fallbackVm;
         }
@@ -220,7 +226,6 @@ public partial class SpellsPanel
         bool isAvailableToClass = spellLevel >= 0;
 
         var isKnown = _knownSpellIds.Contains(spellId);
-        var isMemorized = _memorizedSpellIds.Contains(spellId);
         var isBlocked = !isAvailableToClass;
         var blockedReason = isBlocked ? "Not available to this class" : "";
 
@@ -237,9 +242,9 @@ public partial class SpellsPanel
             rowBackground = GetTransparentRowBackground(statusColor, 20);
             textOpacity = 0.5;
         }
-        else if (isMemorized)
+        else if (memorizedCount > 0)
         {
-            statusText = "Memorized";
+            statusText = memorizedCount > 1 ? $"M×{memorizedCount}" : "Memorized";
             statusColor = GetSelectionBrush();
             rowBackground = GetTransparentRowBackground(statusColor, 30);
             textOpacity = 1.0;
@@ -270,7 +275,7 @@ public partial class SpellsPanel
             School = spellInfo.School,
             SchoolName = GetSchoolName(spellInfo.School),
             IsKnown = isKnown,
-            IsMemorized = isMemorized,
+            MemorizedCount = memorizedCount,
             IsBlocked = isBlocked,
             IsSpontaneousCaster = _isSpontaneousCaster,
             BlockedReason = blockedReason,
@@ -283,12 +288,25 @@ public partial class SpellsPanel
 
         // Wire up change handlers
         vm.OnKnownChanged = OnSpellKnownChanged;
-        vm.OnMemorizedChanged = OnSpellMemorizedChanged;
+        vm.OnMemorizedCountChanged = OnSpellMemorizedCountChanged;
+
+        // Set memorized count color
+        UpdateMemorizedCountColor(vm);
 
         // Load spell icon if available
         LoadSpellIcon(vm);
 
         return vm;
+    }
+
+    private void UpdateMemorizedCountColor(SpellListViewModel vm)
+    {
+        if (vm.MemorizedCount > 0)
+            vm.MemorizedCountColor = GetSelectionBrush();
+        else if (vm.IsKnown && !vm.IsSpontaneousCaster)
+            vm.MemorizedCountColor = GetDisabledBrush();
+        else
+            vm.MemorizedCountColor = GetDisabledBrush();
     }
 
     /// <summary>
