@@ -26,6 +26,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Cache auto-refreshes every 4 hours; manual refresh available via `/cache refresh`
 - Skills use compact list view (~25KB) instead of full cache (~220KB) to reduce context size
 
+### Enhancement: Release workflow with curated highlights (#893)
+
+Updated `/release` command and all release workflows to support curated release highlights.
+
+**Workflow changes:**
+- All workflows check for `release-notes.md` first (curated by `/release` command)
+- Falls back to auto-extracting from CHANGELOG if no curated notes exist
+- Auto-extraction parses latest versioned section, extracts headers and bullet points
+
+**`/release` command changes:**
+- Now presents numbered list of changelog items for the version being released
+- User selects which items are "highlights" to feature prominently
+- Remaining items summarized as "Other Changes" with link to full changelog
+- Generates `release-notes.md` file consumed by workflow
+
 ---
 
 ## [0.9.31] - 2026-01-15
