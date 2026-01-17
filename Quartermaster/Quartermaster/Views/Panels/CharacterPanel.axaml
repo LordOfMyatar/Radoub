@@ -98,9 +98,16 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Sound Set:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <ComboBox Grid.Row="0" Grid.Column="1" x:Name="SoundSetComboBox"
-                                      HorizontalAlignment="Stretch"
-                                      AutomationProperties.AutomationId="SoundSetComboBox"/>
+                            <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="5">
+                                <ComboBox Grid.Column="0" x:Name="SoundSetComboBox"
+                                          HorizontalAlignment="Stretch"
+                                          AutomationProperties.AutomationId="SoundSetComboBox"/>
+                                <Button Grid.Column="1" x:Name="BrowseSoundSetButton"
+                                        Content="..."
+                                        Padding="8,4"
+                                        ToolTip.Tip="Browse soundsets"
+                                        AutomationProperties.AutomationId="BrowseSoundSetButton"/>
+                            </Grid>
 
                             <!-- Soundset preview (#916) -->
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Preview:"

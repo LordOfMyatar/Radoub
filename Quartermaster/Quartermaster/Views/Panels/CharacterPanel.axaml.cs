@@ -30,6 +30,7 @@ public partial class CharacterPanel : UserControl
     private Button? _browseConversationButton;
     private Button? _clearConversationButton;
     private Button? _browsePortraitButton;
+    private Button? _browseSoundSetButton;
 
     // Conversation row visibility controls
     private TextBlock? _conversationLabel;
@@ -79,6 +80,7 @@ public partial class CharacterPanel : UserControl
         _browseConversationButton = this.FindControl<Button>("BrowseConversationButton");
         _clearConversationButton = this.FindControl<Button>("ClearConversationButton");
         _browsePortraitButton = this.FindControl<Button>("BrowsePortraitButton");
+        _browseSoundSetButton = this.FindControl<Button>("BrowseSoundSetButton");
 
         // Conversation row visibility controls
         _conversationLabel = this.FindControl<TextBlock>("ConversationLabel");
@@ -119,6 +121,8 @@ public partial class CharacterPanel : UserControl
             _clearConversationButton.Click += OnClearConversationClick;
         if (_browsePortraitButton != null)
             _browsePortraitButton.Click += OnBrowsePortraitClick;
+        if (_browseSoundSetButton != null)
+            _browseSoundSetButton.Click += OnBrowseSoundSetClick;
 
         // Wire up soundset preview (#916)
         if (_soundsetPlayButton != null)
@@ -482,6 +486,30 @@ public partial class CharacterPanel : UserControl
                     _currentCreature.PortraitId = result.Value;
                     CharacterChanged?.Invoke(this, EventArgs.Empty);
                     PortraitChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+    }
+
+    private async void OnBrowseSoundSetClick(object? sender, RoutedEventArgs e)
+    {
+        if (_gameDataService == null || _audioService == null)
+            return;
+
+        var browser = new SoundsetBrowserWindow(_gameDataService, _audioService);
+
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel is Window parentWindow)
+        {
+            var result = await browser.ShowDialog<ushort?>(parentWindow);
+            if (result.HasValue)
+            {
+                SelectSoundSet(result.Value);
+                // Trigger change event
+                if (_currentCreature != null)
+                {
+                    _currentCreature.SoundSetFile = result.Value;
+                    CharacterChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
         }

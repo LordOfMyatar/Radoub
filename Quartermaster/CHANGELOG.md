@@ -15,7 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Browsers & Selection UX (#931)
 
-- [ ] #928 - Portrait browser with race/gender/class filtering
+- [x] #928 - Portrait browser with race/gender filtering
+  - Filter by race and gender, search by resref name
+  - Visual preview of selected portrait
+  - Browse button next to portrait dropdown in Character panel
 - [ ] #803 - Add soundset browser with filter and preview playback
 
 ---
