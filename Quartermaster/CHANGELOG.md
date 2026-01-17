@@ -15,11 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: UI Polish & Bug Fixes (#923)
 
-- [ ] #837 - Font family changes don't apply to all UI areas
-- [ ] #839 - Auto-detect button for game path settings is glitchy
-- [ ] #815 - Spells panel class selector overflow on narrow screens
-- [ ] #816 - Spells panel filter toolbar overflow
-- [ ] #801 - Settings window should be non-modal
+- [x] #801 - Settings window is now non-modal (users can interact with main window)
+- [x] #837 - Font family changes now refresh all panels (Feats, Skills, Spells)
+- [x] #839 - Path settings now validate in real-time as user types
+- [x] #815 - Replaced class radio buttons with ComboBox for narrow screen compatibility
+- [x] #816 - Compacted filter toolbar labels and reduced MinWidths for better wrapping
 
 ---
 
