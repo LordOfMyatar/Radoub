@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.43-alpha] - 2026-01-17
-**Branch**: `quartermaster/issue-932` | **PR**: #TBD
+**Branch**: `quartermaster/issue-932` | **PR**: #937
 
 ### Sprint: Spell System Polish II (#932)
 
