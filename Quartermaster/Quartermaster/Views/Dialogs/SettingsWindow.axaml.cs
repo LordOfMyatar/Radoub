@@ -114,6 +114,14 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void OnBaseGamePathTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        var textBox = sender as TextBox;
+        ValidateBaseGamePath(textBox?.Text);
+    }
+
     private void OnAutoDetectBaseGamePathClick(object? sender, RoutedEventArgs e)
     {
         var detectedPath = DetectBaseGamePath();
@@ -123,7 +131,7 @@ public partial class SettingsWindow : Window
             if (baseGamePathTextBox != null)
             {
                 baseGamePathTextBox.Text = detectedPath;
-                ValidateBaseGamePath(detectedPath);
+                // TextChanged handler will validate
             }
         }
         else
@@ -157,6 +165,14 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void OnGamePathTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isInitializing) return;
+
+        var textBox = sender as TextBox;
+        ValidateGamePath(textBox?.Text);
+    }
+
     private void OnAutoDetectGamePathClick(object? sender, RoutedEventArgs e)
     {
         var detectedPath = DetectUserDataPath();
@@ -166,7 +182,7 @@ public partial class SettingsWindow : Window
             if (gamePathTextBox != null)
             {
                 gamePathTextBox.Text = detectedPath;
-                ValidateGamePath(detectedPath);
+                // TextChanged handler will validate
             }
         }
         else

@@ -34,7 +34,8 @@
 
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox x:Name="BaseGamePathTextBox" Grid.Column="0"
-                                            Watermark="C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights"/>
+                                            Watermark="C:\Program Files (x86)\Steam\steamapps\common\Neverwinter Nights"
+                                            TextChanged="OnBaseGamePathTextChanged"/>
                                     <Button Grid.Column="1" Content="Browse..." Click="OnBrowseBaseGamePathClick"
                                            Margin="5,0,0,0" Padding="10,5"/>
                                     <Button Grid.Column="2" Content="Auto-Detect" Click="OnAutoDetectBaseGamePathClick"
@@ -54,7 +55,8 @@
 
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox x:Name="GamePathTextBox" Grid.Column="0"
-                                            Watermark="C:\Users\[user]\Documents\Neverwinter Nights"/>
+                                            Watermark="C:\Users\[user]\Documents\Neverwinter Nights"
+                                            TextChanged="OnGamePathTextChanged"/>
                                     <Button Grid.Column="1" Content="Browse..." Click="OnBrowseGamePathClick"
                                            Margin="5,0,0,0" Padding="10,5"/>
                                     <Button Grid.Column="2" Content="Auto-Detect" Click="OnAutoDetectGamePathClick"
