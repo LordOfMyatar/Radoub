@@ -34,7 +34,7 @@ Collect in ONE interaction:
 ### Step 0: Ensure Cache is Fresh
 
 ```bash
-# Auto-refresh if cache is stale (>4 hours) or missing
+# Auto-refresh if cache is stale (>1 hour) or missing
 pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
 ```
 
