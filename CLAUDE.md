@@ -36,8 +36,7 @@ Radoub/
 ├── .gitignore
 ├── .claude/commands/ (slash commands for Claude Code)
 ├── Documentation/ (Aurora Engine format specs - shared across tools)
-│   ├── BioWare_Original_PDFs/
-│   └── Bioware_Aurora_*.md
+│   └── BioWare_Original_PDFs/ (original BioWare PDFs)
 ├── About/ (project history and AI collaboration documentation)
 │   ├── CLAUDE_DEVELOPMENT_TIMELINE.md
 │   └── ON_USING_CLAUDE.md
@@ -103,10 +102,9 @@ When working on a specific tool (e.g., Parley):
 
 **Public Documentation** (`Documentation/`):
 - Shared across all tools
-- Contains BioWare format specifications
+- Contains original BioWare PDF format specifications
 - Read-only reference material
-- Updates only for format corrections or additions
-- Original and Markdown versions of Bioware File Format documentation
+- Markdown conversions of BioWare docs are now in the Wiki (see Resources section)
 
 **About Documentation** (`About/`):
 - Project history and development experience
@@ -479,8 +477,9 @@ See [#868](https://github.com/LordOfMyatar/Radoub/issues/868) for standardizatio
 
 **PRIMARY Reference**: [neverwinter.nim](https://github.com/niv/neverwinter.nim) (MIT License)
 
-**SECONDARY Reference**: BioWare Aurora Specifications (`Documentation/`)
-- Use for understanding structure and design intent
+**SECONDARY Reference**: BioWare Aurora Specifications (Wiki or `Documentation/BioWare_Original_PDFs/`)
+- Markdown conversions available in the Wiki: https://github.com/LordOfMyatar/Radoub/wiki
+- Original PDFs in `Documentation/BioWare_Original_PDFs/`
 - Specs are 20 years old and may not reflect modern edge cases
 - Good for "why" questions, not "how to handle X" questions
 
@@ -524,7 +523,10 @@ Select-String "CharacterPanel" .\.claude\cache\github-data.json
 ## Resources
 
 - **Wiki**: `d:\LOM\workspace\Radoub.wiki\` (local clone of https://github.com/LordOfMyatar/Radoub/wiki)
-- **BioWare Aurora Specs**: `Documentation/`
+  - BioWare Aurora format specs (Markdown conversions)
+  - Tool architecture documentation
+  - Developer guides
+- **BioWare Original PDFs**: `Documentation/BioWare_Original_PDFs/`
 - **neverwinter.nim Reference**: https://github.com/niv/neverwinter.nim
 - **Project History**: `About/CLAUDE_DEVELOPMENT_TIMELINE.md`
 - **AI Collaboration Story**: `About/ON_USING_CLAUDE.md`
