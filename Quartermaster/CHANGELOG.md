@@ -20,10 +20,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Visual preview of selected portrait
   - Browse button next to portrait dropdown in Character panel
 - [x] #803 - Soundset browser with filter and preview playback
-  - Search/filter soundsets by name
+  - Search/filter soundsets by name and gender (Male/Female/Other)
   - Preview panel with sound type selector (Hello, Goodbye, Attack, etc.)
+  - Unavailable sound types greyed out with 0.5 opacity
   - Play/Stop buttons for soundset preview
   - Browse button next to soundset dropdown in Character panel
+- [x] #928 - Portrait browser mini icons (32x40 thumbnails in WrapPanel grid)
+- [x] CharacterPanel soundset preview: unavailable types greyed out
 
 ---
 
