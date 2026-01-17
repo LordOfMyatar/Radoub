@@ -9,53 +9,32 @@
         <!-- Main layout: Spell Slot Table on left, Spell List on right -->
         <Grid ColumnDefinitions="Auto,*">
 
-            <!-- LEFT COLUMN: Spell Slot Table + Known Spells List -->
+            <!-- LEFT COLUMN: Summary Tables + Known Spells List -->
             <StackPanel Grid.Column="0" Margin="0,0,15,0">
-                <!-- Spell Slot Table -->
+                <!-- Known Spells Table (spontaneous casters only: Sorcerer, Bard) -->
+                <!-- Shows: current known / limit from cls_spkn_*.2da -->
                 <Border x:Name="SpellSlotTableBorder"
                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                         CornerRadius="4"
                         Padding="10"
                         MinWidth="180"
                         IsVisible="False"
-                        AutomationProperties.AutomationId="SpellSlotTableSection">
+                        AutomationProperties.AutomationId="KnownSpellsTableSection">
                     <StackPanel>
-                        <TextBlock Text="Spell Slots"
+                        <TextBlock x:Name="SpellSlotTableTitle"
+                                   Text="Known Spells"
                                    FontWeight="SemiBold"
                                    FontSize="{DynamicResource FontSizeNormal}"
                                    Margin="0,0,0,10"/>
                         <!-- Dynamic table grid will be added here -->
                         <Grid x:Name="SpellSlotTableGrid">
-                            <!-- Columns and rows populated dynamically based on caster classes -->
+                            <!-- Columns and rows populated dynamically based on spontaneous caster classes -->
                         </Grid>
                     </StackPanel>
                 </Border>
 
-                <!-- Known Spells List (grouped by level) -->
-                <Border x:Name="KnownSpellsListBorder"
-                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                        CornerRadius="4"
-                        Padding="10"
-                        Margin="0,10,0,0"
-                        MinWidth="180"
-                        MaxHeight="300"
-                        IsVisible="False"
-                        AutomationProperties.AutomationId="KnownSpellsListSection">
-                    <StackPanel>
-                        <TextBlock Text="Known Spells"
-                                   FontWeight="SemiBold"
-                                   FontSize="{DynamicResource FontSizeNormal}"
-                                   Margin="0,0,0,10"/>
-                        <!-- Scrollable list of known spells grouped by level -->
-                        <ScrollViewer MaxHeight="250" VerticalScrollBarVisibility="Auto">
-                            <StackPanel x:Name="KnownSpellsListPanel">
-                                <!-- Dynamically populated with spell names grouped by level -->
-                            </StackPanel>
-                        </ScrollViewer>
-                    </StackPanel>
-                </Border>
-
-                <!-- Memorized Spells Table -->
+                <!-- Memorized Spells Table (prepared casters: Wizard, Cleric, Druid, etc.) -->
+                <!-- Shows: current memorized / slots from cls_spgn_*.2da -->
                 <Border x:Name="MemorizedSpellsTableBorder"
                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                         CornerRadius="4"
@@ -75,6 +54,27 @@
                         </Grid>
                     </StackPanel>
                 </Border>
+
+                <!-- Known Spells List (all casters - detailed spell names) -->
+                <Border x:Name="KnownSpellsListBorder"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="0,10,0,0"
+                        MinWidth="180"
+                        IsVisible="False"
+                        AutomationProperties.AutomationId="KnownSpellsListSection">
+                    <StackPanel>
+                        <TextBlock Text="Spell List"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeNormal}"
+                                   Margin="0,0,0,10"/>
+                        <!-- Spell names grouped by level - no max height, can grow -->
+                        <StackPanel x:Name="KnownSpellsListPanel">
+                            <!-- Dynamically populated with spell names grouped by level -->
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <!-- RIGHT COLUMN: Original spell panel content -->
@@ -85,33 +85,25 @@
                            FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
-                <!-- Class Radio Buttons (Class 1-8) -->
+                <!-- Caster Class Selector - compact layout -->
                 <Border Grid.Row="1"
                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="4"
-                    Padding="10"
-                    Margin="0,0,0,10">
-                <StackPanel>
-                    <TextBlock Text="Caster Class"
-                               FontWeight="SemiBold"
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Margin="0,0,0,8"/>
-                    <!-- ComboBox for class selection - works well on any screen size -->
-                    <ComboBox x:Name="ClassComboBox"
-                              HorizontalAlignment="Stretch"
-                              MaxWidth="350"
-                              AutomationProperties.AutomationId="SpellsClassComboBox"/>
-
-                    <!-- Spell Slot Summary -->
-                    <TextBlock x:Name="SpellSlotSummaryText"
-                               Text=""
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               TextWrapping="Wrap"
-                               Margin="0,10,0,0"
-                               AutomationProperties.AutomationId="SpellSlotSummary"/>
-                </StackPanel>
-            </Border>
+                    Padding="8,6"
+                    Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="Caster Class"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   VerticalAlignment="Center"/>
+                        <ComboBox x:Name="ClassComboBox"
+                                  MinWidth="180"
+                                  MaxWidth="350"
+                                  AutomationProperties.AutomationId="SpellsClassComboBox"/>
+                    </StackPanel>
+                </Border>
+                <!-- Hidden summary text - kept for automation compatibility but not displayed -->
+                <TextBlock x:Name="SpellSlotSummaryText" IsVisible="False" AutomationProperties.AutomationId="SpellSlotSummary"/>
 
             <!-- Filter Toolbar - WrapPanel allows filters to flow to multiple lines on narrow screens -->
             <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,5">
@@ -220,10 +212,18 @@
                          Background="Transparent"
                          SelectionMode="Single"
                          AutomationProperties.AutomationId="SpellsListItems">
+                    <!-- Remove default ListBoxItem padding/margin for tight row spacing -->
+                    <ListBox.ItemContainerTheme>
+                        <ControlTheme TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="MinHeight" Value="0"/>
+                        </ControlTheme>
+                    </ListBox.ItemContainerTheme>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border Background="{Binding RowBackground}"
-                                    Padding="10,6,10,6"
+                                    Padding="10,4,10,4"
                                     ToolTip.Tip="{Binding Description}">
                                 <Grid ColumnDefinitions="32,35,70,*,60,100,80,80">
                                     <!-- Icon -->

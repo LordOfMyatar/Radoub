@@ -29,6 +29,7 @@ public partial class SpellsPanel : UserControl
     // UI Controls
     private Border? _spellSlotTableBorder;
     private Grid? _spellSlotTableGrid;
+    private TextBlock? _spellSlotTableTitle;
     private Border? _knownSpellsListBorder;
     private StackPanel? _knownSpellsListPanel;
     private Border? _memorizedSpellsTableBorder;
@@ -85,6 +86,7 @@ public partial class SpellsPanel : UserControl
         // Find UI controls
         _spellSlotTableBorder = this.FindControl<Border>("SpellSlotTableBorder");
         _spellSlotTableGrid = this.FindControl<Grid>("SpellSlotTableGrid");
+        _spellSlotTableTitle = this.FindControl<TextBlock>("SpellSlotTableTitle");
         _knownSpellsListBorder = this.FindControl<Border>("KnownSpellsListBorder");
         _knownSpellsListPanel = this.FindControl<StackPanel>("KnownSpellsListPanel");
         _memorizedSpellsTableBorder = this.FindControl<Border>("MemorizedSpellsTableBorder");

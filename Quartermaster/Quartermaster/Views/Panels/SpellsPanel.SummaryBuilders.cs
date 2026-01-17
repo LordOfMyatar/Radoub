@@ -24,8 +24,9 @@ public partial class SpellsPanel
     }
 
     /// <summary>
-    /// Updates the spell slot table on the left side.
-    /// Shows a grid with spell levels as rows and caster classes as columns.
+    /// Updates the Known Spells table on the left side.
+    /// Shows spontaneous casters (Sorcerer, Bard) with their known spells count vs. limit.
+    /// Prepared casters are shown in the Memorized Spells table instead.
     /// </summary>
     private void UpdateAllClassesSummary()
     {
@@ -46,32 +47,33 @@ public partial class SpellsPanel
         var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
         var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
 
-        var casterClasses = new List<(int classIndex, string className, int classLevel, int[] limits, Radoub.Formats.Utc.CreatureClass classEntry, bool isSpontaneous)>();
+        var spontaneousCasters = new List<(int classIndex, string className, int classLevel, int[] limits, Radoub.Formats.Utc.CreatureClass classEntry)>();
 
-        // Find all caster classes
+        // Find only SPONTANEOUS caster classes (Sorcerer, Bard)
+        // Prepared casters (Wizard, Cleric, etc.) go in the Memorized Spells table
         for (int i = 0; i < _currentCreature.ClassList.Count; i++)
         {
             var classEntry = _currentCreature.ClassList[i];
             var className = _displayService.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
             var isSpontaneous = _displayService.IsSpontaneousCaster(classEntry.Class);
 
-            // For spontaneous casters, use spells known limit; for prepared casters, use spell slots
-            var limits = isSpontaneous
-                ? _displayService.GetSpellsKnownLimit(classEntry.Class, classEntry.ClassLevel)
-                : _displayService.GetSpellSlots(classEntry.Class, classEntry.ClassLevel);
+            if (!isSpontaneous)
+                continue;  // Skip prepared casters - they go in Memorized table
 
-            // Check if this class has spell slots/limits or has spell data
+            // For spontaneous casters, use spells known limit from cls_spkn_*.2da
+            var limits = _displayService.GetSpellsKnownLimit(classEntry.Class, classEntry.ClassLevel);
+
+            // Check if this class has spell limits or has known spell data
             bool hasSpellLimits = limits != null && limits.Any(s => s > 0);
-            bool hasSpellData = classEntry.KnownSpells.Any(list => list.Count > 0) ||
-                                classEntry.MemorizedSpells.Any(list => list.Count > 0);
+            bool hasSpellData = classEntry.KnownSpells.Any(list => list.Count > 0);
 
             if (hasSpellLimits || hasSpellData)
             {
-                casterClasses.Add((i, className, classEntry.ClassLevel, limits ?? new int[10], classEntry, isSpontaneous));
+                spontaneousCasters.Add((i, className, classEntry.ClassLevel, limits ?? new int[10], classEntry));
             }
         }
 
-        if (casterClasses.Count == 0)
+        if (spontaneousCasters.Count == 0)
         {
             _spellSlotTableBorder.IsVisible = false;
             return;
@@ -79,11 +81,11 @@ public partial class SpellsPanel
 
         _spellSlotTableBorder.IsVisible = true;
 
-        // Find all spell levels that have limits across any class
+        // Find all spell levels that have limits across any spontaneous class
         var activeLevels = new List<int>();
         for (int level = 0; level <= 9; level++)
         {
-            if (casterClasses.Any(c => c.limits[level] > 0))
+            if (spontaneousCasters.Any(c => c.limits[level] > 0))
             {
                 activeLevels.Add(level);
             }
@@ -101,7 +103,7 @@ public partial class SpellsPanel
 
         // Add column definitions: Label column + one per class
         _spellSlotTableGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-        foreach (var _ in casterClasses)
+        foreach (var _ in spontaneousCasters)
         {
             _spellSlotTableGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
         }
@@ -127,9 +129,9 @@ public partial class SpellsPanel
         _spellSlotTableGrid.Children.Add(lvlHeader);
 
         // Add class name headers
-        for (int col = 0; col < casterClasses.Count; col++)
+        for (int col = 0; col < spontaneousCasters.Count; col++)
         {
-            var (classIndex, className, classLevel, _, _, _) = casterClasses[col];
+            var (classIndex, className, classLevel, _, _) = spontaneousCasters[col];
             var isSelected = classIndex == _selectedClassIndex;
 
             var classHeader = new TextBlock
@@ -169,10 +171,10 @@ public partial class SpellsPanel
             Grid.SetColumn(levelLabel, 0);
             _spellSlotTableGrid.Children.Add(levelLabel);
 
-            // Slot/known counts for each class
-            for (int col = 0; col < casterClasses.Count; col++)
+            // Known spell counts for each spontaneous class
+            for (int col = 0; col < spontaneousCasters.Count; col++)
             {
-                var (classIndex, className, _, limits, classEntry, isSpontaneous) = casterClasses[col];
+                var (classIndex, className, _, limits, classEntry) = spontaneousCasters[col];
                 int totalLimit = limits[spellLevel];
 
                 // Only count spells that are actual class spells (not feat-based abilities like Barbarian Rage)
