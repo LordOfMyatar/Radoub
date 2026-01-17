@@ -4,14 +4,22 @@ Create and push a version tag to trigger the GitHub Actions release workflow.
 
 ## Upfront Questions
 
-**IMPORTANT**: Gather ALL required user input at the start, then execute autonomously.
+**IMPORTANT**: Gather user input in phases, not all at once.
 
-Before creating any release, collect these answers in ONE interaction:
-
+### Phase 1: Release Type
 1. **Release Type** (if not specified in args): "Which release? [parley/manifest/radoub]"
-2. **Version Confirmation**: "Ready to release [type] v[version] from commit [hash]? [y/n]"
 
-After collecting answers, proceed through all steps without further prompts unless errors occur.
+### Phase 2: Changelog Highlights Selection
+After determining release type and reading changelog:
+1. Parse the changelog section for the version being released
+2. Present a **numbered list** of all changelog items (bullet points and headers)
+3. Ask user: "Which items are highlights? (Enter numbers, e.g., 1,3,5 or 'all' or 'none')"
+4. Selected items become **Highlights** in release notes
+5. Remaining items are auto-categorized and summarized with link to full changelog
+
+### Phase 3: Final Confirmation
+1. Show release summary with selected highlights
+2. **Version Confirmation**: "Ready to release [type] v[version] from commit [hash]? [y/n]"
 
 ## Usage
 
@@ -54,19 +62,70 @@ Before releasing:
    - Working directory must be clean
    - Confirm latest commit is what we want to release
 
-3. **Check Current Version**
+3. **Check Current Version & Parse Changelog**
    - **Parley**: Read `Parley/CHANGELOG.md`
    - **Manifest**: Read `Manifest/CHANGELOG.md`
-   - **Radoub**: Read `CHANGELOG.md` (repo-level)
+   - **Radoub**: Read `CHANGELOG.md` (repo-level) + tool changelogs
    - Look for the most recent version section (e.g., `[0.1.5-alpha]`)
    - Confirm the version hasn't been released yet
+   - Extract all items from that version's section
 
-4. **Confirm with User**
-   - Show the release type and version
+4. **Present Changelog Items for Selection**
+
+   Display items as a numbered list:
+   ```
+   ## Changelog Items for v0.1.120-alpha
+
+   1. [###] Refactor: Tech debt - Large files needing refactoring (#719)
+   2. [-] Extracted WindowLayoutService for window position, panel layout
+   3. [-] SettingsService now delegates window-related properties
+   4. [-] Removed plugin migration code (PluginSettings.json)
+   5. [-] Follows same service extraction pattern as RecentFilesService
+
+   Which items are highlights? (Enter numbers like 1,2,5 or 'all' or 'none')
+   ```
+
+   - `[###]` prefix = section header
+   - `[-]` prefix = bullet point
+
+5. **Generate Release Notes**
+
+   Based on selection, create structured release notes:
+
+   **If user selects items 1,2:**
+   ```markdown
+   ## What's New
+
+   - **Refactor: Tech debt** - Large files needing refactoring (#719)
+   - Extracted WindowLayoutService for window position, panel layout
+
+   ## Other Changes
+
+   Bug fixes, refactoring, and maintenance. See [CHANGELOG.md](link) for details.
+   ```
+
+   **If user selects 'none':**
+   ```markdown
+   ## What's New
+
+   Bug fixes and maintenance release. See [CHANGELOG.md](link) for details.
+   ```
+
+6. **Write Release Notes File**
+
+   Write the generated notes to `release-notes.md` in repo root.
+   This file is read by the workflow during release.
+
+   ```bash
+   # The workflow reads this file for the release body
+   ```
+
+7. **Confirm with User**
+   - Show the release type, version, and generated highlights
    - Show recent commits that will be included
    - Ask user to confirm: "Ready to release [type] [tag]?"
 
-5. **Create and Push Tag**
+8. **Create and Push Tag**
 
    **For Parley:**
    ```bash
