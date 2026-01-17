@@ -69,7 +69,8 @@ public partial class SpellsPanel : UserControl
     private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(SettingsService.CurrentThemeId) ||
-            e.PropertyName == nameof(SettingsService.FontFamily))
+            e.PropertyName == nameof(SettingsService.FontFamily) ||
+            e.PropertyName == nameof(SettingsService.FontSize))
         {
             // Theme or font changed - reload creature to refresh view
             if (_currentCreature != null)
@@ -241,6 +242,8 @@ public partial class SpellsPanel : UserControl
         }
 
         // Apply status filter
+        // Note: "All" (index 0) excludes blocked spells by default for cleaner view
+        // Use "Blocked" filter to explicitly see blocked spells
         int statusIndex = _statusFilterComboBox?.SelectedIndex ?? 0;
         filtered = statusIndex switch
         {
@@ -248,7 +251,7 @@ public partial class SpellsPanel : UserControl
             2 => filtered.Where(s => s.IsMemorized),      // Memorized Only
             3 => filtered.Where(s => !s.IsBlocked),       // Available
             4 => filtered.Where(s => s.IsBlocked),        // Blocked
-            _ => filtered                                  // All Spells
+            _ => filtered.Where(s => !s.IsBlocked)        // All (excludes blocked)
         };
 
         // Update display

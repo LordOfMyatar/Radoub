@@ -9,11 +9,15 @@
         <!-- Main layout: Spell Slot Table on left, Spell List on right -->
         <Grid ColumnDefinitions="Auto,*">
 
-            <!-- LEFT COLUMN: Summary Tables + Known Spells List -->
-            <StackPanel Grid.Column="0" Margin="0,0,15,0">
-                <!-- Known Spells Table (spontaneous casters only: Sorcerer, Bard) -->
-                <!-- Shows: current known / limit from cls_spkn_*.2da -->
-                <Border x:Name="SpellSlotTableBorder"
+            <!-- LEFT COLUMN: Summary Tables + Known Spells List (scrollable) -->
+            <ScrollViewer Grid.Column="0"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="0,0,15,0">
+                <StackPanel>
+                    <!-- Known Spells Table (spontaneous casters only: Sorcerer, Bard) -->
+                    <!-- Shows: current known / limit from cls_spkn_*.2da -->
+                    <Border x:Name="SpellSlotTableBorder"
                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                         CornerRadius="4"
                         Padding="10"
@@ -24,7 +28,7 @@
                         <TextBlock x:Name="SpellSlotTableTitle"
                                    Text="Known Spells"
                                    FontWeight="SemiBold"
-                                   FontSize="{DynamicResource FontSizeNormal}"
+                                   FontSize="{DynamicResource FontSizeMedium}"
                                    Margin="0,0,0,10"/>
                         <!-- Dynamic table grid will be added here -->
                         <Grid x:Name="SpellSlotTableGrid">
@@ -46,7 +50,7 @@
                     <StackPanel>
                         <TextBlock Text="Memorized Spells"
                                    FontWeight="SemiBold"
-                                   FontSize="{DynamicResource FontSizeNormal}"
+                                   FontSize="{DynamicResource FontSizeMedium}"
                                    Margin="0,0,0,10"/>
                         <!-- Dynamic table grid showing memorized spell counts by level -->
                         <Grid x:Name="MemorizedSpellsTableGrid">
@@ -67,7 +71,7 @@
                     <StackPanel>
                         <TextBlock Text="Spell List"
                                    FontWeight="SemiBold"
-                                   FontSize="{DynamicResource FontSizeNormal}"
+                                   FontSize="{DynamicResource FontSizeMedium}"
                                    Margin="0,0,0,10"/>
                         <!-- Spell names grouped by level - no max height, can grow -->
                         <StackPanel x:Name="KnownSpellsListPanel">
@@ -76,6 +80,7 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+            </ScrollViewer>
 
             <!-- RIGHT COLUMN: Original spell panel content -->
             <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,*,Auto">
@@ -254,7 +259,7 @@
                                         <Button Content="-"
                                                 Width="22" Height="22"
                                                 Padding="0"
-                                                FontSize="14"
+                                                FontSize="{DynamicResource FontSizeNormal}"
                                                 FontWeight="Bold"
                                                 Click="OnDecrementMemorizedClick"
                                                 IsEnabled="{Binding CanDecrementMemorized}"
@@ -270,7 +275,7 @@
                                         <Button Content="+"
                                                 Width="22" Height="22"
                                                 Padding="0"
-                                                FontSize="14"
+                                                FontSize="{DynamicResource FontSizeNormal}"
                                                 FontWeight="Bold"
                                                 Click="OnIncrementMemorizedClick"
                                                 IsEnabled="{Binding CanIncrementMemorized}"

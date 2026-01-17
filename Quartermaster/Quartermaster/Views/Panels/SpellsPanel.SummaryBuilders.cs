@@ -45,7 +45,6 @@ public partial class SpellsPanel
 
         // Get theme-aware font sizes
         var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
-        var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
 
         var spontaneousCasters = new List<(int classIndex, string className, int classLevel, int[] limits, Radoub.Formats.Utc.CreatureClass classEntry)>();
 
@@ -120,7 +119,7 @@ public partial class SpellsPanel
         {
             Text = "Lvl",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
-            FontSize = smallFontSize,
+            FontSize = normalFontSize,
             Margin = new Avalonia.Thickness(0, 0, 10, 4),
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
         };
@@ -138,7 +137,7 @@ public partial class SpellsPanel
             {
                 Text = className,
                 FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                FontSize = smallFontSize,
+                FontSize = normalFontSize,
                 Margin = new Avalonia.Thickness(4, 0, 4, 4),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Foreground = isSelected
@@ -161,7 +160,7 @@ public partial class SpellsPanel
             var levelLabel = new TextBlock
             {
                 Text = spellLevel.ToString(),
-                FontSize = smallFontSize,
+                FontSize = normalFontSize,
                 FontWeight = Avalonia.Media.FontWeight.SemiBold,
                 Margin = new Avalonia.Thickness(0, 2, 10, 2),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
@@ -224,7 +223,7 @@ public partial class SpellsPanel
                 var slotCell = new TextBlock
                 {
                     Text = cellText,
-                    FontSize = smallFontSize,
+                    FontSize = normalFontSize,
                     Margin = new Avalonia.Thickness(4, 2, 4, 2),
                     HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
@@ -256,8 +255,6 @@ public partial class SpellsPanel
 
         // Get theme-aware font sizes
         var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
-        var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
-        var xsmallFontSize = this.FindResource("FontSizeXSmall") as double? ?? 10;
 
         // First pass: collect all known spells and count occurrences across classes
         var spellOccurrences = new Dictionary<int, List<string>>(); // spellId -> list of class names
@@ -318,7 +315,7 @@ public partial class SpellsPanel
             {
                 Text = className,
                 FontWeight = Avalonia.Media.FontWeight.Bold,
-                FontSize = smallFontSize,
+                FontSize = normalFontSize,
                 Foreground = isSelectedClass
                     ? GetInfoBrush()
                     : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
@@ -332,13 +329,13 @@ public partial class SpellsPanel
                 var knownAtLevel = classEntry.KnownSpells[level];
                 if (knownAtLevel.Count == 0) continue;
 
-                // Level header
+                // Level header - use info brush for better contrast on dark themes
                 var levelHeader = new TextBlock
                 {
                     Text = level == 0 ? "  Cantrips" : $"  Level {level}",
                     FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                    FontSize = xsmallFontSize,
-                    Foreground = GetDisabledBrush(),
+                    FontSize = normalFontSize,
+                    Foreground = GetInfoBrush(),
                     Margin = new Avalonia.Thickness(0, 4, 0, 2)
                 };
                 _knownSpellsListPanel.Children.Add(levelHeader);
@@ -396,7 +393,7 @@ public partial class SpellsPanel
                     var spellLabel = new TextBlock
                     {
                         Text = $"    {displayName}",
-                        FontSize = smallFontSize,
+                        FontSize = normalFontSize,
                         Foreground = foreground,
                         Margin = new Avalonia.Thickness(0, 1, 0, 1)
                     };
@@ -492,7 +489,7 @@ public partial class SpellsPanel
         }
 
         // Get theme-aware font sizes
-        var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
+        var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
 
         // Collect memorized spells by class and level
         var classMemorized = new List<(int classIndex, string className, int[] memorizedCounts, bool isSpontaneous)>();
@@ -563,7 +560,7 @@ public partial class SpellsPanel
         {
             Text = "Lvl",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
-            FontSize = smallFontSize,
+            FontSize = normalFontSize,
             Margin = new Avalonia.Thickness(0, 0, 10, 4),
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
         };
@@ -581,7 +578,7 @@ public partial class SpellsPanel
             {
                 Text = className,
                 FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                FontSize = smallFontSize,
+                FontSize = normalFontSize,
                 Margin = new Avalonia.Thickness(4, 0, 4, 4),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Foreground = isSelected
@@ -604,7 +601,7 @@ public partial class SpellsPanel
             var levelLabel = new TextBlock
             {
                 Text = spellLevel.ToString(),
-                FontSize = smallFontSize,
+                FontSize = normalFontSize,
                 FontWeight = Avalonia.Media.FontWeight.SemiBold,
                 Margin = new Avalonia.Thickness(0, 2, 10, 2),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
@@ -635,7 +632,7 @@ public partial class SpellsPanel
                 var countCell = new TextBlock
                 {
                     Text = count.ToString(),
-                    FontSize = smallFontSize,
+                    FontSize = normalFontSize,
                     FontWeight = count > 0 ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal,
                     Margin = new Avalonia.Thickness(4, 2, 4, 2),
                     HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
