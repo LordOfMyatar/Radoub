@@ -490,6 +490,37 @@ See [#868](https://github.com/LordOfMyatar/Radoub/issues/868) for standardizatio
 
 ---
 
+## GitHub Issue Cache
+
+A local cache of GitHub issues/PRs is available for quick lookups without API calls.
+
+**Location**: `.claude/cache/github-data.json`
+
+**Refresh Cache**:
+```powershell
+.\.claude\scripts\Refresh-GitHubCache.ps1        # Only if stale (>1 hour)
+.\.claude\scripts\Refresh-GitHubCache.ps1 -Force # Force refresh
+```
+
+**Use Cases**:
+- Check if tech debt issue exists for a file before creating duplicate
+- Find related issues when investigating a bug
+- Review open PRs before starting new work
+- Check issue labels and status
+
+**Cache Contents**:
+- Open issues with labels, assignees, milestones
+- Open PRs with status and review state
+- Summary stats (stale issues, missing labels)
+- Refreshes automatically when >1 hour old
+
+**Example**: Before creating a tech debt issue for `CharacterPanel.axaml.cs`, search the cache:
+```powershell
+Select-String "CharacterPanel" .\.claude\cache\github-data.json
+```
+
+---
+
 ## Resources
 
 - **Wiki**: `d:\LOM\workspace\Radoub.wiki\` (local clone of https://github.com/LordOfMyatar/Radoub/wiki)
@@ -498,6 +529,7 @@ See [#868](https://github.com/LordOfMyatar/Radoub/issues/868) for standardizatio
 - **Project History**: `About/CLAUDE_DEVELOPMENT_TIMELINE.md`
 - **AI Collaboration Story**: `About/ON_USING_CLAUDE.md`
 - **Tool-Specific Guidance**: `ToolName/CLAUDE.md`
+- **GitHub Issue Cache**: `.claude/cache/github-data.json`
 
 ---
 
