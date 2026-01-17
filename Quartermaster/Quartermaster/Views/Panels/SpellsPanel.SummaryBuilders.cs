@@ -214,13 +214,9 @@ public partial class SpellsPanel
                 }
                 else
                 {
-                    // Empty - normal color
+                    // Empty - use info brush for visibility on dark themes
                     cellText = $"0/{totalLimit}";
-                    // Use high-contrast foreground for visibility on dark themes
-                    cellColor = isSelected
-                        ? GetInfoBrush()
-                        : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
-                          ?? GetDisabledBrush();
+                    cellColor = GetInfoBrush();
                 }
 
                 var slotCell = new TextBlock
@@ -630,11 +626,8 @@ public partial class SpellsPanel
                 }
                 else
                 {
-                    // Use high-contrast foreground for visibility on dark themes
-                    cellColor = isSelected
-                        ? GetInfoBrush()
-                        : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
-                          ?? GetDisabledBrush();
+                    // Use info brush for visibility on dark themes
+                    cellColor = GetInfoBrush();
                 }
 
                 var countCell = new TextBlock
