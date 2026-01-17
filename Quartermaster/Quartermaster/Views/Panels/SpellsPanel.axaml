@@ -169,7 +169,7 @@
                 </StackPanel>
 
                 <!-- Status Filter -->
-                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,5">
+                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,10,5">
                     <TextBlock Text="Status:" VerticalAlignment="Center"/>
                     <ComboBox x:Name="StatusFilterComboBox"
                               SelectedIndex="0"
@@ -182,6 +182,14 @@
                         <ComboBoxItem Content="Blocked"/>
                     </ComboBox>
                 </StackPanel>
+
+                <!-- Class Restrictions Toggle -->
+                <CheckBox x:Name="IgnoreRestrictionsCheckBox"
+                          Content="Ignore class restrictions"
+                          VerticalAlignment="Center"
+                          Margin="0,0,0,5"
+                          ToolTip.Tip="When checked, all spells are available regardless of class spell lists. Useful for custom creatures."
+                          AutomationProperties.AutomationId="SpellsIgnoreRestrictionsCheckbox"/>
             </WrapPanel>
 
             <!-- Spells List -->

@@ -226,8 +226,17 @@ public partial class SpellsPanel
         bool isAvailableToClass = spellLevel >= 0;
 
         var isKnown = _knownSpellIds.Contains(spellId);
-        var isBlocked = !isAvailableToClass;
+
+        // When ignoring class restrictions, no spell is blocked
+        // Use innate level instead of class-specific level
+        var isBlocked = _ignoreClassRestrictions ? false : !isAvailableToClass;
         var blockedReason = isBlocked ? "Not available to this class" : "";
+
+        // If ignoring restrictions and no class level, use innate level for display
+        if (_ignoreClassRestrictions && spellLevel < 0)
+        {
+            spellLevel = spellInfo.InnateLevel;
+        }
 
         // Determine status display
         string statusText;
