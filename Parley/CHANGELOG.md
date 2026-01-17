@@ -38,9 +38,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Extended `TwoDAService` to support soundset.2da lookups with caching
 - Shows informative messages when creature not found or soundset unavailable
 
----
+#### Enhancement: Display NPC portrait for selected speaker (#915)
 
-- #915 - Display NPC portrait for selected speaker
+- Shows portrait ResRef below speaker field for NPC dialog nodes
+- Extracts `PortraitId` from UTC and resolves via `portraits.2da`
+- Extended `TwoDAService` to support portraits.2da lookups with caching
+- Combined with soundset display: "Portrait: po_elara | Soundset: vs_female_f (Female)"
+- Graceful fallback when portrait or creature unavailable
 
 ---
 

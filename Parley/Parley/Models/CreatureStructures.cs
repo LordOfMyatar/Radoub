@@ -17,6 +17,12 @@ namespace DialogEditor.Models
         public ushort PortraitId { get; set; } = 0;
 
         /// <summary>
+        /// Resolved portrait resref from portraits.2da.
+        /// Populated by CreatureService after parsing (#915).
+        /// </summary>
+        public string? PortraitResRef { get; set; }
+
+        /// <summary>
         /// Index into soundset.2da for creature's voice/soundset.
         /// Used to preview NPC soundset compatibility (#786).
         /// </summary>

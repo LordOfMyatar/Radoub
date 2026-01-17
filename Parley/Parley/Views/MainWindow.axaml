@@ -347,12 +347,12 @@
                         </StackPanel>
                     </WrapPanel>
 
-                    <!-- NPC Soundset Preview (Issue #786) - shows soundset info for creature tag -->
+                    <!-- NPC Creature Info (Issue #786 soundset, #915 portrait) -->
                     <TextBlock x:Name="SoundsetInfoTextBlock" DockPanel.Dock="Top"
                                Margin="0,0,0,8"
                                FontSize="11"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               ToolTip.Tip="Creature's soundset from soundset.2da"/>
+                               ToolTip.Tip="Portrait and soundset info from creature lookup"/>
 
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <!-- Tab order: Ctrl+D lands here (1), then scripts, then back to speaker row -->

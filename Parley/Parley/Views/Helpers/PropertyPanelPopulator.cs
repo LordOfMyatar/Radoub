@@ -130,8 +130,8 @@ namespace Parley.Views.Helpers
         }
 
         /// <summary>
-        /// Populates soundset info from creature tag lookup (#786).
-        /// Shows soundset name and gender for NPC speakers with creatures.
+        /// Populates creature info from tag lookup (#786 soundset, #915 portrait).
+        /// Shows portrait and soundset info for NPC speakers with creatures.
         /// </summary>
         private void PopulateSoundsetInfo(DialogNode dialogNode, bool isPC, CreatureService? creatureService)
         {
@@ -160,18 +160,37 @@ namespace Parley.Views.Helpers
                 return;
             }
 
-            // Show soundset info if available
+            // Build info string with portrait and soundset (#786, #915)
+            var infoParts = new List<string>();
+
+            // Portrait info (#915)
+            if (!string.IsNullOrEmpty(creature.PortraitResRef))
+            {
+                infoParts.Add($"Portrait: {creature.PortraitResRef}");
+            }
+            else if (creature.PortraitId > 0)
+            {
+                infoParts.Add($"Portrait ID: {creature.PortraitId}");
+            }
+
+            // Soundset info (#786)
             if (!string.IsNullOrEmpty(creature.SoundSetSummary))
             {
-                soundsetInfoTextBlock.Text = $"Soundset: {creature.SoundSetSummary}";
+                infoParts.Add($"Soundset: {creature.SoundSetSummary}");
             }
-            else if (creature.SoundSetFile == ushort.MaxValue)
+            else if (creature.SoundSetFile != ushort.MaxValue)
             {
-                soundsetInfoTextBlock.Text = "No soundset assigned";
+                infoParts.Add($"Soundset ID: {creature.SoundSetFile}");
+            }
+
+            // Display combined info
+            if (infoParts.Count > 0)
+            {
+                soundsetInfoTextBlock.Text = string.Join(" | ", infoParts);
             }
             else
             {
-                soundsetInfoTextBlock.Text = $"Soundset ID: {creature.SoundSetFile} (not in soundset.2da)";
+                soundsetInfoTextBlock.Text = $"Creature: {creature.DisplayName}";
             }
         }
 

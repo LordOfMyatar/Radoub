@@ -15,6 +15,7 @@ namespace DialogEditor.Services
         private readonly TwoDAParser _parser = new();
         private Dictionary<int, string>? _classNames;
         private Dictionary<int, SoundsetInfo>? _soundsets;
+        private Dictionary<int, string>? _portraits;
         private string? _gameDataDirectory;
 
         /// <summary>
@@ -104,6 +105,7 @@ namespace DialogEditor.Services
         {
             _classNames = null;
             _soundsets = null;
+            _portraits = null;
             UnifiedLogger.LogParser(LogLevel.DEBUG, "2DA cache cleared");
         }
 
@@ -111,6 +113,73 @@ namespace DialogEditor.Services
         /// Get count of loaded class names.
         /// </summary>
         public int ClassNameCount => _classNames?.Count ?? 0;
+
+        #region Portrait Support (#915)
+
+        /// <summary>
+        /// Get portrait base ResRef from portraits.2da by portrait ID.
+        /// Returns null if not found or file not loaded.
+        /// </summary>
+        public string? GetPortraitResRef(int portraitId)
+        {
+            if (portraitId <= 0)
+                return null;
+
+            LoadPortraitsIfNeeded();
+
+            if (_portraits != null && _portraits.TryGetValue(portraitId, out var resRef))
+            {
+                return resRef;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Check if portraits.2da is loaded.
+        /// </summary>
+        public bool HasPortraitData => _portraits != null && _portraits.Count > 0;
+
+        /// <summary>
+        /// Load portraits.2da from game data directory (if not already loaded).
+        /// </summary>
+        private void LoadPortraitsIfNeeded()
+        {
+            if (_portraits != null)
+                return; // Already loaded
+
+            if (string.IsNullOrEmpty(_gameDataDirectory))
+            {
+                UnifiedLogger.LogParser(LogLevel.DEBUG, "Game data directory not set, cannot load portraits.2da");
+                return;
+            }
+
+            var portraitsPath = Path.Combine(_gameDataDirectory, "portraits.2da");
+
+            if (!File.Exists(portraitsPath))
+            {
+                UnifiedLogger.LogParser(LogLevel.WARN, $"portraits.2da not found: {portraitsPath}");
+                _portraits = new Dictionary<int, string>(); // Empty cache to avoid repeated attempts
+                return;
+            }
+
+            try
+            {
+                UnifiedLogger.LogParser(LogLevel.INFO, $"Loading portraits.2da from: {portraitsPath}");
+
+                // Parse as lookup: portraitId → "BaseResRef" column
+                _portraits = _parser.ParseAsLookup(portraitsPath, "BaseResRef");
+
+                UnifiedLogger.LogParser(LogLevel.INFO, $"Loaded {_portraits.Count} portraits from portraits.2da");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogParser(LogLevel.ERROR, $"Error loading portraits.2da: {ex.Message}");
+                _portraits = new Dictionary<int, string>(); // Empty cache to avoid repeated attempts
+            }
+        }
+
+        #endregion
 
         #region Soundset Support (#786)
 
