@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.121-alpha] - 2026-01-16
-**Branch**: `parley/issue-916` | **PR**: #TBD
+**Branch**: `parley/issue-916` | **PR**: #918
 
 ### Sprint: Animation & Audio Features (#916)
 
