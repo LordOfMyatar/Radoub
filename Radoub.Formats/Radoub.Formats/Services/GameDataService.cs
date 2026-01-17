@@ -2,6 +2,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Resolver;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Ssf;
 using Radoub.Formats.Tlk;
 using Radoub.Formats.TwoDA;
 
@@ -301,6 +302,59 @@ public class GameDataService : IGameDataService
 
     #endregion
 
+    #region Soundset Access
+
+    private readonly Dictionary<string, SsfFile?> _ssfCache = new(StringComparer.OrdinalIgnoreCase);
+
+    public SsfFile? GetSoundset(int soundsetId)
+    {
+        var resRef = GetSoundsetResRef(soundsetId);
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        return GetSoundsetByResRef(resRef);
+    }
+
+    public SsfFile? GetSoundsetByResRef(string resRef)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        lock (_lock)
+        {
+            if (_ssfCache.TryGetValue(resRef, out var cached))
+                return cached;
+
+            // Load SSF from game resources (ResourceTypes.Ssf = 2060)
+            var data = FindResource(resRef, ResourceTypes.Ssf);
+            SsfFile? ssf = null;
+
+            if (data != null)
+            {
+                ssf = SsfReader.Read(data);
+                if (ssf != null)
+                {
+                    UnifiedLogger.LogParser(LogLevel.DEBUG, $"Loaded soundset: {resRef}");
+                }
+            }
+
+            _ssfCache[resRef] = ssf;
+            return ssf;
+        }
+    }
+
+    public string? GetSoundsetResRef(int soundsetId)
+    {
+        if (soundsetId < 0)
+            return null;
+
+        return Get2DAValue("soundset", soundsetId, "RESREF");
+    }
+
+    #endregion
+
     #region IDisposable
 
     public void Dispose()
@@ -313,6 +367,7 @@ public class GameDataService : IGameDataService
         _baseTlk = null;
         _customTlk = null;
         _twoDACache.Clear();
+        _ssfCache.Clear();
         _disposed = true;
 
         GC.SuppressFinalize(this);

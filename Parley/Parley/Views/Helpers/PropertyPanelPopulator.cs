@@ -11,6 +11,7 @@ using DialogEditor.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using DialogEditor.Utils;
+using DialogEditor.Views;
 using Parley.Models;
 
 namespace Parley.Views.Helpers
@@ -244,6 +245,54 @@ namespace Parley.Views.Helpers
                     soundsetInfoTextBlock.Text = $"Tag: {creature.Tag}";
                 }
             }
+
+            // Setup soundset preview controls (#916)
+            var soundsetPreviewPanel = _window.FindControl<StackPanel>("SoundsetPreviewPanel");
+            var soundsetTypeCombo = _window.FindControl<ComboBox>("SoundsetTypeComboBox");
+
+            if (soundsetPreviewPanel != null && soundsetTypeCombo != null)
+            {
+                bool hasSoundset = creature.SoundSetFile != ushort.MaxValue;
+                soundsetPreviewPanel.IsVisible = hasSoundset;
+
+                if (hasSoundset)
+                {
+                    // Store soundset ID for play handler
+                    SetCurrentSoundsetId?.Invoke(creature.SoundSetFile);
+
+                    // Populate combo if empty
+                    if (soundsetTypeCombo.ItemCount == 0)
+                    {
+                        soundsetTypeCombo.ItemsSource = GetSoundsetTypeItems();
+                        soundsetTypeCombo.SelectedIndex = 0; // Hello
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Callback to set the current soundset ID in MainWindow for play button (#916).
+        /// </summary>
+        public Action<ushort>? SetCurrentSoundsetId { get; set; }
+
+        /// <summary>
+        /// Gets the common sound type items for the dropdown (#916).
+        /// </summary>
+        private static List<SoundsetTypeItem> GetSoundsetTypeItems()
+        {
+            return new List<SoundsetTypeItem>
+            {
+                new() { Name = "Hello", SoundType = Radoub.Formats.Ssf.SsfSoundType.Hello },
+                new() { Name = "Goodbye", SoundType = Radoub.Formats.Ssf.SsfSoundType.Goodbye },
+                new() { Name = "Yes", SoundType = Radoub.Formats.Ssf.SsfSoundType.Yes },
+                new() { Name = "No", SoundType = Radoub.Formats.Ssf.SsfSoundType.No },
+                new() { Name = "Attack", SoundType = Radoub.Formats.Ssf.SsfSoundType.Attack },
+                new() { Name = "Battlecry", SoundType = Radoub.Formats.Ssf.SsfSoundType.Battlecry1 },
+                new() { Name = "Taunt", SoundType = Radoub.Formats.Ssf.SsfSoundType.Taunt },
+                new() { Name = "Death", SoundType = Radoub.Formats.Ssf.SsfSoundType.Death },
+                new() { Name = "Laugh", SoundType = Radoub.Formats.Ssf.SsfSoundType.Laugh },
+                new() { Name = "Selected", SoundType = Radoub.Formats.Ssf.SsfSoundType.Selected },
+            };
         }
 
         /// <summary>

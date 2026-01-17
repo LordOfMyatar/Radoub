@@ -72,6 +72,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Portrait loading now uses `ImageService.GetPortrait()` which reads from BIF archives
 - Previously, `PortraitService` only searched loose .tga files which don't exist in NWN:EE
 
+#### Enhancement: Soundset preview play button
+
+- Added SSF file parser (`SsfReader`, `SsfFile`, `SsfEntry`) to Radoub.Formats
+- Added soundset playback support to `IGameDataService` (`GetSoundset`, `GetSoundsetByResRef`)
+- Preview panel appears below soundset info when NPC has a valid soundset
+- Dropdown allows selecting sound type (Hello, Goodbye, Attack, Death, etc.)
+- Play button loads sound from SSF and plays via `SoundPlaybackService`
+
 ---
 
 ## [0.1.120-alpha] - 2026-01-16

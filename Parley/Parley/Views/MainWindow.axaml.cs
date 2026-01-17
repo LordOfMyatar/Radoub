@@ -25,9 +25,20 @@ using DialogEditor.Parsers;
 using Parley.Services;
 using Parley.Views.Helpers;
 using DialogEditor.Views;
+using Radoub.Formats.Ssf;
 
 namespace DialogEditor.Views
 {
+    /// <summary>
+    /// Item for the soundset type dropdown (#916).
+    /// </summary>
+    public class SoundsetTypeItem
+    {
+        public string Name { get; set; } = "";
+        public SsfSoundType SoundType { get; set; }
+        public override string ToString() => Name;
+    }
+
     public partial class MainWindow : Window, IKeyboardShortcutHandler
     {
         private readonly MainViewModel _viewModel;
@@ -74,6 +85,7 @@ namespace DialogEditor.Views
             // Property services
             _services.PropertyPopulator = new PropertyPanelPopulator(this);
             _services.PropertyPopulator.SetImageService(_services.ImageService);
+            _services.PropertyPopulator.SetCurrentSoundsetId = id => _currentSoundsetId = id;
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
                 refreshTreeDisplay: RefreshTreeDisplayPreserveState,
@@ -1427,12 +1439,72 @@ namespace DialogEditor.Views
                 var playButton = this.FindControl<Button>("PlaySoundButton");
                 if (playButton != null) playButton.IsEnabled = true;
 
+                var soundsetPlayButton = this.FindControl<Button>("SoundsetPlayButton");
+                if (soundsetPlayButton != null) soundsetPlayButton.IsEnabled = true;
+
                 // Clear "Playing" message if it's still showing
                 if (_viewModel.StatusMessage?.StartsWith("Playing:") == true)
                 {
                     _viewModel.StatusMessage = "";
                 }
             });
+        }
+
+        // Current soundset ID for play button (#916)
+        private ushort _currentSoundsetId = ushort.MaxValue;
+
+        /// <summary>
+        /// Plays a sound from the NPC's soundset (#916).
+        /// </summary>
+        private async void OnSoundsetPlayClick(object? sender, RoutedEventArgs e)
+        {
+            var typeCombo = this.FindControl<ComboBox>("SoundsetTypeComboBox");
+            var playButton = this.FindControl<Button>("SoundsetPlayButton");
+
+            if (typeCombo?.SelectedItem is not SoundsetTypeItem selectedType)
+            {
+                _viewModel.StatusMessage = "Select a sound type to play";
+                return;
+            }
+
+            if (_currentSoundsetId == ushort.MaxValue)
+            {
+                _viewModel.StatusMessage = "No soundset available";
+                return;
+            }
+
+            // Get the soundset
+            var ssf = _services.GameData.GetSoundset(_currentSoundsetId);
+            if (ssf == null)
+            {
+                _viewModel.StatusMessage = $"Cannot load soundset ID {_currentSoundsetId}";
+                return;
+            }
+
+            // Get the sound entry
+            var entry = ssf.GetEntry(selectedType.SoundType);
+            if (entry == null || !entry.HasSound)
+            {
+                _viewModel.StatusMessage = $"No sound for '{selectedType.Name}'";
+                return;
+            }
+
+            // Disable play button during playback
+            if (playButton != null) playButton.IsEnabled = false;
+
+            _viewModel.StatusMessage = $"Loading: {entry.ResRef}...";
+
+            var result = await _services.SoundPlayback.PlaySoundAsync(entry.ResRef);
+
+            if (result.Success)
+            {
+                _viewModel.StatusMessage = $"Playing: {entry.ResRef}{result.SourceLabel}";
+            }
+            else
+            {
+                _viewModel.StatusMessage = $"Sound not found: {entry.ResRef}";
+                if (playButton != null) playButton.IsEnabled = true;
+            }
         }
 
         // OnConversationSettingChanged moved to MainWindow.Properties.cs

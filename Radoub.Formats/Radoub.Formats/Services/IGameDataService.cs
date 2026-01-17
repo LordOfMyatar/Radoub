@@ -1,3 +1,4 @@
+using Radoub.Formats.Ssf;
 using Radoub.Formats.TwoDA;
 
 namespace Radoub.Formats.Services;
@@ -94,6 +95,31 @@ public interface IGameDataService : IDisposable
     /// <param name="resourceType">Resource type ID</param>
     /// <returns>Enumerable of resource info</returns>
     IEnumerable<GameResourceInfo> ListResources(ushort resourceType);
+
+    #endregion
+
+    #region Soundset Access
+
+    /// <summary>
+    /// Get a soundset file by its ID from soundset.2da.
+    /// </summary>
+    /// <param name="soundsetId">Soundset ID (row index in soundset.2da)</param>
+    /// <returns>Parsed SSF file, or null if not found</returns>
+    SsfFile? GetSoundset(int soundsetId);
+
+    /// <summary>
+    /// Get a soundset file by its ResRef.
+    /// </summary>
+    /// <param name="resRef">SSF ResRef (without extension)</param>
+    /// <returns>Parsed SSF file, or null if not found</returns>
+    SsfFile? GetSoundsetByResRef(string resRef);
+
+    /// <summary>
+    /// Get the ResRef for a soundset from soundset.2da.
+    /// </summary>
+    /// <param name="soundsetId">Soundset ID</param>
+    /// <returns>SSF ResRef, or null if not found</returns>
+    string? GetSoundsetResRef(int soundsetId);
 
     #endregion
 
