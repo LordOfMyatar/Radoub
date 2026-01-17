@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.39-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-923` | **PR**: #TBD
+
+### Sprint: UI Polish & Bug Fixes (#923)
+
+- [ ] #837 - Font family changes don't apply to all UI areas
+- [ ] #839 - Auto-detect button for game path settings is glitchy
+- [ ] #815 - Spells panel class selector overflow on narrow screens
+- [ ] #816 - Spells panel filter toolbar overflow
+- [ ] #801 - Settings window should be non-modal
+
+---
+
 ## [0.1.38-alpha] - 2026-01-16
 **Branch**: `parley/issue-916` | **PR**: #918
 
