@@ -50,5 +50,16 @@ namespace DialogEditor.Models.Sound
         /// If IsValidWav is false, describes why.
         /// </summary>
         public string InvalidWavReason { get; set; } = "";
+
+        /// <summary>
+        /// True if channel count (mono/stereo) has not been verified.
+        /// HAK/BIF sounds start as unknown until validated on selection.
+        /// </summary>
+        public bool ChannelUnknown { get; set; }
+
+        /// <summary>
+        /// True if this is an archive sound that needs extraction to determine channels.
+        /// </summary>
+        public bool IsFromArchive => IsFromHak || IsFromBif;
     }
 }

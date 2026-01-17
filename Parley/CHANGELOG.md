@@ -46,6 +46,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Combined with soundset display: "Portrait: po_elara | Soundset: vs_female_f (Female)"
 - Graceful fallback when portrait or creature unavailable
 
+#### Fix: Mono filter shows stereo sounds from HAK/BIF archives
+
+- HAK/BIF sounds now marked as "channel unknown" until validated on selection
+- Mono filter includes unknown-channel sounds (shown with `[?ch]` indicator)
+- When sound is selected and validated, channel status updates and indicator removed
+- File count shows "X unverified" when mono filter active with archive sounds
+- Prevents filtering out potentially valid mono sounds from archives
+
 ---
 
 ## [0.1.120-alpha] - 2026-01-16
