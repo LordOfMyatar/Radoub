@@ -216,9 +216,10 @@ public partial class SpellsPanel
                 {
                     // Empty - normal color
                     cellText = $"0/{totalLimit}";
+                    // Use high-contrast foreground for visibility on dark themes
                     cellColor = isSelected
                         ? GetInfoBrush()
-                        : this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
+                        : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
                           ?? GetDisabledBrush();
                 }
 
@@ -504,11 +505,12 @@ public partial class SpellsPanel
             var className = _displayService.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
             var isSpontaneous = _displayService.IsSpontaneousCaster(classEntry.Class);
 
-            // Count memorized spells by level
+            // Count memorized spells by level - count ALL entries in the list
             var counts = new int[10];
             bool hasAnyMemorized = false;
             for (int level = 0; level <= 9; level++)
             {
+                // Each entry in MemorizedSpells represents one memorized slot
                 counts[level] = classEntry.MemorizedSpells[level].Count;
                 if (counts[level] > 0) hasAnyMemorized = true;
             }
@@ -628,9 +630,10 @@ public partial class SpellsPanel
                 }
                 else
                 {
+                    // Use high-contrast foreground for visibility on dark themes
                     cellColor = isSelected
                         ? GetInfoBrush()
-                        : this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
+                        : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
                           ?? GetDisabledBrush();
                 }
 
