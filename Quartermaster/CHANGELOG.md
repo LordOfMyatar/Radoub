@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.43-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-932` | **PR**: #TBD
+
+### Sprint: Spell System Polish II (#932)
+
+- [ ] #775 - Add toggle for class/race spell restrictions
+
+Note: #776 and #777 completed in v0.1.42-alpha (#936)
+
+---
+
 ## [0.1.42-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-885` | **PR**: #936
 
