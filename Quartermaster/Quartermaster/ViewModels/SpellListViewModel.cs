@@ -95,6 +95,11 @@ public class SpellListViewModel : BindableBase
                 OnPropertyChanged(nameof(KnownTooltip));
                 OnPropertyChanged(nameof(CanToggleMemorized));
                 OnPropertyChanged(nameof(MemorizedTooltip));
+                OnPropertyChanged(nameof(CanIncrementMemorized));
+                OnPropertyChanged(nameof(CanDecrementMemorized));
+                // Notify commands that their CanExecute may have changed
+                IncrementMemorizedCommand.RaiseCanExecuteChanged();
+                DecrementMemorizedCommand.RaiseCanExecuteChanged();
                 OnKnownChanged?.Invoke(this, value);
             }
         }
@@ -132,6 +137,9 @@ public class SpellListViewModel : BindableBase
                 OnPropertyChanged(nameof(IsMemorized));
                 OnPropertyChanged(nameof(CanDecrementMemorized));
                 OnPropertyChanged(nameof(CanIncrementMemorized));
+                // Notify commands that their CanExecute may have changed
+                IncrementMemorizedCommand.RaiseCanExecuteChanged();
+                DecrementMemorizedCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -163,12 +171,12 @@ public class SpellListViewModel : BindableBase
     /// <summary>
     /// Command to increment memorization count.
     /// </summary>
-    public ICommand IncrementMemorizedCommand { get; }
+    public RelayCommand IncrementMemorizedCommand { get; }
 
     /// <summary>
     /// Command to decrement memorization count.
     /// </summary>
-    public ICommand DecrementMemorizedCommand { get; }
+    public RelayCommand DecrementMemorizedCommand { get; }
 
     /// <summary>
     /// Callback when memorization count changes. Args: (SpellListViewModel spell, int delta)

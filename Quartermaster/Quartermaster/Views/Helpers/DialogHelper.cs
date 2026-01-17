@@ -135,19 +135,21 @@ public static class DialogHelper
     }
 
     /// <summary>
-    /// Shows a Yes/No confirmation dialog with a warning icon.
+    /// Shows an OK/Cancel confirmation dialog with a warning icon.
     /// </summary>
     /// <param name="parent">Parent window for centering</param>
     /// <param name="title">Dialog title</param>
     /// <param name="message">Dialog message</param>
-    /// <returns>True if user clicked Yes, false otherwise</returns>
+    /// <returns>True if user clicked OK, false otherwise</returns>
     public static async Task<bool> ShowConfirmationDialog(Window parent, string title, string message)
     {
         var dialog = new Window
         {
             Title = title,
             Width = 400,
-            Height = 200,
+            SizeToContent = SizeToContent.Height,
+            MinHeight = 150,
+            MaxHeight = 400,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false
         };
@@ -184,14 +186,14 @@ public static class DialogHelper
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
         };
 
-        var yesButton = new Button { Content = "Yes", Width = 80 };
-        yesButton.Click += (s, e) => { result = true; dialog.Close(); };
+        var okButton = new Button { Content = "OK", Width = 80 };
+        okButton.Click += (s, e) => { result = true; dialog.Close(); };
 
-        var noButton = new Button { Content = "No", Width = 80 };
-        noButton.Click += (s, e) => { result = false; dialog.Close(); };
+        var cancelButton = new Button { Content = "Cancel", Width = 80 };
+        cancelButton.Click += (s, e) => { result = false; dialog.Close(); };
 
-        buttonPanel.Children.Add(yesButton);
-        buttonPanel.Children.Add(noButton);
+        buttonPanel.Children.Add(okButton);
+        buttonPanel.Children.Add(cancelButton);
         panel.Children.Add(buttonPanel);
 
         dialog.Content = panel;
