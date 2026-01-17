@@ -291,6 +291,9 @@ public class EquipmentSlotValidatorTests
         public void SetCustomTlk(string? path) { }
         public byte[]? FindResource(string resRef, ushort resourceType) => null;
         public IEnumerable<GameResourceInfo> ListResources(ushort resourceType) => Array.Empty<GameResourceInfo>();
+        public Radoub.Formats.Ssf.SsfFile? GetSoundset(int soundsetId) => null;
+        public Radoub.Formats.Ssf.SsfFile? GetSoundsetByResRef(string resRef) => null;
+        public string? GetSoundsetResRef(int soundsetId) => null;
         public bool IsConfigured => true;
         public void ReloadConfiguration() { }
         public void Dispose() { }
