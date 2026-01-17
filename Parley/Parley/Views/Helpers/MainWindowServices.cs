@@ -1,3 +1,4 @@
+using System;
 using DialogEditor.Services;
 using Parley.Services;
 
@@ -7,10 +8,11 @@ namespace Parley.Views.Helpers
     /// Container for MainWindow's service dependencies.
     /// Reduces field count and provides organized access to services.
     /// </summary>
-    public class MainWindowServices
+    public class MainWindowServices : IDisposable
     {
         // Core services
         public AudioService Audio { get; }
+        public SoundPlaybackService SoundPlayback { get; }
         public CreatureService Creature { get; }
 
         // Property services
@@ -36,9 +38,16 @@ namespace Parley.Views.Helpers
         {
             // Services with no dependencies
             Audio = new AudioService();
+            SoundPlayback = new SoundPlaybackService(Audio);
             Creature = new CreatureService();
             KeyboardShortcuts = new KeyboardShortcutManager();
             DragDrop = new TreeViewDragDropService();
+        }
+
+        public void Dispose()
+        {
+            SoundPlayback?.Dispose();
+            Audio?.Dispose();
         }
     }
 }

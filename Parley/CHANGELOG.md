@@ -15,7 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Animation & Audio Features (#916)
 
-- #895 - Fix sound play button in Main Window (bug)
+#### Fix: Sound play button in Main Window (#895)
+
+- Created `SoundPlaybackService` to handle sound playback from all sources
+- Main Window now searches loose files, HAK archives, and BIF archives
+- Play button disables during playback, re-enables when stopped
+- Shows source label (e.g., "(from HAK)") in status bar
+- Properly subscribes to `PlaybackStopped` event for UI state management
+
+---
+
 - #858 - Enhance sound validation for non-standard WAV files
 - #786 - Preview NPC soundset compatibility from creature tag
 - #915 - Display NPC portrait for selected speaker

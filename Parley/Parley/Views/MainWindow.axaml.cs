@@ -115,6 +115,9 @@ namespace DialogEditor.Views
             // TreeView and dialog services
             _services.DragDrop.DropCompleted += OnDragDropCompleted;
             _services.Dialog = new DialogFactory(this);
+
+            // Sound playback - Issue #895
+            _services.SoundPlayback.PlaybackStopped += OnSoundPlaybackStopped;
         }
 
         /// <summary>
@@ -561,7 +564,12 @@ namespace DialogEditor.Views
         {
             _autoSaveTimer?.Stop();
             _autoSaveTimer?.Dispose();
-            _services.Audio.Dispose();
+
+            // Unsubscribe from events
+            _services.SoundPlayback.PlaybackStopped -= OnSoundPlaybackStopped;
+
+            // Dispose services (handles Audio and SoundPlayback)
+            _services.Dispose();
 
             // Issue #343: Close all managed windows (Settings, Flowchart)
             _windows.CloseAll();
@@ -1302,7 +1310,10 @@ namespace DialogEditor.Views
             => _controllers.FileMenu.ClearModuleInfo();
 
 
-        private void OnPlaySoundClick(object? sender, RoutedEventArgs e)
+        /// <summary>
+        /// Plays sound from property panel. Issue #895 fix: Now searches HAK/BIF archives too.
+        /// </summary>
+        private async void OnPlaySoundClick(object? sender, RoutedEventArgs e)
         {
             var soundTextBox = this.FindControl<TextBox>("SoundTextBox");
             var soundFileName = soundTextBox?.Text?.Trim();
@@ -1313,26 +1324,41 @@ namespace DialogEditor.Views
                 return;
             }
 
-            try
-            {
-                // Find the sound file in game paths
-                var soundPath = FindSoundFile(soundFileName);
-                if (soundPath == null)
-                {
-                    _viewModel.StatusMessage = $"⚠ Sound file not found: {soundFileName}";
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound file not found: {soundFileName}");
-                    return;
-                }
+            // Disable play button during playback
+            var playButton = this.FindControl<Button>("PlaySoundButton");
+            if (playButton != null) playButton.IsEnabled = false;
 
-                _services.Audio.Play(soundPath);
-                _viewModel.StatusMessage = $"Playing: {soundFileName}";
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Playing sound: {soundPath}");
-            }
-            catch (Exception ex)
+            _viewModel.StatusMessage = $"Loading: {soundFileName}...";
+
+            var result = await _services.SoundPlayback.PlaySoundAsync(soundFileName);
+
+            if (result.Success)
             {
-                _viewModel.StatusMessage = $"❌ Error playing sound: {ex.Message}";
-                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to play sound: {ex.Message}");
+                _viewModel.StatusMessage = $"Playing: {soundFileName}{result.SourceLabel}";
             }
+            else
+            {
+                _viewModel.StatusMessage = $"⚠ {result.ErrorMessage}";
+                if (playButton != null) playButton.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Handles playback stopped event to re-enable play button.
+        /// </summary>
+        private void OnSoundPlaybackStopped(object? sender, EventArgs e)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                var playButton = this.FindControl<Button>("PlaySoundButton");
+                if (playButton != null) playButton.IsEnabled = true;
+
+                // Clear "Playing" message if it's still showing
+                if (_viewModel.StatusMessage?.StartsWith("Playing:") == true)
+                {
+                    _viewModel.StatusMessage = "";
+                }
+            });
         }
 
         // OnConversationSettingChanged moved to MainWindow.Properties.cs
@@ -1368,57 +1394,7 @@ namespace DialogEditor.Views
         private void OnClearQuestEntryClick(object? sender, RoutedEventArgs e) =>
             _controllers.Quest.OnClearQuestEntryClick(sender, e);
 
-        /// <summary>
-        /// Find a sound file by searching all configured paths and categories.
-        /// Same logic as SoundBrowserWindow for consistency.
-        /// </summary>
-        private string? FindSoundFile(string filename)
-        {
-            // Add extension if not present
-            if (!filename.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) &&
-                !filename.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase))
-            {
-                filename += ".wav"; // NWN default is WAV
-            }
-
-            var categories = new[] { "ambient", "dialog", "music", "soundset", "amb", "dlg", "mus", "sts" };
-            var basePaths = new List<string>();
-
-            // Add user Documents path
-            var userPath = SettingsService.Instance.NeverwinterNightsPath;
-            if (!string.IsNullOrEmpty(userPath) && System.IO.Directory.Exists(userPath))
-            {
-                basePaths.Add(userPath);
-            }
-
-            // Add game installation path + data subdirectory
-            var installPath = SettingsService.Instance.BaseGameInstallPath;
-            if (!string.IsNullOrEmpty(installPath) && System.IO.Directory.Exists(installPath))
-            {
-                basePaths.Add(installPath);
-
-                var dataPath = System.IO.Path.Combine(installPath, "data");
-                if (System.IO.Directory.Exists(dataPath))
-                {
-                    basePaths.Add(dataPath);
-                }
-            }
-
-            // Search all combinations
-            foreach (var basePath in basePaths)
-            {
-                foreach (var category in categories)
-                {
-                    var soundPath = System.IO.Path.Combine(basePath, category, filename);
-                    if (System.IO.File.Exists(soundPath))
-                    {
-                        return soundPath;
-                    }
-                }
-            }
-
-            return null;
-        }
+        // FindSoundFile removed - replaced by SoundPlaybackService (Issue #895)
 
         private void OnBrowseConditionalScriptClick(object? sender, RoutedEventArgs e)
             => _controllers.ScriptBrowser.OnBrowseConditionalScriptClick();
