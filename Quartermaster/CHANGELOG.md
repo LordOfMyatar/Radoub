@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.40-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-922` | **PR**: #927
+
+### Sprint: Portrait & Character Preview (#922)
+
+- [x] #919 - Add portrait selection/change functionality
+  - Portrait moved from Appearance panel to Character panel (Identity section)
+  - Sidebar portrait display refreshes when portrait is changed
+  - Phenotype selection wired up to update model preview
+- [x] #914 - Display NPC portrait in character preview (completed in #916)
+- [x] #768 - Add Sex/Gender column to Appearance panel
+  - Added Gender dropdown to Model section (Male/Female options from gender.2da)
+  - Gender changes update the 3D model preview
+  - Supports non-standard gender values if present in creature files
+
+---
+
 ## [0.1.39-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-923` | **PR**: #924
 

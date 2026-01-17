@@ -239,8 +239,27 @@ Use `/research #[number]` for investigation tasks.
 
 This branch covers all items in the sprint. Update CHANGELOG as you complete each item.
 
+### ⚠️ IMPORTANT: Commit Between Items
+
+**Commit and push after completing each discrete sprint item.** This provides:
+- Clear git history for each change
+- Easy rollback if issues arise
+- Simpler code review
+- Protection against losing work
+
+Example workflow:
+\`\`\`bash
+# After completing item 1
+git add -A && git commit -m "[Tool] feat: Item 1 description (#sprint-issue)"
+git push
+
+# After completing item 2
+git add -A && git commit -m "[Tool] feat: Item 2 description (#sprint-issue)"
+git push
+\`\`\`
+
 ### Next Steps
-1. Work through sprint items
+1. Work through sprint items (commit after each!)
 2. Update CHANGELOG entries as completed
 3. Run `/pre-merge` when sprint complete
 ```
@@ -369,6 +388,20 @@ See `.claude/github-projects-reference.md` for project IDs and field details.
 - Always use draft PRs initially
 - CHANGELOG version should increment appropriately (check last version)
 - For epics, encourage planning before diving into implementation
-- For sprints, all work goes in one PR to keep changes atomic
+- For sprints, all work goes in one PR but **commit and push after each item**
 - Issue number is required - this command won't work without it
+
+## Sprint Workflow Discipline
+
+**CRITICAL**: When working on sprints, commit and push after completing each discrete item:
+
+1. Complete item → commit → push
+2. Complete next item → commit → push
+3. Repeat until sprint complete
+
+This prevents:
+- Large, tangled commits that are hard to review
+- Losing work if session ends unexpectedly
+- Difficult rollbacks when issues are discovered
+- Confusion about what changed when
 

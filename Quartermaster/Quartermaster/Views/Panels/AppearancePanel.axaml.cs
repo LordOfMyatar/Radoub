@@ -18,8 +18,8 @@ public partial class AppearancePanel : UserControl
 {
     // Appearance section
     private ComboBox? _appearanceComboBox;
+    private ComboBox? _genderComboBox;
     private ComboBox? _phenotypeComboBox;
-    private ComboBox? _portraitComboBox;
 
     // Body parts section
     private Border? _bodyPartsSection;
@@ -99,8 +99,8 @@ public partial class AppearancePanel : UserControl
     {
         // Appearance section
         _appearanceComboBox = this.FindControl<ComboBox>("AppearanceComboBox");
+        _genderComboBox = this.FindControl<ComboBox>("GenderComboBox");
         _phenotypeComboBox = this.FindControl<ComboBox>("PhenotypeComboBox");
-        _portraitComboBox = this.FindControl<ComboBox>("PortraitComboBox");
 
         // Body parts section
         _bodyPartsSection = this.FindControl<Border>("BodyPartsSection");
@@ -191,8 +191,8 @@ public partial class AppearancePanel : UserControl
 
         // Appearance - select in combo
         SelectAppearance(creature.AppearanceType);
+        SelectGender(creature.Gender);
         SelectPhenotype(creature.Phenotype);
-        SelectPortrait(creature.PortraitId);
 
         // Body parts - update enabled state and values
         var isPartBased = _displayService?.IsPartBasedAppearance(creature.AppearanceType) ?? false;
@@ -210,10 +210,10 @@ public partial class AppearancePanel : UserControl
     {
         if (_appearanceComboBox != null)
             _appearanceComboBox.SelectedIndex = -1;
+        if (_genderComboBox != null)
+            _genderComboBox.SelectedIndex = -1;
         if (_phenotypeComboBox != null)
             _phenotypeComboBox.SelectedIndex = -1;
-        if (_portraitComboBox != null)
-            _portraitComboBox.SelectedIndex = -1;
 
         UpdateBodyPartsEnabledState(false);
 

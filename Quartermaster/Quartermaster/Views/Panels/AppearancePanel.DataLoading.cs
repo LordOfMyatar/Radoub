@@ -35,6 +35,9 @@ public partial class AppearancePanel
             }
         }
 
+        // Load genders (Male=0, Female=1)
+        LoadGenderData();
+
         // Load phenotypes from 2DA
         _phenotypes = _displayService.GetAllPhenotypes();
         if (_phenotypeComboBox != null)
@@ -50,26 +53,22 @@ public partial class AppearancePanel
             }
         }
 
-        // Load portraits from 2DA
-        LoadPortraitData();
-
         _isLoading = false;
     }
 
-    private void LoadPortraitData()
+    private void LoadGenderData()
     {
-        if (_displayService == null || _portraitComboBox == null) return;
+        if (_displayService == null || _genderComboBox == null) return;
 
-        _portraitComboBox.Items.Clear();
-        var portraits = _displayService.GetAllPortraits();
-        foreach (var (id, name) in portraits)
-        {
-            _portraitComboBox.Items.Add(new ComboBoxItem
-            {
-                Content = name,
-                Tag = id
-            });
-        }
+        _genderComboBox.Items.Clear();
+
+        // NWN gender values: 0=Male, 1=Female, 2=Both, 3=Other, 4=None
+        // For creature editing, only Male and Female are relevant
+        var maleName = _displayService.GetGenderName(0);
+        var femaleName = _displayService.GetGenderName(1);
+
+        _genderComboBox.Items.Add(new ComboBoxItem { Content = maleName, Tag = (byte)0 });
+        _genderComboBox.Items.Add(new ComboBoxItem { Content = femaleName, Tag = (byte)1 });
     }
 
     private void LoadBodyPartData()
@@ -281,6 +280,30 @@ public partial class AppearancePanel
         _appearanceComboBox.SelectedIndex = _appearanceComboBox.Items.Count - 1;
     }
 
+    private void SelectGender(byte genderId)
+    {
+        if (_genderComboBox == null) return;
+
+        for (int i = 0; i < _genderComboBox.Items.Count; i++)
+        {
+            if (_genderComboBox.Items[i] is ComboBoxItem item &&
+                item.Tag is byte id && id == genderId)
+            {
+                _genderComboBox.SelectedIndex = i;
+                return;
+            }
+        }
+
+        // If not found (e.g., genderId > 1), add it
+        var name = _displayService?.GetGenderName(genderId) ?? $"Gender {genderId}";
+        _genderComboBox.Items.Add(new ComboBoxItem
+        {
+            Content = name,
+            Tag = genderId
+        });
+        _genderComboBox.SelectedIndex = _genderComboBox.Items.Count - 1;
+    }
+
     private void SelectPhenotype(int phenotypeId)
     {
         if (_phenotypeComboBox == null || _phenotypes == null) return;
@@ -302,29 +325,5 @@ public partial class AppearancePanel
             Tag = phenotypeId
         });
         _phenotypeComboBox.SelectedIndex = _phenotypeComboBox.Items.Count - 1;
-    }
-
-    private void SelectPortrait(ushort portraitId)
-    {
-        if (_portraitComboBox == null) return;
-
-        for (int i = 0; i < _portraitComboBox.Items.Count; i++)
-        {
-            if (_portraitComboBox.Items[i] is ComboBoxItem item &&
-                item.Tag is ushort id && id == portraitId)
-            {
-                _portraitComboBox.SelectedIndex = i;
-                return;
-            }
-        }
-
-        // If not found, add it
-        var name = _displayService?.GetPortraitName(portraitId) ?? $"Portrait {portraitId}";
-        _portraitComboBox.Items.Add(new ComboBoxItem
-        {
-            Content = name,
-            Tag = portraitId
-        });
-        _portraitComboBox.SelectedIndex = _portraitComboBox.Items.Count - 1;
     }
 }
