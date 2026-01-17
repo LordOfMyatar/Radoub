@@ -42,16 +42,9 @@ public partial class SpellsPanel : UserControl
     private TextBlock? _loadingText;
     private Expander? _metaMagicExpander;
 
-    // Class radio buttons
-    private RadioButton? _classRadio1;
-    private RadioButton? _classRadio2;
-    private RadioButton? _classRadio3;
-    private RadioButton? _classRadio4;
-    private RadioButton? _classRadio5;
-    private RadioButton? _classRadio6;
-    private RadioButton? _classRadio7;
-    private RadioButton? _classRadio8;
-    private RadioButton[] _classRadios = Array.Empty<RadioButton>();
+    // Class selector
+    private ComboBox? _classComboBox;
+    private List<ClassComboItem> _classItems = new();
 
     // Data
     private ObservableCollection<SpellListViewModel> _displayedSpells = new();
@@ -71,9 +64,10 @@ public partial class SpellsPanel : UserControl
 
     private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
+        if (e.PropertyName == nameof(SettingsService.CurrentThemeId) ||
+            e.PropertyName == nameof(SettingsService.FontFamily))
         {
-            // Theme changed - reload creature to refresh colors
+            // Theme or font changed - reload creature to refresh view
             if (_currentCreature != null)
             {
                 LoadCreature(_currentCreature);
@@ -101,21 +95,8 @@ public partial class SpellsPanel : UserControl
         _loadingText = this.FindControl<TextBlock>("LoadingText");
         _metaMagicExpander = this.FindControl<Expander>("MetaMagicExpander");
 
-        // Find class radio buttons
-        _classRadio1 = this.FindControl<RadioButton>("ClassRadio1");
-        _classRadio2 = this.FindControl<RadioButton>("ClassRadio2");
-        _classRadio3 = this.FindControl<RadioButton>("ClassRadio3");
-        _classRadio4 = this.FindControl<RadioButton>("ClassRadio4");
-        _classRadio5 = this.FindControl<RadioButton>("ClassRadio5");
-        _classRadio6 = this.FindControl<RadioButton>("ClassRadio6");
-        _classRadio7 = this.FindControl<RadioButton>("ClassRadio7");
-        _classRadio8 = this.FindControl<RadioButton>("ClassRadio8");
-
-        _classRadios = new[]
-        {
-            _classRadio1!, _classRadio2!, _classRadio3!, _classRadio4!,
-            _classRadio5!, _classRadio6!, _classRadio7!, _classRadio8!
-        };
+        // Find class selector
+        _classComboBox = this.FindControl<ComboBox>("ClassComboBox");
 
         // Set up ItemsSource
         if (_spellsList != null)
@@ -143,12 +124,21 @@ public partial class SpellsPanel : UserControl
         if (_statusFilterComboBox != null)
             _statusFilterComboBox.SelectionChanged += (s, e) => ApplyFilters();
 
-        // Wire up class radio buttons
-        foreach (var radio in _classRadios)
-        {
-            if (radio != null)
-                radio.IsCheckedChanged += OnClassRadioChecked;
-        }
+        // Wire up class combo box
+        if (_classComboBox != null)
+            _classComboBox.SelectionChanged += OnClassComboBoxChanged;
+    }
+
+    /// <summary>
+    /// Simple item class for the class selector combo box.
+    /// </summary>
+    private class ClassComboItem
+    {
+        public int Index { get; set; }
+        public string DisplayName { get; set; } = "";
+        public bool IsEnabled { get; set; }
+
+        public override string ToString() => DisplayName;
     }
 
     /// <summary>
@@ -317,17 +307,13 @@ public partial class SpellsPanel : UserControl
         if (_statusFilterComboBox != null)
             _statusFilterComboBox.SelectedIndex = 0;
 
-        // Reset class radio buttons
-        foreach (var radio in _classRadios)
+        // Reset class combo box
+        _classItems.Clear();
+        if (_classComboBox != null)
         {
-            if (radio != null)
-            {
-                radio.IsEnabled = false;
-                radio.IsVisible = radio == _classRadio1 || radio == _classRadio2 || radio == _classRadio3;
-            }
+            _classComboBox.ItemsSource = null;
+            _classComboBox.SelectedIndex = -1;
         }
-        if (_classRadio1 != null)
-            _classRadio1.IsChecked = true;
     }
 
     private static void SetText(TextBlock? block, string text)

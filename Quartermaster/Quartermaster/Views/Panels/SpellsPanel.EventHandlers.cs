@@ -9,17 +9,16 @@ namespace Quartermaster.Views.Panels;
 
 public partial class SpellsPanel
 {
-    private void OnClassRadioChecked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private void OnClassComboBoxChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_isLoading) return;
 
-        if (sender is RadioButton radio && radio.IsChecked == true)
+        if (_classComboBox?.SelectedItem is ClassComboItem item)
         {
-            var index = Array.IndexOf(_classRadios, radio);
-            if (index >= 0 && index != _selectedClassIndex)
+            if (item.Index != _selectedClassIndex)
             {
                 _isLoading = true;
-                _selectedClassIndex = index;
+                _selectedClassIndex = item.Index;
                 // Reload spells for the selected class
                 if (_currentCreature != null)
                     LoadSpellsForClass(_selectedClassIndex);

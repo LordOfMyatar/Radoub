@@ -32,8 +32,8 @@ public partial class SpellsPanel
         if (_loadingText != null)
             _loadingText.IsVisible = true;
 
-        // Update class radio buttons based on creature's classes
-        UpdateClassRadioButtons(creature);
+        // Update class combo box based on creature's classes
+        UpdateClassComboBox(creature);
 
         // Load spells for the first (selected) class
         LoadSpellsForClass(_selectedClassIndex);
@@ -45,67 +45,69 @@ public partial class SpellsPanel
         _isLoading = false;
     }
 
-    private void UpdateClassRadioButtons(UtcFile creature)
+    private void UpdateClassComboBox(UtcFile creature)
     {
-        // Reset all radio buttons
-        bool foundCaster = false;
+        // Create a new list to ensure ComboBox detects the change
+        var newItems = new List<ClassComboItem>();
+        int firstEnabledIndex = -1;
 
-        for (int i = 0; i < _classRadios.Length; i++)
+        for (int i = 0; i < creature.ClassList.Count && i < 8; i++)
         {
-            var radio = _classRadios[i];
-            if (radio == null) continue;
+            var classEntry = creature.ClassList[i];
+            var className = _displayService?.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
 
-            if (i < creature.ClassList.Count)
+            // Check if this class can cast spells using the display service
+            bool isCaster = _displayService?.IsCasterClass(classEntry.Class) ?? false;
+            int maxSpellLevel = isCaster ? (_displayService?.GetMaxSpellLevel(classEntry.Class, classEntry.ClassLevel) ?? -1) : -1;
+
+            // Check if this class actually has spells in the creature data
+            bool hasSpellsInData = classEntry.KnownSpells.Any(list => list.Count > 0) ||
+                                   classEntry.MemorizedSpells.Any(list => list.Count > 0);
+
+            // Format: "Wizard (10) - Lvl 5" or "Fighter (5)" for non-casters
+            string displayName;
+            if (isCaster && maxSpellLevel >= 0)
             {
-                var classEntry = creature.ClassList[i];
-                var className = _displayService?.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
-
-                // Check if this class can cast spells using the display service
-                bool isCaster = _displayService?.IsCasterClass(classEntry.Class) ?? false;
-                int maxSpellLevel = isCaster ? (_displayService?.GetMaxSpellLevel(classEntry.Class, classEntry.ClassLevel) ?? -1) : -1;
-
-                // Check if this class actually has spells in the creature data
-                bool hasSpellsInData = classEntry.KnownSpells.Any(list => list.Count > 0) ||
-                                       classEntry.MemorizedSpells.Any(list => list.Count > 0);
-
-                // Format: "Wizard (10) - Lvl 5" or "Fighter (5)" for non-casters
-                if (isCaster && maxSpellLevel >= 0)
-                {
-                    radio.Content = $"{className} ({classEntry.ClassLevel}) - Lvl {maxSpellLevel}";
-                }
-                else if (isCaster || hasSpellsInData)
-                {
-                    // Caster class or has spell data
-                    radio.Content = $"{className} ({classEntry.ClassLevel})";
-                }
-                else
-                {
-                    radio.Content = $"{className} ({classEntry.ClassLevel})";
-                }
-
-                // Enable if: detected as caster with spells, OR has actual spell data in creature
-                radio.IsEnabled = (isCaster && maxSpellLevel >= 0) || hasSpellsInData;
-                radio.IsVisible = true;
-
-                // Select first enabled caster class by default
-                if (!foundCaster && radio.IsEnabled)
-                {
-                    radio.IsChecked = true;
-                    _selectedClassIndex = i;
-                    foundCaster = true;
-                }
+                displayName = $"{className} ({classEntry.ClassLevel}) - Lvl {maxSpellLevel}";
             }
             else
             {
-                radio.Content = $"Class {i + 1}";
-                radio.IsEnabled = false;
-                radio.IsVisible = i < 3; // Show first 3 placeholders
+                displayName = $"{className} ({classEntry.ClassLevel})";
+            }
+
+            // Enable if: detected as caster with spells, OR has actual spell data in creature
+            bool isEnabled = (isCaster && maxSpellLevel >= 0) || hasSpellsInData;
+
+            newItems.Add(new ClassComboItem
+            {
+                Index = i,
+                DisplayName = displayName,
+                IsEnabled = isEnabled
+            });
+
+            // Track first enabled class
+            if (isEnabled && firstEnabledIndex < 0)
+            {
+                firstEnabledIndex = newItems.Count - 1;
             }
         }
 
-        // If no caster class found, select first anyway (even if disabled)
-        if (!foundCaster && _classRadios[0] != null)
-            _classRadios[0].IsChecked = true;
+        // Replace the items list and update combo box
+        _classItems = newItems;
+        if (_classComboBox != null)
+        {
+            // Clear and reassign to force refresh
+            _classComboBox.ItemsSource = null;
+            _classComboBox.ItemsSource = _classItems;
+
+            // Select first enabled caster class, or first class if none enabled
+            int selectedIndex = firstEnabledIndex >= 0 ? firstEnabledIndex : (_classItems.Count > 0 ? 0 : -1);
+            if (selectedIndex >= 0)
+            {
+                _classComboBox.SelectedIndex = selectedIndex;
+                _selectedClassIndex = _classItems[selectedIndex].Index;
+            }
+        }
     }
 
     private void LoadSpellsForClass(int classIndex)

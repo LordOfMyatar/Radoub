@@ -624,10 +624,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #region Menu Handlers - Dialogs
 
-    private async void OnSettingsClick(object? sender, RoutedEventArgs e)
+    private void OnSettingsClick(object? sender, RoutedEventArgs e)
     {
         var settingsWindow = new SettingsWindow();
-        await settingsWindow.ShowDialog(this);
+        settingsWindow.Show(this);
     }
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)

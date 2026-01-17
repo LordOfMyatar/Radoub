@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.39-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-923` | **PR**: #924
+
+### Sprint: UI Polish & Bug Fixes (#923)
+
+- [x] #801 - Settings window is now non-modal (users can interact with main window)
+- [x] #837 - Font family changes now refresh all panels (Feats, Skills, Spells)
+- [x] #839 - Path settings now validate in real-time as user types
+- [x] #815 - Replaced class radio buttons with ComboBox for narrow screen compatibility
+- [x] #816 - Compacted filter toolbar labels and reduced MinWidths for better wrapping
+
+---
+
 ## [0.1.38-alpha] - 2026-01-16
 **Branch**: `parley/issue-916` | **PR**: #918
 
