@@ -442,17 +442,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (portraitImage != null && portraitPlaceholder != null)
         {
             var portraitResRef = _creatureDisplayService.GetPortraitResRef(_currentCreature.PortraitId);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait lookup: PortraitId={_currentCreature.PortraitId}, ResRef={portraitResRef ?? "null"}");
             if (!string.IsNullOrEmpty(portraitResRef))
             {
-                // Get large portrait (suffix 'l') for sidebar display
-                var portrait = _itemIconService.GetPortrait(portraitResRef + "l");
+                // ImageService.GetPortrait handles size suffix internally (tries m, l, s)
+                var portrait = _itemIconService.GetPortrait(portraitResRef);
                 if (portrait != null)
                 {
                     portraitImage.Source = portrait;
                     portraitImage.IsVisible = true;
                     portraitPlaceholder.IsVisible = false;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait loaded: {portraitResRef}");
                     return;
                 }
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found: {portraitResRef}");
             }
             // No portrait available - show placeholder
             portraitImage.Source = null;

@@ -73,6 +73,7 @@ namespace DialogEditor.Views
         {
             // Property services
             _services.PropertyPopulator = new PropertyPanelPopulator(this);
+            _services.PropertyPopulator.SetImageService(_services.ImageService);
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
                 refreshTreeDisplay: RefreshTreeDisplayPreserveState,

@@ -66,6 +66,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Previously, creature scan was fire-and-forget, completing after initial node selection
 - Portrait and soundset info now displays immediately when dialog loads
 
+#### Fix: Portrait loading from BIF archives
+
+- Added `GameDataService` and `ImageService` to MainWindowServices for BIF archive access
+- Portrait loading now uses `ImageService.GetPortrait()` which reads from BIF archives
+- Previously, `PortraitService` only searched loose .tga files which don't exist in NWN:EE
+
 ---
 
 ## [0.1.120-alpha] - 2026-01-16

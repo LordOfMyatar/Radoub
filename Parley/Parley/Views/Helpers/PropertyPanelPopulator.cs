@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -8,6 +9,7 @@ using Avalonia.Threading;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using DialogEditor.Utils;
 using Parley.Models;
 
@@ -27,10 +29,19 @@ namespace Parley.Views.Helpers
     public class PropertyPanelPopulator
     {
         private readonly Window _window;
+        private IImageService? _imageService;
 
         public PropertyPanelPopulator(Window window)
         {
             _window = window;
+        }
+
+        /// <summary>
+        /// Sets the image service for loading portraits from BIF archives (#916).
+        /// </summary>
+        public void SetImageService(IImageService imageService)
+        {
+            _imageService = imageService;
         }
 
         /// <summary>
@@ -171,15 +182,19 @@ namespace Parley.Views.Helpers
                 return;
             }
 
-            // Load and display portrait image (#915)
+            // Load and display portrait image (#915, #916)
             if (portraitBorder != null && portraitImage != null)
             {
                 Bitmap? portrait = null;
 
-                // Try to load portrait by ResRef
-                if (!string.IsNullOrEmpty(creature.PortraitResRef))
+                // Try to load portrait by ResRef using ImageService for BIF lookup
+                if (!string.IsNullOrEmpty(creature.PortraitResRef) && _imageService != null)
                 {
-                    portrait = PortraitService.Instance.LoadPortrait(creature.PortraitResRef, 's');
+                    var imageData = _imageService.GetPortrait(creature.PortraitResRef);
+                    if (imageData != null)
+                    {
+                        portrait = ImageDataToBitmap(imageData);
+                    }
                 }
 
                 if (portrait != null)
@@ -191,6 +206,10 @@ namespace Parley.Views.Helpers
                 else
                 {
                     portraitBorder.IsVisible = false;
+                    if (!string.IsNullOrEmpty(creature.PortraitResRef))
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found for {creature.Tag}: {creature.PortraitResRef}");
+                    }
                 }
             }
 
@@ -703,6 +722,102 @@ namespace Parley.Views.Helpers
             var actionPreview = _window.FindControl<TextBox>("ActionScriptPreviewTextBox");
             if (actionPreview != null)
                 actionPreview.Text = "// Action script preview will appear here";
+        }
+
+        /// <summary>
+        /// Converts ImageData from Radoub.Formats to an Avalonia Bitmap (#916).
+        /// </summary>
+        private static Bitmap? ImageDataToBitmap(ImageData imageData)
+        {
+            if (imageData.Width == 0 || imageData.Height == 0 || imageData.Pixels == null)
+                return null;
+
+            try
+            {
+                using var stream = new MemoryStream();
+
+                // Write BMP header + pixel data (32-bit BGRA)
+                WriteBmpHeader(stream, imageData.Width, imageData.Height);
+                WriteBmpPixels(stream, imageData.Width, imageData.Height, imageData.Pixels);
+
+                stream.Position = 0;
+                return new Bitmap(stream);
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to convert image data to bitmap: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Writes BMP file header for 32-bit BGRA format.
+        /// </summary>
+        private static void WriteBmpHeader(Stream stream, int width, int height)
+        {
+            var writer = new BinaryWriter(stream);
+
+            // BMP File Header (14 bytes)
+            var pixelDataSize = width * height * 4;
+            var fileSize = 14 + 108 + pixelDataSize; // BITMAPV4HEADER is 108 bytes
+
+            writer.Write((byte)'B');
+            writer.Write((byte)'M');
+            writer.Write(fileSize);
+            writer.Write((short)0); // Reserved
+            writer.Write((short)0); // Reserved
+            writer.Write(14 + 108); // Pixel data offset
+
+            // BITMAPV4HEADER (108 bytes)
+            writer.Write(108); // Header size
+            writer.Write(width);
+            writer.Write(-height); // Negative for top-down DIB
+            writer.Write((short)1); // Planes
+            writer.Write((short)32); // Bits per pixel
+            writer.Write(3); // Compression: BI_BITFIELDS
+            writer.Write(pixelDataSize);
+            writer.Write(2835); // X pixels per meter (72 DPI)
+            writer.Write(2835); // Y pixels per meter (72 DPI)
+            writer.Write(0); // Colors used
+            writer.Write(0); // Important colors
+
+            // Color masks for BGRA
+            writer.Write(0x00FF0000); // Red mask
+            writer.Write(0x0000FF00); // Green mask
+            writer.Write(0x000000FF); // Blue mask
+            writer.Write(0xFF000000); // Alpha mask
+
+            // Color space type: LCS_sRGB
+            writer.Write(0x73524742);
+
+            // CIEXYZTRIPLE endpoints (36 bytes)
+            for (int i = 0; i < 9; i++)
+                writer.Write(0);
+
+            // Gamma values
+            writer.Write(0); // Red gamma
+            writer.Write(0); // Green gamma
+            writer.Write(0); // Blue gamma
+        }
+
+        /// <summary>
+        /// Writes pixel data in BGRA format.
+        /// </summary>
+        private static void WriteBmpPixels(Stream stream, int width, int height, byte[] rgbaPixels)
+        {
+            // Convert RGBA to BGRA and write
+            for (int i = 0; i < rgbaPixels.Length; i += 4)
+            {
+                var r = rgbaPixels[i];
+                var g = rgbaPixels[i + 1];
+                var b = rgbaPixels[i + 2];
+                var a = rgbaPixels[i + 3];
+
+                stream.WriteByte(b); // Blue
+                stream.WriteByte(g); // Green
+                stream.WriteByte(r); // Red
+                stream.WriteByte(a); // Alpha
+            }
         }
     }
 }

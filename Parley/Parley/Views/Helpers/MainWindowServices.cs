@@ -1,6 +1,7 @@
 using System;
 using DialogEditor.Services;
 using Parley.Services;
+using Radoub.Formats.Services;
 
 namespace Parley.Views.Helpers
 {
@@ -14,6 +15,10 @@ namespace Parley.Views.Helpers
         public AudioService Audio { get; }
         public SoundPlaybackService SoundPlayback { get; }
         public CreatureService Creature { get; }
+
+        // Game data services for BIF/TLK lookups (#916)
+        public IGameDataService GameData { get; }
+        public IImageService ImageService { get; }
 
         // Property services
         public PropertyPanelPopulator PropertyPopulator { get; set; } = null!;
@@ -42,6 +47,10 @@ namespace Parley.Views.Helpers
             Creature = new CreatureService();
             KeyboardShortcuts = new KeyboardShortcutManager();
             DragDrop = new TreeViewDragDropService();
+
+            // Game data services for portrait loading from BIF archives (#916)
+            GameData = new GameDataService();
+            ImageService = new ImageService(GameData);
         }
 
         public void Dispose()
