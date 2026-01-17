@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Pfim;
 using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Plt;
 using Radoub.Formats.Tga;
 
@@ -108,19 +109,106 @@ public class ImageService : IImageService
         if (string.IsNullOrWhiteSpace(resRef))
             return null;
 
-        // Portraits are typically TGA files
-        // Try full-size first (po_*_l), then medium (po_*_m), then small (po_*_s)
-        string baseRef = resRef.TrimEnd('l', 'm', 's', 'h', 't', '_');
+        // Portraits are TGA files with naming convention:
+        // - portraits.2da BaseResRef: "el_m_01_" (without po_ prefix, with trailing underscore)
+        // - Actual files: "po_el_m_01_m.tga" (with po_ prefix, size suffix m/l/s)
+        //
+        // Some portraits already have the po_ prefix, some don't.
+        // We need to handle both cases.
 
+        string baseRef = resRef;
+
+        // Ensure trailing underscore
+        if (!baseRef.EndsWith('_'))
+        {
+            // If ends with a size suffix (m/l/s/h/t) after underscore, strip it
+            if (baseRef.Length > 2 && baseRef[^2] == '_' && "lmsht".Contains(baseRef[^1]))
+            {
+                baseRef = baseRef[..^1]; // Keep underscore, strip suffix
+            }
+            else
+            {
+                baseRef += "_";
+            }
+        }
+
+        UnifiedLogger.Log(LogLevel.DEBUG, $"Portrait lookup: resRef='{resRef}' -> baseRef='{baseRef}'", "ImageService", "Image");
+
+        // Try with po_ prefix first (most common case from portraits.2da)
+        if (!baseRef.StartsWith("po_", StringComparison.OrdinalIgnoreCase))
+        {
+            var withPrefix = $"po_{baseRef}";
+            var image = TryLoadPortraitSizes(withPrefix);
+            if (image != null)
+                return image;
+        }
+
+        // Try as-is (already has po_ prefix or is a custom portrait)
+        return TryLoadPortraitSizes(baseRef);
+    }
+
+    private ImageData? TryLoadPortraitSizes(string baseRef)
+    {
+        // Try medium size first (most common UI size), then large, then small
         var image = LoadImage($"{baseRef}m", ResourceTypes.Tga);
         if (image != null)
-            return image;
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Portrait found: {baseRef}m", "ImageService", "Image");
+            return CropPortraitNegativeSpace(image);
+        }
 
         image = LoadImage($"{baseRef}l", ResourceTypes.Tga);
         if (image != null)
-            return image;
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Portrait found: {baseRef}l", "ImageService", "Image");
+            return CropPortraitNegativeSpace(image);
+        }
 
-        return LoadImage($"{baseRef}s", ResourceTypes.Tga);
+        image = LoadImage($"{baseRef}s", ResourceTypes.Tga);
+        if (image != null)
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Portrait found: {baseRef}s", "ImageService", "Image");
+            return CropPortraitNegativeSpace(image);
+        }
+
+        UnifiedLogger.Log(LogLevel.DEBUG, $"Portrait not found for any size: {baseRef}[m/l/s]", "ImageService", "Image");
+        return null;
+    }
+
+    /// <summary>
+    /// Crops the bottom negative space from NWN portrait images.
+    /// NWN portraits have blank space at the bottom:
+    /// - Huge (h): 256x512 canvas, 256x400 usable
+    /// - Large (l): 128x256 canvas, 128x200 usable
+    /// - Medium (m): 64x128 canvas, 64x100 usable
+    /// - Small (s): 32x64 canvas, 32x50 usable
+    /// - Tiny (t): 16x32 canvas, 16x25 usable
+    /// The usable height is ~78.125% of the canvas height.
+    /// </summary>
+    private static ImageData CropPortraitNegativeSpace(ImageData image)
+    {
+        // Calculate usable height (78.125% of canvas, which gives the standard ratios)
+        int usableHeight = (image.Height * 25) / 32; // 25/32 = 0.78125
+
+        if (usableHeight >= image.Height || usableHeight <= 0)
+            return image; // Nothing to crop
+
+        // Create new pixel array for cropped image
+        int newSize = image.Width * usableHeight * 4;
+        byte[] croppedPixels = new byte[newSize];
+
+        // Copy only the top portion (usable area)
+        int bytesPerRow = image.Width * 4;
+        for (int y = 0; y < usableHeight; y++)
+        {
+            Array.Copy(image.Pixels, y * bytesPerRow, croppedPixels, y * bytesPerRow, bytesPerRow);
+        }
+
+        UnifiedLogger.Log(LogLevel.DEBUG,
+            $"Cropped portrait from {image.Width}x{image.Height} to {image.Width}x{usableHeight}",
+            "ImageService", "Image");
+
+        return new ImageData(image.Width, usableHeight, croppedPixels);
     }
 
     /// <inheritdoc/>
