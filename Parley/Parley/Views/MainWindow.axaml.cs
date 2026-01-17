@@ -13,6 +13,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using DialogEditor.ViewModels;
 using DialogEditor.Models;
@@ -1360,6 +1361,12 @@ namespace DialogEditor.Views
                 if (creatures.Count > 0)
                 {
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Cached {creatures.Count} creatures for portrait/soundset lookup");
+
+                    // Refresh the selected node's properties to show portrait/soundset (#786, #915, #916)
+                    if (_selectedNode != null)
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() => PopulatePropertiesPanel(_selectedNode));
+                    }
                 }
             }
             catch (Exception ex)

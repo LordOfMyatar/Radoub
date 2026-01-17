@@ -103,19 +103,27 @@
                     <!-- Character Header (Portrait + Name) -->
                     <Border DockPanel.Dock="Top" Padding="10" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1">
                         <StackPanel Spacing="8">
-                            <!-- Portrait Placeholder -->
-                            <Border Width="100" Height="100"
+                            <!-- Portrait Display -->
+                            <Border x:Name="PortraitBorder" Width="100" Height="100"
                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                     BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
                                     BorderThickness="1"
                                     CornerRadius="4"
                                     HorizontalAlignment="Center"
                                     AutomationProperties.AutomationId="CharacterPortrait">
-                                <TextBlock Text="No Portrait"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                           FontSize="{DynamicResource FontSizeSmall}"/>
+                                <Grid>
+                                    <!-- Placeholder text (shown when no portrait) -->
+                                    <TextBlock x:Name="PortraitPlaceholderText"
+                                               Text="No Portrait"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               FontSize="{DynamicResource FontSizeSmall}"/>
+                                    <!-- Portrait image (shown when portrait available) -->
+                                    <Image x:Name="PortraitImage"
+                                           Stretch="UniformToFill"
+                                           IsVisible="False"/>
+                                </Grid>
                             </Border>
 
                             <!-- Character Name -->

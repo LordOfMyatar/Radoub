@@ -414,10 +414,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateCharacterHeader()
     {
+        var portraitImage = this.FindControl<Avalonia.Controls.Image>("PortraitImage");
+        var portraitPlaceholder = this.FindControl<TextBlock>("PortraitPlaceholderText");
+
         if (_currentCreature == null)
         {
             CharacterNameText.Text = "No Character Loaded";
             CharacterSummaryText.Text = "";
+            // Clear portrait
+            if (portraitImage != null)
+            {
+                portraitImage.Source = null;
+                portraitImage.IsVisible = false;
+            }
+            if (portraitPlaceholder != null)
+                portraitPlaceholder.IsVisible = true;
             return;
         }
 
@@ -426,6 +437,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Build race/class summary using display service
         CharacterSummaryText.Text = _creatureDisplayService.GetCreatureSummary(_currentCreature);
+
+        // Load portrait image (#916)
+        if (portraitImage != null && portraitPlaceholder != null)
+        {
+            var portraitResRef = _creatureDisplayService.GetPortraitResRef(_currentCreature.PortraitId);
+            if (!string.IsNullOrEmpty(portraitResRef))
+            {
+                // Get large portrait (suffix 'l') for sidebar display
+                var portrait = _itemIconService.GetPortrait(portraitResRef + "l");
+                if (portrait != null)
+                {
+                    portraitImage.Source = portrait;
+                    portraitImage.IsVisible = true;
+                    portraitPlaceholder.IsVisible = false;
+                    return;
+                }
+            }
+            // No portrait available - show placeholder
+            portraitImage.Source = null;
+            portraitImage.IsVisible = false;
+            portraitPlaceholder.IsVisible = true;
+        }
     }
 
     private void UpdateInventoryCounts()

@@ -60,6 +60,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `GetGameDataPath()` helper to locate 2DA files in game installation
 - Enables portrait and soundset resolution from `portraits.2da` and `soundset.2da`
 
+#### Fix: Portrait/soundset not showing on initial node selection
+
+- Creature scan now refreshes selected node properties after completion
+- Previously, creature scan was fire-and-forget, completing after initial node selection
+- Portrait and soundset info now displays immediately when dialog loads
+
 ---
 
 ## [0.1.120-alpha] - 2026-01-16

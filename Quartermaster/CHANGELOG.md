@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Enhancement: Portrait display in sidebar (#916)
+
+- Character portrait now displays in the sidebar when a creature is loaded
+- Uses large portrait variant (suffix 'l') from portraits.2da lookup
+- Shows "No Portrait" placeholder when portrait unavailable
+
 ---
 
 ## [0.1.37-alpha] - 2026-01-16
