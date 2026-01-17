@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.40-alpha] - 2026-01-17
-**Branch**: `quartermaster/issue-922` | **PR**: #TBD
+**Branch**: `quartermaster/issue-922` | **PR**: #927
 
 ### Sprint: Portrait & Character Preview (#922)
 
