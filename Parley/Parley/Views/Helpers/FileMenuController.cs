@@ -201,13 +201,16 @@ namespace Parley.Views.Helpers
                     // Update embedded flowchart if in side-by-side mode
                     _updateEmbeddedFlowchartAfterLoad();
 
-                    // Scan creatures for portrait/soundset display (#786, #915)
+                    // Scan creatures for portrait/soundset display (#786, #915, #916)
+                    // Await the scan so portrait/soundset auto-populates when node is selected
                     if (_scanCreaturesForModule != null)
                     {
                         var moduleDir = Path.GetDirectoryName(filePath);
                         if (!string.IsNullOrEmpty(moduleDir))
                         {
-                            _ = _scanCreaturesForModule(moduleDir);
+                            ViewModel.StatusMessage = "Loading creatures...";
+                            await _scanCreaturesForModule(moduleDir);
+                            ViewModel.StatusMessage = $"Opened: {Path.GetFileName(filePath)}";
                         }
                     }
                 }
@@ -328,6 +331,18 @@ namespace Parley.Views.Helpers
 
                     // Update embedded flowchart
                     _updateEmbeddedFlowchartAfterLoad();
+
+                    // Scan creatures for portrait/soundset display (#786, #915, #916)
+                    if (_scanCreaturesForModule != null)
+                    {
+                        var moduleDir = Path.GetDirectoryName(filePath);
+                        if (!string.IsNullOrEmpty(moduleDir))
+                        {
+                            ViewModel.StatusMessage = "Loading creatures...";
+                            await _scanCreaturesForModule(moduleDir);
+                            ViewModel.StatusMessage = $"Opened: {Path.GetFileName(filePath)}";
+                        }
+                    }
                 }
             }
             catch (Exception ex)

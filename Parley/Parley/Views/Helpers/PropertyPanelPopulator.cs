@@ -10,6 +10,7 @@ using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using DialogEditor.Utils;
 using DialogEditor.Views;
 using Parley.Models;
@@ -31,6 +32,7 @@ namespace Parley.Views.Helpers
     {
         private readonly Window _window;
         private IImageService? _imageService;
+        private IGameDataService? _gameDataService;
 
         public PropertyPanelPopulator(Window window)
         {
@@ -43,6 +45,14 @@ namespace Parley.Views.Helpers
         public void SetImageService(IImageService imageService)
         {
             _imageService = imageService;
+        }
+
+        /// <summary>
+        /// Sets the game data service for 2DA lookups from BIF archives (#916).
+        /// </summary>
+        public void SetGameDataService(IGameDataService gameDataService)
+        {
+            _gameDataService = gameDataService;
         }
 
         /// <summary>
@@ -187,29 +197,51 @@ namespace Parley.Views.Helpers
             if (portraitBorder != null && portraitImage != null)
             {
                 Bitmap? portrait = null;
+                string? portraitResRef = creature.PortraitResRef;
+
+                // If creature doesn't have a resolved PortraitResRef, look it up via GameDataService
+                // This happens when portraits.2da is only available in BIF archives (NWN:EE)
+                if (string.IsNullOrEmpty(portraitResRef) && creature.PortraitId > 0 && _gameDataService != null)
+                {
+                    portraitResRef = _gameDataService.Get2DAValue("portraits", creature.PortraitId, "BaseResRef");
+                    if (!string.IsNullOrEmpty(portraitResRef))
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"Resolved portrait ID {creature.PortraitId} to ResRef '{portraitResRef}' via GameDataService");
+                    }
+                }
 
                 // Try to load portrait by ResRef using ImageService for BIF lookup
-                if (!string.IsNullOrEmpty(creature.PortraitResRef) && _imageService != null)
+                if (!string.IsNullOrEmpty(portraitResRef) && _imageService != null)
                 {
-                    var imageData = _imageService.GetPortrait(creature.PortraitResRef);
+                    var imageData = _imageService.GetPortrait(portraitResRef);
                     if (imageData != null)
                     {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"Portrait imageData for {creature.Tag}: {imageData.Width}x{imageData.Height}");
                         portrait = ImageDataToBitmap(imageData);
                     }
                 }
 
                 if (portrait != null)
                 {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Portrait bitmap for {creature.Tag}: {portrait.PixelSize.Width}x{portrait.PixelSize.Height}");
                     portraitImage.Source = portrait;
                     portraitBorder.IsVisible = true;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded portrait for {creature.Tag}: {creature.PortraitResRef}");
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded portrait for {creature.Tag}: {portraitResRef}");
                 }
                 else
                 {
                     portraitBorder.IsVisible = false;
-                    if (!string.IsNullOrEmpty(creature.PortraitResRef))
+                    if (!string.IsNullOrEmpty(portraitResRef))
                     {
-                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found for {creature.Tag}: {creature.PortraitResRef}");
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found for {creature.Tag}: {portraitResRef}");
+                    }
+                    else if (creature.PortraitId > 0)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"Could not resolve portrait ID {creature.PortraitId} for {creature.Tag}");
                     }
                 }
             }
@@ -223,10 +255,33 @@ namespace Parley.Views.Helpers
                 infoParts.Add(creature.DisplayName);
             }
 
-            // Soundset info (#786)
+            // Soundset info (#786, #916)
             if (!string.IsNullOrEmpty(creature.SoundSetSummary))
             {
                 infoParts.Add($"Soundset: {creature.SoundSetSummary}");
+            }
+            else if (creature.SoundSetFile != ushort.MaxValue && _gameDataService != null)
+            {
+                // Try to look up soundset name via GameDataService (BIF support)
+                var strRefStr = _gameDataService.Get2DAValue("soundset", creature.SoundSetFile, "STRREF");
+                var genderStr = _gameDataService.Get2DAValue("soundset", creature.SoundSetFile, "GENDER");
+                string? soundsetName = null;
+
+                if (uint.TryParse(strRefStr, out var strRef) && strRef < 0x1000000)
+                {
+                    soundsetName = _gameDataService.GetString(strRef);
+                }
+
+                if (!string.IsNullOrEmpty(soundsetName))
+                {
+                    var gender = genderStr == "1" ? "Female" : "Male";
+                    infoParts.Add($"Soundset: {soundsetName} ({gender})");
+                }
+                else
+                {
+                    // Fallback to ID if name lookup fails
+                    infoParts.Add($"Soundset ID: {creature.SoundSetFile}");
+                }
             }
             else if (creature.SoundSetFile != ushort.MaxValue)
             {
@@ -775,6 +830,7 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Converts ImageData from Radoub.Formats to an Avalonia Bitmap (#916).
+        /// Uses SkiaSharp for reliable image conversion.
         /// </summary>
         private static Bitmap? ImageDataToBitmap(ImageData imageData)
         {
@@ -783,89 +839,51 @@ namespace Parley.Views.Helpers
 
             try
             {
-                using var stream = new MemoryStream();
+                int expectedSize = imageData.Width * imageData.Height * 4;
+                if (imageData.Pixels.Length != expectedSize)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"ImageDataToBitmap: Invalid pixel data - expected {expectedSize}, got {imageData.Pixels.Length}");
+                    return null;
+                }
 
-                // Write BMP header + pixel data (32-bit BGRA)
-                WriteBmpHeader(stream, imageData.Width, imageData.Height);
-                WriteBmpPixels(stream, imageData.Width, imageData.Height, imageData.Pixels);
+                // Create SkiaSharp bitmap from RGBA data
+                var info = new SkiaSharp.SKImageInfo(imageData.Width, imageData.Height,
+                    SkiaSharp.SKColorType.Rgba8888, SkiaSharp.SKAlphaType.Unpremul);
+                using var skBitmap = new SkiaSharp.SKBitmap(info);
 
-                stream.Position = 0;
+                // Copy pixel data
+                var pixels = skBitmap.GetPixels();
+                if (pixels == IntPtr.Zero)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "ImageDataToBitmap: GetPixels returned null");
+                    return null;
+                }
+
+                System.Runtime.InteropServices.Marshal.Copy(imageData.Pixels, 0, pixels, imageData.Pixels.Length);
+
+                // Encode to PNG in memory
+                using var image = SkiaSharp.SKImage.FromBitmap(skBitmap);
+                if (image == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "ImageDataToBitmap: SKImage.FromBitmap returned null");
+                    return null;
+                }
+
+                using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+                if (data == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, "ImageDataToBitmap: Encode returned null");
+                    return null;
+                }
+
+                using var stream = new MemoryStream(data.ToArray());
                 return new Bitmap(stream);
             }
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to convert image data to bitmap: {ex.Message}");
                 return null;
-            }
-        }
-
-        /// <summary>
-        /// Writes BMP file header for 32-bit BGRA format.
-        /// </summary>
-        private static void WriteBmpHeader(Stream stream, int width, int height)
-        {
-            var writer = new BinaryWriter(stream);
-
-            // BMP File Header (14 bytes)
-            var pixelDataSize = width * height * 4;
-            var fileSize = 14 + 108 + pixelDataSize; // BITMAPV4HEADER is 108 bytes
-
-            writer.Write((byte)'B');
-            writer.Write((byte)'M');
-            writer.Write(fileSize);
-            writer.Write((short)0); // Reserved
-            writer.Write((short)0); // Reserved
-            writer.Write(14 + 108); // Pixel data offset
-
-            // BITMAPV4HEADER (108 bytes)
-            writer.Write(108); // Header size
-            writer.Write(width);
-            writer.Write(-height); // Negative for top-down DIB
-            writer.Write((short)1); // Planes
-            writer.Write((short)32); // Bits per pixel
-            writer.Write(3); // Compression: BI_BITFIELDS
-            writer.Write(pixelDataSize);
-            writer.Write(2835); // X pixels per meter (72 DPI)
-            writer.Write(2835); // Y pixels per meter (72 DPI)
-            writer.Write(0); // Colors used
-            writer.Write(0); // Important colors
-
-            // Color masks for BGRA
-            writer.Write(0x00FF0000); // Red mask
-            writer.Write(0x0000FF00); // Green mask
-            writer.Write(0x000000FF); // Blue mask
-            writer.Write(0xFF000000); // Alpha mask
-
-            // Color space type: LCS_sRGB
-            writer.Write(0x73524742);
-
-            // CIEXYZTRIPLE endpoints (36 bytes)
-            for (int i = 0; i < 9; i++)
-                writer.Write(0);
-
-            // Gamma values
-            writer.Write(0); // Red gamma
-            writer.Write(0); // Green gamma
-            writer.Write(0); // Blue gamma
-        }
-
-        /// <summary>
-        /// Writes pixel data in BGRA format.
-        /// </summary>
-        private static void WriteBmpPixels(Stream stream, int width, int height, byte[] rgbaPixels)
-        {
-            // Convert RGBA to BGRA and write
-            for (int i = 0; i < rgbaPixels.Length; i += 4)
-            {
-                var r = rgbaPixels[i];
-                var g = rgbaPixels[i + 1];
-                var b = rgbaPixels[i + 2];
-                var a = rgbaPixels[i + 3];
-
-                stream.WriteByte(b); // Blue
-                stream.WriteByte(g); // Green
-                stream.WriteByte(r); // Red
-                stream.WriteByte(a); // Alpha
             }
         }
     }

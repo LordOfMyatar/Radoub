@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Radoub.Formats.Logging;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -131,12 +132,13 @@ namespace DialogEditor.Services
 
     /// <summary>
     /// Windows audio player using NAudio.
-    /// Supports PCM, ADPCM, MP3, and other common formats.
+    /// Supports PCM, ADPCM (including IMA ADPCM), MP3, and other common formats.
+    /// Uses WaveFileReader for WAV files (better codec support) and AudioFileReader for others.
     /// </summary>
     internal class WindowsAudioPlayer : IAudioPlayer
     {
         private NAudio.Wave.WaveOutEvent? _outputDevice;
-        private NAudio.Wave.AudioFileReader? _audioFile;
+        private NAudio.Wave.WaveStream? _waveStream;
 
         /// <summary>
         /// Event raised when playback stops (either naturally or via Stop()).
@@ -149,14 +151,45 @@ namespace DialogEditor.Services
 
             try
             {
-                _audioFile = new NAudio.Wave.AudioFileReader(filePath);
+                // Log first few bytes for debugging format issues
+                LogFileHeader(filePath);
+
+                // Detect format and use appropriate reader
+                var firstBytes = ReadFirstBytes(filePath, 12);
+
+                if (IsRiffWav(firstBytes))
+                {
+                    // Use WaveFileReader for WAV files - better ADPCM codec support
+                    _waveStream = new NAudio.Wave.WaveFileReader(filePath);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Using WaveFileReader for {Path.GetFileName(filePath)} - Format: {_waveStream.WaveFormat}");
+                }
+                else if (IsBmu(firstBytes))
+                {
+                    // BMU is MP3 with 8-byte header - skip the header
+                    _waveStream = CreateBmuReader(filePath);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Using BMU reader for {Path.GetFileName(filePath)}");
+                }
+                else if (IsMp3(firstBytes))
+                {
+                    // MP3 file (ID3 or raw frame sync)
+                    _waveStream = new NAudio.Wave.Mp3FileReader(filePath);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Using Mp3FileReader for {Path.GetFileName(filePath)}");
+                }
+                else
+                {
+                    // Try AudioFileReader as fallback
+                    _waveStream = new NAudio.Wave.AudioFileReader(filePath);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"Using AudioFileReader fallback for {Path.GetFileName(filePath)}");
+                }
+
                 _outputDevice = new NAudio.Wave.WaveOutEvent();
                 _outputDevice.PlaybackStopped += OnPlaybackStopped;
-                _outputDevice.Init(_audioFile);
+                _outputDevice.Init(_waveStream);
                 _outputDevice.Play();
-
-                UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"Playing {Path.GetFileName(filePath)} - Format: {_audioFile.WaveFormat}");
             }
             catch (Exception ex)
             {
@@ -165,6 +198,65 @@ namespace DialogEditor.Services
                 Stop();
                 throw;
             }
+        }
+
+        private static void LogFileHeader(string filePath)
+        {
+            try
+            {
+                var bytes = ReadFirstBytes(filePath, 16);
+                if (bytes.Length >= 16)
+                {
+                    var hex = BitConverter.ToString(bytes).Replace("-", " ");
+                    var ascii = new string(bytes.Select(b => b >= 32 && b < 127 ? (char)b : '.').ToArray());
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                        $"File header [{Path.GetFileName(filePath)}]: {hex} | {ascii}");
+                }
+            }
+            catch { /* Ignore logging errors */ }
+        }
+
+        private static byte[] ReadFirstBytes(string filePath, int count)
+        {
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            var buffer = new byte[Math.Min(count, fs.Length)];
+            fs.Read(buffer, 0, buffer.Length);
+            return buffer;
+        }
+
+        private static bool IsRiffWav(byte[] bytes)
+        {
+            // RIFF....WAVE
+            return bytes.Length >= 12 &&
+                   bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F' &&
+                   bytes[8] == 'W' && bytes[9] == 'A' && bytes[10] == 'V' && bytes[11] == 'E';
+        }
+
+        private static bool IsBmu(byte[] bytes)
+        {
+            // "BMU V1.0"
+            return bytes.Length >= 8 &&
+                   bytes[0] == 'B' && bytes[1] == 'M' && bytes[2] == 'U' && bytes[3] == ' ' &&
+                   bytes[4] == 'V' && bytes[5] == '1' && bytes[6] == '.' && bytes[7] == '0';
+        }
+
+        private static bool IsMp3(byte[] bytes)
+        {
+            // ID3 tag or MP3 frame sync
+            if (bytes.Length >= 3 && bytes[0] == 'I' && bytes[1] == 'D' && bytes[2] == '3')
+                return true;
+            if (bytes.Length >= 2 && bytes[0] == 0xFF && (bytes[1] & 0xE0) == 0xE0)
+                return true;
+            return false;
+        }
+
+        private static NAudio.Wave.WaveStream CreateBmuReader(string filePath)
+        {
+            // BMU files are MP3 with an 8-byte "BMU V1.0" header
+            // Skip the header and treat as MP3
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            stream.Seek(8, SeekOrigin.Begin); // Skip "BMU V1.0" header
+            return new NAudio.Wave.Mp3FileReader(stream);
         }
 
         private void OnPlaybackStopped(object? sender, NAudio.Wave.StoppedEventArgs e)
@@ -182,8 +274,8 @@ namespace DialogEditor.Services
                 _outputDevice = null;
             }
 
-            _audioFile?.Dispose();
-            _audioFile = null;
+            _waveStream?.Dispose();
+            _waveStream = null;
         }
 
         public void Dispose()

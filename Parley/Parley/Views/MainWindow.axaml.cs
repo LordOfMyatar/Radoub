@@ -19,6 +19,7 @@ using DialogEditor.ViewModels;
 using DialogEditor.Models;
 using DialogEditor.Utils;
 using DialogEditor.Services;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using DialogEditor.Parsers;
@@ -85,6 +86,7 @@ namespace DialogEditor.Views
             // Property services
             _services.PropertyPopulator = new PropertyPanelPopulator(this);
             _services.PropertyPopulator.SetImageService(_services.ImageService);
+            _services.PropertyPopulator.SetGameDataService(_services.GameData);
             _services.PropertyPopulator.SetCurrentSoundsetId = id => _currentSoundsetId = id;
             _services.PropertyAutoSave = new PropertyAutoSaveService(
                 findControl: this.FindControl<Control>,
@@ -1494,17 +1496,49 @@ namespace DialogEditor.Views
 
             _viewModel.StatusMessage = $"Loading: {entry.ResRef}...";
 
+            // First try SoundPlaybackService (handles loose files, HAK, and cached BIF)
             var result = await _services.SoundPlayback.PlaySoundAsync(entry.ResRef);
 
             if (result.Success)
             {
                 _viewModel.StatusMessage = $"Playing: {entry.ResRef}{result.SourceLabel}";
+                return;
+            }
+
+            // Fallback: Try loading directly from GameDataService (BIF archives)
+            // This works even when SoundBrowserIncludeBifFiles is disabled
+            var soundData = _services.GameData.FindResource(entry.ResRef, ResourceTypes.Wav);
+            if (soundData != null)
+            {
+                // Log first bytes for format diagnosis
+                var headerBytes = soundData.Length >= 16 ? soundData[..16] : soundData;
+                var hex = BitConverter.ToString(headerBytes).Replace("-", " ");
+                var ascii = new string(headerBytes.Select(b => b >= 32 && b < 127 ? (char)b : '.').ToArray());
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Found sound in BIF: {entry.ResRef} ({soundData.Length} bytes) - Header: {hex} | {ascii}");
+                try
+                {
+                    // Extract to temp file and play
+                    var tempPath = Path.Combine(Path.GetTempPath(), $"ssf_{entry.ResRef}.wav");
+                    await File.WriteAllBytesAsync(tempPath, soundData);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Wrote temp file: {tempPath}");
+                    _services.Audio.Play(tempPath);
+                    _viewModel.StatusMessage = $"Playing: {entry.ResRef} (from BIF)";
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to play BIF sound '{entry.ResRef}': {ex.GetType().Name}: {ex.Message}");
+                    _viewModel.StatusMessage = $"Error: {ex.Message}";
+                    if (playButton != null) playButton.IsEnabled = true;
+                }
             }
             else
             {
-                _viewModel.StatusMessage = $"Sound not found: {entry.ResRef}";
-                if (playButton != null) playButton.IsEnabled = true;
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Sound not found in GameDataService: {entry.ResRef}");
             }
+
+            _viewModel.StatusMessage = $"Sound not found: {entry.ResRef}";
+            if (playButton != null) playButton.IsEnabled = true;
         }
 
         // OnConversationSettingChanged moved to MainWindow.Properties.cs

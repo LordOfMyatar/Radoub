@@ -135,7 +135,16 @@ public class GameDataService : IGameDataService
     public byte[]? FindResource(string resRef, ushort resourceType)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _resolver?.FindResource(resRef, resourceType);
+
+        if (_resolver == null)
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"FindResource({resRef}, {resourceType}): resolver is null", "GameDataService", "GameData");
+            return null;
+        }
+
+        var result = _resolver.FindResource(resRef, resourceType);
+        UnifiedLogger.Log(LogLevel.DEBUG, $"FindResource({resRef}, {resourceType}): {(result != null ? $"{result.Length} bytes" : "not found")}", "GameDataService", "GameData");
+        return result;
     }
 
     public IEnumerable<GameResourceInfo> ListResources(ushort resourceType)
@@ -179,18 +188,28 @@ public class GameDataService : IGameDataService
     {
         var settings = RadoubSettings.Instance;
 
+        UnifiedLogger.Log(LogLevel.INFO, $"InitializeFromSettings: HasGamePaths={settings.HasGamePaths}, " +
+            $"BaseGameInstallPath='{settings.BaseGameInstallPath ?? "(null)"}', " +
+            $"NeverwinterNightsPath='{settings.NeverwinterNightsPath ?? "(null)"}'", "GameDataService", "GameData");
+
         if (!settings.HasGamePaths)
         {
-            UnifiedLogger.Log(LogLevel.DEBUG, "No game paths configured", "GameDataService", "GameData");
+            UnifiedLogger.Log(LogLevel.WARN, "No game paths configured - BIF lookup disabled", "GameDataService", "GameData");
             return;
         }
 
         var config = BuildConfig(settings);
+        UnifiedLogger.Log(LogLevel.INFO, $"BuildConfig: GameDataPath='{config.GameDataPath ?? "(null)"}', " +
+            $"KeyFilePath='{config.KeyFilePath ?? "(null)"}', " +
+            $"OverridePath='{config.OverridePath ?? "(null)"}'", "GameDataService", "GameData");
+
         _resolver = new GameResourceResolver(config);
 
         // Load TLK
         var tlkPath = settings.GetTlkPath(settings.EffectiveLanguage, settings.PreferredGender);
         LoadBaseTlk(tlkPath);
+
+        UnifiedLogger.Log(LogLevel.INFO, $"GameDataService initialized: IsConfigured={IsConfigured}", "GameDataService", "GameData");
     }
 
     private static GameResourceConfig BuildConfig(RadoubSettings settings)
