@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.42-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-885` | **PR**: #936
+
+### Sprint: Spells Panel Polish (#885)
+
+- [x] #816 - Spells panel filter toolbar overflow (completed in v0.1.39)
+- [x] #815 - Spells panel class selector overflow (completed in v0.1.39)
+- [x] #776 - Support multiple memorizations of same spell
+  - Replaced memorized checkbox with +/- buttons and count display
+  - Shows memorization count (e.g., "3" for three memorizations)
+  - Status column shows "M×3" for multiple memorizations
+  - Tracks spell memorization counts correctly in model for save/load
+  - Spontaneous casters (Bard, Sorcerer) show dash instead of controls
+- [x] #777 - Add Clear All Spells option
+  - "Clear All" button in Spell Actions section
+  - Confirmation dialog showing count of spells to be cleared
+  - Clears both known and memorized spells for selected class
+
+---
+
 ## [0.1.41-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-931` | **PR**: #933
 

@@ -314,6 +314,10 @@ public class ThemeManager
             resources["LayerFillColorAltBrush"] = sidebarBrush;
             resources["SystemControlBackgroundAltHighBrush"] = sidebarBrush;
             resources["SystemControlBackgroundChromeMediumBrush"] = sidebarBrush;
+
+            // Table/list backgrounds - use sidebar color for consistency
+            // This ensures contrast calculations in brush-contrast-test.html match actual rendering
+            resources["SystemControlBackgroundBaseLowBrush"] = sidebarBrush;
         }
 
         // Text colors - controls need TextControlForeground

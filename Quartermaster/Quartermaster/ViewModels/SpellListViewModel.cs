@@ -1,4 +1,5 @@
 using System;
+using System.Windows.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Quartermaster.Services;
@@ -13,9 +14,11 @@ public class SpellListViewModel : BindableBase
 {
     private bool _isKnown;
     private bool _isMemorized;
+    private int _memorizedCount;
     private string _statusText = "";
     private IBrush _statusColor = Brushes.Transparent;
     private IBrush _rowBackground = Brushes.Transparent;
+    private IBrush _memorizedCountColor = Brushes.Transparent;
     private double _textOpacity = 1.0;
     private Bitmap? _iconBitmap;
     private bool _iconLoaded = false;
@@ -92,6 +95,11 @@ public class SpellListViewModel : BindableBase
                 OnPropertyChanged(nameof(KnownTooltip));
                 OnPropertyChanged(nameof(CanToggleMemorized));
                 OnPropertyChanged(nameof(MemorizedTooltip));
+                OnPropertyChanged(nameof(CanIncrementMemorized));
+                OnPropertyChanged(nameof(CanDecrementMemorized));
+                // Notify commands that their CanExecute may have changed
+                IncrementMemorizedCommand.RaiseCanExecuteChanged();
+                DecrementMemorizedCommand.RaiseCanExecuteChanged();
                 OnKnownChanged?.Invoke(this, value);
             }
         }
@@ -110,6 +118,80 @@ public class SpellListViewModel : BindableBase
                 OnMemorizedChanged?.Invoke(this, value);
             }
         }
+    }
+
+    /// <summary>
+    /// Number of times this spell is memorized.
+    /// </summary>
+    public int MemorizedCount
+    {
+        get => _memorizedCount;
+        set
+        {
+            if (_memorizedCount != value)
+            {
+                _memorizedCount = value;
+                _isMemorized = value > 0;
+                OnPropertyChanged(nameof(MemorizedCount));
+                OnPropertyChanged(nameof(MemorizedCountDisplay));
+                OnPropertyChanged(nameof(IsMemorized));
+                OnPropertyChanged(nameof(CanDecrementMemorized));
+                OnPropertyChanged(nameof(CanIncrementMemorized));
+                // Notify commands that their CanExecute may have changed
+                IncrementMemorizedCommand.RaiseCanExecuteChanged();
+                DecrementMemorizedCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Display string for memorized count.
+    /// </summary>
+    public string MemorizedCountDisplay => _memorizedCount.ToString();
+
+    /// <summary>
+    /// Color for the memorized count display.
+    /// </summary>
+    public IBrush MemorizedCountColor
+    {
+        get => _memorizedCountColor;
+        set => SetProperty(ref _memorizedCountColor, value);
+    }
+
+    /// <summary>
+    /// Whether the decrement button should be enabled.
+    /// </summary>
+    public bool CanDecrementMemorized => !IsBlocked && IsKnown && !IsSpontaneousCaster && _memorizedCount > 0;
+
+    /// <summary>
+    /// Whether the increment button should be enabled.
+    /// </summary>
+    public bool CanIncrementMemorized => !IsBlocked && IsKnown && !IsSpontaneousCaster;
+
+    /// <summary>
+    /// Command to increment memorization count.
+    /// </summary>
+    public RelayCommand IncrementMemorizedCommand { get; }
+
+    /// <summary>
+    /// Command to decrement memorization count.
+    /// </summary>
+    public RelayCommand DecrementMemorizedCommand { get; }
+
+    /// <summary>
+    /// Callback when memorization count changes. Args: (SpellListViewModel spell, int delta)
+    /// </summary>
+    public Action<SpellListViewModel, int>? OnMemorizedCountChanged { get; set; }
+
+    public SpellListViewModel()
+    {
+        IncrementMemorizedCommand = new RelayCommand(
+            () => OnMemorizedCountChanged?.Invoke(this, 1),
+            () => CanIncrementMemorized);
+
+        DecrementMemorizedCommand = new RelayCommand(
+            () => OnMemorizedCountChanged?.Invoke(this, -1),
+            () => CanDecrementMemorized);
     }
 
     public bool IsBlocked { get; set; }

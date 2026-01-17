@@ -9,52 +9,78 @@
         <!-- Main layout: Spell Slot Table on left, Spell List on right -->
         <Grid ColumnDefinitions="Auto,*">
 
-            <!-- LEFT COLUMN: Spell Slot Table + Known Spells List -->
-            <StackPanel Grid.Column="0" Margin="0,0,15,0">
-                <!-- Spell Slot Table -->
-                <Border x:Name="SpellSlotTableBorder"
+            <!-- LEFT COLUMN: Summary Tables + Known Spells List (scrollable) -->
+            <ScrollViewer Grid.Column="0"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Margin="0,0,15,0">
+                <StackPanel>
+                    <!-- Known Spells Table (spontaneous casters only: Sorcerer, Bard) -->
+                    <!-- Shows: current known / limit from cls_spkn_*.2da -->
+                    <Border x:Name="SpellSlotTableBorder"
                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                         CornerRadius="4"
                         Padding="10"
                         MinWidth="180"
                         IsVisible="False"
-                        AutomationProperties.AutomationId="SpellSlotTableSection">
+                        AutomationProperties.AutomationId="KnownSpellsTableSection">
                     <StackPanel>
-                        <TextBlock Text="Spell Slots"
+                        <TextBlock x:Name="SpellSlotTableTitle"
+                                   Text="Known Spells"
                                    FontWeight="SemiBold"
-                                   FontSize="{DynamicResource FontSizeNormal}"
+                                   FontSize="{DynamicResource FontSizeMedium}"
                                    Margin="0,0,0,10"/>
                         <!-- Dynamic table grid will be added here -->
                         <Grid x:Name="SpellSlotTableGrid">
-                            <!-- Columns and rows populated dynamically based on caster classes -->
+                            <!-- Columns and rows populated dynamically based on spontaneous caster classes -->
                         </Grid>
                     </StackPanel>
                 </Border>
 
-                <!-- Known Spells List (grouped by level) -->
+                <!-- Memorized Spells Table (prepared casters: Wizard, Cleric, Druid, etc.) -->
+                <!-- Shows: current memorized / slots from cls_spgn_*.2da -->
+                <Border x:Name="MemorizedSpellsTableBorder"
+                        Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="0,10,0,0"
+                        MinWidth="180"
+                        IsVisible="False"
+                        AutomationProperties.AutomationId="MemorizedSpellsTableSection">
+                    <StackPanel>
+                        <TextBlock Text="Memorized Spells"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeMedium}"
+                                   Margin="0,0,0,10"/>
+                        <!-- Dynamic table grid showing memorized spell counts by level -->
+                        <Grid x:Name="MemorizedSpellsTableGrid">
+                            <!-- Columns and rows populated dynamically -->
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Known Spells List (all casters - detailed spell names) -->
                 <Border x:Name="KnownSpellsListBorder"
                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                         CornerRadius="4"
                         Padding="10"
                         Margin="0,10,0,0"
                         MinWidth="180"
-                        MaxHeight="400"
                         IsVisible="False"
                         AutomationProperties.AutomationId="KnownSpellsListSection">
                     <StackPanel>
-                        <TextBlock Text="Known Spells"
+                        <TextBlock Text="Spell List"
                                    FontWeight="SemiBold"
-                                   FontSize="{DynamicResource FontSizeNormal}"
+                                   FontSize="{DynamicResource FontSizeMedium}"
                                    Margin="0,0,0,10"/>
-                        <!-- Scrollable list of known spells grouped by level -->
-                        <ScrollViewer MaxHeight="350" VerticalScrollBarVisibility="Auto">
-                            <StackPanel x:Name="KnownSpellsListPanel">
-                                <!-- Dynamically populated with spell names grouped by level -->
-                            </StackPanel>
-                        </ScrollViewer>
+                        <!-- Spell names grouped by level - no max height, can grow -->
+                        <StackPanel x:Name="KnownSpellsListPanel">
+                            <!-- Dynamically populated with spell names grouped by level -->
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
+            </ScrollViewer>
 
             <!-- RIGHT COLUMN: Original spell panel content -->
             <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,*,Auto">
@@ -64,33 +90,25 @@
                            FontSize="{DynamicResource FontSizeXLarge}"
                            FontWeight="Bold"/>
 
-                <!-- Class Radio Buttons (Class 1-8) -->
+                <!-- Caster Class Selector - compact layout -->
                 <Border Grid.Row="1"
                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     CornerRadius="4"
-                    Padding="10"
-                    Margin="0,0,0,10">
-                <StackPanel>
-                    <TextBlock Text="Caster Class"
-                               FontWeight="SemiBold"
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Margin="0,0,0,8"/>
-                    <!-- ComboBox for class selection - works well on any screen size -->
-                    <ComboBox x:Name="ClassComboBox"
-                              HorizontalAlignment="Stretch"
-                              MaxWidth="350"
-                              AutomationProperties.AutomationId="SpellsClassComboBox"/>
-
-                    <!-- Spell Slot Summary -->
-                    <TextBlock x:Name="SpellSlotSummaryText"
-                               Text=""
-                               FontSize="{DynamicResource FontSizeSmall}"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                               TextWrapping="Wrap"
-                               Margin="0,10,0,0"
-                               AutomationProperties.AutomationId="SpellSlotSummary"/>
-                </StackPanel>
-            </Border>
+                    Padding="8,6"
+                    Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="Caster Class"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   VerticalAlignment="Center"/>
+                        <ComboBox x:Name="ClassComboBox"
+                                  MinWidth="180"
+                                  MaxWidth="350"
+                                  AutomationProperties.AutomationId="SpellsClassComboBox"/>
+                    </StackPanel>
+                </Border>
+                <!-- Hidden summary text - kept for automation compatibility but not displayed -->
+                <TextBlock x:Name="SpellSlotSummaryText" IsVisible="False" AutomationProperties.AutomationId="SpellSlotSummary"/>
 
             <!-- Filter Toolbar - WrapPanel allows filters to flow to multiple lines on narrow screens -->
             <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,5">
@@ -175,13 +193,13 @@
                         BorderThickness="1,1,1,0"
                         CornerRadius="4,4,0,0"
                         Padding="10,8,25,8">
-                    <Grid ColumnDefinitions="32,35,35,*,60,100,80,80">
+                    <Grid ColumnDefinitions="32,35,70,*,60,100,80,80">
                         <TextBlock Grid.Column="0" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                         <TextBlock Grid.Column="1" Text="K" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    ToolTip.Tip="Known - Spell is in spellbook/learned"/>
-                        <TextBlock Grid.Column="2" Text="M" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
+                        <TextBlock Grid.Column="2" Text="Mem" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                    x:Name="MemorizedHeader"
-                                   ToolTip.Tip="Memorized - Spell is prepared for casting (disabled for spontaneous casters)"/>
+                                   ToolTip.Tip="Memorized - Number of times spell is prepared (use +/- to adjust)"/>
                         <TextBlock Grid.Column="3" Text="Spell Name" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"/>
                         <TextBlock Grid.Column="4" Text="Level" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
                         <TextBlock Grid.Column="5" Text="School" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"/>
@@ -199,12 +217,20 @@
                          Background="Transparent"
                          SelectionMode="Single"
                          AutomationProperties.AutomationId="SpellsListItems">
+                    <!-- Remove default ListBoxItem padding/margin for tight row spacing -->
+                    <ListBox.ItemContainerTheme>
+                        <ControlTheme TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="MinHeight" Value="0"/>
+                        </ControlTheme>
+                    </ListBox.ItemContainerTheme>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border Background="{Binding RowBackground}"
-                                    Padding="10,6,10,6"
+                                    Padding="10,4,10,4"
                                     ToolTip.Tip="{Binding Description}">
-                                <Grid ColumnDefinitions="32,35,35,*,60,100,80,80">
+                                <Grid ColumnDefinitions="32,35,70,*,60,100,80,80">
                                     <!-- Icon -->
                                     <Image Grid.Column="0"
                                            Source="{Binding IconBitmap}"
@@ -223,14 +249,47 @@
                                               ToolTip.Tip="{Binding KnownTooltip}"
                                               AutomationProperties.AutomationId="SpellKnownCheckbox"/>
 
-                                    <!-- Memorized checkbox -->
-                                    <CheckBox Grid.Column="2"
-                                              IsChecked="{Binding IsMemorized}"
-                                              IsEnabled="{Binding CanToggleMemorized}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              ToolTip.Tip="{Binding MemorizedTooltip}"
-                                              AutomationProperties.AutomationId="SpellMemorizedCheckbox"/>
+                                    <!-- Memorized count with +/- buttons -->
+                                    <StackPanel Grid.Column="2"
+                                                Orientation="Horizontal"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Spacing="2"
+                                                IsVisible="{Binding !IsSpontaneousCaster}">
+                                        <Button Content="-"
+                                                Width="22" Height="22"
+                                                Padding="0"
+                                                FontSize="{DynamicResource FontSizeNormal}"
+                                                FontWeight="Bold"
+                                                Click="OnDecrementMemorizedClick"
+                                                IsEnabled="{Binding CanDecrementMemorized}"
+                                                ToolTip.Tip="Remove one memorization"
+                                                AutomationProperties.AutomationId="SpellMemorizedMinus"/>
+                                        <TextBlock Text="{Binding MemorizedCountDisplay}"
+                                                   Width="24"
+                                                   TextAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="{DynamicResource FontSizeNormal}"
+                                                   FontWeight="Bold"
+                                                   Foreground="{Binding MemorizedCountColor}"/>
+                                        <Button Content="+"
+                                                Width="22" Height="22"
+                                                Padding="0"
+                                                FontSize="{DynamicResource FontSizeNormal}"
+                                                FontWeight="Bold"
+                                                Click="OnIncrementMemorizedClick"
+                                                IsEnabled="{Binding CanIncrementMemorized}"
+                                                ToolTip.Tip="Add one memorization"
+                                                AutomationProperties.AutomationId="SpellMemorizedPlus"/>
+                                    </StackPanel>
+                                    <!-- Spontaneous casters don't memorize - show dash -->
+                                    <TextBlock Grid.Column="2"
+                                               Text="—"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                               IsVisible="{Binding IsSpontaneousCaster}"
+                                               ToolTip.Tip="Spontaneous casters don't memorize spells"/>
 
                                     <!-- Spell Name -->
                                     <TextBlock Grid.Column="3"
@@ -320,11 +379,11 @@
                     </Border>
                 </Expander>
 
-                <!-- Spell Actions (placeholder buttons) -->
+                <!-- Spell Actions -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
-                    <Button Content="Clear List"
-                            IsEnabled="False"
-                            ToolTip.Tip="Clear class spell list (not yet implemented)"
+                    <Button x:Name="ClearSpellListButton"
+                            Content="Clear All"
+                            ToolTip.Tip="Clear all known and memorized spells for selected class"
                             AutomationProperties.AutomationId="ClearSpellListButton"/>
                     <Button Content="Save List"
                             IsEnabled="False"

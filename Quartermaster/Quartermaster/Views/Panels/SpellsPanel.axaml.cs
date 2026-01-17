@@ -29,11 +29,15 @@ public partial class SpellsPanel : UserControl
     // UI Controls
     private Border? _spellSlotTableBorder;
     private Grid? _spellSlotTableGrid;
+    private TextBlock? _spellSlotTableTitle;
     private Border? _knownSpellsListBorder;
     private StackPanel? _knownSpellsListPanel;
+    private Border? _memorizedSpellsTableBorder;
+    private Grid? _memorizedSpellsTableGrid;
     private TextBlock? _spellSlotSummaryText;
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
+    private Button? _clearSpellListButton;
     private ComboBox? _levelFilterComboBox;
     private ComboBox? _schoolFilterComboBox;
     private ComboBox? _statusFilterComboBox;
@@ -50,7 +54,7 @@ public partial class SpellsPanel : UserControl
     private ObservableCollection<SpellListViewModel> _displayedSpells = new();
     private List<SpellListViewModel> _allSpells = new();
     private HashSet<int> _knownSpellIds = new();
-    private HashSet<int> _memorizedSpellIds = new();
+    private Dictionary<int, int> _memorizedSpellCounts = new();  // spellId -> count
     private int _selectedClassIndex = 0;
     private bool _isSpontaneousCaster = false;
 
@@ -65,7 +69,8 @@ public partial class SpellsPanel : UserControl
     private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(SettingsService.CurrentThemeId) ||
-            e.PropertyName == nameof(SettingsService.FontFamily))
+            e.PropertyName == nameof(SettingsService.FontFamily) ||
+            e.PropertyName == nameof(SettingsService.FontSize))
         {
             // Theme or font changed - reload creature to refresh view
             if (_currentCreature != null)
@@ -82,8 +87,11 @@ public partial class SpellsPanel : UserControl
         // Find UI controls
         _spellSlotTableBorder = this.FindControl<Border>("SpellSlotTableBorder");
         _spellSlotTableGrid = this.FindControl<Grid>("SpellSlotTableGrid");
+        _spellSlotTableTitle = this.FindControl<TextBlock>("SpellSlotTableTitle");
         _knownSpellsListBorder = this.FindControl<Border>("KnownSpellsListBorder");
         _knownSpellsListPanel = this.FindControl<StackPanel>("KnownSpellsListPanel");
+        _memorizedSpellsTableBorder = this.FindControl<Border>("MemorizedSpellsTableBorder");
+        _memorizedSpellsTableGrid = this.FindControl<Grid>("MemorizedSpellsTableGrid");
         _spellSlotSummaryText = this.FindControl<TextBlock>("SpellSlotSummaryText");
         _searchTextBox = this.FindControl<TextBox>("SearchTextBox");
         _clearSearchButton = this.FindControl<Button>("ClearSearchButton");
@@ -113,6 +121,12 @@ public partial class SpellsPanel : UserControl
                 if (_searchTextBox != null)
                     _searchTextBox.Text = "";
             };
+        }
+
+        _clearSpellListButton = this.FindControl<Button>("ClearSpellListButton");
+        if (_clearSpellListButton != null)
+        {
+            _clearSpellListButton.Click += OnClearSpellListClick;
         }
 
         if (_levelFilterComboBox != null)
@@ -228,6 +242,8 @@ public partial class SpellsPanel : UserControl
         }
 
         // Apply status filter
+        // Note: "All" (index 0) excludes blocked spells by default for cleaner view
+        // Use "Blocked" filter to explicitly see blocked spells
         int statusIndex = _statusFilterComboBox?.SelectedIndex ?? 0;
         filtered = statusIndex switch
         {
@@ -235,7 +251,7 @@ public partial class SpellsPanel : UserControl
             2 => filtered.Where(s => s.IsMemorized),      // Memorized Only
             3 => filtered.Where(s => !s.IsBlocked),       // Available
             4 => filtered.Where(s => s.IsBlocked),        // Blocked
-            _ => filtered                                  // All Spells
+            _ => filtered.Where(s => !s.IsBlocked)        // All (excludes blocked)
         };
 
         // Update display
@@ -270,7 +286,7 @@ public partial class SpellsPanel : UserControl
         _displayedSpells.Clear();
         _allSpells.Clear();
         _knownSpellIds.Clear();
-        _memorizedSpellIds.Clear();
+        _memorizedSpellCounts.Clear();
         _currentCreature = null;
         _selectedClassIndex = 0;
 
@@ -289,6 +305,16 @@ public partial class SpellsPanel : UserControl
             _knownSpellsListBorder.IsVisible = false;
         if (_knownSpellsListPanel != null)
             _knownSpellsListPanel.Children.Clear();
+
+        // Hide memorized spells table
+        if (_memorizedSpellsTableBorder != null)
+            _memorizedSpellsTableBorder.IsVisible = false;
+        if (_memorizedSpellsTableGrid != null)
+        {
+            _memorizedSpellsTableGrid.Children.Clear();
+            _memorizedSpellsTableGrid.ColumnDefinitions.Clear();
+            _memorizedSpellsTableGrid.RowDefinitions.Clear();
+        }
 
         SetText(_spellSlotSummaryText, "");
 

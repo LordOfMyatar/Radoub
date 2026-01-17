@@ -16,13 +16,17 @@ public partial class SpellsPanel
         // Update known spells list
         UpdateKnownSpellsList();
 
+        // Update memorized spells table
+        UpdateMemorizedSpellsTable();
+
         // Update selected class spell slot summary
         UpdateSpellSlotSummary();
     }
 
     /// <summary>
-    /// Updates the spell slot table on the left side.
-    /// Shows a grid with spell levels as rows and caster classes as columns.
+    /// Updates the Known Spells table on the left side.
+    /// Shows spontaneous casters (Sorcerer, Bard) with their known spells count vs. limit.
+    /// Prepared casters are shown in the Memorized Spells table instead.
     /// </summary>
     private void UpdateAllClassesSummary()
     {
@@ -41,34 +45,34 @@ public partial class SpellsPanel
 
         // Get theme-aware font sizes
         var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
-        var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
 
-        var casterClasses = new List<(int classIndex, string className, int classLevel, int[] limits, Radoub.Formats.Utc.CreatureClass classEntry, bool isSpontaneous)>();
+        var spontaneousCasters = new List<(int classIndex, string className, int classLevel, int[] limits, Radoub.Formats.Utc.CreatureClass classEntry)>();
 
-        // Find all caster classes
+        // Find only SPONTANEOUS caster classes (Sorcerer, Bard)
+        // Prepared casters (Wizard, Cleric, etc.) go in the Memorized Spells table
         for (int i = 0; i < _currentCreature.ClassList.Count; i++)
         {
             var classEntry = _currentCreature.ClassList[i];
             var className = _displayService.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
             var isSpontaneous = _displayService.IsSpontaneousCaster(classEntry.Class);
 
-            // For spontaneous casters, use spells known limit; for prepared casters, use spell slots
-            var limits = isSpontaneous
-                ? _displayService.GetSpellsKnownLimit(classEntry.Class, classEntry.ClassLevel)
-                : _displayService.GetSpellSlots(classEntry.Class, classEntry.ClassLevel);
+            if (!isSpontaneous)
+                continue;  // Skip prepared casters - they go in Memorized table
 
-            // Check if this class has spell slots/limits or has spell data
+            // For spontaneous casters, use spells known limit from cls_spkn_*.2da
+            var limits = _displayService.GetSpellsKnownLimit(classEntry.Class, classEntry.ClassLevel);
+
+            // Check if this class has spell limits or has known spell data
             bool hasSpellLimits = limits != null && limits.Any(s => s > 0);
-            bool hasSpellData = classEntry.KnownSpells.Any(list => list.Count > 0) ||
-                                classEntry.MemorizedSpells.Any(list => list.Count > 0);
+            bool hasSpellData = classEntry.KnownSpells.Any(list => list.Count > 0);
 
             if (hasSpellLimits || hasSpellData)
             {
-                casterClasses.Add((i, className, classEntry.ClassLevel, limits ?? new int[10], classEntry, isSpontaneous));
+                spontaneousCasters.Add((i, className, classEntry.ClassLevel, limits ?? new int[10], classEntry));
             }
         }
 
-        if (casterClasses.Count == 0)
+        if (spontaneousCasters.Count == 0)
         {
             _spellSlotTableBorder.IsVisible = false;
             return;
@@ -76,11 +80,11 @@ public partial class SpellsPanel
 
         _spellSlotTableBorder.IsVisible = true;
 
-        // Find all spell levels that have limits across any class
+        // Find all spell levels that have limits across any spontaneous class
         var activeLevels = new List<int>();
         for (int level = 0; level <= 9; level++)
         {
-            if (casterClasses.Any(c => c.limits[level] > 0))
+            if (spontaneousCasters.Any(c => c.limits[level] > 0))
             {
                 activeLevels.Add(level);
             }
@@ -98,7 +102,7 @@ public partial class SpellsPanel
 
         // Add column definitions: Label column + one per class
         _spellSlotTableGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-        foreach (var _ in casterClasses)
+        foreach (var _ in spontaneousCasters)
         {
             _spellSlotTableGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
         }
@@ -115,7 +119,7 @@ public partial class SpellsPanel
         {
             Text = "Lvl",
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
-            FontSize = smallFontSize,
+            FontSize = normalFontSize,
             Margin = new Avalonia.Thickness(0, 0, 10, 4),
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
         };
@@ -124,16 +128,16 @@ public partial class SpellsPanel
         _spellSlotTableGrid.Children.Add(lvlHeader);
 
         // Add class name headers
-        for (int col = 0; col < casterClasses.Count; col++)
+        for (int col = 0; col < spontaneousCasters.Count; col++)
         {
-            var (classIndex, className, classLevel, _, _, _) = casterClasses[col];
+            var (classIndex, className, classLevel, _, _) = spontaneousCasters[col];
             var isSelected = classIndex == _selectedClassIndex;
 
             var classHeader = new TextBlock
             {
                 Text = className,
                 FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                FontSize = smallFontSize,
+                FontSize = normalFontSize,
                 Margin = new Avalonia.Thickness(4, 0, 4, 4),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 Foreground = isSelected
@@ -156,7 +160,7 @@ public partial class SpellsPanel
             var levelLabel = new TextBlock
             {
                 Text = spellLevel.ToString(),
-                FontSize = smallFontSize,
+                FontSize = normalFontSize,
                 FontWeight = Avalonia.Media.FontWeight.SemiBold,
                 Margin = new Avalonia.Thickness(0, 2, 10, 2),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
@@ -166,10 +170,10 @@ public partial class SpellsPanel
             Grid.SetColumn(levelLabel, 0);
             _spellSlotTableGrid.Children.Add(levelLabel);
 
-            // Slot/known counts for each class
-            for (int col = 0; col < casterClasses.Count; col++)
+            // Known spell counts for each spontaneous class
+            for (int col = 0; col < spontaneousCasters.Count; col++)
             {
-                var (classIndex, className, _, limits, classEntry, isSpontaneous) = casterClasses[col];
+                var (classIndex, className, _, limits, classEntry) = spontaneousCasters[col];
                 int totalLimit = limits[spellLevel];
 
                 // Only count spells that are actual class spells (not feat-based abilities like Barbarian Rage)
@@ -211,18 +215,15 @@ public partial class SpellsPanel
                 }
                 else
                 {
-                    // Empty - normal color
+                    // Empty - use info brush for visibility on dark themes
                     cellText = $"0/{totalLimit}";
-                    cellColor = isSelected
-                        ? GetInfoBrush()
-                        : this.FindResource("SystemControlForegroundBaseMediumBrush") as IBrush
-                          ?? GetDisabledBrush();
+                    cellColor = GetInfoBrush();
                 }
 
                 var slotCell = new TextBlock
                 {
                     Text = cellText,
-                    FontSize = smallFontSize,
+                    FontSize = normalFontSize,
                     Margin = new Avalonia.Thickness(4, 2, 4, 2),
                     HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
@@ -254,8 +255,6 @@ public partial class SpellsPanel
 
         // Get theme-aware font sizes
         var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
-        var smallFontSize = this.FindResource("FontSizeSmall") as double? ?? 12;
-        var xsmallFontSize = this.FindResource("FontSizeXSmall") as double? ?? 10;
 
         // First pass: collect all known spells and count occurrences across classes
         var spellOccurrences = new Dictionary<int, List<string>>(); // spellId -> list of class names
@@ -316,7 +315,7 @@ public partial class SpellsPanel
             {
                 Text = className,
                 FontWeight = Avalonia.Media.FontWeight.Bold,
-                FontSize = smallFontSize,
+                FontSize = normalFontSize,
                 Foreground = isSelectedClass
                     ? GetInfoBrush()
                     : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush ?? GetDisabledBrush(),
@@ -330,13 +329,13 @@ public partial class SpellsPanel
                 var knownAtLevel = classEntry.KnownSpells[level];
                 if (knownAtLevel.Count == 0) continue;
 
-                // Level header
+                // Level header - use info brush for better contrast on dark themes
                 var levelHeader = new TextBlock
                 {
                     Text = level == 0 ? "  Cantrips" : $"  Level {level}",
                     FontWeight = Avalonia.Media.FontWeight.SemiBold,
-                    FontSize = xsmallFontSize,
-                    Foreground = GetDisabledBrush(),
+                    FontSize = normalFontSize,
+                    Foreground = GetInfoBrush(),
                     Margin = new Avalonia.Thickness(0, 4, 0, 2)
                 };
                 _knownSpellsListPanel.Children.Add(levelHeader);
@@ -351,15 +350,34 @@ public partial class SpellsPanel
                     // Check if spell appears in multiple classes (overlap)
                     bool isOverlap = spellOccurrences.TryGetValue(spell.Spell, out var occurrences) && occurrences.Count > 1;
 
+                    // Check memorization count
+                    int memCount = 0;
+                    foreach (var memSpell in classEntry.MemorizedSpells[level])
+                    {
+                        if (memSpell.Spell == spell.Spell)
+                            memCount++;
+                    }
+
                     // Show spell name with indicators
                     var displayName = spellName;
                     IBrush foreground;
 
+                    // Add memorization count in parentheses if memorized
+                    if (memCount > 0)
+                    {
+                        displayName = $"{spellName} ({memCount})";
+                    }
+
                     if (classSpellLevel < 0)
                     {
                         // Not a standard class spell (e.g., feat-based ability)
-                        displayName = $"{spellName} *";
+                        displayName = memCount > 0 ? $"{spellName} ({memCount}) *" : $"{spellName} *";
                         foreground = GetDisabledBrush();
+                    }
+                    else if (memCount > 0)
+                    {
+                        // Memorized - highlight in gold
+                        foreground = GetSelectionBrush();
                     }
                     else if (isOverlap)
                     {
@@ -375,7 +393,7 @@ public partial class SpellsPanel
                     var spellLabel = new TextBlock
                     {
                         Text = $"    {displayName}",
-                        FontSize = smallFontSize,
+                        FontSize = normalFontSize,
                         Foreground = foreground,
                         Margin = new Avalonia.Thickness(0, 1, 0, 1)
                     };
@@ -448,6 +466,183 @@ public partial class SpellsPanel
         else
         {
             _spellSlotSummaryText.Text = string.Join(" | ", summaryParts);
+        }
+    }
+
+    /// <summary>
+    /// Updates the memorized spells table showing counts by spell level.
+    /// Only shown for prepared casters (not spontaneous).
+    /// </summary>
+    private void UpdateMemorizedSpellsTable()
+    {
+        if (_memorizedSpellsTableGrid == null || _memorizedSpellsTableBorder == null) return;
+
+        // Clear existing content
+        _memorizedSpellsTableGrid.Children.Clear();
+        _memorizedSpellsTableGrid.ColumnDefinitions.Clear();
+        _memorizedSpellsTableGrid.RowDefinitions.Clear();
+
+        if (_currentCreature == null || _displayService == null)
+        {
+            _memorizedSpellsTableBorder.IsVisible = false;
+            return;
+        }
+
+        // Get theme-aware font sizes
+        var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
+
+        // Collect memorized spells by class and level
+        var classMemorized = new List<(int classIndex, string className, int[] memorizedCounts, bool isSpontaneous)>();
+
+        for (int i = 0; i < _currentCreature.ClassList.Count; i++)
+        {
+            var classEntry = _currentCreature.ClassList[i];
+            var className = _displayService.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
+            var isSpontaneous = _displayService.IsSpontaneousCaster(classEntry.Class);
+
+            // Count memorized spells by level - count ALL entries in the list
+            var counts = new int[10];
+            bool hasAnyMemorized = false;
+            for (int level = 0; level <= 9; level++)
+            {
+                // Each entry in MemorizedSpells represents one memorized slot
+                counts[level] = classEntry.MemorizedSpells[level].Count;
+                if (counts[level] > 0) hasAnyMemorized = true;
+            }
+
+            // Only include if has memorized spells and is not spontaneous
+            if (hasAnyMemorized && !isSpontaneous)
+            {
+                classMemorized.Add((i, className, counts, isSpontaneous));
+            }
+        }
+
+        if (classMemorized.Count == 0)
+        {
+            _memorizedSpellsTableBorder.IsVisible = false;
+            return;
+        }
+
+        _memorizedSpellsTableBorder.IsVisible = true;
+
+        // Find active levels (levels with any memorized spells)
+        var activeLevels = new List<int>();
+        for (int level = 0; level <= 9; level++)
+        {
+            if (classMemorized.Any(c => c.memorizedCounts[level] > 0))
+            {
+                activeLevels.Add(level);
+            }
+        }
+
+        if (activeLevels.Count == 0)
+        {
+            _memorizedSpellsTableBorder.IsVisible = false;
+            return;
+        }
+
+        // Build grid: Level column + one per class
+        _memorizedSpellsTableGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        foreach (var _ in classMemorized)
+        {
+            _memorizedSpellsTableGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+        }
+
+        // Row definitions: header + one per active level
+        _memorizedSpellsTableGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        foreach (var _ in activeLevels)
+        {
+            _memorizedSpellsTableGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        }
+
+        // Header row
+        var lvlHeader = new TextBlock
+        {
+            Text = "Lvl",
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            FontSize = normalFontSize,
+            Margin = new Avalonia.Thickness(0, 0, 10, 4),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+        };
+        Grid.SetRow(lvlHeader, 0);
+        Grid.SetColumn(lvlHeader, 0);
+        _memorizedSpellsTableGrid.Children.Add(lvlHeader);
+
+        // Class name headers
+        for (int col = 0; col < classMemorized.Count; col++)
+        {
+            var (classIndex, className, _, _) = classMemorized[col];
+            var isSelected = classIndex == _selectedClassIndex;
+
+            var classHeader = new TextBlock
+            {
+                Text = className,
+                FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                FontSize = normalFontSize,
+                Margin = new Avalonia.Thickness(4, 0, 4, 4),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Foreground = isSelected
+                    ? GetInfoBrush()
+                    : this.FindResource("SystemControlForegroundBaseHighBrush") as IBrush
+                      ?? GetDisabledBrush()
+            };
+            Grid.SetRow(classHeader, 0);
+            Grid.SetColumn(classHeader, col + 1);
+            _memorizedSpellsTableGrid.Children.Add(classHeader);
+        }
+
+        // Data rows for each level
+        for (int rowIdx = 0; rowIdx < activeLevels.Count; rowIdx++)
+        {
+            int spellLevel = activeLevels[rowIdx];
+            int gridRow = rowIdx + 1;
+
+            // Level label
+            var levelLabel = new TextBlock
+            {
+                Text = spellLevel.ToString(),
+                FontSize = normalFontSize,
+                FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                Margin = new Avalonia.Thickness(0, 2, 10, 2),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            Grid.SetRow(levelLabel, gridRow);
+            Grid.SetColumn(levelLabel, 0);
+            _memorizedSpellsTableGrid.Children.Add(levelLabel);
+
+            // Memorized counts for each class
+            for (int col = 0; col < classMemorized.Count; col++)
+            {
+                var (classIndex, _, counts, _) = classMemorized[col];
+                int count = counts[spellLevel];
+                var isSelected = classIndex == _selectedClassIndex;
+
+                IBrush cellColor;
+                if (count > 0)
+                {
+                    cellColor = GetSelectionBrush();
+                }
+                else
+                {
+                    // Use info brush for visibility on dark themes
+                    cellColor = GetInfoBrush();
+                }
+
+                var countCell = new TextBlock
+                {
+                    Text = count.ToString(),
+                    FontSize = normalFontSize,
+                    FontWeight = count > 0 ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal,
+                    Margin = new Avalonia.Thickness(4, 2, 4, 2),
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    Foreground = cellColor
+                };
+                Grid.SetRow(countCell, gridRow);
+                Grid.SetColumn(countCell, col + 1);
+                _memorizedSpellsTableGrid.Children.Add(countCell);
+            }
         }
     }
 }
