@@ -71,9 +71,10 @@ public partial class SpellsPanel : UserControl
 
     private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
+        if (e.PropertyName == nameof(SettingsService.CurrentThemeId) ||
+            e.PropertyName == nameof(SettingsService.FontFamily))
         {
-            // Theme changed - reload creature to refresh colors
+            // Theme or font changed - reload creature to refresh view
             if (_currentCreature != null)
             {
                 LoadCreature(_currentCreature);

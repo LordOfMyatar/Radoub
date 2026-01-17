@@ -50,9 +50,10 @@ public partial class SkillsPanel : BasePanelControl
 
     private void OnSettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(SettingsService.CurrentThemeId))
+        if (e.PropertyName == nameof(SettingsService.CurrentThemeId) ||
+            e.PropertyName == nameof(SettingsService.FontFamily))
         {
-            // Theme changed - notify all view models to refresh color bindings
+            // Theme or font changed - notify all view models to refresh bindings
             foreach (var skill in _allSkills)
             {
                 skill.NotifyColorChanged();
