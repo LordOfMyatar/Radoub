@@ -313,14 +313,16 @@ public partial class SettingsWindowViewModel : ObservableObject
     {
         try
         {
-            var logDirectory = UnifiedLogger.GetSessionDirectory();
-            // Navigate to parent folder (Logs directory) to show all sessions
-            var logsFolder = System.IO.Path.GetDirectoryName(logDirectory);
-            if (!string.IsNullOrEmpty(logsFolder) && System.IO.Directory.Exists(logsFolder))
+            // Open the Radoub root folder to show all tool logs
+            var radoubFolder = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Radoub");
+
+            if (System.IO.Directory.Exists(radoubFolder))
             {
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = logsFolder,
+                    FileName = radoubFolder,
                     UseShellExecute = true
                 });
             }
@@ -328,6 +330,40 @@ public partial class SettingsWindowViewModel : ObservableObject
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open log folder: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void CleanupLegacyLogs()
+    {
+        try
+        {
+            // Clean up legacy ~/Radoub/Radoub/Logs directory (from before per-tool logging)
+            var legacyLogsPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Radoub", "Radoub", "Logs");
+
+            if (System.IO.Directory.Exists(legacyLogsPath))
+            {
+                System.IO.Directory.Delete(legacyLogsPath, true);
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Cleaned up legacy Radoub/Radoub/Logs directory");
+
+                // Also remove empty parent if it exists
+                var legacyParent = System.IO.Path.GetDirectoryName(legacyLogsPath);
+                if (!string.IsNullOrEmpty(legacyParent) && System.IO.Directory.Exists(legacyParent))
+                {
+                    var remaining = System.IO.Directory.GetFileSystemEntries(legacyParent);
+                    if (remaining.Length == 0)
+                    {
+                        System.IO.Directory.Delete(legacyParent);
+                        UnifiedLogger.LogApplication(LogLevel.INFO, "Removed empty legacy Radoub/Radoub directory");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to cleanup legacy logs: {ex.Message}");
         }
     }
 }

@@ -28,7 +28,7 @@
                                Foreground="{DynamicResource ThemeAccentForeground}"
                                VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding CurrentModuleName}"
-                               Foreground="{DynamicResource ThemeAccentForeground}"
+                               Foreground="{Binding IsModuleValid, Converter={x:Static vm:ModuleValidityToForegroundConverter.Instance}}"
                                VerticalAlignment="Center"/>
                     <Button Content="Open..."
                             Command="{Binding OpenModuleCommand}"

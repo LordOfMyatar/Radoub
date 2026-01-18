@@ -30,3 +30,29 @@ public class BoolToBrushConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+/// <summary>
+/// Converts module validity to foreground color.
+/// True = White (valid), False = Warning yellow (invalid)
+/// </summary>
+public class ModuleValidityToForegroundConverter : IValueConverter
+{
+    public static readonly ModuleValidityToForegroundConverter Instance = new();
+
+    private static readonly IBrush ValidBrush = new SolidColorBrush(Colors.White);
+    private static readonly IBrush InvalidBrush = new SolidColorBrush(Color.Parse("#FFCC00"));
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isValid)
+        {
+            return isValid ? ValidBrush : InvalidBrush;
+        }
+        return ValidBrush;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

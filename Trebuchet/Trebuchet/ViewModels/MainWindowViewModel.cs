@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -27,6 +28,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _currentModuleName = "(No module selected)";
+
+    [ObservableProperty]
+    private bool _isModuleValid = true;
+
+    private static readonly IBrush WarningBrush = new SolidColorBrush(Color.Parse("#FFCC00"));
+    private static readonly IBrush NormalBrush = new SolidColorBrush(Colors.White);
 
     [ObservableProperty]
     private string _gameStatusText = "Game: Not configured";
@@ -116,16 +123,19 @@ public partial class MainWindowViewModel : ObservableObject
             if (validation.IsValid)
             {
                 CurrentModuleName = moduleName;
+                IsModuleValid = true;
             }
             else
             {
                 CurrentModuleName = $"{moduleName} (Invalid)";
+                IsModuleValid = false;
                 UnifiedLogger.LogApplication(LogLevel.WARN, $"Module validation failed: {validation.Message}");
             }
         }
         else
         {
             CurrentModuleName = "(No module selected)";
+            IsModuleValid = true;
         }
 
         // Game status
