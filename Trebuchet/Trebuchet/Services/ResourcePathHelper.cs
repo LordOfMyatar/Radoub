@@ -128,6 +128,73 @@ public static class ResourcePathHelper
     }
 
     /// <summary>
+    /// Validates that a path is a valid NWN module working directory.
+    /// </summary>
+    public static bool ValidateModulePath(string path)
+    {
+        if (string.IsNullOrEmpty(path) || !Directory.Exists(path))
+            return false;
+
+        // A valid module directory should contain module.ifo (the module info file)
+        var moduleIfo = Path.Combine(path, "module.ifo");
+        if (File.Exists(moduleIfo))
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Module path validated: found module.ifo");
+            return true;
+        }
+
+        // Also check for common GFF files that indicate a module
+        var gffExtensions = new[] { ".are", ".git", ".utc", ".uti", ".dlg", ".nss" };
+        foreach (var ext in gffExtensions)
+        {
+            var files = Directory.GetFiles(path, $"*{ext}", SearchOption.TopDirectoryOnly);
+            if (files.Length > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Module path validated: found {ext} files");
+                return true;
+            }
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Module path validation failed: no module files found");
+        return false;
+    }
+
+    /// <summary>
+    /// Returns validation result with detailed message for UI display.
+    /// </summary>
+    public static PathValidationResult ValidateModulePathWithMessage(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return new PathValidationResult(false, "");
+
+        if (!Directory.Exists(path))
+            return new PathValidationResult(false, "Directory does not exist");
+
+        // Check for module.ifo
+        var moduleIfo = Path.Combine(path, "module.ifo");
+        if (File.Exists(moduleIfo))
+        {
+            // Get some stats about the module
+            var fileCount = Directory.GetFiles(path).Length;
+            return new PathValidationResult(true, $"Valid module ({fileCount} files)");
+        }
+
+        // Check for GFF files
+        var gffExtensions = new[] { ".are", ".git", ".utc", ".uti", ".dlg", ".nss" };
+        foreach (var ext in gffExtensions)
+        {
+            var files = Directory.GetFiles(path, $"*{ext}", SearchOption.TopDirectoryOnly);
+            if (files.Length > 0)
+            {
+                var fileCount = Directory.GetFiles(path).Length;
+                return new PathValidationResult(true, $"Module directory ({fileCount} files, no module.ifo)");
+            }
+        }
+
+        return new PathValidationResult(false, "Not a module - no module.ifo or GFF files found");
+    }
+
+    /// <summary>
     /// Gets platform-specific default user data paths.
     /// </summary>
     private static List<string> GetPlatformGamePaths()

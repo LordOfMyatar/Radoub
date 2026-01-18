@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -7,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using RadoubLauncher.Services;
@@ -54,6 +56,20 @@ public partial class SettingsWindowViewModel : ObservableObject
     private double _fontSizeScale = 1.0;
 
     public string FontSizePercentText => $"{(int)(FontSizeScale * 100)}%";
+
+    // Logging settings
+    [ObservableProperty]
+    private string _selectedLogLevel = "INFO";
+
+    [ObservableProperty]
+    private int _logRetentionSessions = 3;
+
+    public string LogRetentionText => $"{LogRetentionSessions} session{(LogRetentionSessions == 1 ? "" : "s")}";
+
+    public ObservableCollection<string> AvailableLogLevels { get; } = new()
+    {
+        "DEBUG", "INFO", "WARN", "ERROR"
+    };
 
     public ObservableCollection<string> AvailableLanguages { get; } = new()
     {
@@ -106,6 +122,10 @@ public partial class SettingsWindowViewModel : ObservableObject
         SelectedLanguage = sharedSettings.TlkLanguage ?? "English";
         SelectedGender = sharedSettings.TlkUseFemale ? "Female" : "Male";
         FontSizeScale = localSettings.FontSizeScale;
+
+        // Logging settings
+        LogRetentionSessions = localSettings.LogRetentionSessions;
+        SelectedLogLevel = localSettings.CurrentLogLevel.ToString();
 
         // Validate existing paths
         if (!string.IsNullOrEmpty(GameInstallPath))
@@ -161,6 +181,11 @@ public partial class SettingsWindowViewModel : ObservableObject
     partial void OnFontSizeScaleChanged(double value)
     {
         OnPropertyChanged(nameof(FontSizePercentText));
+    }
+
+    partial void OnLogRetentionSessionsChanged(int value)
+    {
+        OnPropertyChanged(nameof(LogRetentionText));
     }
 
     partial void OnSelectedThemeChanged(string value)
@@ -254,6 +279,13 @@ public partial class SettingsWindowViewModel : ObservableObject
         sharedSettings.TlkUseFemale = SelectedGender == "Female";
         localSettings.FontSizeScale = FontSizeScale;
 
+        // Logging settings
+        localSettings.LogRetentionSessions = LogRetentionSessions;
+        if (Enum.TryParse<LogLevel>(SelectedLogLevel, out var logLevel))
+        {
+            localSettings.CurrentLogLevel = logLevel;
+        }
+
         // Apply theme if changed
         var selectedThemeInfo = ThemeManager.Instance.AvailableThemes
             .FirstOrDefault(t => t.Plugin.Name == SelectedTheme);
@@ -274,5 +306,28 @@ public partial class SettingsWindowViewModel : ObservableObject
             ThemeManager.Instance.ApplyTheme(_originalThemeId);
         }
         _window.Close();
+    }
+
+    [RelayCommand]
+    private void OpenLogFolder()
+    {
+        try
+        {
+            var logDirectory = UnifiedLogger.GetSessionDirectory();
+            // Navigate to parent folder (Logs directory) to show all sessions
+            var logsFolder = System.IO.Path.GetDirectoryName(logDirectory);
+            if (!string.IsNullOrEmpty(logsFolder) && System.IO.Directory.Exists(logsFolder))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = logsFolder,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open log folder: {ex.Message}");
+        }
     }
 }

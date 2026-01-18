@@ -107,10 +107,21 @@ public partial class MainWindowViewModel : ObservableObject
     {
         var shared = RadoubSettings.Instance;
 
-        // Module status
+        // Module status with validation
         if (!string.IsNullOrEmpty(shared.CurrentModulePath))
         {
-            CurrentModuleName = Path.GetFileName(shared.CurrentModulePath);
+            var moduleName = Path.GetFileName(shared.CurrentModulePath);
+            var validation = ResourcePathHelper.ValidateModulePathWithMessage(shared.CurrentModulePath);
+
+            if (validation.IsValid)
+            {
+                CurrentModuleName = moduleName;
+            }
+            else
+            {
+                CurrentModuleName = $"{moduleName} (Invalid)";
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Module validation failed: {validation.Message}");
+            }
         }
         else
         {
@@ -246,6 +257,16 @@ public partial class MainWindowViewModel : ObservableObject
         UnifiedLogger.LogApplication(LogLevel.INFO, "Opening settings window");
         var settingsWindow = new SettingsWindow();
         settingsWindow.ShowDialog(_parentWindow);
+    }
+
+    [RelayCommand]
+    private void OpenAbout()
+    {
+        if (_parentWindow == null) return;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Opening about window");
+        var aboutWindow = new AboutWindow();
+        aboutWindow.ShowDialog(_parentWindow);
     }
 
     [RelayCommand]

@@ -35,11 +35,15 @@
                             Padding="8,4"/>
                 </StackPanel>
 
-                <!-- Settings Button -->
-                <Button Grid.Column="1"
-                        Content="Settings"
-                        Command="{Binding OpenSettingsCommand}"
-                        Padding="12,4"/>
+                <!-- Settings and Help Buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="About"
+                            Command="{Binding OpenAboutCommand}"
+                            Padding="12,4"/>
+                    <Button Content="Settings"
+                            Command="{Binding OpenSettingsCommand}"
+                            Padding="12,4"/>
+                </StackPanel>
             </Grid>
         </Border>
 

@@ -1,0 +1,95 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="RadoubLauncher.Views.AboutWindow"
+        Title="About Trebuchet"
+        Width="500" Height="400"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- App Name -->
+        <TextBlock Grid.Row="0"
+                   Text="Trebuchet"
+                   FontSize="28"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,5"/>
+
+        <!-- Subtitle -->
+        <TextBlock Grid.Row="1"
+                   Text="Radoub Launcher for Neverwinter Nights"
+                   FontSize="16"
+                   HorizontalAlignment="Center"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   Margin="0,0,0,15"/>
+
+        <!-- Author -->
+        <TextBlock Grid.Row="2"
+                   Text="by Lord"
+                   FontSize="16"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,5"/>
+
+        <!-- GitHub Link -->
+        <TextBlock Grid.Row="3"
+                   x:Name="GitHubLink"
+                   Text="https://github.com/LordOfMyatar/Radoub"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"
+                   Foreground="Blue"
+                   TextDecorations="Underline"
+                   Cursor="Hand"
+                   PointerPressed="OnGitHubLinkClick"/>
+
+        <!-- Version and Info -->
+        <StackPanel Grid.Row="4"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="10">
+            <TextBlock x:Name="VersionTextBlock"
+                       Text="Version 0.1.0 (Alpha)"
+                       FontSize="14"
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="0,15,0,0"
+                    Margin="0,10,0,0">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Radoub Toolset includes:"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Parley - Dialog Editor&#x0a;Manifest - Journal Editor&#x0a;Quartermaster - Creature/Item Editor&#x0a;Fence - Item Editor"
+                               FontSize="13"
+                               TextAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Special thanks to the&#x0a;Neverwinter Nights modding community"
+                       FontSize="13"
+                       TextAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <!-- Close Button -->
+        <Button Grid.Row="5"
+                Content="Close"
+                HorizontalAlignment="Center"
+                Width="100"
+                Click="OnCloseClick"
+                Margin="0,20,0,0"/>
+    </Grid>
+</Window>

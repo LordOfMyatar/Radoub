@@ -153,6 +153,50 @@
                     </Grid>
                 </StackPanel>
 
+                <!-- Logging Section -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Logging"
+                               FontSize="{DynamicResource FontSizeLarge}"
+                               FontWeight="SemiBold"/>
+
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" Margin="0,8,0,0">
+                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                   Text="Log Level:"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,0"/>
+                        <ComboBox Grid.Row="0" Grid.Column="1"
+                                  ItemsSource="{Binding AvailableLogLevels}"
+                                  SelectedItem="{Binding SelectedLogLevel}"
+                                  MinWidth="200"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                   Text="Session Retention:"
+                                   VerticalAlignment="Center"
+                                   Margin="0,8,12,0"/>
+                        <StackPanel Grid.Row="1" Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    Spacing="8"
+                                    Margin="0,8,0,0">
+                            <Slider Value="{Binding LogRetentionSessions}"
+                                    Minimum="1"
+                                    Maximum="10"
+                                    TickFrequency="1"
+                                    IsSnapToTickEnabled="True"
+                                    Width="200"/>
+                            <TextBlock Text="{Binding LogRetentionText}"
+                                       VerticalAlignment="Center"
+                                       Width="80"/>
+                        </StackPanel>
+
+                        <Button Grid.Row="2" Grid.Column="1"
+                                Content="Open Log Folder"
+                                Command="{Binding OpenLogFolderCommand}"
+                                Margin="0,8,0,0"
+                                Padding="8,4"
+                                HorizontalAlignment="Left"/>
+                    </Grid>
+                </StackPanel>
+
                 <!-- Tool Paths Section (Read-Only Info) -->
                 <StackPanel Spacing="8">
                     <TextBlock Text="Detected Tools"
