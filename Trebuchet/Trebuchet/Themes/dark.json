@@ -1,0 +1,47 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.trebuchet.theme.dark",
+    "name": "Dark",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Professional dark theme that's easy on the eyes",
+    "type": "theme",
+    "tags": ["official", "dark"]
+  },
+  "base_theme": "Dark",
+  "accessibility": {
+    "type": "standard",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#2D2D2D",
+    "sidebar": "#3A3A3A",
+    "text": "#D4D4D4",
+    "selection": "#264F78",
+    "border": "#3E3E42",
+    "accent": "#007ACC",
+    "error": "#F48771",
+    "warning": "#CCA700",
+    "success": "#89D185",
+    "info": "#75BEFF",
+    "disabled": "#6E6E6E",
+    "title_bar": "#3A3A3A",
+    "title_bar_foreground": "#D4D4D4",
+    "button_primary": "#007ACC",
+    "button_secondary": "#5A5A5A",
+    "button_hover": "#1F9CF0"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28
+  }
+}
