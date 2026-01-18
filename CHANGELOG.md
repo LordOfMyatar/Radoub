@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.35] - 2026-01-17
+**Branch**: `radoub/issue-907` | **PR**: #TBD
+
+### Epic 907: Trebuchet (Radoub Launcher)
+
+Central hub for the Radoub toolset providing tool launching, global settings management, and module info editing.
+
+**MVP Scope**:
+- Tool launcher with discovery
+- Global settings manager (game paths, TLK, themes, fonts)
+- Module info (IFO) editor
+
+---
+
 ## [0.9.34] - 2026-01-17
 
 ### Documentation Reorganization
