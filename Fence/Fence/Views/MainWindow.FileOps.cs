@@ -106,8 +106,15 @@ public partial class MainWindow
 
     private async void OnSaveClick(object? sender, RoutedEventArgs e)
     {
-        if (_currentStore == null || string.IsNullOrEmpty(_currentFilePath))
+        if (_currentStore == null)
             return;
+
+        // If no file path yet (new file), redirect to Save As
+        if (string.IsNullOrEmpty(_currentFilePath))
+        {
+            OnSaveAsClick(sender, e);
+            return;
+        }
 
         await SaveFile(_currentFilePath);
     }
