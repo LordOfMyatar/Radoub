@@ -1,7 +1,9 @@
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Utm;
+using System;
 using System.Linq;
 
 namespace MerchantEditor.Views;
@@ -194,16 +196,96 @@ public partial class MainWindow
 
     #region Search
 
+    private void OnStoreSearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplyStoreFilter();
+    }
+
     private void OnClearStoreSearch(object? sender, RoutedEventArgs e)
     {
         StoreSearchBox.Text = "";
-        // TODO: Clear filter
+        ApplyStoreFilter();
+    }
+
+    private void ApplyStoreFilter()
+    {
+        var searchText = StoreSearchBox.Text?.Trim() ?? "";
+
+        if (string.IsNullOrEmpty(searchText))
+        {
+            // Show all items
+            StoreInventoryGrid.ItemsSource = StoreItems;
+        }
+        else
+        {
+            // Filter by display name, resref, or type
+            var filtered = StoreItems.Where(item =>
+                item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                item.ResRef.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                item.BaseItemType.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+
+            StoreInventoryGrid.ItemsSource = filtered;
+        }
+    }
+
+    private void OnPaletteSearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplyPaletteFilter();
     }
 
     private void OnClearPaletteSearch(object? sender, RoutedEventArgs e)
     {
         PaletteSearchBox.Text = "";
-        // TODO: Clear filter
+        ApplyPaletteFilter();
+    }
+
+    private void OnTypeFilterChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        ApplyPaletteFilter();
+    }
+
+    private void OnSourceFilterChanged(object? sender, RoutedEventArgs e)
+    {
+        ApplyPaletteFilter();
+    }
+
+    private void ApplyPaletteFilter()
+    {
+        var searchText = PaletteSearchBox.Text?.Trim() ?? "";
+        var typeFilter = ItemTypeFilter.SelectedIndex > 0 ? ItemTypeFilter.SelectedItem?.ToString() : null;
+        var showStandard = StandardItemsCheck?.IsChecked ?? true;
+        var showCustom = CustomItemsCheck?.IsChecked ?? true;
+
+        var filtered = PaletteItems.AsEnumerable();
+
+        // Apply search text filter
+        if (!string.IsNullOrEmpty(searchText))
+        {
+            filtered = filtered.Where(item =>
+                item.DisplayName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                item.ResRef.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                item.BaseItemType.Contains(searchText, StringComparison.OrdinalIgnoreCase)
+            );
+        }
+
+        // Apply type filter
+        if (!string.IsNullOrEmpty(typeFilter))
+        {
+            filtered = filtered.Where(item =>
+                item.BaseItemType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)
+            );
+        }
+
+        // Apply source filter
+        if (!showStandard || !showCustom)
+        {
+            filtered = filtered.Where(item =>
+                (showStandard && item.IsStandard) || (showCustom && !item.IsStandard)
+            );
+        }
+
+        ItemPaletteGrid.ItemsSource = filtered.ToList();
     }
 
     #endregion

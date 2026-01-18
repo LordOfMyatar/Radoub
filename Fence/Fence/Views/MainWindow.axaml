@@ -198,7 +198,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" x:Name="StoreSearchBox" Watermark="Search items..." AutomationProperties.AutomationId="StoreSearchBox"/>
+                                <TextBox Grid.Column="0" x:Name="StoreSearchBox" Watermark="Search items..." TextChanged="OnStoreSearchTextChanged" AutomationProperties.AutomationId="StoreSearchBox"/>
                                 <Button Grid.Column="1" Content="X" Width="28" Margin="4,0,0,0" Click="OnClearStoreSearch" AutomationProperties.AutomationId="ClearStoreSearchButton"/>
                             </Grid>
                         </Border>
@@ -258,20 +258,20 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" x:Name="PaletteSearchBox" Watermark="Search items..." AutomationProperties.AutomationId="PaletteSearchBox"/>
+                                    <TextBox Grid.Column="0" x:Name="PaletteSearchBox" Watermark="Search items..." TextChanged="OnPaletteSearchTextChanged" AutomationProperties.AutomationId="PaletteSearchBox"/>
                                     <Button Grid.Column="1" Content="X" Width="28" Margin="4,0,0,0" Click="OnClearPaletteSearch" AutomationProperties.AutomationId="ClearPaletteSearchButton"/>
                                 </Grid>
 
                                 <!-- Source Filter -->
                                 <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                    <CheckBox x:Name="StandardItemsCheck" Content="Standard" IsChecked="True" Margin="0,0,12,0" AutomationProperties.AutomationId="StandardItemsCheck"/>
-                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="True" AutomationProperties.AutomationId="CustomItemsCheck"/>
+                                    <CheckBox x:Name="StandardItemsCheck" Content="Standard" IsChecked="True" Margin="0,0,12,0" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="StandardItemsCheck"/>
+                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="True" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="CustomItemsCheck"/>
                                 </WrapPanel>
 
                                 <!-- Type Filter -->
                                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
                                     <TextBlock Text="Type:" VerticalAlignment="Center"/>
-                                    <ComboBox x:Name="ItemTypeFilter" Width="200" AutomationProperties.AutomationId="ItemTypeFilter"/>
+                                    <ComboBox x:Name="ItemTypeFilter" Width="200" SelectionChanged="OnTypeFilterChanged" AutomationProperties.AutomationId="ItemTypeFilter"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
