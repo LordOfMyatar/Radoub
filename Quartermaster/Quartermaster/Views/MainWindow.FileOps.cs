@@ -113,9 +113,9 @@ public partial class MainWindow
         await SaveFileAs();
     }
 
-    private void OnCloseFileClick(object? sender, RoutedEventArgs e)
+    private async void OnCloseFileClick(object? sender, RoutedEventArgs e)
     {
-        CloseFile();
+        await CloseFileWithCheck();
     }
 
     private void OnExitClick(object? sender, RoutedEventArgs e)
@@ -502,6 +502,29 @@ public partial class MainWindow
                 UpdateStatus($"Converted and saved as {(savingAsBic ? "BIC" : "UTC")}: {Path.GetFileName(_currentFilePath)}");
             }
         }
+    }
+
+    /// <summary>
+    /// Close file with unsaved changes check. Returns true if file was closed.
+    /// </summary>
+    private async Task<bool> CloseFileWithCheck()
+    {
+        if (_isDirty)
+        {
+            var result = await DialogHelper.ShowUnsavedChangesDialog(this);
+            if (result == "Save")
+            {
+                await SaveFile();
+            }
+            else if (result == "Cancel")
+            {
+                return false;
+            }
+            // "Discard" continues to close
+        }
+
+        CloseFile();
+        return true;
     }
 
     private void CloseFile()

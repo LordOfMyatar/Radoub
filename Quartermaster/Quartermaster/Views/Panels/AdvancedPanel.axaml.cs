@@ -210,14 +210,24 @@ public partial class AdvancedPanel : BasePanelControl
 
     /// <summary>
     /// Set whether the current file is a BIC (player character) or UTC (creature blueprint).
-    /// This controls visibility of UTC-only fields like Blueprint ResRef and Comment.
+    /// This controls visibility of UTC-only fields like Blueprint ResRef and Comment,
+    /// and disables fields that shouldn't be editable for BIC files.
     /// </summary>
     public void SetFileType(bool isBicFile)
     {
+        // Hide UTC-only fields for BIC files
         if (_resRefRow != null)
             _resRefRow.IsVisible = !isBicFile;
         if (_commentRow != null)
             _commentRow.IsVisible = !isBicFile;
+
+        // IsPC should always be true for BIC files and not editable
+        if (_isPCCheckBox != null)
+        {
+            _isPCCheckBox.IsEnabled = !isBicFile;
+            if (isBicFile)
+                _isPCCheckBox.IsChecked = true;
+        }
     }
 
     /// <summary>
