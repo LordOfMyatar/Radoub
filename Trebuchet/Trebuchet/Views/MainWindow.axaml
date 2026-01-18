@@ -1,8 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:RadoubLauncher.ViewModels"
+        xmlns:svc="using:RadoubLauncher.Services"
+        xmlns:sys="using:System"
         x:Class="RadoubLauncher.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
+        x:Name="MainWindowRoot"
         Title="Trebuchet - Radoub Toolset"
         Width="900" Height="600"
         MinWidth="700" MinHeight="500"
@@ -81,8 +84,8 @@
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchToolCommand}"
+                        <DataTemplate x:DataType="svc:ToolInfo">
+                            <Button Command="{Binding #MainWindowRoot.DataContext.LaunchToolCommand}"
                                     CommandParameter="{Binding}"
                                     IsEnabled="{Binding IsAvailable}"
                                     Margin="0,0,16,16"
@@ -144,8 +147,8 @@
                 <ItemsControl ItemsSource="{Binding RecentModules}"
                               IsVisible="{Binding HasRecentModules}">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenRecentModuleCommand}"
+                        <DataTemplate x:DataType="sys:String">
+                            <Button Command="{Binding #MainWindowRoot.DataContext.OpenRecentModuleCommand}"
                                     CommandParameter="{Binding}"
                                     Background="Transparent"
                                     Padding="8,4"
