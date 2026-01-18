@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.UI.Views;
 using RadoubLauncher.Services;
 using RadoubLauncher.Views;
 
@@ -77,32 +78,34 @@ public partial class MainWindowViewModel : ObservableObject
         _ = CheckForUpdatesAsync();
     }
 
-    private void LoadVersionInfo()
+    private static string GetVersionString()
     {
         try
         {
-            // Use InformationalVersion for semantic version with suffix (e.g., "0.1.0-alpha")
             var infoVersion = Assembly.GetExecutingAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
             if (!string.IsNullOrEmpty(infoVersion))
             {
-                // Strip git hash if present (e.g., "0.1.0-alpha+abc123" -> "0.1.0-alpha")
                 var plusIndex = infoVersion.IndexOf('+');
                 if (plusIndex > 0)
                     infoVersion = infoVersion[..plusIndex];
+                return infoVersion;
+            }
 
-                VersionText = $"v{infoVersion}";
-            }
-            else
-            {
-                // Fallback to assembly version
-                var version = Assembly.GetExecutingAssembly().GetName().Version;
-                if (version != null)
-                {
-                    VersionText = $"v{version.Major}.{version.Minor}.{version.Build}";
-                }
-            }
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            if (version != null)
+                return $"{version.Major}.{version.Minor}.{version.Build}";
+        }
+        catch { }
+        return "0.1.0";
+    }
+
+    private void LoadVersionInfo()
+    {
+        try
+        {
+            VersionText = $"v{GetVersionString()}";
         }
         catch
         {
@@ -275,7 +278,15 @@ public partial class MainWindowViewModel : ObservableObject
         if (_parentWindow == null) return;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Opening about window");
-        var aboutWindow = new AboutWindow();
+
+        var version = GetVersionString();
+        var aboutWindow = Radoub.UI.Views.AboutWindow.Create(new AboutWindowConfig
+        {
+            ToolName = "Trebuchet",
+            Subtitle = "Radoub Launcher for Neverwinter Nights",
+            Version = version,
+            AdditionalInfo = "Radoub Toolset includes:\nParley - Dialog Editor\nManifest - Journal Editor\nQuartermaster - Creature/Item Editor\nFence - Item Editor"
+        });
         aboutWindow.ShowDialog(_parentWindow);
     }
 
