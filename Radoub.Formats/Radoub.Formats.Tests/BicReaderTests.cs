@@ -322,4 +322,137 @@ public class BicReaderTests
 
         return BicWriter.Write(bic);
     }
+
+    #region UTC to BIC Conversion Tests
+
+    [Fact]
+    public void FromUtcFile_InitializesQuickBarWith36Slots()
+    {
+        var utc = CreateTestUtcFile();
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.Equal(36, bic.QBList.Count);
+        Assert.All(bic.QBList, slot => Assert.Equal(QuickBarObjectType.Empty, slot.ObjectType));
+    }
+
+    [Fact]
+    public void FromUtcFile_SetsReasonableAge()
+    {
+        var utc = CreateTestUtcFile();
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.True(bic.Age >= 18, "Age should be at least 18 (NWN minimum)");
+    }
+
+    [Fact]
+    public void FromUtcFile_EnsuresValidHitPoints()
+    {
+        var utc = CreateTestUtcFile();
+        utc.HitPoints = 10;
+        utc.MaxHitPoints = 10;
+        utc.CurrentHitPoints = 0; // Dead creature
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.True(bic.CurrentHitPoints > 0, "CurrentHitPoints should be positive for playable character");
+        Assert.Equal(bic.MaxHitPoints, bic.CurrentHitPoints);
+    }
+
+    [Fact]
+    public void FromUtcFile_SetsIsPcTrue()
+    {
+        var utc = CreateTestUtcFile();
+        utc.IsPC = false;
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.True(bic.IsPC, "IsPC must be true for player characters");
+    }
+
+    [Fact]
+    public void FromUtcFile_CalculatesExperienceFromLevel()
+    {
+        var utc = CreateTestUtcFile();
+        // Level 5 character: XP = (5-1)*5/2*1000 = 10000
+        utc.ClassList[0].ClassLevel = 5;
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.Equal(10000u, bic.Experience);
+    }
+
+    [Fact]
+    public void FromUtcFile_CopiesAllBaseProperties()
+    {
+        var utc = CreateTestUtcFile();
+        utc.Str = 18;
+        utc.Dex = 14;
+        utc.Con = 16;
+        utc.Int = 10;
+        utc.Wis = 12;
+        utc.Cha = 8;
+        utc.Race = 1; // Elf
+        utc.Gender = 1; // Female
+        utc.FirstName.SetString(0, "TestChar");
+        utc.Tag = "test_tag";
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.Equal(18, bic.Str);
+        Assert.Equal(14, bic.Dex);
+        Assert.Equal(16, bic.Con);
+        Assert.Equal(10, bic.Int);
+        Assert.Equal(12, bic.Wis);
+        Assert.Equal(8, bic.Cha);
+        Assert.Equal(1, bic.Race);
+        Assert.Equal(1, bic.Gender);
+        Assert.Equal("TestChar", bic.FirstName.GetDefault());
+        Assert.Equal("test_tag", bic.Tag);
+    }
+
+    [Fact]
+    public void FromUtcFile_RoundTrip_ProducesValidBicFile()
+    {
+        var utc = CreateTestUtcFile();
+        utc.FirstName.SetString(0, "Converted");
+        utc.HitPoints = 20;
+        utc.MaxHitPoints = 20;
+        utc.CurrentHitPoints = 20;
+
+        var bic = BicFile.FromUtcFile(utc);
+        var buffer = BicWriter.Write(bic);
+        var roundTripped = BicReader.Read(buffer);
+
+        // Verify critical fields survive round-trip
+        Assert.Equal("BIC ", roundTripped.FileType);
+        Assert.True(roundTripped.IsPC);
+        Assert.Equal(36, roundTripped.QBList.Count);
+        Assert.Equal("Converted", roundTripped.FirstName.GetDefault());
+        Assert.True(roundTripped.CurrentHitPoints > 0);
+    }
+
+    private static Utc.UtcFile CreateTestUtcFile()
+    {
+        var utc = new Utc.UtcFile
+        {
+            Str = 10,
+            Dex = 10,
+            Con = 10,
+            Int = 10,
+            Wis = 10,
+            Cha = 10,
+            Race = 6, // Human
+            Gender = 0,
+            HitPoints = 8,
+            MaxHitPoints = 8,
+            CurrentHitPoints = 8
+        };
+        utc.FirstName.SetString(0, "Test");
+        utc.ClassList.Add(new Utc.CreatureClass { Class = 0, ClassLevel = 1 });
+        return utc;
+    }
+
+    #endregion
 }

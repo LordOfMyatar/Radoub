@@ -465,11 +465,13 @@ public partial class MainWindow
             var savingAsBic = newExtension == ".bic";
 
             // Handle format conversion
+            var wasConverted = false;
             if (savingAsBic && !_isBicFile)
             {
                 // Converting UTC to BIC
                 _currentCreature = BicFile.FromUtcFile(_currentCreature);
                 _isBicFile = true;
+                wasConverted = true;
                 UnifiedLogger.LogCreature(LogLevel.INFO, "Converted UTC to BIC format");
             }
             else if (!savingAsBic && _isBicFile && _currentCreature is BicFile bicFile)
@@ -477,6 +479,7 @@ public partial class MainWindow
                 // Converting BIC to UTC
                 _currentCreature = bicFile.ToUtcFile();
                 _isBicFile = false;
+                wasConverted = true;
                 UnifiedLogger.LogCreature(LogLevel.INFO, "Converted BIC to UTC format");
             }
             else
@@ -489,6 +492,15 @@ public partial class MainWindow
             UpdateCharacterHeader();
             SettingsService.Instance.AddRecentFile(_currentFilePath);
             UpdateRecentFilesMenu();
+
+            // If format was converted, reload panels to reflect the new file type
+            if (wasConverted)
+            {
+                _isLoading = true;
+                LoadAllPanels(_currentCreature);
+                _isLoading = false;
+                UpdateStatus($"Converted and saved as {(savingAsBic ? "BIC" : "UTC")}: {Path.GetFileName(_currentFilePath)}");
+            }
         }
     }
 

@@ -15,7 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Core Features & Workflow (#715)
 
-- [ ] #690 - Convert between UTC and BIC (Save As)
+- [x] #690 - Convert between UTC and BIC (Save As)
+  - Fixed UTC→BIC conversion to initialize QuickBar with 36 empty slots (required for playable BIC)
+  - Set reasonable default Age (25) for converted characters
+  - Ensure HP is valid (dead creatures get CurrentHP = MaxHP)
+  - UI reloads panels after format conversion to reflect file type changes
+  - Added 7 unit tests for conversion validation
 - [x] #689 - Create new UTC file
   - Added File > New menu item with Ctrl+N shortcut
   - Creates new creature with sensible defaults (Human Commoner level 1)

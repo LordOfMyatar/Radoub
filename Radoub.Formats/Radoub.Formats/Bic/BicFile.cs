@@ -50,6 +50,30 @@ public class BicFile : UtcFile
             bic.Experience = (uint)((totalLevel - 1) * totalLevel / 2 * 1000);
         }
 
+        // Initialize QuickBar with 36 empty slots (required for playable BIC)
+        // 3 bars × 12 slots = 36 total slots
+        bic.QBList = new List<QuickBarSlot>(36);
+        for (int i = 0; i < 36; i++)
+        {
+            bic.QBList.Add(new QuickBarSlot { ObjectType = QuickBarObjectType.Empty });
+        }
+
+        // Set reasonable default Age (NWN character creation minimum is 18)
+        bic.Age = 25;
+
+        // Ensure HP is valid (dead characters can't be loaded)
+        if (bic.CurrentHitPoints <= 0 && bic.MaxHitPoints > 0)
+        {
+            bic.CurrentHitPoints = bic.MaxHitPoints;
+        }
+        else if (bic.MaxHitPoints <= 0)
+        {
+            // Fallback: set minimum HP based on constitution
+            bic.HitPoints = 4;
+            bic.CurrentHitPoints = 4;
+            bic.MaxHitPoints = 4;
+        }
+
         return bic;
     }
 
