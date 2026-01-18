@@ -151,9 +151,16 @@ public partial class MainWindow
             // Update store from UI
             UpdateStoreFromUI();
 
+            // Set ResRef from filename (Aurora Engine convention)
+            var resRef = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
+            _currentStore.ResRef = resRef;
+
             UtmWriter.Write(_currentStore, filePath);
             _currentFilePath = filePath;
             _isDirty = false;
+
+            // Update UI to show new ResRef
+            StoreResRefBox.Text = resRef;
 
             UpdateStatusBar($"Saved: {Path.GetFileName(filePath)}");
             UpdateTitle();
