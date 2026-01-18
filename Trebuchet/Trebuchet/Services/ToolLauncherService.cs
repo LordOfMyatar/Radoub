@@ -198,7 +198,14 @@ public class ToolLauncherService
             }
         }
 
-        // 3. Check common installation locations
+        // 3. Check development paths (sibling project directories)
+        var devPath = DiscoverDevelopmentPath(toolName);
+        if (!string.IsNullOrEmpty(devPath))
+        {
+            return devPath;
+        }
+
+        // 4. Check common installation locations
         var commonPaths = GetCommonInstallPaths(toolName);
         foreach (var path in commonPaths)
         {
@@ -206,6 +213,53 @@ public class ToolLauncherService
             {
                 return path;
             }
+        }
+
+        return null;
+    }
+
+    private string? DiscoverDevelopmentPath(string toolName)
+    {
+        // In development, tools are in sibling directories like:
+        // Radoub/Parley/Parley/bin/Debug/net9.0/Parley.exe
+        // Radoub/Trebuchet/Trebuchet/bin/Debug/net9.0/Trebuchet.exe
+
+        try
+        {
+            // Get the source directory from the assembly location
+            var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            if (string.IsNullOrEmpty(assemblyLocation))
+                return null;
+
+            var assemblyDir = Path.GetDirectoryName(assemblyLocation);
+            if (string.IsNullOrEmpty(assemblyDir))
+                return null;
+
+            // Navigate up from bin/Debug/net9.0 to the Radoub root
+            // assemblyDir = Radoub/Trebuchet/Trebuchet/bin/Debug/net9.0
+            var radoubRoot = Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", "..", ".."));
+
+            // Check for the tool in its project directory
+            var exeName = GetExecutableName(toolName);
+            var configs = new[] { "Debug", "Release" };
+            var frameworks = new[] { "net9.0", "net8.0", "net7.0" };
+
+            foreach (var config in configs)
+            {
+                foreach (var framework in frameworks)
+                {
+                    var toolPath = Path.Combine(radoubRoot, toolName, toolName, "bin", config, framework, exeName);
+                    if (File.Exists(toolPath))
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Found {toolName} in development path: {UnifiedLogger.SanitizePath(toolPath)}");
+                        return toolPath;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Error discovering development path for {toolName}: {ex.Message}");
         }
 
         return null;
