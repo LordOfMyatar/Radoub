@@ -11,6 +11,7 @@ using Radoub.Formats.Utc;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Quartermaster.Views;
@@ -464,6 +465,20 @@ public partial class MainWindow
             var newExtension = Path.GetExtension(_currentFilePath).ToLowerInvariant();
             var savingAsBic = newExtension == ".bic";
 
+            // Validate Aurora Engine filename constraints
+            if (!await ValidateAuroraFilename(_currentFilePath))
+            {
+                _currentFilePath = null; // Clear the path since save was cancelled
+                return;
+            }
+
+            // Validate playable class for BIC files
+            if (savingAsBic && !await ValidatePlayableClassForBic(_currentCreature))
+            {
+                _currentFilePath = null; // Clear the path since save was cancelled
+                return;
+            }
+
             // Handle format conversion
             var wasConverted = false;
             if (savingAsBic && !_isBicFile)
@@ -499,9 +514,99 @@ public partial class MainWindow
                 _isLoading = true;
                 LoadAllPanels(_currentCreature);
                 _isLoading = false;
+                _isDirty = false; // Reset dirty after panel reload
+                UpdateTitle();
                 UpdateStatus($"Converted and saved as {(savingAsBic ? "BIC" : "UTC")}: {Path.GetFileName(_currentFilePath)}");
             }
         }
+    }
+
+    /// <summary>
+    /// Validates that the filename meets Aurora Engine constraints.
+    /// Aurora Engine filenames must be: lowercase, max 16 characters (excluding extension),
+    /// alphanumeric and underscore only.
+    /// </summary>
+    /// <returns>True if valid, false otherwise with error dialog shown.</returns>
+    private async Task<bool> ValidateAuroraFilename(string filePath)
+    {
+        var filename = Path.GetFileNameWithoutExtension(filePath);
+
+        // Check length (max 16 characters)
+        if (filename.Length > 16)
+        {
+            await DialogHelper.ShowMessageDialog(this, "Invalid Filename",
+                $"Filename is too long for Aurora Engine.\n\n" +
+                $"Current: \"{filename}\" ({filename.Length} characters)\n" +
+                $"Maximum: 16 characters\n\n" +
+                "The Aurora Engine (Neverwinter Nights) cannot load files with names longer than 16 characters.");
+            return false;
+        }
+
+        // Check for uppercase letters
+        if (filename.Any(char.IsUpper))
+        {
+            await DialogHelper.ShowMessageDialog(this, "Invalid Filename",
+                $"Filename contains uppercase letters.\n\n" +
+                $"Current: \"{filename}\"\n" +
+                $"Suggested: \"{filename.ToLowerInvariant()}\"\n\n" +
+                "Aurora Engine filenames should be lowercase for compatibility.");
+            return false;
+        }
+
+        // Check for invalid characters (only alphanumeric and underscore allowed)
+        var invalidChars = filename.Where(c => !char.IsLetterOrDigit(c) && c != '_').ToList();
+        if (invalidChars.Count > 0)
+        {
+            var invalidStr = string.Join("", invalidChars.Distinct());
+            await DialogHelper.ShowMessageDialog(this, "Invalid Filename",
+                $"Filename contains invalid characters.\n\n" +
+                $"Current: \"{filename}\"\n" +
+                $"Invalid characters: \"{invalidStr}\"\n\n" +
+                "Aurora Engine filenames can only contain letters, numbers, and underscores.");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Validates that a creature has at least one playable class for BIC files.
+    /// </summary>
+    /// <returns>True if valid for BIC, false otherwise with error dialog shown.</returns>
+    private async Task<bool> ValidatePlayableClassForBic(UtcFile creature)
+    {
+        if (creature.ClassList == null || creature.ClassList.Count == 0)
+        {
+            await DialogHelper.ShowMessageDialog(this, "Invalid Character",
+                "Cannot save as player character (BIC): No classes defined.\n\n" +
+                "Add at least one class to the creature before saving as a BIC file.");
+            return false;
+        }
+
+        // Check if any class is a playable class (PlayerClass = 1 in classes.2da)
+        var hasPlayableClass = creature.ClassList.Any(c =>
+        {
+            var playerClass = _gameDataService.Get2DAValue("classes", c.Class, "PlayerClass");
+            return playerClass == "1";
+        });
+
+        if (!hasPlayableClass)
+        {
+            // Get the class names for the error message
+            var classNames = creature.ClassList
+                .Select(c => _creatureDisplayService.GetClassName(c.Class))
+                .ToList();
+            var classList = string.Join(", ", classNames);
+
+            await DialogHelper.ShowMessageDialog(this, "Invalid Character Class",
+                $"Cannot save as player character (BIC): No playable class found.\n\n" +
+                $"Current class(es): {classList}\n\n" +
+                "Player characters require at least one playable class (Fighter, Wizard, Cleric, etc.). " +
+                "NPC-only classes like Commoner or Animal cannot be used for player characters.");
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -509,42 +614,65 @@ public partial class MainWindow
     /// </summary>
     private async Task<bool> CloseFileWithCheck()
     {
-        if (_isDirty)
+        try
         {
-            var result = await DialogHelper.ShowUnsavedChangesDialog(this);
-            if (result == "Save")
+            if (_isDirty)
             {
-                await SaveFile();
+                var result = await DialogHelper.ShowUnsavedChangesDialog(this);
+                if (result == "Save")
+                {
+                    await SaveFile();
+                    // SaveFile sets _isDirty = false on success
+                }
+                else if (result == "Cancel")
+                {
+                    return false;
+                }
+                // "Discard" continues to close - _isDirty will be cleared in CloseFile
             }
-            else if (result == "Cancel")
-            {
-                return false;
-            }
-            // "Discard" continues to close
-        }
 
-        CloseFile();
-        return true;
+            // Prevent any events during close from marking dirty
+            _isLoading = true;
+            CloseFile();
+            _isLoading = false;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"CloseFileWithCheck failed: {ex}");
+            _isLoading = false;
+            throw;
+        }
     }
 
     private void CloseFile()
     {
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: Starting");
         _currentCreature = null;
         _currentFilePath = null;
         _isDirty = false;
         _isBicFile = false;
 
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: Clearing panel file contexts");
         // Clear panel file contexts
         CharacterPanelContent.SetCurrentFilePath(null);
         ScriptsPanelContent.SetCurrentFilePath(null);
 
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: ClearInventoryUI");
         ClearInventoryUI();
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: UpdateCharacterHeader");
         UpdateCharacterHeader();
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: ClearAllPanels");
         ClearAllPanels();
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: UpdateTitle");
         UpdateTitle();
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: UpdateStatus");
         UpdateStatus("Ready");
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: UpdateInventoryCounts");
         UpdateInventoryCounts();
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: OnPropertyChanged");
         OnPropertyChanged(nameof(HasFile));
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "CloseFile: Complete");
     }
 
     #endregion

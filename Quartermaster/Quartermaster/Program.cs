@@ -37,7 +37,7 @@ sealed class Program
         UnifiedLogger.Configure(new LoggerConfig
         {
             AppName = "Quartermaster",
-            LogLevel = LogLevel.INFO,
+            LogLevel = LogLevel.DEBUG,
             RetainSessions = 10
         });
 

@@ -211,6 +211,7 @@ public static class BicReader
         // BIC-specific lists
         ParseQBList(root, bic);
         ParseReputationList(root, bic);
+        ParseLvlStatList(root, bic);
 
         return bic;
     }
@@ -453,6 +454,48 @@ public static class BicReader
         {
             var amount = repStruct.GetFieldValue<int>("Amount", 50);
             bic.ReputationList.Add(amount);
+        }
+    }
+
+    private static void ParseLvlStatList(GffStruct root, BicFile bic)
+    {
+        var lvlListField = root.GetField("LvlStatList");
+        if (lvlListField == null || !lvlListField.IsList || lvlListField.Value is not GffList lvlList)
+            return;
+
+        foreach (var lvlStruct in lvlList.Elements)
+        {
+            var entry = new LevelStatEntry
+            {
+                LvlStatClass = lvlStruct.GetFieldValue<byte>("LvlStatClass", 0),
+                LvlStatHitDie = lvlStruct.GetFieldValue<byte>("LvlStatHitDie", 0),
+                EpicLevel = lvlStruct.GetFieldValue<byte>("EpicLevel", 0),
+                SkillPoints = lvlStruct.GetFieldValue<short>("SkillPoints", 0)
+            };
+
+            // Parse SkillList
+            var skillListField = lvlStruct.GetField("SkillList");
+            if (skillListField?.Value is GffList skillList)
+            {
+                foreach (var skillStruct in skillList.Elements)
+                {
+                    var rank = skillStruct.GetFieldValue<byte>("Rank", 0);
+                    entry.SkillList.Add(rank);
+                }
+            }
+
+            // Parse FeatList
+            var featListField = lvlStruct.GetField("FeatList");
+            if (featListField?.Value is GffList featList)
+            {
+                foreach (var featStruct in featList.Elements)
+                {
+                    var feat = featStruct.GetFieldValue<ushort>("Feat", 0);
+                    entry.FeatList.Add(feat);
+                }
+            }
+
+            bic.LvlStatList.Add(entry);
         }
     }
 }

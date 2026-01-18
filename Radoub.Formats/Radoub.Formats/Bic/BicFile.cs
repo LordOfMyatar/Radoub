@@ -74,7 +74,52 @@ public class BicFile : UtcFile
             bic.MaxHitPoints = 4;
         }
 
+        // Generate LvlStatList (required for playable BIC in NWN:EE)
+        // Creates one entry per character level with minimal data
+        bic.LvlStatList = GenerateLvlStatList(bic);
+
         return bic;
+    }
+
+    /// <summary>
+    /// Generates a minimal LvlStatList for the character based on class levels.
+    /// Creates one entry per level with class info and empty skill/feat lists.
+    /// The game accepts this for playable characters.
+    /// </summary>
+    private static List<LevelStatEntry> GenerateLvlStatList(BicFile bic)
+    {
+        var result = new List<LevelStatEntry>();
+        int levelIndex = 0;
+
+        // Create entries for each class level in order
+        foreach (var classEntry in bic.ClassList)
+        {
+            for (int i = 0; i < classEntry.ClassLevel; i++)
+            {
+                var entry = new LevelStatEntry
+                {
+                    LvlStatClass = (byte)classEntry.Class,
+                    // First level gets hit die 5, rest are 0
+                    LvlStatHitDie = (byte)(levelIndex == 0 ? 5 : 0),
+                    EpicLevel = (byte)(levelIndex >= 20 ? 1 : 0),
+                    SkillPoints = 0
+                };
+
+                // Initialize empty skill list (28 skills, all 0 ranks)
+                for (int s = 0; s < 28; s++)
+                {
+                    entry.SkillList.Add(0);
+                }
+
+                // Empty feat list (feats are tracked in main FeatList)
+                // entry.FeatList remains empty
+
+                result.Add(entry);
+                levelIndex++;
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -92,6 +137,23 @@ public class BicFile : UtcFile
         return utc;
     }
 
+    /// <summary>
+    /// Deep clone a CExoLocString to avoid shared references.
+    /// </summary>
+    private static CExoLocString CloneLocString(CExoLocString source)
+    {
+        var clone = new CExoLocString
+        {
+            StrRef = source.StrRef,
+            SubStringCount = source.SubStringCount
+        };
+        foreach (var kvp in source.LocalizedStrings)
+        {
+            clone.LocalizedStrings[kvp.Key] = kvp.Value;
+        }
+        return clone;
+    }
+
     private static void CopyBaseProperties(UtcFile source, UtcFile target)
     {
         // File info (not FileType - that's set by caller)
@@ -102,11 +164,11 @@ public class BicFile : UtcFile
         target.Comment = source.Comment;
         target.PaletteID = source.PaletteID;
 
-        // Identity fields
-        target.FirstName = source.FirstName;
-        target.LastName = source.LastName;
+        // Identity fields - deep copy CExoLocStrings to avoid shared references
+        target.FirstName = CloneLocString(source.FirstName);
+        target.LastName = CloneLocString(source.LastName);
         target.Tag = source.Tag;
-        target.Description = source.Description;
+        target.Description = CloneLocString(source.Description);
 
         // Basic info fields
         target.Race = source.Race;
@@ -325,6 +387,50 @@ public class BicFile : UtcFile
     /// in the same order as the module's repute.fac FactionList.
     /// </summary>
     public List<int> ReputationList { get; set; } = new();
+
+    /// <summary>
+    /// Level-up statistics tracking what was gained at each level.
+    /// Required for BIC files to be playable in NWN:EE.
+    /// Not documented in BioWare specs but present in all valid BIC files.
+    /// </summary>
+    public List<LevelStatEntry> LvlStatList { get; set; } = new();
+}
+
+/// <summary>
+/// Represents level-up statistics for a single character level.
+/// Tracks what class was taken, hit die rolled, and feats/skills gained.
+/// </summary>
+public class LevelStatEntry
+{
+    /// <summary>
+    /// Class taken at this level (index into classes.2da).
+    /// </summary>
+    public byte LvlStatClass { get; set; }
+
+    /// <summary>
+    /// Hit die roll result for this level (0 = not rolled/average).
+    /// </summary>
+    public byte LvlStatHitDie { get; set; }
+
+    /// <summary>
+    /// Whether this is an epic level (level 21+).
+    /// </summary>
+    public byte EpicLevel { get; set; }
+
+    /// <summary>
+    /// Remaining skill points (usually 0 for completed characters).
+    /// </summary>
+    public short SkillPoints { get; set; }
+
+    /// <summary>
+    /// Skills trained at this level. 28 entries (one per skill), value = ranks added.
+    /// </summary>
+    public List<byte> SkillList { get; set; } = new();
+
+    /// <summary>
+    /// Feats gained at this level.
+    /// </summary>
+    public List<ushort> FeatList { get; set; } = new();
 }
 
 /// <summary>

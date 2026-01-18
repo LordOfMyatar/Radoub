@@ -365,6 +365,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (result == "Save")
             {
                 await SaveFile();
+                _isDirty = false; // Clear dirty before Close() to prevent re-entry
                 Close();
             }
             else if (result == "Discard")
@@ -372,6 +373,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _isDirty = false;
                 Close();
             }
+            // Cancel: do nothing, window stays open
         }
         else
         {

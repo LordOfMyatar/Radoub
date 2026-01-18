@@ -196,6 +196,7 @@ public static class BicWriter
         // BIC-specific lists
         AddQBList(root, bic.QBList);
         AddReputationList(root, bic.ReputationList);
+        AddLvlStatList(root, bic.LvlStatList);
 
         return root;
     }
@@ -413,5 +414,46 @@ public static class BicWriter
             list.Elements.Add(repStruct);
         }
         AddListField(root, "ReputationList", list);
+    }
+
+    private static void AddLvlStatList(GffStruct root, List<LevelStatEntry> lvlStats)
+    {
+        if (lvlStats == null || lvlStats.Count == 0)
+            return;
+
+        var list = new GffList();
+        foreach (var entry in lvlStats)
+        {
+            // StructID 0 (standard struct type)
+            var lvlStruct = new GffStruct { Type = 0 };
+
+            AddByteField(lvlStruct, "LvlStatClass", entry.LvlStatClass);
+            AddByteField(lvlStruct, "LvlStatHitDie", entry.LvlStatHitDie);
+            AddByteField(lvlStruct, "EpicLevel", entry.EpicLevel);
+            AddShortField(lvlStruct, "SkillPoints", entry.SkillPoints);
+
+            // Add SkillList (28 entries, one per skill)
+            var skillList = new GffList();
+            foreach (var rank in entry.SkillList)
+            {
+                var skillStruct = new GffStruct { Type = 0 };
+                AddByteField(skillStruct, "Rank", rank);
+                skillList.Elements.Add(skillStruct);
+            }
+            AddListField(lvlStruct, "SkillList", skillList);
+
+            // Add FeatList (feats gained at this level)
+            var featList = new GffList();
+            foreach (var feat in entry.FeatList)
+            {
+                var featStruct = new GffStruct { Type = 1 };
+                AddWordField(featStruct, "Feat", feat);
+                featList.Elements.Add(featStruct);
+            }
+            AddListField(lvlStruct, "FeatList", featList);
+
+            list.Elements.Add(lvlStruct);
+        }
+        AddListField(root, "LvlStatList", list);
     }
 }

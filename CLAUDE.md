@@ -117,6 +117,7 @@ When working on a specific tool (e.g., Parley):
 - Contains original BioWare PDF format specifications
 - Read-only reference material
 - Markdown conversions of BioWare docs are now in the Wiki (see Resources section)
+- **NEVER read PDF files without explicit user instruction** - PDFs can exceed context limits and cause "prompt too long" errors
 
 **About Documentation** (`About/`):
 - Project history and development experience

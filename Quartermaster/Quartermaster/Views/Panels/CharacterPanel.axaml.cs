@@ -523,6 +523,8 @@ public partial class CharacterPanel : UserControl
 
     public void ClearPanel()
     {
+        _isLoading = true; // Prevent change events during clear
+
         if (_firstNameTextBox != null)
             _firstNameTextBox.Text = "";
         if (_lastNameTextBox != null)
@@ -549,6 +551,8 @@ public partial class CharacterPanel : UserControl
             _ageTextBox.Text = "";
         if (_biographyTextBox != null)
             _biographyTextBox.Text = "";
+
+        _isLoading = false;
     }
 
     #region Soundset Preview (#916)
