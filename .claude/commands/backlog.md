@@ -45,6 +45,8 @@ pwsh -File .claude/scripts/Refresh-GitHubCache.ps1 -Force
 
 ### Step 1: Load Issues from Cache
 
+- Don't over label.  3 to Five is usually sufficient.
+
 Use the helper script to get a compact view (~25KB instead of 220KB):
 
 ```bash
