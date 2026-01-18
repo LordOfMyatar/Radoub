@@ -455,4 +455,50 @@ public class BicReaderTests
     }
 
     #endregion
+
+    #region Name Comparison Tests
+
+    [Fact]
+    public void CompareNames_QTestVsDana_ShowsNameStructureDifference()
+    {
+        var qtestPath = @"C:\Users\Sheri\Documents\Neverwinter Nights\localvault\qtest.bic";
+        var danaPath = @"C:\Users\Sheri\Documents\Neverwinter Nights\localvault\dana_neh.bic";
+
+        if (!File.Exists(qtestPath) || !File.Exists(danaPath))
+        {
+            Console.WriteLine("Test files not found, skipping");
+            return;
+        }
+
+        var qtest = BicReader.Read(qtestPath);
+        var dana = BicReader.Read(danaPath);
+
+        Console.WriteLine("=== QTEST.BIC (game-created) ===");
+        Console.WriteLine($"FirstName StrRef: {qtest.FirstName.StrRef}");
+        Console.WriteLine($"FirstName SubStringCount: {qtest.FirstName.SubStringCount}");
+        Console.WriteLine($"FirstName LocalizedStrings count: {qtest.FirstName.LocalizedStrings.Count}");
+        foreach (var kvp in qtest.FirstName.LocalizedStrings)
+            Console.WriteLine($"  [{kvp.Key}]: \"{kvp.Value}\"");
+
+        Console.WriteLine($"LastName StrRef: {qtest.LastName.StrRef}");
+        Console.WriteLine($"LastName SubStringCount: {qtest.LastName.SubStringCount}");
+        Console.WriteLine($"LastName LocalizedStrings count: {qtest.LastName.LocalizedStrings.Count}");
+        foreach (var kvp in qtest.LastName.LocalizedStrings)
+            Console.WriteLine($"  [{kvp.Key}]: \"{kvp.Value}\"");
+
+        Console.WriteLine("\n=== DANA_NEH.BIC (Quartermaster-created) ===");
+        Console.WriteLine($"FirstName StrRef: {dana.FirstName.StrRef}");
+        Console.WriteLine($"FirstName SubStringCount: {dana.FirstName.SubStringCount}");
+        Console.WriteLine($"FirstName LocalizedStrings count: {dana.FirstName.LocalizedStrings.Count}");
+        foreach (var kvp in dana.FirstName.LocalizedStrings)
+            Console.WriteLine($"  [{kvp.Key}]: \"{kvp.Value}\"");
+
+        Console.WriteLine($"LastName StrRef: {dana.LastName.StrRef}");
+        Console.WriteLine($"LastName SubStringCount: {dana.LastName.SubStringCount}");
+        Console.WriteLine($"LastName LocalizedStrings count: {dana.LastName.LocalizedStrings.Count}");
+        foreach (var kvp in dana.LastName.LocalizedStrings)
+            Console.WriteLine($"  [{kvp.Key}]: \"{kvp.Value}\"");
+    }
+
+    #endregion
 }

@@ -416,7 +416,13 @@ public static class GffWriter
         var strRefBytes = BitConverter.GetBytes(locString.StrRef);
         stream.Write(strRefBytes, 0, 4);
 
-        var subCountBytes = BitConverter.GetBytes((uint)locString.LocalizedStrings.Count);
+        // Use SubStringCount if explicitly set (e.g., preserving game-created value),
+        // otherwise use actual LocalizedStrings.Count.
+        // Game uses SubStringCount=1 with 0 strings to signal "intentionally empty" vs "not set".
+        var subCount = locString.SubStringCount > 0
+            ? locString.SubStringCount
+            : (uint)locString.LocalizedStrings.Count;
+        var subCountBytes = BitConverter.GetBytes(subCount);
         stream.Write(subCountBytes, 0, 4);
 
         foreach (var kvp in locString.LocalizedStrings)
