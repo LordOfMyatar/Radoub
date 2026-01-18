@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.1-alpha] - 2026-01-17
+**Branch**: `fence/issue-911` | **PR**: #TBD
+
+### Sprint: Phase 2 - Full Editor Functionality
+
+Part of Epic #555. Completes Fence to full editor functionality.
+
+#### Added
+- [ ] **Create New Store** - File → New menu option
+- [ ] **Add/Remove items** - Move items between palette and store inventory
+- [ ] **Search filters** - Store and palette search boxes
+- [ ] **Type filter dropdown** - Filter palette by base item type
+- [ ] **Source checkboxes** - Standard/Custom content filtering
+- [ ] **Double-click transfer** - Wire up double-click to move items
+- [ ] **Unit tests** - Add Fence.Tests project with basic coverage
+
+---
+
 ## [0.1.0-alpha] - 2026-01-15
 **Branch**: `radoub/issue-558` | **PR**: #910
 
