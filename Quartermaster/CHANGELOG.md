@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.44-alpha] - 2026-01-18
-**Branch**: `quartermaster/issue-715` | **PR**: #TBD
+**Branch**: `quartermaster/issue-715` | **PR**: #948
 
 ### Sprint: Core Features & Workflow (#715)
 
