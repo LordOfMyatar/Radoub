@@ -310,13 +310,7 @@ After creating a sprint issue, add it to the appropriate project board.
 
 ### Project Selection
 
-| Label/Title | Project | Number |
-|-------------|---------|--------|
-| `parley` or `[Parley]` | Parley | 2 |
-| `radoub` or `[Radoub]` | Radoub | 3 |
-| `quartermaster` or `[Quartermaster]` | Radoub | 3 |
-| `manifest` or `[Manifest]` | Radoub | 3 |
-| `fence` or `[Fence]` | Radoub | 3 |
+All tools use the **Radoub project (#3)**.
 
 ### Add Sprint to Project and Set In Progress
 

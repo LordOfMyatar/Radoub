@@ -232,19 +232,6 @@
                                   AutomationProperties.AutomationId="StoreInventoryGrid">
                             <DataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="∞" Width="40" Binding="{Binding Infinite}"/>
-                                <DataGridTemplateColumn Header="Panel" Width="120">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ComboBox SelectedIndex="{Binding PanelId}" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="2">
-                                                <ComboBoxItem Content="Armor"/>
-                                                <ComboBoxItem Content="Miscellaneous"/>
-                                                <ComboBoxItem Content="Potions/Scrolls"/>
-                                                <ComboBoxItem Content="Rings/Amulets"/>
-                                                <ComboBoxItem Content="Weapons"/>
-                                            </ComboBox>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Tag" Width="100" Binding="{Binding Tag}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="ResRef" Width="100" Binding="{Binding ResRef}" IsReadOnly="True"/>
