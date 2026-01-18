@@ -41,8 +41,9 @@ public class BicFile : UtcFile
         bic.IsPC = true;
 
         // Ensure LastName has SubStringCount=1 for BIC files, even when empty.
-        // Game interprets SubStringCount=0 differently than SubStringCount=1 with no strings.
-        // Without this, characters display "FirstName FirstName" instead of just "FirstName".
+        // Game interprets SubStringCount=0 as "use first name" fallback.
+        // SubStringCount=1 with an empty string means "intentionally no last name".
+        // GffWriter will write the empty padding entry based on SubStringCount.
         if (bic.LastName.LocalizedStrings.Count == 0 && bic.LastName.SubStringCount == 0)
         {
             bic.LastName.SubStringCount = 1;
