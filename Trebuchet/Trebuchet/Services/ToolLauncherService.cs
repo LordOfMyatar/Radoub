@@ -131,11 +131,13 @@ public class ToolLauncherService
 
         try
         {
+            var toolDir = Path.GetDirectoryName(tool.ExecutablePath!);
             var startInfo = new ProcessStartInfo
             {
                 FileName = tool.ExecutablePath!,
                 Arguments = arguments ?? "",
-                UseShellExecute = false
+                UseShellExecute = true,
+                WorkingDirectory = toolDir ?? ""
             };
 
             Process.Start(startInfo);
