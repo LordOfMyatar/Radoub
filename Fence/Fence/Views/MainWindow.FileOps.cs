@@ -17,6 +17,41 @@ public partial class MainWindow
 {
     #region File Operations
 
+    private void OnNewClick(object? sender, RoutedEventArgs e)
+    {
+        // Create a new empty store
+        _currentStore = new UtmFile
+        {
+            ResRef = "new_store",
+            Tag = "new_store",
+            MarkUp = 100,
+            MarkDown = 50,
+            IdentifyPrice = 100,
+            StoreGold = -1,
+            MaxBuyPrice = -1,
+            BlackMarket = false,
+            BM_MarkDown = 25
+        };
+        _currentStore.LocName.SetString(0, "New Store");
+
+        _currentFilePath = null;
+        _isDirty = true;
+
+        // Clear item resolution context (no file yet)
+        _itemResolutionService.SetCurrentFilePath(null);
+
+        // Update UI
+        PopulateStoreProperties();
+        StoreItems.Clear();
+        UpdateStatusBar("New store created");
+        UpdateTitle();
+        UpdateItemCount();
+
+        OnPropertyChanged(nameof(HasFile));
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Created new store");
+    }
+
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
