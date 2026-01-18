@@ -195,6 +195,16 @@ public partial class MainWindow
         UpdateTitle();
     }
 
+    private void OnStoreCategoryChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        // Only set dirty if we have a file loaded (avoid setting dirty during initialization)
+        if (_currentStore != null)
+        {
+            _isDirty = true;
+            UpdateTitle();
+        }
+    }
+
     private void UpdateBuyRestrictions()
     {
         if (_currentStore == null) return;

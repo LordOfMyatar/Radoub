@@ -97,31 +97,31 @@
 
                     <StackPanel Grid.Row="0" Grid.Column="8" Orientation="Horizontal" Margin="20,0,0,0">
                         <TextBlock Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <ComboBox x:Name="StoreCategoryBox" Width="120" AutomationProperties.AutomationId="StoreCategoryBox"/>
+                        <ComboBox x:Name="StoreCategoryBox" Width="120" AutomationProperties.AutomationId="StoreCategoryBox" SelectionChanged="OnStoreCategoryChanged"/>
                     </StackPanel>
 
                     <!-- Row 1: Pricing -->
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Sell Markup %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
-                    <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="SellMarkupBox" Minimum="0" Maximum="1000" Value="100" Margin="0,8,0,0" AutomationProperties.AutomationId="SellMarkupBox"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="SellMarkupBox" Minimum="0" Maximum="1000" Value="100" FormatString="0" Margin="0,8,0,0" AutomationProperties.AutomationId="SellMarkupBox"/>
 
                     <TextBlock Grid.Row="1" Grid.Column="3" Text="Buy Markdown %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
-                    <NumericUpDown Grid.Row="1" Grid.Column="4" x:Name="BuyMarkdownBox" Minimum="0" Maximum="100" Value="50" Margin="0,8,0,0" AutomationProperties.AutomationId="BuyMarkdownBox"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="4" x:Name="BuyMarkdownBox" Minimum="0" Maximum="100" Value="50" FormatString="0" Width="100" Margin="0,8,0,0" AutomationProperties.AutomationId="BuyMarkdownBox"/>
 
                     <TextBlock Grid.Row="1" Grid.Column="6" Text="Identify Price:" VerticalAlignment="Center" Margin="0,8,8,0"/>
-                    <NumericUpDown Grid.Row="1" Grid.Column="7" x:Name="IdentifyPriceBox" Minimum="-1" Maximum="100000" Value="100" Margin="0,8,0,0" AutomationProperties.AutomationId="IdentifyPriceBox"/>
+                    <NumericUpDown Grid.Row="1" Grid.Column="7" x:Name="IdentifyPriceBox" Minimum="-1" Maximum="100000" Value="100" FormatString="0" Width="120" Margin="0,8,0,0" AutomationProperties.AutomationId="IdentifyPriceBox"/>
 
                     <!-- Row 2: Flags -->
                     <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="8" Margin="0,8,0,0" Orientation="Horizontal">
                         <CheckBox x:Name="BlackMarketCheck" Content="Buy Stolen Goods" Margin="0,0,16,0" AutomationProperties.AutomationId="BlackMarketCheck"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
                             <TextBlock Text="(Markdown: " VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="BlackMarketMarkdownBox" Width="80" Minimum="0" Maximum="100" Value="25" IsEnabled="{Binding IsChecked, ElementName=BlackMarketCheck}" AutomationProperties.AutomationId="BlackMarketMarkdownBox"/>
+                            <NumericUpDown x:Name="BlackMarketMarkdownBox" Width="120" Minimum="0" Maximum="100" Value="25" FormatString="0" IsEnabled="{Binding IsChecked, ElementName=BlackMarketCheck}" AutomationProperties.AutomationId="BlackMarketMarkdownBox"/>
                             <TextBlock Text="%)" VerticalAlignment="Center"/>
                         </StackPanel>
                         <CheckBox x:Name="MaxBuyPriceCheck" Content="Max Buy Price:" Margin="0,0,8,0" AutomationProperties.AutomationId="MaxBuyPriceCheck"/>
-                        <NumericUpDown x:Name="MaxBuyPriceBox" Width="100" Minimum="0" Maximum="1000000" Value="0" IsEnabled="{Binding IsChecked, ElementName=MaxBuyPriceCheck}" AutomationProperties.AutomationId="MaxBuyPriceBox"/>
+                        <NumericUpDown x:Name="MaxBuyPriceBox" Width="120" Minimum="0" Maximum="1000000" Value="0" FormatString="0" IsEnabled="{Binding IsChecked, ElementName=MaxBuyPriceCheck}" AutomationProperties.AutomationId="MaxBuyPriceBox"/>
                         <CheckBox x:Name="LimitedGoldCheck" Content="Limited Gold:" Margin="16,0,8,0" AutomationProperties.AutomationId="LimitedGoldCheck"/>
-                        <NumericUpDown x:Name="StoreGoldBox" Width="100" Minimum="0" Maximum="10000000" Value="0" IsEnabled="{Binding IsChecked, ElementName=LimitedGoldCheck}" AutomationProperties.AutomationId="StoreGoldBox"/>
+                        <NumericUpDown x:Name="StoreGoldBox" Width="120" Minimum="0" Maximum="10000000" Value="0" FormatString="0" IsEnabled="{Binding IsChecked, ElementName=LimitedGoldCheck}" AutomationProperties.AutomationId="StoreGoldBox"/>
                     </WrapPanel>
                 </Grid>
             </Border>

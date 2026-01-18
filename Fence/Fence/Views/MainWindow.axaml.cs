@@ -157,20 +157,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// <summary>
     /// Populate the store category dropdown with toolset palette categories.
     /// These map to category node IDs in storepal.itp.
+    /// Reference: BioWare ITP (Palette) Format specification
+    /// See: https://github.com/LordOfMyatar/Radoub/wiki/Bioware-Legacy-PaletteITP_Format
     /// </summary>
     private void PopulateCategoryDropdown()
     {
         // Merchant palette categories from storepal.itp
-        // Only these categories exist for filing merchants:
+        // The ID field maps directly to these categories in the toolset:
+        //   ID 0 = Custom 1
+        //   ID 1 = Custom 2
+        //   ID 2 = Custom 3
+        //   ID 3 = Custom 4
+        //   ID 4 = Custom 5
+        //   ID 5 = Merchants (appears in Custom tab under Merchants branch)
         StoreCategoryBox.Items.Clear();
-        StoreCategoryBox.Items.Add("Merchants");   // 0 - Default category
-        StoreCategoryBox.Items.Add("Custom 1");    // 1
-        StoreCategoryBox.Items.Add("Custom 2");    // 2
-        StoreCategoryBox.Items.Add("Custom 3");    // 3
-        StoreCategoryBox.Items.Add("Custom 4");    // 4
-        StoreCategoryBox.Items.Add("Custom 5");    // 5
+        StoreCategoryBox.Items.Add("Custom 1");    // ID 0
+        StoreCategoryBox.Items.Add("Custom 2");    // ID 1
+        StoreCategoryBox.Items.Add("Custom 3");    // ID 2
+        StoreCategoryBox.Items.Add("Custom 4");    // ID 3
+        StoreCategoryBox.Items.Add("Custom 5");    // ID 4
+        StoreCategoryBox.Items.Add("Merchants");   // ID 5
 
-        StoreCategoryBox.SelectedIndex = 0;
+        StoreCategoryBox.SelectedIndex = 0;  // Default to Custom 1 (ID 0)
     }
 
     private void RestoreWindowPosition()
