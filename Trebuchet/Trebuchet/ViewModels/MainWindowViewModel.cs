@@ -2,7 +2,9 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
@@ -150,16 +152,44 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void OpenModule()
+    private async Task OpenModule()
     {
-        // This would open a file dialog to select a module
-        // For now, just log the action
+        if (_parentWindow == null) return;
+
         UnifiedLogger.LogApplication(LogLevel.INFO, "Open module dialog requested");
 
-        // TODO: Implement file dialog for module selection
-        // After selection:
-        // RadoubSettings.Instance.CurrentModulePath = selectedPath;
-        // SettingsService.Instance.AddRecentModule(selectedPath);
+        // Modules are extracted to working directories (temp0, temp1, or named folders)
+        // We browse for the extracted module folder, not the .mod file
+        var options = new FolderPickerOpenOptions
+        {
+            Title = "Select Module Working Directory (extracted module folder)",
+            AllowMultiple = false
+        };
+
+        // Start in NWN documents folder if available (where temp0/temp1/named modules live)
+        var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
+        if (!string.IsNullOrEmpty(nwnPath) && Directory.Exists(nwnPath))
+        {
+            try
+            {
+                options.SuggestedStartLocation = await _parentWindow.StorageProvider
+                    .TryGetFolderFromPathAsync(nwnPath);
+            }
+            catch
+            {
+                // Ignore if path can't be resolved - dialog will use default
+            }
+        }
+
+        var result = await _parentWindow.StorageProvider.OpenFolderPickerAsync(options);
+
+        if (result.Count > 0)
+        {
+            var selectedPath = result[0].Path.LocalPath;
+            RadoubSettings.Instance.CurrentModulePath = selectedPath;
+            SettingsService.Instance.AddRecentModule(selectedPath);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened module: {UnifiedLogger.SanitizePath(selectedPath)}");
+        }
     }
 
     [RelayCommand]

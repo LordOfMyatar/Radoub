@@ -16,6 +16,7 @@ namespace RadoubLauncher.ViewModels;
 public partial class SettingsWindowViewModel : ObservableObject
 {
     private readonly Window _window;
+    private readonly string? _originalThemeId;
     private static readonly IBrush SuccessBrush = new SolidColorBrush(Color.Parse("#4CAF50"));
     private static readonly IBrush ErrorBrush = new SolidColorBrush(Color.Parse("#F44336"));
 
@@ -71,6 +72,9 @@ public partial class SettingsWindowViewModel : ObservableObject
     public SettingsWindowViewModel(Window window)
     {
         _window = window;
+
+        // Store original theme for cancel revert
+        _originalThemeId = ThemeManager.Instance.CurrentTheme?.Plugin.Id;
 
         // Load current settings
         LoadSettings();
@@ -157,6 +161,17 @@ public partial class SettingsWindowViewModel : ObservableObject
     partial void OnFontSizeScaleChanged(double value)
     {
         OnPropertyChanged(nameof(FontSizePercentText));
+    }
+
+    partial void OnSelectedThemeChanged(string value)
+    {
+        // Apply theme immediately for live preview
+        var selectedThemeInfo = ThemeManager.Instance.AvailableThemes
+            .FirstOrDefault(t => t.Plugin.Name == value);
+        if (selectedThemeInfo != null)
+        {
+            ThemeManager.Instance.ApplyTheme(selectedThemeInfo.Plugin.Id);
+        }
     }
 
     [RelayCommand]
@@ -253,6 +268,11 @@ public partial class SettingsWindowViewModel : ObservableObject
     [RelayCommand]
     private void Cancel()
     {
+        // Revert theme if changed
+        if (_originalThemeId != null)
+        {
+            ThemeManager.Instance.ApplyTheme(_originalThemeId);
+        }
         _window.Close();
     }
 }
