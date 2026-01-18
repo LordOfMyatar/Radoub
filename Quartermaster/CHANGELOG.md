@@ -15,24 +15,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Core Features & Workflow (#715)
 
-- [x] #690 - Convert between UTC and BIC (Save As)
-  - Fixed UTC→BIC conversion to initialize QuickBar with 36 empty slots (required for playable BIC)
-  - Set reasonable default Age (25) for converted characters
-  - Ensure HP is valid (dead creatures get CurrentHP = MaxHP)
-  - UI reloads panels after format conversion to reflect file type changes
-  - Added 7 unit tests for conversion validation
-- [x] #689 - Create new UTC file
-  - Added File > New menu item with Ctrl+N shortcut
-  - Creates new creature with sensible defaults (Human Commoner level 1)
-  - Prompts to save unsaved changes before creating new file
-  - Ctrl+S on new file redirects to Save As dialog
-- [x] #949 - QuickBar Panel (BIC only)
-  - New QuickBar nav button visible only for BIC files
-  - Displays 36 slots organized as 3 bars (Normal, Shift, Ctrl) × 12 slots (F1-F12)
-  - Shows slot type and ID for assigned slots
-  - Scripts nav hidden for BIC, QuickBar nav hidden for UTC
-- [ ] #626 - Wire up themes and preferences/settings
-- [ ] #643 - Faction Display & Management
+- [ ] #690 - Convert between UTC and BIC (Save As) - **Partial**
+  - ✅ UTC→BIC conversion initializes QuickBar with 36 empty slots
+  - ✅ Set reasonable default Age (25) for converted characters
+  - ✅ Ensure HP is valid (dead creatures get CurrentHP = MaxHP)
+  - ✅ UI reloads panels after format conversion
+  - ✅ Added 7 unit tests for conversion validation
+  - ❌ BIC→UTC not adding to palette (PaletteID/TemplateResRef)
+- [ ] #689 - Create new UTC file - **Partial**
+  - ✅ File > New menu item with Ctrl+N shortcut
+  - ✅ Creates new creature with sensible defaults (Human Commoner level 1)
+  - ✅ Prompts to save unsaved changes before creating new file
+  - ✅ Ctrl+S on new file redirects to Save As dialog
+- [ ] #949 - QuickBar Panel (BIC only) - **Read-only**
+  - ✅ QuickBar nav button visible only for BIC files
+  - ✅ Displays 36 slots organized as 3 bars × 12 slots (F1-F12)
+  - ✅ Shows slot type and ID for assigned slots
+  - ❌ Cannot edit/write QuickBar slots yet
+- [x] #626 - Wire up themes and preferences/settings
+- [x] #643 - Faction Display & Management
+
+### Bug Fixes
+- Fixed BIC portrait display (uses Portrait string when PortraitId=0)
+- Fixed bitmap cache crash when switching panels (removed premature disposal)
+- Added global exception handlers for crash diagnostics
+- Added ITP reader for palette categories
 
 ---
 
