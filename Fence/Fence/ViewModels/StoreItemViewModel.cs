@@ -1,3 +1,4 @@
+using Radoub.Formats.Utm;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -46,8 +47,13 @@ public class StoreItemViewModel : INotifyPropertyChanged
     public int PanelId
     {
         get => _panelId;
-        set { if (_panelId != value) { _panelId = value; OnPropertyChanged(); } }
+        set { if (_panelId != value) { _panelId = value; OnPropertyChanged(); OnPropertyChanged(nameof(PanelName)); } }
     }
+
+    /// <summary>
+    /// Human-readable panel name (Armor, Miscellaneous, Potions/Scrolls, Rings/Amulets, Weapons)
+    /// </summary>
+    public string PanelName => StorePanels.GetPanelName(_panelId);
 
     public string BaseItemType
     {

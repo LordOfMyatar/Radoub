@@ -95,6 +95,11 @@
                     <TextBlock Grid.Row="0" Grid.Column="6" Text="ResRef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBox Grid.Row="0" Grid.Column="7" x:Name="StoreResRefBox" IsReadOnly="True" AutomationProperties.AutomationId="StoreResRefBox"/>
 
+                    <StackPanel Grid.Row="0" Grid.Column="8" Orientation="Horizontal" Margin="20,0,0,0">
+                        <TextBlock Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="StoreCategoryBox" Width="150" AutomationProperties.AutomationId="StoreCategoryBox"/>
+                    </StackPanel>
+
                     <!-- Row 1: Pricing -->
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Sell Markup %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
                     <NumericUpDown Grid.Row="1" Grid.Column="1" x:Name="SellMarkupBox" Minimum="0" Maximum="1000" Value="100" Margin="0,8,0,0" AutomationProperties.AutomationId="SellMarkupBox"/>
@@ -227,6 +232,19 @@
                                   AutomationProperties.AutomationId="StoreInventoryGrid">
                             <DataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="∞" Width="40" Binding="{Binding Infinite}"/>
+                                <DataGridTemplateColumn Header="Panel" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox SelectedIndex="{Binding PanelId}" VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="2">
+                                                <ComboBoxItem Content="Armor"/>
+                                                <ComboBoxItem Content="Miscellaneous"/>
+                                                <ComboBoxItem Content="Potions/Scrolls"/>
+                                                <ComboBoxItem Content="Rings/Amulets"/>
+                                                <ComboBoxItem Content="Weapons"/>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Tag" Width="100" Binding="{Binding Tag}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="ResRef" Width="100" Binding="{Binding ResRef}" IsReadOnly="True"/>

@@ -61,6 +61,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         LoadBaseItemTypes();
         PopulateTypeFilter();
 
+        // Populate store category dropdown (toolset palette categories)
+        PopulateCategoryDropdown();
+
         // Start background loading of item palette
         StartItemPaletteLoad();
 
@@ -149,6 +152,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
+    }
+
+    /// <summary>
+    /// Populate the store category dropdown with toolset palette categories.
+    /// These are the standard NWN toolset categories for organizing merchant blueprints.
+    /// </summary>
+    private void PopulateCategoryDropdown()
+    {
+        // Standard NWN toolset palette categories for merchants
+        // PaletteID 0 = Standard (uncategorized), then custom categories follow
+        StoreCategoryBox.Items.Clear();
+        StoreCategoryBox.Items.Add("Standard");           // 0
+        StoreCategoryBox.Items.Add("Custom 1");           // 1
+        StoreCategoryBox.Items.Add("Custom 2");           // 2
+        StoreCategoryBox.Items.Add("Custom 3");           // 3
+        StoreCategoryBox.Items.Add("Special");            // 4
+
+        StoreCategoryBox.SelectedIndex = 0;
     }
 
     private void RestoreWindowPosition()
@@ -243,6 +264,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         LimitedGoldCheck.IsChecked = _currentStore.StoreGold >= 0;
         StoreGoldBox.Value = Math.Max(0, _currentStore.StoreGold);
+
+        // Set category (PaletteID) - clamp to valid range for our dropdown
+        var categoryIndex = Math.Min(_currentStore.PaletteID, StoreCategoryBox.Items.Count - 1);
+        StoreCategoryBox.SelectedIndex = categoryIndex;
 
         // Populate buy restrictions
         PopulateBuyRestrictions();

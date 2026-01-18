@@ -195,6 +195,9 @@ public partial class MainWindow
         _currentStore.MaxBuyPrice = (MaxBuyPriceCheck.IsChecked ?? false) ? (int)(MaxBuyPriceBox.Value ?? 0) : -1;
         _currentStore.StoreGold = (LimitedGoldCheck.IsChecked ?? false) ? (int)(StoreGoldBox.Value ?? 0) : -1;
 
+        // Update category (PaletteID)
+        _currentStore.PaletteID = (byte)Math.Max(0, StoreCategoryBox.SelectedIndex);
+
         // Update buy restrictions
         UpdateBuyRestrictions();
 
