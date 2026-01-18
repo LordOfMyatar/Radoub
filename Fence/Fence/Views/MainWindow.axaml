@@ -97,7 +97,7 @@
 
                     <StackPanel Grid.Row="0" Grid.Column="8" Orientation="Horizontal" Margin="20,0,0,0">
                         <TextBlock Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <ComboBox x:Name="StoreCategoryBox" Width="150" AutomationProperties.AutomationId="StoreCategoryBox"/>
+                        <ComboBox x:Name="StoreCategoryBox" Width="120" AutomationProperties.AutomationId="StoreCategoryBox"/>
                     </StackPanel>
 
                     <!-- Row 1: Pricing -->
