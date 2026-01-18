@@ -29,6 +29,9 @@ public partial class MainWindow
         _isDirty = true;
         UpdateTitle();
         UpdateItemCount();
+
+        // Refresh grid view (re-apply filter if active)
+        ApplyStoreFilter();
     }
 
     private void OnSetInfinite(object? sender, RoutedEventArgs e)
@@ -39,6 +42,24 @@ public partial class MainWindow
     private void OnClearInfinite(object? sender, RoutedEventArgs e)
     {
         SetInfiniteFlag(false);
+    }
+
+    private void OnSetAllInfinite(object? sender, RoutedEventArgs e)
+    {
+        if (StoreItems.Count == 0)
+            return;
+
+        foreach (var item in StoreItems)
+        {
+            item.Infinite = true;
+        }
+
+        _isDirty = true;
+        UpdateTitle();
+
+        // Refresh grid
+        StoreInventoryGrid.ItemsSource = null;
+        StoreInventoryGrid.ItemsSource = StoreItems;
     }
 
     private void SetInfiniteFlag(bool value)
@@ -86,6 +107,9 @@ public partial class MainWindow
         _isDirty = true;
         UpdateTitle();
         UpdateItemCount();
+
+        // Refresh grid view (re-apply filter if active)
+        ApplyStoreFilter();
     }
 
     private void OnStoreInventoryDoubleTapped(object? sender, TappedEventArgs e)
@@ -103,6 +127,9 @@ public partial class MainWindow
         _isDirty = true;
         UpdateTitle();
         UpdateItemCount();
+
+        // Refresh grid view (re-apply filter if active)
+        ApplyStoreFilter();
     }
 
     private void OnItemPaletteDoubleTapped(object? sender, TappedEventArgs e)
@@ -114,6 +141,11 @@ public partial class MainWindow
     private void OnDeleteClick(object? sender, RoutedEventArgs e)
     {
         OnRemoveFromStore(sender, e);
+    }
+
+    private void OnSelectAllStoreItems(object? sender, RoutedEventArgs e)
+    {
+        StoreInventoryGrid.SelectAll();
     }
 
     #endregion
