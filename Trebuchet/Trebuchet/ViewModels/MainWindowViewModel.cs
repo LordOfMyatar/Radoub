@@ -37,6 +37,15 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _versionText = "v1.0.0";
 
+    [ObservableProperty]
+    private bool _updateAvailable;
+
+    [ObservableProperty]
+    private string _updateStatusText = "";
+
+    [ObservableProperty]
+    private bool _isCheckingForUpdates;
+
     public bool HasRecentModules => RecentModules.Count > 0;
 
     public MainWindowViewModel()
@@ -56,21 +65,41 @@ public partial class MainWindowViewModel : ObservableObject
         // Subscribe to settings changes
         RadoubSettings.Instance.PropertyChanged += OnSharedSettingsChanged;
         SettingsService.Instance.PropertyChanged += OnLocalSettingsChanged;
+
+        // Check for updates on startup (fire and forget)
+        _ = CheckForUpdatesAsync();
     }
 
     private void LoadVersionInfo()
     {
         try
         {
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            if (version != null)
+            // Use InformationalVersion for semantic version with suffix (e.g., "0.1.0-alpha")
+            var infoVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+            if (!string.IsNullOrEmpty(infoVersion))
             {
-                VersionText = $"v{version.Major}.{version.Minor}.{version.Build}";
+                // Strip git hash if present (e.g., "0.1.0-alpha+abc123" -> "0.1.0-alpha")
+                var plusIndex = infoVersion.IndexOf('+');
+                if (plusIndex > 0)
+                    infoVersion = infoVersion[..plusIndex];
+
+                VersionText = $"v{infoVersion}";
+            }
+            else
+            {
+                // Fallback to assembly version
+                var version = Assembly.GetExecutingAssembly().GetName().Version;
+                if (version != null)
+                {
+                    VersionText = $"v{version.Major}.{version.Minor}.{version.Build}";
+                }
             }
         }
         catch
         {
-            VersionText = "v1.0.0";
+            VersionText = "v0.1.0";
         }
     }
 
@@ -224,5 +253,42 @@ public partial class MainWindowViewModel : ObservableObject
     {
         _toolLauncher.RefreshTools();
         Tools = new ObservableCollection<ToolInfo>(_toolLauncher.Tools);
+    }
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        IsCheckingForUpdates = true;
+        UpdateStatusText = "Checking for updates...";
+
+        try
+        {
+            var hasUpdate = await UpdateService.Instance.CheckForUpdatesAsync();
+            UpdateAvailable = hasUpdate;
+
+            if (hasUpdate)
+            {
+                UpdateStatusText = $"Update available: v{UpdateService.Instance.LatestVersion}";
+            }
+            else
+            {
+                UpdateStatusText = "Up to date";
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Update check failed: {ex.Message}");
+            UpdateStatusText = "Update check failed";
+        }
+        finally
+        {
+            IsCheckingForUpdates = false;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenReleasePage()
+    {
+        UpdateService.Instance.OpenReleasePage();
     }
 }

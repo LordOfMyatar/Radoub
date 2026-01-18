@@ -6,7 +6,7 @@
         x:Class="RadoubLauncher.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         x:Name="MainWindowRoot"
-        Title="Trebuchet - Radoub Toolset"
+        Title="Trebuchet - Radoub Toolset (Alpha)"
         Width="900" Height="600"
         MinWidth="700" MinHeight="500"
         WindowStartupLocation="CenterScreen">
@@ -47,7 +47,7 @@
         <Border DockPanel.Dock="Bottom"
                 Background="{DynamicResource ThemeBackgroundAlt}"
                 Padding="12,8">
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="*,Auto,Auto">
                 <!-- Game Info -->
                 <StackPanel Orientation="Horizontal" Spacing="16">
                     <TextBlock Text="{Binding GameStatusText}"
@@ -59,8 +59,35 @@
                                VerticalAlignment="Center"/>
                 </StackPanel>
 
+                <!-- Update Status -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            Margin="16,0">
+                    <!-- Normal status (no update) -->
+                    <TextBlock Text="{Binding UpdateStatusText}"
+                               Opacity="0.7"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding !UpdateAvailable}"/>
+                    <!-- Update available - highlighted -->
+                    <Border Background="{DynamicResource ThemeInfoBrush}"
+                            CornerRadius="4"
+                            Padding="8,4"
+                            IsVisible="{Binding UpdateAvailable}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding UpdateStatusText}"
+                                       Foreground="White"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="Download"
+                                    Command="{Binding OpenReleasePageCommand}"
+                                    Padding="8,2"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
                 <!-- Version -->
-                <TextBlock Grid.Column="1"
+                <TextBlock Grid.Column="2"
                            Text="{Binding VersionText}"
                            Opacity="0.5"
                            VerticalAlignment="Center"/>
