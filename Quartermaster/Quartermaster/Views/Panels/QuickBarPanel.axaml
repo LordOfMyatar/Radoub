@@ -1,0 +1,169 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="400"
+             x:Class="Quartermaster.Views.Panels.QuickBarPanel">
+
+    <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="20">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="20">
+                <!-- Header -->
+                <TextBlock Text="QuickBar Slots"
+                           FontSize="{DynamicResource FontSizeXLarge}"
+                           FontWeight="Bold"/>
+
+                <!-- Summary -->
+                <TextBlock x:Name="QuickBarSummaryText"
+                           Text="36 slots (3 bars × 12 slots)"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                <!-- QuickBar 1: Normal (F1-F12) -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Normal Bar (F1-F12)"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeNormal}"/>
+                        <ItemsControl x:Name="QuickBar1" AutomationProperties.AutomationId="QuickBar1">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="60" Height="60" Margin="2"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            ToolTip.Tip="{Binding TooltipText}">
+                                        <Grid>
+                                            <!-- Slot number label -->
+                                            <TextBlock Text="{Binding SlotLabel}"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Top"
+                                                       Margin="3"/>
+                                            <!-- Content icon/text -->
+                                            <TextBlock Text="{Binding DisplayText}"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap"
+                                                       TextAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Margin="2"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- QuickBar 2: Shift (Shift+F1-F12) -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Shift Bar (Shift+F1-F12)"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeNormal}"/>
+                        <ItemsControl x:Name="QuickBar2" AutomationProperties.AutomationId="QuickBar2">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="60" Height="60" Margin="2"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            ToolTip.Tip="{Binding TooltipText}">
+                                        <Grid>
+                                            <TextBlock Text="{Binding SlotLabel}"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Top"
+                                                       Margin="3"/>
+                                            <TextBlock Text="{Binding DisplayText}"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap"
+                                                       TextAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Margin="2"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- QuickBar 3: Ctrl (Ctrl+F1-F12) -->
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Ctrl Bar (Ctrl+F1-F12)"
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeNormal}"/>
+                        <ItemsControl x:Name="QuickBar3" AutomationProperties.AutomationId="QuickBar3">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="60" Height="60" Margin="2"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                                            BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            ToolTip.Tip="{Binding TooltipText}">
+                                        <Grid>
+                                            <TextBlock Text="{Binding SlotLabel}"
+                                                       FontSize="10"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Top"
+                                                       Margin="3"/>
+                                            <TextBlock Text="{Binding DisplayText}"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap"
+                                                       TextAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       Margin="2"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Info text -->
+                <TextBlock Text="QuickBar slots are only available for player characters (BIC files)."
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,5,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

@@ -2,11 +2,12 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
-using Quartermaster.Views.Panels;
-using Radoub.Formats.Common;
-using Radoub.Formats.Logging;
 using Quartermaster.Views.Dialogs;
 using Quartermaster.Views.Helpers;
+using Quartermaster.Views.Panels;
+using Radoub.Formats.Bic;
+using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
@@ -217,6 +218,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "Appearance" => NavAppearance,
             "Advanced" => NavAdvanced,
             "Scripts" => NavScripts,
+            "QuickBar" => NavQuickBar,
             _ => null
         };
 
@@ -237,6 +239,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AppearancePanelContent.IsVisible = false;
         AdvancedPanelContent.IsVisible = false;
         ScriptsPanelContent.IsVisible = false;
+        QuickBarPanelContent.IsVisible = false;
 
         // Show selected panel
         switch (section)
@@ -270,6 +273,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 break;
             case "Scripts":
                 ScriptsPanelContent.IsVisible = true;
+                break;
+            case "QuickBar":
+                QuickBarPanelContent.IsVisible = true;
                 break;
         }
 
@@ -520,6 +526,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.SetFileType(_isBicFile);
         AdvancedPanelContent.LoadCreature(creature);
 
+        // Load QuickBar for BIC files only
+        if (_isBicFile && creature is BicFile bicFile)
+        {
+            QuickBarPanelContent.LoadQuickBar(bicFile);
+        }
+        else
+        {
+            QuickBarPanelContent.ClearPanel();
+        }
+
         // Update UI visibility based on file type
         UpdateFileTypeVisibility();
     }
@@ -527,14 +543,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// <summary>
     /// Update UI element visibility based on whether loaded file is BIC or UTC.
     /// BIC files (player characters) don't have scripts, conversation, or some advanced properties.
+    /// UTC files (creature blueprints) don't have QuickBar, experience, gold, or age.
     /// </summary>
     private void UpdateFileTypeVisibility()
     {
         // Hide Scripts nav button for BIC files (player characters don't have scripts)
         NavScripts.IsVisible = !_isBicFile;
 
+        // Show QuickBar nav button only for BIC files (player characters have quickbar)
+        NavQuickBar.IsVisible = _isBicFile;
+
         // If currently on Scripts section and loading a BIC, navigate away
         if (_isBicFile && _currentSection == "Scripts")
+        {
+            NavigateToSection("Character", NavCharacter);
+        }
+
+        // If currently on QuickBar section and loading a UTC, navigate away
+        if (!_isBicFile && _currentSection == "QuickBar")
         {
             NavigateToSection("Character", NavCharacter);
         }
@@ -555,9 +581,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AppearancePanelContent.ClearPanel();
         AdvancedPanelContent.SetFileType(false);
         AdvancedPanelContent.ClearPanel();
+        QuickBarPanelContent.ClearPanel();
 
-        // Restore Scripts nav button visibility (show by default)
+        // Reset nav button visibility to defaults (Scripts visible, QuickBar hidden)
         NavScripts.IsVisible = true;
+        NavQuickBar.IsVisible = false;
     }
 
     #endregion

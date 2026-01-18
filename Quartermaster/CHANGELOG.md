@@ -26,6 +26,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Creates new creature with sensible defaults (Human Commoner level 1)
   - Prompts to save unsaved changes before creating new file
   - Ctrl+S on new file redirects to Save As dialog
+- [x] #949 - QuickBar Panel (BIC only)
+  - New QuickBar nav button visible only for BIC files
+  - Displays 36 slots organized as 3 bars (Normal, Shift, Ctrl) × 12 slots (F1-F12)
+  - Shows slot type and ID for assigned slots
+  - Scripts nav hidden for BIC, QuickBar nav hidden for UTC
 - [ ] #626 - Wire up themes and preferences/settings
 - [ ] #643 - Faction Display & Management
 
