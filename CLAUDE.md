@@ -282,8 +282,10 @@ Every tool should reference these shared libraries:
 | Library | Purpose | Required? |
 |---------|---------|-----------|
 | `Radoub.Formats` | GFF, 2DA, TLK, KEY/BIF parsing | Yes |
-| `Radoub.UI` | ThemeManager, ScriptBrowser, shared controls | Yes |
+| `Radoub.UI` | ThemeManager, ScriptBrowser, AboutWindow, shared controls | Yes |
 | `Radoub.Dictionary` | Spell-checking for text fields | If tool has text editing |
+
+**AboutWindow**: Use the universal `AboutWindow` from `Radoub.UI` - don't create tool-specific About dialogs.
 
 ### Implementation Checklist
 
