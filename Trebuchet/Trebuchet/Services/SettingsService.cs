@@ -101,6 +101,7 @@ public class SettingsService : INotifyPropertyChanged
 
     // UI settings
     private double _fontSize = 14;
+    private double _fontSizeScale = 1.0;
     private string _fontFamily = "";
     private string _currentThemeId = "org.trebuchet.theme.light";
 
@@ -157,6 +158,12 @@ public class SettingsService : INotifyPropertyChanged
     {
         get => _fontSize;
         set { if (SetProperty(ref _fontSize, Math.Max(8, Math.Min(24, value)))) SaveSettings(); }
+    }
+
+    public double FontSizeScale
+    {
+        get => _fontSizeScale;
+        set { if (SetProperty(ref _fontSizeScale, Math.Max(0.8, Math.Min(1.5, value)))) SaveSettings(); }
     }
 
     public string FontFamily
@@ -279,6 +286,7 @@ public class SettingsService : INotifyPropertyChanged
                     _windowMaximized = settings.WindowMaximized;
 
                     _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
+                    _fontSizeScale = Math.Max(0.8, Math.Min(1.5, settings.FontSizeScale));
                     _fontFamily = settings.FontFamily ?? "";
                     _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
                         ? settings.CurrentThemeId
@@ -326,6 +334,7 @@ public class SettingsService : INotifyPropertyChanged
                 WindowHeight = WindowHeight,
                 WindowMaximized = WindowMaximized,
                 FontSize = FontSize,
+                FontSizeScale = FontSizeScale,
                 FontFamily = FontFamily,
                 CurrentThemeId = CurrentThemeId,
                 LogRetentionSessions = LogRetentionSessions,
@@ -372,6 +381,7 @@ public class SettingsService : INotifyPropertyChanged
         public bool WindowMaximized { get; set; } = false;
 
         public double FontSize { get; set; } = 14;
+        public double FontSizeScale { get; set; } = 1.0;
         public string FontFamily { get; set; } = "";
         public string CurrentThemeId { get; set; } = "org.trebuchet.theme.light";
 

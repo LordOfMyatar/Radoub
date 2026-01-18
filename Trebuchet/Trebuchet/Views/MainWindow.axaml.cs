@@ -11,7 +11,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = new MainWindowViewModel();
+        var viewModel = new MainWindowViewModel();
+        viewModel.SetParentWindow(this);
+        DataContext = viewModel;
 
         // Restore window position from settings
         RestoreWindowState();

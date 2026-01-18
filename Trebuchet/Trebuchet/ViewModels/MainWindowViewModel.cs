@@ -2,17 +2,20 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Reflection;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using RadoubLauncher.Services;
+using RadoubLauncher.Views;
 
 namespace RadoubLauncher.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ToolLauncherService _toolLauncher;
+    private Window? _parentWindow;
 
     [ObservableProperty]
     private ObservableCollection<ToolInfo> _tools;
@@ -42,6 +45,11 @@ public partial class MainWindowViewModel : ObservableObject
 
         LoadVersionInfo();
         UpdateStatusFromSettings();
+    }
+
+    public void SetParentWindow(Window window)
+    {
+        _parentWindow = window;
 
         // Subscribe to settings changes
         RadoubSettings.Instance.PropertyChanged += OnSharedSettingsChanged;
@@ -174,8 +182,11 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void OpenSettings()
     {
-        UnifiedLogger.LogApplication(LogLevel.INFO, "Settings window requested");
-        // TODO: Open settings window
+        if (_parentWindow == null) return;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Opening settings window");
+        var settingsWindow = new SettingsWindow();
+        settingsWindow.ShowDialog(_parentWindow);
     }
 
     [RelayCommand]
