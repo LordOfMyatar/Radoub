@@ -18,13 +18,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Part of Epic #555. Completes Fence to full editor functionality.
 
 #### Added
-- [ ] **Create New Store** - File → New menu option
-- [ ] **Add/Remove items** - Move items between palette and store inventory
-- [ ] **Search filters** - Store and palette search boxes
-- [ ] **Type filter dropdown** - Filter palette by base item type
-- [ ] **Source checkboxes** - Standard/Custom content filtering
-- [ ] **Double-click transfer** - Wire up double-click to move items
-- [ ] **Unit tests** - Add Fence.Tests project with basic coverage
+- [x] **Create New Store** - File → New menu option (Ctrl+N)
+- [x] **Search filters** - Store and palette search boxes filter by name/resref/type
+- [x] **Type filter dropdown** - Filter palette by base item type
+- [x] **Source checkboxes** - Standard/Custom content filtering
+- [x] **Unit tests** - Fence.Tests project with 18 tests for BaseItemTypeService and SettingsService
+
+#### Refactored
+- **MainWindow partial classes** - Split 1024-line file into 4 partial classes (FileOps, ItemPalette, StoreOperations)
 
 ---
 
