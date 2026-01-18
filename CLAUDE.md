@@ -298,6 +298,38 @@ Every tool should reference these shared libraries:
 - [ ] **Create CLAUDE.md** with tool-specific patterns
 - [ ] **Add dictionary support** if tool has text editing fields
 
+### Versioning
+
+**Version Location**: Set in `.csproj` file PropertyGroup:
+
+```xml
+<!-- Version Configuration -->
+<Version>0.1.0-alpha</Version>
+<AssemblyVersion>0.1.0.0</AssemblyVersion>
+<FileVersion>0.1.0.0</FileVersion>
+<InformationalVersion>0.1.0-alpha</InformationalVersion>
+```
+
+**Initial Version**: New tools start at `0.1.0-alpha`
+
+**Semantic Versioning Rules**:
+| Version | When to Bump |
+|---------|--------------|
+| **Major** (1.0.0) | Breaking changes, major rewrites, stable release |
+| **Minor** (0.2.0) | New features, significant enhancements |
+| **Patch** (0.1.1) | Bug fixes, small improvements |
+| **Prerelease** (-alpha, -beta) | Development builds before stable |
+
+**Version Coordination**:
+- CHANGELOG version sections must match `.csproj` version
+- Update both when preparing a release
+- GitHub releases use the same version tag (e.g., `v0.1.0-alpha`)
+
+**Alpha vs Beta vs Stable**:
+- `alpha`: Active development, features incomplete, may have bugs
+- `beta`: Feature complete, testing phase, API may change
+- (no suffix): Stable release, production ready
+
 ### Common Mistakes to Avoid
 
 | Mistake | Correct Pattern |
@@ -308,6 +340,7 @@ Every tool should reference these shared libraries:
 | Settings in app folder | Store in `~/Radoub/ToolName/settings.json` |
 | Missing SafeMode support | Always implement `--safemode` flag |
 | Skipping unit tests | Create ToolName.Tests from day 1 |
+| Missing version in .csproj | Set Version, AssemblyVersion, FileVersion |
 
 ---
 
