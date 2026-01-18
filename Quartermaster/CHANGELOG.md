@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.44-alpha] - 2026-01-18
+**Branch**: `quartermaster/issue-715` | **PR**: #TBD
+
+### Sprint: Core Features & Workflow (#715)
+
+- [ ] #690 - Convert between UTC and BIC (Save As)
+- [ ] #689 - Create new UTC file
+- [ ] #626 - Wire up themes and preferences/settings
+- [ ] #643 - Faction Display & Management
+
+---
+
 ## [0.1.43-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-932` | **PR**: #937
 
