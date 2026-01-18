@@ -181,14 +181,9 @@ gh project item-add [PROJECT_NUMBER] --owner LordOfMyatar --url https://github.c
 # Set status to "In Progress" (see project IDs below)
 ```
 
-**Project Selection:**
-| Tool | Project | Number |
-|------|---------|--------|
-| parley | Parley | 2 |
-| radoub, quartermaster, manifest, fence | Radoub | 3 |
+**Project:** All tools use Radoub project (#3)
 
 **Project IDs for status update:**
-- Parley: `--project-id PVT_kwHOAotjYs4BHFCR --field-id PVTSSF_lAHOAotjYs4BHFCRzg37-KA --single-select-option-id 47fc9ee4`
 - Radoub: `--project-id PVT_kwHOAotjYs4BHbMq --field-id PVTSSF_lAHOAotjYs4BHbMqzg4Lxyk --single-select-option-id 47fc9ee4`
 
 ## Output Format

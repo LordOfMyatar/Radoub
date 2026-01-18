@@ -10,6 +10,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.1-alpha] - 2026-01-17
+**Branch**: `fence/issue-911` | **PR**: #944
+
+### Sprint: Phase 2 - Full Editor Functionality
+
+Part of Epic #555. Completes Fence to full editor functionality.
+
+#### Added
+- [x] **Create New Store** - File → New menu option (Ctrl+N)
+- [x] **Search filters** - Store and palette search boxes filter by name/resref/type
+- [x] **Type filter dropdown** - Filter palette by base item type
+- [x] **Source checkboxes** - Standard/Custom content filtering
+- [x] **Unit tests** - Fence.Tests project with 18 tests for BaseItemTypeService and SettingsService
+
+#### Refactored
+- **MainWindow partial classes** - Split 1024-line file into 4 partial classes (FileOps, ItemPalette, StoreOperations)
+
+---
+
 ## [0.1.0-alpha] - 2026-01-15
 **Branch**: `radoub/issue-558` | **PR**: #910
 

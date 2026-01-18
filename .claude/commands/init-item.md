@@ -317,37 +317,18 @@ Common label patterns:
 
 ### Project Selection (for Sprints/Epics only)
 
-| Label/Title | Project | Number |
-|-------------|---------|--------|
-| `parley` or `[Parley]` | Parley | 2 |
-| `radoub` or `[Radoub]` | Radoub | 3 |
-| `quartermaster` or `[Quartermaster]` | Radoub | 3 |
-| `manifest` or `[Manifest]` | Radoub | 3 |
-| `fence` or `[Fence]` | Radoub | 3 |
+All tools use the **Radoub project (#3)**.
 
 ### Add Sprint/Epic to Project and Set In Progress
 
 After Step 9 (Create Draft PR), **only for sprints and epics**:
 
 ```bash
-# Add to appropriate project (returns item ID)
-# For Parley sprints/epics:
-ITEM_JSON=$(gh project item-add 2 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
-ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
-
-# For Radoub sprints/epics:
+# Add to Radoub project (returns item ID)
 ITEM_JSON=$(gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json)
 ITEM_ID=$(echo "$ITEM_JSON" | jq -r '.id')
 
 # Set status to "In Progress"
-# For Parley project (2):
-gh project item-edit \
-  --id "$ITEM_ID" \
-  --project-id PVT_kwHOAotjYs4BHFCR \
-  --field-id PVTSSF_lAHOAotjYs4BHFCRzg37-KA \
-  --single-select-option-id 47fc9ee4
-
-# For Radoub project (3):
 gh project item-edit \
   --id "$ITEM_ID" \
   --project-id PVT_kwHOAotjYs4BHbMq \

@@ -72,7 +72,7 @@ public static class UtmReader
 
             // Blueprint fields
             Comment = root.GetFieldValue<string>("Comment", string.Empty),
-            PaletteID = root.GetFieldValue<byte>("PaletteID", 0),
+            PaletteID = root.GetFieldValue<byte>("ID", 0),  // GFF field is "ID", maps to PaletteID in our model
 
             // Scripts
             OnOpenStore = root.GetFieldValue<string>("OnOpenStore", string.Empty),

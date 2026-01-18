@@ -72,7 +72,7 @@ public static class UtmWriter
         // Blueprint fields
         if (!string.IsNullOrEmpty(utm.Comment))
             AddCExoStringField(root, "Comment", utm.Comment);
-        AddByteField(root, "PaletteID", utm.PaletteID);
+        AddByteField(root, "ID", utm.PaletteID);  // GFF field is "ID", maps to PaletteID in our model
 
         // Scripts
         if (!string.IsNullOrEmpty(utm.OnOpenStore))

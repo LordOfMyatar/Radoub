@@ -14,6 +14,7 @@
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
             <MenuItem Header="_File">
+                <MenuItem Header="_New" Click="OnNewClick" InputGesture="Ctrl+N"/>
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
                 <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
                 <Separator/>
@@ -93,6 +94,11 @@
 
                     <TextBlock Grid.Row="0" Grid.Column="6" Text="ResRef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBox Grid.Row="0" Grid.Column="7" x:Name="StoreResRefBox" IsReadOnly="True" AutomationProperties.AutomationId="StoreResRefBox"/>
+
+                    <StackPanel Grid.Row="0" Grid.Column="8" Orientation="Horizontal" Margin="20,0,0,0">
+                        <TextBlock Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="StoreCategoryBox" Width="120" AutomationProperties.AutomationId="StoreCategoryBox"/>
+                    </StackPanel>
 
                     <!-- Row 1: Pricing -->
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Sell Markup %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
@@ -197,7 +203,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" x:Name="StoreSearchBox" Watermark="Search items..." AutomationProperties.AutomationId="StoreSearchBox"/>
+                                <TextBox Grid.Column="0" x:Name="StoreSearchBox" Watermark="Search items..." TextChanged="OnStoreSearchTextChanged" AutomationProperties.AutomationId="StoreSearchBox"/>
                                 <Button Grid.Column="1" Content="X" Width="28" Margin="4,0,0,0" Click="OnClearStoreSearch" AutomationProperties.AutomationId="ClearStoreSearchButton"/>
                             </Grid>
                         </Border>
@@ -205,9 +211,12 @@
                         <!-- Action Buttons (must dock before DataGrid fills remaining space) -->
                         <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Content="Remove" Click="OnRemoveFromStore" AutomationProperties.AutomationId="RemoveFromStoreButton"/>
-                                <Button Content="Set Infinite" Click="OnSetInfinite" AutomationProperties.AutomationId="SetInfiniteButton"/>
-                                <Button Content="Clear Infinite" Click="OnClearInfinite" AutomationProperties.AutomationId="ClearInfiniteButton"/>
+                                <Button Content="Select All" Click="OnSelectAllStoreItems" ToolTip.Tip="Select all items in the store" AutomationProperties.AutomationId="SelectAllStoreButton"/>
+                                <Button Content="Remove" Click="OnRemoveFromStore" ToolTip.Tip="Remove selected items from store" AutomationProperties.AutomationId="RemoveFromStoreButton"/>
+                                <Separator Width="1" Background="{DynamicResource SystemBaseMediumLowColor}" Margin="4,2"/>
+                                <Button Content="∞ Selected" Click="OnSetInfinite" ToolTip.Tip="Set selected items to infinite stock" AutomationProperties.AutomationId="SetInfiniteButton"/>
+                                <Button Content="∞ All" Click="OnSetAllInfinite" ToolTip.Tip="Set ALL items to infinite stock" AutomationProperties.AutomationId="SetAllInfiniteButton"/>
+                                <Button Content="Clear ∞" Click="OnClearInfinite" ToolTip.Tip="Clear infinite flag on selected items" AutomationProperties.AutomationId="ClearInfiniteButton"/>
                             </StackPanel>
                         </Border>
 
@@ -257,20 +266,20 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0" x:Name="PaletteSearchBox" Watermark="Search items..." AutomationProperties.AutomationId="PaletteSearchBox"/>
+                                    <TextBox Grid.Column="0" x:Name="PaletteSearchBox" Watermark="Search items..." TextChanged="OnPaletteSearchTextChanged" AutomationProperties.AutomationId="PaletteSearchBox"/>
                                     <Button Grid.Column="1" Content="X" Width="28" Margin="4,0,0,0" Click="OnClearPaletteSearch" AutomationProperties.AutomationId="ClearPaletteSearchButton"/>
                                 </Grid>
 
                                 <!-- Source Filter -->
                                 <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                    <CheckBox x:Name="StandardItemsCheck" Content="Standard" IsChecked="True" Margin="0,0,12,0" AutomationProperties.AutomationId="StandardItemsCheck"/>
-                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="True" AutomationProperties.AutomationId="CustomItemsCheck"/>
+                                    <CheckBox x:Name="StandardItemsCheck" Content="Standard" IsChecked="True" Margin="0,0,12,0" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="StandardItemsCheck"/>
+                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="True" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="CustomItemsCheck"/>
                                 </WrapPanel>
 
                                 <!-- Type Filter -->
                                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
                                     <TextBlock Text="Type:" VerticalAlignment="Center"/>
-                                    <ComboBox x:Name="ItemTypeFilter" Width="200" AutomationProperties.AutomationId="ItemTypeFilter"/>
+                                    <ComboBox x:Name="ItemTypeFilter" Width="200" SelectionChanged="OnTypeFilterChanged" AutomationProperties.AutomationId="ItemTypeFilter"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
