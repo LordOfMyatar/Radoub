@@ -493,13 +493,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
 
-    private void MarkDirty()
+    private void MarkDirty([CallerMemberName] string? caller = null)
     {
         // Don't mark dirty during file loading - panels may fire change events
-        if (_isLoading) return;
+        if (_isLoading)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (isLoading=true) from {caller}");
+            return;
+        }
+
+        // Don't mark dirty if no file is loaded - stale events from clearing panels
+        if (_currentCreature == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (no file loaded) from {caller}");
+            return;
+        }
 
         if (!_isDirty)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Setting dirty from {caller}");
             _isDirty = true;
             UpdateTitle();
         }
