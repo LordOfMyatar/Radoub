@@ -334,36 +334,36 @@ public partial class SettingsWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void CleanupLegacyLogs()
+    private void CleanupLogs()
     {
         try
         {
-            // Clean up legacy ~/Radoub/Radoub/Logs directory (from before per-tool logging)
-            var legacyLogsPath = System.IO.Path.Combine(
+            var radoubFolder = System.IO.Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                "Radoub", "Radoub", "Logs");
+                "Radoub");
 
-            if (System.IO.Directory.Exists(legacyLogsPath))
+            if (!System.IO.Directory.Exists(radoubFolder))
+                return;
+
+            int deletedCount = 0;
+
+            // Nuke all Logs directories in all tool folders
+            foreach (var toolDir in System.IO.Directory.GetDirectories(radoubFolder))
             {
-                System.IO.Directory.Delete(legacyLogsPath, true);
-                UnifiedLogger.LogApplication(LogLevel.INFO, "Cleaned up legacy Radoub/Radoub/Logs directory");
-
-                // Also remove empty parent if it exists
-                var legacyParent = System.IO.Path.GetDirectoryName(legacyLogsPath);
-                if (!string.IsNullOrEmpty(legacyParent) && System.IO.Directory.Exists(legacyParent))
+                var logsDir = System.IO.Path.Combine(toolDir, "Logs");
+                if (System.IO.Directory.Exists(logsDir))
                 {
-                    var remaining = System.IO.Directory.GetFileSystemEntries(legacyParent);
-                    if (remaining.Length == 0)
-                    {
-                        System.IO.Directory.Delete(legacyParent);
-                        UnifiedLogger.LogApplication(LogLevel.INFO, "Removed empty legacy Radoub/Radoub directory");
-                    }
+                    System.IO.Directory.Delete(logsDir, true);
+                    deletedCount++;
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Deleted logs: {System.IO.Path.GetFileName(toolDir)}/Logs");
                 }
             }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Cleaned up {deletedCount} log directories");
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to cleanup legacy logs: {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to cleanup logs: {ex.Message}");
         }
     }
 }

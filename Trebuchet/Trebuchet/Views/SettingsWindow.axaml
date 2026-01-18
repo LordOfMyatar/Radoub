@@ -198,8 +198,8 @@
                             <Button Content="Open Radoub Folder"
                                     Command="{Binding OpenLogFolderCommand}"
                                     Padding="8,4"/>
-                            <Button Content="Cleanup Legacy Logs"
-                                    Command="{Binding CleanupLegacyLogsCommand}"
+                            <Button Content="Cleanup Logs"
+                                    Command="{Binding CleanupLogsCommand}"
                                     Padding="8,4"/>
                         </StackPanel>
                     </Grid>
