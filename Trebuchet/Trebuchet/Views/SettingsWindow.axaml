@@ -37,34 +37,55 @@
                                FontSize="{DynamicResource FontSizeLarge}"
                                FontWeight="SemiBold"/>
 
-                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" Margin="0,8,0,0">
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                   Text="NWN Installation:"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,12,0"/>
-                        <TextBox Grid.Row="0" Grid.Column="1"
-                                 Text="{Binding GameInstallPath}"
-                                 Watermark="Path to NWN installation folder"
-                                 Margin="0,0,8,0"/>
-                        <Button Grid.Row="0" Grid.Column="2"
-                                Content="Browse..."
-                                Command="{Binding BrowseGamePathCommand}"
-                                Padding="8,4"/>
+                    <!-- Base Game Installation (Steam/GOG) -->
+                    <StackPanel Margin="0,8,0,0" Spacing="4">
+                        <TextBlock Text="Base Game Installation (Steam/GOG):"
+                                   FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding GameInstallPath}"
+                                     Watermark="Path to NWN installation (contains data\ folder)"
+                                     Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="Browse..."
+                                    Command="{Binding BrowseGamePathCommand}"
+                                    Margin="0,0,4,0"
+                                    Padding="8,4"/>
+                            <Button Grid.Column="2"
+                                    Content="Auto-Detect"
+                                    Command="{Binding AutoDetectGamePathCommand}"
+                                    Padding="8,4"/>
+                        </Grid>
+                        <TextBlock Text="{Binding GameInstallValidation}"
+                                   Foreground="{Binding GameInstallValidationColor}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   IsVisible="{Binding HasGameInstallValidation}"/>
+                    </StackPanel>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                   Text="NWN Documents:"
-                                   VerticalAlignment="Center"
-                                   Margin="0,8,12,0"/>
-                        <TextBox Grid.Row="1" Grid.Column="1"
-                                 Text="{Binding NwnDocumentsPath}"
-                                 Watermark="Path to NWN documents folder"
-                                 Margin="0,8,8,0"/>
-                        <Button Grid.Row="1" Grid.Column="2"
-                                Content="Browse..."
-                                Command="{Binding BrowseDocumentsPathCommand}"
-                                Margin="0,8,0,0"
-                                Padding="8,4"/>
-                    </Grid>
+                    <!-- NWN Documents (User Data) -->
+                    <StackPanel Margin="0,8,0,0" Spacing="4">
+                        <TextBlock Text="NWN Documents (User Data):"
+                                   FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding NwnDocumentsPath}"
+                                     Watermark="Path to Documents\Neverwinter Nights"
+                                     Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Content="Browse..."
+                                    Command="{Binding BrowseDocumentsPathCommand}"
+                                    Margin="0,0,4,0"
+                                    Padding="8,4"/>
+                            <Button Grid.Column="2"
+                                    Content="Auto-Detect"
+                                    Command="{Binding AutoDetectDocumentsPathCommand}"
+                                    Padding="8,4"/>
+                        </Grid>
+                        <TextBlock Text="{Binding NwnDocumentsValidation}"
+                                   Foreground="{Binding NwnDocumentsValidationColor}"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   IsVisible="{Binding HasNwnDocumentsValidation}"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- TLK Settings Section -->
