@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.1-alpha] - 2026-01-17
-**Branch**: `fence/issue-911` | **PR**: #TBD
+**Branch**: `fence/issue-911` | **PR**: #944
 
 ### Sprint: Phase 2 - Full Editor Functionality
 
