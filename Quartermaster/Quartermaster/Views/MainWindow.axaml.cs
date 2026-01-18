@@ -570,6 +570,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             switch (e.Key)
             {
+                case Key.N:
+                    _ = NewFile();
+                    e.Handled = true;
+                    break;
                 case Key.O:
                     _ = OpenFile();
                     e.Handled = true;

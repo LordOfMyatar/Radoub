@@ -16,7 +16,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Core Features & Workflow (#715)
 
 - [ ] #690 - Convert between UTC and BIC (Save As)
-- [ ] #689 - Create new UTC file
+- [x] #689 - Create new UTC file
+  - Added File > New menu item with Ctrl+N shortcut
+  - Creates new creature with sensible defaults (Human Commoner level 1)
+  - Prompts to save unsaved changes before creating new file
+  - Ctrl+S on new file redirects to Save As dialog
 - [ ] #626 - Wire up themes and preferences/settings
 - [ ] #643 - Faction Display & Management
 

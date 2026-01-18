@@ -2,11 +2,14 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Quartermaster.Services;
-using Radoub.Formats.Logging;
+using Quartermaster.Views.Helpers;
 using Radoub.Formats.Bic;
 using Radoub.Formats.Common;
+using Radoub.Formats.Gff;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -89,6 +92,11 @@ public partial class MainWindow
     #endregion
 
     #region Menu Click Handlers
+
+    private async void OnNewClick(object? sender, RoutedEventArgs e)
+    {
+        await NewFile();
+    }
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
     {
@@ -174,6 +182,151 @@ public partial class MainWindow
 
     #region File Operations
 
+    private async Task NewFile()
+    {
+        // Check for unsaved changes
+        if (_isDirty)
+        {
+            var result = await DialogHelper.ShowUnsavedChangesDialog(this);
+            if (result == "Save")
+            {
+                await SaveFile();
+            }
+            else if (result == "Cancel")
+            {
+                return;
+            }
+            // "Discard" continues to create new file
+        }
+
+        // Close current file if open
+        if (_currentCreature != null)
+        {
+            CloseFile();
+        }
+
+        // Create new creature with sensible defaults
+        _currentCreature = CreateNewCreature();
+        _currentFilePath = null; // New file, not yet saved
+        _isBicFile = false; // New files are UTC by default
+        _isLoading = true;
+
+        // Clear panel file contexts (no file path yet)
+        CharacterPanelContent.SetCurrentFilePath(null);
+        ScriptsPanelContent.SetCurrentFilePath(null);
+        AdvancedPanelContent.SetModuleDirectory(null);
+
+        // Populate UI
+        ClearInventoryUI();
+        UpdateCharacterHeader();
+        LoadAllPanels(_currentCreature);
+        UpdateInventoryCounts();
+        OnPropertyChanged(nameof(HasFile));
+
+        // Mark as dirty immediately (new unsaved file)
+        _isLoading = false;
+        _isDirty = true;
+        UpdateTitle();
+        UpdateStatus("New creature created");
+
+        UnifiedLogger.LogCreature(LogLevel.INFO, "Created new creature blueprint");
+    }
+
+    /// <summary>
+    /// Creates a new UtcFile with sensible defaults for a basic humanoid creature.
+    /// </summary>
+    private static UtcFile CreateNewCreature()
+    {
+        return new UtcFile
+        {
+            // Identity - StrRef = 0xFFFFFFFF means no TLK reference (use embedded string)
+            FirstName = new CExoLocString { StrRef = 0xFFFFFFFF },
+            LastName = new CExoLocString { StrRef = 0xFFFFFFFF },
+            Tag = "new_creature",
+            TemplateResRef = "new_creature",
+            Description = new CExoLocString { StrRef = 0xFFFFFFFF },
+
+            // Basic info - Human male by default
+            Race = 6, // Human (racialtypes.2da)
+            Gender = 0, // Male
+
+            // Appearance - Human appearance type
+            AppearanceType = 6, // Human (appearance.2da)
+            Phenotype = 0, // Normal
+            PortraitId = 1, // First portrait
+
+            // Default body parts for part-based model (all set to 1 = basic)
+            AppearanceHead = 1,
+            BodyPart_Belt = 0,
+            BodyPart_LBicep = 1,
+            BodyPart_RBicep = 1,
+            BodyPart_LFArm = 1,
+            BodyPart_RFArm = 1,
+            BodyPart_LFoot = 1,
+            BodyPart_RFoot = 1,
+            BodyPart_LHand = 1,
+            BodyPart_RHand = 1,
+            BodyPart_LShin = 1,
+            BodyPart_RShin = 1,
+            BodyPart_LShoul = 0,
+            BodyPart_RShoul = 0,
+            BodyPart_LThigh = 1,
+            BodyPart_RThigh = 1,
+            BodyPart_Neck = 1,
+            BodyPart_Pelvis = 1,
+            BodyPart_Torso = 1,
+
+            // Colors - neutral defaults
+            Color_Skin = 0,
+            Color_Hair = 0,
+            Color_Tattoo1 = 0,
+            Color_Tattoo2 = 0,
+
+            // Ability scores - standard array
+            Str = 10,
+            Dex = 10,
+            Con = 10,
+            Int = 10,
+            Wis = 10,
+            Cha = 10,
+
+            // Hit points - minimal for level 1
+            HitPoints = 4,
+            CurrentHitPoints = 4,
+            MaxHitPoints = 4,
+
+            // Alignment - True Neutral
+            GoodEvil = 50,
+            LawfulChaotic = 50,
+
+            // Behavior defaults
+            FactionID = 1, // Commoner faction
+            PerceptionRange = 11, // Default perception
+            WalkRate = 4, // PC walk rate
+            DecayTime = 5000, // 5 seconds
+
+            // Interruptable by default
+            Interruptable = true,
+
+            // Must have at least one class - Commoner level 1
+            ClassList = new List<CreatureClass>
+            {
+                new CreatureClass
+                {
+                    Class = 7, // Commoner (classes.2da)
+                    ClassLevel = 1
+                }
+            },
+
+            // Initialize empty lists
+            FeatList = new List<ushort>(),
+            SkillList = new List<byte>(),
+            SpecAbilityList = new List<SpecialAbility>(),
+            ItemList = new List<InventoryItem>(),
+            EquipItemList = new List<EquippedItem>()
+        };
+    }
+
     private async Task OpenFile()
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -253,7 +406,14 @@ public partial class MainWindow
 
     private async Task SaveFile()
     {
-        if (_currentCreature == null || string.IsNullOrEmpty(_currentFilePath)) return;
+        if (_currentCreature == null) return;
+
+        // New file without path - redirect to Save As
+        if (string.IsNullOrEmpty(_currentFilePath))
+        {
+            await SaveFileAs();
+            return;
+        }
 
         try
         {
