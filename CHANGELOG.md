@@ -13,6 +13,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Project Board Consolidation
+
+- Consolidate Parley project board (#2) into Radoub board (#3)
+- All tools now use single Radoub project board
+- Update slash commands to remove Parley board references
+- Migrate 30 items from Parley board to Radoub board
+
 ---
 
 ## [0.9.35] - 2026-01-17
