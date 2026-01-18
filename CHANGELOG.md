@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.35] - 2026-01-17
-**Branch**: `radoub/issue-907` | **PR**: #TBD
+**Branch**: `radoub/issue-907` | **PR**: #939
 
 ### Epic 907: Trebuchet (Radoub Launcher)
 
