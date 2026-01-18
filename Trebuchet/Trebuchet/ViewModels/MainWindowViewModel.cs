@@ -285,7 +285,7 @@ public partial class MainWindowViewModel : ObservableObject
             ToolName = "Trebuchet",
             Subtitle = "Radoub Launcher for Neverwinter Nights",
             Version = version,
-            AdditionalInfo = "Radoub Toolset includes:\nParley - Dialog Editor\nManifest - Journal Editor\nQuartermaster - Creature/Item Editor\nFence - Item Editor"
+            AdditionalInfo = "Radoub Toolset includes:\nParley - Dialog Editor\nManifest - Journal Editor\nQuartermaster - Creature/Item Editor\nFence - Merchant Editor"
         });
         aboutWindow.ShowDialog(_parentWindow);
     }
