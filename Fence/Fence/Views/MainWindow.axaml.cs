@@ -156,18 +156,44 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     /// <summary>
     /// Populate the store category dropdown with toolset palette categories.
-    /// These are the standard NWN toolset categories for organizing merchant blueprints.
+    /// These map to category node IDs in storepal.itp.
     /// </summary>
     private void PopulateCategoryDropdown()
     {
-        // Standard NWN toolset palette categories for merchants
-        // PaletteID 0 = Standard (uncategorized), then custom categories follow
+        // Standard NWN toolset palette categories for merchants (from storepal.itp)
+        // These are the Category node IDs - merchants appear under Merchants branch
         StoreCategoryBox.Items.Clear();
-        StoreCategoryBox.Items.Add("Standard");           // 0
-        StoreCategoryBox.Items.Add("Custom 1");           // 1
-        StoreCategoryBox.Items.Add("Custom 2");           // 2
-        StoreCategoryBox.Items.Add("Custom 3");           // 3
-        StoreCategoryBox.Items.Add("Special");            // 4
+        StoreCategoryBox.Items.Add("Ammunition & Throwing Weapons");  // 0
+        StoreCategoryBox.Items.Add("Amulets & Rings");                // 1
+        StoreCategoryBox.Items.Add("Axes");                           // 2
+        StoreCategoryBox.Items.Add("Belts & Boots");                  // 3
+        StoreCategoryBox.Items.Add("Belts, Boots & Bags");            // 4
+        StoreCategoryBox.Items.Add("Bladed Weapons");                 // 5
+        StoreCategoryBox.Items.Add("Bladed Weapons Low");             // 6
+        StoreCategoryBox.Items.Add("Blunt Weapons");                  // 7
+        StoreCategoryBox.Items.Add("Exotic & Double-Sided Weapons");  // 8
+        StoreCategoryBox.Items.Add("Gauntlets, Bracers, & Cloaks");   // 9
+        StoreCategoryBox.Items.Add("Heavy Armor");                    // 10
+        StoreCategoryBox.Items.Add("Heavy Armor Low");                // 11
+        StoreCategoryBox.Items.Add("Helmets & Shields");              // 12
+        StoreCategoryBox.Items.Add("Leather & Small Weapons");        // 13
+        StoreCategoryBox.Items.Add("Light Armor");                    // 14
+        StoreCategoryBox.Items.Add("Medium Armor");                   // 15
+        StoreCategoryBox.Items.Add("Misc. Items");                    // 16
+        StoreCategoryBox.Items.Add("Polearms");                       // 17
+        StoreCategoryBox.Items.Add("Potions");                        // 18
+        StoreCategoryBox.Items.Add("Ranged Weapons");                 // 19
+        StoreCategoryBox.Items.Add("Ranged Weapons & Polearms");      // 20
+        StoreCategoryBox.Items.Add("Rods, Wands, & Staves");          // 21
+        StoreCategoryBox.Items.Add("Scrolls");                        // 22
+        StoreCategoryBox.Items.Add("Scrolls & Potions");              // 23
+        StoreCategoryBox.Items.Add("Trap Kits");                      // 24
+        // Special > Custom categories (these have higher IDs in the palette)
+        StoreCategoryBox.Items.Add("Custom 1");                       // 25
+        StoreCategoryBox.Items.Add("Custom 2");                       // 26
+        StoreCategoryBox.Items.Add("Custom 3");                       // 27
+        StoreCategoryBox.Items.Add("Custom 4");                       // 28
+        StoreCategoryBox.Items.Add("Custom 5");                       // 29
 
         StoreCategoryBox.SelectedIndex = 0;
     }

@@ -335,21 +335,12 @@ Apply recommendations? [y/n/manual]
 
 ### Project Selection (for Sprints/Epics only)
 
-| Label/Title | Project | Number |
-|-------------|---------|--------|
-| `parley` or `[Parley]` | Parley | 2 |
-| `radoub` or `[Radoub]` | Radoub | 3 |
-| `quartermaster` or `[Quartermaster]` | Radoub | 3 |
-| `manifest` or `[Manifest]` | Radoub | 3 |
-| `fence` or `[Fence]` | Radoub | 3 |
+All tools use the **Radoub project (#3)**.
 
 ### Add Sprint/Epic to Project
 
 ```bash
-# Add to Parley project (if parley label)
-gh project item-add 2 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
-
-# Add to Radoub project (if radoub label)
+# Add to Radoub project
 gh project item-add 3 --owner LordOfMyatar --url https://github.com/LordOfMyatar/Radoub/issues/[number] --format json
 ```
 
