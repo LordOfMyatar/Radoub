@@ -13,6 +13,8 @@ Project guidance for Claude Code sessions working with the Radoub multi-tool rep
 - **Parley**: Dialog editor (`.dlg` files) - See `Parley/CLAUDE.md` for tool-specific guidance
 - **Manifest**: Journal editor (`.jrl` files) - See `Manifest/CLAUDE.md` for tool-specific guidance
 - **Quartermaster**: Creature/inventory editor (`.utc`, `.bic` files) - See `Quartermaster/CLAUDE.md` for tool-specific guidance
+- **Fence**: Merchant/store editor (`.utm` files) - See `Fence/CLAUDE.md` for tool-specific guidance
+- **Trebuchet**: Radoub launcher/hub - See `Trebuchet/CLAUDE.md` for tool-specific guidance
 
 ### Shared Libraries
 
@@ -58,6 +60,16 @@ Radoub/
 │   ├── CHANGELOG.md (Quartermaster-specific changes)
 │   ├── Quartermaster/ (source code)
 │   └── Quartermaster.Tests/ (unit tests)
+├── Fence/ (merchant/store editor)
+│   ├── CLAUDE.md (Fence-specific guidance)
+│   ├── CHANGELOG.md (Fence-specific changes)
+│   ├── Fence/ (source code)
+│   └── Fence.Tests/ (unit tests)
+├── Trebuchet/ (launcher/hub)
+│   ├── CLAUDE.md (Trebuchet-specific guidance)
+│   ├── CHANGELOG.md (Trebuchet-specific changes)
+│   ├── Trebuchet/ (source code)
+│   └── Trebuchet.Tests/ (unit tests)
 ├── Radoub.Formats/ (shared library)
 │   ├── Radoub.Formats.sln
 │   ├── Radoub.Formats/ (source code)
@@ -220,33 +232,117 @@ main (production)
 
 ---
 
-## Adding New Tools
+## New Tool Bootstrap Checklist
 
-When adding a new tool to Radoub:
+**CRITICAL**: Before writing any code for a new tool, complete this checklist. This prevents pattern drift and rework.
 
-1. **Create tool directory** with standard structure:
-   ```
-   ToolName/
-   ├── README.md (tool-specific)
-   ├── CLAUDE.md (tool-specific guidance)
-   ├── CHANGELOG.md (tool changelog)
-   ├── ToolName/ (source code)
-   ├── TestingTools/ (if applicable)
-   ├── Documentation/ (tool-specific docs)
-   └── .github/ (tool-specific workflows)
-   ```
+### Reference Implementation
 
-2. **Update Radoub README.md** to list new tool
+**Quartermaster is the canonical reference** for new Radoub tools. Study its structure before starting.
 
-3. **Create tool-specific CLAUDE.md** with:
-   - Tool overview and architecture
-   - Development workflow
-   - Testing requirements
-   - Tool-specific conventions
+### Pre-Coding Checklist
 
-4. **Set up CI/CD** in `.github/workflows/` with tool prefix
+Before writing code, verify you understand these patterns by reading the reference files:
 
-5. **Initial commit**: `[Radoub] feat: Add ToolName - [brief description]`
+| Component | Reference File | Purpose |
+|-----------|---------------|---------|
+| Program.cs startup | `Quartermaster/Quartermaster/Program.cs` | Logging init, command line, Avalonia setup |
+| CommandLineService | `Quartermaster/Quartermaster/Services/CommandLineService.cs` | `--file`, `--safemode`, `--help` pattern |
+| SettingsService | `Quartermaster/Quartermaster/Services/SettingsService.cs` | JSON settings, theme, font persistence |
+| MainWindow structure | `Quartermaster/Quartermaster/Views/MainWindow.axaml` | Menu bar, status bar, panel layout |
+| Panel controls | `Quartermaster/Quartermaster/Controls/` | BasePanelControl inheritance |
+| Theme support | `Radoub.UI/Radoub.UI/Services/ThemeManager.cs` | Dark/light theme, custom themes |
+
+### Required Components (Every Tool)
+
+```
+ToolName/
+├── ToolName/
+│   ├── Program.cs                    # Copy from Quartermaster, update namespace
+│   ├── App.axaml + App.axaml.cs      # Avalonia app setup
+│   ├── Services/
+│   │   ├── CommandLineService.cs     # --file, --safemode, --help
+│   │   └── SettingsService.cs        # Tool-specific settings + theme
+│   ├── Views/
+│   │   ├── MainWindow.axaml          # Standard menu structure
+│   │   └── Dialogs/                  # About, Settings windows
+│   ├── ViewModels/
+│   │   └── MainWindowViewModel.cs    # MVVM pattern
+│   └── Controls/                     # Custom controls
+├── ToolName.Tests/                   # Unit tests from day 1
+├── CLAUDE.md                         # Tool-specific guidance
+├── CHANGELOG.md                      # Initialized with first version
+└── README.md                         # User-facing documentation
+```
+
+### Shared Library References
+
+Every tool should reference these shared libraries:
+
+| Library | Purpose | Required? |
+|---------|---------|-----------|
+| `Radoub.Formats` | GFF, 2DA, TLK, KEY/BIF parsing | Yes |
+| `Radoub.UI` | ThemeManager, ScriptBrowser, AboutWindow, shared controls | Yes |
+| `Radoub.Dictionary` | Spell-checking for text fields | If tool has text editing |
+
+**AboutWindow**: Use the universal `AboutWindow` from `Radoub.UI` - don't create tool-specific About dialogs.
+
+### Implementation Checklist
+
+- [ ] **Read Quartermaster/Program.cs** - Understand startup sequence
+- [ ] **Copy CommandLineService pattern** - Same flags, same behavior
+- [ ] **Copy SettingsService pattern** - JSON storage in `~/Radoub/ToolName/`
+- [ ] **Use ThemeManager from Radoub.UI** - Don't reinvent theming
+- [ ] **Use IGameDataService** for any 2DA/TLK data - Never hardcode game data
+- [ ] **Inherit BasePanelControl** for panel controls - Consistent styling
+- [ ] **Add to Radoub.sln** - Root solution builds all tools
+- [ ] **Initialize CHANGELOG.md** with branch/PR format
+- [ ] **Create CLAUDE.md** with tool-specific patterns
+- [ ] **Add dictionary support** if tool has text editing fields
+
+### Versioning
+
+**Version Location**: Set in `.csproj` file PropertyGroup:
+
+```xml
+<!-- Version Configuration -->
+<Version>0.1.0-alpha</Version>
+<AssemblyVersion>0.1.0.0</AssemblyVersion>
+<FileVersion>0.1.0.0</FileVersion>
+<InformationalVersion>0.1.0-alpha</InformationalVersion>
+```
+
+**Initial Version**: New tools start at `0.1.0-alpha`
+
+**Semantic Versioning Rules**:
+| Version | When to Bump |
+|---------|--------------|
+| **Major** (1.0.0) | Breaking changes, major rewrites, stable release |
+| **Minor** (0.2.0) | New features, significant enhancements |
+| **Patch** (0.1.1) | Bug fixes, small improvements |
+| **Prerelease** (-alpha, -beta) | Development builds before stable |
+
+**Version Coordination**:
+- CHANGELOG version sections must match `.csproj` version
+- Update both when preparing a release
+- GitHub releases use the same version tag (e.g., `v0.1.0-alpha`)
+
+**Alpha vs Beta vs Stable**:
+- `alpha`: Active development, features incomplete, may have bugs
+- `beta`: Feature complete, testing phase, API may change
+- (no suffix): Stable release, production ready
+
+### Common Mistakes to Avoid
+
+| Mistake | Correct Pattern |
+|---------|-----------------|
+| Hardcoding game data (races, classes, etc.) | Use IGameDataService + 2DA files |
+| Custom theme implementation | Use Radoub.UI ThemeManager |
+| Modal dialogs for messages | Use non-modal or toast notifications |
+| Settings in app folder | Store in `~/Radoub/ToolName/settings.json` |
+| Missing SafeMode support | Always implement `--safemode` flag |
+| Skipping unit tests | Create ToolName.Tests from day 1 |
+| Missing version in .csproj | Set Version, AssemblyVersion, FileVersion |
 
 ---
 
@@ -331,6 +427,8 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 | **Parley** | `Parley/CHANGELOG.md` | Parley-specific changes: features, fixes, UI updates |
 | **Manifest** | `Manifest/CHANGELOG.md` | Manifest-specific changes: features, fixes, UI updates |
 | **Quartermaster** | `Quartermaster/CHANGELOG.md` | Quartermaster-specific changes |
+| **Fence** | `Fence/CHANGELOG.md` | Fence-specific changes |
+| **Trebuchet** | `Trebuchet/CHANGELOG.md` | Trebuchet-specific changes |
 
 **Rules**:
 - Tool-specific changes go in tool CHANGELOG only

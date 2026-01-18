@@ -1,0 +1,196 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RadoubLauncher.ViewModels"
+        xmlns:svc="using:RadoubLauncher.Services"
+        xmlns:sys="using:System"
+        x:Class="RadoubLauncher.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        x:Name="MainWindowRoot"
+        Title="Trebuchet - Radoub Toolset (Alpha)"
+        Width="900" Height="600"
+        MinWidth="700" MinHeight="500"
+        WindowStartupLocation="CenterScreen">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <DockPanel>
+        <!-- Header Bar -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource ThemeAccentBrush}"
+                Padding="16,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <!-- Module Info -->
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="Module:"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource ThemeAccentForeground}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding CurrentModuleName}"
+                               Foreground="{Binding IsModuleValid, Converter={x:Static vm:ModuleValidityToForegroundConverter.Instance}}"
+                               VerticalAlignment="Center"/>
+                    <Button Content="Open..."
+                            Command="{Binding OpenModuleCommand}"
+                            Padding="8,4"/>
+                </StackPanel>
+
+                <!-- Settings and Help Buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="About"
+                            Command="{Binding OpenAboutCommand}"
+                            Padding="12,4"/>
+                    <Button Content="Settings"
+                            Command="{Binding OpenSettingsCommand}"
+                            Padding="12,4"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource ThemeBackgroundAlt}"
+                Padding="12,8">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <!-- Game Info -->
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <TextBlock Text="{Binding GameStatusText}"
+                               Opacity="0.7"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="|" Opacity="0.3" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TlkStatusText}"
+                               Opacity="0.7"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Update Status -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            Margin="16,0">
+                    <!-- Normal status (no update) -->
+                    <TextBlock Text="{Binding UpdateStatusText}"
+                               Opacity="0.7"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding !UpdateAvailable}"/>
+                    <!-- Update available - highlighted -->
+                    <Border Background="{DynamicResource ThemeInfoBrush}"
+                            CornerRadius="4"
+                            Padding="8,4"
+                            IsVisible="{Binding UpdateAvailable}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding UpdateStatusText}"
+                                       Foreground="White"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="Download"
+                                    Command="{Binding OpenReleasePageCommand}"
+                                    Padding="8,2"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Version -->
+                <TextBlock Grid.Column="2"
+                           Text="{Binding VersionText}"
+                           Opacity="0.5"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24">
+                <!-- Tool Cards Grid -->
+                <TextBlock Text="Tools"
+                           FontSize="{DynamicResource FontSizeLarge}"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,16"/>
+
+                <ItemsControl ItemsSource="{Binding Tools}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="svc:ToolInfo">
+                            <Button Command="{Binding #MainWindowRoot.DataContext.LaunchToolCommand}"
+                                    CommandParameter="{Binding}"
+                                    IsEnabled="{Binding IsAvailable}"
+                                    Margin="0,0,16,16"
+                                    Padding="0"
+                                    Background="Transparent"
+                                    BorderThickness="0">
+                                <Border Background="{DynamicResource ThemeBackgroundAlt}"
+                                        BorderBrush="{DynamicResource ThemeBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="20"
+                                        Width="180"
+                                        Height="140">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <!-- Tool Name -->
+                                        <TextBlock Text="{Binding Name}"
+                                                   FontSize="{DynamicResource FontSizeLarge}"
+                                                   FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center"/>
+
+                                        <!-- Description -->
+                                        <TextBlock Text="{Binding Description}"
+                                                   FontSize="{DynamicResource FontSizeSmall}"
+                                                   Opacity="0.7"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,4,0,0"/>
+
+                                        <!-- File Types -->
+                                        <TextBlock Text="{Binding FileTypes}"
+                                                   FontSize="{DynamicResource FontSizeXSmall}"
+                                                   Opacity="0.5"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,2,0,0"/>
+
+                                        <!-- Status -->
+                                        <Border CornerRadius="4"
+                                                Padding="8,2"
+                                                Margin="0,12,0,0"
+                                                HorizontalAlignment="Center"
+                                                Background="{Binding IsAvailable, Converter={x:Static vm:BoolToBrushConverter.Instance}}">
+                                            <TextBlock Text="{Binding StatusText}"
+                                                       FontSize="{DynamicResource FontSizeXSmall}"
+                                                       Foreground="White"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Recent Modules Section -->
+                <TextBlock Text="Recent Modules"
+                           FontSize="{DynamicResource FontSizeLarge}"
+                           FontWeight="SemiBold"
+                           Margin="0,24,0,12"
+                           IsVisible="{Binding HasRecentModules}"/>
+
+                <ItemsControl ItemsSource="{Binding RecentModules}"
+                              IsVisible="{Binding HasRecentModules}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="sys:String">
+                            <Button Command="{Binding #MainWindowRoot.DataContext.OpenRecentModuleCommand}"
+                                    CommandParameter="{Binding}"
+                                    Background="Transparent"
+                                    Padding="8,4"
+                                    Margin="0,2">
+                                <TextBlock Text="{Binding}"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

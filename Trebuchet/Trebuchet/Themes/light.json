@@ -1,0 +1,47 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.trebuchet.theme.light",
+    "name": "Light",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Clean, professional light theme with excellent readability",
+    "type": "theme",
+    "tags": ["official", "light", "default"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "standard",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#FFFFFF",
+    "sidebar": "#F5F5F5",
+    "text": "#1A1A1A",
+    "selection": "#0078D4",
+    "border": "#D0D0D0",
+    "accent": "#0078D4",
+    "error": "#D32F2F",
+    "warning": "#F57C00",
+    "success": "#388E3C",
+    "info": "#1976D2",
+    "disabled": "#757575",
+    "title_bar": "#E0E0E0",
+    "title_bar_foreground": "#1A1A1A",
+    "button_primary": "#0078D4",
+    "button_secondary": "#757575",
+    "button_hover": "#005A9E"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28
+  }
+}

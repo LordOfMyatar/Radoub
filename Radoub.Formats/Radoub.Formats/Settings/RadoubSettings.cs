@@ -73,6 +73,7 @@ public class RadoubSettings : INotifyPropertyChanged
     private string _manifestPath = "";
     private string _quartermasterPath = "";
     private string _fencePath = "";
+    private string _trebuchetPath = "";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -200,6 +201,15 @@ public class RadoubSettings : INotifyPropertyChanged
     {
         get => _fencePath;
         set { if (SetProperty(ref _fencePath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Path to Trebuchet.exe. Auto-set when Trebuchet runs.
+    /// </summary>
+    public string TrebuchetPath
+    {
+        get => _trebuchetPath;
+        set { if (SetProperty(ref _trebuchetPath, value ?? "")) SaveSettings(); }
     }
 
     /// <summary>
@@ -348,6 +358,7 @@ public class RadoubSettings : INotifyPropertyChanged
                     _manifestPath = ExpandPath(data.ManifestPath ?? "");
                     _quartermasterPath = ExpandPath(data.QuartermasterPath ?? "");
                     _fencePath = ExpandPath(data.FencePath ?? "");
+                    _trebuchetPath = ExpandPath(data.TrebuchetPath ?? "");
                 }
             }
         }
@@ -379,7 +390,8 @@ public class RadoubSettings : INotifyPropertyChanged
                 ParleyPath = ContractPath(_parleyPath),
                 ManifestPath = ContractPath(_manifestPath),
                 QuartermasterPath = ContractPath(_quartermasterPath),
-                FencePath = ContractPath(_fencePath)
+                FencePath = ContractPath(_fencePath),
+                TrebuchetPath = ContractPath(_trebuchetPath)
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -454,5 +466,6 @@ public class RadoubSettings : INotifyPropertyChanged
         public string? ManifestPath { get; set; }
         public string? QuartermasterPath { get; set; }
         public string? FencePath { get; set; }
+        public string? TrebuchetPath { get; set; }
     }
 }

@@ -1,0 +1,102 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.AboutWindow"
+        Title="About"
+        Width="500" Height="420"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- App Icon -->
+        <Image Grid.Row="0"
+               x:Name="AppIcon"
+               Width="64" Height="64"
+               HorizontalAlignment="Center"
+               Margin="0,0,0,20"/>
+
+        <!-- App Name -->
+        <TextBlock Grid.Row="1"
+                   x:Name="AppNameText"
+                   Text="Tool Name"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,5"/>
+
+        <!-- Subtitle -->
+        <TextBlock Grid.Row="2"
+                   x:Name="SubtitleText"
+                   Text="Part of the Radoub Toolset"
+                   FontSize="14"
+                   HorizontalAlignment="Center"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   Margin="0,0,0,10"/>
+
+        <!-- Author -->
+        <TextBlock Grid.Row="3"
+                   Text="by Lord"
+                   FontSize="16"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,5"/>
+
+        <!-- GitHub Link -->
+        <TextBlock Grid.Row="4"
+                   x:Name="GitHubLinkText"
+                   Text="https://github.com/LordOfMyatar/Radoub"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"
+                   Foreground="Blue"
+                   TextDecorations="Underline"
+                   Cursor="Hand"
+                   PointerPressed="OnGitHubLinkClick"/>
+
+        <!-- Version and Additional Info -->
+        <StackPanel Grid.Row="5"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="10">
+            <TextBlock x:Name="VersionText"
+                       Text="Version 0.1.0"
+                       FontSize="14"
+                       HorizontalAlignment="Center"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+            <!-- Additional Info (optional, tool-specific) -->
+            <TextBlock x:Name="AdditionalInfoText"
+                       Text=""
+                       FontSize="13"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                       IsVisible="False"/>
+
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="0,15,0,0"
+                    Margin="0,10,0,0">
+                <TextBlock Text="Special thanks to the&#x0a;Neverwinter Nights modding community"
+                           FontSize="13"
+                           TextAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+            </Border>
+        </StackPanel>
+
+        <!-- Close Button -->
+        <Button Grid.Row="6"
+                Content="Close"
+                HorizontalAlignment="Center"
+                Width="100"
+                Click="OnCloseClick"
+                Margin="0,20,0,0"/>
+    </Grid>
+</Window>
