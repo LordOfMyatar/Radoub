@@ -429,53 +429,83 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateCharacterHeader()
     {
-        var portraitImage = this.FindControl<Avalonia.Controls.Image>("PortraitImage");
-        var portraitPlaceholder = this.FindControl<TextBlock>("PortraitPlaceholderText");
-
-        if (_currentCreature == null)
+        try
         {
-            CharacterNameText.Text = "No Character Loaded";
-            CharacterSummaryText.Text = "";
-            // Clear portrait
-            if (portraitImage != null)
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Starting");
+            var portraitImage = this.FindControl<Avalonia.Controls.Image>("PortraitImage");
+            var portraitPlaceholder = this.FindControl<TextBlock>("PortraitPlaceholderText");
+
+            if (_currentCreature == null)
             {
+                CharacterNameText.Text = "No Character Loaded";
+                CharacterSummaryText.Text = "";
+                // Clear portrait
+                if (portraitImage != null)
+                {
+                    portraitImage.Source = null;
+                    portraitImage.IsVisible = false;
+                }
+                if (portraitPlaceholder != null)
+                    portraitPlaceholder.IsVisible = true;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: No creature, done");
+                return;
+            }
+
+            // Get character name using display service
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting name");
+            CharacterNameText.Text = CreatureDisplayService.GetCreatureFullName(_currentCreature);
+
+            // Build race/class summary using display service
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting summary");
+            CharacterSummaryText.Text = _creatureDisplayService.GetCreatureSummary(_currentCreature);
+
+            // Load portrait image (#916)
+            if (portraitImage != null && portraitPlaceholder != null)
+            {
+                // Use PortraitId if set, otherwise use Portrait string field directly
+                // BIC files often have PortraitId=0 but a valid Portrait string (e.g., "po_hu_f_07_")
+                string? portraitResRef;
+                if (_currentCreature.PortraitId > 0)
+                {
+                    portraitResRef = _creatureDisplayService.GetPortraitResRef(_currentCreature.PortraitId);
+                }
+                else if (!string.IsNullOrEmpty(_currentCreature.Portrait))
+                {
+                    // Use the Portrait string field directly - it's already the ResRef
+                    portraitResRef = _currentCreature.Portrait;
+                }
+                else
+                {
+                    portraitResRef = null;
+                }
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait lookup: PortraitId={_currentCreature.PortraitId}, Portrait='{_currentCreature.Portrait ?? ""}', ResRef={portraitResRef ?? "null"}");
+                if (!string.IsNullOrEmpty(portraitResRef))
+                {
+                    // ImageService.GetPortrait handles size suffix internally (tries m, l, s)
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateCharacterHeader: Loading portrait {portraitResRef}");
+                    var portrait = _itemIconService.GetPortrait(portraitResRef);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateCharacterHeader: GetPortrait returned {(portrait != null ? "bitmap" : "null")}");
+                    if (portrait != null)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting portrait source");
+                        portraitImage.Source = portrait;
+                        portraitImage.IsVisible = true;
+                        portraitPlaceholder.IsVisible = false;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait loaded: {portraitResRef}");
+                        return;
+                    }
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found: {portraitResRef}");
+                }
+                // No portrait available - show placeholder
                 portraitImage.Source = null;
                 portraitImage.IsVisible = false;
-            }
-            if (portraitPlaceholder != null)
                 portraitPlaceholder.IsVisible = true;
-            return;
-        }
-
-        // Get character name using display service
-        CharacterNameText.Text = CreatureDisplayService.GetCreatureFullName(_currentCreature);
-
-        // Build race/class summary using display service
-        CharacterSummaryText.Text = _creatureDisplayService.GetCreatureSummary(_currentCreature);
-
-        // Load portrait image (#916)
-        if (portraitImage != null && portraitPlaceholder != null)
-        {
-            var portraitResRef = _creatureDisplayService.GetPortraitResRef(_currentCreature.PortraitId);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait lookup: PortraitId={_currentCreature.PortraitId}, ResRef={portraitResRef ?? "null"}");
-            if (!string.IsNullOrEmpty(portraitResRef))
-            {
-                // ImageService.GetPortrait handles size suffix internally (tries m, l, s)
-                var portrait = _itemIconService.GetPortrait(portraitResRef);
-                if (portrait != null)
-                {
-                    portraitImage.Source = portrait;
-                    portraitImage.IsVisible = true;
-                    portraitPlaceholder.IsVisible = false;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait loaded: {portraitResRef}");
-                    return;
-                }
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found: {portraitResRef}");
             }
-            // No portrait available - show placeholder
-            portraitImage.Source = null;
-            portraitImage.IsVisible = false;
-            portraitPlaceholder.IsVisible = true;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Complete");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"UpdateCharacterHeader crashed: {ex}");
         }
     }
 

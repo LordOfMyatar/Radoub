@@ -252,7 +252,19 @@ public partial class CharacterPanel : UserControl
             _subraceTextBox.Text = creature.Subrace ?? "";
         if (_deityTextBox != null)
             _deityTextBox.Text = creature.Deity ?? "";
-        SelectPortrait(creature.PortraitId);
+
+        // Portrait: Use PortraitId if set, otherwise look up Portrait string in portraits.2da
+        // BIC files often use the Portrait string field when PortraitId is 0
+        var portraitId = creature.PortraitId;
+        if (portraitId == 0 && !string.IsNullOrEmpty(creature.Portrait))
+        {
+            var foundId = _displayService?.FindPortraitIdByResRef(creature.Portrait);
+            if (foundId.HasValue)
+            {
+                portraitId = foundId.Value;
+            }
+        }
+        SelectPortrait(portraitId, creature.Portrait);
 
         // Voice & Dialog
         SelectSoundSet(creature.SoundSetFile);
@@ -313,7 +325,7 @@ public partial class CharacterPanel : UserControl
         _raceComboBox.SelectedIndex = _raceComboBox.Items.Count - 1;
     }
 
-    private void SelectPortrait(ushort portraitId)
+    private void SelectPortrait(ushort portraitId, string? portraitResRef = null)
     {
         if (_portraitComboBox == null) return;
 
@@ -327,8 +339,19 @@ public partial class CharacterPanel : UserControl
             }
         }
 
-        // If not found, add it
-        var name = _displayService?.GetPortraitName(portraitId) ?? $"Portrait {portraitId}";
+        // If not found, add it with appropriate display name
+        // If we have a portrait ResRef but no 2DA match, use the ResRef as display name
+        string name;
+        if (portraitId == 0 && !string.IsNullOrEmpty(portraitResRef))
+        {
+            // Portrait string field is set but not found in portraits.2da (custom portrait)
+            name = portraitResRef;
+        }
+        else
+        {
+            name = _displayService?.GetPortraitName(portraitId) ?? $"Portrait {portraitId}";
+        }
+
         _portraitComboBox.Items.Add(new ComboBoxItem
         {
             Content = name,
@@ -474,26 +497,41 @@ public partial class CharacterPanel : UserControl
 
     private async void OnBrowsePortraitClick(object? sender, RoutedEventArgs e)
     {
-        if (_gameDataService == null || _itemIconService == null)
-            return;
-
-        var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
-
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is Window parentWindow)
+        try
         {
-            var result = await browser.ShowDialog<ushort?>(parentWindow);
-            if (result.HasValue)
+            if (_gameDataService == null || _itemIconService == null)
             {
-                SelectPortrait(result.Value);
-                // Trigger change event
-                if (_currentCreature != null)
+                UnifiedLogger.Log(LogLevel.WARN, "CharacterPanel: Cannot open portrait browser - missing services", "CharacterPanel", "UI");
+                return;
+            }
+
+            UnifiedLogger.Log(LogLevel.INFO, "CharacterPanel: Opening portrait browser", "CharacterPanel", "UI");
+            var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
+
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel is Window parentWindow)
+            {
+                var result = await browser.ShowDialog<ushort?>(parentWindow);
+                UnifiedLogger.Log(LogLevel.INFO, $"CharacterPanel: Portrait browser returned: {(result.HasValue ? result.Value.ToString() : "null")}", "CharacterPanel", "UI");
+
+                if (result.HasValue)
                 {
-                    _currentCreature.PortraitId = result.Value;
-                    CharacterChanged?.Invoke(this, EventArgs.Empty);
-                    PortraitChanged?.Invoke(this, EventArgs.Empty);
+                    SelectPortrait(result.Value);
+                    // Trigger change event
+                    if (_currentCreature != null)
+                    {
+                        _currentCreature.PortraitId = result.Value;
+                        // Also clear the Portrait string field since we're using PortraitId now
+                        _currentCreature.Portrait = string.Empty;
+                        CharacterChanged?.Invoke(this, EventArgs.Empty);
+                        PortraitChanged?.Invoke(this, EventArgs.Empty);
+                    }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.Log(LogLevel.ERROR, $"CharacterPanel: OnBrowsePortraitClick crashed: {ex}", "CharacterPanel", "UI");
         }
     }
 

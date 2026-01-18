@@ -136,14 +136,183 @@ public class BicFile : UtcFile
     /// BIC-specific fields (Age, Experience, Gold, QBList, ReputationList) are not copied.
     /// Use this to convert a player character to a creature blueprint.
     /// </summary>
+    /// <param name="targetResRef">Target filename/ResRef for the UTC file (without extension).
+    /// Must match the saved filename. If null, generates from first/last name.</param>
     /// <returns>New UtcFile with copied properties</returns>
-    public UtcFile ToUtcFile()
+    public UtcFile ToUtcFile(string? targetResRef = null)
     {
         var utc = new UtcFile();
         CopyBaseProperties(this, utc);
         utc.FileType = "UTC ";
         utc.IsPC = false;
+
+        // Set blueprint name (TemplateResRef) - MUST match the saved filename
+        // If target filename provided, use it; otherwise generate from first/last name
+        if (!string.IsNullOrEmpty(targetResRef))
+        {
+            // Sanitize and lowercase the provided ResRef
+            utc.TemplateResRef = SanitizeForResRef(targetResRef).ToLowerInvariant();
+            if (utc.TemplateResRef.Length > 16)
+                utc.TemplateResRef = utc.TemplateResRef.Substring(0, 16);
+        }
+        else
+        {
+            utc.TemplateResRef = GenerateBlueprintName(this);
+        }
+
+        // Generate Tag from first/last name (uppercase, truncated if needed)
+        // Tags have a 32 character limit in practice
+        utc.Tag = GenerateTag(this);
+
+        // Set default NWN creature scripts
+        // BIC files don't have scripts (they inherit from module), so we set defaults for UTC
+        SetDefaultScripts(utc);
+
+        // Ensure valid portrait
+        // If both PortraitId and Portrait string are empty, set a default
+        if (utc.PortraitId == 0 && string.IsNullOrEmpty(utc.Portrait))
+        {
+            // Default to hu_m_99_ (generic human male sword portrait)
+            utc.Portrait = "hu_m_99_";
+        }
+
         return utc;
+    }
+
+    /// <summary>
+    /// Generates a blueprint name from first/last name.
+    /// Lowercase, alphanumeric + underscore only, max 16 characters.
+    /// </summary>
+    private static string GenerateBlueprintName(BicFile bic)
+    {
+        var baseName = GetNameForGeneration(bic);
+        if (string.IsNullOrEmpty(baseName))
+            return "creature";
+
+        // Convert to lowercase, replace spaces with underscore, remove invalid characters
+        var sanitized = SanitizeForResRef(baseName);
+
+        // Truncate to 16 characters (Aurora Engine limit)
+        if (sanitized.Length > 16)
+            sanitized = sanitized.Substring(0, 16);
+
+        return sanitized.ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Generates a Tag from first/last name.
+    /// Uppercase, alphanumeric + underscore only, max 32 characters.
+    /// </summary>
+    private static string GenerateTag(BicFile bic)
+    {
+        var baseName = GetNameForGeneration(bic);
+        if (string.IsNullOrEmpty(baseName))
+            return "CREATURE";
+
+        // Convert to uppercase, replace spaces with underscore, remove invalid characters
+        var sanitized = SanitizeForResRef(baseName);
+
+        // Truncate to 32 characters (practical Tag limit)
+        if (sanitized.Length > 32)
+            sanitized = sanitized.Substring(0, 32);
+
+        return sanitized.ToUpperInvariant();
+    }
+
+    /// <summary>
+    /// Gets combined first + last name for name generation.
+    /// Uses English localized string (language ID 0).
+    /// </summary>
+    private static string GetNameForGeneration(BicFile bic)
+    {
+        var firstName = GetLocalizedString(bic.FirstName);
+        var lastName = GetLocalizedString(bic.LastName);
+
+        if (!string.IsNullOrEmpty(firstName) && !string.IsNullOrEmpty(lastName))
+            return $"{firstName}_{lastName}";
+        if (!string.IsNullOrEmpty(firstName))
+            return firstName;
+        if (!string.IsNullOrEmpty(lastName))
+            return lastName;
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Gets the English string from a CExoLocString, or empty if not present.
+    /// </summary>
+    private static string GetLocalizedString(CExoLocString locString)
+    {
+        // Try English (language ID 0)
+        if (locString.LocalizedStrings.TryGetValue(0, out var english) && !string.IsNullOrEmpty(english))
+            return english;
+
+        // Fall back to first available string
+        foreach (var kvp in locString.LocalizedStrings)
+        {
+            if (!string.IsNullOrEmpty(kvp.Value))
+                return kvp.Value;
+        }
+
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Sanitizes a name for use as a ResRef or Tag.
+    /// Replaces spaces with underscores, removes invalid characters.
+    /// </summary>
+    private static string SanitizeForResRef(string name)
+    {
+        var sb = new System.Text.StringBuilder(name.Length);
+        foreach (var c in name)
+        {
+            if (char.IsLetterOrDigit(c))
+                sb.Append(c);
+            else if (c == ' ' || c == '_' || c == '-')
+                sb.Append('_');
+            // Skip other characters
+        }
+
+        // Remove leading/trailing underscores and collapse multiple underscores
+        var result = sb.ToString();
+        while (result.Contains("__"))
+            result = result.Replace("__", "_");
+        return result.Trim('_');
+    }
+
+    /// <summary>
+    /// Sets default NWN creature scripts on a UTC.
+    /// Uses OC (Original Campaign) default scripts from nw_c2_default*.nss.
+    /// </summary>
+    private static void SetDefaultScripts(UtcFile utc)
+    {
+        // OC default creature scripts
+        // Only set if the field is empty (preserve any existing scripts)
+        if (string.IsNullOrEmpty(utc.ScriptAttacked))
+            utc.ScriptAttacked = "nw_c2_default5";
+        if (string.IsNullOrEmpty(utc.ScriptDamaged))
+            utc.ScriptDamaged = "nw_c2_default6";
+        if (string.IsNullOrEmpty(utc.ScriptDeath))
+            utc.ScriptDeath = "nw_c2_default7";
+        if (string.IsNullOrEmpty(utc.ScriptDialogue))
+            utc.ScriptDialogue = "nw_c2_default4";
+        if (string.IsNullOrEmpty(utc.ScriptDisturbed))
+            utc.ScriptDisturbed = "nw_c2_default8";
+        if (string.IsNullOrEmpty(utc.ScriptEndRound))
+            utc.ScriptEndRound = "nw_c2_default3";
+        if (string.IsNullOrEmpty(utc.ScriptHeartbeat))
+            utc.ScriptHeartbeat = "nw_c2_default1";
+        if (string.IsNullOrEmpty(utc.ScriptOnBlocked))
+            utc.ScriptOnBlocked = "nw_c2_defaulte";
+        if (string.IsNullOrEmpty(utc.ScriptOnNotice))
+            utc.ScriptOnNotice = "nw_c2_default2";
+        if (string.IsNullOrEmpty(utc.ScriptRested))
+            utc.ScriptRested = "nw_c2_defaulta";
+        if (string.IsNullOrEmpty(utc.ScriptSpawn))
+            utc.ScriptSpawn = "nw_c2_default9";
+        if (string.IsNullOrEmpty(utc.ScriptSpellAt))
+            utc.ScriptSpellAt = "nw_c2_defaultb";
+        if (string.IsNullOrEmpty(utc.ScriptUserDefine))
+            utc.ScriptUserDefine = "nw_c2_defaultd";
     }
 
     /// <summary>
@@ -189,6 +358,7 @@ public class BicFile : UtcFile
         target.AppearanceType = source.AppearanceType;
         target.Phenotype = source.Phenotype;
         target.PortraitId = source.PortraitId;
+        target.Portrait = source.Portrait;
         target.Wings = source.Wings;
         target.Tail = source.Tail;
         target.BodyBag = source.BodyBag;

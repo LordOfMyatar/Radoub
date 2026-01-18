@@ -93,9 +93,16 @@ public class UtcFile
     public int Phenotype { get; set; }
 
     /// <summary>
-    /// Index into portraits.2da
+    /// Index into portraits.2da.
+    /// When non-zero, takes precedence over Portrait string field.
     /// </summary>
     public ushort PortraitId { get; set; }
+
+    /// <summary>
+    /// Portrait ResRef (base name without size suffix or po_ prefix).
+    /// Used when PortraitId is 0. Common format: "hu_m_99_" for human male #99.
+    /// </summary>
+    public string Portrait { get; set; } = string.Empty;
 
     /// <summary>
     /// Index into tailmodel.2da

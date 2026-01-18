@@ -41,6 +41,19 @@ sealed class Program
             RetainSessions = 10
         });
 
+        // Set up global exception handlers to catch crashes
+        AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+        {
+            var ex = e.ExceptionObject as Exception;
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"UNHANDLED EXCEPTION: {ex?.Message}\n{ex?.StackTrace}");
+        };
+
+        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (sender, e) =>
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"UNOBSERVED TASK EXCEPTION: {e.Exception?.Message}\n{e.Exception?.StackTrace}");
+            e.SetObserved(); // Prevent app crash
+        };
+
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;

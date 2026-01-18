@@ -91,8 +91,13 @@ public partial class PortraitBrowserWindow : Window
 
     private void LoadPortraits()
     {
-        if (_gameDataService == null) return;
+        if (_gameDataService == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "PortraitBrowser: GameDataService is null");
+            return;
+        }
 
+        UnifiedLogger.LogApplication(LogLevel.INFO, "PortraitBrowser: Loading portraits from portraits.2da");
         _allPortraits.Clear();
         var races = new HashSet<int>();
 
@@ -139,6 +144,7 @@ public partial class PortraitBrowserWindow : Window
             _raceFilterComboBox.Items.Add(new ComboBoxItem { Content = raceName, Tag = raceId });
         }
 
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"PortraitBrowser: Loaded {_allPortraits.Count} portraits from portraits.2da");
         UpdatePortraitList();
     }
 
@@ -279,58 +285,85 @@ public partial class PortraitBrowserWindow : Window
 
     private void OnPortraitSelected(object? sender, SelectionChangedEventArgs e)
     {
-        if (_portraitListBox.SelectedItem is ListBoxItem item && item.Tag is PortraitInfo portrait)
+        try
         {
-            _selectedPortrait = portrait;
-            _selectedPortraitLabel.Text = portrait.ResRef;
-            _portraitNameLabel.Text = portrait.ResRef;
-
-            // Load portrait preview
-            if (_itemIconService != null)
+            if (_portraitListBox.SelectedItem is ListBoxItem item && item.Tag is PortraitInfo portrait)
             {
-                try
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PortraitBrowser: Selected portrait ID={portrait.Id} ResRef='{portrait.ResRef}'");
+                _selectedPortrait = portrait;
+                _selectedPortraitLabel.Text = portrait.ResRef;
+                _portraitNameLabel.Text = portrait.ResRef;
+
+                // Load portrait preview
+                if (_itemIconService != null)
                 {
-                    var bitmap = _itemIconService.GetPortrait(portrait.ResRef);
-                    _portraitPreviewImage.Source = bitmap;
-                }
-                catch (Exception ex)
-                {
-                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load portrait preview: {ex.Message}");
-                    _portraitPreviewImage.Source = null;
+                    try
+                    {
+                        var bitmap = _itemIconService.GetPortrait(portrait.ResRef);
+                        _portraitPreviewImage.Source = bitmap;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"PortraitBrowser: Preview loaded: {(bitmap != null ? "success" : "null")}");
+                    }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to load portrait preview: {ex.Message}");
+                        _portraitPreviewImage.Source = null;
+                    }
                 }
             }
+            else
+            {
+                _selectedPortrait = null;
+                _selectedPortraitLabel.Text = "(none)";
+                _portraitNameLabel.Text = "";
+                _portraitPreviewImage.Source = null;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _selectedPortrait = null;
-            _selectedPortraitLabel.Text = "(none)";
-            _portraitNameLabel.Text = "";
-            _portraitPreviewImage.Source = null;
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"PortraitBrowser: OnPortraitSelected crashed: {ex}");
         }
     }
 
     private void OnPortraitDoubleClicked(object? sender, RoutedEventArgs e)
     {
-        if (_selectedPortrait != null)
+        try
         {
-            Close(_selectedPortrait.Id);
+            if (_selectedPortrait != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"PortraitBrowser: Double-clicked portrait ID={_selectedPortrait.Id}");
+                Close(_selectedPortrait.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"PortraitBrowser: OnPortraitDoubleClicked crashed: {ex}");
         }
     }
 
     private void OnOkClick(object? sender, RoutedEventArgs e)
     {
-        if (_selectedPortrait != null)
+        try
         {
-            Close(_selectedPortrait.Id);
+            if (_selectedPortrait != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"PortraitBrowser: OK clicked, returning portrait ID={_selectedPortrait.Id}");
+                Close(_selectedPortrait.Id);
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "PortraitBrowser: OK clicked with no selection");
+                Close(null);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Close(null);
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"PortraitBrowser: OnOkClick crashed: {ex}");
         }
     }
 
     private void OnCancelClick(object? sender, RoutedEventArgs e)
     {
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "PortraitBrowser: Cancel clicked");
         Close(null);
     }
 

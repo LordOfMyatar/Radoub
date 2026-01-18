@@ -77,6 +77,8 @@ public static class UtcWriter
         AddWordField(root, "Appearance_Type", utc.AppearanceType);
         AddIntField(root, "Phenotype", utc.Phenotype);
         AddWordField(root, "PortraitId", utc.PortraitId);
+        if (!string.IsNullOrEmpty(utc.Portrait))
+            AddCResRefField(root, "Portrait", utc.Portrait);
         AddByteField(root, "Tail", utc.Tail);
         AddByteField(root, "Wings", utc.Wings);
         AddByteField(root, "BodyBag", utc.BodyBag);

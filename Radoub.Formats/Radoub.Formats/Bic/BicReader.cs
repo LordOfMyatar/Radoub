@@ -72,6 +72,7 @@ public static class BicReader
             AppearanceType = root.GetFieldValue<ushort>("Appearance_Type", 0),
             Phenotype = root.GetFieldValue<int>("Phenotype", 0),
             PortraitId = root.GetFieldValue<ushort>("PortraitId", 0),
+            Portrait = root.GetFieldValue<string>("Portrait", string.Empty),
             Tail = root.GetFieldValue<byte>("Tail", 0),
             Wings = root.GetFieldValue<byte>("Wings", 0),
             BodyBag = root.GetFieldValue<byte>("BodyBag", 0),

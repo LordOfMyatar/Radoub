@@ -77,6 +77,8 @@ public static class BicWriter
         AddWordField(root, "Appearance_Type", bic.AppearanceType);
         AddIntField(root, "Phenotype", bic.Phenotype);
         AddWordField(root, "PortraitId", bic.PortraitId);
+        if (!string.IsNullOrEmpty(bic.Portrait))
+            AddCResRefField(root, "Portrait", bic.Portrait);
         AddByteField(root, "Tail", bic.Tail);
         AddByteField(root, "Wings", bic.Wings);
         AddByteField(root, "BodyBag", bic.BodyBag);

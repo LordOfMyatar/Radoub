@@ -689,6 +689,7 @@ public class CreatureDisplayService
     public string GetPortraitName(ushort portraitId) => Appearances.GetPortraitName(portraitId);
     public string? GetPortraitResRef(ushort portraitId) => Appearances.GetPortraitResRef(portraitId);
     public List<(ushort Id, string Name)> GetAllPortraits() => Appearances.GetAllPortraits();
+    public ushort? FindPortraitIdByResRef(string? resRef) => Appearances.FindPortraitIdByResRef(resRef);
     public string GetWingName(byte wingId) => Appearances.GetWingName(wingId);
     public string GetTailName(byte tailId) => Appearances.GetTailName(tailId);
     public List<(byte Id, string Name)> GetAllWings() => Appearances.GetAllWings();

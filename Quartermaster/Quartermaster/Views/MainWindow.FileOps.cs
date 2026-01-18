@@ -491,8 +491,9 @@ public partial class MainWindow
             }
             else if (!savingAsBic && _isBicFile && _currentCreature is BicFile bicFile)
             {
-                // Converting BIC to UTC
-                _currentCreature = bicFile.ToUtcFile();
+                // Converting BIC to UTC - pass the target filename so TemplateResRef matches
+                var targetResRef = Path.GetFileNameWithoutExtension(_currentFilePath);
+                _currentCreature = bicFile.ToUtcFile(targetResRef);
                 _isBicFile = false;
                 wasConverted = true;
                 UnifiedLogger.LogCreature(LogLevel.INFO, "Converted BIC to UTC format");
