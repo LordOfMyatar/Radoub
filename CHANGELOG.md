@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.34] - 2026-01-17
+
+### Documentation Reorganization
+
+- Move BioWare Aurora format Markdown conversions to Radoub Wiki
+- Remove `Documentation/BioWare_Markdown_Docs/` folder (59 files)
+- Original BioWare PDFs remain in `Documentation/BioWare_Original_PDFs/`
+- Update CLAUDE.md to reference Wiki for Markdown format specs
+
+---
+
 ## [0.9.33] - 2026-01-16
 **Branch**: `radoub/issue-920` | **PR**: #921
 

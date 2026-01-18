@@ -50,6 +50,10 @@ public partial class SpellsPanel : UserControl
     private ComboBox? _classComboBox;
     private List<ClassComboItem> _classItems = new();
 
+    // Class restrictions toggle
+    private CheckBox? _ignoreRestrictionsCheckBox;
+    private bool _ignoreClassRestrictions = false;
+
     // Data
     private ObservableCollection<SpellListViewModel> _displayedSpells = new();
     private List<SpellListViewModel> _allSpells = new();
@@ -141,6 +145,19 @@ public partial class SpellsPanel : UserControl
         // Wire up class combo box
         if (_classComboBox != null)
             _classComboBox.SelectionChanged += OnClassComboBoxChanged;
+
+        // Wire up ignore restrictions checkbox
+        _ignoreRestrictionsCheckBox = this.FindControl<CheckBox>("IgnoreRestrictionsCheckBox");
+        if (_ignoreRestrictionsCheckBox != null)
+        {
+            _ignoreRestrictionsCheckBox.IsCheckedChanged += (s, e) =>
+            {
+                _ignoreClassRestrictions = _ignoreRestrictionsCheckBox.IsChecked == true;
+                // Reload spells to recalculate blocked status
+                if (_currentCreature != null)
+                    LoadSpellsForClass(_selectedClassIndex);
+            };
+        }
     }
 
     /// <summary>
@@ -340,6 +357,11 @@ public partial class SpellsPanel : UserControl
             _classComboBox.ItemsSource = null;
             _classComboBox.SelectedIndex = -1;
         }
+
+        // Reset ignore restrictions checkbox
+        _ignoreClassRestrictions = false;
+        if (_ignoreRestrictionsCheckBox != null)
+            _ignoreRestrictionsCheckBox.IsChecked = false;
     }
 
     private static void SetText(TextBlock? block, string text)

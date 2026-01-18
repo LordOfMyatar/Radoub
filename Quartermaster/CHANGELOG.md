@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.43-alpha] - 2026-01-17
+**Branch**: `quartermaster/issue-932` | **PR**: #937
+
+### Sprint: Spell System Polish II (#932)
+
+- [x] #775 - Add toggle for class/race spell restrictions
+  - "Ignore class restrictions" checkbox in Spells panel filter toolbar
+  - When checked: All spells shown as available, uses innate level for non-class spells
+  - When unchecked (default): Standard behavior with class spell list restrictions
+  - Summary tables update to count all known spells when ignoring restrictions
+
+Note: #776 and #777 completed in v0.1.42-alpha (#936)
+
+---
+
 ## [0.1.42-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-885` | **PR**: #936
 

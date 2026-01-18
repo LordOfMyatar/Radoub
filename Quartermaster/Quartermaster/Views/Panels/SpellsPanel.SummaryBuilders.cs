@@ -176,18 +176,27 @@ public partial class SpellsPanel
                 var (classIndex, className, _, limits, classEntry) = spontaneousCasters[col];
                 int totalLimit = limits[spellLevel];
 
-                // Only count spells that are actual class spells (not feat-based abilities like Barbarian Rage)
-                // Filter to spells that have a valid level for this class in spells.2da
+                // Count known spells at this level
+                // When ignoring class restrictions, count all known spells
+                // Otherwise, only count spells valid for this class in spells.2da
                 int usedCount = 0;
                 foreach (var knownSpell in classEntry.KnownSpells[spellLevel])
                 {
-                    var spellInfo = _displayService.GetSpellInfo(knownSpell.Spell);
-                    int classSpellLevel = spellInfo?.GetLevelForClass(classEntry.Class) ?? -1;
-
-                    // Only count spells that are valid for this class (filter out feat-based abilities)
-                    if (spellInfo != null && classSpellLevel >= 0)
+                    if (_ignoreClassRestrictions)
                     {
+                        // Count all known spells when ignoring restrictions
                         usedCount++;
+                    }
+                    else
+                    {
+                        var spellInfo = _displayService.GetSpellInfo(knownSpell.Spell);
+                        int classSpellLevel = spellInfo?.GetLevelForClass(classEntry.Class) ?? -1;
+
+                        // Only count spells that are valid for this class (filter out feat-based abilities)
+                        if (spellInfo != null && classSpellLevel >= 0)
+                        {
+                            usedCount++;
+                        }
                     }
                 }
 
@@ -368,9 +377,10 @@ public partial class SpellsPanel
                         displayName = $"{spellName} ({memCount})";
                     }
 
-                    if (classSpellLevel < 0)
+                    if (classSpellLevel < 0 && !_ignoreClassRestrictions)
                     {
                         // Not a standard class spell (e.g., feat-based ability)
+                        // Only mark with asterisk if not ignoring restrictions
                         displayName = memCount > 0 ? $"{spellName} ({memCount}) *" : $"{spellName} *";
                         foreground = GetDisabledBrush();
                     }
