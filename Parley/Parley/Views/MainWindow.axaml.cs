@@ -27,6 +27,7 @@ using Parley.Services;
 using Parley.Views.Helpers;
 using DialogEditor.Views;
 using Radoub.Formats.Ssf;
+using Radoub.UI.Views;
 
 namespace DialogEditor.Views
 {
@@ -834,10 +835,15 @@ namespace DialogEditor.Views
         }
 
 
-        private async void OnAboutClick(object? sender, RoutedEventArgs e)
+        private void OnAboutClick(object? sender, RoutedEventArgs e)
         {
-            var aboutWindow = new AboutWindow();
-            await aboutWindow.ShowDialog(this);
+            var aboutWindow = Radoub.UI.Views.AboutWindow.Create(new AboutWindowConfig
+            {
+                ToolName = "Parley",
+                Subtitle = "Dialog Editor for Neverwinter Nights",
+                Version = VersionHelper.Version
+            });
+            aboutWindow.Show(this);
         }
 
         private void OnDocumentationClick(object? sender, RoutedEventArgs e)
