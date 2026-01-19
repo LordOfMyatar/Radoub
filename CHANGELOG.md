@@ -25,7 +25,18 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 #### Work Items
 - [ ] #970 - [Radoub.UI] Consolidate resource browsers (Script, Sound, Portrait)
 - [ ] #971 - [Radoub.UI] Create shared ITlkService for multilingual support
-- [ ] #972 - [Radoub.UI] Standardize image sizing and portrait handling
+- [x] #972 - [Radoub.UI] Standardize image sizing and portrait handling
+
+#### Added (Radoub.UI - #972)
+- `ImageHelper` static service for consistent image/portrait handling
+  - Standard NWN portrait sizes: Tiny (32x40), Small (64x100), Medium (128x200), Large (256x400), Huge (512x800)
+  - `CalculateFitSize()` - Aspect-ratio-aware scaling to target bounds
+  - `CalculatePortraitSize()` - Calculate portrait height from width
+  - `GetNearestPortraitSize()` - Map arbitrary width to nearest standard size
+  - `ResizeBitmap()` / `ResizePortrait()` - High-quality SkiaSharp resize
+  - `GetMissingPortraitPlaceholder()` - Gray silhouette placeholder for missing portraits
+  - `IsValidBitmap()`, `GetAspectRatio()`, `IsPortraitAspect()` - Validation utilities
+- `Radoub.UI.Tests` project added to solution with 27 ImageHelper tests
 
 ---
 
