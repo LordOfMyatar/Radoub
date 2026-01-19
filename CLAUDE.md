@@ -290,6 +290,8 @@ Every tool should reference these shared libraries:
 
 ### Implementation Checklist
 
+**Day 1 Requirements** (before writing significant code):
+
 - [ ] **Read Quartermaster/Program.cs** - Understand startup sequence
 - [ ] **Copy CommandLineService pattern** - Same flags, same behavior
 - [ ] **Copy SettingsService pattern** - JSON storage in `~/Radoub/ToolName/`
@@ -300,6 +302,43 @@ Every tool should reference these shared libraries:
 - [ ] **Initialize CHANGELOG.md** with branch/PR format
 - [ ] **Create CLAUDE.md** with tool-specific patterns
 - [ ] **Add dictionary support** if tool has text editing fields
+
+### UI Uniformity Checklist (Epic #959)
+
+**Required for all tools** - ensures consistency, performance, and reliability:
+
+| Category | Requirement | Reference |
+|----------|-------------|-----------|
+| **AboutWindow** | Use `AboutWindow.Create(AboutWindowConfig)` from Radoub.UI | Trebuchet |
+| **Version Display** | Use shared `VersionHelper` (not hardcoded strings) | Parley/Utils/VersionHelper.cs |
+| **Modal Dialogs** | Use `Show()` not `ShowDialog()` for info windows | CLAUDE.md UI/UX Guidelines |
+| **Theme Brushes** | Use `BrushManager` for Success/Warning/Error colors | Radoub.UI/Services/BrushManager.cs |
+| **Deferred Loading** | Heavy I/O in `Loaded`/`Opened` events, not constructor | Fence/Views/MainWindow.axaml.cs |
+| **Progress Feedback** | Show status for operations >2 seconds | Fence palette loading pattern |
+| **Caching** | Cache game data if applicable (feats, spells, items) | Fence/Services/PaletteCacheService.cs |
+| **TLK Support** | Use shared ITlkService for localized strings | Radoub.UI/Services/ITlkService.cs |
+| **Spell-Check** | Use Radoub.Dictionary for game-facing text | Parley/Manifest patterns |
+
+**Resource Browsers** (use shared implementations from Radoub.UI):
+
+| Browser | Interface | Use When |
+|---------|-----------|----------|
+| ScriptBrowserWindow | IScriptBrowserContext | Tool needs script selection |
+| SoundBrowserWindow | ISoundBrowserContext | Tool needs sound selection |
+| PortraitBrowserWindow | IPortraitBrowserContext | Tool needs portrait selection |
+
+**Anti-Patterns** (do NOT do these):
+
+| Anti-Pattern | Correct Approach |
+|--------------|------------------|
+| Custom AboutWindow | Use `AboutWindow.Create()` |
+| Hardcoded version "0.1.0-alpha" | Use `VersionHelper.GetVersion()` |
+| `await dialog.ShowDialog(this)` for info | `dialog.Show(this)` |
+| Duplicate brush methods in each file | Use `BrushManager.GetSuccessBrush()` |
+| Load game data in constructor | Defer to `Loaded` event |
+| Rebuild game data every launch | Cache to `~/Radoub/{Tool}/` |
+| Custom TLK loading | Use shared ITlkService |
+| Custom portrait browser | Use shared PortraitBrowserWindow |
 
 ### Versioning
 

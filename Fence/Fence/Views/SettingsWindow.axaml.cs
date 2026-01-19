@@ -329,20 +329,9 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private IBrush GetSuccessBrush()
-    {
-        return this.TryFindResource("ThemeSuccess", out var brush) && brush is IBrush b ? b : Brushes.Green;
-    }
-
-    private IBrush GetWarningBrush()
-    {
-        return this.TryFindResource("ThemeWarning", out var brush) && brush is IBrush b ? b : Brushes.Orange;
-    }
-
-    private IBrush GetErrorBrush()
-    {
-        return this.TryFindResource("ThemeError", out var brush) && brush is IBrush b ? b : Brushes.Red;
-    }
+    private IBrush GetSuccessBrush() => BrushManager.GetSuccessBrush(this);
+    private IBrush GetWarningBrush() => BrushManager.GetWarningBrush(this);
+    private IBrush GetErrorBrush() => BrushManager.GetErrorBrush(this);
 
     private void OnCloseClick(object? sender, RoutedEventArgs e)
     {

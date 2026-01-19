@@ -13,7 +13,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Reflection;
 using System.Threading.Tasks;
+using Radoub.UI.Views;
 
 namespace Manifest.Views;
 
@@ -1219,27 +1221,39 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
-        var dialog = new Window
+        var aboutWindow = AboutWindow.Create(new AboutWindowConfig
         {
-            Title = "About Manifest",
-            Width = 350,
-            Height = 200,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
+            ToolName = "Manifest",
+            Subtitle = "Journal Editor for Neverwinter Nights",
+            Version = GetVersionString()
+        });
+        aboutWindow.Show(this);
+    }
 
-        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
-        panel.Children.Add(new TextBlock { Text = "Manifest", FontSize = 24, FontWeight = Avalonia.Media.FontWeight.Bold });
-        panel.Children.Add(new TextBlock { Text = "Journal Editor for Neverwinter Nights" });
-        panel.Children.Add(new TextBlock { Text = "Version 0.1.0-alpha" });
-        panel.Children.Add(new TextBlock { Text = "Part of the Radoub Toolset", Margin = new Avalonia.Thickness(0, 10, 0, 0) });
+    /// <summary>
+    /// Gets the version string from assembly metadata.
+    /// </summary>
+    private static string GetVersionString()
+    {
+        try
+        {
+            var infoVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
-        var button = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center, Margin = new Avalonia.Thickness(0, 10, 0, 0) };
-        button.Click += (s, e) => dialog.Close();
-        panel.Children.Add(button);
+            if (!string.IsNullOrEmpty(infoVersion))
+            {
+                var plusIndex = infoVersion.IndexOf('+');
+                if (plusIndex > 0)
+                    infoVersion = infoVersion[..plusIndex];
+                return infoVersion;
+            }
 
-        dialog.Content = panel;
-        dialog.Show(this);
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            if (version != null)
+                return $"{version.Major}.{version.Minor}.{version.Build}";
+        }
+        catch { }
+        return "1.0.0";
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

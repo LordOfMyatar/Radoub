@@ -714,9 +714,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         DialogHelper.ShowAboutDialog(this);
     }
 
-    private async Task ShowErrorDialog(string title, string message)
+    private void ShowErrorDialog(string title, string message)
     {
-        await DialogHelper.ShowErrorDialog(this, title, message);
+        DialogHelper.ShowErrorDialog(this, title, message);
     }
 
     #endregion

@@ -2,9 +2,11 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Styling;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 
 namespace DialogEditor.Views
 {
@@ -99,17 +101,7 @@ namespace DialogEditor.Views
 
         /// <summary>
         /// Gets the theme-aware success brush for validation feedback.
-        /// Uses ThemeSuccess resource if available, falls back to LightGreen.
         /// </summary>
-        private Avalonia.Media.IBrush GetSuccessBrush()
-        {
-            var app = Application.Current;
-            if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var successBrush) == true
-                && successBrush is Avalonia.Media.IBrush brush)
-            {
-                return brush;
-            }
-            return Avalonia.Media.Brushes.LightGreen;
-        }
+        private IBrush GetSuccessBrush() => BrushManager.GetSuccessBrush(this);
     }
 }
