@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.39] - 2026-01-18
-**Branch**: `radoub/issue-972` | **PR**: #TBD
+**Branch**: `radoub/issue-972` | **PR**: #986
 
 ### Feature: Standardize Image Sizing and Portrait Handling (#972)
 
