@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.122-alpha] - 2026-01-19
-**Branch**: `parley/issue-999` | **PR**: #TBD
+**Branch**: `parley/issue-999` | **PR**: #1000
 
 ### Sprint: Bug Bash - Theme Regressions (#999)
 
