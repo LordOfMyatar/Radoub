@@ -446,7 +446,40 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
-        // Keyboard shortcuts are handled via InputGestures in menu items
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            switch (e.Key)
+            {
+                case Key.N:
+                    OnNewClick(null, e);
+                    e.Handled = true;
+                    break;
+                case Key.O:
+                    OnOpenClick(null, e);
+                    e.Handled = true;
+                    break;
+                case Key.S:
+                    if (HasFile)
+                    {
+                        OnSaveClick(null, e);
+                        e.Handled = true;
+                    }
+                    break;
+            }
+        }
+        else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
+        {
+            switch (e.Key)
+            {
+                case Key.S:
+                    if (HasFile)
+                    {
+                        OnSaveAsClick(null, e);
+                        e.Handled = true;
+                    }
+                    break;
+            }
+        }
     }
 
     #endregion
