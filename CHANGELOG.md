@@ -24,7 +24,7 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 
 #### Work Items
 - [x] #976 - [Radoub] Radoub-level theme configuration
-- [ ] #977 - [Trebuchet] Theme generator/editor UI
+- [x] #977 - [Trebuchet] Theme generator/editor UI
 - [ ] #978 - [Radoub.Dictionary] Consolidate spell-check for game-facing text
 
 #### Bundled Dependabot Updates (Avalonia 11.3.10 → 11.3.11)
@@ -53,6 +53,15 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 - `ApplyEffectiveTheme(toolThemeId)` - Apply effective theme with fallback
 - `IsUsingSharedTheme` - Check if currently using shared theme
 - Theme discovery now includes: official (app) → shared (`~/Radoub/Themes/`) → tool-specific
+
+#### Added (Trebuchet - #977)
+- **Theme Editor Window**: Visual theme creation with live preview
+  - Core color editing: Background, Sidebar, Text, Accent, Selection, Border
+  - Status colors: Success, Warning, Error, Info
+  - Font settings: Primary font, Monospace font, Base size
+  - Load from preset themes
+  - Export to `~/Radoub/Themes/` for shared use
+- **Settings Window**: Added "Create Theme..." button and "Apply to All Tools" checkbox
 
 ---
 
