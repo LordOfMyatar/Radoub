@@ -5,7 +5,8 @@
         MinWidth="900" MinHeight="500"
         Width="1000" Height="600"
         SizeToContent="Manual"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ThemeBackground}">
 
     <Window.Styles>
         <!-- Dark mode selection visibility fix -->

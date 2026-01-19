@@ -268,9 +268,13 @@
                                             <TextBlock Text="{Binding SpeakerTag}"
                                                        Foreground="{Binding NodeColor}"
                                                        VerticalAlignment="Center"/>
+                                            <!-- Issue #901: Child links show with reduced opacity to distinguish from primary nodes -->
+                                            <!-- Issue #999: Explicit foreground for dark theme visibility -->
                                             <TextBlock Text="{Binding DialogText}"
                                                        TextWrapping="Wrap"
-                                                       VerticalAlignment="Center"/>
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                                                       Opacity="{Binding TextOpacity}"/>
                                         </StackPanel>
                                     </TreeDataTemplate>
                                 </TreeView.DataTemplates>

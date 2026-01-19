@@ -197,7 +197,14 @@ namespace DialogEditor.Views.Controllers
                 themes = themes.Where(t => !t.Plugin.Tags.Contains("easter-egg")).ToList();
             }
 
-            var sortedThemes = themes
+            // Deduplicate by name: prefer shared themes (org.radoub.*) over tool-specific
+            // This prevents "Dark" appearing twice when both org.radoub.theme.dark and org.parley.theme.dark exist
+            var deduplicatedThemes = themes
+                .GroupBy(t => t.Plugin.Name)
+                .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First())
+                .ToList();
+
+            var sortedThemes = deduplicatedThemes
                 .OrderBy(t => t.Accessibility?.Type == "colorblind" ? 1 : 0)
                 .ThenBy(t => t.Plugin.Name)
                 .ToList();

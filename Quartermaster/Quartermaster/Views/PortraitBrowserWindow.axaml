@@ -5,7 +5,8 @@
         AutomationProperties.AutomationId="PortraitBrowserWindow"
         Width="700" Height="550"
         MinWidth="600" MinHeight="450"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ThemeBackground}">
 
     <Window.Styles>
         <!-- Dark mode selection visibility fix -->

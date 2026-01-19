@@ -98,6 +98,7 @@
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
 
+
         <Style Selector="Label">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>

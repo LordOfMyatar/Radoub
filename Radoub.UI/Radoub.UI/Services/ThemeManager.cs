@@ -311,6 +311,9 @@ public class ThemeManager
             resources["SystemControlBackgroundAltHighBrush"] = bgBrush;
             resources["SystemControlBackgroundAltMediumBrush"] = bgBrush;
             resources["SystemControlBackgroundAltMediumHighBrush"] = bgBrush;
+
+            // App-level theme background for windows and dialogs
+            resources["ThemeBackground"] = bgBrush;
         }
 
         // Sidebar/Alt colors - panels, toolbars
@@ -356,6 +359,59 @@ public class ThemeManager
             resources["SystemControlForegroundBaseHighBrush"] = textBrush;
             resources["SystemControlForegroundBaseMediumBrush"] = textBrush;
             resources["SystemControlForegroundBaseMediumHighBrush"] = textBrush;
+
+            // Menu text colors - top-level menu items in menu bar
+            resources["MenuFlyoutItemForeground"] = textBrush;
+            resources["MenuFlyoutItemForegroundPointerOver"] = textBrush;
+            resources["MenuFlyoutItemForegroundPressed"] = textBrush;
+            resources["MenuFlyoutItemForegroundDisabled"] = textBrush;
+            resources["MenuBarItemForeground"] = textBrush;
+            resources["TopLevelItemForeground"] = textBrush;
+
+            // Menu keyboard shortcut (InputGesture/accelerator) text colors
+            resources["MenuFlyoutItemKeyboardAcceleratorTextForeground"] = textBrush;
+            resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundPointerOver"] = textBrush;
+            resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundPressed"] = textBrush;
+            resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundDisabled"] = textBrush;
+
+            // Submenu chevron/arrow colors
+            resources["MenuFlyoutSubItemChevron"] = textBrush;
+            resources["MenuFlyoutSubItemChevronPointerOver"] = textBrush;
+            resources["MenuFlyoutSubItemChevronPressed"] = textBrush;
+            resources["MenuFlyoutSubItemChevronDisabled"] = textBrush;
+            resources["MenuFlyoutSubItemChevronSubMenuOpened"] = textBrush;
+
+            // CheckBox text (label) colors - all states
+            resources["CheckBoxForegroundUnchecked"] = textBrush;
+            resources["CheckBoxForegroundUncheckedPointerOver"] = textBrush;
+            resources["CheckBoxForegroundUncheckedPressed"] = textBrush;
+            resources["CheckBoxForegroundUncheckedDisabled"] = textBrush;
+            resources["CheckBoxForegroundChecked"] = textBrush;
+            resources["CheckBoxForegroundCheckedPointerOver"] = textBrush;
+            resources["CheckBoxForegroundCheckedPressed"] = textBrush;
+            resources["CheckBoxForegroundCheckedDisabled"] = textBrush;
+            resources["CheckBoxForegroundIndeterminate"] = textBrush;
+            resources["CheckBoxForegroundIndeterminatePointerOver"] = textBrush;
+            resources["CheckBoxForegroundIndeterminatePressed"] = textBrush;
+            resources["CheckBoxForegroundIndeterminateDisabled"] = textBrush;
+
+            // RadioButton text colors (similar pattern to CheckBox)
+            resources["RadioButtonForeground"] = textBrush;
+            resources["RadioButtonForegroundPointerOver"] = textBrush;
+            resources["RadioButtonForegroundPressed"] = textBrush;
+            resources["RadioButtonForegroundDisabled"] = textBrush;
+        }
+
+        // Menu flyout (dropdown) background - needs to match theme
+        if (!string.IsNullOrEmpty(colors.Sidebar))
+        {
+            var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar));
+
+            // Menu dropdown background
+            resources["MenuFlyoutPresenterBackground"] = sidebarBrush;
+            resources["MenuFlyoutPresenterBorderBrush"] = sidebarBrush;
+            resources["ContextMenuBackground"] = sidebarBrush;
+            resources["MenuBarBackground"] = sidebarBrush;
         }
 
         // Accent color - buttons, highlights
@@ -479,6 +535,57 @@ public class ThemeManager
         {
             var autoTrimBrush = new SolidColorBrush(Color.Parse(colors.AutoTrimBorder));
             resources["ThemeAutoTrimBorder"] = autoTrimBrush;
+        }
+
+        // Button colors - apply theme-defined button colors to Fluent theme resources
+        // This ensures proper contrast in dark themes
+        if (!string.IsNullOrEmpty(colors.ButtonPrimary))
+        {
+            var btnPrimaryColor = Color.Parse(colors.ButtonPrimary);
+            var btnPrimaryBrush = new SolidColorBrush(btnPrimaryColor);
+
+            // Primary button background (accent buttons)
+            resources["AccentButtonBackground"] = btnPrimaryBrush;
+            resources["AccentButtonBackgroundPointerOver"] = btnPrimaryBrush;
+            resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
+        }
+
+        if (!string.IsNullOrEmpty(colors.ButtonSecondary))
+        {
+            var btnSecondaryColor = Color.Parse(colors.ButtonSecondary);
+            var btnSecondaryBrush = new SolidColorBrush(btnSecondaryColor);
+
+            // Standard button backgrounds - use sidebar-based colors for better visibility
+            resources["ButtonBackground"] = btnSecondaryBrush;
+            resources["ButtonBackgroundDisabled"] = btnSecondaryBrush;
+        }
+
+        if (!string.IsNullOrEmpty(colors.ButtonHover))
+        {
+            var btnHoverColor = Color.Parse(colors.ButtonHover);
+            var btnHoverBrush = new SolidColorBrush(btnHoverColor);
+
+            resources["ButtonBackgroundPointerOver"] = btnHoverBrush;
+            resources["ButtonBackgroundPressed"] = btnHoverBrush;
+        }
+
+        // TabItem text color - ensure readability against tab background
+        // Use theme text color for tab foregrounds
+        if (!string.IsNullOrEmpty(colors.Text))
+        {
+            var textBrush = new SolidColorBrush(Color.Parse(colors.Text));
+
+            // TabItem text (header) colors - Avalonia FluentTheme resource keys
+            // Unselected tab states
+            resources["TabItemHeaderForegroundUnselected"] = textBrush;
+            resources["TabItemHeaderForegroundUnselectedPointerOver"] = textBrush;
+            resources["TabItemHeaderForegroundUnselectedPressed"] = textBrush;
+            // Selected tab states
+            resources["TabItemHeaderForegroundSelected"] = textBrush;
+            resources["TabItemHeaderForegroundSelectedPointerOver"] = textBrush;
+            resources["TabItemHeaderForegroundSelectedPressed"] = textBrush;
+            // Disabled state
+            resources["TabItemHeaderForegroundDisabled"] = textBrush;
         }
     }
 

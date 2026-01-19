@@ -10,6 +10,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.122-alpha] - 2026-01-19
+**Branch**: `parley/issue-999` | **PR**: #1000
+
+### Sprint: Bug Bash - Theme Regressions (#999)
+
+Fixes theme-related regressions from Epic #959 UI Uniformity work.
+
+#### Fix: Duplicate themes in theme selection (#998)
+
+- Added deduplication logic to prefer shared themes (`org.radoub.*`) over tool-specific themes
+- Themes with same display name now appear only once in dropdown
+- Applied to all tools: Parley, Manifest, Quartermaster, Fence
+
+#### Fix: Button and tab contrast in dark themes (#997)
+
+- ThemeManager now applies `button_primary`, `button_secondary`, `button_hover` colors to Fluent theme resources
+- Tab header text now uses theme text color for proper contrast
+
+#### Fix: Child links not visually distinguished (#901)
+
+- Child links now display with 50% opacity to distinguish from primary nodes
+- Added `TextOpacity` property to TreeViewSafeNode model
+
+---
+
 ## [0.1.121-alpha] - 2026-01-16
 **Branch**: `parley/issue-916` | **PR**: #918
 

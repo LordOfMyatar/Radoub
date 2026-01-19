@@ -67,75 +67,63 @@ namespace Parley.Tests
         }
 
         [Fact]
-        public void BackgroundConverter_RootNode_ReturnsNeutralGray_LightTheme()
+        public void BackgroundConverter_RootNode_ReturnsSameAsEntryNode_LightTheme()
         {
-            // Arrange
+            // Arrange - Issue #999: All nodes now use same theme background
             var converter = FlowchartNodeBackgroundConverter.Instance;
-            var values = new object?[]
-            {
-                FlowchartNodeType.Root,
-                false, // isLink
-                "",
-                ThemeVariant.Light
-            };
+            var rootValues = new object?[] { FlowchartNodeType.Root, false, "", ThemeVariant.Light };
+            var entryValues = new object?[] { FlowchartNodeType.Entry, false, "", ThemeVariant.Light };
 
             // Act
-            var result = converter.Convert(values, typeof(IBrush), null, CultureInfo.InvariantCulture);
+            var rootResult = converter.Convert(rootValues, typeof(IBrush), null, CultureInfo.InvariantCulture);
+            var entryResult = converter.Convert(entryValues, typeof(IBrush), null, CultureInfo.InvariantCulture);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.IsType<SolidColorBrush>(result);
-            var brush = (SolidColorBrush)result;
-            // Root should be neutral gray in light theme (#E8E8E8)
-            Assert.Equal(Color.Parse("#E8E8E8"), brush.Color);
+            // Assert - Root and Entry should have same background (distinction via opacity)
+            Assert.NotNull(rootResult);
+            Assert.NotNull(entryResult);
+            Assert.IsType<SolidColorBrush>(rootResult);
+            Assert.IsType<SolidColorBrush>(entryResult);
+            Assert.Equal(((SolidColorBrush)entryResult).Color, ((SolidColorBrush)rootResult).Color);
         }
 
         [Fact]
-        public void BackgroundConverter_RootNode_ReturnsNeutralGray_DarkTheme()
+        public void BackgroundConverter_RootNode_ReturnsSameAsEntryNode_DarkTheme()
         {
-            // Arrange
+            // Arrange - Issue #999: All nodes now use same theme background
             var converter = FlowchartNodeBackgroundConverter.Instance;
-            var values = new object?[]
-            {
-                FlowchartNodeType.Root,
-                false, // isLink
-                "",
-                ThemeVariant.Dark
-            };
+            var rootValues = new object?[] { FlowchartNodeType.Root, false, "", ThemeVariant.Dark };
+            var entryValues = new object?[] { FlowchartNodeType.Entry, false, "", ThemeVariant.Dark };
 
             // Act
-            var result = converter.Convert(values, typeof(IBrush), null, CultureInfo.InvariantCulture);
+            var rootResult = converter.Convert(rootValues, typeof(IBrush), null, CultureInfo.InvariantCulture);
+            var entryResult = converter.Convert(entryValues, typeof(IBrush), null, CultureInfo.InvariantCulture);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.IsType<SolidColorBrush>(result);
-            var brush = (SolidColorBrush)result;
-            // Root should be neutral gray in dark theme (#3A3A3A)
-            Assert.Equal(Color.Parse("#3A3A3A"), brush.Color);
+            // Assert - Root and Entry should have same background (distinction via opacity)
+            Assert.NotNull(rootResult);
+            Assert.NotNull(entryResult);
+            Assert.IsType<SolidColorBrush>(rootResult);
+            Assert.IsType<SolidColorBrush>(entryResult);
+            Assert.Equal(((SolidColorBrush)entryResult).Color, ((SolidColorBrush)rootResult).Color);
         }
 
         [Fact]
-        public void BackgroundConverter_LinkNode_ReturnsDistinctLinkBackground()
+        public void BackgroundConverter_LinkNode_ReturnsSameAsEntryNode()
         {
-            // Arrange
+            // Arrange - Issue #999: All nodes now use same theme background
             var converter = FlowchartNodeBackgroundConverter.Instance;
-            var values = new object?[]
-            {
-                FlowchartNodeType.Link,
-                true, // isLink
-                "",
-                ThemeVariant.Light
-            };
+            var linkValues = new object?[] { FlowchartNodeType.Link, true, "", ThemeVariant.Light };
+            var entryValues = new object?[] { FlowchartNodeType.Entry, false, "", ThemeVariant.Light };
 
             // Act
-            var result = converter.Convert(values, typeof(IBrush), null, CultureInfo.InvariantCulture);
+            var linkResult = converter.Convert(linkValues, typeof(IBrush), null, CultureInfo.InvariantCulture);
+            var entryResult = converter.Convert(entryValues, typeof(IBrush), null, CultureInfo.InvariantCulture);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.IsType<SolidColorBrush>(result);
-            var brush = (SolidColorBrush)result;
-            // Link should have lighter gray (#F0F0F0 in light theme)
-            Assert.Equal(Color.Parse("#F0F0F0"), brush.Color);
+            // Assert - Link and Entry should have same background (distinction via opacity)
+            Assert.NotNull(linkResult);
+            Assert.NotNull(entryResult);
+            Assert.IsType<SolidColorBrush>(linkResult);
+            Assert.IsType<SolidColorBrush>(entryResult);
+            Assert.Equal(((SolidColorBrush)entryResult).Color, ((SolidColorBrush)linkResult).Color);
         }
 
         [Fact]
@@ -295,12 +283,13 @@ namespace Parley.Tests
         {
             // Arrange
             var converter = FlowchartLinkOpacityConverter.Instance;
+            var values = new List<object?> { true, FlowchartNodeType.Entry };
 
             // Act
-            var result = converter.Convert(true, typeof(double), null, CultureInfo.InvariantCulture);
+            var result = converter.Convert(values, typeof(double), null, CultureInfo.InvariantCulture);
 
-            // Assert
-            Assert.Equal(0.7, result);
+            // Assert - exact value depends on theme variant, just verify it's less than 1.0
+            Assert.True(result is double opacity && opacity < 1.0);
         }
 
         [Fact]
@@ -308,12 +297,27 @@ namespace Parley.Tests
         {
             // Arrange
             var converter = FlowchartLinkOpacityConverter.Instance;
+            var values = new List<object?> { false, FlowchartNodeType.Entry };
 
             // Act
-            var result = converter.Convert(false, typeof(double), null, CultureInfo.InvariantCulture);
+            var result = converter.Convert(values, typeof(double), null, CultureInfo.InvariantCulture);
 
             // Assert
             Assert.Equal(1.0, result);
+        }
+
+        [Fact]
+        public void OpacityConverter_RootNode_ReturnsReducedOpacity()
+        {
+            // Arrange
+            var converter = FlowchartLinkOpacityConverter.Instance;
+            var values = new List<object?> { false, FlowchartNodeType.Root };
+
+            // Act
+            var result = converter.Convert(values, typeof(double), null, CultureInfo.InvariantCulture);
+
+            // Assert - Root nodes get reduced opacity regardless of IsLink
+            Assert.True(result is double opacity && opacity < 1.0);
         }
 
         #endregion
