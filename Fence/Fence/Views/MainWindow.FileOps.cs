@@ -276,6 +276,15 @@ public partial class MainWindow
 
     private void UpdateRecentFilesMenu()
     {
+        // Populate menu immediately with current list
+        PopulateRecentFilesMenuItems();
+
+        // Validate files in background and refresh if any were removed
+        _ = ValidateAndRefreshRecentFilesAsync();
+    }
+
+    private void PopulateRecentFilesMenuItems()
+    {
         RecentFilesMenu.Items.Clear();
 
         var recentFiles = SettingsService.Instance.RecentFiles;
@@ -307,6 +316,19 @@ public partial class MainWindow
             UpdateRecentFilesMenu();
         };
         RecentFilesMenu.Items.Add(clearItem);
+    }
+
+    private async System.Threading.Tasks.Task ValidateAndRefreshRecentFilesAsync()
+    {
+        var countBefore = SettingsService.Instance.RecentFiles.Count;
+        await SettingsService.Instance.ValidateRecentFilesAsync();
+        var countAfter = SettingsService.Instance.RecentFiles.Count;
+
+        // Refresh menu if files were removed
+        if (countAfter < countBefore)
+        {
+            PopulateRecentFilesMenuItems();
+        }
     }
 
     private void OnRecentFileClick(object? sender, RoutedEventArgs e)
