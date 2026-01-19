@@ -48,10 +48,19 @@ public class VariableViewModel : INotifyPropertyChanged
         set { if (_intValue != value) { _intValue = value; OnPropertyChanged(); OnPropertyChanged(nameof(ValueDisplay)); } }
     }
 
-    public float FloatValue
+    public decimal FloatValue
     {
-        get => _floatValue;
-        set { if (Math.Abs(_floatValue - value) > 0.0001f) { _floatValue = value; OnPropertyChanged(); OnPropertyChanged(nameof(ValueDisplay)); } }
+        get => (decimal)_floatValue;
+        set
+        {
+            var floatVal = (float)value;
+            if (_floatValue != floatVal)
+            {
+                _floatValue = floatVal;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ValueDisplay));
+            }
+        }
     }
 
     public string StringValue
@@ -134,7 +143,7 @@ public class VariableViewModel : INotifyPropertyChanged
                 vm.IntValue = variable.GetInt();
                 break;
             case VariableType.Float:
-                vm.FloatValue = variable.GetFloat();
+                vm._floatValue = variable.GetFloat(); // Set internal field directly to avoid decimal conversion
                 break;
             case VariableType.String:
                 vm.StringValue = variable.GetString();
@@ -153,7 +162,7 @@ public class VariableViewModel : INotifyPropertyChanged
         return Type switch
         {
             VariableType.Int => Variable.CreateInt(Name, IntValue),
-            VariableType.Float => Variable.CreateFloat(Name, FloatValue),
+            VariableType.Float => Variable.CreateFloat(Name, _floatValue),
             VariableType.String => Variable.CreateString(Name, StringValue),
             _ => Variable.CreateInt(Name, 0) // Fallback for unsupported types
         };
