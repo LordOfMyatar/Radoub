@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.122-alpha] - 2026-01-19
+**Branch**: `parley/issue-999` | **PR**: #TBD
+
+### Sprint: Bug Bash - Theme Regressions (#999)
+
+Fixes theme-related regressions from Epic #959 UI Uniformity work.
+
+- [ ] #998 - Duplicate themes appearing in theme selection
+- [ ] #997 - Brush settings need adjustment for shared themes
+- [ ] #901 - Child links not visually distinguished after theme text change
+
+---
+
 ## [0.1.121-alpha] - 2026-01-16
 **Branch**: `parley/issue-916` | **PR**: #918
 
