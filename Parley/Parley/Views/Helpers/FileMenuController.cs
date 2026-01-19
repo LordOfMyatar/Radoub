@@ -602,25 +602,25 @@ namespace Parley.Views.Helpers
         /// Returns true if valid, false if blocked.
         /// Shows error dialog if filename exceeds 16 characters.
         /// </summary>
-        public async Task<bool> ValidateFilenameAsync(string filePath)
+        public Task<bool> ValidateFilenameAsync(string filePath)
         {
             var filename = Path.GetFileNameWithoutExtension(filePath);
             if (filename.Length <= MaxAuroraFilenameLength)
             {
-                return true;
+                return Task.FromResult(true);
             }
 
             UnifiedLogger.LogApplication(LogLevel.WARN,
                 $"Filename '{filename}' is {filename.Length} characters, exceeds Aurora Engine limit of {MaxAuroraFilenameLength}");
 
-            await ShowFilenameTooLongError(filename);
-            return false;
+            ShowFilenameTooLongError(filename);
+            return Task.FromResult(false);
         }
 
         /// <summary>
-        /// Shows error dialog for filename exceeding Aurora Engine limit.
+        /// Shows error dialog for filename exceeding Aurora Engine limit (non-modal).
         /// </summary>
-        private async Task ShowFilenameTooLongError(string filename)
+        private void ShowFilenameTooLongError(string filename)
         {
             var dialog = new Window
             {
@@ -654,7 +654,7 @@ namespace Parley.Views.Helpers
             panel.Children.Add(okButton);
 
             dialog.Content = panel;
-            await dialog.ShowDialog(_window);
+            dialog.Show(_window);  // Non-modal info dialog
         }
 
         #endregion

@@ -270,7 +270,7 @@ namespace DialogEditor.Views
         /// </summary>
         private static Process? _manifestProcess;
 
-        private async void OnOpenInManifestClick(object? sender, RoutedEventArgs e)
+        private void OnOpenInManifestClick(object? sender, RoutedEventArgs e)
         {
             if (_selectedCategory == null || string.IsNullOrEmpty(_dialogFilePath))
             {
@@ -292,7 +292,7 @@ namespace DialogEditor.Views
                 if (!File.Exists(journalPath))
                 {
                     UnifiedLogger.LogApplication(LogLevel.WARN, $"Cannot open in Manifest: module.jrl not found at {UnifiedLogger.SanitizePath(journalPath)}");
-                    await ShowErrorDialog("module.jrl not found", "Cannot find module.jrl in the dialog file's directory.");
+                    ShowErrorDialog("module.jrl not found", "Cannot find module.jrl in the dialog file's directory.");
                     return;
                 }
 
@@ -302,7 +302,7 @@ namespace DialogEditor.Views
                 if (string.IsNullOrEmpty(manifestPath))
                 {
                     UnifiedLogger.LogApplication(LogLevel.WARN, "Manifest.exe not found");
-                    await ShowManifestNotFoundDialog();
+                    ShowManifestNotFoundDialog();
                     return;
                 }
 
@@ -342,7 +342,7 @@ namespace DialogEditor.Views
             catch (Exception ex)
             {
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Error opening Manifest: {ex.Message}");
-                await ShowErrorDialog("Error", $"Failed to open Manifest: {ex.Message}");
+                ShowErrorDialog("Error", $"Failed to open Manifest: {ex.Message}");
             }
         }
 
@@ -389,7 +389,7 @@ namespace DialogEditor.Views
         /// <summary>
         /// Show dialog when Manifest is not found with link to download.
         /// </summary>
-        private async Task ShowManifestNotFoundDialog()
+        private void ShowManifestNotFoundDialog()
         {
             var msgBox = new Window
             {
@@ -455,13 +455,13 @@ namespace DialogEditor.Views
             panel.Children.Add(okButton);
 
             msgBox.Content = panel;
-            await msgBox.ShowDialog(this);
+            msgBox.Show(this);  // Non-modal info dialog
         }
 
         /// <summary>
-        /// Show a simple error dialog.
+        /// Show a simple error dialog (non-modal).
         /// </summary>
-        private async Task ShowErrorDialog(string title, string message)
+        private void ShowErrorDialog(string title, string message)
         {
             var msgBox = new Window
             {
@@ -490,7 +490,7 @@ namespace DialogEditor.Views
             panel.Children.Add(okButton);
 
             msgBox.Content = panel;
-            await msgBox.ShowDialog(this);
+            msgBox.Show(this);  // Non-modal info dialog
         }
 
         private void OnOkClick(object? sender, RoutedEventArgs e)

@@ -146,7 +146,7 @@ namespace DialogEditor.Services
 
                 if (creatures.Count == 0)
                 {
-                    // Show helpful message with instructions
+                    // Show helpful message with instructions (non-modal)
                     var message = "No creatures found.\n\n" +
                                 "To use creature browser:\n" +
                                 "• Place .utc files in the same folder as your .dlg file, OR\n" +
@@ -166,7 +166,7 @@ namespace DialogEditor.Services
                         WindowStartupLocation = WindowStartupLocation.CenterOwner
                     };
 
-                    await msgBox.ShowDialog(owner);
+                    msgBox.Show(owner);  // Non-modal info dialog
 
                     _setStatusMessage("No creatures found - see message for details");
                     UnifiedLogger.LogApplication(LogLevel.WARN, "No creatures available for picker");
