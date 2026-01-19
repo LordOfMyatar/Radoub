@@ -15,6 +15,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.39] - 2026-01-18
+**Branch**: `radoub/issue-972` | **PR**: #986
+
+### Sprint: UI Uniformity - Browsers & TLK (#981)
+
+Parent Epic: #959 - UI Uniformity & Shared Infrastructure
+
+#### Work Items
+- [x] #970 - [Radoub.UI] Consolidate resource browsers (Script, Sound, Portrait)
+- [x] #971 - [Radoub.UI] Create shared ITlkService for multilingual support
+- [x] #972 - [Radoub.UI] Standardize image sizing and portrait handling
+
+#### Added (Radoub.UI - #970)
+- `IPortraitBrowserContext` interface for portrait browser integration
+  - `PortraitEntry` model with ID, ResRef, Race, Sex metadata
+  - `ListPortraits()` for portraits.2da enumeration
+  - `GetPortraitBitmap()` for portrait image loading
+  - `GetRaceName()` for race display name resolution
+- `ISoundBrowserContext` interface for sound browser integration
+  - `SoundEntry` model with ResRef, Source, IsMono, IsFromHak/Bif flags
+  - `ListSounds()` with source filtering (Override/HAK/BIF)
+  - `ExtractToTemp()` for archived sound playback
+  - `Play()`/`Stop()` for audio control
+- Note: Existing `IScriptBrowserContext` already in Radoub.UI serves as pattern
+
+#### Added (Radoub.UI - #971)
+- `ITlkService` interface for unified TLK string resolution
+  - Primary TLK (dialog.tlk) and Custom TLK (module/server) support
+  - `GetString()` - Resolve StrRef with automatic custom TLK routing
+  - `ResolveLocString()` - Full CExoLocString resolution with fallback chain
+  - `DetectAvailableLanguages()` - Scan game installation for languages
+  - `GetTlkPath()` - Find TLK file for specific language/gender
+- `TlkService` implementation with:
+  - Language selection (English, French, German, Italian, Spanish, Polish, Asian languages)
+  - Gender-aware string resolution (dialogf.tlk support)
+  - Embedded string priority over StrRef
+  - Fallback language chain (English → French → German → Italian → Spanish)
+- 28 new unit tests for TlkService
+
+#### Added (Radoub.UI - #972)
+- `ImageHelper` static service for consistent image/portrait handling
+  - Standard NWN portrait sizes: Tiny (32x40), Small (64x100), Medium (128x200), Large (256x400), Huge (512x800)
+  - `CalculateFitSize()` - Aspect-ratio-aware scaling to target bounds
+  - `CalculatePortraitSize()` - Calculate portrait height from width
+  - `GetNearestPortraitSize()` - Map arbitrary width to nearest standard size
+  - `ResizeBitmap()` / `ResizePortrait()` - High-quality SkiaSharp resize
+  - `GetMissingPortraitPlaceholder()` - Gray silhouette placeholder for missing portraits
+  - `IsValidBitmap()`, `GetAspectRatio()`, `IsPortraitAspect()` - Validation utilities
+- `Radoub.UI.Tests` project added to solution with 27 ImageHelper tests
+
+---
+
 ## [0.9.38] - 2026-01-18
 **Branch**: `radoub/issue-980` | **PR**: #985
 

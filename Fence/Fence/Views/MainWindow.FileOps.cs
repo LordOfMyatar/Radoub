@@ -258,8 +258,11 @@ public partial class MainWindow
         _currentStore.MaxBuyPrice = (MaxBuyPriceCheck.IsChecked ?? false) ? (int)(MaxBuyPriceBox.Value ?? 0) : -1;
         _currentStore.StoreGold = (LimitedGoldCheck.IsChecked ?? false) ? (int)(StoreGoldBox.Value ?? 0) : -1;
 
-        // Update category (PaletteID)
-        _currentStore.PaletteID = (byte)Math.Max(0, StoreCategoryBox.SelectedIndex);
+        // Update category (PaletteID) - use category ID from mapping, not dropdown index
+        var selectedCategoryIndex = Math.Max(0, StoreCategoryBox.SelectedIndex);
+        _currentStore.PaletteID = selectedCategoryIndex < _storeCategories.Count
+            ? _storeCategories[selectedCategoryIndex].Id
+            : (byte)0;
 
         // Update buy restrictions
         UpdateBuyRestrictions();
