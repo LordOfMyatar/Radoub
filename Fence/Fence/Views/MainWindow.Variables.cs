@@ -22,17 +22,32 @@ public partial class MainWindow
     /// </summary>
     private void PopulateVariables()
     {
+        // Unsubscribe from existing items
+        foreach (var vm in Variables)
+        {
+            vm.PropertyChanged -= OnVariablePropertyChanged;
+        }
+
         Variables.Clear();
 
         if (_currentStore == null) return;
 
         foreach (var variable in _currentStore.VarTable)
         {
-            Variables.Add(VariableViewModel.FromVariable(variable));
+            var vm = VariableViewModel.FromVariable(variable);
+            vm.PropertyChanged += OnVariablePropertyChanged;
+            Variables.Add(vm);
         }
 
         VariablesGrid.ItemsSource = Variables;
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {Variables.Count} local variables");
+    }
+
+    private void OnVariablePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        // Mark dirty when any variable property changes
+        _isDirty = true;
+        UpdateTitle();
     }
 
     /// <summary>
@@ -79,6 +94,7 @@ public partial class MainWindow
             IntValue = 0
         };
 
+        newVar.PropertyChanged += OnVariablePropertyChanged;
         Variables.Add(newVar);
         VariablesGrid.SelectedItem = newVar;
 
@@ -96,6 +112,7 @@ public partial class MainWindow
 
         foreach (var item in selectedItems)
         {
+            item.PropertyChanged -= OnVariablePropertyChanged;
             Variables.Remove(item);
         }
 

@@ -203,12 +203,27 @@
                                   AutomationProperties.AutomationId="VariablesGrid">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Name" Width="200" Binding="{Binding Name}"/>
-                                <DataGridTextColumn Header="Type" Width="100" Binding="{Binding TypeDisplay}" IsReadOnly="True"/>
-                                <!-- Int Value -->
+                                <DataGridTemplateColumn Header="Type" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding TypeDisplay}" VerticalAlignment="Center" Margin="4,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <ComboBox SelectedIndex="{Binding TypeIndex}" Margin="0">
+                                                <ComboBoxItem Content="Int"/>
+                                                <ComboBoxItem Content="Float"/>
+                                                <ComboBoxItem Content="String"/>
+                                                <ComboBoxItem Content="Object"/>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="Value" Width="*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding ValueDisplay}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding ValueDisplay}" VerticalAlignment="Center" Margin="4,0"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                     <DataGridTemplateColumn.CellEditingTemplate>
@@ -217,7 +232,7 @@
                                                 <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
                                                 <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.1" FormatString="F3"/>
                                                 <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
-                                                <TextBox Text="{Binding ObjectValue, StringFormat=0x{0:X8}}" IsVisible="{Binding IsObjectType}"/>
+                                                <TextBox Text="{Binding ObjectValueHex}" IsVisible="{Binding IsObjectType}" Watermark="0x00000000"/>
                                             </Grid>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>

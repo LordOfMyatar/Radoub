@@ -65,7 +65,36 @@ public class VariableViewModel : INotifyPropertyChanged
     public uint ObjectValue
     {
         get => _objectValue;
-        set { if (_objectValue != value) { _objectValue = value; OnPropertyChanged(); OnPropertyChanged(nameof(ValueDisplay)); } }
+        set { if (_objectValue != value) { _objectValue = value; OnPropertyChanged(); OnPropertyChanged(nameof(ValueDisplay)); OnPropertyChanged(nameof(ObjectValueHex)); } }
+    }
+
+    /// <summary>
+    /// Object value as hex string for TextBox binding with validation.
+    /// </summary>
+    public string ObjectValueHex
+    {
+        get => $"0x{ObjectValue:X8}";
+        set
+        {
+            if (TryParseHex(value, out var parsed))
+            {
+                ObjectValue = parsed;
+            }
+        }
+    }
+
+    private static bool TryParseHex(string input, out uint result)
+    {
+        result = 0;
+        if (string.IsNullOrWhiteSpace(input))
+            return false;
+
+        // Remove 0x or 0X prefix if present
+        var hex = input.Trim();
+        if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            hex = hex.Substring(2);
+
+        return uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out result);
     }
 
     /// <summary>
@@ -99,6 +128,39 @@ public class VariableViewModel : INotifyPropertyChanged
     public bool IsFloatType => Type == VariableType.Float;
     public bool IsStringType => Type == VariableType.String;
     public bool IsObjectType => Type == VariableType.Object;
+
+    /// <summary>
+    /// ComboBox index for type selection.
+    /// Maps: 0=Int, 1=Float, 2=String, 3=Object
+    /// </summary>
+    public int TypeIndex
+    {
+        get => Type switch
+        {
+            VariableType.Int => 0,
+            VariableType.Float => 1,
+            VariableType.String => 2,
+            VariableType.Object => 3,
+            _ => 0
+        };
+        set
+        {
+            var newType = value switch
+            {
+                0 => VariableType.Int,
+                1 => VariableType.Float,
+                2 => VariableType.String,
+                3 => VariableType.Object,
+                _ => VariableType.Int
+            };
+            if (Type != newType)
+            {
+                // Reset the value when type changes
+                Type = newType;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     /// <summary>
     /// Create a ViewModel from a Variable model.
