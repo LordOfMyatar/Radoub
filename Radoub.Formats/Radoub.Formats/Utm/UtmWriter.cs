@@ -89,6 +89,9 @@ public static class UtmWriter
         if (utm.WillNotBuy.Count > 0)
             AddBaseItemList(root, "WillNotBuy", utm.WillNotBuy);
 
+        // Local variables
+        VarTableHelper.WriteVarTable(root, utm.VarTable);
+
         return root;
     }
 

@@ -125,6 +125,14 @@ public class UtmFile
     /// Values are indices into baseitems.2da.
     /// </summary>
     public List<int> WillNotBuy { get; set; } = new();
+
+    // Local variables
+
+    /// <summary>
+    /// Local variables stored on this store.
+    /// Set via SetLocalInt/SetLocalFloat/SetLocalString script functions.
+    /// </summary>
+    public List<Variable> VarTable { get; set; } = new();
 }
 
 /// <summary>
