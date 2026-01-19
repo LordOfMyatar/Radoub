@@ -23,13 +23,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 
 #### Work Items
-- [ ] #960 - [Parley] Migrate to shared AboutWindow
-- [ ] #961 - [Quartermaster] Migrate to shared AboutWindow
-- [ ] #962 - [Fence] Migrate to shared AboutWindow
-- [ ] #963 - [Manifest] Migrate to shared AboutWindow
-- [ ] #964 - [Parley] Convert modal dialogs to non-modal
-- [ ] #965 - [Quartermaster] Convert DialogHelper to non-modal pattern
-- [ ] #966 - [Radoub.UI] Create centralized BrushManager for theme colors
+- [x] #960 - [Parley] Migrate to shared AboutWindow
+- [x] #961 - [Quartermaster] Migrate to shared AboutWindow
+- [x] #962 - [Fence] Migrate to shared AboutWindow
+- [x] #963 - [Manifest] Migrate to shared AboutWindow
+- [x] #964 - [Parley] Convert modal dialogs to non-modal
+- [x] #965 - [Quartermaster] Convert DialogHelper to non-modal pattern
+- [x] #966 - [Radoub.UI] Create centralized BrushManager for theme colors
 
 ---
 
