@@ -100,6 +100,11 @@
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
         </Style>
 
+        <!-- Issue #999: TabItem header text color for dark themes -->
+        <Style Selector="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+        </Style>
+
         <Style Selector="Label">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
