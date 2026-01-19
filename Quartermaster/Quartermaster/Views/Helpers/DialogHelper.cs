@@ -1,6 +1,9 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
+using Radoub.UI.Views;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Quartermaster.Views.Helpers;
@@ -60,10 +63,10 @@ public static class DialogHelper
     }
 
     /// <summary>
-    /// Shows an informational message dialog with a title and message.
+    /// Shows an informational message dialog with a title and message (non-modal).
     /// Supports longer messages with text wrapping.
     /// </summary>
-    public static async Task ShowMessageDialog(Window parent, string title, string message)
+    public static void ShowMessageDialog(Window parent, string title, string message)
     {
         var dialog = new Window
         {
@@ -89,13 +92,13 @@ public static class DialogHelper
         panel.Children.Add(button);
 
         dialog.Content = panel;
-        await dialog.ShowDialog(parent);
+        dialog.Show(parent);  // Non-modal info dialog
     }
 
     /// <summary>
-    /// Shows an error dialog with a title and message.
+    /// Shows an error dialog with a title and message (non-modal).
     /// </summary>
-    public static async Task ShowErrorDialog(Window parent, string title, string message)
+    public static void ShowErrorDialog(Window parent, string title, string message)
     {
         var dialog = new Window
         {
@@ -114,57 +117,51 @@ public static class DialogHelper
         panel.Children.Add(button);
 
         dialog.Content = panel;
-        await dialog.ShowDialog(parent);
+        dialog.Show(parent);  // Non-modal info dialog
     }
 
     /// <summary>
     /// Shows the About dialog for Quartermaster.
-    /// Uses Show() instead of ShowDialog() for non-blocking behavior.
+    /// Uses shared AboutWindow from Radoub.UI.
     /// </summary>
     public static void ShowAboutDialog(Window parent)
     {
-        var dialog = new Window
+        var aboutWindow = AboutWindow.Create(new AboutWindowConfig
         {
-            Title = "About Quartermaster",
-            Width = 350,
-            Height = 220,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
-
-        var panel = new StackPanel
-        {
-            Margin = new Avalonia.Thickness(20),
-            Spacing = 10,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
-        };
-
-        panel.Children.Add(new TextBlock
-        {
-            Text = "Quartermaster",
-            FontSize = GetTitleFontSize(),
-            FontWeight = Avalonia.Media.FontWeight.Bold
+            ToolName = "Quartermaster",
+            Subtitle = "Creature and Inventory Editor for Neverwinter Nights",
+            Version = GetVersionString(),
+            IconBitmap = new Avalonia.Media.Imaging.Bitmap(
+                Avalonia.Platform.AssetLoader.Open(
+                    new Uri("avares://Quartermaster/Assets/Quartermaster.ico")))
         });
-        panel.Children.Add(new TextBlock { Text = "Creature and Inventory Editor" });
-        panel.Children.Add(new TextBlock { Text = "for Neverwinter Nights" });
-        panel.Children.Add(new TextBlock { Text = "Version 0.1.3-alpha" });
-        panel.Children.Add(new TextBlock
-        {
-            Text = "Part of the Radoub Toolset",
-            Margin = new Avalonia.Thickness(0, 10, 0, 0)
-        });
+        aboutWindow.Show(parent);
+    }
 
-        var button = new Button
+    /// <summary>
+    /// Gets the version string from assembly metadata.
+    /// </summary>
+    private static string GetVersionString()
+    {
+        try
         {
-            Content = "OK",
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-            Margin = new Avalonia.Thickness(0, 10, 0, 0)
-        };
-        button.Click += (s, e) => dialog.Close();
-        panel.Children.Add(button);
+            var infoVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
-        dialog.Content = panel;
-        dialog.Show(parent);
+            if (!string.IsNullOrEmpty(infoVersion))
+            {
+                var plusIndex = infoVersion.IndexOf('+');
+                if (plusIndex > 0)
+                    infoVersion = infoVersion[..plusIndex];
+                return infoVersion;
+            }
+
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            if (version != null)
+                return $"{version.Major}.{version.Minor}.{version.Build}";
+        }
+        catch { }
+        return "1.0.0";
     }
 
     /// <summary>
@@ -233,17 +230,5 @@ public static class DialogHelper
         await dialog.ShowDialog(parent);
 
         return result;
-    }
-
-    /// <summary>
-    /// Gets the title font size from theme resources, with fallback.
-    /// </summary>
-    private static double GetTitleFontSize()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("FontSizeTitle", ThemeVariant.Default, out var size) == true
-            && size is double fontSize)
-            return fontSize;
-        return 24; // Default fallback
     }
 }

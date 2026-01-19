@@ -269,7 +269,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Opening settings window");
         var settingsWindow = new SettingsWindow();
-        settingsWindow.ShowDialog(_parentWindow);
+        settingsWindow.Show(_parentWindow);  // Non-modal settings window
     }
 
     [RelayCommand]
@@ -287,7 +287,7 @@ public partial class MainWindowViewModel : ObservableObject
             Version = version,
             AdditionalInfo = "Radoub Toolset includes:\nParley - Dialog Editor\nManifest - Journal Editor\nQuartermaster - Creature/Item Editor\nFence - Merchant Editor"
         });
-        aboutWindow.ShowDialog(_parentWindow);
+        aboutWindow.Show(_parentWindow);  // Non-modal about window
     }
 
     [RelayCommand]

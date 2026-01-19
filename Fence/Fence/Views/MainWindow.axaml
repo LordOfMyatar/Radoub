@@ -6,6 +6,7 @@
         x:Class="MerchantEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
         Title="Fence - Merchant Editor"
+        Icon="avares://Fence/Assets/fence.ico"
         Width="1200" Height="800"
         MinWidth="900" MinHeight="600"
         KeyDown="OnWindowKeyDown">

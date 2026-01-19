@@ -14,7 +14,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Reflection;
 using System.Threading;
+using Radoub.UI.Views;
 
 namespace MerchantEditor.Views;
 
@@ -414,29 +416,42 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnAboutClick(object? sender, RoutedEventArgs e)
     {
-        var aboutWindow = new Window
+        var aboutWindow = AboutWindow.Create(new AboutWindowConfig
         {
-            Title = "About Fence",
-            Width = 350,
-            Height = 200,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false,
-            Content = new StackPanel
-            {
-                Margin = new Thickness(20),
-                Spacing = 8,
-                Children =
-                {
-                    new TextBlock { Text = "Fence", FontSize = 24, FontWeight = Avalonia.Media.FontWeight.Bold },
-                    new TextBlock { Text = "Merchant Editor for Neverwinter Nights" },
-                    new TextBlock { Text = "Part of the Radoub Toolset" },
-                    new TextBlock { Text = "Version 0.9.31-alpha", Margin = new Thickness(0, 12, 0, 0) },
-                    new TextBlock { Text = "© 2025 LNS Development" }
-                }
-            }
-        };
+            ToolName = "Fence",
+            Subtitle = "Merchant Editor for Neverwinter Nights",
+            Version = GetVersionString(),
+            IconBitmap = new Avalonia.Media.Imaging.Bitmap(
+                Avalonia.Platform.AssetLoader.Open(
+                    new System.Uri("avares://Fence/Assets/fence.ico")))
+        });
+        aboutWindow.Show(this);
+    }
 
-        aboutWindow.Show(this); // Non-modal
+    /// <summary>
+    /// Gets the version string from assembly metadata.
+    /// </summary>
+    private static string GetVersionString()
+    {
+        try
+        {
+            var infoVersion = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+            if (!string.IsNullOrEmpty(infoVersion))
+            {
+                var plusIndex = infoVersion.IndexOf('+');
+                if (plusIndex > 0)
+                    infoVersion = infoVersion[..plusIndex];
+                return infoVersion;
+            }
+
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            if (version != null)
+                return $"{version.Major}.{version.Minor}.{version.Build}";
+        }
+        catch { }
+        return "1.0.0";
     }
 
     #endregion
