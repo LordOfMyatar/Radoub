@@ -22,19 +22,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Shared service for reading/writing local variables on GFF-based files.
 
-#### Scope
-- Read existing local variables from GFF VarTable structures
-- Write/update local variables to GFF structures
-- Support all variable types (int, float, string, location, object)
-- Delete variables by name
-- List all variables on a resource
+#### Added (Radoub.Formats)
+- `Variable` model class with `VariableType` enum (int, float, string, object, location)
+- `VariableLocation` model for location-type variables
+- `VarTableHelper` static class for VarTable read/write operations
+  - `ReadVarTable()`, `WriteVarTable()` - bulk operations
+  - `GetInt()`, `GetFloat()`, `GetString()`, `GetObjectId()`, `GetLocation()` - typed getters
+  - `SetInt()`, `SetFloat()`, `SetString()`, `SetObjectId()`, `SetLocation()` - typed setters
+  - `DeleteVariable()`, `HasVariable()`, `GetVariableNames()`, `ClearVariables()` - utilities
+- 48 unit tests for VarTableHelper
 
-#### First Implementation
-- #945 - Fence UTM variables (stores/merchants)
+#### Fixed (Radoub.Formats)
+- GffWriter now correctly handles nested Struct fields
+  - Struct index stored in DataOrDataOffset (not written to FieldData)
+  - Required for location-type variables to round-trip correctly
 
-#### Future Consumers
-- #946 - Quartermaster UTC variables (creatures)
-- #953 - Trebuchet IFO variables (modules)
+#### Changed (Radoub.Formats)
+- UtmFile now has `VarTable` property for local variables
+- UtmReader parses VarTable from UTM files
+- UtmWriter serializes VarTable to UTM files
+- 2 new UTM tests for VarTable parsing/round-trip
+
+#### Note
+- Fence UI for editing variables (#945) requires separate UI implementation
 
 ---
 
