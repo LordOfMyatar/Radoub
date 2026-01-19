@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Radoub.UI.Controls;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
 

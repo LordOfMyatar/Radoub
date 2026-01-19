@@ -288,6 +288,48 @@ Every tool should reference these shared libraries:
 
 **AboutWindow**: Use the universal `AboutWindow` from `Radoub.UI` - don't create tool-specific About dialogs.
 
+### Spell-Check Integration (Radoub.Dictionary)
+
+For tools with game-facing text (dialog, journal entries, descriptions), use `Radoub.Dictionary`:
+
+**User Dictionary Location**: `~/Radoub/Dictionaries/`
+- `custom.dic` - JSON format (programmatic)
+- `custom_dictionary.txt` - Text format (user-editable, one word per line)
+
+**Usage Pattern** (see Parley/Manifest for examples):
+
+```csharp
+// In App.axaml.cs or startup
+var dictionaryManager = new DictionaryManager();
+var spellChecker = new SpellChecker(dictionaryManager);
+await spellChecker.LoadBundledDictionaryAsync("en_US", loadNwnDictionary: true);
+
+// Load user's custom words
+var userDict = UserDictionaryService.Instance;
+foreach (var word in userDict.Words)
+{
+    dictionaryManager.AddWord(word);
+}
+
+// Check spelling
+if (!spellChecker.IsCorrect("wrod"))
+{
+    var suggestions = spellChecker.GetSuggestions("wrod");
+}
+
+// Add to custom dictionary
+userDict.AddWord("Waterdeep");
+```
+
+**Included Dictionaries**:
+- Hunspell `en_US` (bundled)
+- NWN/D&D terms (bundled)
+- User custom words (shared across all tools)
+
+**NWN-Specific Features**:
+- Token variables (`<FirstName>`, `<CUSTOM1016>`) are ignored during spell-check
+- D&D terminology pre-loaded (races, classes, spell names)
+
 ### Implementation Checklist
 
 **Day 1 Requirements** (before writing significant code):

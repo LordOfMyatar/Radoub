@@ -24,6 +24,11 @@ public class DictionarySettingsService
     /// </summary>
     public event EventHandler<DictionaryToggleEventArgs>? CustomDictionaryToggled;
 
+    /// <summary>
+    /// Event raised when spell-check is enabled or disabled.
+    /// </summary>
+    public event EventHandler<bool>? SpellCheckEnabledChanged;
+
     private DictionarySettingsService()
     {
         var userDictPath = DictionaryDiscovery.GetDefaultUserDictionaryPath();
@@ -85,6 +90,23 @@ public class DictionarySettingsService
                 _settings.PrimaryLanguage = value;
                 SaveSettings();
                 PrimaryLanguageChanged?.Invoke(this, value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets whether spell-checking is enabled globally.
+    /// </summary>
+    public bool SpellCheckEnabled
+    {
+        get => _settings.SpellCheckEnabled;
+        set
+        {
+            if (_settings.SpellCheckEnabled != value)
+            {
+                _settings.SpellCheckEnabled = value;
+                SaveSettings();
+                SpellCheckEnabledChanged?.Invoke(this, value);
             }
         }
     }
@@ -165,6 +187,11 @@ public class DictionarySettingsData
     /// Primary Hunspell language code (e.g., "en_US").
     /// </summary>
     public string PrimaryLanguage { get; set; } = "en_US";
+
+    /// <summary>
+    /// Whether spell-checking is enabled globally.
+    /// </summary>
+    public bool SpellCheckEnabled { get; set; } = true;
 
     /// <summary>
     /// List of disabled custom dictionary IDs.

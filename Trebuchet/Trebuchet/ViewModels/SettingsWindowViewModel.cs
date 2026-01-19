@@ -296,12 +296,24 @@ public partial class SettingsWindowViewModel : ObservableObject
         // Shared theme setting
         sharedSettings.UseSharedTheme = UseSharedTheme;
 
-        // Apply theme if changed
+        // Save and apply selected theme
         var selectedThemeInfo = ThemeManager.Instance.AvailableThemes
             .FirstOrDefault(t => t.Plugin.Name == SelectedTheme);
         if (selectedThemeInfo != null)
         {
-            ThemeManager.Instance.ApplyTheme(selectedThemeInfo.Plugin.Id);
+            var themeId = selectedThemeInfo.Plugin.Id;
+
+            // Save to local settings
+            localSettings.CurrentThemeId = themeId;
+
+            // If using shared themes and this is a universal theme, set it as shared
+            if (UseSharedTheme && themeId.StartsWith("org.radoub.theme."))
+            {
+                sharedSettings.SharedThemeId = themeId;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Set shared theme: {themeId}");
+            }
+
+            ThemeManager.Instance.ApplyTheme(themeId);
         }
 
         _window.Close();

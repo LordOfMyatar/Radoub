@@ -1,0 +1,61 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.radoub.theme.deuteranopia",
+    "name": "Deuteranopia (Red-Green Colorblind)",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Accessibility theme for deuteranopia (most common form of red-green colorblindness). Uses blue/orange palette.",
+    "type": "theme",
+    "tags": ["official", "accessibility", "colorblind", "deuteranopia"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "colorblind",
+    "condition": "deuteranopia",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#DDDDDD",
+    "sidebar": "#AAAAAA",
+    "text": "#000000",
+    "selection": "#0066CC",
+    "border": "#999999",
+    "accent": "#0066CC",
+    "error": "#CC3300",
+    "warning": "#996600",
+    "success": "#006699",
+    "info": "#0066CC",
+    "tree_entry": "#B35900",
+    "tree_reply": "#0066CC",
+    "tree_link": "#9933CC",
+    "title_bar": "#CCCCCC",
+    "title_bar_foreground": "#000000",
+    "button_primary": "#0066CC",
+    "button_secondary": "#666666",
+    "button_hover": "#004C99",
+    "edit_mode_border": "#0066CC",
+    "edit_mode_unsaved": "#B35900",
+    "edit_mode_saved": "#006699",
+    "auto_trim_border": "#0066CC",
+    "spelling_error": "#CC3300",
+    "speaker_1": "#0066CC",
+    "speaker_2": "#B35900",
+    "speaker_3": "#9933CC",
+    "speaker_4": "#006699",
+    "speaker_5": "#CC3300",
+    "speaker_6": "#6600CC"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28
+  }
+}

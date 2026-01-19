@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:Radoub.UI.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="MerchantEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -90,7 +91,7 @@
 
                     <!-- Row 0: Name, Tag, ResRef -->
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="StoreNameBox" AutomationProperties.AutomationId="StoreNameBox"/>
+                    <controls:SpellCheckTextBox Grid.Row="0" Grid.Column="1" x:Name="StoreNameBox" AutomationProperties.AutomationId="StoreNameBox"/>
 
                     <TextBlock Grid.Row="0" Grid.Column="3" Text="Tag:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBox Grid.Row="0" Grid.Column="4" x:Name="StoreTagBox" AutomationProperties.AutomationId="StoreTagBox"/>

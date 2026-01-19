@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using DialogEditor.Services;
+using Radoub.Dictionary;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Views.Controllers
@@ -65,7 +66,7 @@ namespace DialogEditor.Views.Controllers
             var spellCheckEnabledCheckBox = _window.FindControl<CheckBox>("SpellCheckEnabledCheckBox");
             if (spellCheckEnabledCheckBox != null)
             {
-                spellCheckEnabledCheckBox.IsChecked = settings.SpellCheckEnabled;
+                spellCheckEnabledCheckBox.IsChecked = DictionarySettingsService.Instance.SpellCheckEnabled;
             }
 
             // Flowchart node max lines (#813)
@@ -190,7 +191,7 @@ namespace DialogEditor.Views.Controllers
             var checkbox = sender as CheckBox;
             if (checkbox != null)
             {
-                SettingsService.Instance.SpellCheckEnabled = checkbox.IsChecked == true;
+                DictionarySettingsService.Instance.SpellCheckEnabled = checkbox.IsChecked == true;
             }
         }
 

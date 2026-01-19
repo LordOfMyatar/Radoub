@@ -38,6 +38,9 @@ public partial class App : Application
         // Record tool launch for easter egg tracking
         EasterEggService.Instance.RecordToolLaunch("Trebuchet");
 
+        // Copy bundled themes to shared folder so other tools can access them
+        CopyBundledThemesToSharedFolder();
+
         // Initialize and discover themes
         ThemeManager.Initialize("Trebuchet");
         ThemeManager.Instance.DiscoverThemes();
@@ -46,7 +49,7 @@ public partial class App : Application
         if (isSafeMode)
         {
             // SafeMode forces light theme
-            themeId = "org.trebuchet.theme.light";
+            themeId = "org.radoub.theme.light";
         }
         else
         {
@@ -56,7 +59,7 @@ public partial class App : Application
         if (!ThemeManager.Instance.ApplyTheme(themeId))
         {
             // Fallback to light theme
-            ThemeManager.Instance.ApplyTheme("org.trebuchet.theme.light");
+            ThemeManager.Instance.ApplyTheme("org.radoub.theme.light");
         }
 
         // Apply font overrides from settings
@@ -82,7 +85,7 @@ public partial class App : Application
     private void ApplySafeModeDefaults()
     {
         // Reset theme to light
-        SettingsService.Instance.CurrentThemeId = "org.trebuchet.theme.light";
+        SettingsService.Instance.CurrentThemeId = "org.radoub.theme.light";
 
         // Reset fonts to system defaults
         SettingsService.Instance.FontSize = SafeModeService.DefaultFontSize;
@@ -202,6 +205,58 @@ public partial class App : Application
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not register tool path: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Copy bundled themes to shared themes folder so other Radoub tools can access them.
+    /// Only copies themes with org.radoub.theme.* IDs (universal themes).
+    /// Existing files are overwritten to ensure users get latest theme updates.
+    /// </summary>
+    private static void CopyBundledThemesToSharedFolder()
+    {
+        try
+        {
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            var bundledThemesDir = Path.Combine(appDir, "Themes");
+            var sharedThemesDir = Radoub.Formats.Settings.RadoubSettings.Instance.GetSharedThemesPath();
+
+            if (!Directory.Exists(bundledThemesDir))
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "No bundled themes directory found");
+                return;
+            }
+
+            Directory.CreateDirectory(sharedThemesDir);
+
+            var copiedCount = 0;
+            foreach (var themeFile in Directory.GetFiles(bundledThemesDir, "*.json"))
+            {
+                try
+                {
+                    // Only copy universal themes (org.radoub.theme.*)
+                    var content = File.ReadAllText(themeFile);
+                    if (!content.Contains("\"org.radoub.theme."))
+                        continue;
+
+                    var destFile = Path.Combine(sharedThemesDir, Path.GetFileName(themeFile));
+                    File.Copy(themeFile, destFile, overwrite: true);
+                    copiedCount++;
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not copy theme {Path.GetFileName(themeFile)}: {ex.Message}");
+                }
+            }
+
+            if (copiedCount > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Copied {copiedCount} shared themes to {UnifiedLogger.SanitizePath(sharedThemesDir)}");
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not copy bundled themes: {ex.Message}");
         }
     }
 }

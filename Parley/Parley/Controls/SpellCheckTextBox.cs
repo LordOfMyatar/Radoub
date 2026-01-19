@@ -11,8 +11,8 @@ using Avalonia.VisualTree;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
-using DialogEditor.Services;
 using Radoub.Dictionary;
+using Radoub.UI.Services;
 using Avalonia.Layout;
 
 namespace DialogEditor.Controls
@@ -64,17 +64,23 @@ namespace DialogEditor.Controls
             };
             _spellCheckTimer.Tick += OnSpellCheckTimerTick;
 
-            // Subscribe to settings changes to immediately clear/show underlines
-            SettingsService.Instance.PropertyChanged += OnSettingsChanged;
+            // Subscribe to spell-check enabled changes
+            DictionarySettingsService.Instance.SpellCheckEnabledChanged += OnSpellCheckEnabledChanged;
+
+            // Subscribe to dictionary reloads for hot-swap support
+            SpellCheckService.Instance.DictionariesReloaded += OnDictionariesReloaded;
         }
 
-        private void OnSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void OnSpellCheckEnabledChanged(object? sender, bool isEnabled)
         {
-            if (e.PropertyName == nameof(SettingsService.SpellCheckEnabled))
-            {
-                // Immediately recheck spelling (will clear if disabled)
-                CheckSpelling();
-            }
+            // Immediately recheck spelling (will clear if disabled)
+            CheckSpelling();
+        }
+
+        private void OnDictionariesReloaded(object? sender, EventArgs e)
+        {
+            // Re-check spelling with new dictionaries
+            CheckSpelling();
         }
 
         protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -436,6 +442,10 @@ namespace DialogEditor.Controls
             base.OnUnloaded(e);
             _spellCheckTimer?.Stop();
             _spellCheckTimer = null;
+
+            // Unsubscribe from events
+            DictionarySettingsService.Instance.SpellCheckEnabledChanged -= OnSpellCheckEnabledChanged;
+            SpellCheckService.Instance.DictionariesReloaded -= OnDictionariesReloaded;
         }
     }
 

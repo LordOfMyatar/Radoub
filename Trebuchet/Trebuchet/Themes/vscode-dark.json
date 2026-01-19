@@ -1,0 +1,60 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.radoub.theme.vscode-dark",
+    "name": "VSCode Dark",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Faithful recreation of Visual Studio Code's popular dark theme",
+    "type": "theme",
+    "tags": ["official", "dark", "vscode"]
+  },
+  "base_theme": "Dark",
+  "accessibility": {
+    "type": "standard",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#1E1E1E",
+    "sidebar": "#252526",
+    "text": "#D4D4D4",
+    "selection": "#264F78",
+    "border": "#3E3E42",
+    "accent": "#007ACC",
+    "error": "#F14C4C",
+    "warning": "#CCA700",
+    "success": "#89D185",
+    "info": "#75BEFF",
+    "tree_entry": "#CE9178",
+    "tree_reply": "#9CDCFE",
+    "tree_link": "#858585",
+    "title_bar": "#3C3C3C",
+    "title_bar_foreground": "#CCCCCC",
+    "button_primary": "#0E639C",
+    "button_secondary": "#5F6A79",
+    "button_hover": "#1177BB",
+    "edit_mode_border": "#9CDCFE",
+    "edit_mode_unsaved": "#CE9178",
+    "edit_mode_saved": "#89D185",
+    "auto_trim_border": "#75BEFF",
+    "spelling_error": "#F14C4C",
+    "speaker_1": "#9CDCFE",
+    "speaker_2": "#C586C0",
+    "speaker_3": "#F48771",
+    "speaker_4": "#4EC9B0",
+    "speaker_5": "#DCDCAA",
+    "speaker_6": "#CE9178"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28
+  }
+}

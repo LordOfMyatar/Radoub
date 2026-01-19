@@ -13,6 +13,7 @@ using Manifest.Views;
 using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
+using SpellCheckService = Radoub.UI.Services.SpellCheckService;
 
 namespace Manifest;
 
@@ -53,7 +54,8 @@ public partial class App : Application
             themeId = SettingsService.Instance.CurrentThemeId;
         }
 
-        if (!ThemeManager.Instance.ApplyTheme(themeId))
+        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first
+        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId))
         {
             // Fallback to light theme
             ThemeManager.Instance.ApplyTheme("org.manifest.theme.light");
