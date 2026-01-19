@@ -23,9 +23,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 
 #### Work Items
-- [ ] #973 - [Radoub.Formats] Extract shared cache service pattern
+- [x] #973 - [Radoub.Formats] Extract shared cache service pattern
 - [ ] #974 - [Quartermaster] Implement caching for feats/spells/BioWare items
 - [ ] #975 - [Radoub] Standardize deferred loading patterns
+
+#### Added (Radoub.UI - #973)
+- `GameDataCacheService<T>` - Generic file-based caching service
+  - JSON serialization with compact format
+  - Automatic game path validation (invalidates cache when paths change)
+  - Version checking for cache format upgrades
+  - Methods: `HasValidCache()`, `LoadCache()`, `SaveCacheAsync()`, `ClearCache()`, `GetCacheInfo()`
+  - Cache stored at `~/Radoub/{ToolName}/{cacheName}_cache.json`
+- `CacheWrapper<T>` - Generic cache envelope with metadata
+- `CacheInfo` - Cache metadata for display in Settings UI
+
+#### Changed (Fence - #973)
+- `PaletteCacheService` now wraps shared `GameDataCacheService<CachedPaletteItem>`
+- Removed duplicate `CacheInfo` class (uses shared implementation)
 
 ---
 

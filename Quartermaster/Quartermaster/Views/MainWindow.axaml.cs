@@ -294,10 +294,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         UpdateRecentFilesMenu();
 
+        // Initialize caches for better performance
+        await InitializeCachesAsync();
+
         // Start loading game items in background immediately
         StartGameItemsLoad();
 
         await HandleStartupFileAsync();
+    }
+
+    private async Task InitializeCachesAsync()
+    {
+        if (_gameDataService.IsConfigured)
+        {
+            UpdateStatus("Loading game data caches...");
+            try
+            {
+                await _creatureDisplayService.InitializeCachesAsync();
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Game data caches initialized");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Cache initialization failed: {ex.Message}");
+            }
+            UpdateStatus("Ready");
+        }
     }
 
     private async Task HandleStartupFileAsync()

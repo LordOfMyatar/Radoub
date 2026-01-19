@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 
@@ -7,17 +8,82 @@ namespace Quartermaster.Services;
 
 /// <summary>
 /// Provides feat name lookups, categories, prerequisites, and class feat grants.
-/// Uses 2DA and TLK for game data resolution.
+/// Uses 2DA and TLK for game data resolution with caching for performance.
 /// </summary>
 public class FeatService
 {
     private readonly IGameDataService _gameDataService;
     private readonly SkillService _skillService;
+    private readonly FeatCacheService _cacheService;
+    private bool _cacheInitialized;
 
-    public FeatService(IGameDataService gameDataService, SkillService skillService)
+    public FeatService(IGameDataService gameDataService, SkillService skillService, FeatCacheService cacheService)
     {
         _gameDataService = gameDataService;
         _skillService = skillService;
+        _cacheService = cacheService;
+    }
+
+    /// <summary>
+    /// Initialize feat cache from disk or by scanning 2DA.
+    /// Call this early in application startup for best performance.
+    /// </summary>
+    public async Task InitializeCacheAsync()
+    {
+        if (_cacheInitialized)
+            return;
+
+        // Try to load from disk first
+        if (_cacheService.HasValidCache() && _cacheService.LoadCacheFromDisk())
+        {
+            _cacheInitialized = true;
+            return;
+        }
+
+        // Build cache from 2DA
+        await BuildCacheAsync();
+        _cacheInitialized = true;
+    }
+
+    /// <summary>
+    /// Build feat cache by scanning 2DA files.
+    /// </summary>
+    private async Task BuildCacheAsync()
+    {
+        var featIds = ScanAllFeatIds();
+        _cacheService.SetAllFeatIds(featIds);
+
+        // Cache basic feat info for all feats
+        foreach (var featId in featIds)
+        {
+            var entry = new CachedFeatEntry
+            {
+                FeatId = featId,
+                Name = LookupFeatName(featId),
+                Description = LookupFeatDescription(featId),
+                Category = (int)LookupFeatCategory(featId),
+                IsUniversal = LookupFeatUniversal(featId)
+            };
+            _cacheService.CacheFeat(entry);
+        }
+
+        // Save to disk for next time
+        await _cacheService.SaveCacheToDiskAsync();
+    }
+
+    /// <summary>
+    /// Get cache info for settings display.
+    /// </summary>
+    public Radoub.UI.Services.CacheInfo? GetCacheInfo() => _cacheService.GetCacheInfo();
+
+    /// <summary>
+    /// Clear and rebuild the cache.
+    /// </summary>
+    public async Task RebuildCacheAsync()
+    {
+        _cacheService.ClearCache();
+        _cacheInitialized = false;
+        await InitializeCacheAsync();
     }
 
     /// <summary>
@@ -25,7 +91,19 @@ public class FeatService
     /// </summary>
     public string GetFeatName(int featId)
     {
-        // Try 2DA/TLK lookup first
+        // Check cache first
+        if (_cacheService.TryGetFeat(featId, out var cached) && cached != null)
+            return cached.Name;
+
+        // Fallback to direct lookup
+        return LookupFeatName(featId);
+    }
+
+    /// <summary>
+    /// Direct 2DA/TLK lookup for feat name (bypasses cache).
+    /// </summary>
+    private string LookupFeatName(int featId)
+    {
         var strRef = _gameDataService.Get2DAValue("feat", featId, "FEAT");
         if (!string.IsNullOrEmpty(strRef) && strRef != "****")
         {
@@ -59,6 +137,19 @@ public class FeatService
     /// </summary>
     public FeatCategory GetFeatCategory(int featId)
     {
+        // Check cache first
+        if (_cacheService.TryGetFeat(featId, out var cached) && cached != null)
+            return (FeatCategory)cached.Category;
+
+        // Fallback to direct lookup
+        return LookupFeatCategory(featId);
+    }
+
+    /// <summary>
+    /// Direct 2DA lookup for feat category (bypasses cache).
+    /// </summary>
+    private FeatCategory LookupFeatCategory(int featId)
+    {
         var category = _gameDataService.Get2DAValue("feat", featId, "TOOLSCATEGORIES");
         if (!string.IsNullOrEmpty(category) && category != "****" && int.TryParse(category, out int catId))
         {
@@ -81,6 +172,19 @@ public class FeatService
     /// </summary>
     public string GetFeatDescription(int featId)
     {
+        // Check cache first
+        if (_cacheService.TryGetFeat(featId, out var cached) && cached != null)
+            return cached.Description;
+
+        // Fallback to direct lookup
+        return LookupFeatDescription(featId);
+    }
+
+    /// <summary>
+    /// Direct 2DA/TLK lookup for feat description (bypasses cache).
+    /// </summary>
+    private string LookupFeatDescription(int featId)
+    {
         var strRef = _gameDataService.Get2DAValue("feat", featId, "DESCRIPTION");
         if (!string.IsNullOrEmpty(strRef) && strRef != "****")
         {
@@ -96,6 +200,19 @@ public class FeatService
     /// </summary>
     public bool IsFeatUniversal(int featId)
     {
+        // Check cache first
+        if (_cacheService.TryGetFeat(featId, out var cached) && cached != null)
+            return cached.IsUniversal;
+
+        // Fallback to direct lookup
+        return LookupFeatUniversal(featId);
+    }
+
+    /// <summary>
+    /// Direct 2DA lookup for feat universal flag (bypasses cache).
+    /// </summary>
+    private bool LookupFeatUniversal(int featId)
+    {
         var allClassesCanUse = _gameDataService.Get2DAValue("feat", featId, "ALLCLASSESCANUSE");
         return allClassesCanUse == "1";
     }
@@ -104,6 +221,20 @@ public class FeatService
     /// Gets all valid feat IDs from feat.2da.
     /// </summary>
     public List<int> GetAllFeatIds()
+    {
+        // Check cache first
+        var cachedIds = _cacheService.GetAllFeatIds();
+        if (cachedIds != null && cachedIds.Count > 0)
+            return cachedIds;
+
+        // Fallback to direct scan
+        return ScanAllFeatIds();
+    }
+
+    /// <summary>
+    /// Direct 2DA scan for all feat IDs (bypasses cache).
+    /// </summary>
+    private List<int> ScanAllFeatIds()
     {
         var featIds = new List<int>();
 
@@ -148,6 +279,21 @@ public class FeatService
     /// Reads from cls_feat_*.2da files.
     /// </summary>
     public HashSet<int> GetClassGrantedFeatIds(int classId)
+    {
+        // Check cache first
+        if (_cacheService.TryGetClassGrantedFeats(classId, out var cached) && cached != null)
+            return cached;
+
+        // Lookup and cache
+        var result = LookupClassGrantedFeatIds(classId);
+        _cacheService.CacheClassGrantedFeats(classId, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Direct 2DA lookup for class granted feats (bypasses cache).
+    /// </summary>
+    private HashSet<int> LookupClassGrantedFeatIds(int classId)
     {
         var result = new HashSet<int>();
 
@@ -207,6 +353,21 @@ public class FeatService
     /// Unlike class feat tables, ALL feats in a racial feat table are automatically granted.
     /// </summary>
     public HashSet<int> GetRaceGrantedFeatIds(byte raceId)
+    {
+        // Check cache first
+        if (_cacheService.TryGetRaceGrantedFeats(raceId, out var cached) && cached != null)
+            return cached;
+
+        // Lookup and cache
+        var result = LookupRaceGrantedFeatIds(raceId);
+        _cacheService.CacheRaceGrantedFeats(raceId, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Direct 2DA lookup for race granted feats (bypasses cache).
+    /// </summary>
+    private HashSet<int> LookupRaceGrantedFeatIds(byte raceId)
     {
         var result = new HashSet<int>();
 
