@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.38] - 2026-01-18
-**Branch**: `radoub/issue-980` | **PR**: #TBD
+**Branch**: `radoub/issue-980` | **PR**: #985
 
 ### Sprint: UI Uniformity - Shared Utilities (#980)
 
