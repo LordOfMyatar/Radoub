@@ -234,6 +234,12 @@ public class AppearanceService
         // Normalize for comparison (portraits.2da uses lowercase)
         var normalizedResRef = resRef.ToLowerInvariant();
 
+        // BIC files store portrait with "po_" prefix (e.g., "po_hu_m_01_")
+        // portraits.2da stores BaseResRef WITHOUT the prefix (e.g., "hu_m_01_")
+        // Strip the "po_" prefix if present for matching
+        if (normalizedResRef.StartsWith("po_"))
+            normalizedResRef = normalizedResRef.Substring(3);
+
         for (int i = 0; i < 500; i++)
         {
             var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");

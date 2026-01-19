@@ -247,6 +247,9 @@ public partial class MainWindow
             TemplateResRef = "new_creature",
             Description = new CExoLocString { StrRef = 0xFFFFFFFF },
 
+            // Palette - Custom category (1) so creature appears in toolset palette
+            PaletteID = 1,
+
             // Basic info - Human male by default
             Race = 6, // Human (racialtypes.2da)
             Gender = 0, // Male
@@ -496,6 +499,29 @@ public partial class MainWindow
                 _currentCreature = bicFile.ToUtcFile(targetResRef);
                 _isBicFile = false;
                 wasConverted = true;
+
+                // ============================================================
+                // PORTRAIT FIX FOR AURORA TOOLSET (BIC → UTC)
+                // ============================================================
+                // BIC files use Portrait string (e.g., "po_hu_m_01_") with PortraitId=0
+                // Aurora Toolset shows "must specify valid portrait" error if PortraitId=0
+                // Look up the PortraitId from portraits.2da using the Portrait string
+                if (_currentCreature.PortraitId == 0 && !string.IsNullOrEmpty(_currentCreature.Portrait))
+                {
+                    var foundId = _creatureDisplayService.FindPortraitIdByResRef(_currentCreature.Portrait);
+                    if (foundId.HasValue)
+                    {
+                        _currentCreature.PortraitId = foundId.Value;
+                        UnifiedLogger.LogCreature(LogLevel.DEBUG,
+                            $"Portrait lookup: '{_currentCreature.Portrait}' → PortraitId {foundId.Value}");
+                    }
+                    else
+                    {
+                        UnifiedLogger.LogCreature(LogLevel.WARN,
+                            $"Portrait lookup failed: '{_currentCreature.Portrait}' not found in portraits.2da");
+                    }
+                }
+
                 UnifiedLogger.LogCreature(LogLevel.INFO, "Converted BIC to UTC format");
             }
             else

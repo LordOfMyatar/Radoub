@@ -47,7 +47,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Identity" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="15">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Race:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
@@ -82,6 +82,26 @@
                                         ToolTip.Tip="Browse portraits"
                                         AutomationProperties.AutomationId="BrowsePortraitButton"/>
                             </Grid>
+
+                            <!-- Portrait ID (row from portraits.2da) - UTC files use this -->
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Portrait ID:"
+                                       x:Name="PortraitIdLabel"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" x:Name="PortraitIdTextBox"
+                                     Width="80" HorizontalAlignment="Left"
+                                     AutomationProperties.AutomationId="PortraitIdTextBox"
+                                     ToolTip.Tip="Row number in portraits.2da (UTC files)"/>
+
+                            <!-- Portrait ResRef (string) - BIC files use this -->
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Portrait ResRef:"
+                                       x:Name="PortraitResRefLabel"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="5" Grid.Column="1" x:Name="PortraitResRefTextBox"
+                                     FontFamily="Consolas, Courier New, monospace"
+                                     AutomationProperties.AutomationId="PortraitResRefTextBox"
+                                     ToolTip.Tip="Portrait resource reference (BIC files). Example: po_hu_m_01_"/>
                         </Grid>
                     </StackPanel>
                 </Border>

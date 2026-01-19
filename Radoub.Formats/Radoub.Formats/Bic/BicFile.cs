@@ -87,6 +87,21 @@ public class BicFile : UtcFile
         // Creates one entry per character level with minimal data
         bic.LvlStatList = GenerateLvlStatList(bic);
 
+        // ============================================================
+        // PORTRAIT HANDLING (UTC → BIC)
+        // ============================================================
+        // BIC files use the Portrait string field (e.g., "po_hu_m_01_")
+        // PortraitId is typically 0 for player characters
+        // The Portrait string is what actually displays in-game
+        //
+        // If UTC has PortraitId but no Portrait string, we should preserve PortraitId
+        // (CopyBaseProperties already copied both fields)
+        // Only set a fallback if NEITHER is set
+        if (bic.PortraitId == 0 && string.IsNullOrEmpty(bic.Portrait))
+        {
+            bic.Portrait = "po_hu_m_99_";
+        }
+
         return bic;
     }
 
@@ -146,6 +161,15 @@ public class BicFile : UtcFile
         utc.FileType = "UTC ";
         utc.IsPC = false;
 
+        // Set PaletteID to Custom category (1) so creature appears in toolset palette
+        // BIC files don't use PaletteID so it's 0 by default; UTC needs a valid category
+        utc.PaletteID = 1;
+
+        // Set FactionID to Commoner (2) - friendly neutral faction
+        // BIC files may have FactionID=0 (PC) or other values that don't make sense for NPCs
+        // Standard factions: 0=PC, 1=Hostile, 2=Commoner, 3=Merchant, 4=Defender
+        utc.FactionID = 2;
+
         // Set blueprint name (TemplateResRef) - MUST match the saved filename
         // If target filename provided, use it; otherwise generate from first/last name
         if (!string.IsNullOrEmpty(targetResRef))
@@ -168,12 +192,25 @@ public class BicFile : UtcFile
         // BIC files don't have scripts (they inherit from module), so we set defaults for UTC
         SetDefaultScripts(utc);
 
-        // Ensure valid portrait
-        // If both PortraitId and Portrait string are empty, set a default
+        // ============================================================
+        // PORTRAIT HANDLING (BIC → UTC)
+        // ============================================================
+        // BIC files typically have:
+        //   - PortraitId = 0
+        //   - Portrait = "po_hu_m_01_" (the actual portrait string)
+        //
+        // UTC files can use either:
+        //   - PortraitId > 0 (references portraits.2da row)
+        //   - Portrait string (used when PortraitId = 0)
+        //
+        // CopyBaseProperties already copied both PortraitId and Portrait.
+        // The Portrait string from BIC IS the character's actual portrait.
+        // We preserve it as-is. Only set fallback if NEITHER field is set.
+        //
+        // Aurora Toolset shows "must specify valid portrait" if both are empty.
         if (utc.PortraitId == 0 && string.IsNullOrEmpty(utc.Portrait))
         {
-            // Default to hu_m_99_ (generic human male sword portrait)
-            utc.Portrait = "hu_m_99_";
+            utc.Portrait = "po_hu_m_99_";
         }
 
         return utc;

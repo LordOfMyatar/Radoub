@@ -67,6 +67,17 @@
                                          AutomationProperties.AutomationId="CommentTextBox"
                                          Watermark="Developer notes..."/>
                             </Grid>
+
+                            <!-- Palette Category (UTC only - hidden for BIC) -->
+                            <Grid x:Name="PaletteCategoryRow" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                <TextBlock Grid.Column="0" Text="Palette Category:"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center" Width="100"/>
+                                <ComboBox Grid.Column="1" x:Name="PaletteCategoryComboBox"
+                                          HorizontalAlignment="Left" MinWidth="250"
+                                          AutomationProperties.AutomationId="PaletteCategoryComboBox"
+                                          ToolTip.Tip="Category where creature appears in Aurora Toolset palette"/>
+                            </Grid>
                         </StackPanel>
                     </StackPanel>
                 </Border>

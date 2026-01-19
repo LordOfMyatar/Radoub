@@ -413,6 +413,45 @@ public class BicReaderTests
     }
 
     [Fact]
+    public void FromUtcFile_PreservesPortraitString()
+    {
+        // UTC has Portrait string set - should preserve it
+        var utc = CreateTestUtcFile();
+        utc.PortraitId = 0;
+        utc.Portrait = "po_el_f_03_";
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.Equal("po_el_f_03_", bic.Portrait);
+    }
+
+    [Fact]
+    public void FromUtcFile_PreservesPortraitId()
+    {
+        // UTC has PortraitId set - should preserve it
+        var utc = CreateTestUtcFile();
+        utc.PortraitId = 42;
+        utc.Portrait = "";
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.Equal(42, bic.PortraitId);
+    }
+
+    [Fact]
+    public void FromUtcFile_SetsDefaultPortraitWhenBothEmpty()
+    {
+        // UTC has neither - should set default
+        var utc = CreateTestUtcFile();
+        utc.PortraitId = 0;
+        utc.Portrait = "";
+
+        var bic = BicFile.FromUtcFile(utc);
+
+        Assert.Equal("po_hu_m_99_", bic.Portrait);
+    }
+
+    [Fact]
     public void FromUtcFile_RoundTrip_ProducesValidBicFile()
     {
         var utc = CreateTestUtcFile();
@@ -452,6 +491,155 @@ public class BicReaderTests
         utc.FirstName.SetString(0, "Test");
         utc.ClassList.Add(new Utc.CreatureClass { Class = 0, ClassLevel = 1 });
         return utc;
+    }
+
+    #endregion
+
+    #region BIC to UTC Conversion Tests
+
+    [Fact]
+    public void ToUtcFile_SetsPaletteIdToCustomCategory()
+    {
+        var bic = CreateTestBicFile();
+
+        var utc = bic.ToUtcFile("test_creature");
+
+        // PaletteID 1 = Custom category in creature palette
+        Assert.Equal((byte)1, utc.PaletteID);
+    }
+
+    [Fact]
+    public void ToUtcFile_SetsTemplateResRefFromParameter()
+    {
+        var bic = CreateTestBicFile();
+
+        var utc = bic.ToUtcFile("my_test_npc");
+
+        Assert.Equal("my_test_npc", utc.TemplateResRef);
+    }
+
+    [Fact]
+    public void ToUtcFile_TruncatesLongTemplateResRef()
+    {
+        var bic = CreateTestBicFile();
+
+        var utc = bic.ToUtcFile("very_long_creature_name_that_exceeds_limit");
+
+        // TemplateResRef is limited to 16 characters
+        Assert.Equal(16, utc.TemplateResRef.Length);
+        Assert.Equal("very_long_creatu", utc.TemplateResRef);
+    }
+
+    [Fact]
+    public void ToUtcFile_SetsIsPcFalse()
+    {
+        var bic = CreateTestBicFile();
+        Assert.True(bic.IsPC);
+
+        var utc = bic.ToUtcFile();
+
+        Assert.False(utc.IsPC);
+    }
+
+    [Fact]
+    public void ToUtcFile_SetsDefaultScripts()
+    {
+        var bic = CreateTestBicFile();
+
+        var utc = bic.ToUtcFile();
+
+        // Should have default NWN OC scripts set
+        Assert.Equal("nw_c2_default5", utc.ScriptAttacked);
+        Assert.Equal("nw_c2_default6", utc.ScriptDamaged);
+        Assert.Equal("nw_c2_default7", utc.ScriptDeath);
+        Assert.Equal("nw_c2_default1", utc.ScriptHeartbeat);
+    }
+
+    [Fact]
+    public void ToUtcFile_CopiesAbilityScores()
+    {
+        var bic = CreateTestBicFile();
+        bic.Str = 18;
+        bic.Dex = 16;
+        bic.Con = 14;
+        bic.Int = 12;
+        bic.Wis = 10;
+        bic.Cha = 8;
+
+        var utc = bic.ToUtcFile();
+
+        Assert.Equal(18, utc.Str);
+        Assert.Equal(16, utc.Dex);
+        Assert.Equal(14, utc.Con);
+        Assert.Equal(12, utc.Int);
+        Assert.Equal(10, utc.Wis);
+        Assert.Equal(8, utc.Cha);
+    }
+
+    [Fact]
+    public void ToUtcFile_PreservesPortraitString()
+    {
+        // BIC files typically have PortraitId=0 and use Portrait string
+        // The Portrait string should be preserved during conversion
+        var bic = CreateTestBicFile();
+        bic.PortraitId = 0;
+        bic.Portrait = "po_hu_m_01_";
+
+        var utc = bic.ToUtcFile();
+
+        // Portrait string should be preserved - this is the actual character portrait
+        Assert.Equal("po_hu_m_01_", utc.Portrait);
+        // PortraitId stays 0 when Portrait string is set
+        Assert.Equal(0, utc.PortraitId);
+    }
+
+    [Fact]
+    public void ToUtcFile_SetsDefaultPortraitWhenBothEmpty()
+    {
+        // If both PortraitId=0 and Portrait is empty, set a default
+        var bic = CreateTestBicFile();
+        bic.PortraitId = 0;
+        bic.Portrait = "";
+
+        var utc = bic.ToUtcFile();
+
+        // Should set a default portrait string
+        Assert.Equal("po_hu_m_99_", utc.Portrait);
+    }
+
+    [Fact]
+    public void ToUtcFile_PreservesNonZeroPortraitId()
+    {
+        var bic = CreateTestBicFile();
+        bic.PortraitId = 42;
+
+        var utc = bic.ToUtcFile();
+
+        Assert.Equal(42, utc.PortraitId);
+    }
+
+    private static BicFile CreateTestBicFile()
+    {
+        var bic = new BicFile
+        {
+            Str = 10,
+            Dex = 10,
+            Con = 10,
+            Int = 10,
+            Wis = 10,
+            Cha = 10,
+            Race = 6, // Human
+            Gender = 0,
+            HitPoints = 8,
+            MaxHitPoints = 8,
+            CurrentHitPoints = 8,
+            Age = 25,
+            Experience = 0,
+            Gold = 0
+        };
+        bic.FirstName.SetString(0, "TestPC");
+        bic.ClassList.Add(new Utc.CreatureClass { Class = 0, ClassLevel = 1 });
+        return bic;
     }
 
     #endregion
