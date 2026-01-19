@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.36] - 2026-01-18
-**Branch**: `radoub/issue-954` | **PR**: #TBD
+**Branch**: `radoub/issue-954` | **PR**: #955
 
 ### Feature: Variable Setting Service for GFF Files (#954)
 
