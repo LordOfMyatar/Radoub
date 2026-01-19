@@ -10,6 +10,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.2-alpha] - 2026-01-18
+**Branch**: `radoub/issue-954` | **PR**: #955
+
+### Sprint: Local Variables UI (#954)
+
+#### Added
+- **Local Variables panel** - View and edit store VarTable entries (int, float, string types)
+- **Item palette caching** - Palette items cached to `~/Radoub/Fence/palette_cache.json` for faster startup
+- **Cache management UI** - Settings → Cache tab shows cache info and "Clear and Reload Cache" button
+- **First-launch notification** - Shows popup when building cache for first time
+- **Creature item filtering** - Creature weapons (bite, claw, gore) excluded from palette
+- **Async store inventory loading** - Store items load on background thread to avoid UI freeze
+
+#### Fixed
+- Float precision - Values rounded to 3 decimal places to match Aurora Engine typical precision
+- Recent files menu async loading - No longer blocks UI on network paths
+- Ctrl+S keyboard shortcut now works correctly
+
+### Known Issues
+- **Float precision display in Aurora Toolset** - Float values like `0.1` display as `0.100000001490116` in the BioWare toolset. This is an IEEE 754 binary floating-point limitation, not a Fence bug. Values like 0.1 cannot be represented exactly in binary. The toolset shows the raw float bits. Workaround: use binary-exact values (0.125, 0.25, 0.5) or store percentages as integers.
+
+---
+
 ## [0.1.1-alpha] - 2026-01-17
 **Branch**: `fence/issue-911` | **PR**: #944
 

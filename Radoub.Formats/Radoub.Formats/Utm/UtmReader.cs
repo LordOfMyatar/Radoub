@@ -89,6 +89,9 @@ public static class UtmReader
         ParseWillOnlyBuy(root, utm);
         ParseWillNotBuy(root, utm);
 
+        // Local variables
+        utm.VarTable = VarTableHelper.ReadVarTable(root);
+
         return utm;
     }
 

@@ -225,6 +225,37 @@ public class UtmReaderTests
         Assert.Equal("Unknown (99)", StorePanels.GetPanelName(99));
     }
 
+    [Fact]
+    public void Read_UtmWithVarTable_ParsesVariables()
+    {
+        var buffer = CreateUtmWithVariables();
+
+        var utm = UtmReader.Read(buffer);
+
+        Assert.Equal(3, utm.VarTable.Count);
+        Assert.Contains(utm.VarTable, v => v.Name == "TestInt" && v.Type == VariableType.Int && v.GetInt() == 42);
+        Assert.Contains(utm.VarTable, v => v.Name == "TestFloat" && v.Type == VariableType.Float);
+        Assert.Contains(utm.VarTable, v => v.Name == "TestString" && v.Type == VariableType.String && v.GetString() == "Hello");
+    }
+
+    [Fact]
+    public void RoundTrip_UtmWithVariables_PreservesVariables()
+    {
+        var original = CreateUtmWithVariables();
+
+        var utm = UtmReader.Read(original);
+        var written = UtmWriter.Write(utm);
+        var utm2 = UtmReader.Read(written);
+
+        Assert.Equal(utm.VarTable.Count, utm2.VarTable.Count);
+        foreach (var v1 in utm.VarTable)
+        {
+            var v2 = utm2.VarTable.FirstOrDefault(v => v.Name == v1.Name);
+            Assert.NotNull(v2);
+            Assert.Equal(v1.Type, v2.Type);
+        }
+    }
+
     #region Test Helpers
 
     private static byte[] CreateMinimalUtmFile()
@@ -412,6 +443,48 @@ public class UtmReaderTests
         return GffWriter.Write(gff);
     }
 
+    private static byte[] CreateUtmWithVariables()
+    {
+        var gff = CreateGffFileWithType("UTM ");
+        var root = gff.RootStruct;
+
+        AddCResRefField(root, "ResRef", "test_store");
+
+        // Add VarTable with 3 variables
+        var varTable = new GffList();
+
+        // Int variable
+        var intVar = new GffStruct { Type = 0 };
+        AddCExoStringField(intVar, "Name", "TestInt");
+        AddDwordField(intVar, "Type", 1); // VariableType.Int
+        AddIntField(intVar, "Value", 42);
+        varTable.Elements.Add(intVar);
+
+        // Float variable
+        var floatVar = new GffStruct { Type = 0 };
+        AddCExoStringField(floatVar, "Name", "TestFloat");
+        AddDwordField(floatVar, "Type", 2); // VariableType.Float
+        AddFloatField(floatVar, "Value", 3.14f);
+        varTable.Elements.Add(floatVar);
+
+        // String variable
+        var stringVar = new GffStruct { Type = 0 };
+        AddCExoStringField(stringVar, "Name", "TestString");
+        AddDwordField(stringVar, "Type", 3); // VariableType.String
+        AddCExoStringField(stringVar, "Value", "Hello");
+        varTable.Elements.Add(stringVar);
+
+        varTable.Count = 3;
+        root.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "VarTable",
+            Value = varTable
+        });
+
+        return GffWriter.Write(gff);
+    }
+
     private static void AddEmptyItemList(GffStruct panelStruct)
     {
         var itemList = new GffList { Count = 0 };
@@ -479,6 +552,26 @@ public class UtmReaderTests
         parent.Fields.Add(new GffField
         {
             Type = GffField.INT,
+            Label = label,
+            Value = value
+        });
+    }
+
+    private static void AddDwordField(GffStruct parent, string label, uint value)
+    {
+        parent.Fields.Add(new GffField
+        {
+            Type = GffField.DWORD,
+            Label = label,
+            Value = value
+        });
+    }
+
+    private static void AddFloatField(GffStruct parent, string label, float value)
+    {
+        parent.Fields.Add(new GffField
+        {
+            Type = GffField.FLOAT,
             Label = label,
             Value = value
         });

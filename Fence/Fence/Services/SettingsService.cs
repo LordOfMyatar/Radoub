@@ -265,6 +265,29 @@ public class SettingsService : INotifyPropertyChanged
             _recentFiles.RemoveAt(_recentFiles.Count - 1);
     }
 
+    /// <summary>
+    /// Validate recent files asynchronously and remove missing ones.
+    /// Call this when populating the recent files menu to avoid blocking on network paths.
+    /// </summary>
+    public async System.Threading.Tasks.Task ValidateRecentFilesAsync()
+    {
+        var missingFiles = await System.Threading.Tasks.Task.Run(() =>
+        {
+            return _recentFiles.Where(f => !File.Exists(f)).ToList();
+        });
+
+        if (missingFiles.Count > 0)
+        {
+            foreach (var file in missingFiles)
+            {
+                _recentFiles.Remove(file);
+            }
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {missingFiles.Count} missing files from recent files list");
+            OnPropertyChanged(nameof(RecentFiles));
+            SaveSettings();
+        }
+    }
+
     private void LoadSettings()
     {
         try
@@ -306,13 +329,8 @@ public class SettingsService : INotifyPropertyChanged
                         ? settings.MaxRecentFiles
                         : DefaultMaxRecentFiles;
 
-                    // Remove files that no longer exist (with logging)
-                    var removedCount = _recentFiles.RemoveAll(f => !File.Exists(f));
-                    if (removedCount > 0)
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {removedCount} missing files from recent files list");
-                    }
-
+                    // File existence validation is deferred to ValidateRecentFilesAsync()
+                    // to avoid blocking on network paths during startup
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentFiles.Count} recent files, max={_maxRecentFiles}");
                 }
             }

@@ -15,6 +15,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.36] - 2026-01-18
+**Branch**: `radoub/issue-954` | **PR**: #955
+
+### Feature: Variable Setting Service for GFF Files (#954)
+
+Shared service for reading/writing local variables on GFF-based files.
+
+#### Added (Radoub.Formats)
+- `Variable` model class with `VariableType` enum (int, float, string, object, location)
+- `VariableLocation` model for location-type variables
+- `VarTableHelper` static class for VarTable read/write operations
+  - `ReadVarTable()`, `WriteVarTable()` - bulk operations
+  - `GetInt()`, `GetFloat()`, `GetString()`, `GetObjectId()`, `GetLocation()` - typed getters
+  - `SetInt()`, `SetFloat()`, `SetString()`, `SetObjectId()`, `SetLocation()` - typed setters
+  - `DeleteVariable()`, `HasVariable()`, `GetVariableNames()`, `ClearVariables()` - utilities
+- 48 unit tests for VarTableHelper
+
+#### Fixed (Radoub.Formats)
+- GffWriter now correctly handles nested Struct fields
+  - Struct index stored in DataOrDataOffset (not written to FieldData)
+  - Required for location-type variables to round-trip correctly
+
+#### Changed (Radoub.Formats)
+- UtmFile now has `VarTable` property for local variables
+- UtmReader parses VarTable from UTM files
+- UtmWriter serializes VarTable to UTM files
+- 2 new UTM tests for VarTable parsing/round-trip
+
+#### Added (Fence - #945)
+- Local Variables panel in MainWindow (collapsible Expander)
+- `VariableViewModel` for UI binding with type-specific value editing
+- `MainWindow.Variables.cs` partial class for variable operations
+- Add/Remove variable buttons with DataGrid editing
+- Variables load/save with UTM files
+
+---
+
 ## [0.9.35] - 2026-01-17
 **Branch**: `radoub/issue-907` | **PR**: #939
 

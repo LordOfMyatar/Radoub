@@ -60,6 +60,8 @@
                 <RowDefinition Height="Auto"/>
                 <!-- Buy Restrictions (collapsible) -->
                 <RowDefinition Height="Auto"/>
+                <!-- Local Variables (collapsible) -->
+                <RowDefinition Height="Auto"/>
                 <!-- Inventory and Palette -->
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
@@ -177,8 +179,70 @@
                 </Border>
             </Expander>
 
+            <!-- Local Variables Panel -->
+            <Expander Grid.Row="2" Header="Local Variables" IsExpanded="False" Margin="0,0,0,8"
+                      AutomationProperties.AutomationId="VariablesExpander">
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
+                    <DockPanel>
+                        <!-- Action Buttons -->
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                            <Button Content="Add Variable" Click="OnAddVariable" AutomationProperties.AutomationId="AddVariableButton"/>
+                            <Button Content="Remove" Click="OnRemoveVariable" AutomationProperties.AutomationId="RemoveVariableButton"/>
+                        </StackPanel>
+
+                        <!-- Variables DataGrid -->
+                        <DataGrid x:Name="VariablesGrid"
+                                  AutoGenerateColumns="False"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  IsReadOnly="False"
+                                  SelectionMode="Extended"
+                                  GridLinesVisibility="Horizontal"
+                                  MaxHeight="200"
+                                  AutomationProperties.AutomationId="VariablesGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Width="200" Binding="{Binding Name}"/>
+                                <DataGridTemplateColumn Header="Type" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding TypeDisplay}" VerticalAlignment="Center" Margin="4,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <ComboBox SelectedIndex="{Binding TypeIndex}" Margin="0">
+                                                <ComboBoxItem Content="Int"/>
+                                                <ComboBoxItem Content="Float"/>
+                                                <ComboBoxItem Content="String"/>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Value" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ValueDisplay}" VerticalAlignment="Center" Margin="4,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
+                                                <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.001" FormatString="F3"/>
+                                                <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Expander>
+
             <!-- Store Inventory and Item Palette -->
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <!-- Store Inventory -->
                     <ColumnDefinition Width="*" MinWidth="300"/>
@@ -273,7 +337,7 @@
                                 <!-- Source Filter -->
                                 <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
                                     <CheckBox x:Name="StandardItemsCheck" Content="Standard" IsChecked="True" Margin="0,0,12,0" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="StandardItemsCheck"/>
-                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="True" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="CustomItemsCheck"/>
+                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="False" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="CustomItemsCheck"/>
                                 </WrapPanel>
 
                                 <!-- Type Filter -->

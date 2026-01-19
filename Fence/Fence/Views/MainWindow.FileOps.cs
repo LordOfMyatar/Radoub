@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using MerchantEditor.Services;
+using MerchantEditor.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utm;
 using System;
@@ -43,6 +44,7 @@ public partial class MainWindow
         // Update UI
         PopulateStoreProperties();
         StoreItems.Clear();
+        Variables.Clear();
         UpdateStatusBar("New store created");
         UpdateTitle();
         UpdateItemCount();
@@ -83,10 +85,10 @@ public partial class MainWindow
             // Update item resolution service with current file context for module-local items
             _itemResolutionService.SetCurrentFilePath(filePath);
 
-            // Update UI
+            // Update UI - properties and variables are fast
             PopulateStoreProperties();
-            PopulateStoreInventory();
-            UpdateStatusBar($"Loaded: {Path.GetFileName(filePath)}");
+            PopulateVariables();
+            UpdateStatusBar($"Loading items...");
             UpdateTitle();
 
             // Add to recent files
@@ -95,13 +97,74 @@ public partial class MainWindow
 
             OnPropertyChanged(nameof(HasFile));
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded store: {UnifiedLogger.SanitizePath(filePath)}");
+            // Load inventory async to avoid blocking UI during item resolution
+            _ = PopulateStoreInventoryAsync(filePath);
         }
         catch (Exception ex)
         {
             ShowError($"Failed to load file: {ex.Message}");
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load store: {ex.Message}");
         }
+    }
+
+    private async System.Threading.Tasks.Task PopulateStoreInventoryAsync(string filePath)
+    {
+        if (_currentStore == null) return;
+
+        var markUp = 100;
+        var markDown = 50;
+
+        // Get markup values from UI thread
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            markUp = (int)(SellMarkupBox.Value ?? 100);
+            markDown = (int)(BuyMarkdownBox.Value ?? 50);
+        });
+
+        // Collect all items to resolve
+        var itemsToResolve = _currentStore.StoreList
+            .SelectMany(panel => panel.Items.Select(item => new { item, panel.PanelId }))
+            .ToList();
+
+        // Resolve items on background thread
+        var resolvedItems = await System.Threading.Tasks.Task.Run(() =>
+        {
+            var results = new System.Collections.Generic.List<StoreItemViewModel>();
+
+            foreach (var entry in itemsToResolve)
+            {
+                var resolved = _itemResolutionService.ResolveItem(entry.item.InventoryRes);
+
+                results.Add(new StoreItemViewModel
+                {
+                    ResRef = entry.item.InventoryRes,
+                    Tag = resolved?.Tag ?? entry.item.InventoryRes,
+                    DisplayName = resolved?.DisplayName ?? entry.item.InventoryRes,
+                    Infinite = entry.item.Infinite,
+                    PanelId = entry.PanelId,
+                    BaseItemType = resolved?.BaseItemTypeName ?? "Unknown",
+                    SellPrice = resolved?.CalculateSellPrice(markUp) ?? 0,
+                    BuyPrice = resolved?.CalculateBuyPrice(markDown) ?? 0
+                });
+            }
+
+            return results;
+        });
+
+        // Update UI on main thread
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            StoreItems.Clear();
+            foreach (var item in resolvedItems)
+            {
+                StoreItems.Add(item);
+            }
+            StoreInventoryGrid.ItemsSource = StoreItems;
+            UpdateItemCount();
+            UpdateStatusBar($"Loaded: {Path.GetFileName(filePath)}");
+        });
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded store: {UnifiedLogger.SanitizePath(filePath)} ({resolvedItems.Count} items)");
     }
 
     private async void OnSaveClick(object? sender, RoutedEventArgs e)
@@ -201,6 +264,9 @@ public partial class MainWindow
         // Update buy restrictions
         UpdateBuyRestrictions();
 
+        // Update local variables from view model
+        UpdateVarTable();
+
         // Update inventory from view model
         _currentStore.StoreList.Clear();
         var groupedItems = StoreItems.GroupBy(i => i.PanelId);
@@ -229,6 +295,7 @@ public partial class MainWindow
         _itemResolutionService.SetCurrentFilePath(null);
 
         StoreItems.Clear();
+        Variables.Clear();
         ClearStoreProperties();
         UpdateStatusBar("Ready");
         UpdateTitle();
@@ -270,6 +337,15 @@ public partial class MainWindow
 
     private void UpdateRecentFilesMenu()
     {
+        // Populate menu immediately with current list
+        PopulateRecentFilesMenuItems();
+
+        // Background validation disabled - was causing crashes
+        // _ = ValidateAndRefreshRecentFilesAsync();
+    }
+
+    private void PopulateRecentFilesMenuItems()
+    {
         RecentFilesMenu.Items.Clear();
 
         var recentFiles = SettingsService.Instance.RecentFiles;
@@ -303,11 +379,30 @@ public partial class MainWindow
         RecentFilesMenu.Items.Add(clearItem);
     }
 
-    private void OnRecentFileClick(object? sender, RoutedEventArgs e)
+    private async System.Threading.Tasks.Task ValidateAndRefreshRecentFilesAsync()
+    {
+        var countBefore = SettingsService.Instance.RecentFiles.Count;
+        await SettingsService.Instance.ValidateRecentFilesAsync();
+        var countAfter = SettingsService.Instance.RecentFiles.Count;
+
+        // Refresh menu if files were removed - must be on UI thread
+        if (countAfter < countBefore)
+        {
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                PopulateRecentFilesMenuItems();
+            });
+        }
+    }
+
+    private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
     {
         if (sender is MenuItem item && item.Tag is string filePath)
         {
-            if (File.Exists(filePath))
+            // Check file existence on background thread to avoid blocking on network paths
+            var exists = await System.Threading.Tasks.Task.Run(() => File.Exists(filePath));
+
+            if (exists)
             {
                 LoadFile(filePath);
             }
@@ -315,7 +410,7 @@ public partial class MainWindow
             {
                 ShowError($"File not found: {filePath}");
                 SettingsService.Instance.RemoveRecentFile(filePath);
-                UpdateRecentFilesMenu();
+                PopulateRecentFilesMenuItems();
             }
         }
     }
