@@ -4,6 +4,7 @@ using Avalonia.Threading;
 using DialogEditor.Models;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.UI.Utils;
 using Parley.Models;
 
 namespace DialogEditor.ViewModels
@@ -107,8 +108,8 @@ namespace DialogEditor.ViewModels
         public bool ClipboardWasCut => _clipboardService.WasCutOperation;
 
         public string WindowTitle => CurrentFileName != null
-            ? $"Parley v{Utils.VersionHelper.FullVersion} - {System.IO.Path.GetFileName(CurrentFileName)}{(HasUnsavedChanges ? "*" : "")}"
-            : $"Parley v{Utils.VersionHelper.FullVersion}";
+            ? $"Parley v{VersionHelper.GetVersion()} - {System.IO.Path.GetFileName(CurrentFileName)}{(HasUnsavedChanges ? "*" : "")}"
+            : $"Parley v{VersionHelper.GetVersion()}";
 
         public bool IsLoading
         {

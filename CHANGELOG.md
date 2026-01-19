@@ -15,6 +15,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.38] - 2026-01-18
+**Branch**: `radoub/issue-980` | **PR**: #985
+
+### Sprint: UI Uniformity - Shared Utilities (#980)
+
+Parent Epic: #959 - UI Uniformity & Shared Infrastructure
+
+#### Work Items
+- [x] #967 - [Radoub.UI] Move VersionHelper to shared library
+- [x] #968 - [Radoub.UI] Create shared StatusBar component
+- [x] #969 - [Radoub.UI] Standardize progress indicators
+
+#### Added
+- `Radoub.UI.Utils.VersionHelper` - Shared version helper for all tools
+  - `GetVersion()` - Returns semantic version from assembly metadata
+  - `GetEntryAssemblyVersion()` - Returns version for main application
+- `Radoub.UI.Controls.StatusBarControl` - Optional shared status bar component
+  - `PrimaryText` - Main status text (left)
+  - `SecondaryText` - Additional info (optional)
+  - `TertiaryText` - Right-side info (optional)
+  - `FilePath` - File path with auto-trimming (optional)
+  - `ShowProgress` - Indeterminate progress indicator
+
+#### Removed
+- `Parley/Utils/VersionHelper.cs` - Replaced by shared implementation
+
+#### Changed
+- Parley, Manifest, Quartermaster, Fence, Trebuchet now use shared VersionHelper
+- Removed duplicate `GetVersionString()` methods from all tools
+
+#### Documentation
+- Added Progress Indicator Standards to CLAUDE.md (duration-based feedback guidelines)
+
+---
+
 ## [0.9.37] - 2026-01-18
 **Branch**: `radoub/issue-979` | **PR**: #984
 

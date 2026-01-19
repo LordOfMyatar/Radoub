@@ -13,8 +13,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Reflection;
 using System.Threading.Tasks;
+using Radoub.UI.Utils;
 using Radoub.UI.Views;
 
 namespace Manifest.Views;
@@ -1225,38 +1225,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             ToolName = "Manifest",
             Subtitle = "Journal Editor for Neverwinter Nights",
-            Version = GetVersionString(),
+            Version = VersionHelper.GetVersion(),
             IconBitmap = new Avalonia.Media.Imaging.Bitmap(
                 Avalonia.Platform.AssetLoader.Open(
                     new System.Uri("avares://Manifest/Assets/manifest.ico")))
         });
         aboutWindow.Show(this);
-    }
-
-    /// <summary>
-    /// Gets the version string from assembly metadata.
-    /// </summary>
-    private static string GetVersionString()
-    {
-        try
-        {
-            var infoVersion = Assembly.GetExecutingAssembly()
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-
-            if (!string.IsNullOrEmpty(infoVersion))
-            {
-                var plusIndex = infoVersion.IndexOf('+');
-                if (plusIndex > 0)
-                    infoVersion = infoVersion[..plusIndex];
-                return infoVersion;
-            }
-
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            if (version != null)
-                return $"{version.Major}.{version.Minor}.{version.Build}";
-        }
-        catch { }
-        return "1.0.0";
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
