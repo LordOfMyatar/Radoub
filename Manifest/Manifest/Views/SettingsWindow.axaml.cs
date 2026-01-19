@@ -73,11 +73,18 @@ public partial class SettingsWindow : Window
 
         var themes = ThemeManager.Instance.AvailableThemes
             .Where(t => includeEasterEggs || !t.Plugin.Tags.Contains("easter-egg"));
+
+        // Deduplicate by name: prefer shared themes (org.radoub.*) over tool-specific
+        // This prevents "Dark" appearing twice when both org.radoub.theme.dark and org.manifest.theme.dark exist
+        var deduplicatedThemes = themes
+            .GroupBy(t => t.Plugin.Name)
+            .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First());
+
         var currentThemeId = SettingsService.Instance.CurrentThemeId;
 
         // Group themes: standard first, then accessibility
-        var standardThemes = themes.Where(t => t.Accessibility?.Type != "colorblind").OrderBy(t => t.Plugin.Name);
-        var accessibilityThemes = themes.Where(t => t.Accessibility?.Type == "colorblind").OrderBy(t => t.Plugin.Name);
+        var standardThemes = deduplicatedThemes.Where(t => t.Accessibility?.Type != "colorblind").OrderBy(t => t.Plugin.Name);
+        var accessibilityThemes = deduplicatedThemes.Where(t => t.Accessibility?.Type == "colorblind").OrderBy(t => t.Plugin.Name);
 
         foreach (var theme in standardThemes.Concat(accessibilityThemes))
         {

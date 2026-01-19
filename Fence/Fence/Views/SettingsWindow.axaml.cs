@@ -103,13 +103,22 @@ public partial class SettingsWindow : Window
 
     private void PopulateThemes()
     {
-        var themes = ThemeManager.Instance.AvailableThemes.ToList();
-        ThemeComboBox.ItemsSource = themes.Select(t => t.Plugin.Name).ToList();
+        var themes = ThemeManager.Instance.AvailableThemes;
+
+        // Deduplicate by name: prefer shared themes (org.radoub.*) over tool-specific
+        // This prevents "Dark" appearing twice when both org.radoub.theme.dark and org.fence.theme.dark exist
+        var deduplicatedThemes = themes
+            .GroupBy(t => t.Plugin.Name)
+            .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First())
+            .OrderBy(t => t.Plugin.Name)
+            .ToList();
+
+        ThemeComboBox.ItemsSource = deduplicatedThemes.Select(t => t.Plugin.Name).ToList();
 
         var currentTheme = ThemeManager.Instance.CurrentTheme;
         if (currentTheme != null)
         {
-            var index = themes.FindIndex(t => t.Plugin.Id == currentTheme.Plugin.Id);
+            var index = deduplicatedThemes.FindIndex(t => t.Plugin.Id == currentTheme.Plugin.Id);
             if (index >= 0)
             {
                 ThemeComboBox.SelectedIndex = index;
@@ -151,10 +160,16 @@ public partial class SettingsWindow : Window
         if (_isInitializing || ThemeComboBox.SelectedIndex < 0)
             return;
 
-        var themes = ThemeManager.Instance.AvailableThemes.ToList();
-        if (ThemeComboBox.SelectedIndex < themes.Count)
+        // Use same deduplication logic as PopulateThemes
+        var deduplicatedThemes = ThemeManager.Instance.AvailableThemes
+            .GroupBy(t => t.Plugin.Name)
+            .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First())
+            .OrderBy(t => t.Plugin.Name)
+            .ToList();
+
+        if (ThemeComboBox.SelectedIndex < deduplicatedThemes.Count)
         {
-            var theme = themes[ThemeComboBox.SelectedIndex];
+            var theme = deduplicatedThemes[ThemeComboBox.SelectedIndex];
             SettingsService.Instance.CurrentThemeId = theme.Plugin.Id;
         }
     }

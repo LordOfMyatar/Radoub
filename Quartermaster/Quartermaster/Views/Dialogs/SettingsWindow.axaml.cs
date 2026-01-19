@@ -430,11 +430,17 @@ public partial class SettingsWindow : Window
         var includeEasterEggs = EasterEggService.Instance.IsSeaSickUnlocked();
 
         var themes = ThemeManager.Instance.AvailableThemes
-            .Where(t => includeEasterEggs || !t.Plugin.Tags.Contains("easter-egg"))
+            .Where(t => includeEasterEggs || !t.Plugin.Tags.Contains("easter-egg"));
+
+        // Deduplicate by name: prefer shared themes (org.radoub.*) over tool-specific
+        // This prevents "Dark" appearing twice when both org.radoub.theme.dark and org.quartermaster.theme.dark exist
+        var deduplicatedThemes = themes
+            .GroupBy(t => t.Plugin.Name)
+            .Select(g => g.OrderByDescending(t => t.Plugin.Id.StartsWith("org.radoub.")).First())
             .OrderBy(t => t.Plugin.Name)
             .ToList();
 
-        comboBox.ItemsSource = themes;
+        comboBox.ItemsSource = deduplicatedThemes;
         comboBox.DisplayMemberBinding = new Binding("Plugin.Name");
     }
 
