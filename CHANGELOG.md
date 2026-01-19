@@ -23,9 +23,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 
 #### Work Items
-- [ ] #970 - [Radoub.UI] Consolidate resource browsers (Script, Sound, Portrait)
+- [x] #970 - [Radoub.UI] Consolidate resource browsers (Script, Sound, Portrait)
 - [x] #971 - [Radoub.UI] Create shared ITlkService for multilingual support
 - [x] #972 - [Radoub.UI] Standardize image sizing and portrait handling
+
+#### Added (Radoub.UI - #970)
+- `IPortraitBrowserContext` interface for portrait browser integration
+  - `PortraitEntry` model with ID, ResRef, Race, Sex metadata
+  - `ListPortraits()` for portraits.2da enumeration
+  - `GetPortraitBitmap()` for portrait image loading
+  - `GetRaceName()` for race display name resolution
+- `ISoundBrowserContext` interface for sound browser integration
+  - `SoundEntry` model with ResRef, Source, IsMono, IsFromHak/Bif flags
+  - `ListSounds()` with source filtering (Override/HAK/BIF)
+  - `ExtractToTemp()` for archived sound playback
+  - `Play()`/`Stop()` for audio control
+- Note: Existing `IScriptBrowserContext` already in Radoub.UI serves as pattern
 
 #### Added (Radoub.UI - #971)
 - `ITlkService` interface for unified TLK string resolution
