@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <!-- Avalonia packages - match version used by Parley (11.3.10) -->
-    <PackageReference Include="Avalonia" Version="11.3.10" />
+    <PackageReference Include="Avalonia" Version="11.3.11" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.10" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.10" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <!-- Equipment slot placeholder icons from game-icons.net (CC BY 3.0) -->
+    <PackageReference Include="Avalonia.Skia" Version="11.3.11" />
     <AvaloniaResource Include="Assets\Icons\*.svg" />
   </ItemGroup>
 
