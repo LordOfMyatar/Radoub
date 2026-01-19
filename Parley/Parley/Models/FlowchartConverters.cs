@@ -14,7 +14,7 @@ namespace DialogEditor.Models
     /// Converts FlowchartNode properties to background brush color.
     /// Uses theme-aware backgrounds with speaker colors shown via thick borders.
     /// This preserves text readability while showing speaker identity.
-    /// Issue #999: Now uses theme resources for proper dark theme support.
+    /// Issue #999: All nodes use theme background - distinction via opacity instead.
     /// </summary>
     public class FlowchartNodeBackgroundConverter : IMultiValueConverter
     {
@@ -23,36 +23,15 @@ namespace DialogEditor.Models
         // Fallback colors if theme resources aren't available
         private static readonly Color LightBgColor = Color.Parse("#FAFAFA"); // Off-white
         private static readonly Color DarkBgColor = Color.Parse("#2D2D2D"); // Dark gray
-        private static readonly Color LightLinkColor = Color.Parse("#F0F0F0"); // Lighter gray for links
-        private static readonly Color DarkLinkColor = Color.Parse("#383838"); // Slightly different for links
-        private static readonly Color LightRootColor = Color.Parse("#E8E8E8"); // Light gray (neutral)
-        private static readonly Color DarkRootColor = Color.Parse("#3A3A3A"); // Dark gray (neutral)
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
             // Values: NodeType, IsLink, Speaker, ActualThemeVariant
             bool isDark = values.Count >= 4 && values[3] is ThemeVariant tv && tv == ThemeVariant.Dark;
 
-            // Get theme background color from application resources
-            var bgBrush = GetThemedBrush(isDark);
-
-            if (values.Count < 3)
-                return bgBrush;
-
-            var nodeType = values[0] as FlowchartNodeType? ?? FlowchartNodeType.Entry;
-            var isLink = values[1] as bool? ?? false;
-
-            // Link nodes get distinct muted background
-            if (isLink)
-                return new SolidColorBrush(isDark ? DarkLinkColor : LightLinkColor);
-
-            // Root node gets neutral background
-            if (nodeType == FlowchartNodeType.Root)
-                return new SolidColorBrush(isDark ? DarkRootColor : LightRootColor);
-
-            // All other nodes use theme background
-            // Speaker identity is shown via the thick border (see FlowchartNodeBorderConverter)
-            return bgBrush;
+            // All nodes use the same theme background for consistent text readability
+            // Link/Root distinction is handled via FlowchartLinkOpacityConverter
+            return GetThemedBrush(isDark);
         }
 
         /// <summary>
@@ -177,29 +156,34 @@ namespace DialogEditor.Models
     }
 
     /// <summary>
-    /// Converts IsLink boolean to node opacity for visual distinction.
-    /// Issue #999: Increased opacity for dark themes to maintain readability.
+    /// Converts IsLink and NodeType to node opacity for visual distinction.
+    /// Issue #999: Links and Root nodes use reduced opacity while maintaining readability.
     /// </summary>
-    public class FlowchartLinkOpacityConverter : IValueConverter
+    public class FlowchartLinkOpacityConverter : IMultiValueConverter
     {
         public static readonly FlowchartLinkOpacityConverter Instance = new();
 
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
-            var isLink = value as bool? ?? false;
-            if (!isLink)
+            // Values: IsLink, NodeType
+            var isLink = values.Count > 0 && values[0] is bool link && link;
+            var nodeType = values.Count > 1 ? values[1] as FlowchartNodeType? ?? FlowchartNodeType.Entry : FlowchartNodeType.Entry;
+
+            // Regular nodes get full opacity
+            if (!isLink && nodeType != FlowchartNodeType.Root)
                 return 1.0;
 
-            // Links are slightly translucent to indicate they're references
+            // Links and Root nodes are slightly translucent to indicate they're special
             // Use higher opacity in dark themes for better readability
             var app = Application.Current;
             bool isDark = app?.ActualThemeVariant == ThemeVariant.Dark;
-            return isDark ? 0.85 : 0.7;
-        }
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
+            // Root nodes get slightly less opacity than regular nodes
+            if (nodeType == FlowchartNodeType.Root)
+                return isDark ? 0.9 : 0.8;
+
+            // Link nodes get more opacity reduction
+            return isDark ? 0.85 : 0.7;
         }
     }
 
