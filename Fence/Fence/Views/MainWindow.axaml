@@ -337,7 +337,7 @@
                                 <!-- Source Filter -->
                                 <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
                                     <CheckBox x:Name="StandardItemsCheck" Content="Standard" IsChecked="True" Margin="0,0,12,0" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="StandardItemsCheck"/>
-                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="True" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="CustomItemsCheck"/>
+                                    <CheckBox x:Name="CustomItemsCheck" Content="Custom" IsChecked="False" IsCheckedChanged="OnSourceFilterChanged" AutomationProperties.AutomationId="CustomItemsCheck"/>
                                 </WrapPanel>
 
                                 <!-- Type Filter -->

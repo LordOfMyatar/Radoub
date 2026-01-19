@@ -58,15 +58,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _baseItemTypeService = new BaseItemTypeService(_gameDataService);
         _itemResolutionService = new ItemResolutionService(_gameDataService);
 
-        // Load base item types for buy restrictions and type filter
-        LoadBaseItemTypes();
-        PopulateTypeFilter();
-
-        // Populate store category dropdown (toolset palette categories)
+        // Populate store category dropdown (toolset palette categories) - fast, no I/O
         PopulateCategoryDropdown();
 
-        // Start background loading of item palette
-        StartItemPaletteLoad();
+        // Defer heavy I/O operations to background after window shows
+        Loaded += OnWindowLoaded;
 
         // Restore window position from settings
         RestoreWindowPosition();
@@ -186,6 +182,26 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             WindowState = WindowState.Maximized;
         }
+    }
+
+    private async void OnWindowLoaded(object? sender, RoutedEventArgs e)
+    {
+        // Unsubscribe to prevent multiple calls
+        Loaded -= OnWindowLoaded;
+
+        // Load base item types in background (involves 2DA file I/O)
+        await System.Threading.Tasks.Task.Run(() =>
+        {
+            LoadBaseItemTypes();
+        });
+
+        // Populate type filter on UI thread after base items loaded
+        PopulateTypeFilter();
+
+        // Start background loading of item palette
+        StartItemPaletteLoad();
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window loaded, background initialization complete");
     }
 
     private void SaveWindowPosition()
@@ -446,6 +462,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
+        // Only handle Ctrl shortcuts - don't interfere with normal text input
         if (e.KeyModifiers == KeyModifiers.Control)
         {
             switch (e.Key)
@@ -453,18 +470,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 case Key.N:
                     OnNewClick(null, e);
                     e.Handled = true;
-                    break;
+                    return;
                 case Key.O:
                     OnOpenClick(null, e);
                     e.Handled = true;
-                    break;
+                    return;
                 case Key.S:
                     if (HasFile)
                     {
                         OnSaveClick(null, e);
                         e.Handled = true;
                     }
-                    break;
+                    return;
             }
         }
         else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
@@ -477,9 +494,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         OnSaveAsClick(null, e);
                         e.Handled = true;
                     }
-                    break;
+                    return;
             }
         }
+        // Don't mark as handled for other keys - let them propagate to controls
     }
 
     #endregion
