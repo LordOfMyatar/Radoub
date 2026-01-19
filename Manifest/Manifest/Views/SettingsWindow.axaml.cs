@@ -608,43 +608,9 @@ public partial class SettingsWindow : Window
 
     #region Theme-Aware Colors
 
-    // Light theme default colors for fallback
-    private static readonly IBrush DefaultErrorBrush = new SolidColorBrush(Color.Parse("#D32F2F"));
-    private static readonly IBrush DefaultSuccessBrush = new SolidColorBrush(Color.Parse("#388E3C"));
-    private static readonly IBrush DefaultWarningBrush = new SolidColorBrush(Color.Parse("#F57C00"));
-
-    private IBrush GetErrorBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeError", ThemeVariant.Default, out var errorBrush) == true
-            && errorBrush is IBrush brush)
-        {
-            return brush;
-        }
-        return DefaultErrorBrush;
-    }
-
-    private IBrush GetSuccessBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeSuccess", ThemeVariant.Default, out var successBrush) == true
-            && successBrush is IBrush brush)
-        {
-            return brush;
-        }
-        return DefaultSuccessBrush;
-    }
-
-    private IBrush GetWarningBrush()
-    {
-        var app = Application.Current;
-        if (app?.Resources.TryGetResource("ThemeWarning", ThemeVariant.Default, out var warningBrush) == true
-            && warningBrush is IBrush brush)
-        {
-            return brush;
-        }
-        return DefaultWarningBrush;
-    }
+    private IBrush GetErrorBrush() => BrushManager.GetErrorBrush(this);
+    private IBrush GetSuccessBrush() => BrushManager.GetSuccessBrush(this);
+    private IBrush GetWarningBrush() => BrushManager.GetWarningBrush(this);
 
     #endregion
 }
