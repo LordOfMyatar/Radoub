@@ -39,7 +39,7 @@
   <ItemGroup>
     <!-- All Avalonia packages must use same version to avoid rendering bugs -->
     <!-- Mixed versions cause transparent window with ExtendClientAreaToDecorationsHint -->
-    <PackageReference Include="Avalonia" Version="11.3.10" />
+    <PackageReference Include="Avalonia" Version="11.3.11" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.10" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.10" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.10" />
