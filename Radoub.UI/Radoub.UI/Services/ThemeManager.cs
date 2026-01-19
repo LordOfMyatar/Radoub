@@ -311,6 +311,9 @@ public class ThemeManager
             resources["SystemControlBackgroundAltHighBrush"] = bgBrush;
             resources["SystemControlBackgroundAltMediumBrush"] = bgBrush;
             resources["SystemControlBackgroundAltMediumHighBrush"] = bgBrush;
+
+            // App-level theme background for windows and dialogs
+            resources["ThemeBackground"] = bgBrush;
         }
 
         // Sidebar/Alt colors - panels, toolbars

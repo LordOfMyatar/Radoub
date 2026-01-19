@@ -295,12 +295,13 @@ namespace Parley.Tests
         {
             // Arrange
             var converter = FlowchartLinkOpacityConverter.Instance;
+            var values = new List<object?> { true, FlowchartNodeType.Entry };
 
             // Act
-            var result = converter.Convert(true, typeof(double), null, CultureInfo.InvariantCulture);
+            var result = converter.Convert(values, typeof(double), null, CultureInfo.InvariantCulture);
 
-            // Assert
-            Assert.Equal(0.7, result);
+            // Assert - exact value depends on theme variant, just verify it's less than 1.0
+            Assert.True(result is double opacity && opacity < 1.0);
         }
 
         [Fact]
@@ -308,12 +309,27 @@ namespace Parley.Tests
         {
             // Arrange
             var converter = FlowchartLinkOpacityConverter.Instance;
+            var values = new List<object?> { false, FlowchartNodeType.Entry };
 
             // Act
-            var result = converter.Convert(false, typeof(double), null, CultureInfo.InvariantCulture);
+            var result = converter.Convert(values, typeof(double), null, CultureInfo.InvariantCulture);
 
             // Assert
             Assert.Equal(1.0, result);
+        }
+
+        [Fact]
+        public void OpacityConverter_RootNode_ReturnsReducedOpacity()
+        {
+            // Arrange
+            var converter = FlowchartLinkOpacityConverter.Instance;
+            var values = new List<object?> { false, FlowchartNodeType.Root };
+
+            // Act
+            var result = converter.Convert(values, typeof(double), null, CultureInfo.InvariantCulture);
+
+            // Assert - Root nodes get reduced opacity regardless of IsLink
+            Assert.True(result is double opacity && opacity < 1.0);
         }
 
         #endregion
