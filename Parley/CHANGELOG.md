@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.123-alpha] - 2026-01-19
+**Branch**: `parley/issue-1008` | **PR**: #TBD
+
+### Refactor: Remove duplicate ScriptBrowserWindow (#1008)
+
+- Deleted duplicate `ScriptBrowserWindow.axaml` and `.axaml.cs` from Parley (~1,089 lines of dead code)
+- Parley already uses the shared version from `Radoub.UI.Views`
+- Added AutomationId attributes to shared version for FlaUI testing
+- Updated shared version to use dynamic theme brushes for dark mode
+
+---
+
 ## [0.1.122-alpha] - 2026-01-19
 **Branch**: `parley/issue-999` | **PR**: #1000
 
