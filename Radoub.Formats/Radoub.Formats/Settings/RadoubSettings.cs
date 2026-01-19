@@ -68,6 +68,10 @@ public class RadoubSettings : INotifyPropertyChanged
     private bool _tlkUseFemale = false;
     private Language _defaultLanguage = Language.English;  // Default display language
 
+    // Theme settings (shared across all tools)
+    private string _sharedThemeId = "";  // Empty = no shared theme (tools use their own)
+    private bool _useSharedTheme = true;  // If true, tools prefer shared theme over tool-specific
+
     // Tool paths - auto-populated when tools run, used for cross-tool integration
     private string _parleyPath = "";
     private string _manifestPath = "";
@@ -164,6 +168,45 @@ public class RadoubSettings : INotifyPropertyChanged
     /// Get the preferred gender for TLK strings.
     /// </summary>
     public Gender PreferredGender => _tlkUseFemale ? Gender.Female : Gender.Male;
+
+    /// <summary>
+    /// Shared theme ID applied to all tools.
+    /// Empty = no shared theme (tools use their own settings).
+    /// </summary>
+    public string SharedThemeId
+    {
+        get => _sharedThemeId;
+        set { if (SetProperty(ref _sharedThemeId, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// If true, tools prefer the shared theme over their tool-specific setting.
+    /// Tools can still override by setting this to false in their own settings.
+    /// </summary>
+    public bool UseSharedTheme
+    {
+        get => _useSharedTheme;
+        set { if (SetProperty(ref _useSharedTheme, value)) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Check if a shared theme is configured.
+    /// </summary>
+    public bool HasSharedTheme => _useSharedTheme && !string.IsNullOrEmpty(_sharedThemeId);
+
+    /// <summary>
+    /// Get the path to Radoub-level themes folder.
+    /// Location: ~/Radoub/Themes/
+    /// </summary>
+    public string GetSharedThemesPath()
+    {
+        var path = Path.Combine(SettingsDirectory, "Themes");
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+        return path;
+    }
 
     // Tool path properties - auto-populated by tools for cross-tool discovery
 
@@ -353,6 +396,10 @@ public class RadoubSettings : INotifyPropertyChanged
                     _tlkUseFemale = data.TlkUseFemale;
                     _defaultLanguage = data.DefaultLanguage;
 
+                    // Theme settings
+                    _sharedThemeId = data.SharedThemeId ?? "";
+                    _useSharedTheme = data.UseSharedTheme;
+
                     // Tool paths
                     _parleyPath = ExpandPath(data.ParleyPath ?? "");
                     _manifestPath = ExpandPath(data.ManifestPath ?? "");
@@ -385,6 +432,10 @@ public class RadoubSettings : INotifyPropertyChanged
                 TlkLanguage = _tlkLanguage,
                 TlkUseFemale = _tlkUseFemale,
                 DefaultLanguage = _defaultLanguage,
+
+                // Theme settings
+                SharedThemeId = _sharedThemeId,
+                UseSharedTheme = _useSharedTheme,
 
                 // Tool paths
                 ParleyPath = ContractPath(_parleyPath),
@@ -460,6 +511,10 @@ public class RadoubSettings : INotifyPropertyChanged
         public string? TlkLanguage { get; set; }
         public bool TlkUseFemale { get; set; }
         public Language DefaultLanguage { get; set; } = Language.English;
+
+        // Theme settings (shared across all tools)
+        public string? SharedThemeId { get; set; }
+        public bool UseSharedTheme { get; set; } = true;
 
         // Tool paths for cross-tool discovery
         public string? ParleyPath { get; set; }

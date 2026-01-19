@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 
 #### Work Items
-- [ ] #976 - [Radoub] Radoub-level theme configuration
+- [x] #976 - [Radoub] Radoub-level theme configuration
 - [ ] #977 - [Trebuchet] Theme generator/editor UI
 - [ ] #978 - [Radoub.Dictionary] Consolidate spell-check for game-facing text
 
@@ -39,6 +39,20 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
   - Parley, Manifest, Quartermaster, Fence, Trebuchet (main apps)
   - Radoub.UI (shared library)
   - Test projects (Parley.Tests, Quartermaster.Tests, Fence.Tests)
+
+#### Added (RadoubSettings - #976)
+- `SharedThemeId` - Shared theme ID applied to all tools
+- `UseSharedTheme` - Toggle for shared vs tool-specific themes (default: true)
+- `HasSharedTheme` - Check if shared theme is configured
+- `GetSharedThemesPath()` - Returns `~/Radoub/Themes/` for shared themes
+
+#### Added (ThemeManager - #976)
+- Radoub-level shared themes folder: `~/Radoub/Themes/`
+- `Initialize(toolName, useSharedTheme)` - New overload with shared theme support
+- `GetEffectiveThemeId(toolThemeId)` - Returns shared or tool-specific theme ID
+- `ApplyEffectiveTheme(toolThemeId)` - Apply effective theme with fallback
+- `IsUsingSharedTheme` - Check if currently using shared theme
+- Theme discovery now includes: official (app) → shared (`~/Radoub/Themes/`) → tool-specific
 
 ---
 
