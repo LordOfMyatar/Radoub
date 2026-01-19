@@ -15,6 +15,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.36] - 2026-01-18
+**Branch**: `radoub/issue-954` | **PR**: #TBD
+
+### Feature: Variable Setting Service for GFF Files (#954)
+
+Shared service for reading/writing local variables on GFF-based files.
+
+#### Scope
+- Read existing local variables from GFF VarTable structures
+- Write/update local variables to GFF structures
+- Support all variable types (int, float, string, location, object)
+- Delete variables by name
+- List all variables on a resource
+
+#### First Implementation
+- #945 - Fence UTM variables (stores/merchants)
+
+#### Future Consumers
+- #946 - Quartermaster UTC variables (creatures)
+- #953 - Trebuchet IFO variables (modules)
+
+---
+
 ## [0.9.35] - 2026-01-17
 **Branch**: `radoub/issue-907` | **PR**: #939
 
