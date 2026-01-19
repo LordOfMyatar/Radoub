@@ -50,10 +50,11 @@ public class VariableViewModel : INotifyPropertyChanged
 
     public decimal FloatValue
     {
-        get => (decimal)_floatValue;
+        get => (decimal)Math.Round(_floatValue, 3);
         set
         {
-            var floatVal = (float)value;
+            // Round to 3 decimal places to match Aurora Engine's typical precision
+            var floatVal = (float)Math.Round((double)value, 3);
             if (_floatValue != floatVal)
             {
                 _floatValue = floatVal;
@@ -86,7 +87,7 @@ public class VariableViewModel : INotifyPropertyChanged
     public string ValueDisplay => Type switch
     {
         VariableType.Int => IntValue.ToString(),
-        VariableType.Float => FloatValue.ToString("F3"),
+        VariableType.Float => _floatValue.ToString("F3"),
         VariableType.String => StringValue,
         _ => string.Empty
     };
