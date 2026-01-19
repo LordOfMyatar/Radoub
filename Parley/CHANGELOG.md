@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.123-alpha] - 2026-01-19
-**Branch**: `parley/issue-1008` | **PR**: #TBD
+**Branch**: `parley/issue-1008` | **PR**: #1009
 
 ### Refactor: Remove duplicate ScriptBrowserWindow (#1008)
 
