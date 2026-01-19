@@ -15,6 +15,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.40] - 2026-01-18
+**Branch**: `radoub/issue-982` | **PR**: #989
+
+### Sprint: UI Uniformity - Caching & Performance (#982)
+
+Parent Epic: #959 - UI Uniformity & Shared Infrastructure
+
+#### Work Items
+- [x] #973 - [Radoub.Formats] Extract shared cache service pattern
+- [x] #974 - [Quartermaster] Implement caching for feats/spells/BioWare items
+- [x] #975 - [Radoub] Standardize deferred loading patterns
+
+#### Added (Radoub.UI - #973)
+- `GameDataCacheService<T>` - Generic file-based caching service
+  - JSON serialization with compact format
+  - Automatic game path validation (invalidates cache when paths change)
+  - Version checking for cache format upgrades
+  - Methods: `HasValidCache()`, `LoadCache()`, `SaveCacheAsync()`, `ClearCache()`, `GetCacheInfo()`
+  - Cache stored at `~/Radoub/{ToolName}/{cacheName}_cache.json`
+- `CacheWrapper<T>` - Generic cache envelope with metadata
+- `CacheInfo` - Cache metadata for display in Settings UI
+
+#### Changed (Fence - #973)
+- `PaletteCacheService` now wraps shared `GameDataCacheService<CachedPaletteItem>`
+- Removed duplicate `CacheInfo` class (uses shared implementation)
+
+#### Added (Quartermaster - #974)
+- `FeatCacheService` - File-based caching for feat data
+  - Caches feat name, description, category, isUniversal
+  - Caches all feat IDs from feat.2da scan
+  - Memory cache for class/race granted feats
+  - Cache stored at `~/Radoub/Quartermaster/feats_cache.json`
+- `FeatService` now uses caching for all lookups
+  - `InitializeCacheAsync()` - Load from disk or build from 2DA
+  - `RebuildCacheAsync()` - Clear and rebuild cache
+  - Direct lookup fallback when cache unavailable
+- `CreatureDisplayService.InitializeCachesAsync()` - Initialize all caches on startup
+- Cache initialization during `MainWindow.OnWindowOpened` with status feedback
+
+#### Documentation (CLAUDE.md - #975)
+- Added "Deferred Loading Patterns" section to UI/UX Guidelines
+  - Lifecycle event responsibilities (Constructor vs Loaded vs Opened)
+  - Recommended startup pattern with code example
+  - Fire-and-forget async pattern (`_` syntax)
+  - Cancellation token pattern for interruptible operations
+  - Anti-patterns table (blocking constructor, missing cancellation, etc.)
+
+---
+
 ## [0.9.39] - 2026-01-18
 **Branch**: `radoub/issue-972` | **PR**: #986
 

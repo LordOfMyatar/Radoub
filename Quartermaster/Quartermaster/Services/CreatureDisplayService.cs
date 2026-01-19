@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
@@ -19,15 +20,30 @@ public class CreatureDisplayService
     public AppearanceService Appearances { get; }
     public SpellService Spells { get; }
 
+    // Cache services
+    public FeatCacheService FeatCache { get; }
+
     public CreatureDisplayService(IGameDataService gameDataService)
     {
         _gameDataService = gameDataService;
 
+        // Initialize cache services
+        FeatCache = new FeatCacheService();
+
         // Initialize focused services
         Skills = new SkillService(gameDataService);
-        Feats = new FeatService(gameDataService, Skills);
+        Feats = new FeatService(gameDataService, Skills, FeatCache);
         Appearances = new AppearanceService(gameDataService);
         Spells = new SpellService(gameDataService);
+    }
+
+    /// <summary>
+    /// Initialize all caches. Call early in application startup.
+    /// </summary>
+    public async Task InitializeCachesAsync()
+    {
+        await Feats.InitializeCacheAsync();
+        // TODO: Add Spells.InitializeCacheAsync() when SpellCacheService is implemented
     }
 
     #region Race/Gender/Class Lookups
