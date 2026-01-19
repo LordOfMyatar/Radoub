@@ -47,6 +47,8 @@
         <Style Selector="MenuItem">
             <Setter Property="FontSize" Value="{DynamicResource GlobalFontSize}"/>
             <Setter Property="FontFamily" Value="{DynamicResource GlobalFontFamily}"/>
+            <!-- Issue #999: Ensure menu text uses theme color in dark themes -->
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
         </Style>
 
         <Style Selector="ComboBox">

@@ -356,6 +356,14 @@ public class ThemeManager
             resources["SystemControlForegroundBaseHighBrush"] = textBrush;
             resources["SystemControlForegroundBaseMediumBrush"] = textBrush;
             resources["SystemControlForegroundBaseMediumHighBrush"] = textBrush;
+
+            // Menu text colors - top-level menu items in menu bar
+            resources["MenuFlyoutItemForeground"] = textBrush;
+            resources["MenuFlyoutItemForegroundPointerOver"] = textBrush;
+            resources["MenuFlyoutItemForegroundPressed"] = textBrush;
+            resources["MenuFlyoutItemForegroundDisabled"] = textBrush;
+            resources["MenuBarItemForeground"] = textBrush;
+            resources["TopLevelItemForeground"] = textBrush;
         }
 
         // Accent color - buttons, highlights
