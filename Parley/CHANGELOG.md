@@ -17,9 +17,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Fixes theme-related regressions from Epic #959 UI Uniformity work.
 
-- [ ] #998 - Duplicate themes appearing in theme selection
-- [ ] #997 - Brush settings need adjustment for shared themes
-- [ ] #901 - Child links not visually distinguished after theme text change
+#### Fix: Duplicate themes in theme selection (#998)
+
+- Added deduplication logic to prefer shared themes (`org.radoub.*`) over tool-specific themes
+- Themes with same display name now appear only once in dropdown
+- Applied to all tools: Parley, Manifest, Quartermaster, Fence
+
+#### Fix: Button and tab contrast in dark themes (#997)
+
+- ThemeManager now applies `button_primary`, `button_secondary`, `button_hover` colors to Fluent theme resources
+- Tab header text now uses theme text color for proper contrast
+
+#### Fix: Child links not visually distinguished (#901)
+
+- Child links now display with 50% opacity to distinguish from primary nodes
+- Added `TextOpacity` property to TreeViewSafeNode model
 
 ---
 

@@ -268,9 +268,11 @@
                                             <TextBlock Text="{Binding SpeakerTag}"
                                                        Foreground="{Binding NodeColor}"
                                                        VerticalAlignment="Center"/>
+                                            <!-- Issue #901: Child links show with reduced opacity to distinguish from primary nodes -->
                                             <TextBlock Text="{Binding DialogText}"
                                                        TextWrapping="Wrap"
-                                                       VerticalAlignment="Center"/>
+                                                       VerticalAlignment="Center"
+                                                       Opacity="{Binding TextOpacity}"/>
                                         </StackPanel>
                                     </TreeDataTemplate>
                                 </TreeView.DataTemplates>

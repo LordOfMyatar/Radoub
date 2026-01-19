@@ -225,7 +225,7 @@ namespace DialogEditor.Models
             }
         }
 
-        // Node color for tree view display
+        // Node color for tree view display (speaker tag and icon)
         public virtual string NodeColor
         {
             get
@@ -239,6 +239,12 @@ namespace DialogEditor.Models
                 return Utils.SpeakerVisualHelper.GetSpeakerColor(speaker, isPC);
             }
         }
+
+        /// <summary>
+        /// Issue #901: Opacity for dialog text - reduced for child links to distinguish them
+        /// from primary node instances.
+        /// </summary>
+        public virtual double TextOpacity => IsChild ? 0.5 : 1.0;
 
         // Node shape for tree view display
         public virtual string NodeShapeGeometry
