@@ -25,7 +25,7 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 #### Work Items
 - [x] #976 - [Radoub] Radoub-level theme configuration
 - [x] #977 - [Trebuchet] Theme generator/editor UI
-- [ ] #978 - [Radoub.Dictionary] Consolidate spell-check for game-facing text
+- [x] #978 - [Radoub.Dictionary] Consolidate spell-check for game-facing text
 
 #### Bundled Dependabot Updates (Avalonia 11.3.10 → 11.3.11)
 - [x] #991 - Bump Avalonia and Avalonia.Controls.DataGrid (Radoub.UI)
@@ -62,6 +62,28 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
   - Load from preset themes
   - Export to `~/Radoub/Themes/` for shared use
 - **Settings Window**: Added "Create Theme..." button and "Apply to All Tools" checkbox
+- **Bundled Themes**: 6 universal themes (`org.radoub.theme.*`):
+  - Light, Dark, VSCode Dark, Fluent Light
+  - Accessibility: Deuteranopia, Protanopia, Tritanopia
+  - Easter egg: Sea Sick
+
+#### Added (Radoub.UI - #978)
+- `SpellCheckService` - Shared spell-check service for all tools
+  - Wraps DictionaryManager and SpellChecker from Radoub.Dictionary
+  - Methods: `InitializeAsync()`, `IsCorrect()`, `CheckText()`, `GetSuggestions()`, `AddToCustomDictionary()`
+- `SpellCheckTextBox` - Shared control extending TextBox with spell-check
+  - Squiggly underline overlay for misspelled words
+  - Right-click context menu with suggestions
+  - Respects `DictionarySettingsService.SpellCheckEnabled` setting
+
+#### Added (Radoub.Dictionary - #978)
+- `SpellCheckEnabled` property and `SpellCheckEnabledChanged` event in DictionarySettingsService
+
+#### Changed (Quartermaster - #978)
+- Character panel now uses SpellCheckTextBox for: First Name, Last Name, Subrace, Deity, Biography
+
+#### Changed (Fence - #978)
+- Store name field now uses SpellCheckTextBox
 
 ---
 
