@@ -18,9 +18,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.9.39] - 2026-01-18
 **Branch**: `radoub/issue-972` | **PR**: #986
 
-### Feature: Standardize Image Sizing and Portrait Handling (#972)
+### Sprint: UI Uniformity - Browsers & TLK (#981)
 
 Parent Epic: #959 - UI Uniformity & Shared Infrastructure
+
+#### Work Items
+- [ ] #970 - [Radoub.UI] Consolidate resource browsers (Script, Sound, Portrait)
+- [ ] #971 - [Radoub.UI] Create shared ITlkService for multilingual support
+- [ ] #972 - [Radoub.UI] Standardize image sizing and portrait handling
 
 ---
 
