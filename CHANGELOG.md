@@ -24,13 +24,19 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 
 #### Work Items
 - [x] #967 - [Radoub.UI] Move VersionHelper to shared library
-- [ ] #968 - [Radoub.UI] Create shared StatusBar component
+- [x] #968 - [Radoub.UI] Create shared StatusBar component
 - [ ] #969 - [Radoub.UI] Standardize progress indicators
 
 #### Added
 - `Radoub.UI.Utils.VersionHelper` - Shared version helper for all tools
   - `GetVersion()` - Returns semantic version from assembly metadata
   - `GetEntryAssemblyVersion()` - Returns version for main application
+- `Radoub.UI.Controls.StatusBarControl` - Optional shared status bar component
+  - `PrimaryText` - Main status text (left)
+  - `SecondaryText` - Additional info (optional)
+  - `TertiaryText` - Right-side info (optional)
+  - `FilePath` - File path with auto-trimming (optional)
+  - `ShowProgress` - Indeterminate progress indicator
 
 #### Removed
 - `Parley/Utils/VersionHelper.cs` - Replaced by shared implementation

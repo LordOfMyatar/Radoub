@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="30"
+             x:Class="Radoub.UI.Controls.StatusBarControl">
+
+  <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+          BorderThickness="0,1,0,0"
+          Padding="8,4"
+          AutomationProperties.AutomationId="StatusBar">
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- Primary Status Text (left) -->
+      <TextBlock x:Name="PrimaryTextBlock"
+                 Grid.Column="0"
+                 Text="{Binding PrimaryText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 VerticalAlignment="Center"
+                 AutomationProperties.AutomationId="StatusText"/>
+
+      <!-- Secondary Text (optional, left of center) -->
+      <TextBlock x:Name="SecondaryTextBlock"
+                 Grid.Column="1"
+                 Text="{Binding SecondaryText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                 Margin="20,0,0,0"
+                 VerticalAlignment="Center"
+                 IsVisible="{Binding SecondaryText, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+      <!-- Progress Indicator (center) -->
+      <ProgressBar x:Name="ProgressIndicator"
+                   Grid.Column="2"
+                   IsIndeterminate="True"
+                   Height="4"
+                   Margin="20,0"
+                   VerticalAlignment="Center"
+                   IsVisible="{Binding ShowProgress, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+
+      <!-- Tertiary Text (optional, right side) -->
+      <TextBlock x:Name="TertiaryTextBlock"
+                 Grid.Column="3"
+                 Text="{Binding TertiaryText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                 Margin="20,0,0,0"
+                 VerticalAlignment="Center"
+                 TextTrimming="CharacterEllipsis"
+                 IsVisible="{Binding TertiaryText, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+      <!-- File Path (right, trimmed) -->
+      <TextBlock x:Name="FilePathTextBlock"
+                 Grid.Column="4"
+                 Text="{Binding FilePath, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                 Margin="20,0,0,0"
+                 VerticalAlignment="Center"
+                 TextTrimming="CharacterEllipsis"
+                 MaxWidth="300"
+                 IsVisible="{Binding FilePath, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+    </Grid>
+  </Border>
+</UserControl>
