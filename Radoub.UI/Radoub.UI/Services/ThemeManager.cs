@@ -364,6 +364,12 @@ public class ThemeManager
             resources["MenuFlyoutItemForegroundDisabled"] = textBrush;
             resources["MenuBarItemForeground"] = textBrush;
             resources["TopLevelItemForeground"] = textBrush;
+
+            // Menu keyboard shortcut (InputGesture/accelerator) text colors
+            resources["MenuFlyoutItemKeyboardAcceleratorTextForeground"] = textBrush;
+            resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundPointerOver"] = textBrush;
+            resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundPressed"] = textBrush;
+            resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundDisabled"] = textBrush;
         }
 
         // Menu flyout (dropdown) background - needs to match theme

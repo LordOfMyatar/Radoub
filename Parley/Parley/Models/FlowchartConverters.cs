@@ -14,41 +14,71 @@ namespace DialogEditor.Models
     /// Converts FlowchartNode properties to background brush color.
     /// Uses theme-aware backgrounds with speaker colors shown via thick borders.
     /// This preserves text readability while showing speaker identity.
+    /// Issue #999: Now uses theme resources for proper dark theme support.
     /// </summary>
     public class FlowchartNodeBackgroundConverter : IMultiValueConverter
     {
         public static readonly FlowchartNodeBackgroundConverter Instance = new();
 
-        // Theme-aware backgrounds that ensure text readability
-        private static readonly IBrush LightThemeBg = new SolidColorBrush(Color.Parse("#FAFAFA")); // Off-white
-        private static readonly IBrush DarkThemeBg = new SolidColorBrush(Color.Parse("#2D2D2D")); // Dark gray
-        private static readonly IBrush LinkBrushLight = new SolidColorBrush(Color.Parse("#F0F0F0")); // Lighter gray for links
-        private static readonly IBrush LinkBrushDark = new SolidColorBrush(Color.Parse("#383838")); // Slightly different for links
-        private static readonly IBrush RootBrushLight = new SolidColorBrush(Color.Parse("#E8E8E8")); // Light gray (neutral)
-        private static readonly IBrush RootBrushDark = new SolidColorBrush(Color.Parse("#3A3A3A")); // Dark gray (neutral)
+        // Fallback colors if theme resources aren't available
+        private static readonly Color LightBgColor = Color.Parse("#FAFAFA"); // Off-white
+        private static readonly Color DarkBgColor = Color.Parse("#2D2D2D"); // Dark gray
+        private static readonly Color LightLinkColor = Color.Parse("#F0F0F0"); // Lighter gray for links
+        private static readonly Color DarkLinkColor = Color.Parse("#383838"); // Slightly different for links
+        private static readonly Color LightRootColor = Color.Parse("#E8E8E8"); // Light gray (neutral)
+        private static readonly Color DarkRootColor = Color.Parse("#3A3A3A"); // Dark gray (neutral)
 
         public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
         {
             // Values: NodeType, IsLink, Speaker, ActualThemeVariant
             bool isDark = values.Count >= 4 && values[3] is ThemeVariant tv && tv == ThemeVariant.Dark;
 
+            // Get theme background color from application resources
+            var bgBrush = GetThemedBrush(isDark);
+
             if (values.Count < 3)
-                return isDark ? DarkThemeBg : LightThemeBg;
+                return bgBrush;
 
             var nodeType = values[0] as FlowchartNodeType? ?? FlowchartNodeType.Entry;
             var isLink = values[1] as bool? ?? false;
 
             // Link nodes get distinct muted background
             if (isLink)
-                return isDark ? LinkBrushDark : LinkBrushLight;
+                return new SolidColorBrush(isDark ? DarkLinkColor : LightLinkColor);
 
-            // Root node gets subtle green tint
+            // Root node gets neutral background
             if (nodeType == FlowchartNodeType.Root)
-                return isDark ? RootBrushDark : RootBrushLight;
+                return new SolidColorBrush(isDark ? DarkRootColor : LightRootColor);
 
             // All other nodes use theme background
             // Speaker identity is shown via the thick border (see FlowchartNodeBorderConverter)
-            return isDark ? DarkThemeBg : LightThemeBg;
+            return bgBrush;
+        }
+
+        /// <summary>
+        /// Gets a theme-aware background brush from application resources.
+        /// Falls back to hardcoded values if resources aren't available.
+        /// </summary>
+        private static IBrush GetThemedBrush(bool isDark)
+        {
+            var app = Application.Current;
+            if (app != null)
+            {
+                // Try to get the sidebar/background color from theme resources
+                // ThemeBackground is set by ThemeManager from theme manifest
+                var themeVariant = isDark ? ThemeVariant.Dark : ThemeVariant.Light;
+                if (app.Resources.TryGetResource("ThemeBackground", themeVariant, out var bgObj) && bgObj is IBrush brush)
+                {
+                    return brush;
+                }
+                // Try SystemControlBackgroundAltHighBrush as fallback
+                if (app.Resources.TryGetResource("SystemControlBackgroundAltHighBrush", themeVariant, out var altObj) && altObj is IBrush altBrush)
+                {
+                    return altBrush;
+                }
+            }
+            // Fallback to hardcoded colors
+            return new SolidColorBrush(isDark ? DarkBgColor : LightBgColor);
         }
     }
 
