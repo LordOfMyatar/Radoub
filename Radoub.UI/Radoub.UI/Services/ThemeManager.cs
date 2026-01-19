@@ -371,6 +371,13 @@ public class ThemeManager
             resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundPressed"] = textBrush;
             resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundDisabled"] = textBrush;
 
+            // Submenu chevron/arrow colors
+            resources["MenuFlyoutSubItemChevron"] = textBrush;
+            resources["MenuFlyoutSubItemChevronPointerOver"] = textBrush;
+            resources["MenuFlyoutSubItemChevronPressed"] = textBrush;
+            resources["MenuFlyoutSubItemChevronDisabled"] = textBrush;
+            resources["MenuFlyoutSubItemChevronSubMenuOpened"] = textBrush;
+
             // CheckBox text (label) colors - all states
             resources["CheckBoxForegroundUnchecked"] = textBrush;
             resources["CheckBoxForegroundUncheckedPointerOver"] = textBrush;
