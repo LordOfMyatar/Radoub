@@ -480,6 +480,52 @@ public class ThemeManager
             var autoTrimBrush = new SolidColorBrush(Color.Parse(colors.AutoTrimBorder));
             resources["ThemeAutoTrimBorder"] = autoTrimBrush;
         }
+
+        // Button colors - apply theme-defined button colors to Fluent theme resources
+        // This ensures proper contrast in dark themes
+        if (!string.IsNullOrEmpty(colors.ButtonPrimary))
+        {
+            var btnPrimaryColor = Color.Parse(colors.ButtonPrimary);
+            var btnPrimaryBrush = new SolidColorBrush(btnPrimaryColor);
+
+            // Primary button background (accent buttons)
+            resources["AccentButtonBackground"] = btnPrimaryBrush;
+            resources["AccentButtonBackgroundPointerOver"] = btnPrimaryBrush;
+            resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
+        }
+
+        if (!string.IsNullOrEmpty(colors.ButtonSecondary))
+        {
+            var btnSecondaryColor = Color.Parse(colors.ButtonSecondary);
+            var btnSecondaryBrush = new SolidColorBrush(btnSecondaryColor);
+
+            // Standard button backgrounds - use sidebar-based colors for better visibility
+            resources["ButtonBackground"] = btnSecondaryBrush;
+            resources["ButtonBackgroundDisabled"] = btnSecondaryBrush;
+        }
+
+        if (!string.IsNullOrEmpty(colors.ButtonHover))
+        {
+            var btnHoverColor = Color.Parse(colors.ButtonHover);
+            var btnHoverBrush = new SolidColorBrush(btnHoverColor);
+
+            resources["ButtonBackgroundPointerOver"] = btnHoverBrush;
+            resources["ButtonBackgroundPressed"] = btnHoverBrush;
+        }
+
+        // TabItem text color - ensure readability against tab background
+        // Use theme text color for tab foregrounds
+        if (!string.IsNullOrEmpty(colors.Text))
+        {
+            var textBrush = new SolidColorBrush(Color.Parse(colors.Text));
+
+            // TabItem text (header) colors
+            resources["TabItemHeaderForeground"] = textBrush;
+            resources["TabItemHeaderForegroundPointerOver"] = textBrush;
+            resources["TabItemHeaderForegroundPressed"] = textBrush;
+            resources["TabItemHeaderForegroundSelected"] = textBrush;
+            resources["TabItemHeaderForegroundDisabled"] = textBrush;
+        }
     }
 
     /// <summary>
