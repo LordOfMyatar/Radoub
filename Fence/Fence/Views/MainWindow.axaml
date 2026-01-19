@@ -60,6 +60,8 @@
                 <RowDefinition Height="Auto"/>
                 <!-- Buy Restrictions (collapsible) -->
                 <RowDefinition Height="Auto"/>
+                <!-- Local Variables (collapsible) -->
+                <RowDefinition Height="Auto"/>
                 <!-- Inventory and Palette -->
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
@@ -177,8 +179,57 @@
                 </Border>
             </Expander>
 
+            <!-- Local Variables Panel -->
+            <Expander Grid.Row="2" Header="Local Variables" IsExpanded="False" Margin="0,0,0,8"
+                      AutomationProperties.AutomationId="VariablesExpander">
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
+                    <DockPanel>
+                        <!-- Action Buttons -->
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                            <Button Content="Add Variable" Click="OnAddVariable" AutomationProperties.AutomationId="AddVariableButton"/>
+                            <Button Content="Remove" Click="OnRemoveVariable" AutomationProperties.AutomationId="RemoveVariableButton"/>
+                        </StackPanel>
+
+                        <!-- Variables DataGrid -->
+                        <DataGrid x:Name="VariablesGrid"
+                                  AutoGenerateColumns="False"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  CanUserSortColumns="True"
+                                  IsReadOnly="False"
+                                  SelectionMode="Extended"
+                                  GridLinesVisibility="Horizontal"
+                                  MaxHeight="200"
+                                  AutomationProperties.AutomationId="VariablesGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Width="200" Binding="{Binding Name}"/>
+                                <DataGridTextColumn Header="Type" Width="100" Binding="{Binding TypeDisplay}" IsReadOnly="True"/>
+                                <!-- Int Value -->
+                                <DataGridTemplateColumn Header="Value" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ValueDisplay}" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
+                                                <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.1" FormatString="F3"/>
+                                                <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
+                                                <TextBox Text="{Binding ObjectValue, StringFormat=0x{0:X8}}" IsVisible="{Binding IsObjectType}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </Expander>
+
             <!-- Store Inventory and Item Palette -->
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <!-- Store Inventory -->
                     <ColumnDefinition Width="*" MinWidth="300"/>

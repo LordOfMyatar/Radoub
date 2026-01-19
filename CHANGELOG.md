@@ -43,8 +43,12 @@ Shared service for reading/writing local variables on GFF-based files.
 - UtmWriter serializes VarTable to UTM files
 - 2 new UTM tests for VarTable parsing/round-trip
 
-#### Note
-- Fence UI for editing variables (#945) requires separate UI implementation
+#### Added (Fence - #945)
+- Local Variables panel in MainWindow (collapsible Expander)
+- `VariableViewModel` for UI binding with type-specific value editing
+- `MainWindow.Variables.cs` partial class for variable operations
+- Add/Remove variable buttons with DataGrid editing
+- Variables load/save with UTM files
 
 ---
 

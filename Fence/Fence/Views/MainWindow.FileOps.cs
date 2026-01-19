@@ -43,6 +43,7 @@ public partial class MainWindow
         // Update UI
         PopulateStoreProperties();
         StoreItems.Clear();
+        Variables.Clear();
         UpdateStatusBar("New store created");
         UpdateTitle();
         UpdateItemCount();
@@ -86,6 +87,7 @@ public partial class MainWindow
             // Update UI
             PopulateStoreProperties();
             PopulateStoreInventory();
+            PopulateVariables();
             UpdateStatusBar($"Loaded: {Path.GetFileName(filePath)}");
             UpdateTitle();
 
@@ -201,6 +203,9 @@ public partial class MainWindow
         // Update buy restrictions
         UpdateBuyRestrictions();
 
+        // Update local variables from view model
+        UpdateVarTable();
+
         // Update inventory from view model
         _currentStore.StoreList.Clear();
         var groupedItems = StoreItems.GroupBy(i => i.PanelId);
@@ -229,6 +234,7 @@ public partial class MainWindow
         _itemResolutionService.SetCurrentFilePath(null);
 
         StoreItems.Clear();
+        Variables.Clear();
         ClearStoreProperties();
         UpdateStatusBar("Ready");
         UpdateTitle();

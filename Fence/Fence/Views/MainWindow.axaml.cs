@@ -25,6 +25,7 @@ namespace MerchantEditor.Views;
 /// - MainWindow.FileOps.cs: File operations (Open/Save/Recent)
 /// - MainWindow.ItemPalette.cs: Item palette loading
 /// - MainWindow.StoreOperations.cs: Store inventory and buy restrictions
+/// - MainWindow.Variables.cs: Local variable operations (add/edit/remove)
 /// </summary>
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
