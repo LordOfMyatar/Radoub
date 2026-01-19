@@ -175,7 +175,7 @@ public partial class MainWindow
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to export character sheet: {ex.Message}");
-            await ShowErrorDialog("Export Error", $"Failed to export character sheet:\n{ex.Message}");
+            ShowErrorDialog("Export Error", $"Failed to export character sheet:\n{ex.Message}");
         }
     }
 
@@ -353,7 +353,7 @@ public partial class MainWindow
         }
     }
 
-    private async Task LoadFile(string filePath)
+    private Task LoadFile(string filePath)
     {
         try
         {
@@ -404,8 +404,9 @@ public partial class MainWindow
             _isLoading = false;
             UnifiedLogger.LogCreature(LogLevel.ERROR, $"Failed to load creature: {ex.Message}");
             UpdateStatus($"Error loading file: {ex.Message}");
-            await ShowErrorDialog("Load Error", $"Failed to load creature file:\n{ex.Message}");
+            ShowErrorDialog("Load Error", $"Failed to load creature file:\n{ex.Message}");
         }
+        return Task.CompletedTask;
     }
 
     private async Task SaveFile()
@@ -443,7 +444,7 @@ public partial class MainWindow
         {
             UnifiedLogger.LogCreature(LogLevel.ERROR, $"Failed to save creature: {ex.Message}");
             UpdateStatus($"Error saving file: {ex.Message}");
-            await ShowErrorDialog("Save Error", $"Failed to save creature file:\n{ex.Message}");
+            ShowErrorDialog("Save Error", $"Failed to save creature file:\n{ex.Message}");
         }
     }
 
@@ -554,30 +555,30 @@ public partial class MainWindow
     /// alphanumeric and underscore only.
     /// </summary>
     /// <returns>True if valid, false otherwise with error dialog shown.</returns>
-    private async Task<bool> ValidateAuroraFilename(string filePath)
+    private Task<bool> ValidateAuroraFilename(string filePath)
     {
         var filename = Path.GetFileNameWithoutExtension(filePath);
 
         // Check length (max 16 characters)
         if (filename.Length > 16)
         {
-            await DialogHelper.ShowMessageDialog(this, "Invalid Filename",
+            DialogHelper.ShowMessageDialog(this, "Invalid Filename",
                 $"Filename is too long for Aurora Engine.\n\n" +
                 $"Current: \"{filename}\" ({filename.Length} characters)\n" +
                 $"Maximum: 16 characters\n\n" +
                 "The Aurora Engine (Neverwinter Nights) cannot load files with names longer than 16 characters.");
-            return false;
+            return Task.FromResult(false);
         }
 
         // Check for uppercase letters
         if (filename.Any(char.IsUpper))
         {
-            await DialogHelper.ShowMessageDialog(this, "Invalid Filename",
+            DialogHelper.ShowMessageDialog(this, "Invalid Filename",
                 $"Filename contains uppercase letters.\n\n" +
                 $"Current: \"{filename}\"\n" +
                 $"Suggested: \"{filename.ToLowerInvariant()}\"\n\n" +
                 "Aurora Engine filenames should be lowercase for compatibility.");
-            return false;
+            return Task.FromResult(false);
         }
 
         // Check for invalid characters (only alphanumeric and underscore allowed)
@@ -585,29 +586,29 @@ public partial class MainWindow
         if (invalidChars.Count > 0)
         {
             var invalidStr = string.Join("", invalidChars.Distinct());
-            await DialogHelper.ShowMessageDialog(this, "Invalid Filename",
+            DialogHelper.ShowMessageDialog(this, "Invalid Filename",
                 $"Filename contains invalid characters.\n\n" +
                 $"Current: \"{filename}\"\n" +
                 $"Invalid characters: \"{invalidStr}\"\n\n" +
                 "Aurora Engine filenames can only contain letters, numbers, and underscores.");
-            return false;
+            return Task.FromResult(false);
         }
 
-        return true;
+        return Task.FromResult(true);
     }
 
     /// <summary>
     /// Validates that a creature has at least one playable class for BIC files.
     /// </summary>
     /// <returns>True if valid for BIC, false otherwise with error dialog shown.</returns>
-    private async Task<bool> ValidatePlayableClassForBic(UtcFile creature)
+    private Task<bool> ValidatePlayableClassForBic(UtcFile creature)
     {
         if (creature.ClassList == null || creature.ClassList.Count == 0)
         {
-            await DialogHelper.ShowMessageDialog(this, "Invalid Character",
+            DialogHelper.ShowMessageDialog(this, "Invalid Character",
                 "Cannot save as player character (BIC): No classes defined.\n\n" +
                 "Add at least one class to the creature before saving as a BIC file.");
-            return false;
+            return Task.FromResult(false);
         }
 
         // Check if any class is a playable class (PlayerClass = 1 in classes.2da)
@@ -625,15 +626,15 @@ public partial class MainWindow
                 .ToList();
             var classList = string.Join(", ", classNames);
 
-            await DialogHelper.ShowMessageDialog(this, "Invalid Character Class",
+            DialogHelper.ShowMessageDialog(this, "Invalid Character Class",
                 $"Cannot save as player character (BIC): No playable class found.\n\n" +
                 $"Current class(es): {classList}\n\n" +
                 "Player characters require at least one playable class (Fighter, Wizard, Cleric, etc.). " +
                 "NPC-only classes like Commoner or Animal cannot be used for player characters.");
-            return false;
+            return Task.FromResult(false);
         }
 
-        return true;
+        return Task.FromResult(true);
     }
 
     /// <summary>

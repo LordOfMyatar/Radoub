@@ -62,10 +62,10 @@ public static class DialogHelper
     }
 
     /// <summary>
-    /// Shows an informational message dialog with a title and message.
+    /// Shows an informational message dialog with a title and message (non-modal).
     /// Supports longer messages with text wrapping.
     /// </summary>
-    public static async Task ShowMessageDialog(Window parent, string title, string message)
+    public static void ShowMessageDialog(Window parent, string title, string message)
     {
         var dialog = new Window
         {
@@ -91,13 +91,13 @@ public static class DialogHelper
         panel.Children.Add(button);
 
         dialog.Content = panel;
-        await dialog.ShowDialog(parent);
+        dialog.Show(parent);  // Non-modal info dialog
     }
 
     /// <summary>
-    /// Shows an error dialog with a title and message.
+    /// Shows an error dialog with a title and message (non-modal).
     /// </summary>
-    public static async Task ShowErrorDialog(Window parent, string title, string message)
+    public static void ShowErrorDialog(Window parent, string title, string message)
     {
         var dialog = new Window
         {
@@ -116,7 +116,7 @@ public static class DialogHelper
         panel.Children.Add(button);
 
         dialog.Content = panel;
-        await dialog.ShowDialog(parent);
+        dialog.Show(parent);  // Non-modal info dialog
     }
 
     /// <summary>
