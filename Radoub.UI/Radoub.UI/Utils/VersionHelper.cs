@@ -13,11 +13,13 @@ public static class VersionHelper
     /// Uses InformationalVersion if available, stripping any git hash suffix.
     /// Falls back to AssemblyVersion if InformationalVersion is not set.
     /// </summary>
-    /// <param name="assembly">The assembly to get version for. If null, uses calling assembly.</param>
+    /// <param name="assembly">The assembly to get version for. If null, uses entry assembly (main executable).</param>
     /// <returns>Version string (e.g., "0.1.0-alpha")</returns>
     public static string GetVersion(Assembly? assembly = null)
     {
-        assembly ??= Assembly.GetCallingAssembly();
+        assembly ??= Assembly.GetEntryAssembly();
+        if (assembly == null)
+            return "1.0.0";
 
         try
         {
