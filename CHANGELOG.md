@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.38] - 2026-01-18
+**Branch**: `radoub/issue-980` | **PR**: #TBD
+
+### Sprint: UI Uniformity - Shared Utilities (#980)
+
+Parent Epic: #959 - UI Uniformity & Shared Infrastructure
+
+#### Work Items
+- [ ] #967 - [Radoub.UI] Move VersionHelper to shared library
+- [ ] #968 - [Radoub.UI] Create shared StatusBar component
+- [ ] #969 - [Radoub.UI] Standardize progress indicators
+
+---
+
 ## [0.9.37] - 2026-01-18
 **Branch**: `radoub/issue-979` | **PR**: #984
 
