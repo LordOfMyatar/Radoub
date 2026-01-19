@@ -15,7 +15,6 @@ public class VariableViewModel : INotifyPropertyChanged
     private int _intValue;
     private float _floatValue;
     private string _stringValue = string.Empty;
-    private uint _objectValue;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -39,7 +38,6 @@ public class VariableViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsIntType));
                 OnPropertyChanged(nameof(IsFloatType));
                 OnPropertyChanged(nameof(IsStringType));
-                OnPropertyChanged(nameof(IsObjectType));
             }
         }
     }
@@ -62,41 +60,6 @@ public class VariableViewModel : INotifyPropertyChanged
         set { if (_stringValue != value) { _stringValue = value; OnPropertyChanged(); OnPropertyChanged(nameof(ValueDisplay)); } }
     }
 
-    public uint ObjectValue
-    {
-        get => _objectValue;
-        set { if (_objectValue != value) { _objectValue = value; OnPropertyChanged(); OnPropertyChanged(nameof(ValueDisplay)); OnPropertyChanged(nameof(ObjectValueHex)); } }
-    }
-
-    /// <summary>
-    /// Object value as hex string for TextBox binding with validation.
-    /// </summary>
-    public string ObjectValueHex
-    {
-        get => $"0x{ObjectValue:X8}";
-        set
-        {
-            if (TryParseHex(value, out var parsed))
-            {
-                ObjectValue = parsed;
-            }
-        }
-    }
-
-    private static bool TryParseHex(string input, out uint result)
-    {
-        result = 0;
-        if (string.IsNullOrWhiteSpace(input))
-            return false;
-
-        // Remove 0x or 0X prefix if present
-        var hex = input.Trim();
-        if (hex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-            hex = hex.Substring(2);
-
-        return uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out result);
-    }
-
     /// <summary>
     /// Display string for the variable type.
     /// </summary>
@@ -105,8 +68,6 @@ public class VariableViewModel : INotifyPropertyChanged
         VariableType.Int => "Int",
         VariableType.Float => "Float",
         VariableType.String => "String",
-        VariableType.Object => "Object",
-        VariableType.Location => "Location",
         _ => "Unknown"
     };
 
@@ -118,8 +79,6 @@ public class VariableViewModel : INotifyPropertyChanged
         VariableType.Int => IntValue.ToString(),
         VariableType.Float => FloatValue.ToString("F3"),
         VariableType.String => StringValue,
-        VariableType.Object => $"0x{ObjectValue:X8}",
-        VariableType.Location => "(Location)",
         _ => string.Empty
     };
 
@@ -127,11 +86,10 @@ public class VariableViewModel : INotifyPropertyChanged
     public bool IsIntType => Type == VariableType.Int;
     public bool IsFloatType => Type == VariableType.Float;
     public bool IsStringType => Type == VariableType.String;
-    public bool IsObjectType => Type == VariableType.Object;
 
     /// <summary>
     /// ComboBox index for type selection.
-    /// Maps: 0=Int, 1=Float, 2=String, 3=Object
+    /// Maps: 0=Int, 1=Float, 2=String
     /// </summary>
     public int TypeIndex
     {
@@ -140,7 +98,6 @@ public class VariableViewModel : INotifyPropertyChanged
             VariableType.Int => 0,
             VariableType.Float => 1,
             VariableType.String => 2,
-            VariableType.Object => 3,
             _ => 0
         };
         set
@@ -150,12 +107,10 @@ public class VariableViewModel : INotifyPropertyChanged
                 0 => VariableType.Int,
                 1 => VariableType.Float,
                 2 => VariableType.String,
-                3 => VariableType.Object,
                 _ => VariableType.Int
             };
             if (Type != newType)
             {
-                // Reset the value when type changes
                 Type = newType;
                 OnPropertyChanged();
             }
@@ -184,10 +139,7 @@ public class VariableViewModel : INotifyPropertyChanged
             case VariableType.String:
                 vm.StringValue = variable.GetString();
                 break;
-            case VariableType.Object:
-                vm.ObjectValue = variable.GetObjectId();
-                break;
-            // Location type not editable in simple UI
+            // Object and Location types not supported in UI
         }
 
         return vm;
@@ -203,8 +155,7 @@ public class VariableViewModel : INotifyPropertyChanged
             VariableType.Int => Variable.CreateInt(Name, IntValue),
             VariableType.Float => Variable.CreateFloat(Name, FloatValue),
             VariableType.String => Variable.CreateString(Name, StringValue),
-            VariableType.Object => Variable.CreateObject(Name, ObjectValue),
-            _ => Variable.CreateInt(Name, 0) // Fallback
+            _ => Variable.CreateInt(Name, 0) // Fallback for unsupported types
         };
     }
 

@@ -215,7 +215,6 @@
                                                 <ComboBoxItem Content="Int"/>
                                                 <ComboBoxItem Content="Float"/>
                                                 <ComboBoxItem Content="String"/>
-                                                <ComboBoxItem Content="Object"/>
                                             </ComboBox>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>
@@ -232,7 +231,6 @@
                                                 <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
                                                 <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.1" FormatString="F3"/>
                                                 <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
-                                                <TextBox Text="{Binding ObjectValueHex}" IsVisible="{Binding IsObjectType}" Watermark="0x00000000"/>
                                             </Grid>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>
