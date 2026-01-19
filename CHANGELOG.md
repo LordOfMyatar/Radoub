@@ -28,11 +28,17 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 - [ ] #978 - [Radoub.Dictionary] Consolidate spell-check for game-facing text
 
 #### Bundled Dependabot Updates (Avalonia 11.3.10 → 11.3.11)
-- [ ] #991 - Bump Avalonia and Avalonia.Controls.DataGrid (Radoub.UI)
-- [ ] #992 - Bump Avalonia and Avalonia.Diagnostics (Parley)
-- [ ] #993 - Bump Avalonia and Avalonia.Fonts.Inter (Parley)
-- [ ] #994 - Bump Avalonia.Headless.XUnit (Parley.Tests)
-- [ ] #995 - Bump Avalonia and Avalonia.Skia (Parley)
+- [x] #991 - Bump Avalonia and Avalonia.Controls.DataGrid (Radoub.UI)
+- [x] #992 - Bump Avalonia and Avalonia.Diagnostics (Parley)
+- [x] #993 - Bump Avalonia and Avalonia.Fonts.Inter (Parley)
+- [x] #994 - Bump Avalonia.Headless.XUnit (Parley.Tests)
+- [x] #995 - Bump Avalonia and Avalonia.Skia (Parley)
+
+#### Changed
+- Upgraded Avalonia packages from 11.3.10 to 11.3.11 across all tools:
+  - Parley, Manifest, Quartermaster, Fence, Trebuchet (main apps)
+  - Radoub.UI (shared library)
+  - Test projects (Parley.Tests, Quartermaster.Tests, Fence.Tests)
 
 ---
 
