@@ -72,12 +72,27 @@ The script handles:
 - Unit tests (tool + shared if needed)
 - UI tests (if not -UnitOnly)
 
-### Step 4: CHANGELOG Validation
+### Step 4: CHANGELOG and Version Validation
 
 Read CHANGELOG and verify:
 - Version section exists
 - PR number filled in (not TBD)
 - Date is today or earlier
+
+**Verify .csproj version matches CHANGELOG**:
+```bash
+# Get latest version from tool's CHANGELOG
+grep -E "^\#\# \[" [Tool]/CHANGELOG.md | head -2 | tail -1
+
+# Compare with .csproj Version
+grep "<Version>" [Tool]/[Tool]/[Tool].csproj
+```
+
+If versions don't match, update the `.csproj` file:
+- `<Version>` - Semantic version (e.g., "0.1.44-alpha")
+- `<AssemblyVersion>` - Numeric only (e.g., "0.1.44.0")
+- `<FileVersion>` - Numeric only (e.g., "0.1.44.0")
+- `<InformationalVersion>` - Same as Version
 
 ### Step 5: Wiki Freshness Check
 

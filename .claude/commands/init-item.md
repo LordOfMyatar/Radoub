@@ -161,6 +161,22 @@ Add new version section after `[Unreleased]`:
 
 **Use today's date** (not TBD) - most PRs merge same day.
 
+### Step 7b: Update .csproj Version
+
+Update the tool's `.csproj` file to match the new CHANGELOG version:
+
+```xml
+<!-- Version Configuration -->
+<Version>X.Y.Z-alpha</Version>
+<AssemblyVersion>X.Y.Z.0</AssemblyVersion>
+<FileVersion>X.Y.Z.0</FileVersion>
+<InformationalVersion>X.Y.Z-alpha</InformationalVersion>
+```
+
+**Path**: `[Tool]/[Tool]/[Tool].csproj`
+
+This ensures `VersionHelper.GetVersion()` returns the correct version in the About dialog and window title.
+
 ### Step 8: Initial Commit
 
 ```bash
