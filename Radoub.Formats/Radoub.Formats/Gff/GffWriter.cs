@@ -298,9 +298,36 @@ public static class GffWriter
                 // Simple types store value directly in DataOrDataOffset
                 field.DataOrDataOffset = EncodeSimpleValue(field);
             }
+            else if (field.Type == GffField.Struct)
+            {
+                // Struct fields store struct index directly in DataOrDataOffset
+                if (field.Value is GffStruct s && structIndices.TryGetValue(s, out var idx))
+                {
+                    field.DataOrDataOffset = idx;
+                }
+            }
+            else if (field.Type == GffField.List)
+            {
+                // List fields store offset into ListIndices in DataOrDataOffset
+                field.DataOrDataOffset = (uint)listIndices.Position;
+                if (field.Value is GffList list)
+                {
+                    var countBytes = BitConverter.GetBytes(list.Count);
+                    listIndices.Write(countBytes, 0, 4);
+
+                    foreach (var element in list.Elements)
+                    {
+                        if (structIndices.TryGetValue(element, out var elemIdx))
+                        {
+                            var elemBytes = BitConverter.GetBytes(elemIdx);
+                            listIndices.Write(elemBytes, 0, 4);
+                        }
+                    }
+                }
+            }
             else
             {
-                // Complex types store offset into FieldData
+                // Other complex types (CExoString, CResRef, etc.) store offset into FieldData
                 field.DataOrDataOffset = (uint)fieldData.Position;
                 WriteComplexValue(field, fieldData, listIndices, structIndices);
             }
@@ -325,6 +352,7 @@ public static class GffWriter
     private static void WriteComplexValue(GffField field, MemoryStream fieldData,
         MemoryStream listIndices, Dictionary<GffStruct, uint> structIndices)
     {
+        // Note: Struct and List are handled directly in WriteFieldData, not here
         switch (field.Type)
         {
             case GffField.CExoString:
@@ -337,34 +365,6 @@ public static class GffWriter
 
             case GffField.CExoLocString:
                 WriteCExoLocString(fieldData, field.Value as CExoLocString ?? new CExoLocString());
-                break;
-
-            case GffField.Struct:
-                if (field.Value is GffStruct s && structIndices.TryGetValue(s, out var idx))
-                {
-                    var bytes = BitConverter.GetBytes(idx);
-                    fieldData.Write(bytes, 0, 4);
-                }
-                break;
-
-            case GffField.List:
-                // List data goes in ListIndices, but we store the offset in DataOrDataOffset
-                field.DataOrDataOffset = (uint)listIndices.Position;
-                if (field.Value is GffList list)
-                {
-                    var countBytes = BitConverter.GetBytes(list.Count);
-                    listIndices.Write(countBytes, 0, 4);
-
-                    foreach (var element in list.Elements)
-                    {
-                        if (structIndices.TryGetValue(element, out var elemIdx))
-                        {
-                            var elemBytes = BitConverter.GetBytes(elemIdx);
-                            listIndices.Write(elemBytes, 0, 4);
-                        }
-                    }
-                }
-                // Reset fieldData position - List doesn't use fieldData
                 break;
 
             case GffField.VOID:
