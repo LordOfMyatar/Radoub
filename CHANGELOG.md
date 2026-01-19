@@ -15,6 +15,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.41] - 2026-01-19
+**Branch**: `radoub/issue-983` | **PR**: #TBD
+
+### Sprint: UI Uniformity - Theme & Dictionary (#983)
+
+Parent Epic: #959 - UI Uniformity & Shared Infrastructure
+
+#### Work Items
+- [ ] #976 - [Radoub] Radoub-level theme configuration
+- [ ] #977 - [Trebuchet] Theme generator/editor UI
+- [ ] #978 - [Radoub.Dictionary] Consolidate spell-check for game-facing text
+
+#### Bundled Dependabot Updates (Avalonia 11.3.10 → 11.3.11)
+- [ ] #991 - Bump Avalonia and Avalonia.Controls.DataGrid (Radoub.UI)
+- [ ] #992 - Bump Avalonia and Avalonia.Diagnostics (Parley)
+- [ ] #993 - Bump Avalonia and Avalonia.Fonts.Inter (Parley)
+- [ ] #994 - Bump Avalonia.Headless.XUnit (Parley.Tests)
+- [ ] #995 - Bump Avalonia and Avalonia.Skia (Parley)
+
+---
+
 ## [0.9.40] - 2026-01-18
 **Branch**: `radoub/issue-982` | **PR**: #989
 
