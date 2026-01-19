@@ -623,6 +623,92 @@ StatusText = $"Processed {items.Count} items";
 - For cancellable operations, include cancel button or Escape key handling
 - Prefer `IsIndeterminate=true` when total progress is unknown
 
+**Deferred Loading Patterns** (Epic #959, Sprint 4):
+
+**Lifecycle Event Responsibilities**:
+
+| Event | Purpose | Example Operations |
+|-------|---------|-------------------|
+| Constructor | Light synchronous setup | `InitializeComponent()`, create services, register events |
+| Loaded | UI restoration | Restore panel sizes, debug settings, combo box selections |
+| Opened | Heavy async work | Initialize caches, load palettes, handle startup file |
+
+**Recommended Startup Pattern**:
+```csharp
+public MainWindow()
+{
+    InitializeComponent();
+    DataContext = _viewModel;
+
+    // Fast services only (no I/O)
+    _gameDataService = new GameDataService();
+    _displayService = new CreatureDisplayService(_gameDataService);
+
+    InitializeUI();  // Fast UI setup
+    RestoreWindowPosition();
+
+    Loaded += OnWindowLoaded;
+    Opened += OnWindowOpened;
+}
+
+private void OnWindowLoaded(object? sender, RoutedEventArgs e)
+{
+    RestoreDebugSettings();
+    RestorePanelSizes();
+}
+
+private async void OnWindowOpened(object? sender, EventArgs e)
+{
+    Opened -= OnWindowOpened;  // Unsubscribe immediately
+
+    UpdateStatus("Loading game data...");
+    await InitializeCachesAsync();  // Sequential async
+    _ = StartPaletteLoadAsync();     // Fire-and-forget
+    await HandleStartupFileAsync();
+    UpdateStatus("Ready");
+}
+```
+
+**Fire-and-Forget Pattern**:
+```csharp
+// Use underscore to suppress compiler warning
+_ = LoadBaseItemTypesAsync();
+_ = ScanCreaturesAsync(token);
+```
+
+**Cancellation Token Pattern**:
+```csharp
+private CancellationTokenSource? _loadCts;
+
+private void StartLoad()
+{
+    _loadCts?.Cancel();  // Cancel previous operation
+    _loadCts = new CancellationTokenSource();
+    _ = LoadAsync(_loadCts.Token);
+}
+
+private async Task LoadAsync(CancellationToken token)
+{
+    try
+    {
+        await DoWorkAsync(token);
+    }
+    catch (OperationCanceledException)
+    {
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Load cancelled");
+    }
+}
+```
+
+**Anti-Patterns to Avoid**:
+
+| Anti-Pattern | Problem | Fix |
+|--------------|---------|-----|
+| `await` in constructor | Blocks window show | Move to `Opened` event |
+| No cancellation token | Orphaned tasks | Use `CancellationTokenSource` |
+| Status not reset | "Loading..." stuck | Always reset to "Ready" |
+| No error handling | Silent failures | Catch and log in async methods |
+
 ---
 
 ## Aurora Engine File Naming Constraints
