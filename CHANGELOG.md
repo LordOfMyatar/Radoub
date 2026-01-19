@@ -23,9 +23,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 
 #### Work Items
-- [ ] #967 - [Radoub.UI] Move VersionHelper to shared library
+- [x] #967 - [Radoub.UI] Move VersionHelper to shared library
 - [ ] #968 - [Radoub.UI] Create shared StatusBar component
 - [ ] #969 - [Radoub.UI] Standardize progress indicators
+
+#### Added
+- `Radoub.UI.Utils.VersionHelper` - Shared version helper for all tools
+  - `GetVersion()` - Returns semantic version from assembly metadata
+  - `GetEntryAssemblyVersion()` - Returns version for main application
+
+#### Removed
+- `Parley/Utils/VersionHelper.cs` - Replaced by shared implementation
+
+#### Changed
+- Parley, Manifest, Quartermaster, Fence, Trebuchet now use shared VersionHelper
+- Removed duplicate `GetVersionString()` methods from all tools
 
 ---
 

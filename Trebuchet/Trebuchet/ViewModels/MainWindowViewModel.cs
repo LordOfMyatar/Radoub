@@ -1,7 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -10,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
+using Radoub.UI.Utils;
 using Radoub.UI.Views;
 using RadoubLauncher.Services;
 using RadoubLauncher.Views;
@@ -78,34 +78,11 @@ public partial class MainWindowViewModel : ObservableObject
         _ = CheckForUpdatesAsync();
     }
 
-    private static string GetVersionString()
-    {
-        try
-        {
-            var infoVersion = Assembly.GetExecutingAssembly()
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-
-            if (!string.IsNullOrEmpty(infoVersion))
-            {
-                var plusIndex = infoVersion.IndexOf('+');
-                if (plusIndex > 0)
-                    infoVersion = infoVersion[..plusIndex];
-                return infoVersion;
-            }
-
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            if (version != null)
-                return $"{version.Major}.{version.Minor}.{version.Build}";
-        }
-        catch { }
-        return "0.1.0";
-    }
-
     private void LoadVersionInfo()
     {
         try
         {
-            VersionText = $"v{GetVersionString()}";
+            VersionText = $"v{VersionHelper.GetVersion()}";
         }
         catch
         {
@@ -279,12 +256,11 @@ public partial class MainWindowViewModel : ObservableObject
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Opening about window");
 
-        var version = GetVersionString();
         var aboutWindow = Radoub.UI.Views.AboutWindow.Create(new AboutWindowConfig
         {
             ToolName = "Trebuchet",
             Subtitle = "Radoub Launcher for Neverwinter Nights",
-            Version = version,
+            Version = VersionHelper.GetVersion(),
             AdditionalInfo = "Radoub Toolset includes:\nParley - Dialog Editor\nManifest - Journal Editor\nQuartermaster - Creature/Item Editor\nFence - Merchant Editor"
         });
         aboutWindow.Show(_parentWindow);  // Non-modal about window

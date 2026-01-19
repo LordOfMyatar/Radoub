@@ -27,6 +27,7 @@ using Parley.Services;
 using Parley.Views.Helpers;
 using DialogEditor.Views;
 using Radoub.Formats.Ssf;
+using Radoub.UI.Utils;
 using Radoub.UI.Views;
 
 namespace DialogEditor.Views
@@ -841,7 +842,7 @@ namespace DialogEditor.Views
             {
                 ToolName = "Parley",
                 Subtitle = "Dialog Editor for Neverwinter Nights",
-                Version = VersionHelper.Version,
+                Version = Radoub.UI.Utils.VersionHelper.GetVersion(),
                 IconBitmap = new Avalonia.Media.Imaging.Bitmap(
                     Avalonia.Platform.AssetLoader.Open(
                         new System.Uri("avares://Parley/Assets/parley.ico")))
