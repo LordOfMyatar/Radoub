@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.41] - 2026-01-19
-**Branch**: `radoub/issue-983` | **PR**: #TBD
+**Branch**: `radoub/issue-983` | **PR**: #996
 
 ### Sprint: UI Uniformity - Theme & Dictionary (#983)
 
