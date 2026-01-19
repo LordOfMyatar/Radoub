@@ -7,6 +7,7 @@ using MerchantEditor.ViewModels;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
