@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
@@ -129,7 +130,10 @@ public static class DialogHelper
         {
             ToolName = "Quartermaster",
             Subtitle = "Creature and Inventory Editor for Neverwinter Nights",
-            Version = GetVersionString()
+            Version = GetVersionString(),
+            IconBitmap = new Avalonia.Media.Imaging.Bitmap(
+                Avalonia.Platform.AssetLoader.Open(
+                    new Uri("avares://Quartermaster/Assets/Quartermaster.ico")))
         });
         aboutWindow.Show(parent);
     }

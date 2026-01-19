@@ -841,7 +841,10 @@ namespace DialogEditor.Views
             {
                 ToolName = "Parley",
                 Subtitle = "Dialog Editor for Neverwinter Nights",
-                Version = VersionHelper.Version
+                Version = VersionHelper.Version,
+                IconBitmap = new Avalonia.Media.Imaging.Bitmap(
+                    Avalonia.Platform.AssetLoader.Open(
+                        new System.Uri("avares://Parley/Assets/parley.ico")))
             });
             aboutWindow.Show(this);
         }

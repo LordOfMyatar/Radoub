@@ -1225,7 +1225,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             ToolName = "Manifest",
             Subtitle = "Journal Editor for Neverwinter Nights",
-            Version = GetVersionString()
+            Version = GetVersionString(),
+            IconBitmap = new Avalonia.Media.Imaging.Bitmap(
+                Avalonia.Platform.AssetLoader.Open(
+                    new System.Uri("avares://Manifest/Assets/manifest.ico")))
         });
         aboutWindow.Show(this);
     }

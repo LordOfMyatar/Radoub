@@ -420,7 +420,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             ToolName = "Fence",
             Subtitle = "Merchant Editor for Neverwinter Nights",
-            Version = GetVersionString()
+            Version = GetVersionString(),
+            IconBitmap = new Avalonia.Media.Imaging.Bitmap(
+                Avalonia.Platform.AssetLoader.Open(
+                    new System.Uri("avares://Fence/Assets/fence.ico")))
         });
         aboutWindow.Show(this);
     }
