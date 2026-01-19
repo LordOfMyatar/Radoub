@@ -9,6 +9,7 @@ using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
 using Radoub.Formats.Utm;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -40,6 +41,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly IGameDataService? _gameDataService;
     private CancellationTokenSource? _paletteLoadCts;
     private const int PaletteBatchSize = 50;
+
+    // Store palette categories loaded from storepal.itp
+    // Maps dropdown index to category ID for CEP/custom content support
+    private readonly List<PaletteCategory> _storeCategories = new();
 
     public ObservableCollection<StoreItemViewModel> StoreItems { get; } = new();
     public ObservableCollection<PaletteItemViewModel> PaletteItems { get; } = new();
@@ -155,19 +160,51 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     /// <summary>
     /// Populate the store category dropdown with toolset palette categories.
-    /// These map to category node IDs in storepal.itp.
+    /// These are loaded from storepal.itp to support custom content (CEP, etc.).
     /// </summary>
     private void PopulateCategoryDropdown()
     {
-        // Merchant palette categories from storepal.itp
-        // Only these categories exist for filing merchants:
         StoreCategoryBox.Items.Clear();
-        StoreCategoryBox.Items.Add("Merchants");   // 0 - Default category
-        StoreCategoryBox.Items.Add("Custom 1");    // 1
-        StoreCategoryBox.Items.Add("Custom 2");    // 2
-        StoreCategoryBox.Items.Add("Custom 3");    // 3
-        StoreCategoryBox.Items.Add("Custom 4");    // 4
-        StoreCategoryBox.Items.Add("Custom 5");    // 5
+        _storeCategories.Clear();
+
+        // Try to load categories from storepal.itp via GameDataService
+        if (_gameDataService?.IsConfigured == true)
+        {
+            var categories = _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Utm).ToList();
+            if (categories.Count > 0)
+            {
+                // Sort by ID for consistent ordering
+                categories.Sort((a, b) => a.Id.CompareTo(b.Id));
+
+                foreach (var category in categories)
+                {
+                    _storeCategories.Add(category);
+                    StoreCategoryBox.Items.Add(category.Name);
+                }
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {categories.Count} store palette categories from storepal.itp");
+                StoreCategoryBox.SelectedIndex = 0;
+                return;
+            }
+        }
+
+        // Fallback to hardcoded defaults when game data unavailable
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Using fallback store categories (game data unavailable)");
+        var fallbackCategories = new (byte Id, string Name)[]
+        {
+            (0, "Merchants"),
+            (1, "Custom 1"),
+            (2, "Custom 2"),
+            (3, "Custom 3"),
+            (4, "Custom 4"),
+            (5, "Custom 5")
+        };
+
+        foreach (var (id, name) in fallbackCategories)
+        {
+            _storeCategories.Add(new PaletteCategory { Id = id, Name = name });
+            StoreCategoryBox.Items.Add(name);
+        }
 
         StoreCategoryBox.SelectedIndex = 0;
     }
@@ -304,9 +341,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         LimitedGoldCheck.IsChecked = _currentStore.StoreGold >= 0;
         StoreGoldBox.Value = Math.Max(0, _currentStore.StoreGold);
 
-        // Set category (PaletteID) - clamp to valid range for our dropdown
-        var categoryIndex = Math.Min(_currentStore.PaletteID, StoreCategoryBox.Items.Count - 1);
-        StoreCategoryBox.SelectedIndex = categoryIndex;
+        // Set category (PaletteID) - find matching category by ID, not index
+        var categoryIndex = _storeCategories.FindIndex(c => c.Id == _currentStore.PaletteID);
+        StoreCategoryBox.SelectedIndex = categoryIndex >= 0 ? categoryIndex : 0;
 
         // Populate buy restrictions
         PopulateBuyRestrictions();
