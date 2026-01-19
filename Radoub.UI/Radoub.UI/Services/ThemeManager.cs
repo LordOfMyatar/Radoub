@@ -366,6 +366,18 @@ public class ThemeManager
             resources["TopLevelItemForeground"] = textBrush;
         }
 
+        // Menu flyout (dropdown) background - needs to match theme
+        if (!string.IsNullOrEmpty(colors.Sidebar))
+        {
+            var sidebarBrush = new SolidColorBrush(Color.Parse(colors.Sidebar));
+
+            // Menu dropdown background
+            resources["MenuFlyoutPresenterBackground"] = sidebarBrush;
+            resources["MenuFlyoutPresenterBorderBrush"] = sidebarBrush;
+            resources["ContextMenuBackground"] = sidebarBrush;
+            resources["MenuBarBackground"] = sidebarBrush;
+        }
+
         // Accent color - buttons, highlights
         if (!string.IsNullOrEmpty(colors.Accent))
         {
