@@ -370,6 +370,26 @@ public class ThemeManager
             resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundPointerOver"] = textBrush;
             resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundPressed"] = textBrush;
             resources["MenuFlyoutItemKeyboardAcceleratorTextForegroundDisabled"] = textBrush;
+
+            // CheckBox text (label) colors - all states
+            resources["CheckBoxForegroundUnchecked"] = textBrush;
+            resources["CheckBoxForegroundUncheckedPointerOver"] = textBrush;
+            resources["CheckBoxForegroundUncheckedPressed"] = textBrush;
+            resources["CheckBoxForegroundUncheckedDisabled"] = textBrush;
+            resources["CheckBoxForegroundChecked"] = textBrush;
+            resources["CheckBoxForegroundCheckedPointerOver"] = textBrush;
+            resources["CheckBoxForegroundCheckedPressed"] = textBrush;
+            resources["CheckBoxForegroundCheckedDisabled"] = textBrush;
+            resources["CheckBoxForegroundIndeterminate"] = textBrush;
+            resources["CheckBoxForegroundIndeterminatePointerOver"] = textBrush;
+            resources["CheckBoxForegroundIndeterminatePressed"] = textBrush;
+            resources["CheckBoxForegroundIndeterminateDisabled"] = textBrush;
+
+            // RadioButton text colors (similar pattern to CheckBox)
+            resources["RadioButtonForeground"] = textBrush;
+            resources["RadioButtonForegroundPointerOver"] = textBrush;
+            resources["RadioButtonForegroundPressed"] = textBrush;
+            resources["RadioButtonForegroundDisabled"] = textBrush;
         }
 
         // Menu flyout (dropdown) background - needs to match theme
@@ -545,11 +565,16 @@ public class ThemeManager
         {
             var textBrush = new SolidColorBrush(Color.Parse(colors.Text));
 
-            // TabItem text (header) colors
-            resources["TabItemHeaderForeground"] = textBrush;
-            resources["TabItemHeaderForegroundPointerOver"] = textBrush;
-            resources["TabItemHeaderForegroundPressed"] = textBrush;
+            // TabItem text (header) colors - Avalonia FluentTheme resource keys
+            // Unselected tab states
+            resources["TabItemHeaderForegroundUnselected"] = textBrush;
+            resources["TabItemHeaderForegroundUnselectedPointerOver"] = textBrush;
+            resources["TabItemHeaderForegroundUnselectedPressed"] = textBrush;
+            // Selected tab states
             resources["TabItemHeaderForegroundSelected"] = textBrush;
+            resources["TabItemHeaderForegroundSelectedPointerOver"] = textBrush;
+            resources["TabItemHeaderForegroundSelectedPressed"] = textBrush;
+            // Disabled state
             resources["TabItemHeaderForegroundDisabled"] = textBrush;
         }
     }

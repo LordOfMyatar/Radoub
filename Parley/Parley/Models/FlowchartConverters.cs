@@ -178,6 +178,7 @@ namespace DialogEditor.Models
 
     /// <summary>
     /// Converts IsLink boolean to node opacity for visual distinction.
+    /// Issue #999: Increased opacity for dark themes to maintain readability.
     /// </summary>
     public class FlowchartLinkOpacityConverter : IValueConverter
     {
@@ -186,8 +187,14 @@ namespace DialogEditor.Models
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             var isLink = value as bool? ?? false;
+            if (!isLink)
+                return 1.0;
+
             // Links are slightly translucent to indicate they're references
-            return isLink ? 0.7 : 1.0;
+            // Use higher opacity in dark themes for better readability
+            var app = Application.Current;
+            bool isDark = app?.ActualThemeVariant == ThemeVariant.Dark;
+            return isDark ? 0.85 : 0.7;
         }
 
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
