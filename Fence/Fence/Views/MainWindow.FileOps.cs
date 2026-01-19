@@ -331,11 +331,14 @@ public partial class MainWindow
         }
     }
 
-    private void OnRecentFileClick(object? sender, RoutedEventArgs e)
+    private async void OnRecentFileClick(object? sender, RoutedEventArgs e)
     {
         if (sender is MenuItem item && item.Tag is string filePath)
         {
-            if (File.Exists(filePath))
+            // Check file existence on background thread to avoid blocking on network paths
+            var exists = await System.Threading.Tasks.Task.Run(() => File.Exists(filePath));
+
+            if (exists)
             {
                 LoadFile(filePath);
             }
@@ -343,7 +346,7 @@ public partial class MainWindow
             {
                 ShowError($"File not found: {filePath}");
                 SettingsService.Instance.RemoveRecentFile(filePath);
-                UpdateRecentFilesMenu();
+                PopulateRecentFilesMenuItems();
             }
         }
     }
