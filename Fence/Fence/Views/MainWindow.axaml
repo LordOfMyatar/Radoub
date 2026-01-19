@@ -229,7 +229,7 @@
                                         <DataTemplate>
                                             <Grid>
                                                 <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
-                                                <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.1" FormatString="F3"/>
+                                                <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.001" FormatString="F3"/>
                                                 <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
                                             </Grid>
                                         </DataTemplate>

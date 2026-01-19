@@ -184,24 +184,43 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private async void OnWindowLoaded(object? sender, RoutedEventArgs e)
+    private void OnWindowLoaded(object? sender, RoutedEventArgs e)
     {
         // Unsubscribe to prevent multiple calls
         Loaded -= OnWindowLoaded;
 
-        // Load base item types in background (involves 2DA file I/O)
-        await System.Threading.Tasks.Task.Run(() =>
-        {
-            LoadBaseItemTypes();
-        });
+        // Show loading status
+        UpdateStatusBar("Loading game data...");
 
-        // Populate type filter on UI thread after base items loaded
-        PopulateTypeFilter();
-
-        // Start background loading of item palette
+        // Start all background loading - don't await, let window be responsive
+        _ = LoadBaseItemTypesAsync();
         StartItemPaletteLoad();
 
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window loaded, background initialization complete");
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window loaded, background initialization started");
+    }
+
+    private async System.Threading.Tasks.Task LoadBaseItemTypesAsync()
+    {
+        // Load base item types on background thread
+        var types = await System.Threading.Tasks.Task.Run(() =>
+        {
+            return _baseItemTypeService.GetBaseItemTypes();
+        });
+
+        // Update UI on main thread
+        SelectableBaseItemTypes.Clear();
+        foreach (var type in types)
+        {
+            SelectableBaseItemTypes.Add(new SelectableBaseItemTypeViewModel(type.BaseItemIndex, type.DisplayName));
+        }
+        ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
+
+        // Populate type filter after base items loaded
+        PopulateTypeFilter();
+
+        // Don't update status here - let palette loading control the status
+        // UpdateStatusBar("Ready") is called when palette loading completes
     }
 
     private void SaveWindowPosition()
@@ -335,43 +354,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void PopulateStoreInventory()
-    {
-        StoreItems.Clear();
-
-        if (_currentStore == null) return;
-
-        // Get current markup/markdown for price calculations
-        var markUp = (int)(SellMarkupBox.Value ?? 100);
-        var markDown = (int)(BuyMarkdownBox.Value ?? 50);
-
-        foreach (var panel in _currentStore.StoreList)
-        {
-            foreach (var item in panel.Items)
-            {
-                // Resolve item data from UTI
-                var resolved = _itemResolutionService.ResolveItem(item.InventoryRes);
-
-                StoreItems.Add(new StoreItemViewModel
-                {
-                    ResRef = item.InventoryRes,
-                    Tag = resolved?.Tag ?? item.InventoryRes,
-                    DisplayName = resolved?.DisplayName ?? item.InventoryRes,
-                    Infinite = item.Infinite,
-                    PanelId = panel.PanelId,
-                    BaseItemType = resolved?.BaseItemTypeName ?? "Unknown",
-                    SellPrice = resolved?.CalculateSellPrice(markUp) ?? 0,
-                    BuyPrice = resolved?.CalculateBuyPrice(markDown) ?? 0
-                });
-            }
-        }
-
-        StoreInventoryGrid.ItemsSource = StoreItems;
-        UpdateItemCount();
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Populated {StoreItems.Count} store items");
-    }
-
     #endregion
 
     #region UI Updates
@@ -426,6 +408,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnSettingsClick(object? sender, RoutedEventArgs e)
     {
         var settingsWindow = new SettingsWindow();
+        settingsWindow.SetMainWindow(this);
         settingsWindow.Show(this); // Non-modal
     }
 

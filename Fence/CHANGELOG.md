@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- **Item palette caching** - Palette items cached to `~/Radoub/Fence/palette_cache.json` for faster startup
+- **Cache management UI** - Settings → Cache tab shows cache info and "Clear and Reload Cache" button
+- **First-launch notification** - Shows popup when building cache for first time
+- **Creature item filtering** - Creature weapons (bite, claw, gore) excluded from palette
+- **Async store inventory loading** - Store items load on background thread to avoid UI freeze
+
+### Known Issues
+- **Float precision display in Aurora Toolset** - Float values like `0.1` display as `0.100000001490116` in the BioWare toolset. This is an IEEE 754 binary floating-point limitation, not a Fence bug. Values like 0.1 cannot be represented exactly in binary. The toolset shows the raw float bits. Workaround: use binary-exact values (0.125, 0.25, 0.5) or store percentages as integers.
+
 ---
 
 ## [0.1.1-alpha] - 2026-01-17

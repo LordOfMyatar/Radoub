@@ -16,6 +16,7 @@ namespace MerchantEditor.Views;
 public partial class SettingsWindow : Window
 {
     private bool _isInitializing = true;
+    private MainWindow? _mainWindow;
 
     public SettingsWindow()
     {
@@ -24,8 +25,63 @@ public partial class SettingsWindow : Window
         LoadSettings();
         PopulateThemes();
         PopulateFontFamilies();
+        UpdateCacheInfo();
 
         _isInitializing = false;
+    }
+
+    /// <summary>
+    /// Set the main window reference for cache operations.
+    /// </summary>
+    public void SetMainWindow(MainWindow mainWindow)
+    {
+        _mainWindow = mainWindow;
+        UpdateCacheInfo();
+    }
+
+    private void UpdateCacheInfo()
+    {
+        var cacheInfo = _mainWindow?.GetPaletteCacheInfo();
+
+        if (cacheInfo != null)
+        {
+            CacheStatusText.Text = "Cached";
+            CacheStatusText.Foreground = GetSuccessBrush();
+            CacheItemCountText.Text = $"{cacheInfo.ItemCount:N0}";
+            CacheSizeText.Text = $"{cacheInfo.FileSizeKB:N1} KB";
+            CacheCreatedText.Text = cacheInfo.CreatedAt.ToLocalTime().ToString("g");
+        }
+        else
+        {
+            CacheStatusText.Text = "No cache";
+            CacheStatusText.Foreground = GetWarningBrush();
+            CacheItemCountText.Text = "-";
+            CacheSizeText.Text = "-";
+            CacheCreatedText.Text = "-";
+        }
+    }
+
+    private void OnClearCacheClick(object? sender, RoutedEventArgs e)
+    {
+        if (_mainWindow == null)
+            return;
+
+        CacheStatusText.Text = "Rebuilding...";
+        CacheStatusText.Foreground = GetWarningBrush();
+        ClearCacheButton.IsEnabled = false;
+
+        _mainWindow.ClearAndReloadPaletteCache();
+
+        // Re-enable button and update info after a delay to allow rebuild to start
+        _ = System.Threading.Tasks.Task.Run(async () =>
+        {
+            await System.Threading.Tasks.Task.Delay(2000);
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ClearCacheButton.IsEnabled = true;
+                UpdateCacheInfo();
+            });
+        });
     }
 
     private void LoadSettings()
