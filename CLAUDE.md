@@ -582,6 +582,47 @@ ShowToastNotification("Plugin started", 3000);
 
 See [#868](https://github.com/LordOfMyatar/Radoub/issues/868) for standardization audit.
 
+**Progress Indicator Standards**:
+
+Operations should provide appropriate feedback based on duration:
+
+| Duration | Feedback Type | Implementation |
+|----------|---------------|----------------|
+| <2 seconds | Status bar text | Update `StatusText` property |
+| 2-5 seconds | Indeterminate progress | `StatusBarControl.ShowProgress = true` |
+| >5 seconds | Progress with status updates | Update status text periodically |
+
+**Pattern Examples**:
+```csharp
+// Brief operation - status text only
+StatusText = "Saving...";
+await SaveFileAsync();
+StatusText = "Ready";
+
+// Medium operation - indeterminate progress
+ShowProgress = true;
+StatusText = "Loading palette...";
+await LoadPaletteAsync();
+ShowProgress = false;
+StatusText = "Ready";
+
+// Long operation - progress with updates
+ShowProgress = true;
+for (int i = 0; i < items.Count; i++)
+{
+    StatusText = $"Processing {i + 1} of {items.Count}...";
+    await ProcessItemAsync(items[i]);
+}
+ShowProgress = false;
+StatusText = $"Processed {items.Count} items";
+```
+
+**Guidelines**:
+- Always reset status bar to "Ready" when operation completes
+- Use `Radoub.UI.Controls.StatusBarControl` for consistent styling
+- For cancellable operations, include cancel button or Escape key handling
+- Prefer `IsIndeterminate=true` when total progress is unknown
+
 ---
 
 ## Aurora Engine File Naming Constraints

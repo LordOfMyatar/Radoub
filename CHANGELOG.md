@@ -25,7 +25,7 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 #### Work Items
 - [x] #967 - [Radoub.UI] Move VersionHelper to shared library
 - [x] #968 - [Radoub.UI] Create shared StatusBar component
-- [ ] #969 - [Radoub.UI] Standardize progress indicators
+- [x] #969 - [Radoub.UI] Standardize progress indicators
 
 #### Added
 - `Radoub.UI.Utils.VersionHelper` - Shared version helper for all tools
@@ -44,6 +44,9 @@ Parent Epic: #959 - UI Uniformity & Shared Infrastructure
 #### Changed
 - Parley, Manifest, Quartermaster, Fence, Trebuchet now use shared VersionHelper
 - Removed duplicate `GetVersionString()` methods from all tools
+
+#### Documentation
+- Added Progress Indicator Standards to CLAUDE.md (duration-based feedback guidelines)
 
 ---
 
