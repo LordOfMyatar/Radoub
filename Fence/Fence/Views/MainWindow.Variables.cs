@@ -22,6 +22,9 @@ public partial class MainWindow
     /// </summary>
     private void PopulateVariables()
     {
+        // Unbind grid first to avoid UI updates during population
+        VariablesGrid.ItemsSource = null;
+
         // Unsubscribe from existing items
         foreach (var vm in Variables)
         {
@@ -39,6 +42,7 @@ public partial class MainWindow
             Variables.Add(vm);
         }
 
+        // Rebind grid after population complete
         VariablesGrid.ItemsSource = Variables;
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {Variables.Count} local variables");
     }
