@@ -40,6 +40,7 @@
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top" AutomationProperties.AutomationId="MainMenu">
             <MenuItem Header="_File">
+                <MenuItem Header="_New..." Click="OnNewClick" InputGesture="Ctrl+N"/>
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
                 <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
                 <Separator/>
@@ -231,6 +232,15 @@
                                     <TextBlock Text="Scripts" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
+                            <Button x:Name="NavQuickBar" Classes="NavButton"
+                                    Click="OnNavButtonClick" Tag="QuickBar"
+                                    IsVisible="False"
+                                    AutomationProperties.AutomationId="NavButton_QuickBar">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="▤" FontSize="{DynamicResource FontSizeNormal}" Classes="NavIcon"/>
+                                    <TextBlock Text="QuickBar" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
@@ -283,6 +293,10 @@
                     <!-- Scripts Panel -->
                     <panels:ScriptsPanel x:Name="ScriptsPanelContent" IsVisible="False"
                                          AutomationProperties.AutomationId="ScriptsPanel"/>
+
+                    <!-- QuickBar Panel (BIC only) -->
+                    <panels:QuickBarPanel x:Name="QuickBarPanelContent" IsVisible="False"
+                                          AutomationProperties.AutomationId="QuickBarPanel"/>
                 </Grid>
             </Border>
         </Grid>

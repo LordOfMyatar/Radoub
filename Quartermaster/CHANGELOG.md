@@ -10,6 +10,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.44-alpha] - 2026-01-18
+**Branch**: `quartermaster/issue-715` | **PR**: #948
+
+### Sprint: Core Features & Workflow (#715)
+
+- [x] #690 - Convert between UTC and BIC (Save As) - **Complete**
+  - ✅ UTC→BIC conversion initializes QuickBar with 36 empty slots
+  - ✅ Set reasonable default Age (25) for converted characters
+  - ✅ Ensure HP is valid (dead creatures get CurrentHP = MaxHP)
+  - ✅ UI reloads panels after format conversion
+  - ✅ BIC→UTC sets PaletteID=1 (Custom category) so creatures appear in toolset palette
+  - ✅ Added 19 unit tests for conversion validation (9 ToUtcFile, 10 FromUtcFile)
+- [x] #689 - Create new UTC file - **Complete**
+  - ✅ File > New menu item with Ctrl+N shortcut
+  - ✅ Creates new creature with sensible defaults (Human Commoner level 1)
+  - ✅ Prompts to save unsaved changes before creating new file
+  - ✅ Ctrl+S on new file redirects to Save As dialog
+  - ✅ Sets PaletteID=1 (Custom category) so creatures appear in toolset palette
+  - ✅ Palette Category dropdown on Advanced panel for Aurora Toolset compatibility
+- [ ] #949 - QuickBar Panel (BIC only) - **Read-only**
+  - ✅ QuickBar nav button visible only for BIC files
+  - ✅ Displays 36 slots organized as 3 bars × 12 slots (F1-F12)
+  - ✅ Shows slot type and ID for assigned slots
+  - ❌ Cannot edit/write QuickBar slots yet
+- [x] #626 - Wire up themes and preferences/settings
+- [x] #643 - Faction Display & Management
+
+### Bug Fixes
+- Fixed BIC portrait display (uses Portrait string when PortraitId=0)
+- Fixed BIC→UTC conversion preserving Portrait string (character's actual portrait) instead of overwriting with default
+- Fixed Aurora Toolset "must specify valid portrait" error on BIC→UTC conversion (looks up PortraitId from Portrait string via portraits.2da)
+- Added Portrait ID and Portrait ResRef fields to Character panel for debugging portrait issues
+  - UTC files: Portrait ID enabled (primary), Portrait ResRef grayed out
+  - BIC files: Portrait ResRef enabled (primary), Portrait ID grayed out
+- Fixed bitmap cache crash when switching panels (removed premature disposal)
+- Added global exception handlers for crash diagnostics
+- Added ITP reader for palette categories
+
+---
+
 ## [0.1.43-alpha] - 2026-01-17
 **Branch**: `quartermaster/issue-932` | **PR**: #937
 

@@ -34,6 +34,12 @@ public partial class CharacterPanel : UserControl
     private Button? _browsePortraitButton;
     private Button? _browseSoundSetButton;
 
+    // Portrait ID/ResRef fields for debugging Aurora Toolset portrait issues
+    private TextBox? _portraitIdTextBox;
+    private TextBox? _portraitResRefTextBox;
+    private TextBlock? _portraitIdLabel;
+    private TextBlock? _portraitResRefLabel;
+
     // Conversation row visibility controls
     private TextBlock? _conversationLabel;
     private Grid? _conversationRow;
@@ -85,6 +91,12 @@ public partial class CharacterPanel : UserControl
         _browsePortraitButton = this.FindControl<Button>("BrowsePortraitButton");
         _browseSoundSetButton = this.FindControl<Button>("BrowseSoundSetButton");
 
+        // Portrait ID/ResRef fields
+        _portraitIdTextBox = this.FindControl<TextBox>("PortraitIdTextBox");
+        _portraitResRefTextBox = this.FindControl<TextBox>("PortraitResRefTextBox");
+        _portraitIdLabel = this.FindControl<TextBlock>("PortraitIdLabel");
+        _portraitResRefLabel = this.FindControl<TextBlock>("PortraitResRefLabel");
+
         // Conversation row visibility controls
         _conversationLabel = this.FindControl<TextBlock>("ConversationLabel");
         _conversationRow = this.FindControl<Grid>("ConversationRow");
@@ -126,6 +138,12 @@ public partial class CharacterPanel : UserControl
             _browsePortraitButton.Click += OnBrowsePortraitClick;
         if (_browseSoundSetButton != null)
             _browseSoundSetButton.Click += OnBrowseSoundSetClick;
+
+        // Portrait ID/ResRef fields
+        if (_portraitIdTextBox != null)
+            _portraitIdTextBox.TextChanged += OnPortraitIdTextChanged;
+        if (_portraitResRefTextBox != null)
+            _portraitResRefTextBox.TextChanged += OnPortraitResRefTextChanged;
 
         // Wire up soundset preview (#916)
         if (_soundsetPlayButton != null)
@@ -190,6 +208,32 @@ public partial class CharacterPanel : UserControl
             _playerCharacterSection.IsVisible = _isBicFile;
         if (_biographySection != null)
             _biographySection.IsVisible = _isBicFile;
+
+        // ============================================================
+        // PORTRAIT FIELD ENABLE/DISABLE LOGIC
+        // ============================================================
+        // BIC files: Use Portrait string (e.g., "po_hu_m_01_"), PortraitId is typically 0
+        // UTC files: Use PortraitId (row in portraits.2da), Portrait string may be empty
+        //
+        // We enable both fields but gray out the one that's not primary for the file type
+        // This allows users to see and edit both values when needed (e.g., fixing toolset errors)
+        if (_portraitIdTextBox != null)
+        {
+            // PortraitId is primary for UTC files
+            _portraitIdTextBox.IsEnabled = !_isBicFile;
+            _portraitIdTextBox.Opacity = _isBicFile ? 0.5 : 1.0;
+        }
+        if (_portraitIdLabel != null)
+            _portraitIdLabel.Opacity = _isBicFile ? 0.5 : 1.0;
+
+        if (_portraitResRefTextBox != null)
+        {
+            // Portrait string is primary for BIC files
+            _portraitResRefTextBox.IsEnabled = _isBicFile;
+            _portraitResRefTextBox.Opacity = _isBicFile ? 1.0 : 0.5;
+        }
+        if (_portraitResRefLabel != null)
+            _portraitResRefLabel.Opacity = _isBicFile ? 1.0 : 0.5;
     }
 
     private void LoadRaceData()
@@ -252,7 +296,25 @@ public partial class CharacterPanel : UserControl
             _subraceTextBox.Text = creature.Subrace ?? "";
         if (_deityTextBox != null)
             _deityTextBox.Text = creature.Deity ?? "";
-        SelectPortrait(creature.PortraitId);
+
+        // Portrait: Use PortraitId if set, otherwise look up Portrait string in portraits.2da
+        // BIC files often use the Portrait string field when PortraitId is 0
+        var portraitId = creature.PortraitId;
+        if (portraitId == 0 && !string.IsNullOrEmpty(creature.Portrait))
+        {
+            var foundId = _displayService?.FindPortraitIdByResRef(creature.Portrait);
+            if (foundId.HasValue)
+            {
+                portraitId = foundId.Value;
+            }
+        }
+        SelectPortrait(portraitId, creature.Portrait);
+
+        // Portrait ID and ResRef fields (show raw values for debugging)
+        if (_portraitIdTextBox != null)
+            _portraitIdTextBox.Text = creature.PortraitId.ToString();
+        if (_portraitResRefTextBox != null)
+            _portraitResRefTextBox.Text = creature.Portrait ?? "";
 
         // Voice & Dialog
         SelectSoundSet(creature.SoundSetFile);
@@ -313,7 +375,7 @@ public partial class CharacterPanel : UserControl
         _raceComboBox.SelectedIndex = _raceComboBox.Items.Count - 1;
     }
 
-    private void SelectPortrait(ushort portraitId)
+    private void SelectPortrait(ushort portraitId, string? portraitResRef = null)
     {
         if (_portraitComboBox == null) return;
 
@@ -327,8 +389,19 @@ public partial class CharacterPanel : UserControl
             }
         }
 
-        // If not found, add it
-        var name = _displayService?.GetPortraitName(portraitId) ?? $"Portrait {portraitId}";
+        // If not found, add it with appropriate display name
+        // If we have a portrait ResRef but no 2DA match, use the ResRef as display name
+        string name;
+        if (portraitId == 0 && !string.IsNullOrEmpty(portraitResRef))
+        {
+            // Portrait string field is set but not found in portraits.2da (custom portrait)
+            name = portraitResRef;
+        }
+        else
+        {
+            name = _displayService?.GetPortraitName(portraitId) ?? $"Portrait {portraitId}";
+        }
+
         _portraitComboBox.Items.Add(new ComboBoxItem
         {
             Content = name,
@@ -447,9 +520,39 @@ public partial class CharacterPanel : UserControl
             item.Tag is ushort portraitId)
         {
             _currentCreature.PortraitId = portraitId;
+
+            // Also update the PortraitId text field to stay in sync
+            if (_portraitIdTextBox != null)
+                _portraitIdTextBox.Text = portraitId.ToString();
+
             CharacterChanged?.Invoke(this, EventArgs.Empty);
             PortraitChanged?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    private void OnPortraitIdTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        if (ushort.TryParse(_portraitIdTextBox?.Text, out var portraitId))
+        {
+            _currentCreature.PortraitId = portraitId;
+
+            // Update the dropdown to match (if portrait exists in list)
+            SelectPortrait(portraitId);
+
+            CharacterChanged?.Invoke(this, EventArgs.Empty);
+            PortraitChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnPortraitResRefTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        _currentCreature.Portrait = _portraitResRefTextBox?.Text ?? "";
+        CharacterChanged?.Invoke(this, EventArgs.Empty);
+        PortraitChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private async void OnBrowseConversationClick(object? sender, RoutedEventArgs e)
@@ -474,26 +577,41 @@ public partial class CharacterPanel : UserControl
 
     private async void OnBrowsePortraitClick(object? sender, RoutedEventArgs e)
     {
-        if (_gameDataService == null || _itemIconService == null)
-            return;
-
-        var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
-
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel is Window parentWindow)
+        try
         {
-            var result = await browser.ShowDialog<ushort?>(parentWindow);
-            if (result.HasValue)
+            if (_gameDataService == null || _itemIconService == null)
             {
-                SelectPortrait(result.Value);
-                // Trigger change event
-                if (_currentCreature != null)
+                UnifiedLogger.Log(LogLevel.WARN, "CharacterPanel: Cannot open portrait browser - missing services", "CharacterPanel", "UI");
+                return;
+            }
+
+            UnifiedLogger.Log(LogLevel.INFO, "CharacterPanel: Opening portrait browser", "CharacterPanel", "UI");
+            var browser = new PortraitBrowserWindow(_gameDataService, _itemIconService);
+
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel is Window parentWindow)
+            {
+                var result = await browser.ShowDialog<ushort?>(parentWindow);
+                UnifiedLogger.Log(LogLevel.INFO, $"CharacterPanel: Portrait browser returned: {(result.HasValue ? result.Value.ToString() : "null")}", "CharacterPanel", "UI");
+
+                if (result.HasValue)
                 {
-                    _currentCreature.PortraitId = result.Value;
-                    CharacterChanged?.Invoke(this, EventArgs.Empty);
-                    PortraitChanged?.Invoke(this, EventArgs.Empty);
+                    SelectPortrait(result.Value);
+                    // Trigger change event
+                    if (_currentCreature != null)
+                    {
+                        _currentCreature.PortraitId = result.Value;
+                        // Also clear the Portrait string field since we're using PortraitId now
+                        _currentCreature.Portrait = string.Empty;
+                        CharacterChanged?.Invoke(this, EventArgs.Empty);
+                        PortraitChanged?.Invoke(this, EventArgs.Empty);
+                    }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.Log(LogLevel.ERROR, $"CharacterPanel: OnBrowsePortraitClick crashed: {ex}", "CharacterPanel", "UI");
         }
     }
 
@@ -523,6 +641,8 @@ public partial class CharacterPanel : UserControl
 
     public void ClearPanel()
     {
+        _isLoading = true; // Prevent change events during clear
+
         if (_firstNameTextBox != null)
             _firstNameTextBox.Text = "";
         if (_lastNameTextBox != null)
@@ -535,6 +655,10 @@ public partial class CharacterPanel : UserControl
             _deityTextBox.Text = "";
         if (_portraitComboBox != null)
             _portraitComboBox.SelectedIndex = -1;
+        if (_portraitIdTextBox != null)
+            _portraitIdTextBox.Text = "";
+        if (_portraitResRefTextBox != null)
+            _portraitResRefTextBox.Text = "";
         if (_soundSetComboBox != null)
             _soundSetComboBox.SelectedIndex = -1;
         if (_conversationTextBox != null)
@@ -549,6 +673,8 @@ public partial class CharacterPanel : UserControl
             _ageTextBox.Text = "";
         if (_biographyTextBox != null)
             _biographyTextBox.Text = "";
+
+        _isLoading = false;
     }
 
     #region Soundset Preview (#916)

@@ -510,5 +510,7 @@ public class ClassSlotViewModel : INotifyPropertyChanged
     /// </summary>
     public string LevelUpButtonId => $"LevelUp_Class{SlotIndex}";
 
+    #pragma warning disable CS0067 // Event is never used - required by INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
+    #pragma warning restore CS0067
 }

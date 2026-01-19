@@ -350,13 +350,13 @@ public partial class SpellsPanel : UserControl
         if (_statusFilterComboBox != null)
             _statusFilterComboBox.SelectedIndex = 0;
 
-        // Reset class combo box
-        _classItems.Clear();
+        // Reset class combo box - must clear selection BEFORE clearing items to avoid index out of range
         if (_classComboBox != null)
         {
-            _classComboBox.ItemsSource = null;
             _classComboBox.SelectedIndex = -1;
+            _classComboBox.ItemsSource = null;
         }
+        _classItems.Clear();
 
         // Reset ignore restrictions checkbox
         _ignoreClassRestrictions = false;

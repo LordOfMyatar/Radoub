@@ -1,3 +1,4 @@
+using Radoub.Formats.Itp;
 using Radoub.Formats.Ssf;
 using Radoub.Formats.TwoDA;
 
@@ -123,6 +124,26 @@ public interface IGameDataService : IDisposable
 
     #endregion
 
+    #region Palette Access
+
+    /// <summary>
+    /// Get palette categories for a specific resource type.
+    /// Loads from skeleton palette (e.g., creaturepal.itp for UTC).
+    /// </summary>
+    /// <param name="resourceType">Resource type ID (e.g., 2027 for UTC)</param>
+    /// <returns>List of palette categories with IDs and names</returns>
+    IEnumerable<PaletteCategory> GetPaletteCategories(ushort resourceType);
+
+    /// <summary>
+    /// Get palette category name by ID.
+    /// </summary>
+    /// <param name="resourceType">Resource type ID</param>
+    /// <param name="categoryId">Category ID (PaletteID from blueprint)</param>
+    /// <returns>Category name, or null if not found</returns>
+    string? GetPaletteCategoryName(ushort resourceType, byte categoryId);
+
+    #endregion
+
     #region Configuration
 
     /// <summary>
@@ -181,4 +202,30 @@ public enum GameResourceSource
 
     /// <summary>Base game BIF file (lowest priority)</summary>
     Bif
+}
+
+/// <summary>
+/// Represents a palette category from an ITP file.
+/// </summary>
+public class PaletteCategory
+{
+    /// <summary>
+    /// Category ID (matches PaletteID in blueprints).
+    /// </summary>
+    public byte Id { get; init; }
+
+    /// <summary>
+    /// Display name (resolved from TLK or direct name).
+    /// </summary>
+    public required string Name { get; init; }
+
+    /// <summary>
+    /// Parent branch path for tree display (e.g., "Animals/Domestic").
+    /// </summary>
+    public string? ParentPath { get; init; }
+
+    /// <summary>
+    /// Full display path (Parent + Name).
+    /// </summary>
+    public string FullPath => string.IsNullOrEmpty(ParentPath) ? Name : $"{ParentPath}/{Name}";
 }

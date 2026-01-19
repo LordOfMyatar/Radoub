@@ -1,4 +1,5 @@
 using Radoub.Formats.Common;
+using Radoub.Formats.Itp;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Resolver;
 using Radoub.Formats.Settings;
@@ -230,13 +231,22 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // Override path
+        // Override path and HAK path
         if (!string.IsNullOrEmpty(settings.NeverwinterNightsPath))
         {
             var overridePath = Path.Combine(settings.NeverwinterNightsPath, "override");
             if (Directory.Exists(overridePath))
             {
                 config.OverridePath = overridePath;
+            }
+
+            // Scan HAK folder for all .hak files
+            var hakPath = Path.Combine(settings.NeverwinterNightsPath, "hak");
+            if (Directory.Exists(hakPath))
+            {
+                var hakFiles = Directory.GetFiles(hakPath, "*.hak", SearchOption.TopDirectoryOnly);
+                config.HakPaths.AddRange(hakFiles);
+                UnifiedLogger.Log(LogLevel.INFO, $"Found {hakFiles.Length} HAK files in {hakPath}", "GameDataService", "GameData");
             }
         }
 
@@ -374,6 +384,136 @@ public class GameDataService : IGameDataService
 
     #endregion
 
+    #region Palette Access
+
+    private readonly Dictionary<ushort, List<PaletteCategory>> _paletteCache = new();
+
+    public IEnumerable<PaletteCategory> GetPaletteCategories(ushort resourceType)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        lock (_lock)
+        {
+            if (_paletteCache.TryGetValue(resourceType, out var cached))
+                return cached;
+
+            var categories = LoadPaletteCategories(resourceType);
+            _paletteCache[resourceType] = categories;
+            return categories;
+        }
+    }
+
+    public string? GetPaletteCategoryName(ushort resourceType, byte categoryId)
+    {
+        var categories = GetPaletteCategories(resourceType);
+        return categories.FirstOrDefault(c => c.Id == categoryId)?.Name;
+    }
+
+    private List<PaletteCategory> LoadPaletteCategories(ushort resourceType)
+    {
+        var paletteName = GetPaletteNameForResource(resourceType);
+        if (string.IsNullOrEmpty(paletteName))
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"No palette name for resource type {resourceType}", "GameDataService", "GameData");
+            return new List<PaletteCategory>();
+        }
+
+        // Load the skeleton palette ITP
+        var data = FindResource(paletteName, ResourceTypes.Itp);
+        if (data == null)
+        {
+            UnifiedLogger.Log(LogLevel.DEBUG, $"Palette not found: {paletteName}.itp", "GameDataService", "GameData");
+            return new List<PaletteCategory>();
+        }
+
+        var itp = ItpReader.Read(data);
+        if (itp == null)
+        {
+            UnifiedLogger.Log(LogLevel.WARN, $"Failed to parse palette: {paletteName}.itp", "GameDataService", "GameData");
+            return new List<PaletteCategory>();
+        }
+
+        // Extract categories with resolved names
+        var categories = new List<PaletteCategory>();
+        ExtractCategories(itp.MainNodes, categories, null);
+
+        UnifiedLogger.Log(LogLevel.DEBUG, $"Loaded {categories.Count} palette categories from {paletteName}.itp", "GameDataService", "GameData");
+        return categories;
+    }
+
+    private void ExtractCategories(List<PaletteNode> nodes, List<PaletteCategory> categories, string? parentPath)
+    {
+        foreach (var node in nodes)
+        {
+            // Skip nodes that should never display
+            if (node.DisplayType == PaletteDisplayType.DisplayNever)
+                continue;
+
+            // Get node name
+            var name = GetNodeName(node);
+
+            if (node is PaletteCategoryNode category)
+            {
+                categories.Add(new PaletteCategory
+                {
+                    Id = category.Id,
+                    Name = name ?? $"Category {category.Id}",
+                    ParentPath = parentPath
+                });
+            }
+            else if (node is PaletteBranchNode branch)
+            {
+                // Build path for children
+                var currentPath = string.IsNullOrEmpty(parentPath)
+                    ? name
+                    : (string.IsNullOrEmpty(name) ? parentPath : $"{parentPath}/{name}");
+
+                ExtractCategories(branch.Children, categories, currentPath);
+            }
+        }
+    }
+
+    private string? GetNodeName(PaletteNode node)
+    {
+        // Try direct name first
+        if (!string.IsNullOrEmpty(node.Name))
+            return node.Name;
+
+        // Try TLK resolution
+        if (node.StrRef.HasValue && node.StrRef.Value != 0xFFFFFFFF)
+        {
+            var tlkString = GetString(node.StrRef.Value);
+            if (!string.IsNullOrEmpty(tlkString))
+                return tlkString;
+        }
+
+        // Fallback to DELETE_ME field
+        if (!string.IsNullOrEmpty(node.DeleteMe))
+            return node.DeleteMe;
+
+        return null;
+    }
+
+    private static string? GetPaletteNameForResource(ushort resourceType)
+    {
+        // Map resource types to their skeleton palette names
+        return resourceType switch
+        {
+            ResourceTypes.Utc => "creaturepal",   // Creature
+            ResourceTypes.Uti => "itempal",       // Item
+            ResourceTypes.Utp => "placeablepal",  // Placeable
+            ResourceTypes.Utd => "doorpal",       // Door
+            ResourceTypes.Utm => "storepal",      // Store/Merchant
+            ResourceTypes.Utt => "triggerpal",    // Trigger
+            ResourceTypes.Ute => "encounterpal",  // Encounter
+            ResourceTypes.Uts => "soundpal",      // Sound
+            ResourceTypes.Utw => "waypointpal",   // Waypoint
+            _ => null
+        };
+    }
+
+    #endregion
+
     #region IDisposable
 
     public void Dispose()
@@ -387,6 +527,7 @@ public class GameDataService : IGameDataService
         _customTlk = null;
         _twoDACache.Clear();
         _ssfCache.Clear();
+        _paletteCache.Clear();
         _disposed = true;
 
         GC.SuppressFinalize(this);

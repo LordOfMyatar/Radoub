@@ -2,11 +2,12 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Quartermaster.Services;
-using Quartermaster.Views.Panels;
-using Radoub.Formats.Common;
-using Radoub.Formats.Logging;
 using Quartermaster.Views.Dialogs;
 using Quartermaster.Views.Helpers;
+using Quartermaster.Views.Panels;
+using Radoub.Formats.Bic;
+using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
@@ -150,6 +151,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.CommentChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.FlagsChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.BehaviorChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.PaletteCategoryChanged += (s, e) => MarkDirty();
 
         // Initialize scripts panel with game data service
         ScriptsPanelContent.SetGameDataService(_gameDataService);
@@ -217,6 +219,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "Appearance" => NavAppearance,
             "Advanced" => NavAdvanced,
             "Scripts" => NavScripts,
+            "QuickBar" => NavQuickBar,
             _ => null
         };
 
@@ -237,6 +240,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AppearancePanelContent.IsVisible = false;
         AdvancedPanelContent.IsVisible = false;
         ScriptsPanelContent.IsVisible = false;
+        QuickBarPanelContent.IsVisible = false;
 
         // Show selected panel
         switch (section)
@@ -270,6 +274,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 break;
             case "Scripts":
                 ScriptsPanelContent.IsVisible = true;
+                break;
+            case "QuickBar":
+                QuickBarPanelContent.IsVisible = true;
                 break;
         }
 
@@ -359,6 +366,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (result == "Save")
             {
                 await SaveFile();
+                _isDirty = false; // Clear dirty before Close() to prevent re-entry
                 Close();
             }
             else if (result == "Discard")
@@ -366,6 +374,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _isDirty = false;
                 Close();
             }
+            // Cancel: do nothing, window stays open
         }
         else
         {
@@ -421,53 +430,83 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateCharacterHeader()
     {
-        var portraitImage = this.FindControl<Avalonia.Controls.Image>("PortraitImage");
-        var portraitPlaceholder = this.FindControl<TextBlock>("PortraitPlaceholderText");
-
-        if (_currentCreature == null)
+        try
         {
-            CharacterNameText.Text = "No Character Loaded";
-            CharacterSummaryText.Text = "";
-            // Clear portrait
-            if (portraitImage != null)
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Starting");
+            var portraitImage = this.FindControl<Avalonia.Controls.Image>("PortraitImage");
+            var portraitPlaceholder = this.FindControl<TextBlock>("PortraitPlaceholderText");
+
+            if (_currentCreature == null)
             {
+                CharacterNameText.Text = "No Character Loaded";
+                CharacterSummaryText.Text = "";
+                // Clear portrait
+                if (portraitImage != null)
+                {
+                    portraitImage.Source = null;
+                    portraitImage.IsVisible = false;
+                }
+                if (portraitPlaceholder != null)
+                    portraitPlaceholder.IsVisible = true;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: No creature, done");
+                return;
+            }
+
+            // Get character name using display service
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting name");
+            CharacterNameText.Text = CreatureDisplayService.GetCreatureFullName(_currentCreature);
+
+            // Build race/class summary using display service
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting summary");
+            CharacterSummaryText.Text = _creatureDisplayService.GetCreatureSummary(_currentCreature);
+
+            // Load portrait image (#916)
+            if (portraitImage != null && portraitPlaceholder != null)
+            {
+                // Use PortraitId if set, otherwise use Portrait string field directly
+                // BIC files often have PortraitId=0 but a valid Portrait string (e.g., "po_hu_f_07_")
+                string? portraitResRef;
+                if (_currentCreature.PortraitId > 0)
+                {
+                    portraitResRef = _creatureDisplayService.GetPortraitResRef(_currentCreature.PortraitId);
+                }
+                else if (!string.IsNullOrEmpty(_currentCreature.Portrait))
+                {
+                    // Use the Portrait string field directly - it's already the ResRef
+                    portraitResRef = _currentCreature.Portrait;
+                }
+                else
+                {
+                    portraitResRef = null;
+                }
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait lookup: PortraitId={_currentCreature.PortraitId}, Portrait='{_currentCreature.Portrait ?? ""}', ResRef={portraitResRef ?? "null"}");
+                if (!string.IsNullOrEmpty(portraitResRef))
+                {
+                    // ImageService.GetPortrait handles size suffix internally (tries m, l, s)
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateCharacterHeader: Loading portrait {portraitResRef}");
+                    var portrait = _itemIconService.GetPortrait(portraitResRef);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateCharacterHeader: GetPortrait returned {(portrait != null ? "bitmap" : "null")}");
+                    if (portrait != null)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Setting portrait source");
+                        portraitImage.Source = portrait;
+                        portraitImage.IsVisible = true;
+                        portraitPlaceholder.IsVisible = false;
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait loaded: {portraitResRef}");
+                        return;
+                    }
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found: {portraitResRef}");
+                }
+                // No portrait available - show placeholder
                 portraitImage.Source = null;
                 portraitImage.IsVisible = false;
-            }
-            if (portraitPlaceholder != null)
                 portraitPlaceholder.IsVisible = true;
-            return;
-        }
-
-        // Get character name using display service
-        CharacterNameText.Text = CreatureDisplayService.GetCreatureFullName(_currentCreature);
-
-        // Build race/class summary using display service
-        CharacterSummaryText.Text = _creatureDisplayService.GetCreatureSummary(_currentCreature);
-
-        // Load portrait image (#916)
-        if (portraitImage != null && portraitPlaceholder != null)
-        {
-            var portraitResRef = _creatureDisplayService.GetPortraitResRef(_currentCreature.PortraitId);
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait lookup: PortraitId={_currentCreature.PortraitId}, ResRef={portraitResRef ?? "null"}");
-            if (!string.IsNullOrEmpty(portraitResRef))
-            {
-                // ImageService.GetPortrait handles size suffix internally (tries m, l, s)
-                var portrait = _itemIconService.GetPortrait(portraitResRef);
-                if (portrait != null)
-                {
-                    portraitImage.Source = portrait;
-                    portraitImage.IsVisible = true;
-                    portraitPlaceholder.IsVisible = false;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait loaded: {portraitResRef}");
-                    return;
-                }
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait not found: {portraitResRef}");
             }
-            // No portrait available - show placeholder
-            portraitImage.Source = null;
-            portraitImage.IsVisible = false;
-            portraitPlaceholder.IsVisible = true;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "UpdateCharacterHeader: Complete");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"UpdateCharacterHeader crashed: {ex}");
         }
     }
 
@@ -485,13 +524,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         FilePathText.Text = _currentFilePath != null ? UnifiedLogger.SanitizePath(_currentFilePath) : "";
     }
 
-    private void MarkDirty()
+    private void MarkDirty([CallerMemberName] string? caller = null)
     {
         // Don't mark dirty during file loading - panels may fire change events
-        if (_isLoading) return;
+        if (_isLoading)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (isLoading=true) from {caller}");
+            return;
+        }
+
+        // Don't mark dirty if no file is loaded - stale events from clearing panels
+        if (_currentCreature == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Blocked (no file loaded) from {caller}");
+            return;
+        }
 
         if (!_isDirty)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"MarkDirty: Setting dirty from {caller}");
             _isDirty = true;
             UpdateTitle();
         }
@@ -520,6 +571,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.SetFileType(_isBicFile);
         AdvancedPanelContent.LoadCreature(creature);
 
+        // Load QuickBar for BIC files only
+        if (_isBicFile && creature is BicFile bicFile)
+        {
+            QuickBarPanelContent.LoadQuickBar(bicFile);
+        }
+        else
+        {
+            QuickBarPanelContent.ClearPanel();
+        }
+
         // Update UI visibility based on file type
         UpdateFileTypeVisibility();
     }
@@ -527,14 +588,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// <summary>
     /// Update UI element visibility based on whether loaded file is BIC or UTC.
     /// BIC files (player characters) don't have scripts, conversation, or some advanced properties.
+    /// UTC files (creature blueprints) don't have QuickBar, experience, gold, or age.
     /// </summary>
     private void UpdateFileTypeVisibility()
     {
         // Hide Scripts nav button for BIC files (player characters don't have scripts)
         NavScripts.IsVisible = !_isBicFile;
 
+        // Show QuickBar nav button only for BIC files (player characters have quickbar)
+        NavQuickBar.IsVisible = _isBicFile;
+
         // If currently on Scripts section and loading a BIC, navigate away
         if (_isBicFile && _currentSection == "Scripts")
+        {
+            NavigateToSection("Character", NavCharacter);
+        }
+
+        // If currently on QuickBar section and loading a UTC, navigate away
+        if (!_isBicFile && _currentSection == "QuickBar")
         {
             NavigateToSection("Character", NavCharacter);
         }
@@ -555,9 +626,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AppearancePanelContent.ClearPanel();
         AdvancedPanelContent.SetFileType(false);
         AdvancedPanelContent.ClearPanel();
+        QuickBarPanelContent.ClearPanel();
 
-        // Restore Scripts nav button visibility (show by default)
+        // Reset nav button visibility to defaults (Scripts visible, QuickBar hidden)
         NavScripts.IsVisible = true;
+        NavQuickBar.IsVisible = false;
     }
 
     #endregion
@@ -570,6 +643,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             switch (e.Key)
             {
+                case Key.N:
+                    _ = NewFile();
+                    e.Handled = true;
+                    break;
                 case Key.O:
                     _ = OpenFile();
                     e.Handled = true;

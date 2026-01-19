@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
 
@@ -689,6 +690,7 @@ public class CreatureDisplayService
     public string GetPortraitName(ushort portraitId) => Appearances.GetPortraitName(portraitId);
     public string? GetPortraitResRef(ushort portraitId) => Appearances.GetPortraitResRef(portraitId);
     public List<(ushort Id, string Name)> GetAllPortraits() => Appearances.GetAllPortraits();
+    public ushort? FindPortraitIdByResRef(string? resRef) => Appearances.FindPortraitIdByResRef(resRef);
     public string GetWingName(byte wingId) => Appearances.GetWingName(wingId);
     public string GetTailName(byte tailId) => Appearances.GetTailName(tailId);
     public List<(byte Id, string Name)> GetAllWings() => Appearances.GetAllWings();
@@ -708,6 +710,26 @@ public class CreatureDisplayService
     public bool IsSpontaneousCaster(int classId) => Spells.IsSpontaneousCaster(classId);
     public int[]? GetSpellSlots(int classId, int classLevel) => Spells.GetSpellSlots(classId, classLevel);
     public int[]? GetSpellsKnownLimit(int classId, int classLevel) => Spells.GetSpellsKnownLimit(classId, classLevel);
+
+    #endregion
+
+    #region Palette Categories
+
+    /// <summary>
+    /// Gets all palette categories for creature blueprints.
+    /// </summary>
+    public IEnumerable<PaletteCategory> GetCreaturePaletteCategories()
+    {
+        return _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Utc);
+    }
+
+    /// <summary>
+    /// Gets the name of a palette category by ID.
+    /// </summary>
+    public string? GetPaletteCategoryName(byte categoryId)
+    {
+        return _gameDataService.GetPaletteCategoryName(Radoub.Formats.Common.ResourceTypes.Utc, categoryId);
+    }
 
     #endregion
 }

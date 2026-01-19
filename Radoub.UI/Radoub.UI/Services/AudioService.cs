@@ -221,7 +221,7 @@ internal class WindowsAudioPlayer : IAudioPlayer
     {
         using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
         var buffer = new byte[Math.Min(count, fs.Length)];
-        fs.Read(buffer, 0, buffer.Length);
+        fs.ReadExactly(buffer, 0, buffer.Length);
         return buffer;
     }
 

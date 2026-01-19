@@ -18,7 +18,7 @@ public class ItemIconService
     private readonly ImageService _imageService;
     private readonly IGameDataService _gameDataService;
     private readonly ConcurrentDictionary<string, Bitmap?> _bitmapCache;
-    private const int MaxCacheSize = 500;
+    // No cache limit - keep icons for session lifetime (~15-30MB for 1500 icons is acceptable)
 
     public ItemIconService(IGameDataService gameDataService)
     {
@@ -53,12 +53,6 @@ public class ItemIconService
         if (_bitmapCache.TryGetValue(cacheKey, out var cached))
             return cached;
 
-        // Limit cache size
-        if (_bitmapCache.Count > MaxCacheSize)
-        {
-            ClearCache();
-        }
-
         var imageData = _imageService.GetItemIcon(baseItemType, modelNumber);
         Bitmap? bitmap = null;
 
@@ -85,12 +79,6 @@ public class ItemIconService
 
         if (_bitmapCache.TryGetValue(cacheKey, out var cached))
             return cached;
-
-        // Limit cache size
-        if (_bitmapCache.Count > MaxCacheSize)
-        {
-            ClearCache();
-        }
 
         var imageData = _imageService.GetPortrait(resRef);
         Bitmap? bitmap = null;
@@ -152,13 +140,6 @@ public class ItemIconService
         if (_bitmapCache.TryGetValue(cacheKey, out var cached))
             return cached;
 
-        // Limit cache size
-        if (_bitmapCache.Count > MaxCacheSize)
-        {
-            UnifiedLogger.Log(LogLevel.DEBUG, $"ItemIconService: Cache full ({_bitmapCache.Count}), clearing...", "UI", "[UI]");
-            ClearCache();
-        }
-
         try
         {
             UnifiedLogger.Log(LogLevel.DEBUG, $"ItemIconService: Loading {cacheKey}", "UI", "[UI]");
@@ -198,11 +179,9 @@ public class ItemIconService
     /// </summary>
     public void ClearCache()
     {
-        // Dispose all cached bitmaps
-        foreach (var kvp in _bitmapCache)
-        {
-            kvp.Value?.Dispose();
-        }
+        // NOTE: Do NOT dispose bitmaps here - they may still be bound to UI Image controls.
+        // Disposing while bound causes Avalonia crash in Image.ArrangeOverride.
+        // Let GC handle bitmap cleanup when controls are disposed.
         _bitmapCache.Clear();
         _imageService.ClearCache();
     }

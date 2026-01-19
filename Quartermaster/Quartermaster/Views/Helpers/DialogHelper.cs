@@ -60,6 +60,39 @@ public static class DialogHelper
     }
 
     /// <summary>
+    /// Shows an informational message dialog with a title and message.
+    /// Supports longer messages with text wrapping.
+    /// </summary>
+    public static async Task ShowMessageDialog(Window parent, string title, string message)
+    {
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 450,
+            SizeToContent = SizeToContent.Height,
+            MinHeight = 150,
+            MaxHeight = 350,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = message,
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+            MaxWidth = 400
+        });
+
+        var button = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+        button.Click += (s, e) => dialog.Close();
+        panel.Children.Add(button);
+
+        dialog.Content = panel;
+        await dialog.ShowDialog(parent);
+    }
+
+    /// <summary>
     /// Shows an error dialog with a title and message.
     /// </summary>
     public static async Task ShowErrorDialog(Window parent, string title, string message)

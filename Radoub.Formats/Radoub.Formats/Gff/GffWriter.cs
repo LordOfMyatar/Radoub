@@ -401,12 +401,20 @@ public static class GffWriter
 
     private static void WriteCExoLocString(MemoryStream stream, CExoLocString locString)
     {
-        // Calculate total size
+        // Determine actual substring count to write.
+        // If SubStringCount > LocalizedStrings.Count, we need to write empty padding entries.
+        // This is used by the game for "intentionally empty" fields like LastName.
+        var actualSubCount = Math.Max(locString.SubStringCount, (uint)locString.LocalizedStrings.Count);
+        var paddingCount = actualSubCount - (uint)locString.LocalizedStrings.Count;
+
+        // Calculate total size: 8 bytes header (StrRef + SubStringCount) + substring data
         var substringsSize = 0;
         foreach (var kvp in locString.LocalizedStrings)
         {
-            substringsSize += 8 + Encoding.UTF8.GetByteCount(kvp.Value);
+            substringsSize += 8 + Encoding.UTF8.GetByteCount(kvp.Value); // langId + length + string
         }
+        // Add size for empty padding entries (8 bytes each: langId + length=0)
+        substringsSize += (int)paddingCount * 8;
 
         var totalSize = 8 + substringsSize; // StrRef + SubStringCount + substrings
 
@@ -416,9 +424,10 @@ public static class GffWriter
         var strRefBytes = BitConverter.GetBytes(locString.StrRef);
         stream.Write(strRefBytes, 0, 4);
 
-        var subCountBytes = BitConverter.GetBytes((uint)locString.LocalizedStrings.Count);
+        var subCountBytes = BitConverter.GetBytes(actualSubCount);
         stream.Write(subCountBytes, 0, 4);
 
+        // Write actual localized strings
         foreach (var kvp in locString.LocalizedStrings)
         {
             var langIdBytes = BitConverter.GetBytes(kvp.Key);
@@ -428,6 +437,14 @@ public static class GffWriter
             var stringLengthBytes = BitConverter.GetBytes((uint)stringBytes.Length);
             stream.Write(stringLengthBytes, 0, 4);
             stream.Write(stringBytes, 0, stringBytes.Length);
+        }
+
+        // Write empty padding entries for SubStringCount > LocalizedStrings.Count
+        // Game uses this pattern for "intentionally empty" fields (e.g., no last name)
+        for (uint i = 0; i < paddingCount; i++)
+        {
+            stream.Write(BitConverter.GetBytes((uint)0), 0, 4); // languageId = 0 (English)
+            stream.Write(BitConverter.GetBytes((uint)0), 0, 4); // stringLength = 0
         }
     }
 

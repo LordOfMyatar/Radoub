@@ -90,6 +90,22 @@ public class MockGameDataService : IGameDataService
 
     #endregion
 
+    #region Palette Access
+
+    public IEnumerable<PaletteCategory> GetPaletteCategories(ushort resourceType)
+    {
+        // Return empty by default - tests can override if needed
+        return Enumerable.Empty<PaletteCategory>();
+    }
+
+    public string? GetPaletteCategoryName(ushort resourceType, byte categoryId)
+    {
+        // Return null by default - tests can override if needed
+        return null;
+    }
+
+    #endregion
+
     #region Configuration
 
     public bool IsConfigured

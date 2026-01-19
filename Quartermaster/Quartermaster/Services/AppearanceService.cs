@@ -220,6 +220,39 @@ public class AppearanceService
         return portraits;
     }
 
+    /// <summary>
+    /// Finds a portrait ID by its BaseResRef string.
+    /// Used when PortraitId is 0 but Portrait string field is set (common in BIC files).
+    /// </summary>
+    /// <param name="resRef">The portrait ResRef to find (e.g., "hu_m_99_")</param>
+    /// <returns>Portrait ID if found, null otherwise</returns>
+    public ushort? FindPortraitIdByResRef(string? resRef)
+    {
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        // Normalize for comparison (portraits.2da uses lowercase)
+        var normalizedResRef = resRef.ToLowerInvariant();
+
+        // BIC files store portrait with "po_" prefix (e.g., "po_hu_m_01_")
+        // portraits.2da stores BaseResRef WITHOUT the prefix (e.g., "hu_m_01_")
+        // Strip the "po_" prefix if present for matching
+        if (normalizedResRef.StartsWith("po_"))
+            normalizedResRef = normalizedResRef.Substring(3);
+
+        for (int i = 0; i < 500; i++)
+        {
+            var baseResRef = _gameDataService.Get2DAValue("portraits", i, "BaseResRef");
+            if (string.IsNullOrEmpty(baseResRef) || baseResRef == "****")
+                continue;
+
+            if (baseResRef.Equals(normalizedResRef, System.StringComparison.OrdinalIgnoreCase))
+                return (ushort)i;
+        }
+
+        return null;
+    }
+
     #endregion
 
     #region Wings and Tails

@@ -19,6 +19,8 @@ public partial class AdvancedPanel : BasePanelControl
     private Button? _copyTagButton;
     private Grid? _resRefRow;
     private Grid? _commentRow;
+    private Grid? _paletteCategoryRow;
+    private ComboBox? _paletteCategoryComboBox;
 
     // Flag checkboxes
     private CheckBox? _plotCheckBox;
@@ -44,6 +46,7 @@ public partial class AdvancedPanel : BasePanelControl
     public event EventHandler? TagChanged;
     public event EventHandler? FlagsChanged;
     public event EventHandler? BehaviorChanged;
+    public event EventHandler? PaletteCategoryChanged;
 
     public AdvancedPanel()
     {
@@ -62,6 +65,8 @@ public partial class AdvancedPanel : BasePanelControl
         _copyTagButton = this.FindControl<Button>("CopyTagButton");
         _resRefRow = this.FindControl<Grid>("ResRefRow");
         _commentRow = this.FindControl<Grid>("CommentRow");
+        _paletteCategoryRow = this.FindControl<Grid>("PaletteCategoryRow");
+        _paletteCategoryComboBox = this.FindControl<ComboBox>("PaletteCategoryComboBox");
 
         // Flag checkboxes
         _plotCheckBox = this.FindControl<CheckBox>("PlotCheckBox");
@@ -92,6 +97,25 @@ public partial class AdvancedPanel : BasePanelControl
 
         WireUpFlagCheckboxes();
         WireUpBehaviorCombos();
+        WireUpIdentityCombos();
+    }
+
+    private void WireUpIdentityCombos()
+    {
+        if (_paletteCategoryComboBox != null)
+            _paletteCategoryComboBox.SelectionChanged += OnPaletteCategorySelectionChanged;
+    }
+
+    private void OnPaletteCategorySelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (IsLoading || CurrentCreature == null) return;
+
+        var categoryId = ComboBoxHelper.GetSelectedTag<byte>(_paletteCategoryComboBox);
+        if (categoryId.HasValue)
+        {
+            CurrentCreature.PaletteID = categoryId.Value;
+            PaletteCategoryChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void WireUpBehaviorCombos()
@@ -206,18 +230,31 @@ public partial class AdvancedPanel : BasePanelControl
     {
         _displayService = displayService;
         LoadBehaviorData();
+        LoadPaletteCategoryData();
     }
 
     /// <summary>
     /// Set whether the current file is a BIC (player character) or UTC (creature blueprint).
-    /// This controls visibility of UTC-only fields like Blueprint ResRef and Comment.
+    /// This controls visibility of UTC-only fields like Blueprint ResRef, Comment, and Palette Category,
+    /// and disables fields that shouldn't be editable for BIC files.
     /// </summary>
     public void SetFileType(bool isBicFile)
     {
+        // Hide UTC-only fields for BIC files
         if (_resRefRow != null)
             _resRefRow.IsVisible = !isBicFile;
         if (_commentRow != null)
             _commentRow.IsVisible = !isBicFile;
+        if (_paletteCategoryRow != null)
+            _paletteCategoryRow.IsVisible = !isBicFile;
+
+        // IsPC should always be true for BIC files and not editable
+        if (_isPCCheckBox != null)
+        {
+            _isPCCheckBox.IsEnabled = !isBicFile;
+            if (isBicFile)
+                _isPCCheckBox.IsChecked = true;
+        }
     }
 
     /// <summary>
@@ -296,6 +333,36 @@ public partial class AdvancedPanel : BasePanelControl
         }
     }
 
+    private void LoadPaletteCategoryData()
+    {
+        if (_paletteCategoryComboBox == null || _displayService == null) return;
+
+        _paletteCategoryComboBox.Items.Clear();
+
+        // Load categories from creaturepal.itp via GameDataService
+        var categories = _displayService.GetCreaturePaletteCategories().ToList();
+
+        if (categories.Count == 0)
+        {
+            // Fallback if no categories loaded (e.g., game data not configured)
+            _paletteCategoryComboBox.Items.Add(new ComboBoxItem { Content = "Custom (1)", Tag = (byte)1 });
+            return;
+        }
+
+        foreach (var category in categories.OrderBy(c => c.Id))
+        {
+            var displayName = !string.IsNullOrEmpty(category.ParentPath)
+                ? $"{category.ParentPath}/{category.Name} ({category.Id})"
+                : $"{category.Name} ({category.Id})";
+
+            _paletteCategoryComboBox.Items.Add(new ComboBoxItem
+            {
+                Content = displayName,
+                Tag = category.Id
+            });
+        }
+    }
+
     public override void LoadCreature(UtcFile? creature)
     {
         IsLoading = true;
@@ -312,6 +379,7 @@ public partial class AdvancedPanel : BasePanelControl
         SetTextBox(_templateResRefTextBox, creature.TemplateResRef ?? "");
         SetTextBox(_tagTextBox, creature.Tag ?? "");
         SetTextBox(_commentTextBox, creature.Comment ?? "");
+        ComboBoxHelper.SelectByTag(_paletteCategoryComboBox, creature.PaletteID);
 
         // Flags
         SetCheckBox(_plotCheckBox, creature.Plot);
@@ -355,6 +423,8 @@ public partial class AdvancedPanel : BasePanelControl
             _decayTimeComboBox.SelectedIndex = 2; // 5 seconds default
         if (_bodyBagComboBox != null)
             _bodyBagComboBox.SelectedIndex = 0;
+        // Select PaletteID 1 (typically Custom category) by tag, not index
+        ComboBoxHelper.SelectByTag(_paletteCategoryComboBox, (byte)1);
     }
 
     private async void OnCopyResRefClick(object? sender, RoutedEventArgs e)
