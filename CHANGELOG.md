@@ -15,6 +15,78 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.41] - 2026-01-19
+**Branch**: `radoub/issue-983` | **PR**: #996
+
+### Sprint: UI Uniformity - Theme & Dictionary (#983)
+
+Parent Epic: #959 - UI Uniformity & Shared Infrastructure
+
+#### Work Items
+- [x] #976 - [Radoub] Radoub-level theme configuration
+- [x] #977 - [Trebuchet] Theme generator/editor UI
+- [x] #978 - [Radoub.Dictionary] Consolidate spell-check for game-facing text
+
+#### Bundled Dependabot Updates (Avalonia 11.3.10 → 11.3.11)
+- [x] #991 - Bump Avalonia and Avalonia.Controls.DataGrid (Radoub.UI)
+- [x] #992 - Bump Avalonia and Avalonia.Diagnostics (Parley)
+- [x] #993 - Bump Avalonia and Avalonia.Fonts.Inter (Parley)
+- [x] #994 - Bump Avalonia.Headless.XUnit (Parley.Tests)
+- [x] #995 - Bump Avalonia and Avalonia.Skia (Parley)
+
+#### Changed
+- Upgraded Avalonia packages from 11.3.10 to 11.3.11 across all tools:
+  - Parley, Manifest, Quartermaster, Fence, Trebuchet (main apps)
+  - Radoub.UI (shared library)
+  - Test projects (Parley.Tests, Quartermaster.Tests, Fence.Tests)
+
+#### Added (RadoubSettings - #976)
+- `SharedThemeId` - Shared theme ID applied to all tools
+- `UseSharedTheme` - Toggle for shared vs tool-specific themes (default: true)
+- `HasSharedTheme` - Check if shared theme is configured
+- `GetSharedThemesPath()` - Returns `~/Radoub/Themes/` for shared themes
+
+#### Added (ThemeManager - #976)
+- Radoub-level shared themes folder: `~/Radoub/Themes/`
+- `Initialize(toolName, useSharedTheme)` - New overload with shared theme support
+- `GetEffectiveThemeId(toolThemeId)` - Returns shared or tool-specific theme ID
+- `ApplyEffectiveTheme(toolThemeId)` - Apply effective theme with fallback
+- `IsUsingSharedTheme` - Check if currently using shared theme
+- Theme discovery now includes: official (app) → shared (`~/Radoub/Themes/`) → tool-specific
+
+#### Added (Trebuchet - #977)
+- **Theme Editor Window**: Visual theme creation with live preview
+  - Core color editing: Background, Sidebar, Text, Accent, Selection, Border
+  - Status colors: Success, Warning, Error, Info
+  - Font settings: Primary font, Monospace font, Base size
+  - Load from preset themes
+  - Export to `~/Radoub/Themes/` for shared use
+- **Settings Window**: Added "Create Theme..." button and "Apply to All Tools" checkbox
+- **Bundled Themes**: 6 universal themes (`org.radoub.theme.*`):
+  - Light, Dark, VSCode Dark, Fluent Light
+  - Accessibility: Deuteranopia, Protanopia, Tritanopia
+  - Easter egg: Sea Sick
+
+#### Added (Radoub.UI - #978)
+- `SpellCheckService` - Shared spell-check service for all tools
+  - Wraps DictionaryManager and SpellChecker from Radoub.Dictionary
+  - Methods: `InitializeAsync()`, `IsCorrect()`, `CheckText()`, `GetSuggestions()`, `AddToCustomDictionary()`
+- `SpellCheckTextBox` - Shared control extending TextBox with spell-check
+  - Squiggly underline overlay for misspelled words
+  - Right-click context menu with suggestions
+  - Respects `DictionarySettingsService.SpellCheckEnabled` setting
+
+#### Added (Radoub.Dictionary - #978)
+- `SpellCheckEnabled` property and `SpellCheckEnabledChanged` event in DictionarySettingsService
+
+#### Changed (Quartermaster - #978)
+- Character panel now uses SpellCheckTextBox for: First Name, Last Name, Subrace, Deity, Biography
+
+#### Changed (Fence - #978)
+- Store name field now uses SpellCheckTextBox
+
+---
+
 ## [0.9.40] - 2026-01-18
 **Branch**: `radoub/issue-982` | **PR**: #989
 

@@ -14,10 +14,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Avalonia packages - match version used by Parley (11.3.10) -->
-    <PackageReference Include="Avalonia" Version="11.3.10" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.10" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.10" />
+    <!-- Avalonia packages - match version used by Parley (11.3.11) -->
+    <PackageReference Include="Avalonia" Version="11.3.11" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.11" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.11" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.9.2" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Radoub.Formats\Radoub.Formats\Radoub.Formats.csproj" />
+    <ProjectReference Include="..\..\Radoub.Dictionary\Radoub.Dictionary\Radoub.Dictionary.csproj" />
   </ItemGroup>
 
   <ItemGroup>

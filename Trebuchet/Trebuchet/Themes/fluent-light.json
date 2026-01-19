@@ -1,0 +1,60 @@
+{
+  "manifest_version": "1.0",
+  "plugin": {
+    "id": "org.radoub.theme.fluent-light",
+    "name": "Fluent Light",
+    "version": "1.0.0",
+    "author": "Radoub Team",
+    "description": "Microsoft Fluent Design System light theme with modern, clean aesthetics",
+    "type": "theme",
+    "tags": ["official", "light", "fluent", "modern"]
+  },
+  "base_theme": "Light",
+  "accessibility": {
+    "type": "standard",
+    "contrast_level": "AAA"
+  },
+  "colors": {
+    "background": "#F3F3F3",
+    "sidebar": "#FAFAFA",
+    "text": "#000000",
+    "selection": "#0078D4",
+    "border": "#E1E1E1",
+    "accent": "#0078D4",
+    "error": "#C42B1C",
+    "warning": "#CA5010",
+    "success": "#107C10",
+    "info": "#0078D4",
+    "tree_entry": "#D83B01",
+    "tree_reply": "#0078D4",
+    "tree_link": "#6B6B6B",
+    "title_bar": "#EBEBEB",
+    "title_bar_foreground": "#000000",
+    "button_primary": "#0078D4",
+    "button_secondary": "#8A8A8A",
+    "button_hover": "#106EBE",
+    "edit_mode_border": "#0078D4",
+    "edit_mode_unsaved": "#CA5010",
+    "edit_mode_saved": "#107C10",
+    "auto_trim_border": "#0078D4",
+    "spelling_error": "#C42B1C",
+    "speaker_1": "#0078D4",
+    "speaker_2": "#881798",
+    "speaker_3": "#C30052",
+    "speaker_4": "#038387",
+    "speaker_5": "#CA5010",
+    "speaker_6": "#8764B8"
+  },
+  "fonts": {
+    "primary": "$Default",
+    "monospace": "Consolas",
+    "size": 14,
+    "weight": "Normal"
+  },
+  "spacing": {
+    "control_padding": 8,
+    "control_margin": 4,
+    "panel_spacing": 8,
+    "min_control_height": 28
+  }
+}

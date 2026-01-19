@@ -122,7 +122,7 @@
                                FontSize="{DynamicResource FontSizeLarge}"
                                FontWeight="SemiBold"/>
 
-                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" Margin="0,8,0,0">
+                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" Margin="0,8,0,0">
                         <TextBlock Grid.Row="0" Grid.Column="0"
                                    Text="Theme:"
                                    VerticalAlignment="Center"
@@ -131,12 +131,26 @@
                                   ItemsSource="{Binding AvailableThemes}"
                                   SelectedItem="{Binding SelectedTheme}"
                                   MinWidth="200"/>
+                        <Button Grid.Row="0" Grid.Column="2"
+                                Content="Create Theme..."
+                                Command="{Binding OpenThemeEditorCommand}"
+                                Margin="8,0,0,0"
+                                Padding="8,4"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0"
+                                   Text="Apply to All Tools:"
+                                   VerticalAlignment="Center"
+                                   Margin="0,8,12,0"/>
+                        <CheckBox Grid.Row="1" Grid.Column="1"
+                                  IsChecked="{Binding UseSharedTheme}"
+                                  Content="Use this theme for all Radoub tools"
+                                  Margin="0,8,0,0"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0"
                                    Text="Font Size:"
                                    VerticalAlignment="Center"
                                    Margin="0,8,12,0"/>
-                        <StackPanel Grid.Row="1" Grid.Column="1"
+                        <StackPanel Grid.Row="2" Grid.Column="1"
                                     Orientation="Horizontal"
                                     Spacing="8"
                                     Margin="0,8,0,0">

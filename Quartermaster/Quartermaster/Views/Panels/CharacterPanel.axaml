@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:controls="using:Radoub.UI.Controls"
              mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="600"
              x:Class="Quartermaster.Views.Panels.CharacterPanel">
 
@@ -25,14 +26,14 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="First Name:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="0" Grid.Column="1" x:Name="FirstNameTextBox"
+                            <controls:SpellCheckTextBox Grid.Row="0" Grid.Column="1" x:Name="FirstNameTextBox"
                                      AutomationProperties.AutomationId="FirstNameTextBox"
                                      Watermark="Character's first name"/>
 
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Last Name:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="LastNameTextBox"
+                            <controls:SpellCheckTextBox Grid.Row="1" Grid.Column="1" x:Name="LastNameTextBox"
                                      AutomationProperties.AutomationId="LastNameTextBox"
                                      Watermark="Character's last name (optional)"/>
                         </Grid>
@@ -58,14 +59,14 @@
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Subrace:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="1" Grid.Column="1" x:Name="SubraceTextBox"
+                            <controls:SpellCheckTextBox Grid.Row="1" Grid.Column="1" x:Name="SubraceTextBox"
                                      AutomationProperties.AutomationId="SubraceTextBox"
                                      Watermark="e.g., Gold Elf, Shield Dwarf"/>
 
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="Deity:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <TextBox Grid.Row="2" Grid.Column="1" x:Name="DeityTextBox"
+                            <controls:SpellCheckTextBox Grid.Row="2" Grid.Column="1" x:Name="DeityTextBox"
                                      AutomationProperties.AutomationId="DeityTextBox"
                                      Watermark="e.g., Mystra, Torm"/>
 
@@ -223,7 +224,7 @@
                         IsVisible="False">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Biography" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
-                        <TextBox x:Name="BiographyTextBox"
+                        <controls:SpellCheckTextBox x:Name="BiographyTextBox"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
                                  MinHeight="100"

@@ -1,7 +1,7 @@
 {
   "manifest_version": "1.0",
   "plugin": {
-    "id": "org.trebuchet.theme.dark",
+    "id": "org.radoub.theme.dark",
     "name": "Dark",
     "version": "1.0.0",
     "author": "Radoub Team",

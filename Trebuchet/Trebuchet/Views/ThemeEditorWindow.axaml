@@ -1,0 +1,236 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RadoubLauncher.ViewModels"
+        x:Class="RadoubLauncher.Views.ThemeEditorWindow"
+        x:DataType="vm:ThemeEditorViewModel"
+        Title="Theme Editor - Trebuchet"
+        Width="850" Height="700"
+        MinWidth="700" MinHeight="550"
+        WindowStartupLocation="CenterOwner">
+
+    <Design.DataContext>
+        <vm:ThemeEditorViewModel/>
+    </Design.DataContext>
+
+    <DockPanel Margin="16">
+        <!-- Bottom Buttons -->
+        <StackPanel DockPanel.Dock="Bottom"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8"
+                    Margin="0,16,0,0">
+            <Button Content="Export Theme"
+                    Command="{Binding ExportCommand}"
+                    Padding="16,8"/>
+            <Button Content="Close"
+                    Command="{Binding CloseCommand}"
+                    Padding="16,8"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid ColumnDefinitions="*,300">
+            <!-- Left Panel: Editor -->
+            <ScrollViewer Grid.Column="0"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto"
+                          Margin="0,0,16,0">
+                <StackPanel Spacing="24">
+                    <!-- Theme Info Section -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Theme Information"
+                                   FontSize="{DynamicResource FontSizeLarge}"
+                                   FontWeight="SemiBold"/>
+
+                        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,12,4"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ThemeName}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="ID:" VerticalAlignment="Center" Margin="0,0,12,4"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ThemeId}" Watermark="e.g., org.radoub.theme.custom" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Author:" VerticalAlignment="Center" Margin="0,0,12,4"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ThemeAuthor}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Description:" VerticalAlignment="Center" Margin="0,0,12,4"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ThemeDescription}" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Base Theme:" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <ComboBox Grid.Row="4" Grid.Column="1"
+                                      ItemsSource="{Binding BaseThemeOptions}"
+                                      SelectedItem="{Binding SelectedBaseTheme}"
+                                      MinWidth="150"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Start From Preset -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Start From Preset"
+                                   FontSize="{DynamicResource FontSizeLarge}"
+                                   FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ComboBox ItemsSource="{Binding PresetThemes}"
+                                      SelectedItem="{Binding SelectedPreset}"
+                                      DisplayMemberBinding="{Binding Plugin.Name}"
+                                      MinWidth="200"/>
+                            <Button Content="Load Preset"
+                                    Command="{Binding LoadPresetCommand}"
+                                    Padding="8,4"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Core Colors Section -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Core Colors"
+                                   FontSize="{DynamicResource FontSizeLarge}"
+                                   FontWeight="SemiBold"/>
+
+                        <Grid ColumnDefinitions="120,120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                            <!-- Background -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Background:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="0" Grid.Column="1" Background="{Binding BackgroundBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding BackgroundColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Sidebar -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Sidebar:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="1" Grid.Column="1" Background="{Binding SidebarBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding SidebarColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Text -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Text:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="2" Grid.Column="1" Background="{Binding TextBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding TextColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Accent -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Accent:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="3" Grid.Column="1" Background="{Binding AccentBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding AccentColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Selection -->
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Selection:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="4" Grid.Column="1" Background="{Binding SelectionBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="4" Grid.Column="2" Text="{Binding SelectionColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Border -->
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Border:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="5" Grid.Column="1" Background="{Binding BorderColorBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="5" Grid.Column="2" Text="{Binding BorderColor}" Watermark="#RRGGBB" Margin="0,2"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Status Colors Section -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Status Colors"
+                                   FontSize="{DynamicResource FontSizeLarge}"
+                                   FontWeight="SemiBold"/>
+
+                        <Grid ColumnDefinitions="120,120,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                            <!-- Success -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Success:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="0" Grid.Column="1" Background="{Binding SuccessBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding SuccessColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Warning -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Warning:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="1" Grid.Column="1" Background="{Binding WarningBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding WarningColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Error -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Error:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="2" Grid.Column="1" Background="{Binding ErrorBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="2" Grid.Column="2" Text="{Binding ErrorColor}" Watermark="#RRGGBB" Margin="0,2"/>
+
+                            <!-- Info -->
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Info:" VerticalAlignment="Center"/>
+                            <Border Grid.Row="3" Grid.Column="1" Background="{Binding InfoBrush}" Width="80" Height="24" CornerRadius="4" Margin="8,2"/>
+                            <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding InfoColor}" Watermark="#RRGGBB" Margin="0,2"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Font Settings Section -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Font Settings"
+                                   FontSize="{DynamicResource FontSizeLarge}"
+                                   FontWeight="SemiBold"/>
+
+                        <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto" Margin="0,8,0,0">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Primary Font:" VerticalAlignment="Center" Margin="0,0,12,4"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding PrimaryFont}" Watermark="Segoe UI" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Monospace Font:" VerticalAlignment="Center" Margin="0,0,12,4"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MonospaceFont}" Watermark="Cascadia Code" Margin="0,0,0,4"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Base Size:" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                <NumericUpDown Value="{Binding FontSize}" Minimum="10" Maximum="24" Width="100"/>
+                                <TextBlock Text="px" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Right Panel: Preview -->
+            <Border Grid.Column="1"
+                    Background="{Binding PreviewBackgroundBrush}"
+                    BorderBrush="{Binding PreviewBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Live Preview"
+                               FontSize="{DynamicResource FontSizeLarge}"
+                               FontWeight="SemiBold"
+                               Foreground="{Binding PreviewTextBrush}"/>
+
+                    <!-- Preview Sidebar -->
+                    <Border Background="{Binding PreviewSidebarBrush}"
+                            CornerRadius="4"
+                            Padding="8">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Sidebar"
+                                       Foreground="{Binding PreviewTextBrush}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Menu Item 1"
+                                       Foreground="{Binding PreviewTextBrush}"/>
+                            <Border Background="{Binding PreviewSelectionBrush}"
+                                    CornerRadius="2"
+                                    Padding="4,2">
+                                <TextBlock Text="Selected Item"
+                                           Foreground="{Binding PreviewTextBrush}"/>
+                            </Border>
+                            <TextBlock Text="Menu Item 3"
+                                       Foreground="{Binding PreviewTextBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Preview Button -->
+                    <Button Content="Accent Button"
+                            Background="{Binding PreviewAccentBrush}"
+                            Foreground="White"
+                            HorizontalAlignment="Left"
+                            Padding="12,6"/>
+
+                    <!-- Status Messages -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Status Messages:" Foreground="{Binding PreviewTextBrush}" FontWeight="SemiBold"/>
+                        <TextBlock Text="Success message" Foreground="{Binding SuccessBrush}"/>
+                        <TextBlock Text="Warning message" Foreground="{Binding WarningBrush}"/>
+                        <TextBlock Text="Error message" Foreground="{Binding ErrorBrush}"/>
+                        <TextBlock Text="Info message" Foreground="{Binding InfoBrush}"/>
+                    </StackPanel>
+
+                    <!-- Sample Text -->
+                    <Border Background="{Binding PreviewSidebarBrush}"
+                            BorderBrush="{Binding PreviewBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="8">
+                        <TextBlock Text="Sample text in a panel with border styling."
+                                   Foreground="{Binding PreviewTextBrush}"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

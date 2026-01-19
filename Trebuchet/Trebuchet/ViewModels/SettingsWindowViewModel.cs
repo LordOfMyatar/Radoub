@@ -12,6 +12,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using RadoubLauncher.Services;
+using RadoubLauncher.Views;
 
 namespace RadoubLauncher.ViewModels;
 
@@ -54,6 +55,9 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private double _fontSizeScale = 1.0;
+
+    [ObservableProperty]
+    private bool _useSharedTheme = true;
 
     public string FontSizePercentText => $"{(int)(FontSizeScale * 100)}%";
 
@@ -126,6 +130,9 @@ public partial class SettingsWindowViewModel : ObservableObject
         // Logging settings
         LogRetentionSessions = localSettings.LogRetentionSessions;
         SelectedLogLevel = localSettings.CurrentLogLevel.ToString();
+
+        // Shared theme setting
+        UseSharedTheme = sharedSettings.UseSharedTheme;
 
         // Validate existing paths
         if (!string.IsNullOrEmpty(GameInstallPath))
@@ -286,12 +293,27 @@ public partial class SettingsWindowViewModel : ObservableObject
             localSettings.CurrentLogLevel = logLevel;
         }
 
-        // Apply theme if changed
+        // Shared theme setting
+        sharedSettings.UseSharedTheme = UseSharedTheme;
+
+        // Save and apply selected theme
         var selectedThemeInfo = ThemeManager.Instance.AvailableThemes
             .FirstOrDefault(t => t.Plugin.Name == SelectedTheme);
         if (selectedThemeInfo != null)
         {
-            ThemeManager.Instance.ApplyTheme(selectedThemeInfo.Plugin.Id);
+            var themeId = selectedThemeInfo.Plugin.Id;
+
+            // Save to local settings
+            localSettings.CurrentThemeId = themeId;
+
+            // If using shared themes and this is a universal theme, set it as shared
+            if (UseSharedTheme && themeId.StartsWith("org.radoub.theme."))
+            {
+                sharedSettings.SharedThemeId = themeId;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Set shared theme: {themeId}");
+            }
+
+            ThemeManager.Instance.ApplyTheme(themeId);
         }
 
         _window.Close();
@@ -364,6 +386,23 @@ public partial class SettingsWindowViewModel : ObservableObject
         catch (Exception ex)
         {
             UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to cleanup logs: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenThemeEditor()
+    {
+        try
+        {
+            var viewModel = new ThemeEditorViewModel();
+            var editorWindow = new ThemeEditorWindow(viewModel);
+            editorWindow.Show(_window);
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Opened Theme Editor");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open Theme Editor: {ex.Message}");
         }
     }
 }

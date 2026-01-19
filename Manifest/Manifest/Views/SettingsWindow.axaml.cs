@@ -10,6 +10,7 @@ using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using ThemeManifest = Radoub.UI.Models.ThemeManifest;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
+using SpellCheckService = Radoub.UI.Services.SpellCheckService;
 using Radoub.Dictionary;
 using Radoub.Formats.Settings;
 using System;
@@ -436,7 +437,7 @@ public partial class SettingsWindow : Window
 
     private void LoadSpellCheckSettings()
     {
-        SpellCheckEnabledCheckBox.IsChecked = SettingsService.Instance.SpellCheckEnabled;
+        SpellCheckEnabledCheckBox.IsChecked = DictionarySettingsService.Instance.SpellCheckEnabled;
         UpdateDictionaryInfo();
     }
 
@@ -444,7 +445,7 @@ public partial class SettingsWindow : Window
     {
         if (_isLoading) return;
 
-        SettingsService.Instance.SpellCheckEnabled = SpellCheckEnabledCheckBox.IsChecked ?? true;
+        DictionarySettingsService.Instance.SpellCheckEnabled = SpellCheckEnabledCheckBox.IsChecked ?? true;
     }
 
     private void UpdateDictionaryInfo()

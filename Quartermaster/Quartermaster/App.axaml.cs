@@ -53,7 +53,8 @@ public partial class App : Application
             themeId = SettingsService.Instance.CurrentThemeId;
         }
 
-        if (!ThemeManager.Instance.ApplyTheme(themeId))
+        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first
+        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId))
         {
             // Fallback to light theme
             ThemeManager.Instance.ApplyTheme("org.quartermaster.theme.light");
@@ -74,6 +75,9 @@ public partial class App : Application
 
         // Clean up old log sessions
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
+
+        // Initialize spell-checking (async, non-blocking)
+        _ = SpellCheckService.Instance.InitializeAsync();
     }
 
     /// <summary>

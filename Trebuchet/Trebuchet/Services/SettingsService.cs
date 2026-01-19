@@ -103,7 +103,7 @@ public class SettingsService : INotifyPropertyChanged
     private double _fontSize = 14;
     private double _fontSizeScale = 1.0;
     private string _fontFamily = "";
-    private string _currentThemeId = "org.trebuchet.theme.light";
+    private string _currentThemeId = "org.radoub.theme.light";
 
     // Logging settings
     private int _logRetentionSessions = 3;
@@ -175,7 +175,7 @@ public class SettingsService : INotifyPropertyChanged
     public string CurrentThemeId
     {
         get => _currentThemeId;
-        set { if (SetProperty(ref _currentThemeId, value ?? "org.trebuchet.theme.light")) SaveSettings(); }
+        set { if (SetProperty(ref _currentThemeId, value ?? "org.radoub.theme.light")) SaveSettings(); }
     }
 
     // Logging properties
@@ -290,7 +290,7 @@ public class SettingsService : INotifyPropertyChanged
                     _fontFamily = settings.FontFamily ?? "";
                     _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
                         ? settings.CurrentThemeId
-                        : "org.trebuchet.theme.light";
+                        : "org.radoub.theme.light";
 
                     _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
                     _logLevel = settings.LogLevel;
@@ -383,7 +383,7 @@ public class SettingsService : INotifyPropertyChanged
         public double FontSize { get; set; } = 14;
         public double FontSizeScale { get; set; } = 1.0;
         public string FontFamily { get; set; } = "";
-        public string CurrentThemeId { get; set; } = "org.trebuchet.theme.light";
+        public string CurrentThemeId { get; set; } = "org.radoub.theme.light";
 
         public int LogRetentionSessions { get; set; } = 3;
         public LogLevel LogLevel { get; set; } = LogLevel.INFO;

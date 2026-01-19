@@ -117,9 +117,10 @@ Global settings at `~/Radoub/RadoubSettings.json`:
 
 Uses `Radoub.UI.ThemeManager` for consistent theming across tools:
 
-- Theme files in `Themes/` folder (light.json, dark.json)
-- Theme ID format: `org.trebuchet.theme.{name}`
-- Accessibility: Font size scaling, high contrast support
+- Theme files in `Themes/` folder (light, dark, vscode-dark, fluent-light, accessibility themes)
+- Theme ID format: `org.radoub.theme.{name}` (universal IDs for shared themes)
+- On startup, Trebuchet copies bundled themes to `~/Radoub/Themes/` so other tools can access them
+- Accessibility: Font size scaling, high contrast support, colorblind themes (deuteranopia, protanopia, tritanopia)
 
 ---
 

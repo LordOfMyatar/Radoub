@@ -15,6 +15,7 @@ using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 using ThemeManager = Radoub.UI.Services.ThemeManager;
 using EasterEggService = Radoub.UI.Services.EasterEggService;
+using SpellCheckService = Radoub.UI.Services.SpellCheckService;
 
 namespace DialogEditor;
 
@@ -65,7 +66,8 @@ public partial class App : Application
             }
         }
 
-        if (!ThemeManager.Instance.ApplyTheme(themeId))
+        // Use ApplyEffectiveTheme to check for shared Radoub-level theme first
+        if (!ThemeManager.Instance.ApplyEffectiveTheme(themeId))
         {
             // If preferred theme fails, try default light theme
             ThemeManager.Instance.ApplyTheme("org.parley.theme.light");
