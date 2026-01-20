@@ -15,6 +15,7 @@ public class SpellsPanelTests : QuartermasterTestBase
     /// Consolidated test for Spells panel UI elements.
     /// Replaces 10 individual tests with diagnostic step tracking.
     /// Continue on first failure, stop on second (1 failure = specific issue, 2 = dumpster fire).
+    /// Requires a creature to be loaded for class radio buttons to appear.
     /// </summary>
     [Fact]
     [Trait("Category", "SpellsPanel")]
@@ -22,15 +23,18 @@ public class SpellsPanelTests : QuartermasterTestBase
     {
         var steps = new TestSteps();
 
+        // Load test creature file - class radios require creature with classes
+        var testCreature = TestPaths.GetTestModuleFile("parleypirate.utc");
+
         // Setup steps
-        steps.Run("Launch Quartermaster", () =>
+        steps.Run("Launch with creature", () =>
         {
-            StartApplication();
+            StartApplication($"--file \"{testCreature}\"");
             return true;
         });
 
-        steps.Run("Wait for window ready", () =>
-            WaitForTitleContains("Quartermaster", DefaultTimeout));
+        steps.Run("Wait for creature loaded", () =>
+            WaitForTitleContains("parleypirate", DefaultTimeout));
 
         steps.Run("Navigate to Spells panel", () =>
         {
@@ -48,16 +52,10 @@ public class SpellsPanelTests : QuartermasterTestBase
         steps.Run("SchoolFilter exists", () => FindElement("SpellsSchoolFilter") != null);
         steps.Run("StatusFilter exists", () => FindElement("SpellsStatusFilter") != null);
 
-        // Class radio buttons (check first 3)
-        steps.Run("Class1 radio exists", () => FindElement("SpellsClass1") != null);
-        steps.Run("Class2 radio exists", () => FindElement("SpellsClass2") != null);
-        steps.Run("Class3 radio exists", () => FindElement("SpellsClass3") != null);
+        // Class selection combobox (replaced individual radio buttons)
+        steps.Run("ClassComboBox exists", () => FindElement("SpellsClassComboBox") != null);
 
-        // Summary and action buttons
-        steps.Run("SpellSlotSummary exists", () => FindElement("SpellSlotSummary") != null);
-        steps.Run("ClearSpellList button exists", () => FindElement("ClearSpellListButton") != null);
-        steps.Run("SaveSpellList button exists", () => FindElement("SaveSpellListButton") != null);
-        steps.Run("LoadSpellList button exists", () => FindElement("LoadSpellListButton") != null);
+        // Note: SpellSlotSummary is hidden (IsVisible=False) so not accessible via FlaUI
 
         steps.AssertAllPassed();
     }

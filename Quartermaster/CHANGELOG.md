@@ -19,11 +19,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] Root cause analysis: Tests were using user's actual NWN installation (82 HAK files scanned = slow startup)
 - [x] Fix FlaUITestBase to pre-seed `BaseGameInstallPath` preventing AutoDetect from finding user's game
 
+- [x] Update SpellsPanel test to match current UI (ComboBox instead of radio buttons)
+- [x] Skip tests requiring game data (classes.2da, packages.2da) not in test environment
+- [x] Add parleypirate.utc to test data for creature-dependent tests
+
 #### Results
 - **Before**: 0/15 tests passing (all failed due to slow startup / window detection timeout)
-- **After**: 11/15 tests passing
-- **3 Known Failures**: Tests require loaded creature data (Class picker, Package picker, SpellsPanel class radios)
-- **1 Skipped**: Avalonia Expander AutomationId issue (known FlaUI limitation)
+- **After**: 12/15 tests passing, 3 skipped (valid reasons)
+- **3 Skipped**: 2 require game data (picker tests), 1 Avalonia Expander issue
 
 ---
 
