@@ -295,10 +295,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         UpdateRecentFilesMenu();
 
-        // Initialize caches for better performance
-        await InitializeCachesAsync();
+        // Fire-and-forget cache initialization - don't block on it
+        // This runs in parallel with game items loading
+        _ = InitializeCachesAsync();
 
-        // Start loading game items in background immediately
+        // Start loading game items in background immediately (parallel with caches)
         StartGameItemsLoad();
 
         await HandleStartupFileAsync();

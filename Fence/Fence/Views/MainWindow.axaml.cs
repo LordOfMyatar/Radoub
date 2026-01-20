@@ -37,11 +37,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string? _currentFilePath;
     private bool _isDirty;
 
-    private readonly BaseItemTypeService _baseItemTypeService;
-    private readonly ItemResolutionService _itemResolutionService;
-    private readonly IGameDataService? _gameDataService;
+    private BaseItemTypeService? _baseItemTypeService;
+    private ItemResolutionService? _itemResolutionService;
+    private IGameDataService? _gameDataService;
     private CancellationTokenSource? _paletteLoadCts;
     private const int PaletteBatchSize = 50;
+    private bool _servicesInitialized;
 
     // Store palette categories loaded from storepal.itp
     // Maps dropdown index to category ID for CEP/custom content support
@@ -61,16 +62,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         DataContext = this;
 
-        // Initialize game data service and related services
-        _gameDataService = CreateGameDataService();
-        _baseItemTypeService = new BaseItemTypeService(_gameDataService);
-        _itemResolutionService = new ItemResolutionService(_gameDataService);
-
-        // Populate store category dropdown (toolset palette categories) - fast, no I/O
-        PopulateCategoryDropdown();
-
-        // Defer heavy I/O operations to background after window shows
+        // Defer heavy I/O (GameDataService, palette loading) to Opened event
+        // Only do fast, synchronous UI setup here
         Loaded += OnWindowLoaded;
+        Opened += OnWindowOpened;
 
         // Restore window position from settings
         RestoreWindowPosition();
@@ -92,19 +87,47 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Set up recent files menu
         UpdateRecentFilesMenu();
 
-        // Handle command line arguments
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Fence MainWindow initialized");
+    }
+
+    private async void OnWindowOpened(object? sender, EventArgs e)
+    {
+        Opened -= OnWindowOpened;
+
+        UpdateStatusBar("Initializing...");
+
+        // Initialize services on background thread - this is the expensive part
+        await InitializeServicesAsync();
+
+        // Now populate UI that depends on services
+        PopulateCategoryDropdown();
+
+        // Start background loading tasks in parallel (fire-and-forget)
+        _ = LoadBaseItemTypesAsync();
+        StartItemPaletteLoad();
+
+        // Handle command line file
         var options = CommandLineService.Options;
         if (!string.IsNullOrEmpty(options.FilePath) && File.Exists(options.FilePath))
         {
-            // Defer loading until window is shown
-            Opened += async (s, e) =>
-            {
-                await System.Threading.Tasks.Task.Delay(100);
-                LoadFile(options.FilePath);
-            };
+            LoadFile(options.FilePath);
         }
+    }
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, "Fence MainWindow initialized");
+    private async System.Threading.Tasks.Task InitializeServicesAsync()
+    {
+        if (_servicesInitialized) return;
+
+        // Run the expensive GameDataService initialization on a background thread
+        await System.Threading.Tasks.Task.Run(() =>
+        {
+            _gameDataService = CreateGameDataService();
+            _baseItemTypeService = new BaseItemTypeService(_gameDataService);
+            _itemResolutionService = new ItemResolutionService(_gameDataService);
+        });
+
+        _servicesInitialized = true;
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Fence services initialized");
     }
 
     private IGameDataService? CreateGameDataService()
@@ -229,18 +252,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Unsubscribe to prevent multiple calls
         Loaded -= OnWindowLoaded;
 
-        // Show loading status
-        UpdateStatusBar("Loading game data...");
-
-        // Start all background loading - don't await, let window be responsive
-        _ = LoadBaseItemTypesAsync();
-        StartItemPaletteLoad();
-
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window loaded, background initialization started");
+        // Loaded event fires before Opened - just log, heavy work is in OnWindowOpened
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window loaded");
     }
 
     private async System.Threading.Tasks.Task LoadBaseItemTypesAsync()
     {
+        if (_baseItemTypeService == null) return;
+
         // Load base item types on background thread
         var types = await System.Threading.Tasks.Task.Run(() =>
         {

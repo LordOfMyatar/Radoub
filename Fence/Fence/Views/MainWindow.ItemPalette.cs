@@ -40,6 +40,8 @@ public partial class MainWindow
 
     private void PopulateTypeFilter()
     {
+        if (_baseItemTypeService == null) return;
+
         var types = _baseItemTypeService.GetBaseItemTypes();
         var items = new List<string> { "(All Types)" };
         items.AddRange(types.Select(t => t.DisplayName));

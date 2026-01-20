@@ -19,8 +19,11 @@ Part of Epic #555 (Merchant Editor Tool).
 
 #### Work Items
 - [ ] #945 - Add Scripts, Variables, and Comment fields
-- [ ] #958 - File loading performance (target: under 2 seconds)
+- [x] #958 - File loading performance (target: under 2 seconds)
 - [ ] #956 - Move status bar to top of window
+
+#### Fixed
+- **Startup performance** - Moved GameDataService initialization from constructor to `Opened` event, runs on background thread. Window appears immediately instead of blocking for ~8 seconds on first launch.
 
 ---
 

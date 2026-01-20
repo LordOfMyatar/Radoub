@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **Startup performance** - Cache initialization now runs in parallel with game items loading instead of sequentially. Window becomes interactive faster on startup.
+
 ---
 
 ## [0.1.47-alpha] - 2026-01-19
