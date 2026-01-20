@@ -8,7 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Fixed
+---
+
+## [0.1.48-alpha] - 2026-01-20
+**Branch**: `quartermaster/issue-1028` | **PR**: #TBD
+
+### Feature: Complete Creature Display UI (#1028)
+
+Finish the creature display panels to show creature data properly.
+
+#### Changed
 - **Startup performance** - Moved GameDataService and panel initialization from constructor to `Opened` event, runs on background thread. Cache and item loading run in parallel. Window appears in ~1.9s instead of ~18 seconds.
 
 ---
