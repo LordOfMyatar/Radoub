@@ -32,11 +32,8 @@ public class ModelPreviewControl : Control
     private float _zoom = 1.0f;
     private Vector3 _cameraPosition = new(0, 0, 5);
 
-    // Character colors for PLT rendering
-    private int _skinColor;
-    private int _hairColor;
-    private int _tattoo1Color;
-    private int _tattoo2Color;
+    // PLT color indices for texture rendering (body + armor colors)
+    private PltColorIndices _colorIndices = new();
 
     // Texture cache: resref -> SKBitmap
     private readonly Dictionary<string, SKBitmap?> _textureCache = new();
@@ -112,16 +109,64 @@ public class ModelPreviewControl : Control
     /// </summary>
     public void SetCharacterColors(int skinColor, int hairColor, int tattoo1Color, int tattoo2Color)
     {
-        if (_skinColor != skinColor || _hairColor != hairColor ||
-            _tattoo1Color != tattoo1Color || _tattoo2Color != tattoo2Color)
+        SetColorIndices(new PltColorIndices
         {
-            _skinColor = skinColor;
-            _hairColor = hairColor;
-            _tattoo1Color = tattoo1Color;
-            _tattoo2Color = tattoo2Color;
+            Skin = skinColor,
+            Hair = hairColor,
+            Tattoo1 = tattoo1Color,
+            Tattoo2 = tattoo2Color,
+            // Preserve existing armor colors
+            Metal1 = _colorIndices.Metal1,
+            Metal2 = _colorIndices.Metal2,
+            Cloth1 = _colorIndices.Cloth1,
+            Cloth2 = _colorIndices.Cloth2,
+            Leather1 = _colorIndices.Leather1,
+            Leather2 = _colorIndices.Leather2
+        });
+    }
+
+    /// <summary>
+    /// Set all PLT color indices (body + armor colors).
+    /// </summary>
+    public void SetColorIndices(PltColorIndices colorIndices)
+    {
+        if (!ColorsEqual(_colorIndices, colorIndices))
+        {
+            _colorIndices = colorIndices;
             ClearTextureCache(); // Clear cache since colors changed
             InvalidateVisual();
         }
+    }
+
+    /// <summary>
+    /// Set armor colors for PLT texture rendering.
+    /// </summary>
+    public void SetArmorColors(int metal1, int metal2, int cloth1, int cloth2, int leather1, int leather2)
+    {
+        SetColorIndices(new PltColorIndices
+        {
+            // Preserve existing body colors
+            Skin = _colorIndices.Skin,
+            Hair = _colorIndices.Hair,
+            Tattoo1 = _colorIndices.Tattoo1,
+            Tattoo2 = _colorIndices.Tattoo2,
+            // Set armor colors
+            Metal1 = metal1,
+            Metal2 = metal2,
+            Cloth1 = cloth1,
+            Cloth2 = cloth2,
+            Leather1 = leather1,
+            Leather2 = leather2
+        });
+    }
+
+    private static bool ColorsEqual(PltColorIndices a, PltColorIndices b)
+    {
+        return a.Skin == b.Skin && a.Hair == b.Hair &&
+               a.Tattoo1 == b.Tattoo1 && a.Tattoo2 == b.Tattoo2 &&
+               a.Metal1 == b.Metal1 && a.Metal2 == b.Metal2 &&
+               a.Cloth1 == b.Cloth1 && a.Cloth2 == b.Cloth2 &&
+               a.Leather1 == b.Leather1 && a.Leather2 == b.Leather2;
     }
 
     /// <summary>
@@ -239,20 +284,25 @@ public class ModelPreviewControl : Control
     private SKBitmap? LoadTextureAsBitmap(string textureName)
     {
         if (_textureService == null || string.IsNullOrEmpty(textureName))
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.DEBUG,
+                $"LoadTextureAsBitmap: Skipping '{textureName}' (no service or empty name)");
             return null;
+        }
 
         try
         {
-            // Try to load texture with character colors
-            var textureData = _textureService.LoadTexture(
-                textureName,
-                _skinColor,
-                _hairColor,
-                _tattoo1Color,
-                _tattoo2Color);
+            // Try to load texture with PLT color indices (body + armor colors)
+            var textureData = _textureService.LoadTexture(textureName, _colorIndices);
 
             if (textureData == null)
+            {
+                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                    Radoub.Formats.Logging.LogLevel.DEBUG,
+                    $"LoadTextureAsBitmap: '{textureName}' not found (skin={_colorIndices.Skin})");
                 return null;
+            }
 
             var (width, height, pixels) = textureData.Value;
 
@@ -263,10 +313,17 @@ public class ModelPreviewControl : Control
             // Copy pixel data - TextureService returns RGBA
             System.Runtime.InteropServices.Marshal.Copy(pixels, 0, handle, pixels.Length);
 
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.DEBUG,
+                $"LoadTextureAsBitmap: '{textureName}' loaded OK ({width}x{height})");
+
             return bitmap;
         }
-        catch
+        catch (Exception ex)
         {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.WARN,
+                $"LoadTextureAsBitmap: '{textureName}' failed: {ex.Message}");
             return null;
         }
     }
@@ -292,9 +349,9 @@ public class ModelPreviewControl : Control
 
     #region Theme-Aware Colors
 
-    // Default colors for fallback (dark theme values)
-    private static readonly IBrush DefaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 46));
-    private static readonly IBrush DefaultPlaceholderBrush = new SolidColorBrush(Color.FromRgb(106, 106, 138));
+    // Default colors for fallback - lighter gray for better contrast with models
+    private static readonly IBrush DefaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(80, 80, 90));
+    private static readonly IBrush DefaultPlaceholderBrush = new SolidColorBrush(Color.FromRgb(140, 140, 160));
 
     private IBrush GetBackgroundBrush()
     {
@@ -419,25 +476,9 @@ public class ModelPreviewControl : Control
                 // Sort by depth (painter's algorithm - draw far faces first)
                 allFaces.Sort((a, b) => b.Depth.CompareTo(a.Depth));
 
-                // Group faces by texture for batched rendering
-                var facesByTexture = new Dictionary<string, List<TexturedFace>>();
-                foreach (var face in allFaces)
-                {
-                    var key = face.TextureName ?? "";
-                    if (!facesByTexture.ContainsKey(key))
-                        facesByTexture[key] = new List<TexturedFace>();
-                    facesByTexture[key].Add(face);
-                }
-
-                // Render each texture group
-                foreach (var (textureName, faces) in facesByTexture.OrderByDescending(kvp => kvp.Value.Max(f => f.Depth)))
-                {
-                    SKBitmap? texture = null;
-                    if (!string.IsNullOrEmpty(textureName))
-                        _textures.TryGetValue(textureName, out texture);
-
-                    RenderTexturedFaces(canvas, faces, texture);
-                }
+                // Render faces in strict depth order (not grouped by texture)
+                // This properly handles overlapping body parts like arms over torso
+                RenderFacesInDepthOrder(canvas, allFaces);
             }
 
             canvas.Restore();
@@ -558,6 +599,62 @@ public class ModelPreviewControl : Control
                     TextureName = textureName,
                     DiffuseColor = diffuseColor
                 });
+            }
+        }
+
+        /// <summary>
+        /// Render all faces in strict depth order, looking up textures as needed.
+        /// </summary>
+        private void RenderFacesInDepthOrder(SKCanvas canvas, List<TexturedFace> faces)
+        {
+            if (faces.Count == 0) return;
+
+            using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
+
+            foreach (var face in faces)
+            {
+                // Get texture for this face (if any)
+                SKBitmap? texture = null;
+                if (!string.IsNullOrEmpty(face.TextureName))
+                    _textures.TryGetValue(face.TextureName, out texture);
+
+                // Get lit color
+                SKColor faceColor;
+                if (texture != null)
+                {
+                    // Sample texture at face center UV and apply lighting
+                    var centerU = (face.UVs[0].X + face.UVs[1].X + face.UVs[2].X) / 3f;
+                    var centerV = (face.UVs[0].Y + face.UVs[1].Y + face.UVs[2].Y) / 3f;
+
+                    // Wrap UVs and flip V
+                    centerU = centerU - MathF.Floor(centerU);
+                    centerV = 1.0f - (centerV - MathF.Floor(centerV));
+
+                    var texX = (int)(centerU * texture.Width) % texture.Width;
+                    var texY = (int)(centerV * texture.Height) % texture.Height;
+                    if (texX < 0) texX += texture.Width;
+                    if (texY < 0) texY += texture.Height;
+
+                    var texColor = texture.GetPixel(texX, texY);
+                    faceColor = ApplyLighting(texColor, face.LightIntensity);
+                }
+                else
+                {
+                    // No texture - use a neutral gray color instead of mesh diffuse
+                    // (which is often set to blue for debugging in some models)
+                    var neutralColor = new SKColor(180, 170, 160); // Warm gray for skin-like appearance
+                    faceColor = ApplyLighting(neutralColor, face.LightIntensity);
+                }
+
+                paint.Color = faceColor;
+
+                // Draw filled triangle
+                using var path = new SKPath();
+                path.MoveTo(face.ScreenPoints[0]);
+                path.LineTo(face.ScreenPoints[1]);
+                path.LineTo(face.ScreenPoints[2]);
+                path.Close();
+                canvas.DrawPath(path, paint);
             }
         }
 

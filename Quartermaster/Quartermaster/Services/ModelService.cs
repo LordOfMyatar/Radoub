@@ -57,6 +57,42 @@ public class ModelService
     /// </summary>
     private Dictionary<string, byte>? GetArmorPartOverrides(UtcFile creature)
     {
+        var armor = LoadEquippedArmor(creature);
+        if (armor != null && armor.ArmorParts.Count > 0)
+        {
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"GetArmorPartOverrides: Armor has {armor.ArmorParts.Count} part overrides");
+            return armor.ArmorParts;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Get armor colors from equipped chest armor.
+    /// Returns null if no armor equipped or armor has no colors.
+    /// </summary>
+    public (byte metal1, byte metal2, byte cloth1, byte cloth2, byte leather1, byte leather2)? GetArmorColors(UtcFile creature)
+    {
+        var armor = LoadEquippedArmor(creature);
+        if (armor == null)
+            return null;
+
+        // Check if armor has any non-default colors
+        if (armor.Metal1Color == 0 && armor.Metal2Color == 0 &&
+            armor.Cloth1Color == 0 && armor.Cloth2Color == 0 &&
+            armor.Leather1Color == 0 && armor.Leather2Color == 0)
+            return null;
+
+        return (armor.Metal1Color, armor.Metal2Color,
+                armor.Cloth1Color, armor.Cloth2Color,
+                armor.Leather1Color, armor.Leather2Color);
+    }
+
+    /// <summary>
+    /// Load the equipped chest armor UTI.
+    /// </summary>
+    private UtiFile? LoadEquippedArmor(UtcFile creature)
+    {
         // Find equipped chest armor
         var chestItem = creature.EquipItemList.FirstOrDefault(e => e.Slot == EquipmentSlots.Chest);
         if (chestItem == null || string.IsNullOrEmpty(chestItem.EquipRes))
@@ -68,24 +104,17 @@ public class ModelService
             var utiData = _gameDataService.FindResource(chestItem.EquipRes.ToLowerInvariant(), ResourceTypes.Uti);
             if (utiData == null || utiData.Length == 0)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetArmorPartOverrides: Armor UTI '{chestItem.EquipRes}' not found");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadEquippedArmor: Armor UTI '{chestItem.EquipRes}' not found");
                 return null;
             }
 
-            var armor = UtiReader.Read(utiData);
-            if (armor.ArmorParts.Count > 0)
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO,
-                    $"GetArmorPartOverrides: Armor '{chestItem.EquipRes}' has {armor.ArmorParts.Count} part overrides");
-                return armor.ArmorParts;
-            }
+            return UtiReader.Read(utiData);
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.WARN, $"GetArmorPartOverrides: Failed to load armor '{chestItem.EquipRes}': {ex.Message}");
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"LoadEquippedArmor: Failed to load armor '{chestItem.EquipRes}': {ex.Message}");
+            return null;
         }
-
-        return null;
     }
 
     /// <summary>
@@ -152,28 +181,30 @@ public class ModelService
         TryAddBodyPart(compositeModel, basePrefix, "head", creature.AppearanceHead);
 
         // Standard body parts (armor can override these)
+        // NWN body part naming: belt, bicepl/bicepr, chest, footl/footr, forel/forer,
+        // handl/handr, legl/legr, neck, pelvis, shinl/shinr, shol/shor
         TryAddBodyPart(compositeModel, basePrefix, "neck", GetPartNumber("Neck", creature.BodyPart_Neck));
         TryAddBodyPart(compositeModel, basePrefix, "chest", GetPartNumber("Torso", creature.BodyPart_Torso));
         TryAddBodyPart(compositeModel, basePrefix, "pelvis", GetPartNumber("Pelvis", creature.BodyPart_Pelvis));
         TryAddBodyPart(compositeModel, basePrefix, "belt", GetPartNumber("Belt", creature.BodyPart_Belt));
 
-        // Arms (armor can override these)
-        TryAddBodyPart(compositeModel, basePrefix, "lshoul", GetPartNumber("LShoul", creature.BodyPart_LShoul));
-        TryAddBodyPart(compositeModel, basePrefix, "rshoul", GetPartNumber("RShoul", creature.BodyPart_RShoul));
-        TryAddBodyPart(compositeModel, basePrefix, "lbicep", GetPartNumber("LBicep", creature.BodyPart_LBicep));
-        TryAddBodyPart(compositeModel, basePrefix, "rbicep", GetPartNumber("RBicep", creature.BodyPart_RBicep));
-        TryAddBodyPart(compositeModel, basePrefix, "lfarm", GetPartNumber("LFArm", creature.BodyPart_LFArm));
-        TryAddBodyPart(compositeModel, basePrefix, "rfarm", GetPartNumber("RFArm", creature.BodyPart_RFArm));
-        TryAddBodyPart(compositeModel, basePrefix, "lhand", GetPartNumber("LHand", creature.BodyPart_LHand));
-        TryAddBodyPart(compositeModel, basePrefix, "rhand", GetPartNumber("RHand", creature.BodyPart_RHand));
+        // Arms (armor can override these) - NWN uses shol/shor, bicepl/bicepr, forel/forer, handl/handr
+        TryAddBodyPart(compositeModel, basePrefix, "shol", GetPartNumber("LShoul", creature.BodyPart_LShoul));
+        TryAddBodyPart(compositeModel, basePrefix, "shor", GetPartNumber("RShoul", creature.BodyPart_RShoul));
+        TryAddBodyPart(compositeModel, basePrefix, "bicepl", GetPartNumber("LBicep", creature.BodyPart_LBicep));
+        TryAddBodyPart(compositeModel, basePrefix, "bicepr", GetPartNumber("RBicep", creature.BodyPart_RBicep));
+        TryAddBodyPart(compositeModel, basePrefix, "forel", GetPartNumber("LFArm", creature.BodyPart_LFArm));
+        TryAddBodyPart(compositeModel, basePrefix, "forer", GetPartNumber("RFArm", creature.BodyPart_RFArm));
+        TryAddBodyPart(compositeModel, basePrefix, "handl", GetPartNumber("LHand", creature.BodyPart_LHand));
+        TryAddBodyPart(compositeModel, basePrefix, "handr", GetPartNumber("RHand", creature.BodyPart_RHand));
 
-        // Legs (armor can override these)
-        TryAddBodyPart(compositeModel, basePrefix, "lthigh", GetPartNumber("LThigh", creature.BodyPart_LThigh));
-        TryAddBodyPart(compositeModel, basePrefix, "rthigh", GetPartNumber("RThigh", creature.BodyPart_RThigh));
-        TryAddBodyPart(compositeModel, basePrefix, "lshin", GetPartNumber("LShin", creature.BodyPart_LShin));
-        TryAddBodyPart(compositeModel, basePrefix, "rshin", GetPartNumber("RShin", creature.BodyPart_RShin));
-        TryAddBodyPart(compositeModel, basePrefix, "lfoot", GetPartNumber("LFoot", creature.BodyPart_LFoot));
-        TryAddBodyPart(compositeModel, basePrefix, "rfoot", GetPartNumber("RFoot", creature.BodyPart_RFoot));
+        // Legs (armor can override these) - NWN uses legl/legr (thighs), shinl/shinr, footl/footr
+        TryAddBodyPart(compositeModel, basePrefix, "legl", GetPartNumber("LThigh", creature.BodyPart_LThigh));
+        TryAddBodyPart(compositeModel, basePrefix, "legr", GetPartNumber("RThigh", creature.BodyPart_RThigh));
+        TryAddBodyPart(compositeModel, basePrefix, "shinl", GetPartNumber("LShin", creature.BodyPart_LShin));
+        TryAddBodyPart(compositeModel, basePrefix, "shinr", GetPartNumber("RShin", creature.BodyPart_RShin));
+        TryAddBodyPart(compositeModel, basePrefix, "footl", GetPartNumber("LFoot", creature.BodyPart_LFoot));
+        TryAddBodyPart(compositeModel, basePrefix, "footr", GetPartNumber("RFoot", creature.BodyPart_RFoot));
 
         // Calculate combined bounding box
         UpdateCompositeBounds(compositeModel);
@@ -198,6 +229,26 @@ public class ModelService
         var partName = $"{basePrefix}_{partType}{partNumber:D3}";
         var partModel = LoadModel(partName);
 
+        // If not found with race-specific prefix, try human fallback
+        // NWN shares many body part models across races using pmh0/pfh0 (human male/female)
+        if (partModel == null && basePrefix.Length >= 2)
+        {
+            // Extract gender char (m/f) from position 1
+            var genderChar = basePrefix[1];
+            var humanPrefix = $"p{genderChar}h0"; // e.g., pmh0 or pfh0
+            if (humanPrefix != basePrefix)
+            {
+                var humanPartName = $"{humanPrefix}_{partType}{partNumber:D3}";
+                partModel = LoadModel(humanPartName);
+                if (partModel != null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"TryAddBodyPart: Using human fallback '{humanPartName}' for '{partName}'");
+                    partName = humanPartName; // Update for logging
+                }
+            }
+        }
+
         if (partModel != null)
         {
             // Body part MDL files have geometry at local origin
@@ -213,6 +264,29 @@ public class ModelService
                     // Position the mesh at the bone location
                     trimesh.Position = bonePosition;
 
+                    // If no bitmap set, derive texture name from model name
+                    // NWN body parts often have empty bitmap field but texture follows naming convention
+                    if (string.IsNullOrEmpty(trimesh.Bitmap))
+                    {
+                        // For race-specific parts (head), try the original race prefix first
+                        // For limbs (which use human fallback models), use human texture prefix
+                        var derivedTexture = partName; // Default to model name (e.g., pme0_head001)
+
+                        // Check if this is a fallback model (human prefix loaded for non-human creature)
+                        // If so, use the human texture; otherwise use race-specific texture
+                        var isHumanFallback = partName.StartsWith("pmh0_") || partName.StartsWith("pfh0_");
+                        if (!isHumanFallback)
+                        {
+                            // Race-specific model - use race texture first (e.g., pme0_head001)
+                            derivedTexture = $"{basePrefix}_{partType}{partNumber:D3}";
+                        }
+                        // else: human fallback model - partName already has correct texture name
+
+                        trimesh.Bitmap = derivedTexture;
+                        UnifiedLogger.LogApplication(LogLevel.INFO,
+                            $"TryAddBodyPart: Derived texture '{derivedTexture}' for mesh '{trimesh.Name}'");
+                    }
+
                     // Add to composite's root (or create root if needed)
                     if (compositeModel.GeometryRoot == null)
                     {
@@ -220,26 +294,12 @@ public class ModelService
                     }
                     compositeModel.GeometryRoot.Children.Add(node);
                     meshCount++;
-                    // Log vertex bounds for debugging
-                    if (trimesh.Vertices.Length > 0)
-                    {
-                        var minV = trimesh.Vertices[0];
-                        var maxV = trimesh.Vertices[0];
-                        foreach (var v in trimesh.Vertices)
-                        {
-                            minV = new System.Numerics.Vector3(
-                                Math.Min(minV.X, v.X), Math.Min(minV.Y, v.Y), Math.Min(minV.Z, v.Z));
-                            maxV = new System.Numerics.Vector3(
-                                Math.Max(maxV.X, v.X), Math.Max(maxV.Y, v.Y), Math.Max(maxV.Z, v.Z));
-                        }
-                        UnifiedLogger.LogApplication(LogLevel.INFO,
-                            $"TryAddBodyPart: Added mesh '{trimesh.Name}' from {partName}, verts={trimesh.Vertices.Length}, faces={trimesh.Faces.Length}, vertBounds={minV}-{maxV}, bonePos={bonePosition}");
-                    }
-                    else
-                    {
-                        UnifiedLogger.LogApplication(LogLevel.INFO,
-                            $"TryAddBodyPart: Added mesh '{trimesh.Name}' from {partName}, verts=0, faces={trimesh.Faces.Length}");
-                    }
+                    // Log vertex bounds and texture info for debugging
+                    var hasUVs = trimesh.TextureCoords.Length > 0 && trimesh.TextureCoords[0].Length > 0;
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"TryAddBodyPart: Added mesh '{trimesh.Name}' from {partName}, " +
+                        $"bitmap='{trimesh.Bitmap}', hasUVs={hasUVs}, " +
+                        $"verts={trimesh.Vertices.Length}, faces={trimesh.Faces.Length}");
                 }
             }
             UnifiedLogger.LogApplication(LogLevel.INFO, $"TryAddBodyPart: {partName} added {meshCount} meshes");
@@ -260,8 +320,8 @@ public class ModelService
             return System.Numerics.Vector3.Zero;
 
         // Map body part type to skeleton bone name
-        // Body parts use names like "head", "neck", "chest", etc.
-        // Skeleton uses names like "head_g", "neck_g", "torso_g", etc.
+        // Body parts use NWN naming: bicepl, bicepr, forel, forer, etc.
+        // Skeleton uses names like "head_g", "neck_g", "lbicep_g", etc.
         var boneName = partType switch
         {
             "head" => "head_g",
@@ -269,20 +329,20 @@ public class ModelService
             "chest" => "torso_g",
             "pelvis" => "pelvis_g",
             "belt" => "belt_g",
-            "lshoul" => "lshoulder_g",
-            "rshoul" => "rshoulder_g",
-            "lbicep" => "lbicep_g",
-            "rbicep" => "rbicep_g",
-            "lfarm" => "lforearm_g",
-            "rfarm" => "rforearm_g",
-            "lhand" => "lhand_g",
-            "rhand" => "rhand_g",
-            "lthigh" => "lthigh_g",
-            "rthigh" => "rthigh_g",
-            "lshin" => "lshin_g",
-            "rshin" => "rshin_g",
-            "lfoot" => "lfoot_g",
-            "rfoot" => "rfoot_g",
+            "shol" => "lshoulder_g",
+            "shor" => "rshoulder_g",
+            "bicepl" => "lbicep_g",
+            "bicepr" => "rbicep_g",
+            "forel" => "lforearm_g",
+            "forer" => "rforearm_g",
+            "handl" => "lhand_g",
+            "handr" => "rhand_g",
+            "legl" => "lthigh_g",
+            "legr" => "rthigh_g",
+            "shinl" => "lshin_g",
+            "shinr" => "rshin_g",
+            "footl" => "lfoot_g",
+            "footr" => "rfoot_g",
             _ => partType + "_g"
         };
 
