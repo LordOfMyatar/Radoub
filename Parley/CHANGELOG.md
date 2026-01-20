@@ -15,9 +15,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Parley Startup Performance (#988)
 
-- [ ] Profile Parley startup to identify bottlenecks
-- [ ] Implement optimizations if identified
-- [ ] Document findings
+- [x] Profile Parley startup to identify bottlenecks
+- [x] Implement optimizations if identified
+
+#### Root Cause
+First click on NPC node was slow because `GameDataService` uses lazy loading for KEY/BIF/TLK files. The heavy I/O happened on first portrait/soundset lookup instead of during startup.
+
+#### Fix
+Added `WarmupGameDataServiceAsync()` that primes `portraits.2da` and `soundset.2da` in background during `OnWindowOpened`. This shifts the lazy loading from user interaction to startup (fire-and-forget pattern per CLAUDE.md deferred loading guidelines).
 
 ---
 
