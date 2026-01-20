@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.47-alpha] - 2026-01-19
-**Branch**: `quartermaster/issue-829` | **PR**: #TBD
+**Branch**: `quartermaster/issue-829` | **PR**: #1017
 
 ### Sprint: Level-Up Wizard System (#829)
 
