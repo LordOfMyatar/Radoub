@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.46-alpha] - 2026-01-19
+**Branch**: `quartermaster/issue-884` | **PR**: #1012
+
+### Sprint: Bug Bash - Settings & UI Fixes (#884)
+
+- [x] #873 - Settings: Changing font to system font has no effect
+
+#### Fixed
+- **System font selection now applies correctly** (#873)
+  - When "(System Default)" is selected, `GlobalFontFamily` is now explicitly set to `FontFamily.Default`
+  - Previously, empty font string caused no action, leaving the previous font active
+  - Fix applied to all 5 tools: Quartermaster, Trebuchet, Manifest, Fence (Parley already had the fix)
+  - Also fixed in ThemeManager for themes specifying `$Default` or empty font
+
+---
+
 ## [0.1.45-alpha] - 2026-01-19
 **Branch**: `radoub/sprint-988-1010` | **PR**: #1011
 

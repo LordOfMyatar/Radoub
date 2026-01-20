@@ -594,6 +594,7 @@ public class ThemeManager
     /// </summary>
     private void ApplyFonts(IResourceDictionary resources, ThemeFonts fonts)
     {
+        // Apply font family - empty or "$Default" means system default
         if (!string.IsNullOrEmpty(fonts.Primary) && fonts.Primary != "$Default")
         {
             try
@@ -604,7 +605,13 @@ public class ThemeManager
             {
                 UnifiedLogger.LogApplication(LogLevel.WARN,
                     $"[{_toolName}] Invalid font family: {fonts.Primary} - {ex.Message}");
+                resources["GlobalFontFamily"] = FontFamily.Default;
             }
+        }
+        else
+        {
+            // Explicitly set system default font
+            resources["GlobalFontFamily"] = FontFamily.Default;
         }
 
         // Use theme's font size or default to 14

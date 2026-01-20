@@ -166,16 +166,27 @@ public partial class App : Application
             UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font size: {settings.FontSize}pt (derived sizes updated)");
         }
 
-        if (!string.IsNullOrEmpty(settings.FontFamily) && Resources != null)
+        if (Resources != null)
         {
-            try
+            if (!string.IsNullOrEmpty(settings.FontFamily))
             {
-                Resources["GlobalFontFamily"] = new FontFamily(settings.FontFamily);
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {settings.FontFamily}");
+                try
+                {
+                    Resources["GlobalFontFamily"] = new FontFamily(settings.FontFamily);
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {settings.FontFamily}");
+                }
+                catch
+                {
+                    // Invalid font family - fall back to system default
+                    Resources["GlobalFontFamily"] = FontFamily.Default;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default (fallback)");
+                }
             }
-            catch
+            else
             {
-                // Invalid font family - ignore
+                // Empty string means system default
+                Resources["GlobalFontFamily"] = FontFamily.Default;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default");
             }
         }
     }
