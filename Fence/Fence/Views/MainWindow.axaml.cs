@@ -40,8 +40,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private BaseItemTypeService? _baseItemTypeService;
     private ItemResolutionService? _itemResolutionService;
     private IGameDataService? _gameDataService;
-    private CancellationTokenSource? _paletteLoadCts;
-    private const int PaletteBatchSize = 50;
     private bool _servicesInitialized;
 
     // Store palette categories loaded from storepal.itp
