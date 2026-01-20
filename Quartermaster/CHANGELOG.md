@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Add skin to the creature body - appearance customization for body parts, skin/hair colors, and armor-provided limbs.
 
+#### Added
+- **Textured 3D model rendering** - Model preview now renders with proper texture mapping instead of flat shading
+  - UV coordinates extracted from MDL mesh data
+  - SKVertices-based GPU-accelerated triangle rendering
+  - PLT textures rendered with skin/hair/tattoo colors via TextureService
+  - Lighting still applied for depth perception
+
 #### Changed
 - **Startup performance** - Moved GameDataService and panel initialization from constructor to `Opened` event, runs on background thread. Cache and item loading run in parallel. Window appears in ~1.9s instead of ~18 seconds.
 
