@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.3-alpha] - 2026-01-19
+**Branch**: `fence/issue-1014` | **PR**: #TBD
+
+### Sprint: Fence Completion (#1014)
+
+Part of Epic #555 (Merchant Editor Tool).
+
+#### Work Items
+- [ ] #945 - Add Scripts, Variables, and Comment fields
+- [ ] #958 - File loading performance (target: under 2 seconds)
+- [ ] #956 - Move status bar to top of window
+
+---
+
 ## [0.1.2-alpha] - 2026-01-18
 **Branch**: `radoub/issue-954` | **PR**: #955
 
