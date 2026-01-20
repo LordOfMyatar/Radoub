@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.48-alpha] - 2026-01-20
-**Branch**: `quartermaster/issue-1028` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1028` | **PR**: #1029
 
 ### Feature: Complete Creature Display UI (#1028)
 
