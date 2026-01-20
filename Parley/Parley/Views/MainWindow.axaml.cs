@@ -280,6 +280,41 @@ namespace DialogEditor.Views
 
             // Initialize portrait service with game data path (#915)
             InitializePortraitService();
+
+            // #988: Warm up GameDataService in background to avoid lag on first NPC click
+            // KEY/BIF/TLK loading is lazy - prime it during startup instead of on first use
+            _ = WarmupGameDataServiceAsync();
+        }
+
+        /// <summary>
+        /// Warms up GameDataService by priming the KEY file and commonly used 2DA files.
+        /// This prevents lag on first NPC click when portrait/soundset lookup happens.
+        /// Issue #988: Parley startup performance.
+        /// </summary>
+        private async Task WarmupGameDataServiceAsync()
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    if (!_services.GameData.IsConfigured)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, "GameDataService not configured, skipping warmup");
+                        return;
+                    }
+
+                    // Prime commonly used 2DAs for NPC display
+                    // These lookups trigger lazy loading of KEY file + BIF archives
+                    _services.GameData.Get2DA("portraits");
+                    _services.GameData.Get2DA("soundset");
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO, "GameDataService warmup complete");
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"GameDataService warmup failed: {ex.Message}");
+                }
+            });
         }
 
         /// <summary>
