@@ -145,11 +145,22 @@ public partial class AppearancePanel
 
         try
         {
+            // Set body colors
             _modelPreview.SetCharacterColors(
                 _currentCreature.Color_Skin,
                 _currentCreature.Color_Hair,
                 _currentCreature.Color_Tattoo1,
                 _currentCreature.Color_Tattoo2);
+
+            // Load armor colors from equipped chest armor
+            var armorColors = _modelService.GetArmorColors(_currentCreature);
+            if (armorColors != null)
+            {
+                _modelPreview.SetArmorColors(
+                    armorColors.Value.metal1, armorColors.Value.metal2,
+                    armorColors.Value.cloth1, armorColors.Value.cloth2,
+                    armorColors.Value.leather1, armorColors.Value.leather2);
+            }
 
             var model = _modelService.LoadCreatureModel(_currentCreature);
             _modelPreview.Model = model;

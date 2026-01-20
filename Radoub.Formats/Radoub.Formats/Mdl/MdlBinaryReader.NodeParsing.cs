@@ -217,7 +217,11 @@ public partial class MdlBinaryReader
 
         for (int i = 0; i < keyCount; i++)
         {
-            stream.Position = keyOffset + i * ControllerKeySize;
+            var keyPos = keyOffset + i * ControllerKeySize;
+            if (keyPos + ControllerKeySize > _modelData.Length)
+                break; // Out of bounds
+
+            stream.Position = keyPos;
 
             var type = reader.ReadInt32();
             var rows = reader.ReadInt16();
@@ -228,14 +232,18 @@ public partial class MdlBinaryReader
 
             // Read controller data based on type
             // Type 8 = Position, Type 20 = Orientation
+            var valuePos = dataOffset + valueDataOffset * 4;
+
             if (type == 8 && rows > 0) // Position
             {
-                stream.Position = dataOffset + valueDataOffset * 4;
+                if (valuePos + 12 > _modelData.Length) continue;
+                stream.Position = valuePos;
                 node.Position = ReadVector3(reader);
             }
             else if (type == 20 && rows > 0) // Orientation
             {
-                stream.Position = dataOffset + valueDataOffset * 4;
+                if (valuePos + 16 > _modelData.Length) continue;
+                stream.Position = valuePos;
                 var x = reader.ReadSingle();
                 var y = reader.ReadSingle();
                 var z = reader.ReadSingle();
@@ -244,17 +252,20 @@ public partial class MdlBinaryReader
             }
             else if (type == 36 && rows > 0) // Scale
             {
-                stream.Position = dataOffset + valueDataOffset * 4;
+                if (valuePos + 4 > _modelData.Length) continue;
+                stream.Position = valuePos;
                 node.Scale = reader.ReadSingle();
             }
             else if (type == 76 && rows > 0 && node is MdlLightNode light) // Light Color
             {
-                stream.Position = dataOffset + valueDataOffset * 4;
+                if (valuePos + 12 > _modelData.Length) continue;
+                stream.Position = valuePos;
                 light.Color = ReadVector3(reader);
             }
             else if (type == 88 && rows > 0 && node is MdlLightNode light2) // Light Radius
             {
-                stream.Position = dataOffset + valueDataOffset * 4;
+                if (valuePos + 4 > _modelData.Length) continue;
+                stream.Position = valuePos;
                 light2.Radius = reader.ReadSingle();
             }
         }

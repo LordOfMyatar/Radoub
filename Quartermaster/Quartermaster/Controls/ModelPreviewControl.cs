@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Avalonia;
 using Avalonia.Controls;
@@ -31,11 +32,8 @@ public class ModelPreviewControl : Control
     private float _zoom = 1.0f;
     private Vector3 _cameraPosition = new(0, 0, 5);
 
-    // Character colors for PLT rendering
-    private int _skinColor;
-    private int _hairColor;
-    private int _tattoo1Color;
-    private int _tattoo2Color;
+    // PLT color indices for texture rendering (body + armor colors)
+    private PltColorIndices _colorIndices = new();
 
     // Texture cache: resref -> SKBitmap
     private readonly Dictionary<string, SKBitmap?> _textureCache = new();
@@ -111,16 +109,64 @@ public class ModelPreviewControl : Control
     /// </summary>
     public void SetCharacterColors(int skinColor, int hairColor, int tattoo1Color, int tattoo2Color)
     {
-        if (_skinColor != skinColor || _hairColor != hairColor ||
-            _tattoo1Color != tattoo1Color || _tattoo2Color != tattoo2Color)
+        SetColorIndices(new PltColorIndices
         {
-            _skinColor = skinColor;
-            _hairColor = hairColor;
-            _tattoo1Color = tattoo1Color;
-            _tattoo2Color = tattoo2Color;
+            Skin = skinColor,
+            Hair = hairColor,
+            Tattoo1 = tattoo1Color,
+            Tattoo2 = tattoo2Color,
+            // Preserve existing armor colors
+            Metal1 = _colorIndices.Metal1,
+            Metal2 = _colorIndices.Metal2,
+            Cloth1 = _colorIndices.Cloth1,
+            Cloth2 = _colorIndices.Cloth2,
+            Leather1 = _colorIndices.Leather1,
+            Leather2 = _colorIndices.Leather2
+        });
+    }
+
+    /// <summary>
+    /// Set all PLT color indices (body + armor colors).
+    /// </summary>
+    public void SetColorIndices(PltColorIndices colorIndices)
+    {
+        if (!ColorsEqual(_colorIndices, colorIndices))
+        {
+            _colorIndices = colorIndices;
             ClearTextureCache(); // Clear cache since colors changed
             InvalidateVisual();
         }
+    }
+
+    /// <summary>
+    /// Set armor colors for PLT texture rendering.
+    /// </summary>
+    public void SetArmorColors(int metal1, int metal2, int cloth1, int cloth2, int leather1, int leather2)
+    {
+        SetColorIndices(new PltColorIndices
+        {
+            // Preserve existing body colors
+            Skin = _colorIndices.Skin,
+            Hair = _colorIndices.Hair,
+            Tattoo1 = _colorIndices.Tattoo1,
+            Tattoo2 = _colorIndices.Tattoo2,
+            // Set armor colors
+            Metal1 = metal1,
+            Metal2 = metal2,
+            Cloth1 = cloth1,
+            Cloth2 = cloth2,
+            Leather1 = leather1,
+            Leather2 = leather2
+        });
+    }
+
+    private static bool ColorsEqual(PltColorIndices a, PltColorIndices b)
+    {
+        return a.Skin == b.Skin && a.Hair == b.Hair &&
+               a.Tattoo1 == b.Tattoo1 && a.Tattoo2 == b.Tattoo2 &&
+               a.Metal1 == b.Metal1 && a.Metal2 == b.Metal2 &&
+               a.Cloth1 == b.Cloth1 && a.Cloth2 == b.Cloth2 &&
+               a.Leather1 == b.Leather1 && a.Leather2 == b.Leather2;
     }
 
     /// <summary>
@@ -238,20 +284,25 @@ public class ModelPreviewControl : Control
     private SKBitmap? LoadTextureAsBitmap(string textureName)
     {
         if (_textureService == null || string.IsNullOrEmpty(textureName))
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.DEBUG,
+                $"LoadTextureAsBitmap: Skipping '{textureName}' (no service or empty name)");
             return null;
+        }
 
         try
         {
-            // Try to load texture with character colors
-            var textureData = _textureService.LoadTexture(
-                textureName,
-                _skinColor,
-                _hairColor,
-                _tattoo1Color,
-                _tattoo2Color);
+            // Try to load texture with PLT color indices (body + armor colors)
+            var textureData = _textureService.LoadTexture(textureName, _colorIndices);
 
             if (textureData == null)
+            {
+                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                    Radoub.Formats.Logging.LogLevel.DEBUG,
+                    $"LoadTextureAsBitmap: '{textureName}' not found (skin={_colorIndices.Skin})");
                 return null;
+            }
 
             var (width, height, pixels) = textureData.Value;
 
@@ -262,10 +313,17 @@ public class ModelPreviewControl : Control
             // Copy pixel data - TextureService returns RGBA
             System.Runtime.InteropServices.Marshal.Copy(pixels, 0, handle, pixels.Length);
 
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.DEBUG,
+                $"LoadTextureAsBitmap: '{textureName}' loaded OK ({width}x{height})");
+
             return bitmap;
         }
-        catch
+        catch (Exception ex)
         {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.WARN,
+                $"LoadTextureAsBitmap: '{textureName}' failed: {ex.Message}");
             return null;
         }
     }
@@ -291,9 +349,9 @@ public class ModelPreviewControl : Control
 
     #region Theme-Aware Colors
 
-    // Default colors for fallback (dark theme values)
-    private static readonly IBrush DefaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(26, 26, 46));
-    private static readonly IBrush DefaultPlaceholderBrush = new SolidColorBrush(Color.FromRgb(106, 106, 138));
+    // Default colors for fallback - lighter gray for better contrast with models
+    private static readonly IBrush DefaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(80, 80, 90));
+    private static readonly IBrush DefaultPlaceholderBrush = new SolidColorBrush(Color.FromRgb(140, 140, 160));
 
     private IBrush GetBackgroundBrush()
     {
@@ -407,69 +465,41 @@ public class ModelPreviewControl : Control
             }
             else
             {
-                // Solid flat-shaded rendering with depth sorting
-                var allFaces = new List<(MdlTrimeshNode mesh, int faceIndex, float depth, SKPoint[] points, Vector3 normal)>();
+                // Textured rendering with depth sorting
+                var allFaces = new List<TexturedFace>();
 
                 foreach (var mesh in _model.GetMeshNodes())
                 {
-                    CollectSortedFaces(mesh, rotationMatrix, screenCenterX, screenCenterY, scale, allFaces);
+                    CollectTexturedFaces(mesh, rotationMatrix, screenCenterX, screenCenterY, scale, lightDir, allFaces);
                 }
 
                 // Sort by depth (painter's algorithm - draw far faces first)
-                allFaces.Sort((a, b) => b.depth.CompareTo(a.depth));
+                allFaces.Sort((a, b) => b.Depth.CompareTo(a.Depth));
 
-                using var fillPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
-
-                foreach (var (mesh, faceIndex, depth, points, normal) in allFaces)
-                {
-                    // Calculate lighting
-                    var rotatedNormal = Vector3.TransformNormal(normal, rotationMatrix);
-                    var lightIntensity = Math.Max(0.2f, Vector3.Dot(rotatedNormal, lightDir));
-
-                    // Get base color from texture or material
-                    var baseColor = GetMeshColor(mesh);
-                    var r = (byte)Math.Clamp(baseColor.Red * lightIntensity, 0, 255);
-                    var g = (byte)Math.Clamp(baseColor.Green * lightIntensity, 0, 255);
-                    var b = (byte)Math.Clamp(baseColor.Blue * lightIntensity, 0, 255);
-
-                    fillPaint.Color = new SKColor(r, g, b);
-
-                    // Draw filled triangle
-                    using var path = new SKPath();
-                    path.MoveTo(points[0]);
-                    path.LineTo(points[1]);
-                    path.LineTo(points[2]);
-                    path.Close();
-                    canvas.DrawPath(path, fillPaint);
-                }
+                // Render faces in strict depth order (not grouped by texture)
+                // This properly handles overlapping body parts like arms over torso
+                RenderFacesInDepthOrder(canvas, allFaces);
             }
 
             canvas.Restore();
         }
 
-        private SKColor GetMeshColor(MdlTrimeshNode mesh)
+        /// <summary>
+        /// Represents a face with all data needed for textured rendering.
+        /// </summary>
+        private struct TexturedFace
         {
-            // Try to get average color from texture
-            var textureName = mesh.Bitmap?.ToLowerInvariant() ?? "";
-            if (!string.IsNullOrEmpty(textureName) && _textures.TryGetValue(textureName, out var bitmap) && bitmap != null)
-            {
-                // Sample center of texture for average color
-                var centerX = bitmap.Width / 2;
-                var centerY = bitmap.Height / 2;
-                return bitmap.GetPixel(centerX, centerY);
-            }
-
-            // Fall back to mesh diffuse color
-            var d = mesh.Diffuse;
-            return new SKColor(
-                (byte)(d.X * 255),
-                (byte)(d.Y * 255),
-                (byte)(d.Z * 255));
+            public SKPoint[] ScreenPoints;
+            public SKPoint[] UVs;
+            public float Depth;
+            public float LightIntensity;
+            public string? TextureName;
+            public SKColor DiffuseColor;
         }
 
-        private void CollectSortedFaces(MdlTrimeshNode mesh, Matrix4x4 rotation,
-            float centerX, float centerY, float scale,
-            List<(MdlTrimeshNode mesh, int faceIndex, float depth, SKPoint[] points, Vector3 normal)> faces)
+        private void CollectTexturedFaces(MdlTrimeshNode mesh, Matrix4x4 rotation,
+            float centerX, float centerY, float scale, Vector3 lightDir,
+            List<TexturedFace> faces)
         {
             if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
                 return;
@@ -477,8 +507,11 @@ public class ModelPreviewControl : Control
             // Model center for rotation
             var modelCenter = (_model.BoundingMin + _model.BoundingMax) * 0.5f;
 
-            // Get mesh node's position offset (body parts have different positions)
+            // Get mesh node's position offset
             var nodePosition = mesh.Position;
+
+            // Get texture coordinates if available
+            var hasUVs = mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length == mesh.Vertices.Length;
 
             // Project vertices to screen space
             var screenPoints = new SKPoint[mesh.Vertices.Length];
@@ -486,24 +519,28 @@ public class ModelPreviewControl : Control
 
             for (int i = 0; i < mesh.Vertices.Length; i++)
             {
-                // Apply node position offset, then center on model
                 var v = mesh.Vertices[i] + nodePosition - modelCenter;
                 var rotated = Vector3.Transform(v, rotation);
                 worldPositions[i] = rotated;
 
-                // NWN uses Z-up coordinate system:
-                // X = left/right, Y = forward/back (depth), Z = up/down
-                // After rotation, Y becomes depth into screen
-                var depth = -rotated.Y + 5; // Negate Y for correct depth after rotation
+                var depth = -rotated.Y + 5;
                 if (depth < 0.1f) depth = 0.1f;
 
                 var screenX = centerX + (rotated.X / depth) * scale;
-                var screenY = centerY - (rotated.Z / depth) * scale; // - because screen Y increases down, Z increases up
+                var screenY = centerY - (rotated.Z / depth) * scale;
 
                 screenPoints[i] = new SKPoint(screenX, screenY);
             }
 
-            // Collect faces with depth info
+            // Get texture name and diffuse color
+            var textureName = mesh.Bitmap?.ToLowerInvariant();
+            var diffuse = mesh.Diffuse;
+            var diffuseColor = new SKColor(
+                (byte)(diffuse.X * 255),
+                (byte)(diffuse.Y * 255),
+                (byte)(diffuse.Z * 255));
+
+            // Collect faces
             for (int faceIdx = 0; faceIdx < mesh.Faces.Length; faceIdx++)
             {
                 var face = mesh.Faces[faceIdx];
@@ -516,25 +553,163 @@ public class ModelPreviewControl : Control
                 var p1 = screenPoints[face.VertexIndex1];
                 var p2 = screenPoints[face.VertexIndex2];
 
-                // Backface culling (reversed due to Y flip)
+                // Backface culling
                 var cross = (p1.X - p0.X) * (p2.Y - p0.Y) - (p1.Y - p0.Y) * (p2.X - p0.X);
                 if (cross > 0) continue;
 
-                // Average depth for sorting (negated Y is depth after rotation)
+                // Average depth for sorting
                 var avgDepth = -(worldPositions[face.VertexIndex0].Y +
                                 worldPositions[face.VertexIndex1].Y +
                                 worldPositions[face.VertexIndex2].Y) / 3f;
 
-                // Calculate face normal
+                // Calculate face normal and lighting
                 var v0 = mesh.Vertices[face.VertexIndex0];
                 var v1 = mesh.Vertices[face.VertexIndex1];
                 var v2 = mesh.Vertices[face.VertexIndex2];
                 var edge1 = v1 - v0;
                 var edge2 = v2 - v0;
                 var normal = Vector3.Normalize(Vector3.Cross(edge1, edge2));
+                var rotatedNormal = Vector3.TransformNormal(normal, rotation);
+                var lightIntensity = Math.Max(0.3f, Vector3.Dot(rotatedNormal, lightDir));
 
-                faces.Add((mesh, faceIdx, avgDepth, new[] { p0, p1, p2 }, normal));
+                // Get UVs for this face
+                SKPoint[] uvs;
+                if (hasUVs)
+                {
+                    var texCoords = mesh.TextureCoords[0];
+                    uvs = new[]
+                    {
+                        new SKPoint(texCoords[face.VertexIndex0].X, texCoords[face.VertexIndex0].Y),
+                        new SKPoint(texCoords[face.VertexIndex1].X, texCoords[face.VertexIndex1].Y),
+                        new SKPoint(texCoords[face.VertexIndex2].X, texCoords[face.VertexIndex2].Y)
+                    };
+                }
+                else
+                {
+                    // Default UVs if none available
+                    uvs = new[] { new SKPoint(0, 0), new SKPoint(1, 0), new SKPoint(0.5f, 1) };
+                }
+
+                faces.Add(new TexturedFace
+                {
+                    ScreenPoints = new[] { p0, p1, p2 },
+                    UVs = uvs,
+                    Depth = avgDepth,
+                    LightIntensity = lightIntensity,
+                    TextureName = textureName,
+                    DiffuseColor = diffuseColor
+                });
             }
+        }
+
+        /// <summary>
+        /// Render all faces in strict depth order, looking up textures as needed.
+        /// </summary>
+        private void RenderFacesInDepthOrder(SKCanvas canvas, List<TexturedFace> faces)
+        {
+            if (faces.Count == 0) return;
+
+            using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
+
+            foreach (var face in faces)
+            {
+                // Get texture for this face (if any)
+                SKBitmap? texture = null;
+                if (!string.IsNullOrEmpty(face.TextureName))
+                    _textures.TryGetValue(face.TextureName, out texture);
+
+                // Get lit color
+                SKColor faceColor;
+                if (texture != null)
+                {
+                    // Sample texture at face center UV and apply lighting
+                    var centerU = (face.UVs[0].X + face.UVs[1].X + face.UVs[2].X) / 3f;
+                    var centerV = (face.UVs[0].Y + face.UVs[1].Y + face.UVs[2].Y) / 3f;
+
+                    // Wrap UVs and flip V
+                    centerU = centerU - MathF.Floor(centerU);
+                    centerV = 1.0f - (centerV - MathF.Floor(centerV));
+
+                    var texX = (int)(centerU * texture.Width) % texture.Width;
+                    var texY = (int)(centerV * texture.Height) % texture.Height;
+                    if (texX < 0) texX += texture.Width;
+                    if (texY < 0) texY += texture.Height;
+
+                    var texColor = texture.GetPixel(texX, texY);
+                    faceColor = ApplyLighting(texColor, face.LightIntensity);
+                }
+                else
+                {
+                    // No texture - use a neutral gray color instead of mesh diffuse
+                    // (which is often set to blue for debugging in some models)
+                    var neutralColor = new SKColor(180, 170, 160); // Warm gray for skin-like appearance
+                    faceColor = ApplyLighting(neutralColor, face.LightIntensity);
+                }
+
+                paint.Color = faceColor;
+
+                // Draw filled triangle
+                using var path = new SKPath();
+                path.MoveTo(face.ScreenPoints[0]);
+                path.LineTo(face.ScreenPoints[1]);
+                path.LineTo(face.ScreenPoints[2]);
+                path.Close();
+                canvas.DrawPath(path, paint);
+            }
+        }
+
+        private void RenderTexturedFaces(SKCanvas canvas, List<TexturedFace> faces, SKBitmap? texture)
+        {
+            if (faces.Count == 0) return;
+
+            using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
+
+            foreach (var face in faces)
+            {
+                // Get lit color
+                SKColor faceColor;
+                if (texture != null)
+                {
+                    // Sample texture at face center UV and apply lighting
+                    var centerU = (face.UVs[0].X + face.UVs[1].X + face.UVs[2].X) / 3f;
+                    var centerV = (face.UVs[0].Y + face.UVs[1].Y + face.UVs[2].Y) / 3f;
+
+                    // Wrap UVs and flip V
+                    centerU = centerU - MathF.Floor(centerU);
+                    centerV = 1.0f - (centerV - MathF.Floor(centerV));
+
+                    var texX = (int)(centerU * texture.Width) % texture.Width;
+                    var texY = (int)(centerV * texture.Height) % texture.Height;
+                    if (texX < 0) texX += texture.Width;
+                    if (texY < 0) texY += texture.Height;
+
+                    var texColor = texture.GetPixel(texX, texY);
+                    faceColor = ApplyLighting(texColor, face.LightIntensity);
+                }
+                else
+                {
+                    faceColor = ApplyLighting(face.DiffuseColor, face.LightIntensity);
+                }
+
+                paint.Color = faceColor;
+
+                // Draw filled triangle
+                using var path = new SKPath();
+                path.MoveTo(face.ScreenPoints[0]);
+                path.LineTo(face.ScreenPoints[1]);
+                path.LineTo(face.ScreenPoints[2]);
+                path.Close();
+                canvas.DrawPath(path, paint);
+            }
+        }
+
+        private static SKColor ApplyLighting(SKColor baseColor, float intensity)
+        {
+            return new SKColor(
+                (byte)Math.Clamp(baseColor.Red * intensity, 0, 255),
+                (byte)Math.Clamp(baseColor.Green * intensity, 0, 255),
+                (byte)Math.Clamp(baseColor.Blue * intensity, 0, 255),
+                baseColor.Alpha);
         }
 
         private void DrawMeshWireframe(SKCanvas canvas, MdlTrimeshNode mesh,

@@ -8,8 +8,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Fixed
+---
+
+## [0.1.48-alpha] - 2026-01-20
+**Branch**: `trebuchet/issue-951` | **PR**: #1029
+
+### Feature: Complete Creature Appearance UI (#1028)
+
+Add skin to the creature body - appearance customization for body parts, skin/hair colors, and armor-provided limbs.
+
+#### Added
+- **Textured 3D model rendering** - Model preview now renders with proper texture mapping instead of flat shading
+  - UV coordinates extracted from MDL mesh data
+  - SKVertices-based GPU-accelerated triangle rendering
+  - PLT textures rendered with skin/hair/tattoo colors via TextureService
+  - Lighting still applied for depth perception
+- **Armor-provided body part overrides** - Equipped chest armor now overrides creature body parts
+  - Loads armor's `ArmorParts` dictionary from UTI
+  - Applies armor-provided models for torso, arms, legs, etc.
+  - Head is not overridden (matching NWN behavior)
+- **Full body part model loading** - All NWN body part types now load correctly
+  - Correct NWN naming convention: bicepl/bicepr, forel/forer, legl/legr, shinl/shinr, footl/footr, shol/shor
+  - Human model fallback for race-specific models not found (pme0 → pmh0)
+  - Human texture fallback when race-specific textures missing
+  - Texture name derivation for empty bitmap fields
+- **PLT armor colors** - Full 10-layer PLT color support
+  - PltColorIndices class for all layers (skin, hair, metal1/2, cloth1/2, leather1/2, tattoo1/2)
+  - Armor colors loaded from equipped chest armor UTI
+  - TextureService refactored to pass all color indices
+
+#### Changed
 - **Startup performance** - Moved GameDataService and panel initialization from constructor to `Opened` event, runs on background thread. Cache and item loading run in parallel. Window appears in ~1.9s instead of ~18 seconds.
+
+#### Fixed
+- **MDL parser** - Added bounds checking to ParseControllers to prevent exceptions on malformed controller data
+
+#### Known Issues
+- Head/face geometry not rendering (needs investigation)
+- Armor body parts not rendering (armor overrides may not be applying)
+- Tattoos not visible on model (#1031)
 
 ---
 
