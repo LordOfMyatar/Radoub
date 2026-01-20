@@ -6,6 +6,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
+using Radoub.Formats.Uti;
 
 namespace Quartermaster.Services;
 
@@ -28,6 +29,7 @@ public class ModelService
     /// <summary>
     /// Load the model for a creature based on its appearance settings.
     /// For part-based models, loads and combines body part models.
+    /// Equipped armor can override certain body parts.
     /// </summary>
     public MdlModel? LoadCreatureModel(UtcFile creature)
     {
@@ -39,8 +41,11 @@ public class ModelService
         var modelType = _gameDataService.Get2DAValue("appearance", appearanceId, "MODELTYPE");
         if (modelType?.ToUpperInvariant().Contains("P") == true)
         {
-            // Part-based model - load body parts
-            return LoadPartBasedCreatureModel(creature);
+            // Get armor-provided body part overrides
+            var armorOverrides = GetArmorPartOverrides(creature);
+
+            // Part-based model - load body parts with armor overrides
+            return LoadPartBasedCreatureModel(creature, armorOverrides);
         }
 
         // Simple/Full model - load single model
@@ -48,9 +53,47 @@ public class ModelService
     }
 
     /// <summary>
+    /// Get body part overrides from equipped chest armor.
+    /// </summary>
+    private Dictionary<string, byte>? GetArmorPartOverrides(UtcFile creature)
+    {
+        // Find equipped chest armor
+        var chestItem = creature.EquipItemList.FirstOrDefault(e => e.Slot == EquipmentSlots.Chest);
+        if (chestItem == null || string.IsNullOrEmpty(chestItem.EquipRes))
+            return null;
+
+        try
+        {
+            // Load the armor UTI from game resources
+            var utiData = _gameDataService.FindResource(chestItem.EquipRes.ToLowerInvariant(), ResourceTypes.Uti);
+            if (utiData == null || utiData.Length == 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"GetArmorPartOverrides: Armor UTI '{chestItem.EquipRes}' not found");
+                return null;
+            }
+
+            var armor = UtiReader.Read(utiData);
+            if (armor.ArmorParts.Count > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"GetArmorPartOverrides: Armor '{chestItem.EquipRes}' has {armor.ArmorParts.Count} part overrides");
+                return armor.ArmorParts;
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"GetArmorPartOverrides: Failed to load armor '{chestItem.EquipRes}': {ex.Message}");
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Load a part-based creature model by combining body part models.
     /// </summary>
-    private MdlModel? LoadPartBasedCreatureModel(UtcFile creature)
+    /// <param name="creature">The creature to load</param>
+    /// <param name="armorOverrides">Optional armor-provided body part overrides</param>
+    private MdlModel? LoadPartBasedCreatureModel(UtcFile creature, Dictionary<string, byte>? armorOverrides = null)
     {
         var appearanceId = creature.AppearanceType;
         var race = _gameDataService.Get2DAValue("appearance", appearanceId, "RACE");
@@ -98,33 +141,39 @@ public class ModelService
         // Store skeleton for bone position lookup
         _currentSkeleton = skeletonModel;
 
-        // Load each body part
-        // Head is special - uses AppearanceHead
+        // Helper to get body part number, preferring armor override
+        byte GetPartNumber(string armorKey, byte creatureValue) =>
+            (armorOverrides != null && armorOverrides.TryGetValue(armorKey, out var armorValue) && armorValue > 0)
+                ? armorValue
+                : creatureValue;
+
+        // Load each body part (armor overrides take precedence where applicable)
+        // Head is special - uses AppearanceHead, not overridden by armor
         TryAddBodyPart(compositeModel, basePrefix, "head", creature.AppearanceHead);
 
-        // Standard body parts
-        TryAddBodyPart(compositeModel, basePrefix, "neck", creature.BodyPart_Neck);
-        TryAddBodyPart(compositeModel, basePrefix, "chest", creature.BodyPart_Torso);
-        TryAddBodyPart(compositeModel, basePrefix, "pelvis", creature.BodyPart_Pelvis);
-        TryAddBodyPart(compositeModel, basePrefix, "belt", creature.BodyPart_Belt);
+        // Standard body parts (armor can override these)
+        TryAddBodyPart(compositeModel, basePrefix, "neck", GetPartNumber("Neck", creature.BodyPart_Neck));
+        TryAddBodyPart(compositeModel, basePrefix, "chest", GetPartNumber("Torso", creature.BodyPart_Torso));
+        TryAddBodyPart(compositeModel, basePrefix, "pelvis", GetPartNumber("Pelvis", creature.BodyPart_Pelvis));
+        TryAddBodyPart(compositeModel, basePrefix, "belt", GetPartNumber("Belt", creature.BodyPart_Belt));
 
-        // Arms
-        TryAddBodyPart(compositeModel, basePrefix, "lshoul", creature.BodyPart_LShoul);
-        TryAddBodyPart(compositeModel, basePrefix, "rshoul", creature.BodyPart_RShoul);
-        TryAddBodyPart(compositeModel, basePrefix, "lbicep", creature.BodyPart_LBicep);
-        TryAddBodyPart(compositeModel, basePrefix, "rbicep", creature.BodyPart_RBicep);
-        TryAddBodyPart(compositeModel, basePrefix, "lfarm", creature.BodyPart_LFArm);
-        TryAddBodyPart(compositeModel, basePrefix, "rfarm", creature.BodyPart_RFArm);
-        TryAddBodyPart(compositeModel, basePrefix, "lhand", creature.BodyPart_LHand);
-        TryAddBodyPart(compositeModel, basePrefix, "rhand", creature.BodyPart_RHand);
+        // Arms (armor can override these)
+        TryAddBodyPart(compositeModel, basePrefix, "lshoul", GetPartNumber("LShoul", creature.BodyPart_LShoul));
+        TryAddBodyPart(compositeModel, basePrefix, "rshoul", GetPartNumber("RShoul", creature.BodyPart_RShoul));
+        TryAddBodyPart(compositeModel, basePrefix, "lbicep", GetPartNumber("LBicep", creature.BodyPart_LBicep));
+        TryAddBodyPart(compositeModel, basePrefix, "rbicep", GetPartNumber("RBicep", creature.BodyPart_RBicep));
+        TryAddBodyPart(compositeModel, basePrefix, "lfarm", GetPartNumber("LFArm", creature.BodyPart_LFArm));
+        TryAddBodyPart(compositeModel, basePrefix, "rfarm", GetPartNumber("RFArm", creature.BodyPart_RFArm));
+        TryAddBodyPart(compositeModel, basePrefix, "lhand", GetPartNumber("LHand", creature.BodyPart_LHand));
+        TryAddBodyPart(compositeModel, basePrefix, "rhand", GetPartNumber("RHand", creature.BodyPart_RHand));
 
-        // Legs
-        TryAddBodyPart(compositeModel, basePrefix, "lthigh", creature.BodyPart_LThigh);
-        TryAddBodyPart(compositeModel, basePrefix, "rthigh", creature.BodyPart_RThigh);
-        TryAddBodyPart(compositeModel, basePrefix, "lshin", creature.BodyPart_LShin);
-        TryAddBodyPart(compositeModel, basePrefix, "rshin", creature.BodyPart_RShin);
-        TryAddBodyPart(compositeModel, basePrefix, "lfoot", creature.BodyPart_LFoot);
-        TryAddBodyPart(compositeModel, basePrefix, "rfoot", creature.BodyPart_RFoot);
+        // Legs (armor can override these)
+        TryAddBodyPart(compositeModel, basePrefix, "lthigh", GetPartNumber("LThigh", creature.BodyPart_LThigh));
+        TryAddBodyPart(compositeModel, basePrefix, "rthigh", GetPartNumber("RThigh", creature.BodyPart_RThigh));
+        TryAddBodyPart(compositeModel, basePrefix, "lshin", GetPartNumber("LShin", creature.BodyPart_LShin));
+        TryAddBodyPart(compositeModel, basePrefix, "rshin", GetPartNumber("RShin", creature.BodyPart_RShin));
+        TryAddBodyPart(compositeModel, basePrefix, "lfoot", GetPartNumber("LFoot", creature.BodyPart_LFoot));
+        TryAddBodyPart(compositeModel, basePrefix, "rfoot", GetPartNumber("RFoot", creature.BodyPart_RFoot));
 
         // Calculate combined bounding box
         UpdateCompositeBounds(compositeModel);
