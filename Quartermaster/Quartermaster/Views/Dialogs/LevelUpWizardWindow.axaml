@@ -1,0 +1,439 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Quartermaster.Views.Dialogs.LevelUpWizardWindow"
+        Title="Level Up Wizard"
+        AutomationProperties.AutomationId="LevelUpWizardWindow"
+        MinWidth="900" MinHeight="600"
+        Width="1000" Height="700"
+        SizeToContent="Manual"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ThemeBackground}">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <!-- Step indicator styles -->
+        <Style Selector="Border.step-indicator">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Border.step-indicator.current">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+        </Style>
+        <Style Selector="Border.step-indicator.completed">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Left Sidebar: Step Navigator -->
+        <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                Padding="10">
+            <StackPanel>
+                <!-- Character Info Header -->
+                <TextBlock x:Name="CharacterNameLabel"
+                           Text="Character Name"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Margin="0,0,0,5"/>
+                <TextBlock x:Name="CharacterLevelLabel"
+                           Text="Level X -> Y"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Margin="0,0,0,20"/>
+
+                <!-- Step Indicators -->
+                <TextBlock Text="Steps" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                <Border x:Name="Step1Border" Classes="step-indicator current">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step1Number" Text="1" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Select Class"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step2Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step2Number" Text="2" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Select Feats"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step3Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step3Number" Text="3" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Allocate Skills"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step4Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step4Number" Text="4" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Select Spells"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Step5Border" Classes="step-indicator">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="Step5Number" Text="5" FontWeight="Bold" Width="20"/>
+                        <TextBlock Text="Summary"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Column="1" Grid.Row="0" Margin="15">
+            <!-- Step 1: Class Selection -->
+            <Grid x:Name="Step1Panel">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Select Class" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Class List -->
+                    <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5" Margin="0,0,10,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBox Grid.Row="0" x:Name="ClassSearchBox"
+                                     Watermark="Filter classes..."
+                                     Margin="0,0,0,5"
+                                     TextChanged="OnClassSearchChanged"/>
+
+                            <CheckBox Grid.Row="1" x:Name="ShowUnqualifiedPrestigeCheckBox"
+                                      Content="Show unqualified prestige"
+                                      IsChecked="True"
+                                      Margin="0,0,0,5"
+                                      Checked="OnClassFilterChanged"
+                                      Unchecked="OnClassFilterChanged"/>
+
+                            <ListBox Grid.Row="2" x:Name="ClassListBox"
+                                     SelectionChanged="OnClassSelectionChanged">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                            <TextBlock Text="{Binding Icon}" Width="16"/>
+                                            <TextBlock Text="{Binding DisplayName}"/>
+                                            <TextBlock Text="{Binding Badge}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                       FontStyle="Italic"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Border>
+
+                    <!-- Class Details -->
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" x:Name="SelectedClassNameLabel"
+                                       Text="Select a class"
+                                       FontSize="18" FontWeight="Bold"
+                                       Margin="0,0,0,10"/>
+
+                            <StackPanel Grid.Row="1" x:Name="ClassStatsPanel" Orientation="Horizontal" Spacing="20" Margin="0,0,0,10" IsVisible="False">
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="Hit Die:" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="ClassHitDieLabel"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                    <TextBlock Text="Skills:" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="ClassSkillPointsLabel"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Prerequisites Panel -->
+                            <Border Grid.Row="2" x:Name="ClassPrereqPanel"
+                                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                    Padding="10" Margin="0,0,0,10" IsVisible="False">
+                                <StackPanel>
+                                    <TextBlock Text="Prerequisites" FontWeight="Bold" Margin="0,0,0,5"/>
+                                    <ItemsControl x:Name="ClassPrereqItems">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2">
+                                                    <TextBlock Text="{Binding Icon}" Width="25"/>
+                                                    <TextBlock Text="{Binding Text}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <ScrollViewer Grid.Row="3">
+                                <TextBlock x:Name="ClassDescriptionLabel"
+                                           TextWrapping="Wrap"
+                                           Text="Select a class to see its description."
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- Step 2: Feat Selection (shown when applicable) -->
+            <Grid x:Name="Step2Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Select Feats" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <TextBlock Grid.Row="1" x:Name="FeatAllocationLabel"
+                           Text="You have 1 feat to select."
+                           Margin="0,0,0,15"/>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Available Feats -->
+                    <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5" Margin="0,0,5,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Available Feats" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox Grid.Row="1" x:Name="FeatSearchBox"
+                                     Watermark="Filter feats..."
+                                     Margin="0,0,0,5"
+                                     TextChanged="OnFeatSearchChanged"/>
+                            <ListBox Grid.Row="2" x:Name="AvailableFeatsListBox"
+                                     SelectionChanged="OnAvailableFeatSelected"
+                                     DoubleTapped="OnFeatDoubleClicked"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Selected Feats -->
+                    <Border Grid.Column="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5" Margin="5,0,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" x:Name="SelectedFeatsHeader" Text="Selected Feats (0/1)" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <ListBox Grid.Row="1" x:Name="SelectedFeatsListBox"
+                                     DoubleTapped="OnSelectedFeatDoubleClicked"/>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="0,5,0,0">
+                                <Button x:Name="AddFeatButton" Content="Add" Click="OnAddFeatClick" IsEnabled="False"/>
+                                <Button x:Name="RemoveFeatButton" Content="Remove" Click="OnRemoveFeatClick" IsEnabled="False"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- Step 3: Skill Allocation -->
+            <Grid x:Name="Step3Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Allocate Skill Points" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="20" Margin="0,0,0,15">
+                    <TextBlock x:Name="SkillPointsRemainingLabel" Text="Points remaining: 5"/>
+                    <TextBlock x:Name="SkillPointsTotalLabel" Text="(Base 2 + INT 3 = 5)" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+
+                <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
+                    <ScrollViewer>
+                        <ItemsControl x:Name="SkillsItemsControl">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="5,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding CurrentRanks}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="2" Content="-" Width="25" Click="OnSkillDecrease" Tag="{Binding SkillId}" IsEnabled="{Binding CanDecrease}"/>
+                                        <Button Grid.Column="3" Content="+" Width="25" Click="OnSkillIncrease" Tag="{Binding SkillId}" IsEnabled="{Binding CanIncrease}"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding AddedRanks}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="LimeGreen"/>
+                                        <TextBlock Grid.Column="5" Text="{Binding ClassSkillIndicator}" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+
+            <!-- Step 4: Spell Selection (for casters) -->
+            <Grid x:Name="Step4Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Select Spells" FontSize="20" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <TextBlock Grid.Row="1" x:Name="SpellSelectionLabel"
+                           Text="Select new spells to learn."
+                           Margin="0,0,0,15"/>
+
+                <!-- Spell selection UI will be added here -->
+                <TextBlock Grid.Row="2" x:Name="SpellPlaceholder"
+                           Text="(Spell selection coming soon - this level does not grant new spell slots)"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+            </Grid>
+
+            <!-- Step 5: Summary -->
+            <Grid x:Name="Step5Panel" IsVisible="False">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="Level Up Summary" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                <ScrollViewer Grid.Row="1">
+                    <StackPanel x:Name="SummaryPanel" Spacing="15">
+                        <!-- Class Section -->
+                        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Class" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <TextBlock x:Name="SummaryClassLabel" Text="Fighter 5 -> 6"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Feats Section -->
+                        <Border x:Name="SummaryFeatsPanel" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4" IsVisible="False">
+                            <StackPanel>
+                                <TextBlock Text="New Feats" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <ItemsControl x:Name="SummaryFeatsList"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Skills Section -->
+                        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Skill Points Allocated" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <ItemsControl x:Name="SummarySkillsList"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Spells Section -->
+                        <Border x:Name="SummarySpellsPanel" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4" IsVisible="False">
+                            <StackPanel>
+                                <TextBlock Text="New Spells" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <ItemsControl x:Name="SummarySpellsList"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Stats Changes -->
+                        <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" Padding="15" CornerRadius="4">
+                            <StackPanel>
+                                <TextBlock Text="Derived Stats Changes" FontWeight="Bold" FontSize="14" Margin="0,0,0,5"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="HP" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="SummaryHpLabel" Text="+d10"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="BAB" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="SummaryBabLabel" Text="+1"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Saves" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="SummarySavesLabel" Text="Fort +1"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+
+        <!-- Bottom Button Bar -->
+        <Border Grid.Column="1" Grid.Row="1"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                Padding="15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Status Message -->
+                <TextBlock Grid.Column="0" x:Name="StatusLabel"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                <!-- Navigation Buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button x:Name="BackButton" Content="Back" Width="80" Click="OnBackClick" IsEnabled="False"/>
+                    <Button x:Name="NextButton" Content="Next" Width="80" Click="OnNextClick"/>
+                    <Button x:Name="FinishButton" Content="Finish" Width="80" Click="OnFinishClick" IsVisible="False"/>
+                    <Button Content="Cancel" Width="80" Click="OnCancelClick"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
