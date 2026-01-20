@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.46-alpha] - 2026-01-19
-**Branch**: `quartermaster/issue-884` | **PR**: #TBD
+**Branch**: `quartermaster/issue-884` | **PR**: #1012
 
 ### Sprint: Bug Bash - Settings & UI Fixes (#884)
 
