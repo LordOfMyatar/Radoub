@@ -199,96 +199,115 @@ public partial class MainWindow
 
     private async Task BuildAndCachePaletteAsync(CancellationToken cancellationToken)
     {
-        // List all UTI resources from game data
-        var gameResources = await Task.Run(() =>
-            _gameDataService!.ListResources(ResourceTypes.Uti).ToList(),
-            cancellationToken);
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Found {gameResources.Count} UTI resources in game data");
-
-        var existingResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var batch = new List<PaletteItemViewModel>();
+        // Run ALL heavy work on background thread, only touch UI for batch updates
         var cacheItems = new List<CachedPaletteItem>();
         var loadedCount = 0;
+        var lastUIUpdate = 0;
 
-        foreach (var resourceInfo in gameResources)
+        await Task.Run(async () =>
         {
-            if (cancellationToken.IsCancellationRequested)
-                break;
+            // List all UTI resources from game data
+            var gameResources = _gameDataService!.ListResources(ResourceTypes.Uti).ToList();
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Found {gameResources.Count} UTI resources in game data");
 
-            if (existingResRefs.Contains(resourceInfo.ResRef))
-                continue;
+            var existingResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var batch = new List<PaletteItemViewModel>();
 
-            try
+            foreach (var resourceInfo in gameResources)
             {
-                // Resolve the item to get display info
-                var resolved = _itemResolutionService.ResolveItem(resourceInfo.ResRef);
-                if (resolved != null)
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                if (existingResRefs.Contains(resourceInfo.ResRef))
+                    continue;
+
+                try
                 {
-                    // Skip creature weapons and internal item types
-                    if (ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
-                        continue;
-
-                    var viewModel = new PaletteItemViewModel
+                    // Resolve the item to get display info - this is the expensive part
+                    var resolved = _itemResolutionService!.ResolveItem(resourceInfo.ResRef);
+                    if (resolved != null)
                     {
-                        ResRef = resolved.ResRef,
-                        DisplayName = resolved.DisplayName,
-                        BaseItemType = resolved.BaseItemTypeName,
-                        BaseValue = resolved.BaseCost,
-                        IsStandard = resourceInfo.Source == GameResourceSource.Bif
-                    };
+                        // Skip creature weapons and internal item types
+                        if (ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
+                            continue;
 
-                    batch.Add(viewModel);
-
-                    // Also add to cache list
-                    cacheItems.Add(new CachedPaletteItem
-                    {
-                        ResRef = resolved.ResRef,
-                        DisplayName = resolved.DisplayName,
-                        BaseItemType = resolved.BaseItemTypeName,
-                        BaseValue = resolved.BaseCost,
-                        IsStandard = resourceInfo.Source == GameResourceSource.Bif
-                    });
-
-                    existingResRefs.Add(resourceInfo.ResRef);
-                    loadedCount++;
-
-                    // Add batch to UI periodically
-                    if (batch.Count >= PaletteBatchSize)
-                    {
-                        await AddPaletteBatchAsync(batch);
-                        batch.Clear();
-
-                        // Update status with progress
-                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        var viewModel = new PaletteItemViewModel
                         {
-                            UpdateStatusBar($"Building cache... {loadedCount} items");
+                            ResRef = resolved.ResRef,
+                            DisplayName = resolved.DisplayName,
+                            BaseItemType = resolved.BaseItemTypeName,
+                            BaseValue = resolved.BaseCost,
+                            IsStandard = resourceInfo.Source == GameResourceSource.Bif
+                        };
+
+                        batch.Add(viewModel);
+
+                        // Also add to cache list
+                        cacheItems.Add(new CachedPaletteItem
+                        {
+                            ResRef = resolved.ResRef,
+                            DisplayName = resolved.DisplayName,
+                            BaseItemType = resolved.BaseItemTypeName,
+                            BaseValue = resolved.BaseCost,
+                            IsStandard = resourceInfo.Source == GameResourceSource.Bif
                         });
+
+                        existingResRefs.Add(resourceInfo.ResRef);
+                        loadedCount++;
+
+                        // Add batch to UI periodically (larger batches = fewer UI updates = less jank)
+                        if (batch.Count >= PaletteBatchSize * 4)
+                        {
+                            var batchCopy = batch.ToList();
+                            batch.Clear();
+
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                            {
+                                foreach (var item in batchCopy)
+                                {
+                                    PaletteItems.Add(item);
+                                }
+                            });
+
+                            // Update status less frequently (every 500 items)
+                            if (loadedCount - lastUIUpdate >= 500)
+                            {
+                                lastUIUpdate = loadedCount;
+                                await Dispatcher.UIThread.InvokeAsync(() =>
+                                {
+                                    UpdateStatusBar($"Building cache... {loadedCount} items");
+                                });
+                            }
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load palette item {resourceInfo.ResRef}: {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load palette item {resourceInfo.ResRef}: {ex.Message}");
-            }
-        }
 
-        // Add remaining items
-        if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
-        {
-            await AddPaletteBatchAsync(batch);
-        }
+            // Add remaining items
+            if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
+            {
+                var finalBatch = batch.ToList();
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    foreach (var item in finalBatch)
+                    {
+                        PaletteItems.Add(item);
+                    }
+                });
+            }
+        }, cancellationToken);
 
         if (!cancellationToken.IsCancellationRequested)
         {
-            // Save cache for next time
+            // Save cache for next time (on background thread)
             await _paletteCacheService.SaveCacheAsync(cacheItems);
 
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Item palette build complete: {loadedCount} items cached");
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                UpdateStatusBar($"Ready - {loadedCount} items in palette");
-            });
+            UpdateStatusBar($"Ready - {loadedCount} items in palette");
         }
     }
 

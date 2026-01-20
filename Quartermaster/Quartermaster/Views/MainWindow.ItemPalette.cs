@@ -83,62 +83,84 @@ public partial class MainWindow
 
     /// <summary>
     /// Loads game items (Override + BIF) in batches to avoid blocking UI.
+    /// All heavy work runs on background thread; only UI updates touch dispatcher.
     /// </summary>
     private async Task LoadGameItemsAsync(CancellationToken cancellationToken)
     {
         try
         {
-            var gameResources = await Task.Run(() =>
-                _gameDataService.ListResources(ResourceTypes.Uti).ToList(),
-                cancellationToken);
-
+            // Capture existing resrefs on UI thread first
             var existingResRefs = new HashSet<string>(
                 InventoryPanelContent.PaletteItems.Select(p => p.ResRef),
                 StringComparer.OrdinalIgnoreCase);
 
-            var batch = new List<ItemViewModel>();
             var gameItemCount = 0;
 
-            foreach (var resourceInfo in gameResources)
+            // Run ALL heavy work on background thread
+            await Task.Run(async () =>
             {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
+                var gameResources = _gameDataService.ListResources(ResourceTypes.Uti).ToList();
+                UnifiedLogger.LogInventory(LogLevel.INFO, $"Found {gameResources.Count} UTI resources to load");
 
-                if (existingResRefs.Contains(resourceInfo.ResRef))
-                    continue;
+                var batch = new List<ItemViewModel>();
 
-                try
+                foreach (var resourceInfo in gameResources)
                 {
-                    var utiData = await Task.Run(() =>
-                        _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti),
-                        cancellationToken);
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
 
-                    if (utiData != null)
+                    if (existingResRefs.Contains(resourceInfo.ResRef))
+                        continue;
+
+                    try
                     {
-                        var item = UtiReader.Read(utiData);
-                        var viewModel = _itemViewModelFactory.Create(item, resourceInfo.Source);
-                        SetupLazyIconLoading(viewModel);
-                        batch.Add(viewModel);
-                        existingResRefs.Add(resourceInfo.ResRef);
-                        gameItemCount++;
+                        // FindResource and UtiReader.Read are the expensive parts
+                        var utiData = _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti);
 
-                        if (batch.Count >= PaletteBatchSize)
+                        if (utiData != null)
                         {
-                            await AddBatchToUIAsync(batch);
-                            batch.Clear();
+                            var item = UtiReader.Read(utiData);
+                            var viewModel = _itemViewModelFactory.Create(item, resourceInfo.Source);
+                            SetupLazyIconLoading(viewModel);
+                            batch.Add(viewModel);
+                            existingResRefs.Add(resourceInfo.ResRef);
+                            gameItemCount++;
+
+                            // Larger batches = fewer UI interruptions
+                            if (batch.Count >= PaletteBatchSize * 4)
+                            {
+                                var batchCopy = batch.ToList();
+                                batch.Clear();
+
+                                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                                {
+                                    foreach (var vm in batchCopy)
+                                    {
+                                        InventoryPanelContent.PaletteItems.Add(vm);
+                                    }
+                                });
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to load UTI {resourceInfo.ResRef}: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to load UTI {resourceInfo.ResRef}: {ex.Message}");
-                }
-            }
 
-            if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
-            {
-                await AddBatchToUIAsync(batch);
-            }
+                // Add remaining items
+                if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
+                {
+                    var finalBatch = batch.ToList();
+                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        foreach (var vm in finalBatch)
+                        {
+                            InventoryPanelContent.PaletteItems.Add(vm);
+                        }
+                    });
+                }
+            }, cancellationToken);
 
             if (!cancellationToken.IsCancellationRequested)
             {
