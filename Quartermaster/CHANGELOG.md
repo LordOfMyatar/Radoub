@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.47-alpha] - 2026-01-19
+**Branch**: `quartermaster/issue-829` | **PR**: #TBD
+
+### Sprint: Level-Up Wizard System (#829)
+
+Implement wizard-based character leveling that enforces game rules during level changes.
+
+- [ ] Add Level wizard (single level)
+- [ ] Class selection with multiclass validation
+- [ ] Feat selection with prerequisite enforcement
+- [ ] Skill allocation with point tracking
+- [ ] Spell selection (for casters) with slot validation
+- [ ] Re-Level wizard (strip and rebuild)
+- [ ] Down-Level via Copy & Re-Level
+
+---
+
 ## [0.1.46-alpha] - 2026-01-19
 **Branch**: `quartermaster/issue-884` | **PR**: #1012
 
