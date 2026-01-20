@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.0-alpha] - 2026-01-20
+**Branch**: `trebuchet/issue-951` | **PR**: #TBD
+
+### Feature: Launch NWN:EE with specific BIC/module for testing
+
+- Add ability to launch NWN:EE directly from Trebuchet
+- Support launching with specific BIC file pre-selected
+- Support launching with specific module
+- Accelerate edit-test-fix cycle for BIC/module development
+
+---
+
 ## [1.0.0-alpha] - 2026-01-17
 **Branch**: `radoub/issue-907` | **PR**: #939
 
