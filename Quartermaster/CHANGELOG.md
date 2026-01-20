@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.46-alpha] - 2026-01-19
+**Branch**: `quartermaster/issue-884` | **PR**: #TBD
+
+### Sprint: Bug Bash - Settings & UI Fixes (#884)
+
+- [ ] #873 - Settings: Changing font to system font has no effect
+
+---
+
 ## [0.1.45-alpha] - 2026-01-19
 **Branch**: `radoub/sprint-988-1010` | **PR**: #1011
 
