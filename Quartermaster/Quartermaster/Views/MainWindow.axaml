@@ -64,6 +64,11 @@
                 <MenuItem Header="_Paste" InputGesture="Ctrl+V" IsEnabled="False" ToolTip.Tip="Not yet implemented"/>
                 <MenuItem Header="_Delete" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
             </MenuItem>
+            <MenuItem Header="_Character">
+                <MenuItem Header="_Level Up..." Click="OnLevelUpClick" InputGesture="Ctrl+L" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <Separator/>
+                <MenuItem Header="Re-_Level..." Click="OnReLevelClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}" ToolTip.Tip="Strip all levels and rebuild from scratch"/>
+            </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
             </MenuItem>

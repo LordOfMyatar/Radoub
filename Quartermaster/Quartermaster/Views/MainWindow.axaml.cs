@@ -735,6 +735,33 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         DialogHelper.ShowAboutDialog(this);
     }
 
+    private void OnLevelUpClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentCreature == null)
+            return;
+
+        var wizard = new LevelUpWizardWindow(_creatureDisplayService, _currentCreature);
+        wizard.ShowDialog(this);
+
+        if (wizard.Confirmed)
+        {
+            // Refresh all panels to show updated data
+            MarkDirty();
+            LoadAllPanels(_currentCreature);
+            UpdateCharacterHeader();
+            UpdateStatus("Character leveled up");
+        }
+    }
+
+    private void OnReLevelClick(object? sender, RoutedEventArgs e)
+    {
+        if (_currentCreature == null)
+            return;
+
+        // TODO: Implement Re-Level wizard (strip and rebuild)
+        ShowErrorDialog("Coming Soon", "Re-Level functionality will be available in a future update.");
+    }
+
     private void ShowErrorDialog(string title, string message)
     {
         DialogHelper.ShowErrorDialog(this, title, message);
