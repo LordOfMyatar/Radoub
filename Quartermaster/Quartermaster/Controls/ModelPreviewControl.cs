@@ -565,6 +565,10 @@ public class ModelPreviewControl : Control
         {
             if (faces.Count == 0) return;
 
+            // Get texture dimensions for UV scaling
+            var texWidth = texture?.Width ?? 1;
+            var texHeight = texture?.Height ?? 1;
+
             // Build vertex arrays for SKVertices
             var positions = new List<SKPoint>();
             var texCoords = new List<SKPoint>();
@@ -574,15 +578,31 @@ public class ModelPreviewControl : Control
             ushort vertexIndex = 0;
             foreach (var face in faces)
             {
-                // Apply lighting to colors
-                var lit = ApplyLighting(face.DiffuseColor, face.LightIntensity);
+                // Apply lighting to colors - use white if we have a texture
+                SKColor vertColor;
+                if (texture != null)
+                {
+                    // With texture, use white modulated by lighting
+                    var intensity = face.LightIntensity;
+                    var gray = (byte)Math.Clamp(255 * intensity, 0, 255);
+                    vertColor = new SKColor(gray, gray, gray);
+                }
+                else
+                {
+                    // No texture, use lit diffuse color
+                    vertColor = ApplyLighting(face.DiffuseColor, face.LightIntensity);
+                }
 
                 // Add three vertices for the triangle
                 for (int i = 0; i < 3; i++)
                 {
                     positions.Add(face.ScreenPoints[i]);
-                    texCoords.Add(face.UVs[i]);
-                    colors.Add(lit);
+                    // Scale UVs from normalized (0-1) to pixel coordinates
+                    // Also flip V coordinate (NWN uses bottom-left origin, SkiaSharp uses top-left)
+                    var u = face.UVs[i].X * texWidth;
+                    var v = (1.0f - face.UVs[i].Y) * texHeight;
+                    texCoords.Add(new SKPoint(u, v));
+                    colors.Add(vertColor);
                     indices.Add(vertexIndex++);
                 }
             }
@@ -599,12 +619,11 @@ public class ModelPreviewControl : Control
 
             if (texture != null)
             {
-                // Create shader from texture with proper UV mapping
+                // Create shader from texture - UVs are already in pixel space
                 using var shader = SKShader.CreateBitmap(
                     texture,
                     SKShaderTileMode.Repeat,
-                    SKShaderTileMode.Repeat,
-                    SKMatrix.CreateScale(texture.Width, texture.Height));
+                    SKShaderTileMode.Repeat);
                 paint.Shader = shader;
             }
 
