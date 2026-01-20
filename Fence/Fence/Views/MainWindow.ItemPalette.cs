@@ -18,11 +18,11 @@ namespace MerchantEditor.Views;
 
 /// <summary>
 /// MainWindow partial: Item Palette loading and filtering
+/// Uses on-demand loading - items are loaded when user selects a type filter.
 /// </summary>
 public partial class MainWindow
 {
     // Base item types to exclude from palette (creature weapons, internal items)
-    // These are game internals that shouldn't appear in merchant stores
     private static readonly HashSet<int> ExcludedBaseItemTypes = new()
     {
         69,  // Creature Bite
@@ -31,15 +31,21 @@ public partial class MainWindow
         72,  // Creature Slashing
         73,  // Creature Piercing/Bludgeoning
         255, // Invalid/special marker
-        // Add more as needed based on baseitems.2da
     };
 
     private readonly PaletteCacheService _paletteCacheService = new();
+
+    // Track which types have been loaded (for on-demand loading)
+    private readonly HashSet<string> _loadedItemTypes = new(StringComparer.OrdinalIgnoreCase);
+    private bool _allItemsLoaded;
+    private List<CachedPaletteItem>? _cachedPaletteData;
 
     #region Item Palette
 
     private void PopulateTypeFilter()
     {
+        if (_baseItemTypeService == null) return;
+
         var types = _baseItemTypeService.GetBaseItemTypes();
         var items = new List<string> { "(All Types)" };
         items.AddRange(types.Select(t => t.DisplayName));
@@ -47,6 +53,10 @@ public partial class MainWindow
         ItemTypeFilter.SelectedIndex = 0;
     }
 
+    /// <summary>
+    /// Initialize palette - don't load items yet, just prepare the cache.
+    /// Items are loaded on-demand when user filters or searches.
+    /// </summary>
     private void StartItemPaletteLoad()
     {
         if (_gameDataService == null || !_gameDataService.IsConfigured)
@@ -56,237 +66,168 @@ public partial class MainWindow
             return;
         }
 
-        _paletteLoadCts?.Cancel();
-        _paletteLoadCts = new CancellationTokenSource();
+        // Bind grid to collection
+        ItemPaletteGrid.ItemsSource = PaletteItems;
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, "Starting item palette load...");
-        _ = LoadItemPaletteWithCacheAsync(_paletteLoadCts.Token);
+        // Pre-warm cache in background (but don't display items yet)
+        _ = PreWarmCacheAsync();
+
+        UpdateStatusBar("Ready - select an item type to browse");
     }
 
-    private async Task LoadItemPaletteWithCacheAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Pre-warm the cache in background so it's ready when user filters.
+    /// </summary>
+    private async Task PreWarmCacheAsync()
     {
         try
         {
-            // Try to load from cache first
             if (_paletteCacheService.HasValidCache())
             {
-                var cachedItems = await Task.Run(() => _paletteCacheService.LoadCache(), cancellationToken);
-                if (cachedItems != null && cachedItems.Count > 0)
+                _cachedPaletteData = await Task.Run(() => _paletteCacheService.LoadCache());
+                if (_cachedPaletteData != null)
                 {
-                    await LoadFromCacheAsync(cachedItems, cancellationToken);
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Cache pre-warmed: {_cachedPaletteData.Count} items ready");
                     return;
                 }
             }
 
-            // No valid cache - show notification and build cache
-            await ShowCacheBuildingNotification();
-            await BuildAndCachePaletteAsync(cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Item palette loading cancelled");
+            // No cache - build it in background
+            UnifiedLogger.LogApplication(LogLevel.INFO, "Building palette cache in background...");
+            await BuildCacheInBackgroundAsync();
         }
         catch (Exception ex)
         {
-            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Item palette load failed: {ex.Message}");
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                UpdateStatusBar("Ready (item palette load failed)");
-            });
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Cache pre-warm failed: {ex.Message}");
         }
     }
 
-    private async Task LoadFromCacheAsync(List<CachedPaletteItem> cachedItems, CancellationToken cancellationToken)
+    /// <summary>
+    /// Build the full cache in background without displaying items.
+    /// </summary>
+    private async Task BuildCacheInBackgroundAsync()
     {
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading {cachedItems.Count} items from cache...");
-
-        await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            UpdateStatusBar("Loading from cache...");
-        });
-
-        // Load in batches to keep UI responsive
-        var batch = new List<PaletteItemViewModel>();
-        var loadedCount = 0;
-
-        foreach (var cached in cachedItems)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                break;
-
-            batch.Add(new PaletteItemViewModel
-            {
-                ResRef = cached.ResRef,
-                DisplayName = cached.DisplayName,
-                BaseItemType = cached.BaseItemType,
-                BaseValue = cached.BaseValue,
-                IsStandard = cached.IsStandard
-            });
-            loadedCount++;
-
-            if (batch.Count >= PaletteBatchSize * 4) // Larger batches for cache since it's fast
-            {
-                await AddPaletteBatchAsync(batch);
-                batch.Clear();
-            }
-        }
-
-        // Add remaining items
-        if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
-        {
-            await AddPaletteBatchAsync(batch);
-        }
-
-        if (!cancellationToken.IsCancellationRequested)
-        {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {loadedCount} items from cache");
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                UpdateStatusBar($"Ready - {loadedCount} items in palette");
-            });
-        }
-    }
-
-    private async Task ShowCacheBuildingNotification()
-    {
-        await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            var notification = new Window
-            {
-                Title = "Building Item Cache",
-                Width = 350,
-                Height = 120,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                CanResize = false,
-                ShowInTaskbar = false,
-                Content = new StackPanel
-                {
-                    Margin = new Avalonia.Thickness(20),
-                    Spacing = 12,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Text = "Building item palette cache...",
-                            FontWeight = FontWeight.SemiBold
-                        },
-                        new TextBlock
-                        {
-                            Text = "This only happens once. Future launches will be faster.",
-                            TextWrapping = TextWrapping.Wrap,
-                            Foreground = Brushes.Gray
-                        }
-                    }
-                }
-            };
-
-            notification.Show(this);
-
-            // Auto-close after delay - give users time to read the message
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(5000);
-                await Dispatcher.UIThread.InvokeAsync(() =>
-                {
-                    try { notification.Close(); } catch { }
-                });
-            });
-        });
-    }
-
-    private async Task BuildAndCachePaletteAsync(CancellationToken cancellationToken)
-    {
-        // List all UTI resources from game data
-        var gameResources = await Task.Run(() =>
-            _gameDataService!.ListResources(ResourceTypes.Uti).ToList(),
-            cancellationToken);
-
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Found {gameResources.Count} UTI resources in game data");
-
-        var existingResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var batch = new List<PaletteItemViewModel>();
         var cacheItems = new List<CachedPaletteItem>();
-        var loadedCount = 0;
 
-        foreach (var resourceInfo in gameResources)
+        await Task.Run(() =>
         {
-            if (cancellationToken.IsCancellationRequested)
-                break;
+            var gameResources = _gameDataService!.ListResources(ResourceTypes.Uti).ToList();
+            var existingResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            if (existingResRefs.Contains(resourceInfo.ResRef))
-                continue;
-
-            try
+            foreach (var resourceInfo in gameResources)
             {
-                // Resolve the item to get display info
-                var resolved = _itemResolutionService.ResolveItem(resourceInfo.ResRef);
-                if (resolved != null)
+                if (existingResRefs.Contains(resourceInfo.ResRef))
+                    continue;
+
+                try
                 {
-                    // Skip creature weapons and internal item types
-                    if (ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
-                        continue;
-
-                    var viewModel = new PaletteItemViewModel
+                    var resolved = _itemResolutionService!.ResolveItem(resourceInfo.ResRef);
+                    if (resolved != null && !ExcludedBaseItemTypes.Contains(resolved.BaseItemType))
                     {
-                        ResRef = resolved.ResRef,
-                        DisplayName = resolved.DisplayName,
-                        BaseItemType = resolved.BaseItemTypeName,
-                        BaseValue = resolved.BaseCost,
-                        IsStandard = resourceInfo.Source == GameResourceSource.Bif
-                    };
-
-                    batch.Add(viewModel);
-
-                    // Also add to cache list
-                    cacheItems.Add(new CachedPaletteItem
-                    {
-                        ResRef = resolved.ResRef,
-                        DisplayName = resolved.DisplayName,
-                        BaseItemType = resolved.BaseItemTypeName,
-                        BaseValue = resolved.BaseCost,
-                        IsStandard = resourceInfo.Source == GameResourceSource.Bif
-                    });
-
-                    existingResRefs.Add(resourceInfo.ResRef);
-                    loadedCount++;
-
-                    // Add batch to UI periodically
-                    if (batch.Count >= PaletteBatchSize)
-                    {
-                        await AddPaletteBatchAsync(batch);
-                        batch.Clear();
-
-                        // Update status with progress
-                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        cacheItems.Add(new CachedPaletteItem
                         {
-                            UpdateStatusBar($"Building cache... {loadedCount} items");
+                            ResRef = resolved.ResRef,
+                            DisplayName = resolved.DisplayName,
+                            BaseItemType = resolved.BaseItemTypeName,
+                            BaseValue = resolved.BaseCost,
+                            IsStandard = resourceInfo.Source == GameResourceSource.Bif
                         });
+                        existingResRefs.Add(resourceInfo.ResRef);
                     }
                 }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to cache item {resourceInfo.ResRef}: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+        });
+
+        // Save and store
+        await _paletteCacheService.SaveCacheAsync(cacheItems);
+        _cachedPaletteData = cacheItems;
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Background cache complete: {cacheItems.Count} items");
+    }
+
+    /// <summary>
+    /// Load items for a specific type filter. Called when user changes filter.
+    /// </summary>
+    public async Task LoadItemsForTypeAsync(string? typeFilter)
+    {
+        // If loading all items and already done, skip
+        if (string.IsNullOrEmpty(typeFilter) && _allItemsLoaded)
+            return;
+
+        // If loading specific type and already loaded, skip
+        if (!string.IsNullOrEmpty(typeFilter) && _loadedItemTypes.Contains(typeFilter))
+            return;
+
+        UpdateStatusBar($"Loading {typeFilter ?? "all"} items...");
+
+        try
+        {
+            // Wait for cache if not ready
+            if (_cachedPaletteData == null)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load palette item {resourceInfo.ResRef}: {ex.Message}");
+                await PreWarmCacheAsync();
             }
-        }
 
-        // Add remaining items
-        if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
-        {
-            await AddPaletteBatchAsync(batch);
-        }
+            if (_cachedPaletteData == null)
+            {
+                UpdateStatusBar("Ready (no items available)");
+                return;
+            }
 
-        if (!cancellationToken.IsCancellationRequested)
-        {
-            // Save cache for next time
-            await _paletteCacheService.SaveCacheAsync(cacheItems);
+            // Filter cached data
+            var itemsToAdd = string.IsNullOrEmpty(typeFilter)
+                ? _cachedPaletteData
+                : _cachedPaletteData.Where(i => i.BaseItemType.Equals(typeFilter, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Item palette build complete: {loadedCount} items cached");
+            // Convert to view models and add (skip already loaded)
+            var existingResRefs = new HashSet<string>(PaletteItems.Select(p => p.ResRef), StringComparer.OrdinalIgnoreCase);
+            var newItems = new List<PaletteItemViewModel>();
+
+            foreach (var cached in itemsToAdd)
+            {
+                if (!existingResRefs.Contains(cached.ResRef))
+                {
+                    newItems.Add(new PaletteItemViewModel
+                    {
+                        ResRef = cached.ResRef,
+                        DisplayName = cached.DisplayName,
+                        BaseItemType = cached.BaseItemType,
+                        BaseValue = cached.BaseValue,
+                        IsStandard = cached.IsStandard
+                    });
+                }
+            }
+
+            // Add to UI
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                UpdateStatusBar($"Ready - {loadedCount} items in palette");
+                foreach (var item in newItems)
+                {
+                    PaletteItems.Add(item);
+                }
             });
+
+            // Track what's loaded
+            if (string.IsNullOrEmpty(typeFilter))
+            {
+                _allItemsLoaded = true;
+            }
+            else
+            {
+                _loadedItemTypes.Add(typeFilter);
+            }
+
+            var total = PaletteItems.Count;
+            UpdateStatusBar($"Ready - {total} items loaded");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {newItems.Count} {typeFilter ?? "all"} items (total: {total})");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load items: {ex.Message}");
+            UpdateStatusBar("Ready (load failed)");
         }
     }
 
@@ -296,6 +237,9 @@ public partial class MainWindow
     public void ClearAndReloadPaletteCache()
     {
         _paletteCacheService.ClearCache();
+        _cachedPaletteData = null;
+        _loadedItemTypes.Clear();
+        _allItemsLoaded = false;
         PaletteItems.Clear();
         StartItemPaletteLoad();
     }
@@ -304,18 +248,6 @@ public partial class MainWindow
     /// Get cache info for display in Settings.
     /// </summary>
     public CacheInfo? GetPaletteCacheInfo() => _paletteCacheService.GetCacheInfo();
-
-    private async Task AddPaletteBatchAsync(List<PaletteItemViewModel> batch)
-    {
-        await Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            foreach (var item in batch)
-            {
-                PaletteItems.Add(item);
-            }
-            ItemPaletteGrid.ItemsSource = PaletteItems;
-        });
-    }
 
     #endregion
 }

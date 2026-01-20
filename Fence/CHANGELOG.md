@@ -10,6 +10,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.3-alpha] - 2026-01-19
+**Branch**: `fence/issue-1014` | **PR**: #1022
+
+### Sprint: Fence Completion (#1014)
+
+Part of Epic #555 (Merchant Editor Tool).
+
+#### Work Items
+- [ ] #945 - Add Scripts, Variables, and Comment fields
+- [~] #958 - File loading performance (partial - still has hangs)
+- [ ] #956 - Move status bar to top of window
+
+#### Added
+- **On-demand palette loading** - Items load when user selects a type filter, not on startup
+- **Persistent KEY index cache** - KEY file parsing results cached to `~/Radoub/Cache/key_index_cache.json`
+
+#### Changed
+- **Non-blocking service initialization** - Window appears instantly, services initialize in background
+- **Background threading** - Cache operations run on background thread with batched UI updates
+
+#### Known Issues
+- Performance still not at target (<2 seconds). BIF metadata loading and item resolution remain bottlenecks. See #958 for next steps.
+
+---
+
 ## [0.1.2-alpha] - 2026-01-18
 **Branch**: `radoub/issue-954` | **PR**: #955
 

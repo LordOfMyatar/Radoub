@@ -261,8 +261,14 @@ public partial class MainWindow
         }
     }
 
-    private void OnPaletteSearchTextChanged(object? sender, TextChangedEventArgs e)
+    private async void OnPaletteSearchTextChanged(object? sender, TextChangedEventArgs e)
     {
+        // If user is searching, load all items first (search needs full dataset)
+        var searchText = PaletteSearchBox.Text?.Trim() ?? "";
+        if (!string.IsNullOrEmpty(searchText) && searchText.Length >= 2)
+        {
+            await LoadItemsForTypeAsync(null); // Load all items for search
+        }
         ApplyPaletteFilter();
     }
 
@@ -272,8 +278,11 @@ public partial class MainWindow
         ApplyPaletteFilter();
     }
 
-    private void OnTypeFilterChanged(object? sender, SelectionChangedEventArgs e)
+    private async void OnTypeFilterChanged(object? sender, SelectionChangedEventArgs e)
     {
+        // Load items for the selected type on-demand
+        var typeFilter = ItemTypeFilter.SelectedIndex > 0 ? ItemTypeFilter.SelectedItem?.ToString() : null;
+        await LoadItemsForTypeAsync(typeFilter);
         ApplyPaletteFilter();
     }
 
