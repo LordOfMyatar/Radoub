@@ -88,7 +88,11 @@ public abstract class FlaUITestBase : IDisposable
 
         // Pre-seed RadoubSettings with test data paths (for Sound Browser, etc.)
         // These paths point to our test data which includes HAK files with sounds
+        // IMPORTANT: Set BaseGameInstallPath to a non-empty value to prevent AutoDetectPaths() from
+        // finding user's actual Steam/GOG installation (which scans 80+ HAK files and slows startup)
+        // We use TestGameRoot even though it doesn't have BIF files - that's OK for UI tests
         var radoubSettings = $@"{{
+  ""BaseGameInstallPath"": ""{TestPaths.TestGameRoot.Replace("\\", "\\\\")}"",
   ""NeverwinterNightsPath"": ""{TestPaths.TestGameRoot.Replace("\\", "\\\\")}"",
   ""CurrentModulePath"": ""{TestPaths.TestModuleDirectory.Replace("\\", "\\\\")}""
 }}";
