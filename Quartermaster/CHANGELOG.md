@@ -15,7 +15,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Bash - Settings & UI Fixes (#884)
 
-- [ ] #873 - Settings: Changing font to system font has no effect
+- [x] #873 - Settings: Changing font to system font has no effect
+
+#### Fixed
+- **System font selection now applies correctly** (#873)
+  - When "(System Default)" is selected, `GlobalFontFamily` is now explicitly set to `FontFamily.Default`
+  - Previously, empty font string caused no action, leaving the previous font active
+  - Fix applied to all 5 tools: Quartermaster, Trebuchet, Manifest, Fence (Parley already had the fix)
+  - Also fixed in ThemeManager for themes specifying `$Default` or empty font
 
 ---
 
