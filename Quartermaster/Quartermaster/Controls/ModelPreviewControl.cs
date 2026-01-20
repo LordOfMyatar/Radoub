@@ -565,69 +565,45 @@ public class ModelPreviewControl : Control
         {
             if (faces.Count == 0) return;
 
-            // Get texture dimensions for UV scaling
-            var texWidth = texture?.Width ?? 1;
-            var texHeight = texture?.Height ?? 1;
+            using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
 
-            // Build vertex arrays for SKVertices
-            var positions = new List<SKPoint>();
-            var texCoords = new List<SKPoint>();
-            var colors = new List<SKColor>();
-            var indices = new List<ushort>();
-
-            ushort vertexIndex = 0;
             foreach (var face in faces)
             {
-                // Apply lighting to colors - use white if we have a texture
-                SKColor vertColor;
+                // Get lit color
+                SKColor faceColor;
                 if (texture != null)
                 {
-                    // With texture, use white modulated by lighting
-                    var intensity = face.LightIntensity;
-                    var gray = (byte)Math.Clamp(255 * intensity, 0, 255);
-                    vertColor = new SKColor(gray, gray, gray);
+                    // Sample texture at face center UV and apply lighting
+                    var centerU = (face.UVs[0].X + face.UVs[1].X + face.UVs[2].X) / 3f;
+                    var centerV = (face.UVs[0].Y + face.UVs[1].Y + face.UVs[2].Y) / 3f;
+
+                    // Wrap UVs and flip V
+                    centerU = centerU - MathF.Floor(centerU);
+                    centerV = 1.0f - (centerV - MathF.Floor(centerV));
+
+                    var texX = (int)(centerU * texture.Width) % texture.Width;
+                    var texY = (int)(centerV * texture.Height) % texture.Height;
+                    if (texX < 0) texX += texture.Width;
+                    if (texY < 0) texY += texture.Height;
+
+                    var texColor = texture.GetPixel(texX, texY);
+                    faceColor = ApplyLighting(texColor, face.LightIntensity);
                 }
                 else
                 {
-                    // No texture, use lit diffuse color
-                    vertColor = ApplyLighting(face.DiffuseColor, face.LightIntensity);
+                    faceColor = ApplyLighting(face.DiffuseColor, face.LightIntensity);
                 }
 
-                // Add three vertices for the triangle
-                for (int i = 0; i < 3; i++)
-                {
-                    positions.Add(face.ScreenPoints[i]);
-                    // Scale UVs from normalized (0-1) to pixel coordinates
-                    // Also flip V coordinate (NWN uses bottom-left origin, SkiaSharp uses top-left)
-                    var u = face.UVs[i].X * texWidth;
-                    var v = (1.0f - face.UVs[i].Y) * texHeight;
-                    texCoords.Add(new SKPoint(u, v));
-                    colors.Add(vertColor);
-                    indices.Add(vertexIndex++);
-                }
+                paint.Color = faceColor;
+
+                // Draw filled triangle
+                using var path = new SKPath();
+                path.MoveTo(face.ScreenPoints[0]);
+                path.LineTo(face.ScreenPoints[1]);
+                path.LineTo(face.ScreenPoints[2]);
+                path.Close();
+                canvas.DrawPath(path, paint);
             }
-
-            // Create vertices with texture coordinates
-            using var vertices = SKVertices.CreateCopy(
-                SKVertexMode.Triangles,
-                positions.ToArray(),
-                texCoords.ToArray(),
-                colors.ToArray(),
-                indices.ToArray());
-
-            using var paint = new SKPaint { IsAntialias = true };
-
-            if (texture != null)
-            {
-                // Create shader from texture - UVs are already in pixel space
-                using var shader = SKShader.CreateBitmap(
-                    texture,
-                    SKShaderTileMode.Repeat,
-                    SKShaderTileMode.Repeat);
-                paint.Shader = shader;
-            }
-
-            canvas.DrawVertices(vertices, SKBlendMode.Modulate, paint);
         }
 
         private static SKColor ApplyLighting(SKColor baseColor, float intensity)
