@@ -66,8 +66,10 @@
             </MenuItem>
             <MenuItem Header="_Character">
                 <MenuItem Header="_Level Up..." Click="OnLevelUpClick" InputGesture="Ctrl+L" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}"/>
+                <MenuItem Header="_View Level History..." Click="OnViewLevelHistoryClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}" ToolTip.Tip="View recorded level-up decisions"/>
                 <Separator/>
                 <MenuItem Header="Re-_Level..." Click="OnReLevelClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}" ToolTip.Tip="Strip all levels and rebuild from scratch"/>
+                <MenuItem Header="_Down-Level (Save Copy)..." Click="OnDownLevelClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}" ToolTip.Tip="Save a level 1 copy to a new file"/>
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>

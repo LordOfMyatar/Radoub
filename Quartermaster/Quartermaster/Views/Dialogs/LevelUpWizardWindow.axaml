@@ -248,7 +248,20 @@
                                      TextChanged="OnFeatSearchChanged"/>
                             <ListBox Grid.Row="2" x:Name="AvailableFeatsListBox"
                                      SelectionChanged="OnAvailableFeatSelected"
-                                     DoubleTapped="OnFeatDoubleClicked"/>
+                                     DoubleTapped="OnFeatDoubleClicked">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" ToolTip.Tip="{Binding PrereqTooltip}">
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                                            <TextBlock Text="{Binding Badge}"
+                                                       Margin="5,0,0,0"
+                                                       Foreground="Orange"
+                                                       IsVisible="{Binding Badge, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
                         </Grid>
                     </Border>
 

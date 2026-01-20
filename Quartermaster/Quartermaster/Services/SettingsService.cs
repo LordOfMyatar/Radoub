@@ -111,6 +111,10 @@ public class SettingsService : INotifyPropertyChanged
     private int _logRetentionSessions = 3;
     private LogLevel _logLevel = LogLevel.INFO;
 
+    // Level history settings
+    private LevelHistoryEncoding _levelHistoryEncoding = LevelHistoryEncoding.Readable;
+    private bool _recordLevelHistory = true;
+
     // Recent files
     private const int DefaultMaxRecentFiles = 10;
     private List<string> _recentFiles = new();
@@ -219,6 +223,19 @@ public class SettingsService : INotifyPropertyChanged
         }
     }
 
+    // Level history properties
+    public LevelHistoryEncoding LevelHistoryEncoding
+    {
+        get => _levelHistoryEncoding;
+        set { if (SetProperty(ref _levelHistoryEncoding, value)) SaveSettings(); }
+    }
+
+    public bool RecordLevelHistory
+    {
+        get => _recordLevelHistory;
+        set { if (SetProperty(ref _recordLevelHistory, value)) SaveSettings(); }
+    }
+
     // Recent Files
     public List<string> RecentFiles => _recentFiles.ToList();
 
@@ -308,6 +325,9 @@ public class SettingsService : INotifyPropertyChanged
                     _logLevel = settings.LogLevel;
                     UnifiedLogger.SetLogLevel(_logLevel); // Apply loaded log level to logger
 
+                    _levelHistoryEncoding = settings.LevelHistoryEncoding;
+                    _recordLevelHistory = settings.RecordLevelHistory;
+
                     _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
                     // Use default if MaxRecentFiles is 0 (corrupt/old file) or out of range
                     _maxRecentFiles = settings.MaxRecentFiles > 0 && settings.MaxRecentFiles <= 20
@@ -354,6 +374,8 @@ public class SettingsService : INotifyPropertyChanged
                 CurrentThemeId = CurrentThemeId,
                 LogRetentionSessions = LogRetentionSessions,
                 LogLevel = CurrentLogLevel,
+                LevelHistoryEncoding = LevelHistoryEncoding,
+                RecordLevelHistory = RecordLevelHistory,
                 RecentFiles = _recentFiles,
                 MaxRecentFiles = MaxRecentFiles
             };
@@ -404,6 +426,9 @@ public class SettingsService : INotifyPropertyChanged
 
         public int LogRetentionSessions { get; set; } = 3;
         public LogLevel LogLevel { get; set; } = LogLevel.INFO;
+
+        public LevelHistoryEncoding LevelHistoryEncoding { get; set; } = LevelHistoryEncoding.Readable;
+        public bool RecordLevelHistory { get; set; } = true;
 
         public List<string> RecentFiles { get; set; } = new();
         public int MaxRecentFiles { get; set; } = DefaultMaxRecentFiles;

@@ -21,6 +21,11 @@ public class CreatureDisplayService
     public SpellService Spells { get; }
     public ClassService Classes { get; }
 
+    /// <summary>
+    /// Direct access to game data service for advanced queries.
+    /// </summary>
+    public IGameDataService GameDataService => _gameDataService;
+
     // Cache services
     public FeatCacheService FeatCache { get; }
 

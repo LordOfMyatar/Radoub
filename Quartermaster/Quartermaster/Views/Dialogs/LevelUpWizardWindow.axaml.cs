@@ -40,6 +40,8 @@ public partial class LevelUpWizardWindow : Window
     // UI state
     private List<ClassDisplayItem> _allClasses = new();
     private List<ClassDisplayItem> _filteredClasses = new();
+    private List<FeatDisplayItem> _allAvailableFeats = new();
+    private List<FeatDisplayItem> _filteredAvailableFeats = new();
 
     // Controls
     private readonly TextBlock _characterNameLabel;
@@ -231,7 +233,7 @@ public partial class LevelUpWizardWindow : Window
             1 => _selectedClassId >= 0,
             2 => _selectedFeats.Count >= _featsToSelect,
             3 => GetRemainingSkillPoints() == 0,
-            4 => !_needsSpellSelection || _selectedSpells.Count > 0,
+            4 => true, // Spell selection is deferred - always allow proceeding
             5 => true,
             _ => false
         };
@@ -245,6 +247,7 @@ public partial class LevelUpWizardWindow : Window
             1 when _selectedClassId < 0 => "Select a class to continue.",
             2 when _selectedFeats.Count < _featsToSelect => $"Select {_featsToSelect - _selectedFeats.Count} more feat(s).",
             3 when GetRemainingSkillPoints() > 0 => $"Allocate {GetRemainingSkillPoints()} remaining skill point(s).",
+            4 when _needsSpellSelection => "Spell selection deferred. Add spells via the Spells panel after leveling.",
             _ => ""
         };
     }
@@ -269,33 +272,46 @@ public partial class LevelUpWizardWindow : Window
     {
         if (_currentStep < TotalSteps)
         {
-            // Perform step completion actions
-            if (_currentStep == 1)
-            {
-                PrepareStep2(); // Calculate feat requirements
-            }
-            else if (_currentStep == 2)
-            {
-                PrepareStep3(); // Calculate skill points
-            }
-            else if (_currentStep == 3)
-            {
-                PrepareStep4(); // Check spell requirements
-            }
-            else if (_currentStep == 4)
-            {
-                PrepareStep5(); // Build summary
-            }
-
             _currentStep++;
 
-            // Skip steps that don't apply
-            if (_currentStep == 2 && _featsToSelect == 0)
-                _currentStep++;
-            if (_currentStep == 4 && !_needsSpellSelection)
-                _currentStep++;
+            // Prepare the next step (and handle skip logic)
+            PrepareCurrentStep();
 
             UpdateStepDisplay();
+        }
+    }
+
+    private void PrepareCurrentStep()
+    {
+        switch (_currentStep)
+        {
+            case 2:
+                PrepareStep2(); // Calculate feat requirements
+                // Skip if no feats to select
+                if (_featsToSelect == 0)
+                {
+                    _currentStep++;
+                    PrepareCurrentStep(); // Recursively prepare next step
+                }
+                break;
+
+            case 3:
+                PrepareStep3(); // Calculate skill points
+                break;
+
+            case 4:
+                PrepareStep4(); // Check spell requirements
+                // Skip if no spell selection needed
+                if (!_needsSpellSelection)
+                {
+                    _currentStep++;
+                    PrepareCurrentStep(); // Recursively prepare next step
+                }
+                break;
+
+            case 5:
+                PrepareStep5(); // Build summary
+                break;
         }
     }
 
@@ -480,7 +496,7 @@ public partial class LevelUpWizardWindow : Window
         if (totalLevel == 1 || totalLevel % 3 == 0)
             _featsToSelect++;
 
-        // Class bonus feats (Fighter, Wizard, etc.)
+        // Class bonus feats (from cls_bfeat_*.2da)
         _featsToSelect += GetClassBonusFeats(_selectedClassId, _newClassLevel);
 
         // Human bonus feat at level 1
@@ -493,67 +509,274 @@ public partial class LevelUpWizardWindow : Window
             ? $"You have {_featsToSelect} feat(s) to select."
             : "No feats to select at this level.";
 
-        // TODO: Load available feats
-        _availableFeatsListBox.ItemsSource = new List<string> { "(Feat list coming soon)" };
-        _selectedFeatsListBox.ItemsSource = _selectedFeats.Select(f => _displayService.GetFeatName(f));
+        // Build the list of available feats
+        LoadAvailableFeats();
+        ApplyFeatFilter();
+        RefreshSelectedFeatsList();
 
         UpdateFeatSelectionUI();
     }
 
+    private void LoadAvailableFeats()
+    {
+        _allAvailableFeats.Clear();
+
+        // Get all feats the creature already has
+        var existingFeats = new HashSet<int>(_creature.FeatList.Select(f => (int)f));
+
+        // Add any feats we've already selected in this wizard session
+        foreach (var selectedFeat in _selectedFeats)
+        {
+            existingFeats.Add(selectedFeat);
+        }
+
+        // Get class feat tables for the selected class and existing classes
+        var classFeatIds = new HashSet<int>();
+        var selectedClassFeats = GetClassSelectableFeatIds(_selectedClassId);
+        foreach (var f in selectedClassFeats)
+            classFeatIds.Add(f);
+
+        foreach (var creatureClass in _creature.ClassList)
+        {
+            var classFeats = GetClassSelectableFeatIds(creatureClass.Class);
+            foreach (var f in classFeats)
+                classFeatIds.Add(f);
+        }
+
+        // Create current feats set (including tentatively selected)
+        var currentFeats = new HashSet<ushort>(_creature.FeatList);
+        foreach (var sf in _selectedFeats)
+            currentFeats.Add((ushort)sf);
+
+        // Get all feat IDs
+        var allFeatIds = _displayService.Feats.GetAllFeatIds();
+
+        foreach (var featId in allFeatIds)
+        {
+            // Skip feats the creature already has
+            if (existingFeats.Contains(featId))
+                continue;
+
+            // Check if feat is available to select (universal or in class table)
+            bool isUniversal = _displayService.Feats.IsFeatUniversal(featId);
+            bool isClassFeat = classFeatIds.Contains(featId);
+
+            if (!isUniversal && !isClassFeat)
+                continue;
+
+            // Get feat info
+            var featInfo = _displayService.Feats.GetFeatInfo(featId);
+
+            // Check prerequisites
+            var prereqResult = _displayService.Feats.CheckFeatPrerequisites(
+                _creature,
+                featId,
+                currentFeats,
+                c => _displayService.CalculateBaseAttackBonus(c),
+                cid => _displayService.GetClassName(cid));
+
+            _allAvailableFeats.Add(new FeatDisplayItem
+            {
+                FeatId = featId,
+                Name = featInfo.Name,
+                Description = featInfo.Description,
+                Category = featInfo.Category,
+                MeetsPrereqs = prereqResult.AllMet,
+                PrereqResult = prereqResult,
+                IsClassFeat = isClassFeat && !isUniversal,
+                CanSelect = prereqResult.AllMet
+            });
+        }
+
+        // Sort: selectable first, then by name
+        _allAvailableFeats = _allAvailableFeats
+            .OrderByDescending(f => f.CanSelect)
+            .ThenBy(f => f.Name)
+            .ToList();
+    }
+
+    private HashSet<int> GetClassSelectableFeatIds(int classId)
+    {
+        var result = new HashSet<int>();
+        var featTable = _displayService.GameDataService.Get2DAValue("classes", classId, "FeatsTable");
+        if (string.IsNullOrEmpty(featTable) || featTable == "****")
+            return result;
+
+        for (int row = 0; row < 300; row++)
+        {
+            var featIndexStr = _displayService.GameDataService.Get2DAValue(featTable, row, "FeatIndex");
+            if (string.IsNullOrEmpty(featIndexStr) || featIndexStr == "****")
+                break;
+
+            if (int.TryParse(featIndexStr, out int featId))
+            {
+                var listType = _displayService.GameDataService.Get2DAValue(featTable, row, "List");
+                // List = 1: Bonus feat only, 2: Normal selectable, 3: Automatic/granted
+                // We want 1 and 2 for selection
+                if (listType == "1" || listType == "2")
+                {
+                    result.Add(featId);
+                }
+            }
+        }
+
+        return result;
+    }
+
     private int GetClassBonusFeats(int classId, int classLevel)
     {
-        // Check bonus feats table for this class/level
-        // For now, simplified hardcoded check
-        // Fighter: bonus feat at 1, 2, 4, 6, 8, 10...
-        // Wizard: bonus feat at 5, 10, 15, 20
-        if (classId == 4) // Fighter
-            return (classLevel == 1 || classLevel % 2 == 0) ? 1 : 0;
-        if (classId == 10) // Wizard
-            return (classLevel % 5 == 0) ? 1 : 0;
+        // Read from cls_bfeat_*.2da (BonusFeatsTable)
+        var bfeatTable = _displayService.GameDataService.Get2DAValue("classes", classId, "BonusFeatsTable");
+        if (string.IsNullOrEmpty(bfeatTable) || bfeatTable == "****")
+            return 0;
 
-        return 0;
+        // Check if this specific level grants a bonus feat
+        var bonus = _displayService.GameDataService.Get2DAValue(bfeatTable, classLevel - 1, "Bonus");
+        return bonus == "1" ? 1 : 0;
+    }
+
+    private void ApplyFeatFilter()
+    {
+        var searchText = _featSearchBox?.Text?.Trim() ?? "";
+
+        _filteredAvailableFeats = _allAvailableFeats.Where(f =>
+        {
+            // Don't show already-selected feats in available list
+            if (_selectedFeats.Contains(f.FeatId))
+                return false;
+
+            if (!string.IsNullOrEmpty(searchText) &&
+                !f.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return true;
+        }).ToList();
+
+        _availableFeatsListBox.ItemsSource = _filteredAvailableFeats;
+    }
+
+    private void RefreshSelectedFeatsList()
+    {
+        var selectedItems = _selectedFeats.Select(featId =>
+        {
+            var item = _allAvailableFeats.FirstOrDefault(f => f.FeatId == featId);
+            return item?.Name ?? _displayService.GetFeatName(featId);
+        }).ToList();
+
+        _selectedFeatsListBox.ItemsSource = selectedItems;
     }
 
     private void UpdateFeatSelectionUI()
     {
         _selectedFeatsHeader.Text = $"Selected Feats ({_selectedFeats.Count}/{_featsToSelect})";
+
+        // Update button states
+        var selectedItem = _availableFeatsListBox.SelectedItem as FeatDisplayItem;
+        _addFeatButton.IsEnabled = selectedItem != null &&
+                                   selectedItem.CanSelect &&
+                                   _selectedFeats.Count < _featsToSelect;
+        _removeFeatButton.IsEnabled = _selectedFeatsListBox.SelectedItem != null;
+
         ValidateCurrentStep();
     }
 
     private void OnFeatSearchChanged(object? sender, TextChangedEventArgs e)
     {
-        // TODO: Filter available feats
+        ApplyFeatFilter();
     }
 
     private void OnAvailableFeatSelected(object? sender, SelectionChangedEventArgs e)
     {
-        _addFeatButton.IsEnabled = _availableFeatsListBox.SelectedItem != null &&
-                                   _selectedFeats.Count < _featsToSelect;
+        UpdateFeatSelectionUI();
     }
 
     private void OnFeatDoubleClicked(object? sender, TappedEventArgs e)
     {
-        // TODO: Add feat
+        AddSelectedFeat();
     }
 
     private void OnSelectedFeatDoubleClicked(object? sender, TappedEventArgs e)
     {
-        // TODO: Remove feat
+        RemoveSelectedFeat();
     }
 
     private void OnAddFeatClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: Add selected feat
+        AddSelectedFeat();
     }
 
     private void OnRemoveFeatClick(object? sender, RoutedEventArgs e)
     {
-        // TODO: Remove selected feat
+        RemoveSelectedFeat();
+    }
+
+    private void AddSelectedFeat()
+    {
+        if (_availableFeatsListBox.SelectedItem is not FeatDisplayItem item)
+            return;
+
+        if (!item.CanSelect || _selectedFeats.Count >= _featsToSelect)
+            return;
+
+        _selectedFeats.Add(item.FeatId);
+
+        // Re-evaluate prerequisites since selected feat may unlock others
+        RefreshFeatPrerequisites();
+        ApplyFeatFilter();
+        RefreshSelectedFeatsList();
+        UpdateFeatSelectionUI();
+    }
+
+    private void RemoveSelectedFeat()
+    {
+        var index = _selectedFeatsListBox.SelectedIndex;
+        if (index < 0 || index >= _selectedFeats.Count)
+            return;
+
+        _selectedFeats.RemoveAt(index);
+
+        // Re-evaluate prerequisites since removed feat may lock others
+        RefreshFeatPrerequisites();
+        ApplyFeatFilter();
+        RefreshSelectedFeatsList();
+        UpdateFeatSelectionUI();
+    }
+
+    private void RefreshFeatPrerequisites()
+    {
+        // Create current feats set including tentatively selected
+        var currentFeats = new HashSet<ushort>(_creature.FeatList);
+        foreach (var sf in _selectedFeats)
+            currentFeats.Add((ushort)sf);
+
+        // Re-check prerequisites for all feats
+        foreach (var feat in _allAvailableFeats)
+        {
+            var prereqResult = _displayService.Feats.CheckFeatPrerequisites(
+                _creature,
+                feat.FeatId,
+                currentFeats,
+                c => _displayService.CalculateBaseAttackBonus(c),
+                cid => _displayService.GetClassName(cid));
+
+            feat.MeetsPrereqs = prereqResult.AllMet;
+            feat.PrereqResult = prereqResult;
+            feat.CanSelect = prereqResult.AllMet;
+        }
+
+        // Re-sort: selectable first, then by name
+        _allAvailableFeats = _allAvailableFeats
+            .OrderByDescending(f => f.CanSelect)
+            .ThenBy(f => f.Name)
+            .ToList();
     }
 
     #endregion
 
     #region Step 3: Skill Allocation
+
+    // Tracks class skill status for the level being gained
+    private HashSet<int> _classSkillIds = new();
 
     private void PrepareStep3()
     {
@@ -567,9 +790,16 @@ public partial class LevelUpWizardWindow : Window
         if (totalLevel == 1)
             _skillPointsToAllocate *= 4;
 
+        // Human bonus skill points
+        if (_creature.Race == 6) // Human
+            _skillPointsToAllocate += totalLevel == 1 ? 4 : 1;
+
         _skillPointsAdded.Clear();
 
-        _skillPointsTotalLabel.Text = $"(Base {basePoints} + INT {intMod} = {_skillPointsToAllocate})";
+        // Cache class skills for the level being gained
+        _classSkillIds = _displayService.GetClassSkillIds(_selectedClassId);
+
+        _skillPointsTotalLabel.Text = $"(Base {basePoints} + INT {intMod}{(_creature.Race == 6 ? " + Human" : "")} = {_skillPointsToAllocate})";
         UpdateSkillPointsDisplay();
 
         // Build skill list
@@ -580,17 +810,11 @@ public partial class LevelUpWizardWindow : Window
     private List<SkillDisplayItem> BuildSkillList()
     {
         var skills = new List<SkillDisplayItem>();
-        var classSkillIds = _displayService.GetCombinedClassSkillIds(_creature);
-
-        // Add selected class's skills
-        var newClassSkills = _displayService.GetClassSkillIds(_selectedClassId);
-        foreach (var s in newClassSkills)
-            classSkillIds.Add(s);
 
         for (int i = 0; i < 28; i++) // Standard NWN skill count
         {
             int currentRanks = i < _creature.SkillList.Count ? _creature.SkillList[i] : 0;
-            bool isClassSkill = classSkillIds.Contains(i);
+            bool isClassSkill = _classSkillIds.Contains(i);
 
             skills.Add(new SkillDisplayItem
             {
@@ -599,11 +823,13 @@ public partial class LevelUpWizardWindow : Window
                 CurrentRanks = currentRanks,
                 AddedRanks = _skillPointsAdded.GetValueOrDefault(i, 0),
                 IsClassSkill = isClassSkill,
-                MaxRanks = CalculateMaxRanks(isClassSkill)
+                MaxRanks = CalculateMaxRanks(isClassSkill),
+                Cost = isClassSkill ? 1 : 2
             });
         }
 
-        return skills;
+        // Sort: class skills first, then by name
+        return skills.OrderByDescending(s => s.IsClassSkill).ThenBy(s => s.Name).ToList();
     }
 
     private int CalculateMaxRanks(bool isClassSkill)
@@ -614,7 +840,13 @@ public partial class LevelUpWizardWindow : Window
 
     private int GetRemainingSkillPoints()
     {
-        int spent = _skillPointsAdded.Values.Sum();
+        int spent = 0;
+        foreach (var (skillId, ranks) in _skillPointsAdded)
+        {
+            bool isClassSkill = _classSkillIds.Contains(skillId);
+            int cost = isClassSkill ? 1 : 2;
+            spent += ranks * cost;
+        }
         return _skillPointsToAllocate - spent;
     }
 
@@ -628,12 +860,23 @@ public partial class LevelUpWizardWindow : Window
     {
         if (sender is Button btn && btn.Tag is int skillId)
         {
+            bool isClassSkill = _classSkillIds.Contains(skillId);
+            int cost = isClassSkill ? 1 : 2;
             int remaining = GetRemainingSkillPoints();
-            if (remaining > 0)
+
+            if (remaining >= cost)
             {
-                _skillPointsAdded[skillId] = _skillPointsAdded.GetValueOrDefault(skillId, 0) + 1;
-                _skillsItemsControl.ItemsSource = BuildSkillList();
-                UpdateSkillPointsDisplay();
+                int currentAdded = _skillPointsAdded.GetValueOrDefault(skillId, 0);
+                int currentRanks = skillId < _creature.SkillList.Count ? _creature.SkillList[skillId] : 0;
+                int maxRanks = CalculateMaxRanks(isClassSkill);
+
+                // Check if we can add another rank
+                if (currentRanks + currentAdded < maxRanks)
+                {
+                    _skillPointsAdded[skillId] = currentAdded + 1;
+                    _skillsItemsControl.ItemsSource = BuildSkillList();
+                    UpdateSkillPointsDisplay();
+                }
             }
         }
     }
@@ -657,13 +900,85 @@ public partial class LevelUpWizardWindow : Window
 
     #region Step 4: Spell Selection
 
+    private TextBlock? _spellPlaceholder;
+    private int _spellsToSelect;
+    private int _maxSpellLevelThisLevel;
+
     private void PrepareStep4()
     {
-        // Check if this class/level grants new spells
-        _needsSpellSelection = _displayService.IsCasterClass(_selectedClassId);
+        // Get the placeholder control if not yet found
+        _spellPlaceholder ??= this.FindControl<TextBlock>("SpellPlaceholder");
 
-        // For now, simplified - just note whether spells are needed
-        // Full implementation would check spell slots gained at this level
+        // Check if this class/level grants new spells
+        bool isCaster = _displayService.IsCasterClass(_selectedClassId);
+        if (!isCaster)
+        {
+            _needsSpellSelection = false;
+            if (_spellPlaceholder != null)
+                _spellPlaceholder.Text = $"{_displayService.GetClassName(_selectedClassId)} is not a spellcasting class.";
+            return;
+        }
+
+        // Check spell progression for this class
+        bool isSpontaneous = _displayService.Spells.IsSpontaneousCaster(_selectedClassId);
+        int maxSpellLevel = _displayService.Spells.GetMaxSpellLevel(_selectedClassId, _newClassLevel);
+        int prevMaxSpellLevel = _newClassLevel > 1 ? _displayService.Spells.GetMaxSpellLevel(_selectedClassId, _newClassLevel - 1) : -1;
+
+        _maxSpellLevelThisLevel = maxSpellLevel;
+
+        if (isSpontaneous)
+        {
+            // For spontaneous casters (Sorcerer/Bard), check spells known
+            var knownAtLevel = _displayService.Spells.GetSpellsKnownLimit(_selectedClassId, _newClassLevel);
+            var knownAtPrevLevel = _newClassLevel > 1 ? _displayService.Spells.GetSpellsKnownLimit(_selectedClassId, _newClassLevel - 1) : null;
+
+            _spellsToSelect = 0;
+            if (knownAtLevel != null)
+            {
+                for (int i = 0; i <= 9; i++)
+                {
+                    int prevKnown = knownAtPrevLevel?[i] ?? 0;
+                    int newKnown = knownAtLevel[i];
+                    if (newKnown > prevKnown)
+                        _spellsToSelect += (newKnown - prevKnown);
+                }
+            }
+
+            if (_spellsToSelect > 0)
+            {
+                _needsSpellSelection = true;
+                if (_spellPlaceholder != null)
+                    _spellPlaceholder.Text = $"Spell selection for spontaneous casters is not yet implemented.\n" +
+                                              $"You can learn {_spellsToSelect} new spell(s) at this level (up to level {maxSpellLevel}).\n" +
+                                              $"Use the Spells panel after leveling up to add spells manually.";
+            }
+            else
+            {
+                _needsSpellSelection = false;
+                if (_spellPlaceholder != null)
+                    _spellPlaceholder.Text = "No new spells to learn at this level.";
+            }
+        }
+        else
+        {
+            // For prepared casters (Wizard, Cleric, Druid), check if we gained a new spell level
+            bool gainedNewLevel = maxSpellLevel > prevMaxSpellLevel;
+
+            if (gainedNewLevel && maxSpellLevel > 0)
+            {
+                _needsSpellSelection = true;
+                if (_spellPlaceholder != null)
+                    _spellPlaceholder.Text = $"Spell selection for prepared casters is not yet implemented.\n" +
+                                              $"You have gained access to level {maxSpellLevel} spells.\n" +
+                                              $"Use the Spells panel after leveling up to prepare spells.";
+            }
+            else
+            {
+                _needsSpellSelection = false;
+                if (_spellPlaceholder != null)
+                    _spellPlaceholder.Text = "No new spell levels gained. Use the Spells panel to prepare different spells.";
+            }
+        }
     }
 
     #endregion
@@ -680,8 +995,17 @@ public partial class LevelUpWizardWindow : Window
         }
         else
         {
-            int oldLevel = _creature.ClassList.First(c => c.Class == _selectedClassId).ClassLevel;
-            _summaryClassLabel.Text = $"{className} {oldLevel} -> {oldLevel + 1}";
+            var existingClass = _creature.ClassList.FirstOrDefault(c => c.Class == _selectedClassId);
+            if (existingClass != null)
+            {
+                int oldLevel = existingClass.ClassLevel;
+                _summaryClassLabel.Text = $"{className} {oldLevel} -> {oldLevel + 1}";
+            }
+            else
+            {
+                // Fallback - shouldn't happen but be safe
+                _summaryClassLabel.Text = $"Taking level {_newClassLevel} in {className}";
+            }
         }
 
         // Feats summary
@@ -770,6 +1094,37 @@ public partial class LevelUpWizardWindow : Window
         }
 
         // Add spells (TODO: implement spell addition)
+
+        // Record level history if enabled
+        RecordLevelHistory();
+    }
+
+    private void RecordLevelHistory()
+    {
+        var settings = SettingsService.Instance;
+        if (!settings.RecordLevelHistory)
+            return;
+
+        // Build this level's record
+        var record = new LevelRecord
+        {
+            TotalLevel = _creature.ClassList.Sum(c => c.ClassLevel),
+            ClassId = _selectedClassId,
+            ClassLevel = _newClassLevel,
+            Feats = _selectedFeats.ToList(),
+            Skills = _skillPointsAdded.Where(kv => kv.Value > 0).ToDictionary(kv => kv.Key, kv => kv.Value),
+            AbilityIncrease = -1 // TODO: Track ability increases when implemented
+        };
+
+        // Get existing history or create new
+        var existingHistory = LevelHistoryService.Decode(_creature.Comment) ?? new List<LevelRecord>();
+        existingHistory.Add(record);
+
+        // Encode and update comment
+        _creature.Comment = LevelHistoryService.AppendToComment(
+            _creature.Comment,
+            existingHistory,
+            settings.LevelHistoryEncoding);
     }
 
     #endregion
@@ -814,10 +1169,27 @@ public partial class LevelUpWizardWindow : Window
         public int AddedRanks { get; set; }
         public bool IsClassSkill { get; set; }
         public int MaxRanks { get; set; }
+        public int Cost { get; set; } = 1;
 
-        public string ClassSkillIndicator => IsClassSkill ? "(class skill)" : "(cross-class)";
+        public string ClassSkillIndicator => IsClassSkill ? "(class skill, 1 pt)" : "(cross-class, 2 pts)";
         public bool CanIncrease => CurrentRanks + AddedRanks < MaxRanks;
         public bool CanDecrease => AddedRanks > 0;
+    }
+
+    private class FeatDisplayItem
+    {
+        public int FeatId { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public FeatCategory Category { get; set; }
+        public bool MeetsPrereqs { get; set; }
+        public FeatPrereqResult? PrereqResult { get; set; }
+        public bool IsClassFeat { get; set; }
+        public bool CanSelect { get; set; }
+
+        public string DisplayName => Name;
+        public string PrereqTooltip => PrereqResult?.GetTooltip() ?? "No prerequisites";
+        public string Badge => !MeetsPrereqs ? "(prereqs)" : IsClassFeat ? "(class)" : "";
     }
 
     #endregion
