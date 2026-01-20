@@ -19,6 +19,12 @@ public class CreatureDisplayService
     public FeatService Feats { get; }
     public AppearanceService Appearances { get; }
     public SpellService Spells { get; }
+    public ClassService Classes { get; }
+
+    /// <summary>
+    /// Direct access to game data service for advanced queries.
+    /// </summary>
+    public IGameDataService GameDataService => _gameDataService;
 
     // Cache services
     public FeatCacheService FeatCache { get; }
@@ -35,6 +41,7 @@ public class CreatureDisplayService
         Feats = new FeatService(gameDataService, Skills, FeatCache);
         Appearances = new AppearanceService(gameDataService);
         Spells = new SpellService(gameDataService);
+        Classes = new ClassService(gameDataService, Skills, Feats);
     }
 
     /// <summary>
