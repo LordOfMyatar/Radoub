@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.124-alpha] - 2026-01-19
-**Branch**: `radoub/sprint-988-1010` | **PR**: #TBD
+**Branch**: `radoub/sprint-988-1010` | **PR**: #1011
 
 ### Sprint: Parley Startup Performance (#988)
 
