@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.1.0-alpha] - 2026-01-20
-**Branch**: `trebuchet/issue-951` | **PR**: #TBD
+**Branch**: `trebuchet/issue-951` | **PR**: #1025
 
 ### Feature: Launch NWN:EE with specific BIC/module for testing
 
