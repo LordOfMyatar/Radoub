@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.45-alpha] - 2026-01-19
+**Branch**: `radoub/sprint-988-1010` | **PR**: #TBD
+
+### Sprint: Fix and Stabilize Integration Tests (#1010)
+
+- [ ] Run full integration test suite and document all failures
+- [ ] Identify flaky tests (run multiple times to confirm)
+- [ ] Fix failing tests or update expectations if behavior changed
+- [ ] Add stabilization patterns (waits, focus handling) per FlaUI best practices
+
+---
+
 ## [0.1.44-alpha] - 2026-01-18
 **Branch**: `quartermaster/issue-715` | **PR**: #948
 

@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.124-alpha] - 2026-01-19
+**Branch**: `radoub/sprint-988-1010` | **PR**: #TBD
+
+### Sprint: Parley Startup Performance (#988)
+
+- [ ] Profile Parley startup to identify bottlenecks
+- [ ] Implement optimizations if identified
+- [ ] Document findings
+
+---
+
 ## [0.1.123-alpha] - 2026-01-19
 **Branch**: `parley/issue-1008` | **PR**: #1009
 
