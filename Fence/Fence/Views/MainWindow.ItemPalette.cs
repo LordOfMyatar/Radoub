@@ -102,50 +102,34 @@ public partial class MainWindow
     {
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loading {cachedItems.Count} items from cache...");
 
-        await Dispatcher.UIThread.InvokeAsync(() =>
+        UpdateStatusBar("Loading from cache...");
+
+        // Convert cached items to view models on background thread
+        var viewModels = await Task.Run(() =>
         {
-            UpdateStatusBar("Loading from cache...");
-        });
-
-        // Load in batches to keep UI responsive
-        var batch = new List<PaletteItemViewModel>();
-        var loadedCount = 0;
-
-        foreach (var cached in cachedItems)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                break;
-
-            batch.Add(new PaletteItemViewModel
+            return cachedItems.Select(cached => new PaletteItemViewModel
             {
                 ResRef = cached.ResRef,
                 DisplayName = cached.DisplayName,
                 BaseItemType = cached.BaseItemType,
                 BaseValue = cached.BaseValue,
                 IsStandard = cached.IsStandard
-            });
-            loadedCount++;
+            }).ToList();
+        }, cancellationToken);
 
-            if (batch.Count >= PaletteBatchSize * 4) // Larger batches for cache since it's fast
-            {
-                await AddPaletteBatchAsync(batch);
-                batch.Clear();
-            }
-        }
-
-        // Add remaining items
-        if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
+        // Add all at once on UI thread - this is fast since it's just object references
+        await Dispatcher.UIThread.InvokeAsync(() =>
         {
-            await AddPaletteBatchAsync(batch);
-        }
+            foreach (var vm in viewModels)
+            {
+                PaletteItems.Add(vm);
+            }
+        });
 
         if (!cancellationToken.IsCancellationRequested)
         {
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {loadedCount} items from cache");
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                UpdateStatusBar($"Ready - {loadedCount} items in palette");
-            });
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {viewModels.Count} items from cache");
+            UpdateStatusBar($"Ready - {viewModels.Count} items in palette");
         }
     }
 

@@ -274,19 +274,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     #region Window Lifecycle
 
-    private async void OnWindowOpened(object? sender, EventArgs e)
+    private void OnWindowOpened(object? sender, EventArgs e)
     {
         Opened -= OnWindowOpened;
 
         UpdateStatus("Initializing...");
+        UpdateRecentFilesMenu();
 
+        // Fire and forget - don't block UI thread
+        // Service init and all loading happens in background
+        _ = InitializeAndLoadAsync();
+    }
+
+    private async Task InitializeAndLoadAsync()
+    {
         // Initialize services on background thread - this is the expensive part
         await InitializeServicesAsync();
 
-        // Now initialize panels that depend on services
-        InitializePanels();
-
-        UpdateRecentFilesMenu();
+        // Now initialize panels that depend on services (must be on UI thread)
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            InitializePanels();
+        });
 
         // Fire-and-forget cache and item loading in parallel
         _ = InitializeCachesAsync();
@@ -294,7 +303,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         await HandleStartupFileAsync();
 
-        UpdateStatus("Ready");
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            UpdateStatus("Ready");
+        });
     }
 
     private async Task InitializeServicesAsync()

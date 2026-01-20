@@ -90,17 +90,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UnifiedLogger.LogApplication(LogLevel.INFO, "Fence MainWindow initialized");
     }
 
-    private async void OnWindowOpened(object? sender, EventArgs e)
+    private void OnWindowOpened(object? sender, EventArgs e)
     {
         Opened -= OnWindowOpened;
 
         UpdateStatusBar("Initializing...");
 
+        // Fire and forget - don't block UI thread
+        // Service init and palette loading happen in background
+        _ = InitializeAndLoadAsync();
+    }
+
+    private async System.Threading.Tasks.Task InitializeAndLoadAsync()
+    {
         // Initialize services on background thread - this is the expensive part
         await InitializeServicesAsync();
 
-        // Now populate UI that depends on services
-        PopulateCategoryDropdown();
+        // Now populate UI that depends on services (must be on UI thread)
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            PopulateCategoryDropdown();
+        });
 
         // Start background loading tasks in parallel (fire-and-forget)
         _ = LoadBaseItemTypesAsync();
@@ -110,7 +120,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var options = CommandLineService.Options;
         if (!string.IsNullOrEmpty(options.FilePath) && File.Exists(options.FilePath))
         {
-            LoadFile(options.FilePath);
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                LoadFile(options.FilePath);
+            });
         }
     }
 

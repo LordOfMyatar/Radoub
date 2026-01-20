@@ -19,11 +19,13 @@ public class GameResourceResolver : IDisposable
 {
     private readonly GameResourceConfig _config;
     private KeyFile? _keyFile;
+    private CachedKeyIndex? _cachedKeyIndex;
     private readonly Dictionary<string, BifFile> _bifCache = new();
     private readonly Dictionary<string, ErfFile> _hakCache = new();
     private TlkFile? _baseTlk;
     private TlkFile? _customTlk;
     private bool _disposed;
+    private bool _keyIndexLoaded;
 
     /// <summary>
     /// Create a new resolver with the specified configuration.
@@ -272,18 +274,22 @@ public class GameResourceResolver : IDisposable
     private ResourceResult? FindInBif(string resRef, ushort resourceType)
     {
         EnsureKeyLoaded();
-        if (_keyFile == null)
+        if (_cachedKeyIndex == null)
             return null;
 
-        var keyEntry = _keyFile.FindResource(resRef, resourceType);
-        if (keyEntry == null)
+        // Find resource in cached index
+        var entry = _cachedKeyIndex.Resources.FirstOrDefault(r =>
+            r.ResRef.Equals(resRef, StringComparison.OrdinalIgnoreCase) &&
+            r.ResourceType == resourceType);
+        if (entry == null)
             return null;
 
-        var bifEntry = _keyFile.GetBifForResource(keyEntry);
-        if (bifEntry == null)
+        // Get BIF filename from cached index
+        if (entry.BifIndex < 0 || entry.BifIndex >= _cachedKeyIndex.BifFiles.Count)
             return null;
 
-        var bifPath = ResolveBifPath(bifEntry.Filename);
+        var bifFilename = _cachedKeyIndex.BifFiles[entry.BifIndex].Filename;
+        var bifPath = ResolveBifPath(bifFilename);
         if (bifPath == null || !File.Exists(bifPath))
             return null;
 
@@ -291,7 +297,7 @@ public class GameResourceResolver : IDisposable
         if (bif == null)
             return null;
 
-        var data = bif.ExtractVariableResource(keyEntry.VariableTableIndex);
+        var data = bif.ExtractVariableResource(entry.VariableTableIndex);
         if (data == null)
             return null;
 
@@ -301,13 +307,15 @@ public class GameResourceResolver : IDisposable
     private IEnumerable<ResourceInfo> ListBifResources(ushort resourceType)
     {
         EnsureKeyLoaded();
-        if (_keyFile == null)
+        if (_cachedKeyIndex == null)
             yield break;
 
-        foreach (var entry in _keyFile.GetResourcesByType(resourceType))
+        foreach (var entry in _cachedKeyIndex.Resources.Where(r => r.ResourceType == resourceType))
         {
-            var bifEntry = _keyFile.GetBifForResource(entry);
-            var bifPath = bifEntry != null ? ResolveBifPath(bifEntry.Filename) : null;
+            var bifFilename = entry.BifIndex >= 0 && entry.BifIndex < _cachedKeyIndex.BifFiles.Count
+                ? _cachedKeyIndex.BifFiles[entry.BifIndex].Filename
+                : null;
+            var bifPath = bifFilename != null ? ResolveBifPath(bifFilename) : null;
 
             yield return new ResourceInfo
             {
@@ -321,8 +329,10 @@ public class GameResourceResolver : IDisposable
 
     private void EnsureKeyLoaded()
     {
-        if (_keyFile != null)
+        if (_keyIndexLoaded)
             return;
+
+        _keyIndexLoaded = true;
 
         var keyPath = _config.KeyFilePath;
         if (string.IsNullOrEmpty(keyPath) && !string.IsNullOrEmpty(_config.GameDataPath))
@@ -331,9 +341,47 @@ public class GameResourceResolver : IDisposable
         if (string.IsNullOrEmpty(keyPath) || !File.Exists(keyPath))
             return;
 
+        // Try to load from persistent cache first
+        _cachedKeyIndex = KeyIndexCache.TryLoad(keyPath);
+        if (_cachedKeyIndex != null)
+        {
+            // Cache hit - we have the index, no need to parse KEY file
+            return;
+        }
+
+        // Cache miss - parse KEY file and save to cache
         try
         {
             _keyFile = KeyReader.Read(keyPath);
+
+            // Build cache from parsed KEY file
+            _cachedKeyIndex = new CachedKeyIndex();
+
+            foreach (var bif in _keyFile.BifEntries)
+            {
+                _cachedKeyIndex.BifFiles.Add(new CachedBifEntry
+                {
+                    Filename = bif.Filename,
+                    FileSize = bif.FileSize
+                });
+            }
+
+            foreach (var entry in _keyFile.ResourceEntries)
+            {
+                _cachedKeyIndex.Resources.Add(new CachedResourceEntry
+                {
+                    ResRef = entry.ResRef,
+                    ResourceType = entry.ResourceType,
+                    BifIndex = entry.BifIndex,
+                    VariableTableIndex = entry.VariableTableIndex
+                });
+            }
+
+            // Save cache for next time
+            KeyIndexCache.Save(keyPath, _cachedKeyIndex);
+
+            // Clear the full KeyFile - we only need the cached index now
+            _keyFile = null;
         }
         catch (Exception ex)
         {
@@ -441,6 +489,7 @@ public class GameResourceResolver : IDisposable
         _bifCache.Clear();
         _hakCache.Clear();
         _keyFile = null;
+        _cachedKeyIndex = null;
         _baseTlk = null;
         _customTlk = null;
         _disposed = true;
