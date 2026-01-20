@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Fixed
-- **Startup performance** - Cache initialization now runs in parallel with game items loading instead of sequentially. Window becomes interactive faster on startup.
+- **Startup performance** - Moved GameDataService and panel initialization from constructor to `Opened` event, runs on background thread. Cache and item loading run in parallel. Window appears in ~1.9s instead of ~18 seconds.
 
 ---
 

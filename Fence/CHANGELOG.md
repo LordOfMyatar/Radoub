@@ -23,7 +23,7 @@ Part of Epic #555 (Merchant Editor Tool).
 - [ ] #956 - Move status bar to top of window
 
 #### Fixed
-- **Startup performance** - Moved GameDataService initialization from constructor to `Opened` event, runs on background thread. Window appears immediately instead of blocking for ~8 seconds on first launch.
+- **Startup performance** - Moved GameDataService initialization from constructor to `Opened` event, runs on background thread. Window appears in ~1.7s instead of blocking for ~8 seconds on first launch.
 
 ---
 

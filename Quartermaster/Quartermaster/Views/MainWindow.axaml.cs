@@ -34,12 +34,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string _currentSection = "Character";
     private Button? _selectedNavButton;
 
-    // Game data service for BIF/TLK lookups
-    private readonly IGameDataService _gameDataService;
-    private readonly CreatureDisplayService _creatureDisplayService;
-    private readonly ItemViewModelFactory _itemViewModelFactory;
-    private readonly ItemIconService _itemIconService;
-    private readonly AudioService _audioService;
+    // Game data service for BIF/TLK lookups - initialized in OnWindowOpened
+    private IGameDataService _gameDataService = null!;
+    private CreatureDisplayService _creatureDisplayService = null!;
+    private ItemViewModelFactory _itemViewModelFactory = null!;
+    private ItemIconService _itemIconService = null!;
+    private AudioService _audioService = null!;
+    private bool _servicesInitialized;
 
     // Equipment slots collection (shared with InventoryPanel)
     private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
@@ -61,24 +62,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         InitializeComponent();
 
-        // Initialize game data service for BIF/TLK lookups
-        _gameDataService = new GameDataService();
-        _creatureDisplayService = new CreatureDisplayService(_gameDataService);
-        _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
-        _itemIconService = new ItemIconService(_gameDataService);
-        _audioService = new AudioService();
-
-        if (_gameDataService.IsConfigured)
-        {
-            UnifiedLogger.LogApplication(LogLevel.INFO, "GameDataService initialized - BIF lookup enabled");
-        }
-        else
-        {
-            UnifiedLogger.LogApplication(LogLevel.WARN, "GameDataService not configured - BIF lookup disabled");
-        }
-
+        // Only do fast UI setup in constructor - defer heavy I/O to OnWindowOpened
         InitializeEquipmentSlots();
-        InitializePanels();
         RestoreWindowPosition();
 
         // Set initial nav button selection
@@ -87,7 +72,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Closing += OnWindowClosing;
         Opened += OnWindowOpened;
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, "Quartermaster MainWindow initialized with sidebar layout");
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Quartermaster MainWindow initialized");
     }
 
     private void InitializeEquipmentSlots()
@@ -293,16 +278,50 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         Opened -= OnWindowOpened;
 
+        UpdateStatus("Initializing...");
+
+        // Initialize services on background thread - this is the expensive part
+        await InitializeServicesAsync();
+
+        // Now initialize panels that depend on services
+        InitializePanels();
+
         UpdateRecentFilesMenu();
 
-        // Fire-and-forget cache initialization - don't block on it
-        // This runs in parallel with game items loading
+        // Fire-and-forget cache and item loading in parallel
         _ = InitializeCachesAsync();
-
-        // Start loading game items in background immediately (parallel with caches)
         StartGameItemsLoad();
 
         await HandleStartupFileAsync();
+
+        UpdateStatus("Ready");
+    }
+
+    private async Task InitializeServicesAsync()
+    {
+        if (_servicesInitialized) return;
+
+        // Run the expensive GameDataService initialization on a background thread
+        await Task.Run(() =>
+        {
+            _gameDataService = new GameDataService();
+            _creatureDisplayService = new CreatureDisplayService(_gameDataService);
+            _itemViewModelFactory = new ItemViewModelFactory(_gameDataService);
+            _itemIconService = new ItemIconService(_gameDataService);
+            _audioService = new AudioService();
+
+            if (_gameDataService.IsConfigured)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "GameDataService initialized - BIF lookup enabled");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, "GameDataService not configured - BIF lookup disabled");
+            }
+        });
+
+        _servicesInitialized = true;
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Quartermaster services initialized");
     }
 
     private async Task InitializeCachesAsync()
