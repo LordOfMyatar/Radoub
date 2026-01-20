@@ -168,6 +168,36 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
+                <!-- Launch Game Section -->
+                <TextBlock Text="Launch Game"
+                           FontSize="{DynamicResource FontSizeLarge}"
+                           FontWeight="SemiBold"
+                           Margin="0,24,0,12"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button Content="Launch NWN:EE"
+                            Command="{Binding LaunchGameCommand}"
+                            IsEnabled="{Binding IsGameAvailable}"
+                            Padding="16,8"
+                            ToolTip.Tip="Launch Neverwinter Nights: Enhanced Edition"/>
+                    <Button Content="Test Module"
+                            Command="{Binding LaunchTestModuleCommand}"
+                            IsEnabled="{Binding CanTestModule}"
+                            Padding="16,8"
+                            ToolTip.Tip="Launch with current module, auto-select first character"/>
+                    <Button Content="Load Module"
+                            Command="{Binding LaunchLoadModuleCommand}"
+                            IsEnabled="{Binding CanLoadModule}"
+                            Padding="16,8"
+                            ToolTip.Tip="Launch with current module, show character select"/>
+                </StackPanel>
+
+                <TextBlock Text="Game not configured - set Base Game Path in Settings"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           Opacity="0.6"
+                           Margin="0,8,0,0"
+                           IsVisible="{Binding !IsGameAvailable}"/>
+
                 <!-- Recent Modules Section -->
                 <TextBlock Text="Recent Modules"
                            FontSize="{DynamicResource FontSizeLarge}"

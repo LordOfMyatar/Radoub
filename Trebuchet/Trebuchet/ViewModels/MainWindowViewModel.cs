@@ -19,6 +19,7 @@ namespace RadoubLauncher.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ToolLauncherService _toolLauncher;
+    private readonly GameLauncherService _gameLauncher;
     private Window? _parentWindow;
 
     [ObservableProperty]
@@ -54,16 +55,26 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCheckingForUpdates;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanTestModule))]
+    [NotifyPropertyChangedFor(nameof(CanLoadModule))]
+    private bool _isGameAvailable;
+
     public bool HasRecentModules => RecentModules.Count > 0;
+
+    public bool CanTestModule => IsGameAvailable && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
+    public bool CanLoadModule => CanTestModule;
 
     public MainWindowViewModel()
     {
         _toolLauncher = ToolLauncherService.Instance;
+        _gameLauncher = GameLauncherService.Instance;
         _tools = new ObservableCollection<ToolInfo>(_toolLauncher.Tools);
         _recentModules = new ObservableCollection<string>(SettingsService.Instance.RecentModules);
 
         LoadVersionInfo();
         UpdateStatusFromSettings();
+        UpdateGameAvailability();
     }
 
     public void SetParentWindow(Window window)
@@ -150,6 +161,20 @@ public partial class MainWindowViewModel : ObservableObject
     private void OnSharedSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         UpdateStatusFromSettings();
+        UpdateGameAvailability();
+
+        // Update module-dependent properties when module changes
+        if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
+        {
+            OnPropertyChanged(nameof(CanTestModule));
+            OnPropertyChanged(nameof(CanLoadModule));
+        }
+    }
+
+    private void UpdateGameAvailability()
+    {
+        _gameLauncher.RefreshDiscovery();
+        IsGameAvailable = _gameLauncher.IsGameAvailable;
     }
 
     private void OnLocalSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -308,5 +333,40 @@ public partial class MainWindowViewModel : ObservableObject
     private void OpenReleasePage()
     {
         UpdateService.Instance.OpenReleasePage();
+    }
+
+    [RelayCommand]
+    private void LaunchGame()
+    {
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Launching NWN:EE");
+        _gameLauncher.LaunchGame();
+    }
+
+    [RelayCommand]
+    private void LaunchTestModule()
+    {
+        var moduleName = GameLauncherService.GetModuleNameFromPath(RadoubSettings.Instance.CurrentModulePath);
+        if (string.IsNullOrEmpty(moduleName))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot launch test module: no module selected");
+            return;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching NWN:EE with +TestNewModule \"{moduleName}\"");
+        _gameLauncher.LaunchWithModule(moduleName, testMode: true);
+    }
+
+    [RelayCommand]
+    private void LaunchLoadModule()
+    {
+        var moduleName = GameLauncherService.GetModuleNameFromPath(RadoubSettings.Instance.CurrentModulePath);
+        if (string.IsNullOrEmpty(moduleName))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Cannot launch load module: no module selected");
+            return;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching NWN:EE with +LoadNewModule \"{moduleName}\"");
+        _gameLauncher.LaunchWithModule(moduleName, testMode: false);
     }
 }

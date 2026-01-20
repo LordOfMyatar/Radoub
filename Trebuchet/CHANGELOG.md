@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.0-alpha] - 2026-01-20
+**Branch**: `trebuchet/issue-951` | **PR**: #1025
+
+### Feature: Launch NWN:EE with module for testing
+
+- Add ability to launch NWN:EE directly from Trebuchet
+- **Test Module**: Launch with `+TestNewModule` (auto-selects first character)
+- **Load Module**: Launch with `+LoadNewModule` (shows character select)
+- Accelerate edit-test-fix cycle for module development
+
+---
+
 ## [1.0.0-alpha] - 2026-01-17
 **Branch**: `radoub/issue-907` | **PR**: #939
 
