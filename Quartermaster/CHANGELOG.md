@@ -23,6 +23,10 @@ Add skin to the creature body - appearance customization for body parts, skin/ha
   - SKVertices-based GPU-accelerated triangle rendering
   - PLT textures rendered with skin/hair/tattoo colors via TextureService
   - Lighting still applied for depth perception
+- **Armor-provided body part overrides** - Equipped chest armor now overrides creature body parts
+  - Loads armor's `ArmorParts` dictionary from UTI
+  - Applies armor-provided models for torso, arms, legs, etc.
+  - Head is not overridden (matching NWN behavior)
 
 #### Changed
 - **Startup performance** - Moved GameDataService and panel initialization from constructor to `Opened` event, runs on background thread. Cache and item loading run in parallel. Window appears in ~1.9s instead of ~18 seconds.
