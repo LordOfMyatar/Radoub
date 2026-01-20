@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Avalonia;
 using Avalonia.Controls;
@@ -407,69 +408,57 @@ public class ModelPreviewControl : Control
             }
             else
             {
-                // Solid flat-shaded rendering with depth sorting
-                var allFaces = new List<(MdlTrimeshNode mesh, int faceIndex, float depth, SKPoint[] points, Vector3 normal)>();
+                // Textured rendering with depth sorting
+                var allFaces = new List<TexturedFace>();
 
                 foreach (var mesh in _model.GetMeshNodes())
                 {
-                    CollectSortedFaces(mesh, rotationMatrix, screenCenterX, screenCenterY, scale, allFaces);
+                    CollectTexturedFaces(mesh, rotationMatrix, screenCenterX, screenCenterY, scale, lightDir, allFaces);
                 }
 
                 // Sort by depth (painter's algorithm - draw far faces first)
-                allFaces.Sort((a, b) => b.depth.CompareTo(a.depth));
+                allFaces.Sort((a, b) => b.Depth.CompareTo(a.Depth));
 
-                using var fillPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
-
-                foreach (var (mesh, faceIndex, depth, points, normal) in allFaces)
+                // Group faces by texture for batched rendering
+                var facesByTexture = new Dictionary<string, List<TexturedFace>>();
+                foreach (var face in allFaces)
                 {
-                    // Calculate lighting
-                    var rotatedNormal = Vector3.TransformNormal(normal, rotationMatrix);
-                    var lightIntensity = Math.Max(0.2f, Vector3.Dot(rotatedNormal, lightDir));
+                    var key = face.TextureName ?? "";
+                    if (!facesByTexture.ContainsKey(key))
+                        facesByTexture[key] = new List<TexturedFace>();
+                    facesByTexture[key].Add(face);
+                }
 
-                    // Get base color from texture or material
-                    var baseColor = GetMeshColor(mesh);
-                    var r = (byte)Math.Clamp(baseColor.Red * lightIntensity, 0, 255);
-                    var g = (byte)Math.Clamp(baseColor.Green * lightIntensity, 0, 255);
-                    var b = (byte)Math.Clamp(baseColor.Blue * lightIntensity, 0, 255);
+                // Render each texture group
+                foreach (var (textureName, faces) in facesByTexture.OrderByDescending(kvp => kvp.Value.Max(f => f.Depth)))
+                {
+                    SKBitmap? texture = null;
+                    if (!string.IsNullOrEmpty(textureName))
+                        _textures.TryGetValue(textureName, out texture);
 
-                    fillPaint.Color = new SKColor(r, g, b);
-
-                    // Draw filled triangle
-                    using var path = new SKPath();
-                    path.MoveTo(points[0]);
-                    path.LineTo(points[1]);
-                    path.LineTo(points[2]);
-                    path.Close();
-                    canvas.DrawPath(path, fillPaint);
+                    RenderTexturedFaces(canvas, faces, texture);
                 }
             }
 
             canvas.Restore();
         }
 
-        private SKColor GetMeshColor(MdlTrimeshNode mesh)
+        /// <summary>
+        /// Represents a face with all data needed for textured rendering.
+        /// </summary>
+        private struct TexturedFace
         {
-            // Try to get average color from texture
-            var textureName = mesh.Bitmap?.ToLowerInvariant() ?? "";
-            if (!string.IsNullOrEmpty(textureName) && _textures.TryGetValue(textureName, out var bitmap) && bitmap != null)
-            {
-                // Sample center of texture for average color
-                var centerX = bitmap.Width / 2;
-                var centerY = bitmap.Height / 2;
-                return bitmap.GetPixel(centerX, centerY);
-            }
-
-            // Fall back to mesh diffuse color
-            var d = mesh.Diffuse;
-            return new SKColor(
-                (byte)(d.X * 255),
-                (byte)(d.Y * 255),
-                (byte)(d.Z * 255));
+            public SKPoint[] ScreenPoints;
+            public SKPoint[] UVs;
+            public float Depth;
+            public float LightIntensity;
+            public string? TextureName;
+            public SKColor DiffuseColor;
         }
 
-        private void CollectSortedFaces(MdlTrimeshNode mesh, Matrix4x4 rotation,
-            float centerX, float centerY, float scale,
-            List<(MdlTrimeshNode mesh, int faceIndex, float depth, SKPoint[] points, Vector3 normal)> faces)
+        private void CollectTexturedFaces(MdlTrimeshNode mesh, Matrix4x4 rotation,
+            float centerX, float centerY, float scale, Vector3 lightDir,
+            List<TexturedFace> faces)
         {
             if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
                 return;
@@ -477,8 +466,11 @@ public class ModelPreviewControl : Control
             // Model center for rotation
             var modelCenter = (_model.BoundingMin + _model.BoundingMax) * 0.5f;
 
-            // Get mesh node's position offset (body parts have different positions)
+            // Get mesh node's position offset
             var nodePosition = mesh.Position;
+
+            // Get texture coordinates if available
+            var hasUVs = mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length == mesh.Vertices.Length;
 
             // Project vertices to screen space
             var screenPoints = new SKPoint[mesh.Vertices.Length];
@@ -486,24 +478,28 @@ public class ModelPreviewControl : Control
 
             for (int i = 0; i < mesh.Vertices.Length; i++)
             {
-                // Apply node position offset, then center on model
                 var v = mesh.Vertices[i] + nodePosition - modelCenter;
                 var rotated = Vector3.Transform(v, rotation);
                 worldPositions[i] = rotated;
 
-                // NWN uses Z-up coordinate system:
-                // X = left/right, Y = forward/back (depth), Z = up/down
-                // After rotation, Y becomes depth into screen
-                var depth = -rotated.Y + 5; // Negate Y for correct depth after rotation
+                var depth = -rotated.Y + 5;
                 if (depth < 0.1f) depth = 0.1f;
 
                 var screenX = centerX + (rotated.X / depth) * scale;
-                var screenY = centerY - (rotated.Z / depth) * scale; // - because screen Y increases down, Z increases up
+                var screenY = centerY - (rotated.Z / depth) * scale;
 
                 screenPoints[i] = new SKPoint(screenX, screenY);
             }
 
-            // Collect faces with depth info
+            // Get texture name and diffuse color
+            var textureName = mesh.Bitmap?.ToLowerInvariant();
+            var diffuse = mesh.Diffuse;
+            var diffuseColor = new SKColor(
+                (byte)(diffuse.X * 255),
+                (byte)(diffuse.Y * 255),
+                (byte)(diffuse.Z * 255));
+
+            // Collect faces
             for (int faceIdx = 0; faceIdx < mesh.Faces.Length; faceIdx++)
             {
                 var face = mesh.Faces[faceIdx];
@@ -516,25 +512,112 @@ public class ModelPreviewControl : Control
                 var p1 = screenPoints[face.VertexIndex1];
                 var p2 = screenPoints[face.VertexIndex2];
 
-                // Backface culling (reversed due to Y flip)
+                // Backface culling
                 var cross = (p1.X - p0.X) * (p2.Y - p0.Y) - (p1.Y - p0.Y) * (p2.X - p0.X);
                 if (cross > 0) continue;
 
-                // Average depth for sorting (negated Y is depth after rotation)
+                // Average depth for sorting
                 var avgDepth = -(worldPositions[face.VertexIndex0].Y +
                                 worldPositions[face.VertexIndex1].Y +
                                 worldPositions[face.VertexIndex2].Y) / 3f;
 
-                // Calculate face normal
+                // Calculate face normal and lighting
                 var v0 = mesh.Vertices[face.VertexIndex0];
                 var v1 = mesh.Vertices[face.VertexIndex1];
                 var v2 = mesh.Vertices[face.VertexIndex2];
                 var edge1 = v1 - v0;
                 var edge2 = v2 - v0;
                 var normal = Vector3.Normalize(Vector3.Cross(edge1, edge2));
+                var rotatedNormal = Vector3.TransformNormal(normal, rotation);
+                var lightIntensity = Math.Max(0.3f, Vector3.Dot(rotatedNormal, lightDir));
 
-                faces.Add((mesh, faceIdx, avgDepth, new[] { p0, p1, p2 }, normal));
+                // Get UVs for this face
+                SKPoint[] uvs;
+                if (hasUVs)
+                {
+                    var texCoords = mesh.TextureCoords[0];
+                    uvs = new[]
+                    {
+                        new SKPoint(texCoords[face.VertexIndex0].X, texCoords[face.VertexIndex0].Y),
+                        new SKPoint(texCoords[face.VertexIndex1].X, texCoords[face.VertexIndex1].Y),
+                        new SKPoint(texCoords[face.VertexIndex2].X, texCoords[face.VertexIndex2].Y)
+                    };
+                }
+                else
+                {
+                    // Default UVs if none available
+                    uvs = new[] { new SKPoint(0, 0), new SKPoint(1, 0), new SKPoint(0.5f, 1) };
+                }
+
+                faces.Add(new TexturedFace
+                {
+                    ScreenPoints = new[] { p0, p1, p2 },
+                    UVs = uvs,
+                    Depth = avgDepth,
+                    LightIntensity = lightIntensity,
+                    TextureName = textureName,
+                    DiffuseColor = diffuseColor
+                });
             }
+        }
+
+        private void RenderTexturedFaces(SKCanvas canvas, List<TexturedFace> faces, SKBitmap? texture)
+        {
+            if (faces.Count == 0) return;
+
+            // Build vertex arrays for SKVertices
+            var positions = new List<SKPoint>();
+            var texCoords = new List<SKPoint>();
+            var colors = new List<SKColor>();
+            var indices = new List<ushort>();
+
+            ushort vertexIndex = 0;
+            foreach (var face in faces)
+            {
+                // Apply lighting to colors
+                var lit = ApplyLighting(face.DiffuseColor, face.LightIntensity);
+
+                // Add three vertices for the triangle
+                for (int i = 0; i < 3; i++)
+                {
+                    positions.Add(face.ScreenPoints[i]);
+                    texCoords.Add(face.UVs[i]);
+                    colors.Add(lit);
+                    indices.Add(vertexIndex++);
+                }
+            }
+
+            // Create vertices with texture coordinates
+            using var vertices = SKVertices.CreateCopy(
+                SKVertexMode.Triangles,
+                positions.ToArray(),
+                texCoords.ToArray(),
+                colors.ToArray(),
+                indices.ToArray());
+
+            using var paint = new SKPaint { IsAntialias = true };
+
+            if (texture != null)
+            {
+                // Create shader from texture with proper UV mapping
+                using var shader = SKShader.CreateBitmap(
+                    texture,
+                    SKShaderTileMode.Repeat,
+                    SKShaderTileMode.Repeat,
+                    SKMatrix.CreateScale(texture.Width, texture.Height));
+                paint.Shader = shader;
+            }
+
+            canvas.DrawVertices(vertices, SKBlendMode.Modulate, paint);
+        }
+
+        private static SKColor ApplyLighting(SKColor baseColor, float intensity)
+        {
+            return new SKColor(
+                (byte)Math.Clamp(baseColor.Red * intensity, 0, 255),
+                (byte)Math.Clamp(baseColor.Green * intensity, 0, 255),
+                (byte)Math.Clamp(baseColor.Blue * intensity, 0, 255),
+                baseColor.Alpha);
         }
 
         private void DrawMeshWireframe(SKCanvas canvas, MdlTrimeshNode mesh,
