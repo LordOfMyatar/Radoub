@@ -27,12 +27,17 @@ Performance improvements for item palette - caching, background loading, and res
   - Subsequent loads are near-instant from cache
 - **Background cache building** - Full cache built on background thread
   - No UI updates during cache build
-  - Items loaded into UI in single batch when navigating to Inventory
+  - Standard items loaded first (visible immediately with default filter)
+- **Batched UI loading** - Items added in batches of 100 with yields
+  - UI remains responsive during palette population
+  - Progress shown in status bar
+- **Filter defaults** - "Show Custom" unchecked by default (CEP adds thousands)
 
 #### Fixed
 - **Tab unresponsiveness** - Clicking sidebar tabs during palette loading no longer blocks
   - Root cause: Background item loading was posting batch updates to UI thread
   - Fix: Defer all UI population until user navigates to Inventory panel
+- **Palette persists across files** - Palette no longer disappears when opening second creature file
 
 ---
 
