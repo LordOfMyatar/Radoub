@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.4-alpha] - 2026-01-20
-**Branch**: `fence/issue-958` | **PR**: #TBD
+**Branch**: `fence/issue-958` | **PR**: #1033
 
 ### Fix: File loading delayed ~8 seconds (#958)
 
