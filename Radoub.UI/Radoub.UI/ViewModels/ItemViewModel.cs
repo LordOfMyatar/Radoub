@@ -9,10 +9,17 @@ namespace Radoub.UI.ViewModels;
 /// <summary>
 /// ViewModel for displaying an item in a DataGrid.
 /// Wraps UtiFile data with display-friendly properties.
+/// Can be created from cached data (without full UtiFile) for performance.
 /// </summary>
 public partial class ItemViewModel : ObservableObject
 {
-    private readonly UtiFile _item;
+    private readonly UtiFile? _item;
+
+    // For cache-loaded items that don't have full UtiFile data
+    private readonly string? _cachedResRef;
+    private readonly string? _cachedTag;
+    private readonly int _cachedBaseItem;
+    private readonly uint _cachedValue;
 
     /// <summary>
     /// Creates a new ItemViewModel wrapping a UtiFile.
@@ -37,6 +44,18 @@ public partial class ItemViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Creates a cache-loaded ItemViewModel without full UtiFile data.
+    /// Used for displaying items in palettes where full data isn't needed.
+    /// </summary>
+    public ItemViewModel()
+    {
+        Name = string.Empty;
+        BaseItemName = string.Empty;
+        PropertiesDisplay = string.Empty;
+        Source = GameResourceSource.Bif;
+    }
+
+    /// <summary>
     /// Creates a new ItemViewModel for a backpack item with inventory metadata.
     /// </summary>
     public ItemViewModel(
@@ -58,49 +77,65 @@ public partial class ItemViewModel : ObservableObject
     }
 
     /// <summary>
-    /// The underlying item data.
+    /// The underlying item data. May be null for cache-loaded items.
     /// </summary>
-    public UtiFile Item => _item;
+    public UtiFile? Item => _item;
 
     /// <summary>
     /// Display name resolved from TLK or LocalizedName.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; set; }
 
     /// <summary>
     /// Blueprint resource reference (filename without extension).
     /// </summary>
-    public string ResRef => _item.TemplateResRef;
+    public string ResRef
+    {
+        get => _item?.TemplateResRef ?? _cachedResRef ?? string.Empty;
+        init => _cachedResRef = value;
+    }
 
     /// <summary>
     /// Item tag for scripting reference.
     /// </summary>
-    public string Tag => _item.Tag;
+    public string Tag
+    {
+        get => _item?.Tag ?? _cachedTag ?? string.Empty;
+        init => _cachedTag = value;
+    }
 
     /// <summary>
     /// Base item type name (e.g., "Longsword", "Ring", "Amulet").
     /// </summary>
-    public string BaseItemName { get; }
+    public string BaseItemName { get; set; }
 
     /// <summary>
     /// Base item type index into baseitems.2da.
     /// </summary>
-    public int BaseItem => _item.BaseItem;
+    public int BaseItem
+    {
+        get => _item?.BaseItem ?? _cachedBaseItem;
+        init => _cachedBaseItem = value;
+    }
 
     /// <summary>
     /// Item value (Cost + AddCost).
     /// </summary>
-    public uint Value => _item.Cost + _item.AddCost;
+    public uint Value
+    {
+        get => _item != null ? _item.Cost + _item.AddCost : _cachedValue;
+        init => _cachedValue = value;
+    }
 
     /// <summary>
     /// Formatted display of item properties.
     /// </summary>
-    public string PropertiesDisplay { get; }
+    public string PropertiesDisplay { get; set; }
 
     /// <summary>
     /// Number of item properties.
     /// </summary>
-    public int PropertyCount => _item.Properties.Count;
+    public int PropertyCount => _item?.Properties.Count ?? 0;
 
     /// <summary>
     /// Selection state for checkbox column.
@@ -111,22 +146,22 @@ public partial class ItemViewModel : ObservableObject
     /// <summary>
     /// Stack size for stackable items.
     /// </summary>
-    public ushort StackSize => _item.StackSize;
+    public ushort StackSize => _item?.StackSize ?? 1;
 
     /// <summary>
     /// True if item is a plot item.
     /// </summary>
-    public bool IsPlot => _item.Plot;
+    public bool IsPlot => _item?.Plot ?? false;
 
     /// <summary>
     /// True if item is cursed (undroppable).
     /// </summary>
-    public bool IsCursed => _item.Cursed;
+    public bool IsCursed => _item?.Cursed ?? false;
 
     /// <summary>
     /// Source of the item resource.
     /// </summary>
-    public GameResourceSource Source { get; }
+    public GameResourceSource Source { get; init; }
 
     /// <summary>
     /// True if item is from base game (BIF).
@@ -172,7 +207,7 @@ public partial class ItemViewModel : ObservableObject
         get
         {
             // Lazy load on first access
-            if (!_iconLoaded && _iconLoader != null)
+            if (!_iconLoaded && _iconLoader != null && _item != null)
             {
                 _iconLoaded = true;
                 try

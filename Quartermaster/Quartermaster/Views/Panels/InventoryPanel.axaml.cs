@@ -137,7 +137,7 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     {
         _equipmentPanel?.ClearAllSlots();
         _backpackItems.Clear();
-        _paletteItems.Clear();
+        // Don't clear palette - it's shared game data, not per-creature
         HasBackpackSelection = false;
         HasPaletteSelection = false;
     }

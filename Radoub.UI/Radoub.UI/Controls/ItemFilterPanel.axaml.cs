@@ -46,9 +46,10 @@ public partial class ItemFilterPanel : UserControl
 
     /// <summary>
     /// Show items from module/HAK (Custom).
+    /// Default false - custom items can be numerous (CEP adds thousands).
     /// </summary>
     public static readonly StyledProperty<bool> ShowCustomProperty =
-        AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowCustom), defaultValue: true);
+        AvaloniaProperty.Register<ItemFilterPanel, bool>(nameof(ShowCustom), defaultValue: false);
 
     /// <summary>
     /// Available item types for filtering.

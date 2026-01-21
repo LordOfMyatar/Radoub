@@ -2,7 +2,9 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
+using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
+using Quartermaster.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,33 +16,229 @@ namespace Quartermaster.Views;
 
 /// <summary>
 /// MainWindow partial class for item palette population.
-/// Handles background loading of game items from BIF archives.
+/// Uses on-demand loading - items are loaded when user navigates to Inventory panel.
+/// Cache is built in background on startup for fast subsequent access.
 /// </summary>
 public partial class MainWindow
 {
-    // Cancellation token for background palette loading
-    private CancellationTokenSource? _paletteLoadCts;
-    private const int PaletteBatchSize = 50;
+    // Palette cache service for disk caching
+    private readonly PaletteCacheService _paletteCacheService = new();
+
+    // Cancellation token for background cache building
+    private CancellationTokenSource? _paletteCacheCts;
+
+    // Track loaded state
+    private List<CachedPaletteItem>? _cachedPaletteData;
+    private bool _paletteLoaded;
 
     /// <summary>
-    /// Starts loading game items (BIF) in background. Called on app startup.
+    /// Initialize palette loading - pre-warm cache in background but don't populate UI.
+    /// Called on app startup.
     /// </summary>
     public void StartGameItemsLoad()
     {
         if (!_gameDataService.IsConfigured)
+        {
+            UnifiedLogger.LogInventory(LogLevel.WARN, "Item palette unavailable - GameDataService not configured");
             return;
+        }
 
-        _paletteLoadCts?.Cancel();
-        _paletteLoadCts = new CancellationTokenSource();
-
-        UnifiedLogger.LogInventory(LogLevel.INFO, "Starting background load for game items...");
-        _ = LoadGameItemsAsync(_paletteLoadCts.Token);
+        // Pre-warm cache in background (non-blocking)
+        _ = PreWarmCacheAsync();
     }
 
     /// <summary>
-    /// Populates the item palette from multiple sources:
-    /// 1. Module directory (loose UTI files) - loaded synchronously
-    /// 2. Base game BIF archives - continues loading in background if not already done
+    /// Pre-warm the cache in background so it's ready when user navigates to Inventory.
+    /// Does NOT populate the UI - that happens on-demand.
+    /// </summary>
+    private async Task PreWarmCacheAsync()
+    {
+        try
+        {
+            if (_paletteCacheService.HasValidCache())
+            {
+                // Load existing cache into memory
+                _cachedPaletteData = await Task.Run(() => _paletteCacheService.LoadCache());
+                if (_cachedPaletteData != null)
+                {
+                    UnifiedLogger.LogInventory(LogLevel.INFO, $"Cache pre-warmed: {_cachedPaletteData.Count} items ready");
+                    return;
+                }
+            }
+
+            // No valid cache - build it in background
+            UnifiedLogger.LogInventory(LogLevel.INFO, "Building palette cache in background...");
+            await BuildCacheInBackgroundAsync();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogInventory(LogLevel.WARN, $"Cache pre-warm failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Build the full cache in background without displaying items.
+    /// This runs entirely on background threads until complete.
+    /// </summary>
+    private async Task BuildCacheInBackgroundAsync()
+    {
+        _paletteCacheCts?.Cancel();
+        _paletteCacheCts = new CancellationTokenSource();
+        var token = _paletteCacheCts.Token;
+
+        var cacheItems = new List<CachedPaletteItem>();
+
+        await Task.Run(() =>
+        {
+            var gameResources = _gameDataService.ListResources(ResourceTypes.Uti).ToList();
+            var existingResRefs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Building cache from {gameResources.Count} UTI resources...");
+
+            foreach (var resourceInfo in gameResources)
+            {
+                if (token.IsCancellationRequested)
+                    break;
+
+                if (existingResRefs.Contains(resourceInfo.ResRef))
+                    continue;
+
+                try
+                {
+                    var utiData = _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti);
+                    if (utiData != null)
+                    {
+                        var item = UtiReader.Read(utiData);
+                        var displayName = _itemViewModelFactory.GetItemDisplayName(item);
+                        var baseItemTypeName = _itemViewModelFactory.GetBaseItemTypeName(item.BaseItem);
+
+                        cacheItems.Add(new CachedPaletteItem
+                        {
+                            ResRef = resourceInfo.ResRef,
+                            DisplayName = displayName,
+                            BaseItemTypeName = baseItemTypeName,
+                            BaseItemType = item.BaseItem,
+                            BaseValue = item.Cost,
+                            IsStandard = resourceInfo.Source == GameResourceSource.Bif
+                        });
+                        existingResRefs.Add(resourceInfo.ResRef);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to cache item {resourceInfo.ResRef}: {ex.Message}");
+                }
+            }
+        }, token);
+
+        if (!token.IsCancellationRequested)
+        {
+            // Save cache to disk
+            await _paletteCacheService.SaveCacheAsync(cacheItems);
+            _cachedPaletteData = cacheItems;
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Background cache complete: {cacheItems.Count} items");
+        }
+    }
+
+    // Batch size for UI updates - small enough to keep UI responsive
+    private const int UIBatchSize = 100;
+
+    /// <summary>
+    /// Load palette items into the UI. Called when user navigates to Inventory panel.
+    /// Uses cached data if available, otherwise waits for cache to be ready.
+    /// Adds items in small batches to keep UI responsive.
+    /// </summary>
+    public async Task LoadPaletteItemsAsync()
+    {
+        if (_paletteLoaded)
+            return;
+
+        UpdateStatus("Loading item palette...");
+
+        try
+        {
+            // Wait for cache if not ready
+            if (_cachedPaletteData == null)
+            {
+                await PreWarmCacheAsync();
+            }
+
+            if (_cachedPaletteData == null)
+            {
+                UpdateStatus("Ready (no items available)");
+                _paletteLoaded = true;
+                return;
+            }
+
+            // Load standard items first (visible immediately), then custom items
+            // Filter defaults to hiding custom, so users see fast initial load
+            var standardItems = _cachedPaletteData.Where(i => i.IsStandard).ToList();
+            var customItems = _cachedPaletteData.Where(i => !i.IsStandard).ToList();
+            var allItems = standardItems.Concat(customItems).ToList();
+            var totalItems = allItems.Count;
+            var loadedCount = 0;
+
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Loading {standardItems.Count} standard + {customItems.Count} custom items");
+
+            // Add items in small batches to keep UI responsive
+            for (int i = 0; i < totalItems; i += UIBatchSize)
+            {
+                var batch = allItems.Skip(i).Take(UIBatchSize).ToList();
+
+                // Create view models on background thread
+                var viewModels = await Task.Run(() =>
+                {
+                    var vms = new List<ItemViewModel>(batch.Count);
+                    foreach (var cached in batch)
+                    {
+                        vms.Add(new ItemViewModel
+                        {
+                            ResRef = cached.ResRef,
+                            Name = cached.DisplayName,
+                            BaseItemName = cached.BaseItemTypeName,
+                            BaseItem = cached.BaseItemType,
+                            Value = cached.BaseValue,
+                            Tag = cached.ResRef,
+                            PropertiesDisplay = string.Empty,
+                            Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
+                        });
+                    }
+                    return vms;
+                });
+
+                // Add batch to UI
+                foreach (var vm in viewModels)
+                {
+                    InventoryPanelContent.PaletteItems.Add(vm);
+                }
+
+                loadedCount += viewModels.Count;
+
+                // Update status periodically
+                if (i % 500 == 0 || loadedCount >= totalItems)
+                {
+                    UpdateStatus($"Loading items... {loadedCount:N0} / {totalItems:N0}");
+                }
+
+                // Yield to UI thread to process events (clicks, repaints)
+                await Task.Delay(1);
+            }
+
+            _paletteLoaded = true;
+            UpdateStatus($"Ready - {totalItems:N0} items loaded");
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {totalItems} items");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogInventory(LogLevel.ERROR, $"Failed to load palette: {ex.Message}");
+            UpdateStatus("Ready (palette load failed)");
+            _paletteLoaded = true;
+        }
+    }
+
+    /// <summary>
+    /// Populates the item palette from module directory (loose UTI files).
+    /// Called when a creature file is loaded.
     /// </summary>
     private void PopulateItemPalette()
     {
@@ -82,111 +280,21 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Loads game items (Override + BIF) in batches to avoid blocking UI.
-    /// All heavy work runs on background thread; only UI updates touch dispatcher.
+    /// Clear and reload the palette cache. Called from Settings.
     /// </summary>
-    private async Task LoadGameItemsAsync(CancellationToken cancellationToken)
+    public void ClearAndReloadPaletteCache()
     {
-        try
-        {
-            // Capture existing resrefs on UI thread first
-            var existingResRefs = new HashSet<string>(
-                InventoryPanelContent.PaletteItems.Select(p => p.ResRef),
-                StringComparer.OrdinalIgnoreCase);
-
-            var gameItemCount = 0;
-
-            // Run ALL heavy work on background thread
-            await Task.Run(async () =>
-            {
-                var gameResources = _gameDataService.ListResources(ResourceTypes.Uti).ToList();
-                UnifiedLogger.LogInventory(LogLevel.INFO, $"Found {gameResources.Count} UTI resources to load");
-
-                var batch = new List<ItemViewModel>();
-
-                foreach (var resourceInfo in gameResources)
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
-
-                    if (existingResRefs.Contains(resourceInfo.ResRef))
-                        continue;
-
-                    try
-                    {
-                        // FindResource and UtiReader.Read are the expensive parts
-                        var utiData = _gameDataService.FindResource(resourceInfo.ResRef, ResourceTypes.Uti);
-
-                        if (utiData != null)
-                        {
-                            var item = UtiReader.Read(utiData);
-                            var viewModel = _itemViewModelFactory.Create(item, resourceInfo.Source);
-                            SetupLazyIconLoading(viewModel);
-                            batch.Add(viewModel);
-                            existingResRefs.Add(resourceInfo.ResRef);
-                            gameItemCount++;
-
-                            // Larger batches = fewer UI interruptions
-                            if (batch.Count >= PaletteBatchSize * 4)
-                            {
-                                var batchCopy = batch.ToList();
-                                batch.Clear();
-
-                                await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                                {
-                                    foreach (var vm in batchCopy)
-                                    {
-                                        InventoryPanelContent.PaletteItems.Add(vm);
-                                    }
-                                });
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Failed to load UTI {resourceInfo.ResRef}: {ex.Message}");
-                    }
-                }
-
-                // Add remaining items
-                if (batch.Count > 0 && !cancellationToken.IsCancellationRequested)
-                {
-                    var finalBatch = batch.ToList();
-                    await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        foreach (var vm in finalBatch)
-                        {
-                            InventoryPanelContent.PaletteItems.Add(vm);
-                        }
-                    });
-                }
-            }, cancellationToken);
-
-            if (!cancellationToken.IsCancellationRequested)
-            {
-                UnifiedLogger.LogInventory(LogLevel.INFO, $"Background load complete: {gameItemCount} game items added to palette");
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Palette loading cancelled");
-        }
-        catch (Exception ex)
-        {
-            UnifiedLogger.LogInventory(LogLevel.ERROR, $"Error loading game items: {ex.Message}");
-        }
+        _paletteCacheService.ClearCache();
+        _cachedPaletteData = null;
+        _paletteLoaded = false;
+        InventoryPanelContent.PaletteItems.Clear();
+        StartGameItemsLoad();
     }
 
-    private async Task AddBatchToUIAsync(List<ItemViewModel> batch)
-    {
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-        {
-            foreach (var item in batch)
-            {
-                InventoryPanelContent.PaletteItems.Add(item);
-            }
-        });
-    }
+    /// <summary>
+    /// Get cache info for display in Settings.
+    /// </summary>
+    public CacheInfo? GetPaletteCacheInfo() => _paletteCacheService.GetCacheInfo();
 
     /// <summary>
     /// Sets up lazy icon loading for an item ViewModel.
