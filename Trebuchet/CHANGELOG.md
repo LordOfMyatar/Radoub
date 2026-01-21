@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.0-alpha] - 2026-01-20
+**Branch**: `trebuchet/issue-953` | **PR**: #TBD
+
+### Feature: Module Editing (IFO Files)
+
+- Add module editing capability for IFO (module info) files
+- Load IFO files from modules (.mod) or directories
+- Edit module properties (name, description, tag, etc.)
+- Set/get module-level local variables
+- Save changes back to IFO format
+
+---
+
 ## [1.1.0-alpha] - 2026-01-20
 **Branch**: `trebuchet/issue-951` | **PR**: #1025
 
