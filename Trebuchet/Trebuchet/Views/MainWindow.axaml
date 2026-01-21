@@ -33,6 +33,10 @@
                     <Button Content="Open..."
                             Command="{Binding OpenModuleCommand}"
                             Padding="8,4"/>
+                    <Button Content="Edit..."
+                            Command="{Binding OpenModuleEditorCommand}"
+                            Padding="8,4"
+                            ToolTip.Tip="Edit module settings (IFO)"/>
                 </StackPanel>
 
                 <!-- Settings and Help Buttons -->
