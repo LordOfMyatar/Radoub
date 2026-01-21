@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.5-alpha] - 2026-01-21
-**Branch**: `fence/issue-1040` | **PR**: #TBD
+**Branch**: `fence/issue-1040` | **PR**: #1041
 
 ### Sprint: Fence Completion - Scripts, Variables & Polish (#1040)
 
