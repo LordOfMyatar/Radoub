@@ -385,6 +385,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var categoryIndex = _storeCategories.FindIndex(c => c.Id == _currentStore.PaletteID);
         StoreCategoryBox.SelectedIndex = categoryIndex >= 0 ? categoryIndex : 0;
 
+        // Scripts and comment
+        OnOpenStoreBox.Text = _currentStore.OnOpenStore;
+        OnStoreClosedBox.Text = _currentStore.OnStoreClosed;
+        CommentBox.Text = _currentStore.Comment;
+
         // Populate buy restrictions
         PopulateBuyRestrictions();
     }

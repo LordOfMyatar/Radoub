@@ -264,6 +264,11 @@ public partial class MainWindow
             ? _storeCategories[selectedCategoryIndex].Id
             : (byte)0;
 
+        // Update scripts and comment
+        _currentStore.OnOpenStore = OnOpenStoreBox.Text ?? "";
+        _currentStore.OnStoreClosed = OnStoreClosedBox.Text ?? "";
+        _currentStore.Comment = CommentBox.Text ?? "";
+
         // Update buy restrictions
         UpdateBuyRestrictions();
 

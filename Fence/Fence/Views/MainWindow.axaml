@@ -60,6 +60,8 @@
             <Grid.RowDefinitions>
                 <!-- Store Properties -->
                 <RowDefinition Height="Auto"/>
+                <!-- Scripts & Comment (collapsible) -->
+                <RowDefinition Height="Auto"/>
                 <!-- Buy Restrictions (collapsible) -->
                 <RowDefinition Height="Auto"/>
                 <!-- Local Variables (collapsible) -->
@@ -130,8 +132,59 @@
                 </Grid>
             </Border>
 
+            <!-- Scripts & Comment Panel -->
+            <Expander Grid.Row="1" Header="Scripts &amp; Comment" IsExpanded="False" Margin="0,0,0,8"
+                      AutomationProperties.AutomationId="ScriptsExpander">
+                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Row 0: OnOpenStore script -->
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="OnOpenStore:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" x:Name="OnOpenStoreBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
+                                 AutomationProperties.AutomationId="OnOpenStoreBox"/>
+                        <Button Grid.Row="0" Grid.Column="2" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseOpenScript"
+                                ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseOpenScriptButton"/>
+                        <Button Grid.Row="0" Grid.Column="3" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearOpenScript"
+                                ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearOpenScriptButton"/>
+
+                        <!-- Row 0: OnStoreClosed script -->
+                        <TextBlock Grid.Row="0" Grid.Column="5" Text="OnStoreClosed:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Grid.Row="0" Grid.Column="6" x:Name="OnStoreClosedBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
+                                 AutomationProperties.AutomationId="OnStoreClosedBox"/>
+                        <Button Grid.Row="0" Grid.Column="7" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseClosedScript"
+                                ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseClosedScriptButton"/>
+                        <Button Grid.Row="0" Grid.Column="8" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearClosedScript"
+                                ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearClosedScriptButton"/>
+
+                        <!-- Row 1: Comment field -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Comment:" VerticalAlignment="Top" Margin="0,12,8,0"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="9" x:Name="CommentBox"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="120"
+                                 Watermark="Developer notes..." Margin="0,8,0,0"
+                                 AutomationProperties.AutomationId="CommentBox"/>
+                    </Grid>
+                </Border>
+            </Expander>
+
             <!-- Buy Restrictions Panel -->
-            <Expander Grid.Row="1" Header="Buy Restrictions" IsExpanded="False" Margin="0,0,0,8"
+            <Expander Grid.Row="2" Header="Buy Restrictions" IsExpanded="False" Margin="0,0,0,8"
                       AutomationProperties.AutomationId="BuyRestrictionsExpander">
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
                     <Grid>
@@ -182,7 +235,7 @@
             </Expander>
 
             <!-- Local Variables Panel -->
-            <Expander Grid.Row="2" Header="Local Variables" IsExpanded="False" Margin="0,0,0,8"
+            <Expander Grid.Row="3" Header="Local Variables" IsExpanded="False" Margin="0,0,0,8"
                       AutomationProperties.AutomationId="VariablesExpander">
                 <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
                     <DockPanel>
@@ -244,7 +297,7 @@
             </Expander>
 
             <!-- Store Inventory and Item Palette -->
-            <Grid Grid.Row="3">
+            <Grid Grid.Row="4">
                 <Grid.ColumnDefinitions>
                     <!-- Store Inventory -->
                     <ColumnDefinition Width="*" MinWidth="300"/>

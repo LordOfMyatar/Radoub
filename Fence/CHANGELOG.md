@@ -18,9 +18,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Part of Epic #555 (Merchant Editor Tool).
 
 #### Work Items
-- [ ] #945 - Add Scripts, Variables, and Comment fields
-- [ ] #1002 - Integrate IGameDataService for item data resolution
-- [ ] #1027 - Filter out bad strref errors in TLK lookups
+- [x] #945 - Add Scripts, Variables, and Comment fields
+- [x] #1002 - Integrate IGameDataService for item data resolution (already done)
+- [x] #1027 - Filter out bad strref errors in TLK lookups
+
+#### Added
+- **Scripts & Comment expander** - New collapsible section for OnOpenStore, OnStoreClosed scripts and Comment field
+- **Script browser integration** - Browse button opens shared ScriptBrowserWindow for script selection
+- **Comment field** - Multi-line text box for developer notes (max 120px height)
+
+#### Fixed
+- **Palette category filtering** - Filter out invalid category names (DELETED, BadStrRef, PAdding, etc.)
+- **Duplicate categories** - Skip duplicate category IDs in palette loading
 
 ---
 
