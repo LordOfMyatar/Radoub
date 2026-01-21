@@ -17,6 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Continuation of performance optimization work started in 0.1.3-alpha.
 
+#### Changed
+- **Binary KEY cache format** - Reduced cache load time from 528ms to 33ms (16x faster)
+- **HAK scanning disabled by default** - Eliminates 16+ second scan of 80+ HAK files
+- **BIF metadata-only loading** - Avoids loading 500MB+ BIF files into memory
+- **Background category loading** - UI stays responsive during initialization
+
 ---
 
 ## [0.1.3-alpha] - 2026-01-19
