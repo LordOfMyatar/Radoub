@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.2.0-alpha] - 2026-01-20
-**Branch**: `trebuchet/issue-953` | **PR**: #TBD
+**Branch**: `trebuchet/issue-953` | **PR**: #1037
 
 ### Feature: Module Editing (IFO Files)
 
