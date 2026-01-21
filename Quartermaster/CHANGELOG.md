@@ -17,8 +17,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Performance improvements for item palette - caching, background loading, and responsive UI.
 
-#### Added
-- TBD
+#### Changed
+- **On-demand palette loading** - Item palette now loads only when navigating to Inventory panel, not at app startup
+  - Eliminates UI thread blocking from batch ObservableCollection updates
+  - Tab navigation is now immediately responsive
+- **Disk caching** - Item metadata cached to `~/Radoub/Quartermaster/palette_cache.json`
+  - Cache pre-warms in background on startup (no UI impact)
+  - Cache invalidates automatically when game paths change
+  - Subsequent loads are near-instant from cache
+- **Background cache building** - Full cache built on background thread
+  - No UI updates during cache build
+  - Items loaded into UI in single batch when navigating to Inventory
+
+#### Fixed
+- **Tab unresponsiveness** - Clicking sidebar tabs during palette loading no longer blocks
+  - Root cause: Background item loading was posting batch updates to UI thread
+  - Fix: Defer all UI population until user navigates to Inventory panel
 
 ---
 

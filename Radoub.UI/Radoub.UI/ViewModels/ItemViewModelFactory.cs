@@ -79,6 +79,16 @@ public class ItemViewModelFactory
         return itemsWithSource.Select(x => Create(x.item, x.source));
     }
 
+    /// <summary>
+    /// Get the display name for an item (for caching).
+    /// </summary>
+    public string GetItemDisplayName(UtiFile item) => ResolveDisplayName(item);
+
+    /// <summary>
+    /// Get the base item type name (for caching).
+    /// </summary>
+    public string GetBaseItemTypeName(int baseItem) => ResolveBaseItemName(baseItem);
+
     private string ResolveDisplayName(UtiFile item)
     {
         // Try localized name first

@@ -251,6 +251,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 break;
             case "Inventory":
                 InventoryPanelContent.IsVisible = true;
+                // Load palette items on-demand when first navigating to Inventory
+                _ = LoadPaletteItemsAsync();
                 break;
             case "Appearance":
                 AppearancePanelContent.IsVisible = true;
