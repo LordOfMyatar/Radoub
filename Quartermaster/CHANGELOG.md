@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.49-alpha] - 2026-01-20
+**Branch**: `quartermaster/issue-586` | **PR**: #TBD
+
+### Feature: Item Palette Loading and Caching (#586)
+
+Performance improvements for item palette - caching, background loading, and responsive UI.
+
+#### Added
+- TBD
+
+---
+
 ## [0.1.48-alpha] - 2026-01-20
 **Branch**: `trebuchet/issue-951` | **PR**: #1029
 
