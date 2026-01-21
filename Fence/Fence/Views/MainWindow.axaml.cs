@@ -104,10 +104,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize services on background thread - this is the expensive part
         await InitializeServicesAsync();
 
-        // Now populate UI that depends on services (must be on UI thread)
+        // Load store categories on background thread (triggers KEY cache + BIF metadata load)
+        // Then update UI on main thread
+        var categories = await System.Threading.Tasks.Task.Run(() =>
+        {
+            if (_gameDataService?.IsConfigured != true)
+                return new List<PaletteCategory>();
+
+            return _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Utm).ToList();
+        });
+
+        // Now populate UI with pre-loaded categories (fast - no I/O)
         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
-            PopulateCategoryDropdown();
+            PopulateCategoryDropdownFromList(categories);
         });
 
         // Start background loading tasks in parallel (fire-and-forget)
@@ -194,33 +204,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Populate the store category dropdown with toolset palette categories.
-    /// These are loaded from storepal.itp to support custom content (CEP, etc.).
+    /// Populate the store category dropdown from pre-loaded categories.
+    /// Categories are loaded on background thread to avoid UI blocking.
     /// </summary>
-    private void PopulateCategoryDropdown()
+    private void PopulateCategoryDropdownFromList(List<PaletteCategory> categories)
     {
         StoreCategoryBox.Items.Clear();
         _storeCategories.Clear();
 
-        // Try to load categories from storepal.itp via GameDataService
-        if (_gameDataService?.IsConfigured == true)
+        if (categories.Count > 0)
         {
-            var categories = _gameDataService.GetPaletteCategories(Radoub.Formats.Common.ResourceTypes.Utm).ToList();
-            if (categories.Count > 0)
+            // Sort by ID for consistent ordering
+            categories.Sort((a, b) => a.Id.CompareTo(b.Id));
+
+            foreach (var category in categories)
             {
-                // Sort by ID for consistent ordering
-                categories.Sort((a, b) => a.Id.CompareTo(b.Id));
-
-                foreach (var category in categories)
-                {
-                    _storeCategories.Add(category);
-                    StoreCategoryBox.Items.Add(category.Name);
-                }
-
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {categories.Count} store palette categories from storepal.itp");
-                StoreCategoryBox.SelectedIndex = 0;
-                return;
+                _storeCategories.Add(category);
+                StoreCategoryBox.Items.Add(category.Name);
             }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Populated {categories.Count} store palette categories");
+            StoreCategoryBox.SelectedIndex = 0;
+            return;
         }
 
         // Fallback to hardcoded defaults when game data unavailable
@@ -271,23 +276,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_baseItemTypeService == null) return;
 
-        // Load base item types on background thread
-        var types = await System.Threading.Tasks.Task.Run(() =>
+        // Load base item types on background thread and create view models there too
+        var viewModels = await System.Threading.Tasks.Task.Run(() =>
         {
-            return _baseItemTypeService.GetBaseItemTypes();
+            var types = _baseItemTypeService.GetBaseItemTypes();
+            return types.Select(t => new SelectableBaseItemTypeViewModel(t.BaseItemIndex, t.DisplayName)).ToList();
         });
 
-        // Update UI on main thread
-        SelectableBaseItemTypes.Clear();
-        foreach (var type in types)
+        // Update UI on main thread - batch update to avoid 575 individual collection changes
+        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
-            SelectableBaseItemTypes.Add(new SelectableBaseItemTypeViewModel(type.BaseItemIndex, type.DisplayName));
-        }
-        ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
+            SelectableBaseItemTypes.Clear();
+            foreach (var vm in viewModels)
+            {
+                SelectableBaseItemTypes.Add(vm);
+            }
+            ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
 
-        // Populate type filter after base items loaded
-        PopulateTypeFilter();
+            // Populate type filter after base items loaded
+            PopulateTypeFilter();
+        });
 
         // Don't update status here - let palette loading control the status
         // UpdateStatusBar("Ready") is called when palette loading completes

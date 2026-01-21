@@ -45,6 +45,13 @@ public class GameResourceConfig
     public bool CacheArchives { get; set; } = true;
 
     /// <summary>
+    /// Whether to scan HAK files for resources.
+    /// Default: false (disabled for performance - scanning 80+ HAKs takes 15+ seconds).
+    /// Future: Trebuchet will read module.ifo for specific HAK list.
+    /// </summary>
+    public bool EnableHakScanning { get; set; } = false;
+
+    /// <summary>
     /// Create a config for a standard NWN:EE installation.
     /// </summary>
     public static GameResourceConfig ForNwnEE(string installPath)
