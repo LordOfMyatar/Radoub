@@ -1,0 +1,408 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RadoubLauncher.ViewModels"
+        x:Class="RadoubLauncher.Views.ModuleEditorWindow"
+        x:DataType="vm:ModuleEditorViewModel"
+        Title="Module Editor - Trebuchet"
+        Width="800" Height="700"
+        MinWidth="600" MinHeight="500"
+        WindowStartupLocation="CenterOwner">
+
+    <Design.DataContext>
+        <vm:ModuleEditorViewModel/>
+    </Design.DataContext>
+
+    <DockPanel>
+        <!-- Header -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource ThemeAccentBrush}"
+                Padding="16,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Module Editor"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeAccentForeground}"
+                           VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Save"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding HasUnsavedChanges}"
+                            Padding="16,6"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource ThemeBackgroundAlt}"
+                Padding="12,8">
+            <TextBlock Text="{Binding StatusText}"
+                       Opacity="0.8"/>
+        </Border>
+
+        <!-- Loading Overlay -->
+        <Border IsVisible="{Binding IsLoading}"
+                Background="#80000000"
+                ZIndex="100">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="200"/>
+                <TextBlock Text="Loading..."
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content (tabs) -->
+        <TabControl Margin="16" IsEnabled="{Binding IsModuleLoaded}">
+            <!-- Metadata Tab -->
+            <TabItem Header="Metadata">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="8">
+                        <StackPanel>
+                            <TextBlock Text="Module Name" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding ModuleName}"
+                                     Watermark="Enter module name"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Description" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding ModuleDescription}"
+                                     AcceptsReturn="True"
+                                     Height="100"
+                                     TextWrapping="Wrap"
+                                     Watermark="Enter module description"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Tag" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding ModuleTag}"
+                                     Watermark="Module tag (max 32 characters)"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Custom TLK" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding CustomTlk}"
+                                     Watermark="Custom TLK file name (without .tlk)"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Version Tab -->
+            <TabItem Header="Version">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="8">
+                        <StackPanel>
+                            <TextBlock Text="Minimum Game Version" FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding GameVersions}"
+                                      SelectedItem="{Binding MinGameVersion}"
+                                      Width="200"/>
+                            <TextBlock Text="1.69 = Universal compatibility. Higher versions may prevent older clients from loading."
+                                       FontSize="11"
+                                       Opacity="0.7"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Required Expansions" FontWeight="SemiBold" Margin="0,16,0,8"/>
+                            <CheckBox IsChecked="{Binding RequiresSoU}"
+                                      Content="Shadows of Undrentide"/>
+                            <CheckBox IsChecked="{Binding RequiresHotU}"
+                                      Content="Hordes of the Underdark"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="XP Scale (%)" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                            <NumericUpDown Value="{Binding XpScale}"
+                                           Minimum="0"
+                                           Maximum="200"
+                                           MinWidth="120"
+                                           HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- HAK List Tab -->
+            <TabItem Header="HAK Files">
+                <Grid RowDefinitions="Auto,*,Auto" Margin="8">
+                    <TextBlock Text="HAK files (first = highest priority)"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,8"/>
+
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding HakList}"
+                             SelectedItem="{Binding SelectedHak}"
+                             MinHeight="200"/>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                        <TextBox Text="{Binding NewHakName}"
+                                 Watermark="HAK name"
+                                 Width="200"/>
+                        <Button Content="Add"
+                                Command="{Binding AddHakCommand}"/>
+                        <Button Content="Remove"
+                                Command="{Binding RemoveHakCommand}"
+                                IsEnabled="{Binding SelectedHak, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                        <Button Content="▲ Up"
+                                Command="{Binding MoveHakUpCommand}"
+                                IsEnabled="{Binding SelectedHak, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                        <Button Content="▼ Down"
+                                Command="{Binding MoveHakDownCommand}"
+                                IsEnabled="{Binding SelectedHak, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- Time Settings Tab -->
+            <TabItem Header="Time">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="8">
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,16,0">
+                                <TextBlock Text="Dawn Hour (0-23)" FontWeight="SemiBold"/>
+                                <NumericUpDown Value="{Binding DawnHour}"
+                                               Minimum="0"
+                                               Maximum="23"
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="1">
+                                <TextBlock Text="Dusk Hour (0-23)" FontWeight="SemiBold"/>
+                                <NumericUpDown Value="{Binding DuskHour}"
+                                               Minimum="0"
+                                               Maximum="23"
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,16,16,0">
+                                <TextBlock Text="Minutes per Hour" FontWeight="SemiBold"/>
+                                <NumericUpDown Value="{Binding MinutesPerHour}"
+                                               Minimum="1"
+                                               Maximum="255"
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="Start Date/Time" FontWeight="SemiBold" Margin="0,16,0,8"/>
+                        <Grid ColumnDefinitions="Auto,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,16,0">
+                                <TextBlock Text="Year"/>
+                                <NumericUpDown Value="{Binding StartYear}"
+                                               Minimum="0"
+                                               Maximum="9999"
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,16,0">
+                                <TextBlock Text="Month (1-12)"/>
+                                <NumericUpDown Value="{Binding StartMonth}"
+                                               Minimum="1"
+                                               Maximum="12"
+                                               MinWidth="100"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,16,0">
+                                <TextBlock Text="Day (1-28)"/>
+                                <NumericUpDown Value="{Binding StartDay}"
+                                               Minimum="1"
+                                               Maximum="28"
+                                               MinWidth="100"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="3">
+                                <TextBlock Text="Hour (0-23)"/>
+                                <NumericUpDown Value="{Binding StartHour}"
+                                               Minimum="0"
+                                               Maximum="23"
+                                               MinWidth="100"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Entry Point Tab -->
+            <TabItem Header="Entry Point">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="8">
+                        <StackPanel>
+                            <TextBlock Text="Starting Area" FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding AreaList}"
+                                      SelectedItem="{Binding EntryArea}"
+                                      IsEditable="True"
+                                      Width="250"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Starting Position" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                        <Grid ColumnDefinitions="Auto,Auto,Auto">
+                            <StackPanel Margin="0,0,16,0">
+                                <TextBlock Text="X"/>
+                                <NumericUpDown Value="{Binding EntryX}"
+                                               FormatString="F2"
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,16,0">
+                                <TextBlock Text="Y"/>
+                                <NumericUpDown Value="{Binding EntryY}"
+                                               FormatString="F2"
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Z"/>
+                                <NumericUpDown Value="{Binding EntryZ}"
+                                               FormatString="F2"
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Scripts Tab -->
+            <TabItem Header="Scripts">
+                <ScrollViewer>
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="8">
+                        <Grid.Styles>
+                            <Style Selector="StackPanel">
+                                <Setter Property="Margin" Value="0,0,16,12"/>
+                            </Style>
+                        </Grid.Styles>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock Text="On Module Load"/>
+                            <TextBox Text="{Binding OnModuleLoad}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="0" Grid.Column="1">
+                            <TextBlock Text="On Client Enter"/>
+                            <TextBox Text="{Binding OnClientEnter}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0">
+                            <TextBlock Text="On Client Leave"/>
+                            <TextBox Text="{Binding OnClientLeave}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1">
+                            <TextBlock Text="On Heartbeat"/>
+                            <TextBox Text="{Binding OnHeartbeat}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0">
+                            <TextBlock Text="On Acquire Item"/>
+                            <TextBox Text="{Binding OnAcquireItem}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="1">
+                            <TextBlock Text="On Activate Item"/>
+                            <TextBox Text="{Binding OnActivateItem}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Grid.Column="0">
+                            <TextBlock Text="On Unacquire Item"/>
+                            <TextBox Text="{Binding OnUnacquireItem}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Grid.Column="1">
+                            <TextBlock Text="On Player Death"/>
+                            <TextBox Text="{Binding OnPlayerDeath}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Grid.Column="0">
+                            <TextBlock Text="On Player Dying"/>
+                            <TextBox Text="{Binding OnPlayerDying}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Grid.Column="1">
+                            <TextBlock Text="On Player Rest"/>
+                            <TextBox Text="{Binding OnPlayerRest}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="5" Grid.Column="0">
+                            <TextBlock Text="On Player Equip Item"/>
+                            <TextBox Text="{Binding OnPlayerEquipItem}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="5" Grid.Column="1">
+                            <TextBlock Text="On Player Unequip Item"/>
+                            <TextBox Text="{Binding OnPlayerUnequipItem}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="6" Grid.Column="0">
+                            <TextBlock Text="On Player Level Up"/>
+                            <TextBox Text="{Binding OnPlayerLevelUp}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="6" Grid.Column="1">
+                            <TextBlock Text="On User Defined"/>
+                            <TextBox Text="{Binding OnUserDefined}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="7" Grid.Column="0">
+                            <TextBlock Text="On Spawn Button"/>
+                            <TextBox Text="{Binding OnSpawnButtonDown}" Watermark="Script ResRef"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="7" Grid.Column="1">
+                            <TextBlock Text="On Cutscene Abort"/>
+                            <TextBox Text="{Binding OnCutsceneAbort}" Watermark="Script ResRef"/>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Variables Tab -->
+            <TabItem Header="Variables">
+                <Grid RowDefinitions="*,Auto" Margin="8">
+                    <DataGrid Grid.Row="0"
+                              ItemsSource="{Binding Variables}"
+                              SelectedItem="{Binding SelectedVariable}"
+                              AutoGenerateColumns="False"
+                              CanUserResizeColumns="True"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              MinHeight="200">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name"
+                                                Binding="{Binding Name}"
+                                                Width="*"/>
+                            <DataGridTemplateColumn Header="Type" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:VariableViewModel">
+                                        <ComboBox ItemsSource="{Binding VariableTypes}"
+                                                  SelectedItem="{Binding Type}"
+                                                  HorizontalAlignment="Stretch"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Value"
+                                                Binding="{Binding ValueString}"
+                                                Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                        <Button Content="Add Variable"
+                                Command="{Binding AddVariableCommand}"/>
+                        <Button Content="Remove"
+                                Command="{Binding RemoveVariableCommand}"
+                                IsEnabled="{Binding SelectedVariable, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

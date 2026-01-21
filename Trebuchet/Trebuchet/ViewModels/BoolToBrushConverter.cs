@@ -2,27 +2,31 @@ using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using Radoub.UI.Services;
 
 namespace RadoubLauncher.ViewModels;
 
 /// <summary>
 /// Converts a boolean to a brush color.
-/// True = Green (available), False = Gray (not found)
+/// True = Theme success (green), False = Theme disabled (gray)
+/// Uses theme resources for colorblind accessibility.
 /// </summary>
 public class BoolToBrushConverter : IValueConverter
 {
     public static readonly BoolToBrushConverter Instance = new();
 
-    private static readonly IBrush AvailableBrush = new SolidColorBrush(Color.Parse("#4CAF50"));
-    private static readonly IBrush UnavailableBrush = new SolidColorBrush(Color.Parse("#9E9E9E"));
+    // Fallback for disabled (not in BrushManager)
+    private static readonly IBrush DisabledBrush = new SolidColorBrush(Color.Parse("#9E9E9E"));
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool isAvailable)
         {
-            return isAvailable ? AvailableBrush : UnavailableBrush;
+            return isAvailable
+                ? BrushManager.GetSuccessBrush()
+                : DisabledBrush;
         }
-        return UnavailableBrush;
+        return DisabledBrush;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -33,20 +37,47 @@ public class BoolToBrushConverter : IValueConverter
 
 /// <summary>
 /// Converts module validity to foreground color.
-/// True = White (valid), False = Warning yellow (invalid)
+/// True = White (valid), False = Warning (invalid)
+/// Uses theme resources for colorblind accessibility.
 /// </summary>
 public class ModuleValidityToForegroundConverter : IValueConverter
 {
     public static readonly ModuleValidityToForegroundConverter Instance = new();
 
     private static readonly IBrush ValidBrush = new SolidColorBrush(Colors.White);
-    private static readonly IBrush InvalidBrush = new SolidColorBrush(Color.Parse("#FFCC00"));
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool isValid)
         {
-            return isValid ? ValidBrush : InvalidBrush;
+            return isValid ? ValidBrush : BrushManager.GetWarningBrush();
+        }
+        return ValidBrush;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+/// <summary>
+/// Converts module validity to background color for the module name badge.
+/// True = Semi-transparent dark (valid), False = Theme warning (invalid)
+/// Uses theme resources for colorblind accessibility.
+/// </summary>
+public class ModuleValidityToBgConverter : IValueConverter
+{
+    public static readonly ModuleValidityToBgConverter Instance = new();
+
+    // Semi-transparent dark for valid (visible contrast against accent header)
+    private static readonly IBrush ValidBrush = new SolidColorBrush(Color.Parse("#80000000"));
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isValid)
+        {
+            return isValid ? ValidBrush : BrushManager.GetWarningBrush();
         }
         return ValidBrush;
     }

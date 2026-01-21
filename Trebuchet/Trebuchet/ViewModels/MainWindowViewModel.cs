@@ -275,6 +275,16 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void OpenModuleEditor()
+    {
+        if (_parentWindow == null) return;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Opening module editor");
+        var editorWindow = new ModuleEditorWindow();
+        editorWindow.Show(_parentWindow);  // Non-modal editor window
+    }
+
+    [RelayCommand]
     private void OpenAbout()
     {
         if (_parentWindow == null) return;
