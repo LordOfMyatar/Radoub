@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.5-alpha] - 2026-01-21
+**Branch**: `fence/issue-1040` | **PR**: #TBD
+
+### Sprint: Fence Completion - Scripts, Variables & Polish (#1040)
+
+Part of Epic #555 (Merchant Editor Tool).
+
+#### Work Items
+- [ ] #945 - Add Scripts, Variables, and Comment fields
+- [ ] #1002 - Integrate IGameDataService for item data resolution
+- [ ] #1027 - Filter out bad strref errors in TLK lookups
+
+---
+
 ## [0.1.4-alpha] - 2026-01-20
 **Branch**: `fence/issue-958` | **PR**: #1033
 
