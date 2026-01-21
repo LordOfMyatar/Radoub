@@ -118,7 +118,8 @@
                             <NumericUpDown Value="{Binding XpScale}"
                                            Minimum="0"
                                            Maximum="200"
-                                           Width="100"/>
+                                           MinWidth="120"
+                                           HorizontalAlignment="Left"/>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -165,7 +166,8 @@
                                 <NumericUpDown Value="{Binding DawnHour}"
                                                Minimum="0"
                                                Maximum="23"
-                                               Width="100"/>
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
 
                             <StackPanel Grid.Row="0" Grid.Column="1">
@@ -173,7 +175,8 @@
                                 <NumericUpDown Value="{Binding DuskHour}"
                                                Minimum="0"
                                                Maximum="23"
-                                               Width="100"/>
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
 
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,16,16,0">
@@ -181,7 +184,8 @@
                                 <NumericUpDown Value="{Binding MinutesPerHour}"
                                                Minimum="1"
                                                Maximum="255"
-                                               Width="100"/>
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Grid>
 
@@ -192,7 +196,8 @@
                                 <NumericUpDown Value="{Binding StartYear}"
                                                Minimum="0"
                                                Maximum="9999"
-                                               Width="100"/>
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
 
                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,16,0">
@@ -200,7 +205,8 @@
                                 <NumericUpDown Value="{Binding StartMonth}"
                                                Minimum="1"
                                                Maximum="12"
-                                               Width="80"/>
+                                               MinWidth="100"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
 
                             <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,16,0">
@@ -208,7 +214,8 @@
                                 <NumericUpDown Value="{Binding StartDay}"
                                                Minimum="1"
                                                Maximum="28"
-                                               Width="80"/>
+                                               MinWidth="100"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
 
                             <StackPanel Grid.Row="0" Grid.Column="3">
@@ -216,7 +223,8 @@
                                 <NumericUpDown Value="{Binding StartHour}"
                                                Minimum="0"
                                                Maximum="23"
-                                               Width="80"/>
+                                               MinWidth="100"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
@@ -241,19 +249,22 @@
                                 <TextBlock Text="X"/>
                                 <NumericUpDown Value="{Binding EntryX}"
                                                FormatString="F2"
-                                               Width="100"/>
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,16,0">
                                 <TextBlock Text="Y"/>
                                 <NumericUpDown Value="{Binding EntryY}"
                                                FormatString="F2"
-                                               Width="100"/>
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Z"/>
                                 <NumericUpDown Value="{Binding EntryZ}"
                                                FormatString="F2"
-                                               Width="100"/>
+                                               MinWidth="120"
+                                               HorizontalAlignment="Left"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
