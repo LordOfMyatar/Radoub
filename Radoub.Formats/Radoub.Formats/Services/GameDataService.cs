@@ -189,9 +189,7 @@ public class GameDataService : IGameDataService
     {
         var settings = RadoubSettings.Instance;
 
-        UnifiedLogger.Log(LogLevel.INFO, $"InitializeFromSettings: HasGamePaths={settings.HasGamePaths}, " +
-            $"BaseGameInstallPath='{settings.BaseGameInstallPath ?? "(null)"}', " +
-            $"NeverwinterNightsPath='{settings.NeverwinterNightsPath ?? "(null)"}'", "GameDataService", "GameData");
+        UnifiedLogger.Log(LogLevel.INFO, $"InitializeFromSettings: HasGamePaths={settings.HasGamePaths}", "GameDataService", "GameData");
 
         if (!settings.HasGamePaths)
         {
@@ -200,10 +198,6 @@ public class GameDataService : IGameDataService
         }
 
         var config = BuildConfig(settings);
-        UnifiedLogger.Log(LogLevel.INFO, $"BuildConfig: GameDataPath='{config.GameDataPath ?? "(null)"}', " +
-            $"KeyFilePath='{config.KeyFilePath ?? "(null)"}', " +
-            $"OverridePath='{config.OverridePath ?? "(null)"}'", "GameDataService", "GameData");
-
         _resolver = new GameResourceResolver(config);
 
         // Load TLK

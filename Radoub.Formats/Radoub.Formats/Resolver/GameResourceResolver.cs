@@ -204,6 +204,11 @@ public class GameResourceResolver : IDisposable
 
     private ResourceResult? FindInHaks(string resRef, ushort resourceType)
     {
+        // Skip HAK scanning if disabled (default for performance)
+        // Future: Trebuchet will read module.ifo for specific HAK list
+        if (!_config.EnableHakScanning)
+            return null;
+
         foreach (var hakPath in _config.HakPaths)
         {
             if (!File.Exists(hakPath))
@@ -226,6 +231,10 @@ public class GameResourceResolver : IDisposable
 
     private IEnumerable<ResourceInfo> ListHakResources(ushort resourceType)
     {
+        // Skip HAK scanning if disabled (default for performance)
+        if (!_config.EnableHakScanning)
+            yield break;
+
         foreach (var hakPath in _config.HakPaths)
         {
             if (!File.Exists(hakPath))
@@ -333,6 +342,7 @@ public class GameResourceResolver : IDisposable
             return;
 
         _keyIndexLoaded = true;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
 
         var keyPath = _config.KeyFilePath;
         if (string.IsNullOrEmpty(keyPath) && !string.IsNullOrEmpty(_config.GameDataPath))
@@ -346,15 +356,20 @@ public class GameResourceResolver : IDisposable
         if (_cachedKeyIndex != null)
         {
             // Cache hit - we have the index, no need to parse KEY file
+            UnifiedLogger.Log(LogLevel.INFO, $"[TIMING] KEY cache hit: {sw.ElapsedMilliseconds}ms", "GameResourceResolver", "Resolver");
             return;
         }
 
         // Cache miss - parse KEY file and save to cache
         try
         {
+            UnifiedLogger.Log(LogLevel.INFO, "[TIMING] KEY cache miss - parsing KEY file...", "GameResourceResolver", "Resolver");
+            sw.Restart();
             _keyFile = KeyReader.Read(keyPath);
+            UnifiedLogger.Log(LogLevel.INFO, $"[TIMING] KeyReader.Read: {sw.ElapsedMilliseconds}ms", "GameResourceResolver", "Resolver");
 
             // Build cache from parsed KEY file
+            sw.Restart();
             _cachedKeyIndex = new CachedKeyIndex();
 
             foreach (var bif in _keyFile.BifEntries)
@@ -376,9 +391,12 @@ public class GameResourceResolver : IDisposable
                     VariableTableIndex = entry.VariableTableIndex
                 });
             }
+            UnifiedLogger.Log(LogLevel.INFO, $"[TIMING] Build cache index: {sw.ElapsedMilliseconds}ms", "GameResourceResolver", "Resolver");
 
             // Save cache for next time
+            sw.Restart();
             KeyIndexCache.Save(keyPath, _cachedKeyIndex);
+            UnifiedLogger.Log(LogLevel.INFO, $"[TIMING] Save cache: {sw.ElapsedMilliseconds}ms", "GameResourceResolver", "Resolver");
 
             // Clear the full KeyFile - we only need the cached index now
             _keyFile = null;
@@ -396,7 +414,10 @@ public class GameResourceResolver : IDisposable
 
         try
         {
-            var bif = BifReader.Read(bifPath);
+            // Use ReadMetadataOnly instead of Read to avoid loading entire BIF into memory
+            // BIF files can be 500MB+; we only need the resource table for lookups
+            // Resource data is extracted on-demand via BifReader.ExtractResource()
+            var bif = BifReader.ReadMetadataOnly(bifPath);
             if (_config.CacheArchives)
                 _bifCache[bifPath] = bif;
             return bif;
