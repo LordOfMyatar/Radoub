@@ -140,9 +140,13 @@ public partial class MainWindow
         }
     }
 
+    // Batch size for UI updates - small enough to keep UI responsive
+    private const int UIBatchSize = 100;
+
     /// <summary>
     /// Load palette items into the UI. Called when user navigates to Inventory panel.
     /// Uses cached data if available, otherwise waits for cache to be ready.
+    /// Adds items in small batches to keep UI responsive.
     /// </summary>
     public async Task LoadPaletteItemsAsync()
     {
@@ -166,48 +170,69 @@ public partial class MainWindow
                 return;
             }
 
-            // Convert cached data to view models in one batch
-            var viewModels = new List<ItemViewModel>();
+            // Load standard items first (visible immediately), then custom items
+            // Filter defaults to hiding custom, so users see fast initial load
+            var standardItems = _cachedPaletteData.Where(i => i.IsStandard).ToList();
+            var customItems = _cachedPaletteData.Where(i => !i.IsStandard).ToList();
+            var allItems = standardItems.Concat(customItems).ToList();
+            var totalItems = allItems.Count;
+            var loadedCount = 0;
 
-            await Task.Run(() =>
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Loading {standardItems.Count} standard + {customItems.Count} custom items");
+
+            // Add items in small batches to keep UI responsive
+            for (int i = 0; i < totalItems; i += UIBatchSize)
             {
-                foreach (var cached in _cachedPaletteData)
+                var batch = allItems.Skip(i).Take(UIBatchSize).ToList();
+
+                // Create view models on background thread
+                var viewModels = await Task.Run(() =>
                 {
-                    var vm = new ItemViewModel
+                    var vms = new List<ItemViewModel>(batch.Count);
+                    foreach (var cached in batch)
                     {
-                        ResRef = cached.ResRef,
-                        Name = cached.DisplayName,
-                        BaseItemName = cached.BaseItemTypeName,
-                        BaseItem = cached.BaseItemType,
-                        Value = (uint)cached.BaseValue,
-                        Tag = cached.ResRef, // Use resref as tag for cache-loaded items
-                        PropertiesDisplay = string.Empty,
-                        Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
-                    };
-                    // Note: Icon loading requires UtiFile, so cache-loaded items use placeholder icons
-                    viewModels.Add(vm);
-                }
-            });
+                        vms.Add(new ItemViewModel
+                        {
+                            ResRef = cached.ResRef,
+                            Name = cached.DisplayName,
+                            BaseItemName = cached.BaseItemTypeName,
+                            BaseItem = cached.BaseItemType,
+                            Value = cached.BaseValue,
+                            Tag = cached.ResRef,
+                            PropertiesDisplay = string.Empty,
+                            Source = cached.IsStandard ? GameResourceSource.Bif : GameResourceSource.Override
+                        });
+                    }
+                    return vms;
+                });
 
-            // Add to UI in a single batch
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                // Add all items at once - DataGrid will virtualize
+                // Add batch to UI
                 foreach (var vm in viewModels)
                 {
                     InventoryPanelContent.PaletteItems.Add(vm);
                 }
-            });
+
+                loadedCount += viewModels.Count;
+
+                // Update status periodically
+                if (i % 500 == 0 || loadedCount >= totalItems)
+                {
+                    UpdateStatus($"Loading items... {loadedCount:N0} / {totalItems:N0}");
+                }
+
+                // Yield to UI thread to process events (clicks, repaints)
+                await Task.Delay(1);
+            }
 
             _paletteLoaded = true;
-            UpdateStatus($"Ready - {viewModels.Count} items loaded");
-            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {viewModels.Count} items");
+            UpdateStatus($"Ready - {totalItems:N0} items loaded");
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {totalItems} items");
         }
         catch (Exception ex)
         {
             UnifiedLogger.LogInventory(LogLevel.ERROR, $"Failed to load palette: {ex.Message}");
             UpdateStatus("Ready (palette load failed)");
-            _paletteLoaded = true; // Don't retry on every navigation
+            _paletteLoaded = true;
         }
     }
 
