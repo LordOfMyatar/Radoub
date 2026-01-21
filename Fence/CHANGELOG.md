@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.4-alpha] - 2026-01-20
+**Branch**: `fence/issue-958` | **PR**: #TBD
+
+### Fix: File loading delayed ~8 seconds (#958)
+
+Continuation of performance optimization work started in 0.1.3-alpha.
+
+---
+
 ## [0.1.3-alpha] - 2026-01-19
 **Branch**: `fence/issue-1014` | **PR**: #1022
 
