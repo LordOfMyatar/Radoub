@@ -24,7 +24,7 @@ Parent Epic: #545 - Shared Game Data Infrastructure
 
 #### Work Items
 - [x] #1001 - [Parley] Integrate IGameDataService for script/sound browsers
-- [ ] #1002 - [Fence] Integrate IGameDataService for item data resolution
+- [x] #1002 - [Fence] Integrate IGameDataService for item data resolution (verified: already complete)
 
 #### Changed (#1001)
 - `ParleyScriptBrowserContext` now accepts optional `IGameDataService` for module-aware script resolution
@@ -33,6 +33,14 @@ Parent Epic: #545 - Shared Game Data Infrastructure
 - `ResourceBrowserManager` passes `IGameDataService` to sound browser
 - Sound browser now includes step 5: "Module-configured resources via IGameDataService" after standard scanning
 - Scripts/sounds from module HAKs now appear when module is configured in settings
+
+#### Verified (#1002)
+- Fence already has complete IGameDataService integration (implemented during Epic #555)
+- `ItemResolutionService` uses `IGameDataService.FindResource()` for item UTI resolution
+- `BaseItemTypeService` uses `IGameDataService.Get2DA()` for baseitems.2da
+- Palette loading uses `IGameDataService.ListResources(ResourceTypes.Uti)` for cache building
+- `PaletteCacheService` wraps `GameDataCacheService` for performance
+- Items from HAKs appear in palettes when module is configured
 
 #### Goals
 - Connect Parley and Fence to shared game data infrastructure
