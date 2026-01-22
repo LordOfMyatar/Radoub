@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.50-alpha] - 2026-01-21
+**Branch**: `quartermaster/issue-1016` | **PR**: #1045
+
+### Sprint: Variables & Metadata Fields (#1016)
+
+#### Refactored (Already Completed)
+- **BindableBase migration** (#926) - Migrated `FeatListViewModel` and `SkillViewModel` to inherit from `BindableBase`, replacing ~100+ lines of manual `INotifyPropertyChanged` boilerplate with `SetProperty()` calls
+- **Theme color consolidation** (#925) - Consolidated duplicated theme-aware color methods (`GetDisabledBrush()`, `GetSuccessBrush()`, `GetInfoBrush()`, etc.) from FeatsPanel, SkillsPanel, and SpellsPanel into `BasePanelControl`
+
+#### Added
+- **Variables panel** (#946) - Add Variables, Category, and Comment fields for creature editing
+- **INI script import** (#952) - Import script names from INI file for complex creatures
+
+---
+
 ## [0.1.49-alpha] - 2026-01-20
 **Branch**: `quartermaster/issue-586` | **PR**: #1034
 

@@ -2,6 +2,8 @@ using Radoub.Formats.Gff;
 
 namespace Radoub.Formats.Utc;
 
+// VarTable support - uses shared Variable class from Gff namespace
+
 /// <summary>
 /// Represents a UTC (Creature Blueprint) file used by Aurora Engine games.
 /// UTC files are GFF-based and store creature template data.
@@ -608,6 +610,12 @@ public class UtcFile
     /// Equipped items (mapped to equipment slots)
     /// </summary>
     public List<EquippedItem> EquipItemList { get; set; } = new();
+
+    /// <summary>
+    /// Local variables attached to the creature blueprint.
+    /// Used for scripting and module-specific data.
+    /// </summary>
+    public List<Variable> VarTable { get; set; } = new();
 }
 
 /// <summary>

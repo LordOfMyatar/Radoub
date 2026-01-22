@@ -297,13 +297,15 @@ Use `/research #[number]` for investigation tasks.
 
 This branch covers all items in the sprint. Update CHANGELOG as you complete each item.
 
-### ⚠️ IMPORTANT: Commit Between Items
+### ⚠️ AI Workflow: Commit Between Items
 
-**Commit and push after completing each discrete sprint item.** This provides:
+**Note**: This guidance is for AI assistants (Claude), not humans. Humans may batch commits as they prefer.
+
+**AI should commit and push after completing each discrete sprint item.** This provides:
 - Clear git history for each change
 - Easy rollback if issues arise
 - Simpler code review
-- Protection against losing work
+- Protection against losing work if session ends
 
 Example workflow:
 \`\`\`bash
@@ -317,7 +319,7 @@ git push
 \`\`\`
 
 ### Next Steps
-1. Work through sprint items (commit after each!)
+1. Begin work immediately (any order) unless user specifies otherwise
 2. Update CHANGELOG entries as completed
 3. Run `/pre-merge` when sprint complete
 ```
@@ -430,9 +432,11 @@ See `.claude/github-projects-reference.md` for project IDs and field details.
 - For sprints, all work goes in one PR but **commit and push after each item**
 - Issue number is required - this command won't work without it
 
-## Sprint Workflow Discipline
+## Sprint Workflow Discipline (AI)
 
-**CRITICAL**: When working on sprints, commit and push after completing each discrete item:
+**Note**: This guidance is for AI assistants (Claude), not humans.
+
+**AI should** commit and push after completing each discrete item:
 
 1. Complete item → commit → push
 2. Complete next item → commit → push
@@ -443,4 +447,6 @@ This prevents:
 - Losing work if session ends unexpectedly
 - Difficult rollbacks when issues are discovered
 - Confusion about what changed when
+
+**AI should** begin work immediately in any order unless the user specifies a particular sequence.
 

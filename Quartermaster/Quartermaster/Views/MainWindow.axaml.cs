@@ -138,6 +138,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AdvancedPanelContent.FlagsChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.BehaviorChanged += (s, e) => MarkDirty();
         AdvancedPanelContent.PaletteCategoryChanged += (s, e) => MarkDirty();
+        AdvancedPanelContent.VariablesChanged += (s, e) => MarkDirty();
 
         // Initialize scripts panel with game data service
         ScriptsPanelContent.SetGameDataService(_gameDataService);
