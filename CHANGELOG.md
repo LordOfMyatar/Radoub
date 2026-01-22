@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.42] - 2026-01-21
-**Branch**: `radoub/issue-1015` | **PR**: #TBD
+**Branch**: `radoub/issue-1015` | **PR**: #1044
 
 ### Sprint: IGameDataService Integration (#1015)
 
