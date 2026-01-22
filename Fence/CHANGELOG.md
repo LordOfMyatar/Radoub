@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.6-alpha] - 2026-01-21
+**Branch**: `fence/issue-956` | **PR**: #1047
+
+### Feature: Move status bar to top of window (#956)
+
+Part of Sprint #1014 (Fence Completion).
+
+#### Changed
+- **Status bar position** - Moved from bottom to top of window for better visibility during loading operations
+- **Status bar styling** - Added themed background, rounded corners, and full border to match panel headers
+
+#### Fixed
+- **Null reference warnings** - Added null-conditional operators for service calls that may occur before initialization
+- **Async save operation** - File write now runs on background thread for UI responsiveness
+
+---
+
 ## [0.1.5-alpha] - 2026-01-21
 **Branch**: `fence/issue-1040` | **PR**: #1041
 

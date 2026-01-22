@@ -191,6 +191,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void LoadBaseItemTypes()
     {
+        if (_baseItemTypeService == null) return;
+
         SelectableBaseItemTypes.Clear();
 
         var types = _baseItemTypeService.GetBaseItemTypes();
