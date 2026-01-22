@@ -19,7 +19,7 @@ Part of Sprint #1014 (Fence Completion).
 
 #### Changed
 - **Status bar position** - Moved from bottom to top of window for better visibility during loading operations
-- **Border styling** - Adjusted border from top edge (`0,1,0,0`) to bottom edge (`0,0,0,1`) for correct visual separation
+- **Status bar styling** - Added themed background, rounded corners, and full border to match panel headers
 
 ---
 
