@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.43] - 2026-01-21
+**Branch**: `radoub/issue-1013` | **PR**: #TBD
+
+### Sprint: Bug Bash - Recent Regressions (#1013)
+
+Quick fixes for recently reported user-visible issues.
+
+#### Work Items
+- [ ] #1005 - [Quartermaster] Toolbar visibility and backpack items not visible by default
+- [ ] #1006 - [Parley] Soundset playback stops working after clicking PC node
+- [ ] #1007 - [Radoub] Browser windows need custom title bars for dark theme
+
+---
+
 ## [0.9.42] - 2026-01-21
 **Branch**: `radoub/issue-1015` | **PR**: #1044
 
