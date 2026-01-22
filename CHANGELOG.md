@@ -23,8 +23,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Parent Epic: #545 - Shared Game Data Infrastructure
 
 #### Work Items
-- [ ] #1001 - [Parley] Integrate IGameDataService for script/sound browsers
+- [x] #1001 - [Parley] Integrate IGameDataService for script/sound browsers
 - [ ] #1002 - [Fence] Integrate IGameDataService for item data resolution
+
+#### Changed (#1001)
+- `ParleyScriptBrowserContext` now accepts optional `IGameDataService` for module-aware script resolution
+- `ScriptBrowserController` passes `IGameDataService` to context for HAK/Override script discovery
+- `SoundBrowserWindow` accepts optional `IGameDataService` for module-configured sound resources
+- `ResourceBrowserManager` passes `IGameDataService` to sound browser
+- Sound browser now includes step 5: "Module-configured resources via IGameDataService" after standard scanning
+- Scripts/sounds from module HAKs now appear when module is configured in settings
 
 #### Goals
 - Connect Parley and Fence to shared game data infrastructure

@@ -9,7 +9,9 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using DialogEditor.Models.Sound;
 using DialogEditor.Services;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.UI.Services;
 
 namespace DialogEditor.Views
@@ -20,6 +22,7 @@ namespace DialogEditor.Views
         private readonly AudioService _audioService;
         private readonly SoundScanner _scanner;
         private readonly SoundExtractor _extractor;
+        private readonly IGameDataService? _gameDataService;
         private List<SoundFileInfo> _allSounds;
         private List<SoundFileInfo> _filteredSounds;
         private string? _selectedSound;
@@ -45,15 +48,16 @@ namespace DialogEditor.Views
             return null;
         }
 
-        public SoundBrowserWindow() : this(null) { }
+        public SoundBrowserWindow() : this(null, null) { }
 
-        public SoundBrowserWindow(string? dialogFilePath)
+        public SoundBrowserWindow(string? dialogFilePath, IGameDataService? gameDataService = null)
         {
             InitializeComponent();
             _soundService = new SoundService(SettingsService.Instance);
             _audioService = new AudioService();
             _scanner = new SoundScanner(SettingsService.Instance);
             _extractor = new SoundExtractor();
+            _gameDataService = gameDataService;
             _allSounds = new List<SoundFileInfo>();
             _filteredSounds = new List<SoundFileInfo>();
             _dialogFilePath = dialogFilePath;
@@ -188,6 +192,14 @@ namespace DialogEditor.Views
                     _allSounds.AddRange(hakSounds);
                 }
 
+                // 5. Module-configured resources via IGameDataService (#1001)
+                // Adds sounds from module HAKs that may not be in standard scan paths
+                if (includeHakFiles || includeBifFiles)
+                {
+                    FileCountLabel.Text = "Checking module resources...";
+                    LoadSoundsFromGameDataService();
+                }
+
                 if (_allSounds.Count == 0)
                 {
                     var msg = GetNoSoundsMessage(includeGameResources, includeOtherLocation, settings);
@@ -308,6 +320,65 @@ namespace DialogEditor.Views
                     bifName => FileCountLabel.Text = $"Loading sounds from {bifName}...");
                 _allSounds.AddRange(bifSounds);
             }
+        }
+
+        /// <summary>
+        /// Load sounds from IGameDataService (module-aware resolution).
+        /// Adds any sounds from module HAKs not already found by direct scanning.
+        /// </summary>
+        private void LoadSoundsFromGameDataService()
+        {
+            if (_gameDataService == null || !_gameDataService.IsConfigured)
+                return;
+
+            try
+            {
+                var existingResRefs = new HashSet<string>(
+                    _allSounds.Select(s => Path.GetFileNameWithoutExtension(s.FileName)),
+                    StringComparer.OrdinalIgnoreCase);
+
+                var resources = _gameDataService.ListResources(ResourceTypes.Wav);
+                foreach (var resource in resources)
+                {
+                    // Skip if already loaded from another source
+                    if (existingResRefs.Contains(resource.ResRef))
+                        continue;
+
+                    // Create SoundFileInfo for this resource
+                    // Note: IsFromHak/IsFromBif are computed properties based on HakPath+ErfEntry/BifInfo
+                    // For IGameDataService resources, we set HakPath without ErfEntry (extraction via service)
+                    var soundInfo = new SoundFileInfo
+                    {
+                        FileName = resource.ResRef + ".wav",
+                        FullPath = resource.Source == GameResourceSource.Override ? (resource.SourcePath ?? "") : "",
+                        IsMono = true, // Assume mono (NWN standard), will validate on selection
+                        ChannelUnknown = true, // Haven't validated yet
+                        Source = GetSourceLabel(resource.Source),
+                        // For HAK/BIF sounds from IGameDataService, store path for reference
+                        // but don't set ErfEntry/BifInfo (extraction handled differently)
+                        HakPath = resource.Source == GameResourceSource.Hak ? resource.SourcePath : null
+                    };
+
+                    _allSounds.Add(soundInfo);
+                    existingResRefs.Add(resource.ResRef);
+                }
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Error loading sounds from IGameDataService: {ex.Message}");
+            }
+        }
+
+        private static string GetSourceLabel(GameResourceSource source)
+        {
+            return source switch
+            {
+                GameResourceSource.Override => "Override",
+                GameResourceSource.Hak => "HAK (Module)",
+                GameResourceSource.Module => "Module",
+                GameResourceSource.Bif => "BIF",
+                _ => source.ToString()
+            };
         }
 
         private static string GetNoSoundsMessage(bool includeGameResources, bool includeOtherLocation, SettingsService settings)
