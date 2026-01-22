@@ -435,6 +435,14 @@ public class GameDataService : IGameDataService
         return categories;
     }
 
+    // Names that indicate invalid/placeholder palette entries
+    private static readonly HashSet<string> InvalidCategoryNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "DELETED", "DELETE_ME", "BadStrRef", "BadStreff", "Padding", "PAdding",
+        "XP2SpecReq", "Reserved", "Unused", "INVALID", "NULL", "NONE", "N/A",
+        "****", "---", "???"
+    };
+
     private void ExtractCategories(List<PaletteNode> nodes, List<PaletteCategory> categories, string? parentPath)
     {
         foreach (var node in nodes)
@@ -446,12 +454,20 @@ public class GameDataService : IGameDataService
             // Get node name
             var name = GetNodeName(node);
 
+            // Skip invalid/placeholder names
+            if (string.IsNullOrEmpty(name) || IsInvalidCategoryName(name))
+                continue;
+
             if (node is PaletteCategoryNode category)
             {
+                // Skip duplicate category IDs (keep first occurrence)
+                if (categories.Any(c => c.Id == category.Id))
+                    continue;
+
                 categories.Add(new PaletteCategory
                 {
                     Id = category.Id,
-                    Name = name ?? $"Category {category.Id}",
+                    Name = name,
                     ParentPath = parentPath
                 });
             }
@@ -481,11 +497,28 @@ public class GameDataService : IGameDataService
                 return tlkString;
         }
 
-        // Fallback to DELETE_ME field
-        if (!string.IsNullOrEmpty(node.DeleteMe))
-            return node.DeleteMe;
-
+        // Don't fall back to DELETE_ME - it often contains garbage like "BadStrRef", "DELETED", etc.
+        // If we can't get a proper name from Name field or TLK, skip this node
         return null;
+    }
+
+    private static bool IsInvalidCategoryName(string name)
+    {
+        // Check against known invalid names
+        if (InvalidCategoryNames.Contains(name))
+            return true;
+
+        // Check for names that are just numbers or whitespace
+        if (string.IsNullOrWhiteSpace(name))
+            return true;
+
+        // Check for names that start with common invalid prefixes
+        if (name.StartsWith("Bad", StringComparison.OrdinalIgnoreCase) ||
+            name.StartsWith("Delete", StringComparison.OrdinalIgnoreCase) ||
+            name.StartsWith("Unused", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
     }
 
     private static string? GetPaletteNameForResource(ushort resourceType)

@@ -44,17 +44,59 @@ git checkout main
 git pull origin main
 ```
 
-### Step 3: Fetch Issue Details
+### Step 3: Fetch Issue Details and Check for Duplicates
 
+**First, check the GitHub cache** (`.claude/cache/github-data.json`):
+
+```bash
+# Check cache freshness (should be <1 hour old from /backlog run)
+stat -c %Y .claude/cache/github-data.json 2>/dev/null || echo "cache missing"
+```
+
+**If cache is fresh** (<1 hour), use it for:
+1. Issue details lookup
+2. Similar/duplicate issue search
+
+**If cache is stale or missing**, fall back to GitHub API:
 ```bash
 gh issue view [number] --json title,labels,body,milestone
 ```
 
-Extract:
+**Extract from issue**:
 - **Title**: For branch name and PR title
 - **Labels**: To determine item type
 - **Body**: For additional context
 - **Milestone**: For version targeting
+
+**Search for similar/duplicate issues**:
+
+Extract key terms from the issue title (remove prefixes like `[Tool]`, `feat:`, `fix:`) and search the cache:
+
+```bash
+# Search cache for issues with similar keywords
+grep -i "keyword1\|keyword2" .claude/cache/github-data.json | head -20
+```
+
+**Patterns to detect**:
+- Same tool + same feature area (e.g., two "[Fence] Scripts" issues)
+- Same error/bug description
+- Overlapping file paths mentioned in body
+- Issues that were closed but reopened as new issues
+
+**If similar issues found**, report to user:
+
+```markdown
+### ⚠️ Potentially Related Issues Found
+
+| # | Title | State |
+|---|-------|-------|
+| #123 | [Similar title] | OPEN |
+| #456 | [Related work] | CLOSED |
+
+Continue anyway? [y/n]
+```
+
+**If no similar issues**, proceed silently to Step 4.
 
 ### Step 4: Determine Item Type and Branch Name
 

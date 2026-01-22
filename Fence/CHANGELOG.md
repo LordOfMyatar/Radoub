@@ -10,6 +10,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.5-alpha] - 2026-01-21
+**Branch**: `fence/issue-1040` | **PR**: #1041
+
+### Sprint: Fence Completion - Scripts, Variables & Polish (#1040)
+
+Part of Epic #555 (Merchant Editor Tool).
+
+#### Work Items
+- [x] #945 - Add Scripts, Variables, and Comment fields
+- [x] #1002 - Integrate IGameDataService for item data resolution (already done)
+- [x] #1027 - Filter out bad strref errors in TLK lookups
+
+#### Added
+- **Scripts & Comment expander** - New collapsible section for OnOpenStore, OnStoreClosed scripts and Comment field
+- **Script browser integration** - Browse button opens shared ScriptBrowserWindow for script selection
+- **Comment field** - Multi-line text box for developer notes (max 120px height)
+
+#### Fixed
+- **Palette category filtering** - Filter out invalid category names (DELETED, BadStrRef, PAdding, etc.)
+- **Duplicate categories** - Skip duplicate category IDs in palette loading
+- **Item type dropdown filtering** - Filter garbage labels (deleted, padding, xp2spec*) from base item types
+- **Item name resolution** - Filter invalid TLK strings (BadStrRef, DELETED, etc.) in item display names
+- **Settings cache status** - Cache rebuild now shows "Rebuilt" status correctly after completion
+
+---
+
 ## [0.1.4-alpha] - 2026-01-20
 **Branch**: `fence/issue-958` | **PR**: #1033
 

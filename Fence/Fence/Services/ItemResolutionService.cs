@@ -181,14 +181,14 @@ public class ItemResolutionService
     {
         // 1. Try localized name string first
         var defaultString = uti.LocalizedName.GetDefault();
-        if (!string.IsNullOrEmpty(defaultString))
+        if (!string.IsNullOrEmpty(defaultString) && !IsInvalidTlkString(defaultString))
             return defaultString;
 
         // 2. Fall back to TLK reference if LocalizedName has a StrRef
         if (uti.LocalizedName.StrRef != 0xFFFFFFFF && _gameDataService != null)
         {
             var tlkString = _gameDataService.GetString(uti.LocalizedName.StrRef);
-            if (!string.IsNullOrEmpty(tlkString))
+            if (!string.IsNullOrEmpty(tlkString) && !IsInvalidTlkString(tlkString))
                 return tlkString;
         }
 
@@ -198,6 +198,25 @@ public class ItemResolutionService
 
         // 4. Final fallback to the resRef we were looking for
         return resRef;
+    }
+
+    /// <summary>
+    /// Check if a TLK string is a placeholder/garbage value that should be skipped.
+    /// </summary>
+    private static bool IsInvalidTlkString(string value)
+    {
+        var trimmed = value.Trim();
+
+        // Common placeholder values in NWN TLK files
+        return trimmed.Equals("BadStrRef", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("BadStreff", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("DELETED", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("DELETE_ME", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("Padding", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Equals("PAdding", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.StartsWith("Bad Str", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.StartsWith("Xp2spec", StringComparison.OrdinalIgnoreCase) ||
+               trimmed.Contains("deleted", StringComparison.OrdinalIgnoreCase);
     }
 
     private string GetBaseItemTypeName(int baseItemIndex)
@@ -210,7 +229,7 @@ public class ItemResolutionService
         if (!string.IsNullOrEmpty(nameStrRef) && nameStrRef != "****")
         {
             var name = _gameDataService.GetString(nameStrRef);
-            if (!string.IsNullOrEmpty(name))
+            if (!string.IsNullOrEmpty(name) && !IsInvalidTlkString(name))
                 return name;
         }
 

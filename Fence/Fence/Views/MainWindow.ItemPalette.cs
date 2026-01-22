@@ -233,15 +233,50 @@ public partial class MainWindow
 
     /// <summary>
     /// Clear and reload the palette cache. Called from Settings.
+    /// Returns a task that completes when rebuild is done.
     /// </summary>
-    public void ClearAndReloadPaletteCache()
+    public Task ClearAndReloadPaletteCacheAsync()
     {
         _paletteCacheService.ClearCache();
         _cachedPaletteData = null;
         _loadedItemTypes.Clear();
         _allItemsLoaded = false;
         PaletteItems.Clear();
-        StartItemPaletteLoad();
+
+        // Rebuild cache and refresh the current filter
+        return RebuildCacheAndRefreshAsync();
+    }
+
+    /// <summary>
+    /// Rebuild cache from scratch and refresh the palette display.
+    /// </summary>
+    private async Task RebuildCacheAndRefreshAsync()
+    {
+        try
+        {
+            UpdateStatusBar("Rebuilding palette cache...");
+
+            // Build the cache
+            await BuildCacheInBackgroundAsync();
+
+            // Refresh the current filter selection
+            var selectedType = ItemTypeFilter.SelectedItem as string;
+            if (!string.IsNullOrEmpty(selectedType) && selectedType != "All Items")
+            {
+                await LoadItemsForTypeAsync(selectedType);
+            }
+            else if (selectedType == "All Items")
+            {
+                await LoadItemsForTypeAsync(null);
+            }
+
+            UpdateStatusBar("Cache rebuilt successfully");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Cache rebuild failed: {ex.Message}");
+            UpdateStatusBar("Cache rebuild failed");
+        }
     }
 
     /// <summary>
