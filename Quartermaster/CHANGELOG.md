@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.51-alpha] - 2026-01-22
+**Branch**: `quartermaster/issue-1051` | **PR**: #TBD
+
+### Sprint: Creature Editing - Stats & Abilities (#1051)
+
+- #588 - Add item details panel with icon display
+- #728 - Edit Movement Speed
+- #730 - Edit Base Saving Throws
+- #733 - Edit Levelup Package
+- #735 - Edit Special Abilities (Spell-Like Abilities)
+- #739 - Metamagic Support for Spells
+
+---
+
 ## [0.1.50-alpha] - 2026-01-21
 **Branch**: `quartermaster/issue-1016` | **PR**: #1045
 
