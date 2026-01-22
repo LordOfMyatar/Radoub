@@ -15,6 +15,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.42] - 2026-01-21
+**Branch**: `radoub/issue-1015` | **PR**: #1044
+
+### Sprint: IGameDataService Integration (#1015)
+
+Parent Epic: #545 - Shared Game Data Infrastructure
+
+#### Work Items
+- [x] #1001 - [Parley] Integrate IGameDataService for script/sound browsers
+- [x] #1002 - [Fence] Integrate IGameDataService for item data resolution (verified: already complete)
+
+#### Changed (#1001)
+- `ParleyScriptBrowserContext` now accepts optional `IGameDataService` for module-aware script resolution
+- `ScriptBrowserController` passes `IGameDataService` to context for HAK/Override script discovery
+- `SoundBrowserWindow` accepts optional `IGameDataService` for module-configured sound resources
+- `ResourceBrowserManager` passes `IGameDataService` to sound browser
+- Sound browser now includes step 5: "Module-configured resources via IGameDataService" after standard scanning
+- Scripts/sounds from module HAKs now appear when module is configured in settings
+
+#### Verified (#1002)
+- Fence already has complete IGameDataService integration (implemented during Epic #555)
+- `ItemResolutionService` uses `IGameDataService.FindResource()` for item UTI resolution
+- `BaseItemTypeService` uses `IGameDataService.Get2DA()` for baseitems.2da
+- Palette loading uses `IGameDataService.ListResources(ResourceTypes.Uti)` for cache building
+- `PaletteCacheService` wraps `GameDataCacheService` for performance
+- Items from HAKs appear in palettes when module is configured
+
+#### Goals
+- Connect Parley and Fence to shared game data infrastructure
+- Enable custom content support (CEP, PRC)
+- Reduce hardcoded data across tools
+
+---
+
 ## [0.9.41] - 2026-01-19
 **Branch**: `radoub/issue-983` | **PR**: #996
 

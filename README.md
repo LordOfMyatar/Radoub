@@ -12,28 +12,33 @@ A collection of cross-platform tools for creating and editing Neverwinter Nights
 
 ## Tools
 
-### Parley - Dialog Editor
+### Ready for Preview
 
-Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI, plugin system, and Aurora Engine compatibility.
+These tools are ready for adventurous users to try out. Like a zombie hungering for brains, we crave your feedback!
 
-**Status**: Alpha (v0.1.66)
-**Platforms**: Windows, Linux, macOS
+**Important**: Always work with copies of your modules, not originals.
+
+#### Parley - Dialog Editor
+
+Cross-platform dialog editor for Neverwinter Nights DLG files with modern UI and Aurora Engine compatibility.
+
+**Status**: User Preview (Alpha)
+**Platforms**: Windows, Linux, macOS (experimental)
 **Key Features**:
 - Dialog tree editing with undo/redo
 - Native flowchart view (handles 100+ depth trees)
-- Sound and script browsers
-- Python plugin system with gRPC
+- Sound and script browsers with module HAK support
 - Color-blind accessible themes
 - Dark mode and font scaling
 
-**Learn more**: [Parley/README.md](Parley/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki)
+**Learn more**: [Parley/README.md](Parley/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Parley)
 
-### Manifest - Journal Editor
+#### Manifest - Journal Editor
 
 Cross-platform journal editor for Neverwinter Nights JRL files.
 
-**Status**: Alpha (v0.11.0)
-**Platforms**: Windows, Linux, macOS
+**Status**: User Preview (Alpha)
+**Platforms**: Windows, Linux, macOS (experimental)
 **Key Features**:
 - Quest category and entry editing
 - TLK string resolution with multi-language support
@@ -41,33 +46,79 @@ Cross-platform journal editor for Neverwinter Nights JRL files.
 - Theme support (dark/light, accessibility themes)
 - Auto-detect game installation paths
 
-**Learn more**: [Manifest Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Manifest)
+**Learn more**: [Manifest/README.md](Manifest/README.md) | [Wiki](https://github.com/LordOfMyatar/Radoub/wiki/Manifest)
 
-### Quartermaster - Creature & Inventory Editor
+---
+
+### In Development
+
+#### Fence - Merchant Editor
+
+Store/merchant editor for Neverwinter Nights UTM files.
+
+**Status**: Nearing User Preview
+**Platforms**: Windows, Linux, macOS (experimental)
+**Features**:
+- Store properties editing (markup, markdown, gold reserves)
+- Item palette with search/filter
+- Buy restrictions (WillOnlyBuy/WillNotBuy)
+- Custom content support via module HAKs
+
+#### Quartermaster - Creature & Inventory Editor
 
 Cross-platform creature and inventory editor for Neverwinter Nights UTC and BIC files.
 
-**Status**: Coming Soon
-**Platforms**: Windows, Linux, macOS
-**Planned Features**:
+**Status**: In Development (user preview expected next sprint)
+**Platforms**: Windows, Linux, macOS (experimental)
+**Features**:
 - Edit creature blueprints (.utc) and player characters (.bic)
 - Visual equipment slots panel
 - Inventory management with drag-and-drop
 - Creature properties (abilities, feats, skills)
 - Class and level configuration
 
-### Radoub.Formats - Shared Library
+#### Trebuchet - Tool Launcher & Settings Hub
 
-Aurora Engine file format parsers used by Parley and Manifest.
+Central launcher for the Radoub toolset with module-wide configuration.
 
-**Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF, DLG, JRL, UTC, UTI, UTM, BIC
+**Status**: In Development
+**Platforms**: Windows, Linux, macOS (experimental)
+**Features**:
+- Launch any Radoub tool
+- Module-wide settings (game paths, HAKs, TLK)
+- Theme configuration across all tools
+- IFO module file editing
 
-### Radoub.Dictionary - Shared Library
+*Note: Development timelines have a sea-wide margin of error. We're building this ship while sailing it.*
+
+---
+
+### Shared Libraries
+
+#### Radoub.Formats
+
+Aurora Engine file format parsers used by all tools.
+
+**Supported Formats**: GFF, KEY, BIF, TLK, 2DA, ERF, DLG, JRL, UTC, UTI, UTM, BIC, IFO, SSF
+
+#### Radoub.Dictionary
 
 D&D/NWN spell-checking library providing:
 - Base language checking via [Hunspell](https://hunspell.github.io/) dictionaries
 - Custom dictionary support for D&D/NWN terminology (proper nouns, spells, creatures)
 - Term extraction from game files (.2da, dialogs)
+
+---
+
+## Documentation
+
+**Wiki**: [github.com/LordOfMyatar/Radoub/wiki](https://github.com/LordOfMyatar/Radoub/wiki)
+
+The wiki contains:
+- User guides for each tool
+- Developer architecture documentation
+- Aurora Engine format specifications (converted from BioWare PDFs)
+- Development history and AI collaboration notes
 
 ---
 
@@ -142,8 +193,9 @@ This is a multi-tool repository. Each tool maintains its own:
 
 This toolset is developed through collaboration between Claude (Anthropic's AI assistant) and human direction. The goal is to create high-quality, maintainable tools that serve the Neverwinter Nights modding community.
 
-- **CLAUDE_DEVELOPMENT_TIMELINE.md**: Day-by-day development chronicle
-- **ON_USING_CLAUDE.md**: Personal account of the collaboration experience
+For the story behind this project, see the wiki:
+- [Development Timeline](https://github.com/LordOfMyatar/Radoub/wiki/Development-Timeline) - Day-by-day chronicle
+- [On Using Claude](https://github.com/LordOfMyatar/Radoub/wiki/On-Using-Claude) - Personal account of AI collaboration
 
 ---
 

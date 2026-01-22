@@ -7,6 +7,7 @@ using DialogEditor.ViewModels;
 using DialogEditor.Views;
 using System;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.UI.Services;
 using System.Collections.Generic;
 using System.IO;
@@ -24,6 +25,7 @@ namespace DialogEditor.Services
     {
         private readonly AudioService _audioService;
         private readonly CreatureService _creatureService;
+        private readonly IGameDataService? _gameDataService;
         private readonly Func<string, Control?> _findControl;
         private readonly Action<string> _setStatusMessage;
         private readonly Action<string> _autoSaveProperty;
@@ -40,7 +42,8 @@ namespace DialogEditor.Services
             Action<string> setStatusMessage,
             Action<string> autoSaveProperty,
             Func<TreeViewSafeNode?> getSelectedNode,
-            Func<string?>? getCurrentFilePath = null)
+            Func<string?>? getCurrentFilePath = null,
+            IGameDataService? gameDataService = null)
         {
             _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
             _creatureService = creatureService ?? throw new ArgumentNullException(nameof(creatureService));
@@ -49,6 +52,7 @@ namespace DialogEditor.Services
             _autoSaveProperty = autoSaveProperty ?? throw new ArgumentNullException(nameof(autoSaveProperty));
             _getSelectedNode = getSelectedNode ?? throw new ArgumentNullException(nameof(getSelectedNode));
             _getCurrentFilePath = getCurrentFilePath ?? (() => null);
+            _gameDataService = gameDataService;
         }
 
         /// <summary>
@@ -72,7 +76,7 @@ namespace DialogEditor.Services
 
             try
             {
-                var soundBrowser = new SoundBrowserWindow();
+                var soundBrowser = new SoundBrowserWindow(_getCurrentFilePath(), _gameDataService);
                 var result = await soundBrowser.ShowDialog<string?>(owner);
 
                 if (!string.IsNullOrEmpty(result))

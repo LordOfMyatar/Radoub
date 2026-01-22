@@ -117,7 +117,8 @@ namespace DialogEditor.Views
                 setStatusMessage: msg => _viewModel.StatusMessage = msg,
                 autoSaveProperty: AutoSaveProperty,
                 getSelectedNode: () => _selectedNode,
-                getCurrentFilePath: () => _viewModel.CurrentFilePath);
+                getCurrentFilePath: () => _viewModel.CurrentFilePath,
+                gameDataService: _services.GameData);
             _services.KeyboardShortcuts.RegisterShortcuts(this);
 
             // Window services
@@ -175,7 +176,8 @@ namespace DialogEditor.Views
                 controls: _controls,
                 getViewModel: () => _viewModel,
                 getSelectedNode: () => _selectedNode,
-                autoSaveProperty: AutoSaveProperty);
+                autoSaveProperty: AutoSaveProperty,
+                gameDataService: _services.GameData);
 
             _controllers.ParameterBrowser = new ParameterBrowserController(
                 controls: _controls,
@@ -1173,7 +1175,7 @@ namespace DialogEditor.Views
 
             try
             {
-                var soundBrowser = new SoundBrowserWindow();
+                var soundBrowser = new SoundBrowserWindow(_viewModel.CurrentFileName, _services.GameData);
                 var result = await soundBrowser.ShowDialog<string?>(this);
 
                 if (!string.IsNullOrEmpty(result))
