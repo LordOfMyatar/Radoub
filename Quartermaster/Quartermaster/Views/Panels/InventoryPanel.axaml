@@ -12,8 +12,11 @@
             <!-- Left: Equipment + Backpack - flexible, resizable via splitter -->
             <ColumnDefinition Width="350"/>
             <ColumnDefinition Width="5"/>
-            <!-- Right: Item Palette - takes remaining space -->
+            <!-- Middle: Item Palette - takes remaining space -->
             <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="5"/>
+            <!-- Right: Item Details - fixed width -->
+            <ColumnDefinition Width="250"/>
         </Grid.ColumnDefinitions>
 
         <!-- Left Panel: Equipment Slots + Backpack -->
@@ -73,7 +76,7 @@
                       Background="{DynamicResource SystemBaseMediumLowColor}"
                       AutomationProperties.AutomationId="InventoryPaletteSplitter"/>
 
-        <!-- Right Panel: Item Palette -->
+        <!-- Middle Panel: Item Palette -->
         <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Item Palette" FontWeight="Bold" Margin="0,0,0,5"/>
@@ -101,6 +104,134 @@
                 <controls:ItemListView x:Name="PaletteList"
                                         ContextKey="Palette"
                                         AutomationProperties.AutomationId="PaletteList"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch"
+                      Background="{DynamicResource SystemBaseMediumLowColor}"
+                      AutomationProperties.AutomationId="PaletteDetailsSplitter"/>
+
+        <!-- Right Panel: Item Details -->
+        <Border Grid.Column="4" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="10">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Item Details" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <!-- No Selection Message -->
+                <TextBlock x:Name="NoSelectionText"
+                           Text="Select an item to view details"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           IsVisible="True"
+                           AutomationProperties.AutomationId="NoSelectionText"/>
+
+                <!-- Item Details Content -->
+                <ScrollViewer x:Name="ItemDetailsScroll"
+                              VerticalScrollBarVisibility="Auto"
+                              IsVisible="False">
+                    <StackPanel x:Name="ItemDetailsPanel" Spacing="10">
+                        <!-- Icon -->
+                        <Border HorizontalAlignment="Center"
+                                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                                BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                BorderThickness="1"
+                                Padding="10"
+                                CornerRadius="4">
+                            <Image x:Name="ItemIcon"
+                                   Width="64" Height="64"
+                                   Stretch="Uniform"
+                                   AutomationProperties.AutomationId="ItemIcon"/>
+                        </Border>
+
+                        <!-- Item Name -->
+                        <TextBlock x:Name="ItemNameText"
+                                   Text=""
+                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource FontSizeMedium}"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Center"
+                                   AutomationProperties.AutomationId="ItemNameText"/>
+
+                        <!-- Base Item Type -->
+                        <TextBlock x:Name="ItemTypeText"
+                                   Text=""
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                   HorizontalAlignment="Center"
+                                   AutomationProperties.AutomationId="ItemTypeText"/>
+
+                        <!-- Properties Section -->
+                        <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,10,0,0"
+                                Margin="0,5,0,0">
+                            <StackPanel Spacing="5">
+                                <!-- ResRef -->
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Grid.Column="0" Text="ResRef:"
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,10,0"/>
+                                    <TextBlock Grid.Column="1" x:Name="ItemResRefText"
+                                               Text=""
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               FontFamily="Consolas"
+                                               AutomationProperties.AutomationId="ItemResRefText"/>
+                                </Grid>
+
+                                <!-- Tag -->
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Grid.Column="0" Text="Tag:"
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,10,0"/>
+                                    <TextBlock Grid.Column="1" x:Name="ItemTagText"
+                                               Text=""
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               FontFamily="Consolas"
+                                               AutomationProperties.AutomationId="ItemTagText"/>
+                                </Grid>
+
+                                <!-- Value -->
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Grid.Column="0" Text="Value:"
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,10,0"/>
+                                    <TextBlock Grid.Column="1" x:Name="ItemValueText"
+                                               Text=""
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               AutomationProperties.AutomationId="ItemValueText"/>
+                                </Grid>
+
+                                <!-- Source -->
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Grid.Column="0" Text="Source:"
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,10,0"/>
+                                    <TextBlock Grid.Column="1" x:Name="ItemSourceText"
+                                               Text=""
+                                               FontSize="{DynamicResource FontSizeSmall}"
+                                               AutomationProperties.AutomationId="ItemSourceText"/>
+                                </Grid>
+
+                                <!-- Properties -->
+                                <TextBlock Text="Properties:"
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           Margin="0,5,0,0"/>
+                                <TextBlock x:Name="ItemPropertiesText"
+                                           Text=""
+                                           FontSize="{DynamicResource FontSizeSmall}"
+                                           TextWrapping="Wrap"
+                                           AutomationProperties.AutomationId="ItemPropertiesText"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </DockPanel>
         </Border>
     </Grid>
