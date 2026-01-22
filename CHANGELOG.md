@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.43] - 2026-01-21
-**Branch**: `radoub/issue-1013` | **PR**: #TBD
+**Branch**: `radoub/issue-1013` | **PR**: #1048
 
 ### Sprint: Bug Bash - Recent Regressions (#1013)
 
