@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Quartermaster.Views.Panels;
 
@@ -359,22 +360,32 @@ public partial class SpellsPanel
                     // Check if spell appears in multiple classes (overlap)
                     bool isOverlap = spellOccurrences.TryGetValue(spell.Spell, out var occurrences) && occurrences.Count > 1;
 
-                    // Check memorization count
+                    // Check memorization count and collect metamagic info
                     int memCount = 0;
+                    var metamagicAbbrevs = new List<string>();
                     foreach (var memSpell in classEntry.MemorizedSpells[level])
                     {
                         if (memSpell.Spell == spell.Spell)
+                        {
                             memCount++;
+                            if (memSpell.SpellMetaMagic != 0)
+                            {
+                                metamagicAbbrevs.Add(GetMetamagicAbbreviation(memSpell.SpellMetaMagic));
+                            }
+                        }
                     }
 
                     // Show spell name with indicators
                     var displayName = spellName;
                     IBrush foreground;
 
-                    // Add memorization count in parentheses if memorized
+                    // Add memorization count in parentheses if memorized, plus metamagic
                     if (memCount > 0)
                     {
-                        displayName = $"{spellName} ({memCount})";
+                        var metamagicDisplay = metamagicAbbrevs.Count > 0
+                            ? " " + string.Join(" ", metamagicAbbrevs.Distinct())
+                            : "";
+                        displayName = $"{spellName} ({memCount}){metamagicDisplay}";
                     }
 
                     if (classSpellLevel < 0 && !_ignoreClassRestrictions)
@@ -654,5 +665,40 @@ public partial class SpellsPanel
                 _memorizedSpellsTableGrid.Children.Add(countCell);
             }
         }
+    }
+
+    /// <summary>
+    /// Gets a short abbreviation for metamagic flags applied to a spell.
+    /// </summary>
+    private static string GetMetamagicAbbreviation(byte metamagic)
+    {
+        if (metamagic == 0) return "";
+
+        var abbrev = new StringBuilder();
+        if ((metamagic & 0x01) != 0) abbrev.Append("E");  // Empower
+        if ((metamagic & 0x02) != 0) abbrev.Append("X");  // Extend
+        if ((metamagic & 0x04) != 0) abbrev.Append("M");  // Maximize
+        if ((metamagic & 0x08) != 0) abbrev.Append("Q");  // Quicken
+        if ((metamagic & 0x10) != 0) abbrev.Append("S");  // Silent
+        if ((metamagic & 0x20) != 0) abbrev.Append("T");  // Still
+
+        return abbrev.Length > 0 ? $"[{abbrev}]" : "";
+    }
+
+    /// <summary>
+    /// Gets the full name of a metamagic type.
+    /// </summary>
+    public static string GetMetamagicName(byte metamagic)
+    {
+        return metamagic switch
+        {
+            0x01 => "Empower Spell",
+            0x02 => "Extend Spell",
+            0x04 => "Maximize Spell",
+            0x08 => "Quicken Spell",
+            0x10 => "Silent Spell",
+            0x20 => "Still Spell",
+            _ => "None"
+        };
     }
 }
