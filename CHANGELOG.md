@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Quick fixes for recently reported user-visible issues.
 
 #### Work Items
-- [x] #1005 - [Quartermaster] Equipment panel sizing - capped at 400px to ensure backpack visibility
+- [x] #1005 - [Quartermaster] Equipment panel proportional sizing (2/3 equipment, 1/3 backpack) with splitter
 - [x] #1006 - [Parley] Reset soundset ID on PC nodes to prevent stale state
 - [x] #1007 - [Radoub] Add custom title bars to 8 browser windows for dark theme support
 
