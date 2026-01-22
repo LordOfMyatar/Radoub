@@ -95,6 +95,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StatsPanelContent.AbilityScoresChanged += (s, e) => MarkDirty();
         StatsPanelContent.HitPointsChanged += (s, e) => MarkDirty();
         StatsPanelContent.NaturalAcChanged += (s, e) => MarkDirty();
+        StatsPanelContent.SavingThrowsChanged += (s, e) => MarkDirty();
 
         // Initialize character panel with display service
         CharacterPanelContent.SetDisplayService(_creatureDisplayService);

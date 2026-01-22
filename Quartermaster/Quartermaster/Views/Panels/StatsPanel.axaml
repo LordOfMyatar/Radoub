@@ -282,27 +282,33 @@
                         </Grid>
 
                         <!-- Fortitude Row -->
-                        <Grid ColumnDefinitions="100,60,60,60" AutomationProperties.AutomationId="FortRow">
+                        <Grid ColumnDefinitions="100,70,60,60" AutomationProperties.AutomationId="FortRow">
                             <TextBlock Grid.Column="0" Text="Fortitude" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="FortBase" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <NumericUpDown x:Name="FortBase" Grid.Column="1" Value="0" Minimum="-127" Maximum="127" Increment="1"
+                                           FormatString="+0;-0;+0" FontSize="{DynamicResource FontSizeSmall}"
+                                           AutomationProperties.AutomationId="FortBaseNumeric"/>
                             <TextBlock x:Name="FortAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock x:Name="FortTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- Reflex Row -->
-                        <Grid ColumnDefinitions="100,60,60,60" AutomationProperties.AutomationId="RefRow">
+                        <Grid ColumnDefinitions="100,70,60,60" AutomationProperties.AutomationId="RefRow">
                             <TextBlock Grid.Column="0" Text="Reflex" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="RefBase" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <NumericUpDown x:Name="RefBase" Grid.Column="1" Value="0" Minimum="-127" Maximum="127" Increment="1"
+                                           FormatString="+0;-0;+0" FontSize="{DynamicResource FontSizeSmall}"
+                                           AutomationProperties.AutomationId="RefBaseNumeric"/>
                             <TextBlock x:Name="RefAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock x:Name="RefTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- Will Row -->
-                        <Grid ColumnDefinitions="100,60,60,60" AutomationProperties.AutomationId="WillRow">
+                        <Grid ColumnDefinitions="100,70,60,60" AutomationProperties.AutomationId="WillRow">
                             <TextBlock Grid.Column="0" Text="Will" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="WillBase" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <NumericUpDown x:Name="WillBase" Grid.Column="1" Value="0" Minimum="-127" Maximum="127" Increment="1"
+                                           FormatString="+0;-0;+0" FontSize="{DynamicResource FontSizeSmall}"
+                                           AutomationProperties.AutomationId="WillBaseNumeric"/>
                             <TextBlock x:Name="WillAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock x:Name="WillTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>

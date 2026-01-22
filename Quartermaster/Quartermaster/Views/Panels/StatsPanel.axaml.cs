@@ -20,6 +20,7 @@ public partial class StatsPanel : UserControl
     public event EventHandler? AbilityScoresChanged;
     public event EventHandler? HitPointsChanged;
     public event EventHandler? NaturalAcChanged;
+    public event EventHandler? SavingThrowsChanged;
 
     // Ability score controls - NumericUpDown for base, TextBlock for derived
     private NumericUpDown? _strBase;
@@ -51,10 +52,13 @@ public partial class StatsPanel : UserControl
     private NumericUpDown? _crAdjustNumeric;
     private StackPanel? _crDisplaySection;
 
-    // Saving throws controls
-    private TextBlock? _fortBase, _fortAbility, _fortTotal;
-    private TextBlock? _refBase, _refAbility, _refTotal;
-    private TextBlock? _willBase, _willAbility, _willTotal;
+    // Saving throws controls - NumericUpDown for base, TextBlock for derived
+    private NumericUpDown? _fortBase;
+    private TextBlock? _fortAbility, _fortTotal;
+    private NumericUpDown? _refBase;
+    private TextBlock? _refAbility, _refTotal;
+    private NumericUpDown? _willBase;
+    private TextBlock? _willAbility, _willTotal;
 
     // Ability points summary
     private TextBlock? _abilityPointsSummary;
@@ -135,18 +139,21 @@ public partial class StatsPanel : UserControl
         if (_crAdjustNumeric != null)
             _crAdjustNumeric.ValueChanged += OnCRAdjustValueChanged;
 
-        // Saving throws
-        _fortBase = this.FindControl<TextBlock>("FortBase");
+        // Saving throws - NumericUpDown for base values
+        _fortBase = this.FindControl<NumericUpDown>("FortBase");
         _fortAbility = this.FindControl<TextBlock>("FortAbility");
         _fortTotal = this.FindControl<TextBlock>("FortTotal");
 
-        _refBase = this.FindControl<TextBlock>("RefBase");
+        _refBase = this.FindControl<NumericUpDown>("RefBase");
         _refAbility = this.FindControl<TextBlock>("RefAbility");
         _refTotal = this.FindControl<TextBlock>("RefTotal");
 
-        _willBase = this.FindControl<TextBlock>("WillBase");
+        _willBase = this.FindControl<NumericUpDown>("WillBase");
         _willAbility = this.FindControl<TextBlock>("WillAbility");
         _willTotal = this.FindControl<TextBlock>("WillTotal");
+
+        // Wire up saving throw change events
+        WireSavingThrowEvents();
 
         // Ability points summary
         _abilityPointsSummary = this.FindControl<TextBlock>("AbilityPointsSummary");
@@ -700,14 +707,76 @@ public partial class StatsPanel : UserControl
         SetText(bonusCtrl, CreatureDisplayService.FormatBonus(bonus));
     }
 
-    private void LoadSavingThrow(TextBlock? baseCtrl, TextBlock? abilityCtrl, TextBlock? totalCtrl,
+    private void LoadSavingThrow(NumericUpDown? baseCtrl, TextBlock? abilityCtrl, TextBlock? totalCtrl,
         short baseValue, int abilityBonus)
     {
         int total = baseValue + abilityBonus;
 
-        SetText(baseCtrl, CreatureDisplayService.FormatBonus(baseValue));
+        if (baseCtrl != null) baseCtrl.Value = baseValue;
         SetText(abilityCtrl, CreatureDisplayService.FormatBonus(abilityBonus));
         SetText(totalCtrl, CreatureDisplayService.FormatBonus(total));
+    }
+
+    private void WireSavingThrowEvents()
+    {
+        if (_fortBase != null) _fortBase.ValueChanged += OnFortValueChanged;
+        if (_refBase != null) _refBase.ValueChanged += OnRefValueChanged;
+        if (_willBase != null) _willBase.ValueChanged += OnWillValueChanged;
+    }
+
+    private void OnFortValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.FortBonus = (short)(e.NewValue ?? 0);
+        UpdateSavingThrowTotal(_fortBase, _fortAbility, _fortTotal, _currentCreature.FortBonus, GetConBonus());
+        SavingThrowsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnRefValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.RefBonus = (short)(e.NewValue ?? 0);
+        UpdateSavingThrowTotal(_refBase, _refAbility, _refTotal, _currentCreature.RefBonus, GetDexBonus());
+        SavingThrowsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnWillValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        _currentCreature.WillBonus = (short)(e.NewValue ?? 0);
+        UpdateSavingThrowTotal(_willBase, _willAbility, _willTotal, _currentCreature.WillBonus, GetWisBonus());
+        SavingThrowsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void UpdateSavingThrowTotal(NumericUpDown? baseCtrl, TextBlock? abilityCtrl, TextBlock? totalCtrl,
+        short baseValue, int abilityBonus)
+    {
+        int total = baseValue + abilityBonus;
+        SetText(totalCtrl, CreatureDisplayService.FormatBonus(total));
+    }
+
+    private int GetConBonus()
+    {
+        if (_currentCreature == null) return 0;
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int conTotal = _currentCreature.Con + racialMods.Con;
+        return CreatureDisplayService.CalculateAbilityBonus(conTotal);
+    }
+
+    private int GetDexBonus()
+    {
+        if (_currentCreature == null) return 0;
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int dexTotal = _currentCreature.Dex + racialMods.Dex;
+        return CreatureDisplayService.CalculateAbilityBonus(dexTotal);
+    }
+
+    private int GetWisBonus()
+    {
+        if (_currentCreature == null) return 0;
+        var racialMods = _displayService?.GetRacialModifiers(_currentCreature.Race) ?? new RacialModifiers();
+        int wisTotal = _currentCreature.Wis + racialMods.Wis;
+        return CreatureDisplayService.CalculateAbilityBonus(wisTotal);
     }
 
     public void ClearStats()
