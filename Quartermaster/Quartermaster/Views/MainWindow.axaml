@@ -97,11 +97,11 @@
         <!-- Main Content - Sidebar + Content Layout -->
         <Grid x:Name="MainGrid">
             <Grid.ColumnDefinitions>
-                <!-- Sidebar -->
-                <ColumnDefinition Width="200" MinWidth="140" MaxWidth="300"/>
+                <!-- Sidebar - slightly wider default for portrait/name comfort -->
+                <ColumnDefinition Width="220"/>
                 <ColumnDefinition Width="5"/>
-                <!-- Content Area - reduced minimum for 1024x768 support -->
-                <ColumnDefinition Width="*" MinWidth="300"/>
+                <!-- Content Area -->
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- Sidebar -->
