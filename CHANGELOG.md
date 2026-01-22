@@ -15,6 +15,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.42] - 2026-01-21
+**Branch**: `radoub/issue-1015` | **PR**: #TBD
+
+### Sprint: IGameDataService Integration (#1015)
+
+Parent Epic: #545 - Shared Game Data Infrastructure
+
+#### Work Items
+- [ ] #1001 - [Parley] Integrate IGameDataService for script/sound browsers
+- [ ] #1002 - [Fence] Integrate IGameDataService for item data resolution
+
+#### Goals
+- Connect Parley and Fence to shared game data infrastructure
+- Enable custom content support (CEP, PRC)
+- Reduce hardcoded data across tools
+
+---
+
 ## [0.9.41] - 2026-01-19
 **Branch**: `radoub/issue-983` | **PR**: #996
 
