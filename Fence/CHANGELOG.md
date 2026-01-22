@@ -17,6 +17,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Part of Sprint #1014 (Fence Completion).
 
+#### Changed
+- **Status bar position** - Moved from bottom to top of window for better visibility during loading operations
+- **Border styling** - Adjusted border from top edge (`0,1,0,0`) to bottom edge (`0,0,0,1`) for correct visual separation
+
 ---
 
 ## [0.1.5-alpha] - 2026-01-21

@@ -40,8 +40,8 @@
             </MenuItem>
         </Menu>
 
-        <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0" Padding="5,2"
+        <!-- Status Bar (top position for visibility during loading) -->
+        <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1" Padding="5,2"
                 AutomationProperties.AutomationId="StatusBar">
             <Grid>
                 <Grid.ColumnDefinitions>
