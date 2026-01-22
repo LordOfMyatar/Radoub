@@ -163,6 +163,9 @@ namespace Parley.Views.Helpers
             var portraitBorder = _window.FindControl<Border>("PortraitBorder");
             var portraitImage = _window.FindControl<Image>("PortraitImage");
 
+            // Get soundset preview panel for visibility management
+            var soundsetPreviewPanel = _window.FindControl<StackPanel>("SoundsetPreviewPanel");
+
             // Clear portrait and soundset for PC nodes or empty speaker
             if (isPC || string.IsNullOrWhiteSpace(dialogNode.Speaker))
             {
@@ -170,6 +173,8 @@ namespace Parley.Views.Helpers
                     soundsetInfoTextBlock.Text = "";
                 if (portraitBorder != null)
                     portraitBorder.IsVisible = false;
+                if (soundsetPreviewPanel != null)
+                    soundsetPreviewPanel.IsVisible = false;
                 // Reset soundset ID to prevent stale state (#1006)
                 SetCurrentSoundsetId?.Invoke(ushort.MaxValue);
                 return;
@@ -182,6 +187,8 @@ namespace Parley.Views.Helpers
                     soundsetInfoTextBlock.Text = "";
                 if (portraitBorder != null)
                     portraitBorder.IsVisible = false;
+                if (soundsetPreviewPanel != null)
+                    soundsetPreviewPanel.IsVisible = false;
                 // Reset soundset ID to prevent stale state (#1006)
                 SetCurrentSoundsetId?.Invoke(ushort.MaxValue);
                 return;
@@ -194,6 +201,8 @@ namespace Parley.Views.Helpers
                     soundsetInfoTextBlock.Text = $"Creature '{dialogNode.Speaker}' not found in module";
                 if (portraitBorder != null)
                     portraitBorder.IsVisible = false;
+                if (soundsetPreviewPanel != null)
+                    soundsetPreviewPanel.IsVisible = false;
                 // Reset soundset ID to prevent stale state (#1006)
                 SetCurrentSoundsetId?.Invoke(ushort.MaxValue);
                 return;
@@ -308,7 +317,6 @@ namespace Parley.Views.Helpers
             }
 
             // Setup soundset preview controls (#916)
-            var soundsetPreviewPanel = _window.FindControl<StackPanel>("SoundsetPreviewPanel");
             var soundsetTypeCombo = _window.FindControl<ComboBox>("SoundsetTypeComboBox");
 
             if (soundsetPreviewPanel != null && soundsetTypeCombo != null)
