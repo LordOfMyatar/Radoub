@@ -211,7 +211,7 @@
 
             <!-- Footer with Special Abilities -->
             <Expander Grid.Row="4"
-                      Header="Special Abilities"
+                      Header="Special Abilities (Spell-Like)"
                       Margin="0,10,0,0"
                       IsExpanded="False"
                       x:Name="SpecialAbilitiesExpander">
@@ -219,33 +219,63 @@
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"
-                        MaxHeight="150">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <ItemsControl x:Name="SpecialAbilitiesList">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnDefinitions="*,Auto" Margin="0,3">
-                                            <TextBlock Grid.Column="0"
-                                                       Text="{Binding AbilityName}"
-                                                       VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding CasterLevelDisplay}"
-                                                       FontSize="{DynamicResource FontSizeSmall}"
-                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                                       VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                        MaxHeight="250">
+                    <Grid RowDefinitions="*,Auto">
+                        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <ItemsControl x:Name="SpecialAbilitiesList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="*,70,60,30" Margin="0,3">
+                                                <!-- Spell Name -->
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding AbilityName}"
+                                                           VerticalAlignment="Center"/>
+                                                <!-- Caster Level -->
+                                                <NumericUpDown Grid.Column="1"
+                                                               Value="{Binding CasterLevel, Mode=TwoWay}"
+                                                               Minimum="1" Maximum="40" Increment="1"
+                                                               FormatString="CL 0"
+                                                               FontSize="{DynamicResource FontSizeSmall}"
+                                                               VerticalAlignment="Center"
+                                                               AutomationProperties.AutomationId="AbilityCasterLevel"/>
+                                                <!-- Flags (Unlimited checkbox) -->
+                                                <CheckBox Grid.Column="2"
+                                                          IsChecked="{Binding IsUnlimited, Mode=TwoWay}"
+                                                          Content="Unl"
+                                                          ToolTip.Tip="Unlimited uses per day"
+                                                          FontSize="{DynamicResource FontSizeSmall}"
+                                                          VerticalAlignment="Center"
+                                                          AutomationProperties.AutomationId="AbilityUnlimited"/>
+                                                <!-- Remove Button -->
+                                                <Button Grid.Column="3"
+                                                        Content="X"
+                                                        ToolTip.Tip="Remove ability"
+                                                        Command="{Binding RemoveCommand}"
+                                                        FontSize="{DynamicResource FontSizeSmall}"
+                                                        Padding="4,2"
+                                                        VerticalAlignment="Center"
+                                                        AutomationProperties.AutomationId="RemoveAbilityButton"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-                            <TextBlock x:Name="NoAbilitiesText"
-                                       Text="No special abilities"
-                                       FontStyle="Italic"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                                       IsVisible="True"/>
-                        </StackPanel>
-                    </ScrollViewer>
+                                <TextBlock x:Name="NoAbilitiesText"
+                                           Text="No special abilities"
+                                           FontStyle="Italic"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           IsVisible="True"/>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Add Button -->
+                        <Button Grid.Row="1" x:Name="AddAbilityButton"
+                                Content="Add Ability..."
+                                HorizontalAlignment="Left"
+                                Margin="0,10,0,0"
+                                AutomationProperties.AutomationId="AddAbilityButton"/>
+                    </Grid>
                 </Border>
             </Expander>
             </Grid>

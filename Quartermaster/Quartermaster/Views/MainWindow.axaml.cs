@@ -114,6 +114,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Initialize feats panel with display service for 2DA/TLK lookups
         FeatsPanelContent.SetDisplayService(_creatureDisplayService);
         FeatsPanelContent.SetIconService(_itemIconService);
+        FeatsPanelContent.FeatsChanged += (s, e) => MarkDirty();
+        FeatsPanelContent.SpecialAbilitiesChanged += (s, e) => MarkDirty();
 
         // Initialize skills panel with display service for 2DA/TLK lookups
         SkillsPanelContent.SetDisplayService(_creatureDisplayService);
