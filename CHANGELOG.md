@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Quick fixes for recently reported user-visible issues.
 
 #### Work Items
-- [ ] #1005 - [Quartermaster] Toolbar visibility and backpack items not visible by default
+- [x] #1005 - [Quartermaster] Equipment panel sizing - capped at 400px to ensure backpack visibility
 - [ ] #1006 - [Parley] Soundset playback stops working after clicking PC node
 - [ ] #1007 - [Radoub] Browser windows need custom title bars for dark theme
 

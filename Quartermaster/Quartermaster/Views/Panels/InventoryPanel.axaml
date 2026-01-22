@@ -19,9 +19,11 @@
         <!-- Left Panel: Equipment Slots + Backpack -->
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
+                <!-- Equipment: cap at 400px to leave room for backpack -->
+                <RowDefinition Height="Auto" MaxHeight="400"/>
                 <RowDefinition Height="5"/>
-                <RowDefinition Height="*"/>
+                <!-- Backpack: takes remaining space, minimum 150px -->
+                <RowDefinition Height="*" MinHeight="150"/>
             </Grid.RowDefinitions>
 
             <!-- Equipment Slots Panel -->
