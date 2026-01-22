@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.6-alpha] - 2026-01-21
-**Branch**: `fence/issue-956` | **PR**: #TBD
+**Branch**: `fence/issue-956` | **PR**: #1047
 
 ### Feature: Move status bar to top of window (#956)
 
