@@ -39,7 +39,7 @@ public partial class MainWindow
         _isDirty = true;
 
         // Clear item resolution context (no file yet)
-        _itemResolutionService.SetCurrentFilePath(null);
+        _itemResolutionService?.SetCurrentFilePath(null);
 
         // Update UI
         PopulateStoreProperties();
@@ -83,7 +83,7 @@ public partial class MainWindow
             _isDirty = false;
 
             // Update item resolution service with current file context for module-local items
-            _itemResolutionService.SetCurrentFilePath(filePath);
+            _itemResolutionService?.SetCurrentFilePath(filePath);
 
             // Update UI - properties and variables are fast
             PopulateStoreProperties();
@@ -133,7 +133,7 @@ public partial class MainWindow
 
             foreach (var entry in itemsToResolve)
             {
-                var resolved = _itemResolutionService.ResolveItem(entry.item.InventoryRes);
+                var resolved = _itemResolutionService?.ResolveItem(entry.item.InventoryRes);
 
                 results.Add(new StoreItemViewModel
                 {
@@ -218,7 +218,10 @@ public partial class MainWindow
             var resRef = Path.GetFileNameWithoutExtension(filePath).ToLowerInvariant();
             _currentStore.ResRef = resRef;
 
-            UtmWriter.Write(_currentStore, filePath);
+            // Write file on background thread to keep UI responsive
+            var store = _currentStore;
+            await System.Threading.Tasks.Task.Run(() => UtmWriter.Write(store, filePath));
+
             _currentFilePath = filePath;
             _isDirty = false;
 
@@ -300,7 +303,7 @@ public partial class MainWindow
         _isDirty = false;
 
         // Clear item resolution context
-        _itemResolutionService.SetCurrentFilePath(null);
+        _itemResolutionService?.SetCurrentFilePath(null);
 
         StoreItems.Clear();
         Variables.Clear();
