@@ -60,11 +60,7 @@
             <Grid.RowDefinitions>
                 <!-- Store Properties -->
                 <RowDefinition Height="Auto"/>
-                <!-- Scripts & Comment (collapsible) -->
-                <RowDefinition Height="Auto"/>
-                <!-- Buy Restrictions (collapsible) -->
-                <RowDefinition Height="Auto"/>
-                <!-- Local Variables (collapsible) -->
+                <!-- Collapsible panels (side by side) -->
                 <RowDefinition Height="Auto"/>
                 <!-- Inventory and Palette -->
                 <RowDefinition Height="*"/>
@@ -132,172 +128,179 @@
                 </Grid>
             </Border>
 
-            <!-- Scripts & Comment Panel -->
-            <Expander Grid.Row="1" Header="Scripts &amp; Comment" IsExpanded="False" Margin="0,0,0,8"
-                      AutomationProperties.AutomationId="ScriptsExpander">
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="40"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+            <!-- Collapsible Panels (side by side) -->
+            <Grid Grid.Row="1" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                        <!-- Row 0: OnOpenStore script -->
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="OnOpenStore:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" x:Name="OnOpenStoreBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
-                                 AutomationProperties.AutomationId="OnOpenStoreBox"/>
-                        <Button Grid.Row="0" Grid.Column="2" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseOpenScript"
-                                ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseOpenScriptButton"/>
-                        <Button Grid.Row="0" Grid.Column="3" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearOpenScript"
-                                ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearOpenScriptButton"/>
+                <!-- Scripts & Comment Panel -->
+                <Expander Grid.Column="0" Header="Scripts &amp; Comment" IsExpanded="False"
+                          AutomationProperties.AutomationId="ScriptsExpander">
+                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
+                        <StackPanel Spacing="8">
+                            <!-- OnOpenStore script -->
+                            <StackPanel>
+                                <TextBlock Text="OnOpenStore:" Margin="0,0,0,4"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" x:Name="OnOpenStoreBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
+                                             AutomationProperties.AutomationId="OnOpenStoreBox"/>
+                                    <Button Grid.Column="1" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseOpenScript"
+                                            ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseOpenScriptButton"/>
+                                    <Button Grid.Column="2" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearOpenScript"
+                                            ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearOpenScriptButton"/>
+                                </Grid>
+                            </StackPanel>
 
-                        <!-- Row 0: OnStoreClosed script -->
-                        <TextBlock Grid.Row="0" Grid.Column="5" Text="OnStoreClosed:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox Grid.Row="0" Grid.Column="6" x:Name="OnStoreClosedBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
-                                 AutomationProperties.AutomationId="OnStoreClosedBox"/>
-                        <Button Grid.Row="0" Grid.Column="7" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseClosedScript"
-                                ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseClosedScriptButton"/>
-                        <Button Grid.Row="0" Grid.Column="8" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearClosedScript"
-                                ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearClosedScriptButton"/>
+                            <!-- OnStoreClosed script -->
+                            <StackPanel>
+                                <TextBlock Text="OnStoreClosed:" Margin="0,0,0,4"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0" x:Name="OnStoreClosedBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
+                                             AutomationProperties.AutomationId="OnStoreClosedBox"/>
+                                    <Button Grid.Column="1" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseClosedScript"
+                                            ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseClosedScriptButton"/>
+                                    <Button Grid.Column="2" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearClosedScript"
+                                            ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearClosedScriptButton"/>
+                                </Grid>
+                            </StackPanel>
 
-                        <!-- Row 1: Comment field -->
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Comment:" VerticalAlignment="Top" Margin="0,12,8,0"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="9" x:Name="CommentBox"
-                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="120"
-                                 Watermark="Developer notes..." Margin="0,8,0,0"
-                                 AutomationProperties.AutomationId="CommentBox"/>
-                    </Grid>
-                </Border>
-            </Expander>
-
-            <!-- Buy Restrictions Panel -->
-            <Expander Grid.Row="2" Header="Buy Restrictions" IsExpanded="False" Margin="0,0,0,8"
-                      AutomationProperties.AutomationId="BuyRestrictionsExpander">
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Mode Selection -->
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
-                            <RadioButton x:Name="BuyAllRadio" Content="Buy All Item Types" GroupName="BuyMode" IsChecked="True"
-                                         Checked="OnBuyModeChanged" AutomationProperties.AutomationId="BuyAllRadio"/>
-                            <RadioButton x:Name="WillOnlyBuyRadio" Content="Will Only Buy Selected" GroupName="BuyMode"
-                                         Checked="OnBuyModeChanged" AutomationProperties.AutomationId="WillOnlyBuyRadio"/>
-                            <RadioButton x:Name="WillNotBuyRadio" Content="Will Not Buy Selected" GroupName="BuyMode"
-                                         Checked="OnBuyModeChanged" AutomationProperties.AutomationId="WillNotBuyRadio"/>
+                            <!-- Comment field -->
+                            <StackPanel>
+                                <TextBlock Text="Comment:" Margin="0,0,0,4"/>
+                                <TextBox x:Name="CommentBox"
+                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="60" MaxHeight="120"
+                                         Watermark="Developer notes..."
+                                         AutomationProperties.AutomationId="CommentBox"/>
+                            </StackPanel>
                         </StackPanel>
+                    </Border>
+                </Expander>
 
-                        <!-- Helper Buttons -->
-                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8"
-                                    IsVisible="{Binding !IsChecked, ElementName=BuyAllRadio}">
-                            <Button Content="Select All" Click="OnSelectAllTypes" AutomationProperties.AutomationId="SelectAllTypesButton"/>
-                            <Button Content="Clear All" Click="OnClearAllTypes" AutomationProperties.AutomationId="ClearAllTypesButton"/>
+                <!-- Buy Restrictions Panel -->
+                <Expander Grid.Column="2" Header="Buy Restrictions" IsExpanded="False"
+                          AutomationProperties.AutomationId="BuyRestrictionsExpander">
+                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
+                        <StackPanel Spacing="8">
+                            <!-- Mode Selection -->
+                            <StackPanel Spacing="4">
+                                <RadioButton x:Name="BuyAllRadio" Content="Buy All Item Types" GroupName="BuyMode" IsChecked="True"
+                                             Checked="OnBuyModeChanged" AutomationProperties.AutomationId="BuyAllRadio"/>
+                                <RadioButton x:Name="WillOnlyBuyRadio" Content="Will Only Buy Selected" GroupName="BuyMode"
+                                             Checked="OnBuyModeChanged" AutomationProperties.AutomationId="WillOnlyBuyRadio"/>
+                                <RadioButton x:Name="WillNotBuyRadio" Content="Will Not Buy Selected" GroupName="BuyMode"
+                                             Checked="OnBuyModeChanged" AutomationProperties.AutomationId="WillNotBuyRadio"/>
+                            </StackPanel>
+
+                            <!-- Helper Buttons -->
+                            <StackPanel Orientation="Horizontal" Spacing="8"
+                                        IsVisible="{Binding !IsChecked, ElementName=BuyAllRadio}">
+                                <Button Content="Select All" Click="OnSelectAllTypes" AutomationProperties.AutomationId="SelectAllTypesButton"/>
+                                <Button Content="Clear All" Click="OnClearAllTypes" AutomationProperties.AutomationId="ClearAllTypesButton"/>
+                            </StackPanel>
+
+                            <!-- Item Type Checkboxes -->
+                            <ScrollViewer MaxHeight="150" IsVisible="{Binding !IsChecked, ElementName=BuyAllRadio}">
+                                <ItemsControl x:Name="ItemTypeCheckboxes" AutomationProperties.AutomationId="ItemTypeCheckboxes">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Content="{Binding DisplayName}"
+                                                      IsChecked="{Binding IsSelected}"
+                                                      Width="140" Margin="0,2,4,2"
+                                                      Checked="OnItemTypeCheckChanged"
+                                                      Unchecked="OnItemTypeCheckChanged"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
                         </StackPanel>
+                    </Border>
+                </Expander>
 
-                        <!-- Item Type Checkboxes -->
-                        <ScrollViewer Grid.Row="2" MaxHeight="200" IsVisible="{Binding !IsChecked, ElementName=BuyAllRadio}">
-                            <ItemsControl x:Name="ItemTypeCheckboxes" AutomationProperties.AutomationId="ItemTypeCheckboxes">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <CheckBox Content="{Binding DisplayName}"
-                                                  IsChecked="{Binding IsSelected}"
-                                                  Width="180" Margin="0,2,8,2"
-                                                  Checked="OnItemTypeCheckChanged"
-                                                  Unchecked="OnItemTypeCheckChanged"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </Grid>
-                </Border>
-            </Expander>
+                <!-- Local Variables Panel -->
+                <Expander Grid.Column="4" Header="Local Variables" IsExpanded="False"
+                          AutomationProperties.AutomationId="VariablesExpander">
+                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
+                        <DockPanel>
+                            <!-- Action Buttons -->
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                <Button Content="Add" Click="OnAddVariable" AutomationProperties.AutomationId="AddVariableButton"/>
+                                <Button Content="Remove" Click="OnRemoveVariable" AutomationProperties.AutomationId="RemoveVariableButton"/>
+                            </StackPanel>
 
-            <!-- Local Variables Panel -->
-            <Expander Grid.Row="3" Header="Local Variables" IsExpanded="False" Margin="0,0,0,8"
-                      AutomationProperties.AutomationId="VariablesExpander">
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0">
-                    <DockPanel>
-                        <!-- Action Buttons -->
-                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                            <Button Content="Add Variable" Click="OnAddVariable" AutomationProperties.AutomationId="AddVariableButton"/>
-                            <Button Content="Remove" Click="OnRemoveVariable" AutomationProperties.AutomationId="RemoveVariableButton"/>
-                        </StackPanel>
-
-                        <!-- Variables DataGrid -->
-                        <DataGrid x:Name="VariablesGrid"
-                                  AutoGenerateColumns="False"
-                                  CanUserReorderColumns="True"
-                                  CanUserResizeColumns="True"
-                                  CanUserSortColumns="True"
-                                  IsReadOnly="False"
-                                  SelectionMode="Extended"
-                                  GridLinesVisibility="Horizontal"
-                                  MaxHeight="200"
-                                  AutomationProperties.AutomationId="VariablesGrid">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Name" Width="200" Binding="{Binding Name}"/>
-                                <DataGridTemplateColumn Header="Type" Width="100">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding TypeDisplay}" VerticalAlignment="Center" Margin="4,0"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <ComboBox SelectedIndex="{Binding TypeIndex}" Margin="0">
-                                                <ComboBoxItem Content="Int"/>
-                                                <ComboBoxItem Content="Float"/>
-                                                <ComboBoxItem Content="String"/>
-                                            </ComboBox>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Value" Width="*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding ValueDisplay}" VerticalAlignment="Center" Margin="4,0"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <Grid>
-                                                <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
-                                                <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.001" FormatString="F3"/>
-                                                <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </DockPanel>
-                </Border>
-            </Expander>
+                            <!-- Variables DataGrid -->
+                            <DataGrid x:Name="VariablesGrid"
+                                      AutoGenerateColumns="False"
+                                      CanUserReorderColumns="True"
+                                      CanUserResizeColumns="True"
+                                      CanUserSortColumns="True"
+                                      IsReadOnly="False"
+                                      SelectionMode="Extended"
+                                      GridLinesVisibility="Horizontal"
+                                      MaxHeight="180"
+                                      AutomationProperties.AutomationId="VariablesGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Width="120" Binding="{Binding Name}"/>
+                                    <DataGridTemplateColumn Header="Type" Width="70">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding TypeDisplay}" VerticalAlignment="Center" Margin="4,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <ComboBox SelectedIndex="{Binding TypeIndex}" Margin="0">
+                                                    <ComboBoxItem Content="Int"/>
+                                                    <ComboBoxItem Content="Float"/>
+                                                    <ComboBoxItem Content="String"/>
+                                                </ComboBox>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Value" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding ValueDisplay}" VerticalAlignment="Center" Margin="4,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <NumericUpDown Value="{Binding IntValue}" IsVisible="{Binding IsIntType}" Minimum="-2147483648" Maximum="2147483647"/>
+                                                    <NumericUpDown Value="{Binding FloatValue}" IsVisible="{Binding IsFloatType}" Increment="0.001" FormatString="F3"/>
+                                                    <TextBox Text="{Binding StringValue}" IsVisible="{Binding IsStringType}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+                </Expander>
+            </Grid>
 
             <!-- Store Inventory and Item Palette -->
-            <Grid Grid.Row="4">
+            <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <!-- Store Inventory -->
                     <ColumnDefinition Width="*" MinWidth="300"/>

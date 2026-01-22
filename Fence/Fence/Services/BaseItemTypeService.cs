@@ -49,12 +49,18 @@ public class BaseItemTypeService
             if (string.IsNullOrEmpty(label) || label == "****")
                 continue;
 
+            // Skip garbage labels entirely
+            if (IsGarbageLabel(label))
+                continue;
+
             // Get display name from TLK
             var nameStrRef = baseItems.GetValue(i, "Name");
             string displayName;
             if (nameStrRef != null && nameStrRef != "****")
             {
-                displayName = _gameDataService.GetString(nameStrRef) ?? FormatLabel(label);
+                var tlkName = _gameDataService.GetString(nameStrRef);
+                // Filter garbage TLK values
+                displayName = IsValidTlkString(tlkName) ? tlkName! : FormatLabel(label);
             }
             else
             {
@@ -88,6 +94,38 @@ public class BaseItemTypeService
         // Convert underscores to spaces and title case
         return string.Join(" ", label.Split('_')
             .Select(w => char.ToUpper(w[0]) + w.Substring(1).ToLower()));
+    }
+
+    /// <summary>
+    /// Check if a label from baseitems.2da is a garbage/placeholder entry.
+    /// </summary>
+    private static bool IsGarbageLabel(string label)
+    {
+        return label.Contains("deleted", StringComparison.OrdinalIgnoreCase) ||
+               label.Contains("padding", StringComparison.OrdinalIgnoreCase) ||
+               label.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Check if a TLK string is valid (not null, not empty, not a placeholder value).
+    /// </summary>
+    private static bool IsValidTlkString(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        var trimmed = value.Trim();
+
+        // Common placeholder values in NWN TLK files
+        return !trimmed.Equals("BadStrRef", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("Bad Strref", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("DELETED", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("DELETE_ME", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("Padding", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.StartsWith("Bad Str", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.StartsWith("Xp2spec", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.StartsWith("deleted", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Contains("deleted", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

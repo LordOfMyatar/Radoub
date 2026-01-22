@@ -30,6 +30,9 @@ Part of Epic #555 (Merchant Editor Tool).
 #### Fixed
 - **Palette category filtering** - Filter out invalid category names (DELETED, BadStrRef, PAdding, etc.)
 - **Duplicate categories** - Skip duplicate category IDs in palette loading
+- **Item type dropdown filtering** - Filter garbage labels (deleted, padding, xp2spec*) from base item types
+- **Item name resolution** - Filter invalid TLK strings (BadStrRef, DELETED, etc.) in item display names
+- **Settings cache status** - Cache rebuild now shows "Rebuilt" status correctly after completion
 
 ---
 

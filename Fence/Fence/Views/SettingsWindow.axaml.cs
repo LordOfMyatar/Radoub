@@ -61,7 +61,7 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void OnClearCacheClick(object? sender, RoutedEventArgs e)
+    private async void OnClearCacheClick(object? sender, RoutedEventArgs e)
     {
         if (_mainWindow == null)
             return;
@@ -70,18 +70,22 @@ public partial class SettingsWindow : Window
         CacheStatusText.Foreground = GetWarningBrush();
         ClearCacheButton.IsEnabled = false;
 
-        _mainWindow.ClearAndReloadPaletteCache();
-
-        // Re-enable button and update info after a delay to allow rebuild to start
-        _ = System.Threading.Tasks.Task.Run(async () =>
+        try
         {
-            await System.Threading.Tasks.Task.Delay(2000);
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                ClearCacheButton.IsEnabled = true;
-                UpdateCacheInfo();
-            });
-        });
+            await _mainWindow.ClearAndReloadPaletteCacheAsync();
+            CacheStatusText.Text = "Rebuilt";
+            CacheStatusText.Foreground = GetSuccessBrush();
+        }
+        catch
+        {
+            CacheStatusText.Text = "Rebuild failed";
+            CacheStatusText.Foreground = GetErrorBrush();
+        }
+        finally
+        {
+            ClearCacheButton.IsEnabled = true;
+            UpdateCacheInfo();
+        }
     }
 
     private void LoadSettings()
