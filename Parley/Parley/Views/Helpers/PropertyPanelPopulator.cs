@@ -163,13 +163,15 @@ namespace Parley.Views.Helpers
             var portraitBorder = _window.FindControl<Border>("PortraitBorder");
             var portraitImage = _window.FindControl<Image>("PortraitImage");
 
-            // Clear portrait for PC nodes or empty speaker
+            // Clear portrait and soundset for PC nodes or empty speaker
             if (isPC || string.IsNullOrWhiteSpace(dialogNode.Speaker))
             {
                 if (soundsetInfoTextBlock != null)
                     soundsetInfoTextBlock.Text = "";
                 if (portraitBorder != null)
                     portraitBorder.IsVisible = false;
+                // Reset soundset ID to prevent stale state (#1006)
+                SetCurrentSoundsetId?.Invoke(ushort.MaxValue);
                 return;
             }
 
@@ -180,6 +182,8 @@ namespace Parley.Views.Helpers
                     soundsetInfoTextBlock.Text = "";
                 if (portraitBorder != null)
                     portraitBorder.IsVisible = false;
+                // Reset soundset ID to prevent stale state (#1006)
+                SetCurrentSoundsetId?.Invoke(ushort.MaxValue);
                 return;
             }
 
@@ -190,6 +194,8 @@ namespace Parley.Views.Helpers
                     soundsetInfoTextBlock.Text = $"Creature '{dialogNode.Speaker}' not found in module";
                 if (portraitBorder != null)
                     portraitBorder.IsVisible = false;
+                // Reset soundset ID to prevent stale state (#1006)
+                SetCurrentSoundsetId?.Invoke(ushort.MaxValue);
                 return;
             }
 

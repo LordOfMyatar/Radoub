@@ -24,7 +24,7 @@ Quick fixes for recently reported user-visible issues.
 
 #### Work Items
 - [x] #1005 - [Quartermaster] Equipment panel sizing - capped at 400px to ensure backpack visibility
-- [ ] #1006 - [Parley] Soundset playback stops working after clicking PC node
+- [x] #1006 - [Parley] Reset soundset ID on PC nodes to prevent stale state
 - [ ] #1007 - [Radoub] Browser windows need custom title bars for dark theme
 
 ---
