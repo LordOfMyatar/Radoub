@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.50-alpha] - 2026-01-21
-**Branch**: `quartermaster/issue-1016` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1016` | **PR**: #1045
 
 ### Sprint: Variables & Metadata Fields (#1016)
 
