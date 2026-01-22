@@ -206,6 +206,9 @@ public static class UtcReader
         ParseItemList(root, utc);
         ParseEquipItemList(root, utc);
 
+        // VarTable (local variables)
+        utc.VarTable = VarTableHelper.ReadVarTable(root);
+
         return utc;
     }
 

@@ -193,6 +193,12 @@ public static class UtcWriter
         AddItemList(root, utc.ItemList);
         AddEquipItemList(root, utc.EquipItemList);
 
+        // VarTable (local variables)
+        if (utc.VarTable.Count > 0)
+        {
+            VarTableHelper.WriteVarTable(root, utc.VarTable);
+        }
+
         return root;
     }
 

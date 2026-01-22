@@ -424,6 +424,7 @@ public partial class MainWindow
         {
             // Sync UI state to creature model before saving
             SyncInventoryToCreature();
+            AdvancedPanelContent.UpdateVarTable();
 
             if (_isBicFile && _currentCreature is BicFile bicFile)
             {

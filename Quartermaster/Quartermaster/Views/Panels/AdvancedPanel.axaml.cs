@@ -1,10 +1,14 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
+using Quartermaster.ViewModels;
 using Quartermaster.Views.Dialogs;
+using Radoub.Formats.Gff;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
 
 namespace Quartermaster.Views.Panels;
@@ -39,14 +43,26 @@ public partial class AdvancedPanel : BasePanelControl
     private ComboBox? _decayTimeComboBox;
     private ComboBox? _bodyBagComboBox;
 
+    // Variables
+    private Border? _variablesSection;
+    private DataGrid? _variablesGrid;
+    private Button? _addVariableButton;
+    private Button? _removeVariableButton;
+
     private CreatureDisplayService? _displayService;
     private string? _currentModuleDirectory;
+
+    /// <summary>
+    /// Collection of local variables for data binding.
+    /// </summary>
+    public ObservableCollection<VariableViewModel> Variables { get; } = new();
 
     public event EventHandler? CommentChanged;
     public event EventHandler? TagChanged;
     public event EventHandler? FlagsChanged;
     public event EventHandler? BehaviorChanged;
     public event EventHandler? PaletteCategoryChanged;
+    public event EventHandler? VariablesChanged;
 
     public AdvancedPanel()
     {
@@ -85,6 +101,12 @@ public partial class AdvancedPanel : BasePanelControl
         _decayTimeComboBox = this.FindControl<ComboBox>("DecayTimeComboBox");
         _bodyBagComboBox = this.FindControl<ComboBox>("BodyBagComboBox");
 
+        // Variables
+        _variablesSection = this.FindControl<Border>("VariablesSection");
+        _variablesGrid = this.FindControl<DataGrid>("VariablesGrid");
+        _addVariableButton = this.FindControl<Button>("AddVariableButton");
+        _removeVariableButton = this.FindControl<Button>("RemoveVariableButton");
+
         // Wire up events
         if (_copyResRefButton != null)
             _copyResRefButton.Click += OnCopyResRefClick;
@@ -98,6 +120,7 @@ public partial class AdvancedPanel : BasePanelControl
         WireUpFlagCheckboxes();
         WireUpBehaviorCombos();
         WireUpIdentityCombos();
+        WireUpVariables();
     }
 
     private void WireUpIdentityCombos()
@@ -235,7 +258,7 @@ public partial class AdvancedPanel : BasePanelControl
 
     /// <summary>
     /// Set whether the current file is a BIC (player character) or UTC (creature blueprint).
-    /// This controls visibility of UTC-only fields like Blueprint ResRef, Comment, and Palette Category,
+    /// This controls visibility of UTC-only fields like Blueprint ResRef, Comment, Palette Category, and Variables,
     /// and disables fields that shouldn't be editable for BIC files.
     /// </summary>
     public void SetFileType(bool isBicFile)
@@ -247,6 +270,8 @@ public partial class AdvancedPanel : BasePanelControl
             _commentRow.IsVisible = !isBicFile;
         if (_paletteCategoryRow != null)
             _paletteCategoryRow.IsVisible = !isBicFile;
+        if (_variablesSection != null)
+            _variablesSection.IsVisible = !isBicFile;
 
         // IsPC should always be true for BIC files and not editable
         if (_isPCCheckBox != null)
@@ -397,6 +422,9 @@ public partial class AdvancedPanel : BasePanelControl
         ComboBoxHelper.SelectByTag(_decayTimeComboBox, creature.DecayTime, "{0} ms");
         ComboBoxHelper.SelectByTag(_bodyBagComboBox, creature.BodyBag);
 
+        // Variables
+        PopulateVariables();
+
         DeferLoadingReset();
     }
 
@@ -425,6 +453,9 @@ public partial class AdvancedPanel : BasePanelControl
             _bodyBagComboBox.SelectedIndex = 0;
         // Select PaletteID 1 (typically Custom category) by tag, not index
         ComboBoxHelper.SelectByTag(_paletteCategoryComboBox, (byte)1);
+
+        // Variables
+        ClearVariables();
     }
 
     private async void OnCopyResRefClick(object? sender, RoutedEventArgs e)
@@ -467,4 +498,131 @@ public partial class AdvancedPanel : BasePanelControl
 
     public string GetComment() => _commentTextBox?.Text ?? "";
     public string GetTag() => _tagTextBox?.Text ?? "";
+
+    #region Variables
+
+    private void WireUpVariables()
+    {
+        if (_addVariableButton != null)
+            _addVariableButton.Click += OnAddVariable;
+        if (_removeVariableButton != null)
+            _removeVariableButton.Click += OnRemoveVariable;
+        if (_variablesGrid != null)
+            _variablesGrid.ItemsSource = Variables;
+    }
+
+    /// <summary>
+    /// Populate the Variables collection from the current creature's VarTable.
+    /// </summary>
+    private void PopulateVariables()
+    {
+        // Unbind grid first to avoid UI updates during population
+        if (_variablesGrid != null)
+            _variablesGrid.ItemsSource = null;
+
+        // Unsubscribe from existing items
+        foreach (var vm in Variables)
+        {
+            vm.PropertyChanged -= OnVariablePropertyChanged;
+        }
+
+        Variables.Clear();
+
+        if (CurrentCreature == null) return;
+
+        foreach (var variable in CurrentCreature.VarTable)
+        {
+            var vm = VariableViewModel.FromVariable(variable);
+            vm.PropertyChanged += OnVariablePropertyChanged;
+            Variables.Add(vm);
+        }
+
+        // Rebind grid after population complete
+        if (_variablesGrid != null)
+            _variablesGrid.ItemsSource = Variables;
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Loaded {Variables.Count} local variables");
+    }
+
+    private void OnVariablePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (IsLoading) return;
+        VariablesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Update the current creature's VarTable from the Variables collection.
+    /// Call this before saving.
+    /// </summary>
+    public void UpdateVarTable()
+    {
+        if (CurrentCreature == null) return;
+
+        CurrentCreature.VarTable.Clear();
+        foreach (var vm in Variables)
+        {
+            CurrentCreature.VarTable.Add(vm.ToVariable());
+        }
+    }
+
+    private void OnAddVariable(object? sender, RoutedEventArgs e)
+    {
+        if (CurrentCreature == null) return;
+
+        // Generate a unique variable name
+        var baseName = "NewVar";
+        var counter = 1;
+        var name = baseName;
+
+        while (Variables.Any(v => v.Name == name))
+        {
+            name = $"{baseName}{counter}";
+            counter++;
+        }
+
+        var newVar = new VariableViewModel
+        {
+            Name = name,
+            Type = VariableType.Int,
+            IntValue = 0
+        };
+
+        newVar.PropertyChanged += OnVariablePropertyChanged;
+        Variables.Add(newVar);
+
+        if (_variablesGrid != null)
+            _variablesGrid.SelectedItem = newVar;
+
+        VariablesChanged?.Invoke(this, EventArgs.Empty);
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Added new variable: {name}");
+    }
+
+    private void OnRemoveVariable(object? sender, RoutedEventArgs e)
+    {
+        if (_variablesGrid == null) return;
+
+        var selectedItems = _variablesGrid.SelectedItems?.Cast<VariableViewModel>().ToList();
+        if (selectedItems == null || selectedItems.Count == 0)
+            return;
+
+        foreach (var item in selectedItems)
+        {
+            item.PropertyChanged -= OnVariablePropertyChanged;
+            Variables.Remove(item);
+        }
+
+        VariablesChanged?.Invoke(this, EventArgs.Empty);
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Removed {selectedItems.Count} variable(s)");
+    }
+
+    private void ClearVariables()
+    {
+        foreach (var vm in Variables)
+        {
+            vm.PropertyChanged -= OnVariablePropertyChanged;
+        }
+        Variables.Clear();
+    }
+
+    #endregion
 }

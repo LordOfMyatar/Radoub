@@ -155,6 +155,81 @@
                         </Grid>
                     </StackPanel>
                 </Border>
+
+                <!-- Local Variables Section (UTC only - hidden for BIC) -->
+                <Border x:Name="VariablesSection"
+                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="15">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Local Variables" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+
+                        <DockPanel>
+                            <!-- Action Buttons -->
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                <Button x:Name="AddVariableButton" Content="Add"
+                                        AutomationProperties.AutomationId="AddVariableButton"/>
+                                <Button x:Name="RemoveVariableButton" Content="Remove"
+                                        AutomationProperties.AutomationId="RemoveVariableButton"/>
+                            </StackPanel>
+
+                            <!-- Variables DataGrid -->
+                            <DataGrid x:Name="VariablesGrid"
+                                      AutoGenerateColumns="False"
+                                      CanUserReorderColumns="True"
+                                      CanUserResizeColumns="True"
+                                      CanUserSortColumns="True"
+                                      IsReadOnly="False"
+                                      SelectionMode="Extended"
+                                      GridLinesVisibility="Horizontal"
+                                      MaxHeight="200"
+                                      AutomationProperties.AutomationId="VariablesGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Width="140" Binding="{Binding Name}"/>
+                                    <DataGridTemplateColumn Header="Type" Width="80">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox SelectedIndex="{Binding TypeIndex}"
+                                                          HorizontalAlignment="Stretch"
+                                                          Margin="2">
+                                                    <ComboBoxItem Content="Int"/>
+                                                    <ComboBoxItem Content="Float"/>
+                                                    <ComboBoxItem Content="String"/>
+                                                </ComboBox>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Value" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <!-- Int value editor -->
+                                                    <NumericUpDown Value="{Binding IntValue}"
+                                                                   IsVisible="{Binding IsIntType}"
+                                                                   Minimum="-2147483648"
+                                                                   Maximum="2147483647"
+                                                                   FormatString="0"
+                                                                   Margin="2"/>
+                                                    <!-- Float value editor -->
+                                                    <NumericUpDown Value="{Binding FloatValue}"
+                                                                   IsVisible="{Binding IsFloatType}"
+                                                                   FormatString="F3"
+                                                                   Increment="0.1"
+                                                                   Margin="2"/>
+                                                    <!-- String value editor -->
+                                                    <TextBox Text="{Binding StringValue}"
+                                                             IsVisible="{Binding IsStringType}"
+                                                             Margin="2"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
     </Border>
