@@ -6,7 +6,10 @@
         Width="900" Height="500"
         SizeToContent="Manual"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource ThemeBackground}">
+        Background="{DynamicResource ThemeBackground}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
 
     <Window.Styles>
         <!-- Dark mode selection visibility fix -->
@@ -24,16 +27,38 @@
         </Style>
     </Window.Styles>
 
-    <Grid Margin="10">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Information -->
-        <TextBlock Grid.Row="0" x:Name="HeaderText"
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeTitleBar}"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        IsHitTestVisible="False">
+                <TextBlock Text="Parameter Browser"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header Information -->
+            <TextBlock Grid.Row="0" x:Name="HeaderText"
                    FontWeight="Bold" Margin="0,0,0,5"
                    Text="Available Parameters"/>
 
@@ -166,6 +191,7 @@
                         Margin="0,0,10,0"/>
                 <Button Content="Close" Click="OnCloseClick"/>
             </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

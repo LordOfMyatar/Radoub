@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.43] - 2026-01-21
+**Branch**: `radoub/issue-1013` | **PR**: #1048
+
+### Sprint: Bug Bash - Recent Regressions (#1013)
+
+Quick fixes for recently reported user-visible issues.
+
+#### Work Items
+- [x] #1005 - [Quartermaster] Equipment panel proportional sizing (2/3 equipment, 1/3 backpack) with splitter
+- [x] #1006 - [Parley] Reset soundset ID on PC nodes to prevent stale state
+- [x] #1007 - [Radoub] Add custom title bars to 8 browser windows for dark theme support
+
+---
+
 ## [0.9.42] - 2026-01-21
 **Branch**: `radoub/issue-1015` | **PR**: #1044
 

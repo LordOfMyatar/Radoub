@@ -6,7 +6,10 @@
         Width="600" Height="500"
         MinWidth="500" MinHeight="400"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource ThemeBackground}">
+        Background="{DynamicResource ThemeBackground}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
 
     <Window.Styles>
         <!-- Dark mode selection visibility fix -->
@@ -24,17 +27,39 @@
         </Style>
     </Window.Styles>
 
-    <Grid Margin="10">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Source Selection Row -->
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeTitleBar}"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        IsHitTestVisible="False">
+                <TextBlock Text="Sound Browser"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Source Selection Row -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,5" Spacing="15">
             <TextBlock Text="Sources:"
                        VerticalAlignment="Center"
@@ -218,5 +243,6 @@
                     Click="OnCancelClick"
                     IsCancel="True"/>
         </StackPanel>
+        </Grid>
     </Grid>
 </Window>

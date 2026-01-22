@@ -9,19 +9,21 @@
 
     <Grid x:Name="InventoryGrid">
         <Grid.ColumnDefinitions>
-            <!-- Left: Equipment + Backpack - reduced for 1024x768 support -->
-            <ColumnDefinition Width="300" MinWidth="200"/>
+            <!-- Left: Equipment + Backpack - flexible, resizable via splitter -->
+            <ColumnDefinition Width="350"/>
             <ColumnDefinition Width="5"/>
-            <!-- Right: Item Palette -->
-            <ColumnDefinition Width="*" MinWidth="250"/>
+            <!-- Right: Item Palette - takes remaining space -->
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- Left Panel: Equipment Slots + Backpack -->
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
+                <!-- Equipment: 2/3 of space by default, fully resizable via splitter -->
+                <RowDefinition Height="2*"/>
                 <RowDefinition Height="5"/>
-                <RowDefinition Height="*"/>
+                <!-- Backpack: 1/3 of space by default, fully resizable via splitter -->
+                <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
 
             <!-- Equipment Slots Panel -->

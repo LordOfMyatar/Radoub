@@ -5,7 +5,10 @@
         Width="700" Height="550"
         MinWidth="500" MinHeight="400"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource ThemeBackground}">
+        Background="{DynamicResource ThemeBackground}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
 
     <Window.Styles>
         <!-- Dark mode selection visibility fix -->
@@ -23,17 +26,39 @@
         </Style>
     </Window.Styles>
 
-    <Grid Margin="10">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Search Box -->
-        <Grid Grid.Row="0" Margin="0,0,0,10">
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeTitleBar}"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        IsHitTestVisible="False">
+                <TextBlock Text="Quest Browser"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Search Box -->
+            <Grid Grid.Row="0" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -197,5 +222,6 @@
                     Click="OnCancelClick"
                     IsCancel="True"/>
         </StackPanel>
+        </Grid>
     </Grid>
 </Window>

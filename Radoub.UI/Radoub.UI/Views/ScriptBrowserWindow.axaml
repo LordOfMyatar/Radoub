@@ -7,7 +7,10 @@
         Width="1000" Height="600"
         SizeToContent="Manual"
         WindowStartupLocation="CenterOwner"
-        Background="{DynamicResource ThemeBackground}">
+        Background="{DynamicResource ThemeBackground}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
 
     <Window.Styles>
         <!-- Dark mode selection visibility fix -->
@@ -25,17 +28,39 @@
         </Style>
     </Window.Styles>
 
-    <Grid Margin="10">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="30"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Location Override Row -->
-        <Grid Grid.Row="0" Margin="0,0,0,5">
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeTitleBar}"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        IsHitTestVisible="False">
+                <TextBlock Text="Script Browser"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Location Override Row -->
+            <Grid Grid.Row="0" Margin="0,0,0,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -215,5 +240,6 @@
                     Click="OnCancelClick"
                     IsCancel="True"/>
         </StackPanel>
+        </Grid>
     </Grid>
 </Window>

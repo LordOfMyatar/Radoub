@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
@@ -377,4 +378,23 @@ public partial class PortraitBrowserWindow : Window
         public int Race { get; set; } = -1;
         public int Sex { get; set; } = -1;
     }
+
+    #region Title Bar Events
+
+    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            BeginMoveDrag(e);
+        }
+    }
+
+    private void OnTitleBarDoubleTapped(object? sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized
+            ? WindowState.Normal
+            : WindowState.Maximized;
+    }
+
+    #endregion
 }
