@@ -572,5 +572,24 @@ namespace DialogEditor.Views
                 }
             }
         }
+
+        #region Title Bar Events
+
+        private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            {
+                BeginMoveDrag(e);
+            }
+        }
+
+        private void OnTitleBarDoubleTapped(object? sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+        }
+
+        #endregion
     }
 }
