@@ -25,4 +25,9 @@
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Project references for TLK test data generation -->
+    <ProjectReference Include="..\Radoub.Formats\Radoub.Formats\Radoub.Formats.csproj" />
+  </ItemGroup>
+
 </Project>
