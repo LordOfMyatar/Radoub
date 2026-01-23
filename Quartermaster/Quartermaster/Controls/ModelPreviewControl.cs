@@ -268,10 +268,17 @@ public class ModelPreviewControl : Control
         }
         else
         {
+            var meshesWithNoTexture = new List<string>();
             foreach (var mesh in _model.GetMeshNodes())
             {
                 var textureName = mesh.Bitmap?.ToLowerInvariant() ?? "";
-                if (!string.IsNullOrEmpty(textureName) && !meshTextures.ContainsKey(textureName))
+                if (string.IsNullOrEmpty(textureName))
+                {
+                    meshesWithNoTexture.Add(mesh.Name ?? "unnamed");
+                    continue;
+                }
+
+                if (!meshTextures.ContainsKey(textureName))
                 {
                     if (!_textureCache.TryGetValue(textureName, out var bitmap))
                     {
@@ -282,6 +289,13 @@ public class ModelPreviewControl : Control
                     if (bitmap != null) texturesLoaded++;
                     else texturesFailed++;
                 }
+            }
+
+            if (meshesWithNoTexture.Count > 0)
+            {
+                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                    Radoub.Formats.Logging.LogLevel.WARN,
+                    $"ModelPreviewControl.Render: {meshesWithNoTexture.Count} meshes have NO Bitmap: {string.Join(", ", meshesWithNoTexture)}");
             }
 
             Radoub.Formats.Logging.UnifiedLogger.LogApplication(
@@ -329,11 +343,21 @@ public class ModelPreviewControl : Control
             var (width, height, pixels) = textureData.Value;
 
             // Create SKBitmap from RGBA pixel data
-            var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
+            // Use Unpremul since TextureService returns straight (non-premultiplied) RGBA
+            var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Unpremul);
             var handle = bitmap.GetPixels();
 
             // Copy pixel data - TextureService returns RGBA
             System.Runtime.InteropServices.Marshal.Copy(pixels, 0, handle, pixels.Length);
+
+            // Log a sample pixel to verify texture content
+            if (width > 0 && height > 0)
+            {
+                var sampleColor = bitmap.GetPixel(width / 2, height / 2);
+                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                    Radoub.Formats.Logging.LogLevel.DEBUG,
+                    $"LoadTextureAsBitmap: '{textureName}' sample pixel at center: R={sampleColor.Red}, G={sampleColor.Green}, B={sampleColor.Blue}, A={sampleColor.Alpha}");
+            }
 
             Radoub.Formats.Logging.UnifiedLogger.LogApplication(
                 Radoub.Formats.Logging.LogLevel.DEBUG,
