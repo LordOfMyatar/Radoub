@@ -250,33 +250,14 @@ public class ModelPreviewControl : Control
 
         // Load textures for model if texture service is available
         var meshTextures = new Dictionary<string, SKBitmap?>();
-        var meshCount = _model.GetMeshNodes().Count();
-        var texturesLoaded = 0;
-        var texturesFailed = 0;
 
-        if (_textureService == null)
+        if (_textureService != null && !_wireframeMode)
         {
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.WARN,
-                $"ModelPreviewControl.Render: _textureService is NULL - textures will not load! meshCount={meshCount}");
-        }
-        else if (_wireframeMode)
-        {
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.DEBUG,
-                $"ModelPreviewControl.Render: wireframe mode, skipping textures");
-        }
-        else
-        {
-            var meshesWithNoTexture = new List<string>();
             foreach (var mesh in _model.GetMeshNodes())
             {
                 var textureName = mesh.Bitmap?.ToLowerInvariant() ?? "";
                 if (string.IsNullOrEmpty(textureName))
-                {
-                    meshesWithNoTexture.Add(mesh.Name ?? "unnamed");
                     continue;
-                }
 
                 if (!meshTextures.ContainsKey(textureName))
                 {
@@ -286,21 +267,8 @@ public class ModelPreviewControl : Control
                         _textureCache[textureName] = bitmap;
                     }
                     meshTextures[textureName] = bitmap;
-                    if (bitmap != null) texturesLoaded++;
-                    else texturesFailed++;
                 }
             }
-
-            if (meshesWithNoTexture.Count > 0)
-            {
-                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                    Radoub.Formats.Logging.LogLevel.WARN,
-                    $"ModelPreviewControl.Render: {meshesWithNoTexture.Count} meshes have NO Bitmap: {string.Join(", ", meshesWithNoTexture)}");
-            }
-
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.INFO,
-                $"ModelPreviewControl.Render: meshes={meshCount}, texturesLoaded={texturesLoaded}, texturesFailed={texturesFailed}");
         }
 
         // Use custom SkiaSharp drawing operation for 3D rendering
@@ -320,25 +288,13 @@ public class ModelPreviewControl : Control
     private SKBitmap? LoadTextureAsBitmap(string textureName)
     {
         if (_textureService == null || string.IsNullOrEmpty(textureName))
-        {
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.DEBUG,
-                $"LoadTextureAsBitmap: Skipping '{textureName}' (no service or empty name)");
             return null;
-        }
 
         try
         {
-            // Try to load texture with PLT color indices (body + armor colors)
             var textureData = _textureService.LoadTexture(textureName, _colorIndices);
-
             if (textureData == null)
-            {
-                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                    Radoub.Formats.Logging.LogLevel.DEBUG,
-                    $"LoadTextureAsBitmap: '{textureName}' not found (skin={_colorIndices.Skin})");
                 return null;
-            }
 
             var (width, height, pixels) = textureData.Value;
 
@@ -346,22 +302,7 @@ public class ModelPreviewControl : Control
             // Use Unpremul since TextureService returns straight (non-premultiplied) RGBA
             var bitmap = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Unpremul);
             var handle = bitmap.GetPixels();
-
-            // Copy pixel data - TextureService returns RGBA
             System.Runtime.InteropServices.Marshal.Copy(pixels, 0, handle, pixels.Length);
-
-            // Log a sample pixel to verify texture content
-            if (width > 0 && height > 0)
-            {
-                var sampleColor = bitmap.GetPixel(width / 2, height / 2);
-                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                    Radoub.Formats.Logging.LogLevel.DEBUG,
-                    $"LoadTextureAsBitmap: '{textureName}' sample pixel at center: R={sampleColor.Red}, G={sampleColor.Green}, B={sampleColor.Blue}, A={sampleColor.Alpha}");
-            }
-
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.DEBUG,
-                $"LoadTextureAsBitmap: '{textureName}' loaded OK ({width}x{height})");
 
             return bitmap;
         }
@@ -649,58 +590,81 @@ public class ModelPreviewControl : Control
         }
 
         /// <summary>
-        /// Render all faces in strict depth order, looking up textures as needed.
+        /// Render all faces in strict depth order using DrawVertices for per-pixel texture mapping.
+        /// Faces MUST be rendered one-by-one in depth order (painter's algorithm) to avoid
+        /// depth artifacts when different body parts overlap.
         /// </summary>
         private void RenderFacesInDepthOrder(SKCanvas canvas, List<TexturedFace> faces)
         {
             if (faces.Count == 0) return;
 
+            // Cache shaders by texture to avoid recreating for every face
+            var shaderCache = new Dictionary<string, SKShader>();
+
             using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
 
-            foreach (var face in faces)
+            // Reusable arrays for single-triangle DrawVertices calls
+            var vertices = new SKPoint[3];
+            var texCoords = new SKPoint[3];
+
+            try
             {
-                // Get texture for this face (if any)
-                SKBitmap? texture = null;
-                if (!string.IsNullOrEmpty(face.TextureName))
-                    _textures.TryGetValue(face.TextureName, out texture);
-
-                // Get lit color
-                SKColor faceColor;
-                if (texture != null)
+                // Render each face in strict depth order (faces are pre-sorted)
+                foreach (var face in faces)
                 {
-                    // Sample texture at face center UV and apply lighting
-                    var centerU = (face.UVs[0].X + face.UVs[1].X + face.UVs[2].X) / 3f;
-                    var centerV = (face.UVs[0].Y + face.UVs[1].Y + face.UVs[2].Y) / 3f;
+                    // Check if this face has a texture we can use
+                    SKBitmap? texture = null;
+                    if (!string.IsNullOrEmpty(face.TextureName) && _textures.TryGetValue(face.TextureName, out texture) && texture != null)
+                    {
+                        // Get or create shader for this texture
+                        if (!shaderCache.TryGetValue(face.TextureName, out var shader))
+                        {
+                            shader = SKShader.CreateBitmap(texture, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat);
+                            shaderCache[face.TextureName] = shader;
+                        }
 
-                    // Wrap UVs and flip V
-                    centerU = centerU - MathF.Floor(centerU);
-                    centerV = 1.0f - (centerV - MathF.Floor(centerV));
+                        // Build vertex data for this single triangle
+                        for (int i = 0; i < 3; i++)
+                        {
+                            vertices[i] = face.ScreenPoints[i];
 
-                    var texX = (int)(centerU * texture.Width) % texture.Width;
-                    var texY = (int)(centerV * texture.Height) % texture.Height;
-                    if (texX < 0) texX += texture.Width;
-                    if (texY < 0) texY += texture.Height;
+                            // Convert UV (0-1) to texture pixel coordinates
+                            var u = face.UVs[i].X;
+                            var v = face.UVs[i].Y;
+                            u = u - MathF.Floor(u);
+                            v = 1.0f - (v - MathF.Floor(v)); // Flip V
 
-                    var texColor = texture.GetPixel(texX, texY);
-                    faceColor = ApplyLighting(texColor, face.LightIntensity);
+                            texCoords[i] = new SKPoint(u * texture.Width, v * texture.Height);
+                        }
+
+                        paint.Shader = shader;
+                        // Don't pass colors - let the texture show through unmodified
+                        // Lighting via vertex colors doesn't work correctly with SkiaSharp
+                        canvas.DrawVertices(SKVertexMode.Triangles, vertices, texCoords, null, paint);
+                    }
+                    else
+                    {
+                        // Untextured face - draw with flat color
+                        paint.Shader = null;
+                        var neutralColor = new SKColor(180, 170, 160);
+                        paint.Color = ApplyLighting(neutralColor, face.LightIntensity);
+
+                        using var path = new SKPath();
+                        path.MoveTo(face.ScreenPoints[0]);
+                        path.LineTo(face.ScreenPoints[1]);
+                        path.LineTo(face.ScreenPoints[2]);
+                        path.Close();
+                        canvas.DrawPath(path, paint);
+                    }
                 }
-                else
+            }
+            finally
+            {
+                // Dispose all cached shaders
+                foreach (var shader in shaderCache.Values)
                 {
-                    // No texture - use a neutral gray color instead of mesh diffuse
-                    // (which is often set to blue for debugging in some models)
-                    var neutralColor = new SKColor(180, 170, 160); // Warm gray for skin-like appearance
-                    faceColor = ApplyLighting(neutralColor, face.LightIntensity);
+                    shader.Dispose();
                 }
-
-                paint.Color = faceColor;
-
-                // Draw filled triangle
-                using var path = new SKPath();
-                path.MoveTo(face.ScreenPoints[0]);
-                path.LineTo(face.ScreenPoints[1]);
-                path.LineTo(face.ScreenPoints[2]);
-                path.Close();
-                canvas.DrawPath(path, paint);
             }
         }
 

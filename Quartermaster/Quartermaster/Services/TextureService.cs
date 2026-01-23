@@ -142,38 +142,19 @@ public class TextureService
         PltColorIndices? colorIndices = null)
     {
         if (string.IsNullOrEmpty(resRef))
-        {
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.DEBUG,
-                $"TextureService.LoadTexture: Empty resRef, returning null");
             return null;
-        }
 
         colorIndices ??= new PltColorIndices();
-
-        Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-            Radoub.Formats.Logging.LogLevel.DEBUG,
-            $"TextureService.LoadTexture: Loading '{resRef}' (skin={colorIndices.Skin}, hair={colorIndices.Hair})");
 
         // Try PLT first
         var pltResult = RenderPltTexture(resRef, colorIndices);
         if (pltResult.HasValue)
-        {
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.INFO,
-                $"TextureService.LoadTexture: '{resRef}' loaded as PLT ({pltResult.Value.width}x{pltResult.Value.height})");
             return pltResult;
-        }
 
         // Fall back to TGA
         var tgaResult = LoadTgaTexture(resRef);
         if (tgaResult.HasValue)
-        {
-            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                Radoub.Formats.Logging.LogLevel.INFO,
-                $"TextureService.LoadTexture: '{resRef}' loaded as TGA ({tgaResult.Value.width}x{tgaResult.Value.height})");
             return tgaResult;
-        }
 
         // If race-specific texture not found, try human fallback
         // e.g., pme0_head001 -> pmh0_head001
@@ -184,33 +165,15 @@ public class TextureService
 
             if (humanResRef != resRef)
             {
-                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                    Radoub.Formats.Logging.LogLevel.DEBUG,
-                    $"TextureService.LoadTexture: Trying human fallback '{humanResRef}' for '{resRef}'");
-
                 pltResult = RenderPltTexture(humanResRef, colorIndices);
                 if (pltResult.HasValue)
-                {
-                    Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                        Radoub.Formats.Logging.LogLevel.INFO,
-                        $"TextureService.LoadTexture: '{humanResRef}' loaded as PLT (fallback)");
                     return pltResult;
-                }
 
                 tgaResult = LoadTgaTexture(humanResRef);
                 if (tgaResult.HasValue)
-                {
-                    Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                        Radoub.Formats.Logging.LogLevel.INFO,
-                        $"TextureService.LoadTexture: '{humanResRef}' loaded as TGA (fallback)");
                     return tgaResult;
-                }
             }
         }
-
-        Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-            Radoub.Formats.Logging.LogLevel.WARN,
-            $"TextureService.LoadTexture: '{resRef}' NOT FOUND (tried PLT, TGA, and human fallback)");
 
         return null;
     }
