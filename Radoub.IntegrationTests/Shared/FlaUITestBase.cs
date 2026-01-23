@@ -64,9 +64,13 @@ public abstract class FlaUITestBase : IDisposable
         var parleySettingsDir = Path.Combine(_isolatedSettingsDir, "Parley");
         var manifestSettingsDir = Path.Combine(_isolatedSettingsDir, "Manifest");
         var quartermasterSettingsDir = Path.Combine(_isolatedSettingsDir, "Quartermaster");
+        var fenceSettingsDir = Path.Combine(_isolatedSettingsDir, "Fence");
+        var trebuchetSettingsDir = Path.Combine(_isolatedSettingsDir, "Trebuchet");
         Directory.CreateDirectory(parleySettingsDir);
         Directory.CreateDirectory(manifestSettingsDir);
         Directory.CreateDirectory(quartermasterSettingsDir);
+        Directory.CreateDirectory(fenceSettingsDir);
+        Directory.CreateDirectory(trebuchetSettingsDir);
 
         // Pre-seed Parley settings with test-friendly defaults
         // SideBySide layout is most stable for automated testing (no separate windows)
@@ -85,6 +89,14 @@ public abstract class FlaUITestBase : IDisposable
         // Pre-seed Quartermaster settings with test-friendly defaults
         var quartermasterSettings = @"{}";
         File.WriteAllText(Path.Combine(quartermasterSettingsDir, "QuartermasterSettings.json"), quartermasterSettings);
+
+        // Pre-seed Fence settings with test-friendly defaults
+        var fenceSettings = @"{}";
+        File.WriteAllText(Path.Combine(fenceSettingsDir, "FenceSettings.json"), fenceSettings);
+
+        // Pre-seed Trebuchet settings with test-friendly defaults
+        var trebuchetSettings = @"{}";
+        File.WriteAllText(Path.Combine(trebuchetSettingsDir, "TrebuchetSettings.json"), trebuchetSettings);
 
         // Pre-seed RadoubSettings with test data paths (for Sound Browser, etc.)
         // These paths point to our test data which includes HAK files with sounds
@@ -110,10 +122,14 @@ public abstract class FlaUITestBase : IDisposable
         // PARLEY_SETTINGS_DIR: ~/Radoub/Parley equivalent (ParleySettings.json)
         // MANIFEST_SETTINGS_DIR: ~/Radoub/Manifest equivalent (ManifestSettings.json)
         // QUARTERMASTER_SETTINGS_DIR: ~/Radoub/Quartermaster equivalent
+        // FENCE_SETTINGS_DIR: ~/Radoub/Fence equivalent
+        // TREBUCHET_SETTINGS_DIR: ~/Radoub/Trebuchet equivalent
         processInfo.Environment["RADOUB_SETTINGS_DIR"] = _isolatedSettingsDir;
         processInfo.Environment["PARLEY_SETTINGS_DIR"] = parleySettingsDir;
         processInfo.Environment["MANIFEST_SETTINGS_DIR"] = manifestSettingsDir;
         processInfo.Environment["QUARTERMASTER_SETTINGS_DIR"] = quartermasterSettingsDir;
+        processInfo.Environment["FENCE_SETTINGS_DIR"] = fenceSettingsDir;
+        processInfo.Environment["TREBUCHET_SETTINGS_DIR"] = trebuchetSettingsDir;
 
         App = Application.Launch(processInfo);
 
