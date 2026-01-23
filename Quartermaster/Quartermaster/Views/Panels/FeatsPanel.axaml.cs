@@ -25,6 +25,11 @@ public partial class FeatsPanel : UserControl
     /// </summary>
     public event EventHandler? FeatsChanged;
 
+    /// <summary>
+    /// Raised when the creature's special abilities are modified.
+    /// </summary>
+    public event EventHandler? SpecialAbilitiesChanged;
+
     private TextBlock? _featsSummaryText;
     private TextBox? _searchTextBox;
     private Button? _clearSearchButton;
@@ -40,6 +45,7 @@ public partial class FeatsPanel : UserControl
     private Expander? _specialAbilitiesExpander;
     private ItemsControl? _specialAbilitiesList;
     private TextBlock? _noAbilitiesText;
+    private Button? _addAbilityButton;
     private Border? _assignedFeatsListBorder;
     private StackPanel? _assignedFeatsListPanel;
     private bool _isLoading;
@@ -91,6 +97,7 @@ public partial class FeatsPanel : UserControl
         _specialAbilitiesExpander = this.FindControl<Expander>("SpecialAbilitiesExpander");
         _specialAbilitiesList = this.FindControl<ItemsControl>("SpecialAbilitiesList");
         _noAbilitiesText = this.FindControl<TextBlock>("NoAbilitiesText");
+        _addAbilityButton = this.FindControl<Button>("AddAbilityButton");
         _assignedFeatsListBorder = this.FindControl<Border>("AssignedFeatsListBorder");
         _assignedFeatsListPanel = this.FindControl<StackPanel>("AssignedFeatsListPanel");
 
@@ -132,6 +139,10 @@ public partial class FeatsPanel : UserControl
             _showPrereqsUnmetCheckBox.IsCheckedChanged += (s, e) => ApplySearchAndFilter();
         if (_showUnavailableCheckBox != null)
             _showUnavailableCheckBox.IsCheckedChanged += (s, e) => ApplySearchAndFilter();
+
+        // Wire up Add Ability button
+        if (_addAbilityButton != null)
+            _addAbilityButton.Click += OnAddAbilityClick;
     }
 
     /// <summary>
@@ -390,22 +401,141 @@ public partial class FeatsPanel : UserControl
     {
         foreach (var ability in creature.SpecAbilityList)
         {
-            _abilities.Add(new SpecialAbilityViewModel
+            var vm = new SpecialAbilityViewModel
             {
                 SpellId = ability.Spell,
                 AbilityName = GetSpellNameInternal(ability.Spell),
-                CasterLevel = ability.SpellCasterLevel,
                 CasterLevelDisplay = $"CL {ability.SpellCasterLevel}",
                 Flags = ability.SpellFlags
-            });
+            };
+            // Set CasterLevel last to avoid triggering callback during load
+            vm._casterLevel = ability.SpellCasterLevel;
+            vm.OnCasterLevelChanged = OnAbilityCasterLevelChanged;
+            vm.OnFlagsChanged = OnAbilityFlagsChanged;
+            vm.RemoveCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => RemoveAbility(vm));
+            _abilities.Add(vm);
         }
 
+        UpdateAbilitiesVisibility();
+    }
+
+    private void UpdateAbilitiesVisibility()
+    {
         if (_noAbilitiesText != null)
             _noAbilitiesText.IsVisible = _abilities.Count == 0;
 
         // Show expander if there are abilities
         if (_specialAbilitiesExpander != null && _abilities.Count > 0)
             _specialAbilitiesExpander.IsExpanded = true;
+    }
+
+    private void OnAbilityCasterLevelChanged(SpecialAbilityViewModel vm)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        // Update the creature's SpecAbilityList
+        var ability = _currentCreature.SpecAbilityList.FirstOrDefault(a => a.Spell == vm.SpellId);
+        if (ability != null)
+        {
+            ability.SpellCasterLevel = vm.CasterLevel;
+            SpecialAbilitiesChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnAbilityFlagsChanged(SpecialAbilityViewModel vm)
+    {
+        if (_isLoading || _currentCreature == null) return;
+
+        // Update the creature's SpecAbilityList
+        var ability = _currentCreature.SpecAbilityList.FirstOrDefault(a => a.Spell == vm.SpellId);
+        if (ability != null)
+        {
+            ability.SpellFlags = vm.Flags;
+            SpecialAbilitiesChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void RemoveAbility(SpecialAbilityViewModel vm)
+    {
+        if (_currentCreature == null) return;
+
+        // Remove from creature
+        var ability = _currentCreature.SpecAbilityList.FirstOrDefault(a => a.Spell == vm.SpellId);
+        if (ability != null)
+        {
+            _currentCreature.SpecAbilityList.Remove(ability);
+        }
+
+        // Remove from UI
+        _abilities.Remove(vm);
+        UpdateAbilitiesVisibility();
+
+        SpecialAbilitiesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async void OnAddAbilityClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_displayService == null || _currentCreature == null) return;
+
+        // Get all spells for picker
+        var spellIds = _displayService.GetAllSpellIds();
+        var spells = new List<(int Id, string Name, int InnateLevel)>();
+
+        foreach (var spellId in spellIds)
+        {
+            var spellName = _displayService.GetSpellName(spellId);
+            var spellInfo = _displayService.GetSpellInfo(spellId);
+            int innateLevel = spellInfo?.InnateLevel ?? 0;
+            spells.Add((spellId, spellName, innateLevel));
+        }
+
+        var picker = new Dialogs.SpellPickerWindow(spells);
+        var parentWindow = TopLevel.GetTopLevel(this) as Window;
+        if (parentWindow != null)
+        {
+            await picker.ShowDialog(parentWindow);
+        }
+        else
+        {
+            picker.Show();
+        }
+
+        if (picker.Confirmed && picker.SelectedSpellId.HasValue)
+        {
+            var spellId = picker.SelectedSpellId.Value;
+
+            // Check if already exists
+            if (_currentCreature.SpecAbilityList.Any(a => a.Spell == spellId))
+            {
+                return; // Already has this ability
+            }
+
+            // Add to creature
+            var newAbility = new Radoub.Formats.Utc.SpecialAbility
+            {
+                Spell = spellId,
+                SpellCasterLevel = 1, // Default caster level
+                SpellFlags = 0x01 // Default: readied
+            };
+            _currentCreature.SpecAbilityList.Add(newAbility);
+
+            // Add to UI
+            var vm = new SpecialAbilityViewModel
+            {
+                SpellId = spellId,
+                AbilityName = picker.SelectedSpellName,
+                CasterLevelDisplay = "CL 1",
+                Flags = 0x01
+            };
+            vm._casterLevel = 1;
+            vm.OnCasterLevelChanged = OnAbilityCasterLevelChanged;
+            vm.OnFlagsChanged = OnAbilityFlagsChanged;
+            vm.RemoveCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => RemoveAbility(vm));
+            _abilities.Add(vm);
+
+            UpdateAbilitiesVisibility();
+            SpecialAbilitiesChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void ApplySearchAndFilter()
@@ -1016,11 +1146,50 @@ public class FeatListViewModel : System.ComponentModel.INotifyPropertyChanged
     }
 }
 
-public class SpecialAbilityViewModel
+public class SpecialAbilityViewModel : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
 {
     public ushort SpellId { get; set; }
     public string AbilityName { get; set; } = "";
-    public byte CasterLevel { get; set; }
+
+    internal byte _casterLevel;
+    public byte CasterLevel
+    {
+        get => _casterLevel;
+        set
+        {
+            if (SetProperty(ref _casterLevel, value))
+            {
+                CasterLevelDisplay = $"CL {value}";
+                OnCasterLevelChanged?.Invoke(this);
+            }
+        }
+    }
+
     public string CasterLevelDisplay { get; set; } = "";
-    public byte Flags { get; set; }
+
+    private byte _flags;
+    public byte Flags
+    {
+        get => _flags;
+        set => SetProperty(ref _flags, value);
+    }
+
+    // Flag 0x04 = unlimited uses
+    public bool IsUnlimited
+    {
+        get => (Flags & 0x04) != 0;
+        set
+        {
+            if (value)
+                Flags = (byte)(Flags | 0x04);
+            else
+                Flags = (byte)(Flags & ~0x04);
+            OnPropertyChanged();
+            OnFlagsChanged?.Invoke(this);
+        }
+    }
+
+    public Action<SpecialAbilityViewModel>? OnCasterLevelChanged { get; set; }
+    public Action<SpecialAbilityViewModel>? OnFlagsChanged { get; set; }
+    public System.Windows.Input.ICommand? RemoveCommand { get; set; }
 }

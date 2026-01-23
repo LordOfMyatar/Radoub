@@ -31,6 +31,18 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     private CheckBox? _bulkDropableCheck;
     private CheckBox? _bulkPickpocketCheck;
 
+    // Item Details controls
+    private TextBlock? _noSelectionText;
+    private ScrollViewer? _itemDetailsScroll;
+    private Image? _itemIcon;
+    private TextBlock? _itemNameText;
+    private TextBlock? _itemTypeText;
+    private TextBlock? _itemResRefText;
+    private TextBlock? _itemTagText;
+    private TextBlock? _itemValueText;
+    private TextBlock? _itemSourceText;
+    private TextBlock? _itemPropertiesText;
+
     public new event PropertyChangedEventHandler? PropertyChanged;
 
     // Events for MainWindow to subscribe to
@@ -75,6 +87,18 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         _paletteList = this.FindControl<ItemListView>("PaletteList");
         _bulkDropableCheck = this.FindControl<CheckBox>("BulkDropableCheck");
         _bulkPickpocketCheck = this.FindControl<CheckBox>("BulkPickpocketCheck");
+
+        // Find item details controls
+        _noSelectionText = this.FindControl<TextBlock>("NoSelectionText");
+        _itemDetailsScroll = this.FindControl<ScrollViewer>("ItemDetailsScroll");
+        _itemIcon = this.FindControl<Image>("ItemIcon");
+        _itemNameText = this.FindControl<TextBlock>("ItemNameText");
+        _itemTypeText = this.FindControl<TextBlock>("ItemTypeText");
+        _itemResRefText = this.FindControl<TextBlock>("ItemResRefText");
+        _itemTagText = this.FindControl<TextBlock>("ItemTagText");
+        _itemValueText = this.FindControl<TextBlock>("ItemValueText");
+        _itemSourceText = this.FindControl<TextBlock>("ItemSourceText");
+        _itemPropertiesText = this.FindControl<TextBlock>("ItemPropertiesText");
     }
 
     protected override void OnInitialized()
@@ -185,6 +209,10 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
         HasBackpackSelection = _backpackList?.SelectedItems.Count > 0;
         UpdateBulkCheckboxStates();
         UnifiedLogger.LogUI(LogLevel.DEBUG, $"Backpack selection changed: {_backpackList?.SelectedItems.Count ?? 0} items");
+
+        // Update item details - use first selected backpack item if any
+        var selectedItem = _backpackList?.SelectedItems.FirstOrDefault();
+        UpdateItemDetails(selectedItem);
     }
 
     private void UpdateBulkCheckboxStates()
@@ -283,6 +311,14 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     {
         HasPaletteSelection = _paletteList?.SelectedItems.Count > 0;
         UnifiedLogger.LogUI(LogLevel.DEBUG, $"Palette selection changed: {_paletteList?.SelectedItems.Count ?? 0} items");
+
+        // Update item details - prefer backpack selection, fall back to palette
+        var backpackSelected = _backpackList?.SelectedItems.FirstOrDefault();
+        if (backpackSelected == null)
+        {
+            var paletteSelected = _paletteList?.SelectedItems.FirstOrDefault();
+            UpdateItemDetails(paletteSelected);
+        }
     }
 
     private void OnPaletteDragStarting(object? sender, ItemDragEventArgs e)
@@ -336,6 +372,87 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
             UnifiedLogger.LogInventory(LogLevel.INFO, $"Removed from backpack: {item.Name}");
         }
         return removed;
+    }
+
+    #endregion
+
+    #region Item Details
+
+    /// <summary>
+    /// Updates the item details panel with the selected item's information.
+    /// </summary>
+    private void UpdateItemDetails(ItemViewModel? item)
+    {
+        if (item == null)
+        {
+            // No selection - show placeholder
+            if (_noSelectionText != null) _noSelectionText.IsVisible = true;
+            if (_itemDetailsScroll != null) _itemDetailsScroll.IsVisible = false;
+            return;
+        }
+
+        // Show details panel
+        if (_noSelectionText != null) _noSelectionText.IsVisible = false;
+        if (_itemDetailsScroll != null) _itemDetailsScroll.IsVisible = true;
+
+        // Icon - prefer game icon, fall back to placeholder
+        if (_itemIcon != null)
+        {
+            if (item.IconBitmap != null)
+            {
+                _itemIcon.Source = item.IconBitmap;
+            }
+            else if (!string.IsNullOrEmpty(item.IconPath))
+            {
+                try
+                {
+                    var uri = new System.Uri($"avares://Radoub.UI/{item.IconPath}");
+                    var asset = Avalonia.Platform.AssetLoader.Open(uri);
+                    _itemIcon.Source = new Avalonia.Media.Imaging.Bitmap(asset);
+                }
+                catch
+                {
+                    _itemIcon.Source = null;
+                }
+            }
+            else
+            {
+                _itemIcon.Source = null;
+            }
+        }
+
+        // Basic info
+        if (_itemNameText != null) _itemNameText.Text = item.Name;
+        if (_itemTypeText != null) _itemTypeText.Text = item.BaseItemName;
+        if (_itemResRefText != null) _itemResRefText.Text = item.ResRef;
+        if (_itemTagText != null) _itemTagText.Text = item.Tag;
+        if (_itemValueText != null) _itemValueText.Text = $"{item.Value:N0} gp";
+        if (_itemSourceText != null) _itemSourceText.Text = item.Source.ToString();
+
+        // Properties
+        if (_itemPropertiesText != null)
+        {
+            if (!string.IsNullOrEmpty(item.PropertiesDisplay))
+            {
+                _itemPropertiesText.Text = item.PropertiesDisplay;
+            }
+            else if (item.PropertyCount > 0)
+            {
+                _itemPropertiesText.Text = $"{item.PropertyCount} properties";
+            }
+            else
+            {
+                _itemPropertiesText.Text = "None";
+            }
+        }
+    }
+
+    /// <summary>
+    /// Clears the item details panel.
+    /// </summary>
+    public void ClearItemDetails()
+    {
+        UpdateItemDetails(null);
     }
 
     #endregion
