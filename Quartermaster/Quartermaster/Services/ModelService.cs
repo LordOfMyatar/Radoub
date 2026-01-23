@@ -37,12 +37,32 @@ public class ModelService
         var gender = creature.Gender;
         var phenotype = creature.Phenotype;
 
+        // Log equipped items for debugging
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"LoadCreatureModel: {creature.EquipItemList.Count} equipped items");
+        foreach (var equip in creature.EquipItemList)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"  Slot {equip.Slot}: '{equip.EquipRes}'");
+        }
+
         // Check if this is a part-based model
         var modelType = _gameDataService.Get2DAValue("appearance", appearanceId, "MODELTYPE");
         if (modelType?.ToUpperInvariant().Contains("P") == true)
         {
             // Get armor-provided body part overrides
             var armorOverrides = GetArmorPartOverrides(creature);
+
+            if (armorOverrides != null)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"LoadCreatureModel: Armor overrides: {string.Join(", ", armorOverrides.Select(kv => $"{kv.Key}={kv.Value}"))}");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"LoadCreatureModel: No armor overrides (naked creature or no chest armor)");
+            }
 
             // Part-based model - load body parts with armor overrides
             return LoadPartBasedCreatureModel(creature, armorOverrides);
@@ -58,29 +78,37 @@ public class ModelService
     private Dictionary<string, byte>? GetArmorPartOverrides(UtcFile creature)
     {
         var armor = LoadEquippedArmor(creature);
-        if (armor != null && armor.ArmorParts.Count > 0)
+        if (armor == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"GetArmorPartOverrides: No chest armor found");
+            return null;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"GetArmorPartOverrides: Loaded armor '{armor.TemplateResRef}', BaseItem={armor.BaseItem}, ArmorParts.Count={armor.ArmorParts.Count}");
+
+        if (armor.ArmorParts.Count > 0)
         {
             UnifiedLogger.LogApplication(LogLevel.INFO,
-                $"GetArmorPartOverrides: Armor has {armor.ArmorParts.Count} part overrides");
+                $"GetArmorPartOverrides: Armor has {armor.ArmorParts.Count} part overrides: {string.Join(", ", armor.ArmorParts.Select(kv => $"{kv.Key}={kv.Value}"))}");
             return armor.ArmorParts;
         }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+            $"GetArmorPartOverrides: Armor has no ArmorPart_ fields (not a part-based armor?)");
         return null;
     }
 
     /// <summary>
     /// Get armor colors from equipped chest armor.
-    /// Returns null if no armor equipped or armor has no colors.
+    /// Returns null if no armor equipped.
+    /// Note: Color index 0 is a valid color (first in palette), so we always return colors if armor exists.
     /// </summary>
     public (byte metal1, byte metal2, byte cloth1, byte cloth2, byte leather1, byte leather2)? GetArmorColors(UtcFile creature)
     {
         var armor = LoadEquippedArmor(creature);
         if (armor == null)
-            return null;
-
-        // Check if armor has any non-default colors
-        if (armor.Metal1Color == 0 && armor.Metal2Color == 0 &&
-            armor.Cloth1Color == 0 && armor.Cloth2Color == 0 &&
-            armor.Leather1Color == 0 && armor.Leather2Color == 0)
             return null;
 
         return (armor.Metal1Color, armor.Metal2Color,
@@ -93,18 +121,16 @@ public class ModelService
     /// </summary>
     private UtiFile? LoadEquippedArmor(UtcFile creature)
     {
-        // Find equipped chest armor
         var chestItem = creature.EquipItemList.FirstOrDefault(e => e.Slot == EquipmentSlots.Chest);
         if (chestItem == null || string.IsNullOrEmpty(chestItem.EquipRes))
             return null;
 
         try
         {
-            // Load the armor UTI from game resources
             var utiData = _gameDataService.FindResource(chestItem.EquipRes.ToLowerInvariant(), ResourceTypes.Uti);
             if (utiData == null || utiData.Length == 0)
             {
-                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadEquippedArmor: Armor UTI '{chestItem.EquipRes}' not found");
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"LoadEquippedArmor: Armor UTI '{chestItem.EquipRes}' not found in game resources");
                 return null;
             }
 

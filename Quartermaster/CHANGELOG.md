@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.52-alpha] - 2026-01-22
+**Branch**: `quartermaster/issue-746` | **PR**: #1054
+
+### Feature: Appearance Preview Rendering (#746)
+
+- Add visual preview of creature appearance in the Appearance panel
+
+---
+
 ## [0.1.51-alpha] - 2026-01-22
 **Branch**: `quartermaster/issue-1051` | **PR**: #1052
 

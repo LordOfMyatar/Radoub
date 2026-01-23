@@ -165,15 +165,13 @@ public class TextureService
 
             if (humanResRef != resRef)
             {
-                Radoub.Formats.Logging.UnifiedLogger.LogApplication(
-                    Radoub.Formats.Logging.LogLevel.DEBUG,
-                    $"TextureService.LoadTexture: Trying human fallback '{humanResRef}' for '{resRef}'");
-
                 pltResult = RenderPltTexture(humanResRef, colorIndices);
                 if (pltResult.HasValue)
                     return pltResult;
 
-                return LoadTgaTexture(humanResRef);
+                tgaResult = LoadTgaTexture(humanResRef);
+                if (tgaResult.HasValue)
+                    return tgaResult;
             }
         }
 
