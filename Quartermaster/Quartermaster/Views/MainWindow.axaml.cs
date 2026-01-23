@@ -6,7 +6,6 @@ using Quartermaster.Views.Dialogs;
 using Quartermaster.Views.Helpers;
 using Quartermaster.Views.Panels;
 using Radoub.Formats.Bic;
-using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.Formats.Utc;
@@ -856,43 +855,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_currentCreature == null)
             return;
 
-        // Keep first class at level 1, remove others
-        if (_currentCreature.ClassList.Count > 0)
-        {
-            var firstClass = _currentCreature.ClassList[0];
-            firstClass.ClassLevel = 1;
-            _currentCreature.ClassList.Clear();
-            _currentCreature.ClassList.Add(firstClass);
-        }
-
-        // Get feats to keep (racial + class granted at level 1)
-        var featsToKeep = new HashSet<ushort>();
-
-        // Racial feats
-        var racialFeats = _creatureDisplayService.Feats.GetRaceGrantedFeatIds(_currentCreature.Race);
-        foreach (var f in racialFeats)
-            featsToKeep.Add((ushort)f);
-
-        // Class granted feats at level 1
-        if (_currentCreature.ClassList.Count > 0)
-        {
-            var classGrantedFeats = _creatureDisplayService.Feats.GetClassGrantedFeatIds(_currentCreature.ClassList[0].Class);
-            foreach (var f in classGrantedFeats)
-                featsToKeep.Add((ushort)f);
-        }
-
-        // Filter feat list to only keep granted feats
-        var newFeatList = _currentCreature.FeatList.Where(f => featsToKeep.Contains(f)).ToList();
-        _currentCreature.FeatList.Clear();
-        foreach (var f in newFeatList)
-            _currentCreature.FeatList.Add(f);
-
-        // Reset all skills to 0
-        for (int i = 0; i < _currentCreature.SkillList.Count; i++)
-            _currentCreature.SkillList[i] = 0;
-
-        // Clear known spells (will need to be re-selected)
-        // Note: This is simplified - a full implementation would handle spell memorization differently
+        StripCreatureToLevelOne(_currentCreature);
     }
 
     private async void OnDownLevelClick(object? sender, RoutedEventArgs e)
@@ -1032,44 +995,4 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    #region Resource Resolution
-
-    /// <summary>
-    /// Resolve a conversation resref to a file path.
-    /// Checks Override folder first, then module directory where creature was loaded.
-    /// </summary>
-    private string? ResolveConversationPath(string resRef)
-    {
-        if (string.IsNullOrEmpty(resRef))
-            return null;
-
-        var dlgFilename = resRef + ".dlg";
-
-        // Try to find in same directory as the loaded creature file
-        if (!string.IsNullOrEmpty(_currentFilePath))
-        {
-            var creatureDir = Path.GetDirectoryName(_currentFilePath);
-            if (!string.IsNullOrEmpty(creatureDir))
-            {
-                var localPath = Path.Combine(creatureDir, dlgFilename);
-                if (File.Exists(localPath))
-                    return localPath;
-            }
-        }
-
-        // Try Override folder via game data service
-        if (_gameDataService.IsConfigured)
-        {
-            var resourceInfo = _gameDataService.ListResources(ResourceTypes.Dlg)
-                .FirstOrDefault(r => r.ResRef.Equals(resRef, StringComparison.OrdinalIgnoreCase)
-                                     && r.Source == GameResourceSource.Override);
-
-            if (resourceInfo?.SourcePath != null && File.Exists(resourceInfo.SourcePath))
-                return resourceInfo.SourcePath;
-        }
-
-        return null;
-    }
-
-    #endregion
 }
