@@ -15,6 +15,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.44] - 2026-01-23
+**Branch**: `radoub/issue-1064` | **PR**: #TBD
+
+### Sprint: Testing - Integration Test Foundation (#1064)
+
+Establish foundation for better integration test coverage.
+
+#### Work Items
+- [ ] #1063 - Expand Integration Tests & Update Pre-Merge Triggers
+- [ ] #845 - Add TLK test data for string resolution testing
+
+#### Goals
+- Pre-merge auto-detects UI changes and includes integration tests
+- Quartermaster has value-change tests for major panels
+- Fence has value-change tests for store properties and inventory
+- Trebuchet has tests for tool launching and settings
+- TLK test files created and committed
+
+---
+
 ## [0.9.43] - 2026-01-21
 **Branch**: `radoub/issue-1013` | **PR**: #1048
 
