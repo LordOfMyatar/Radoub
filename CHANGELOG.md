@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.45] - 2026-01-23
+**Branch**: `radoub/issue-1058` | **PR**: #TBD
+
+### Sprint: Cross-Tool Consolidation (#1058)
+
+Reduce code duplication by extracting common utilities to shared libraries.
+
+#### Work Items
+- [ ] #940 - Extract PathHelper (ContractPath/ExpandPath) as shared utility
+- [ ] #941 - Extract LoggingSettingsService as shared component
+- [ ] #942 - Consolidate ResourcePathHelper implementations
+
+---
+
 ## [0.9.44] - 2026-01-23
 **Branch**: `radoub/issue-1064` | **PR**: #1067
 
