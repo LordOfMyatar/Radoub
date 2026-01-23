@@ -389,9 +389,9 @@ public class RadoubSettings : INotifyPropertyChanged
 
                 if (data != null)
                 {
-                    _baseGameInstallPath = ExpandPath(data.BaseGameInstallPath ?? "");
-                    _neverwinterNightsPath = ExpandPath(data.NeverwinterNightsPath ?? "");
-                    _currentModulePath = ExpandPath(data.CurrentModulePath ?? "");
+                    _baseGameInstallPath = PathHelper.ExpandPath(data.BaseGameInstallPath ?? "");
+                    _neverwinterNightsPath = PathHelper.ExpandPath(data.NeverwinterNightsPath ?? "");
+                    _currentModulePath = PathHelper.ExpandPath(data.CurrentModulePath ?? "");
                     _tlkLanguage = data.TlkLanguage ?? "";
                     _tlkUseFemale = data.TlkUseFemale;
                     _defaultLanguage = data.DefaultLanguage;
@@ -401,11 +401,11 @@ public class RadoubSettings : INotifyPropertyChanged
                     _useSharedTheme = data.UseSharedTheme;
 
                     // Tool paths
-                    _parleyPath = ExpandPath(data.ParleyPath ?? "");
-                    _manifestPath = ExpandPath(data.ManifestPath ?? "");
-                    _quartermasterPath = ExpandPath(data.QuartermasterPath ?? "");
-                    _fencePath = ExpandPath(data.FencePath ?? "");
-                    _trebuchetPath = ExpandPath(data.TrebuchetPath ?? "");
+                    _parleyPath = PathHelper.ExpandPath(data.ParleyPath ?? "");
+                    _manifestPath = PathHelper.ExpandPath(data.ManifestPath ?? "");
+                    _quartermasterPath = PathHelper.ExpandPath(data.QuartermasterPath ?? "");
+                    _fencePath = PathHelper.ExpandPath(data.FencePath ?? "");
+                    _trebuchetPath = PathHelper.ExpandPath(data.TrebuchetPath ?? "");
                 }
             }
         }
@@ -426,9 +426,9 @@ public class RadoubSettings : INotifyPropertyChanged
 
             var data = new SettingsData
             {
-                BaseGameInstallPath = ContractPath(_baseGameInstallPath),
-                NeverwinterNightsPath = ContractPath(_neverwinterNightsPath),
-                CurrentModulePath = ContractPath(_currentModulePath),
+                BaseGameInstallPath = PathHelper.ContractPath(_baseGameInstallPath),
+                NeverwinterNightsPath = PathHelper.ContractPath(_neverwinterNightsPath),
+                CurrentModulePath = PathHelper.ContractPath(_currentModulePath),
                 TlkLanguage = _tlkLanguage,
                 TlkUseFemale = _tlkUseFemale,
                 DefaultLanguage = _defaultLanguage,
@@ -438,11 +438,11 @@ public class RadoubSettings : INotifyPropertyChanged
                 UseSharedTheme = _useSharedTheme,
 
                 // Tool paths
-                ParleyPath = ContractPath(_parleyPath),
-                ManifestPath = ContractPath(_manifestPath),
-                QuartermasterPath = ContractPath(_quartermasterPath),
-                FencePath = ContractPath(_fencePath),
-                TrebuchetPath = ContractPath(_trebuchetPath)
+                ParleyPath = PathHelper.ContractPath(_parleyPath),
+                ManifestPath = PathHelper.ContractPath(_manifestPath),
+                QuartermasterPath = PathHelper.ContractPath(_quartermasterPath),
+                FencePath = PathHelper.ContractPath(_fencePath),
+                TrebuchetPath = PathHelper.ContractPath(_trebuchetPath)
             };
 
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -452,40 +452,6 @@ public class RadoubSettings : INotifyPropertyChanged
         {
             // Ignore save errors
         }
-    }
-
-    /// <summary>
-    /// Contract path for storage - replaces user home with ~
-    /// </summary>
-    private static string ContractPath(string path)
-    {
-        if (string.IsNullOrEmpty(path))
-            return path;
-
-        var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (!string.IsNullOrEmpty(userProfile) && path.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase))
-        {
-            return "~" + path.Substring(userProfile.Length);
-        }
-
-        return path;
-    }
-
-    /// <summary>
-    /// Expand path from storage - replaces ~ with user home
-    /// </summary>
-    private static string ExpandPath(string path)
-    {
-        if (string.IsNullOrEmpty(path))
-            return path;
-
-        if (path.StartsWith("~"))
-        {
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            return userProfile + path.Substring(1);
-        }
-
-        return path;
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
