@@ -164,7 +164,7 @@ public partial class SettingsWindowViewModel : ObservableObject
             return;
         }
 
-        var result = ResourcePathHelper.ValidateBaseGamePathWithMessage(path);
+        var result = ResourcePathDetector.ValidateBaseGamePathWithMessage(path);
         GameInstallValidation = result.Message;
         GameInstallValidationColor = result.IsValid ? SuccessBrush : ErrorBrush;
         OnPropertyChanged(nameof(HasGameInstallValidation));
@@ -179,7 +179,7 @@ public partial class SettingsWindowViewModel : ObservableObject
             return;
         }
 
-        var result = ResourcePathHelper.ValidateGamePathWithMessage(path);
+        var result = ResourcePathDetector.ValidateGamePathWithMessage(path);
         NwnDocumentsValidation = result.Message;
         NwnDocumentsValidationColor = result.IsValid ? SuccessBrush : ErrorBrush;
         OnPropertyChanged(nameof(HasNwnDocumentsValidation));
@@ -224,7 +224,7 @@ public partial class SettingsWindowViewModel : ObservableObject
     [RelayCommand]
     private void AutoDetectGamePath()
     {
-        var detected = ResourcePathHelper.AutoDetectBaseGamePath();
+        var detected = ResourcePathDetector.AutoDetectBaseGamePath();
         if (!string.IsNullOrEmpty(detected))
         {
             GameInstallPath = detected;
@@ -261,7 +261,7 @@ public partial class SettingsWindowViewModel : ObservableObject
     [RelayCommand]
     private void AutoDetectDocumentsPath()
     {
-        var detected = ResourcePathHelper.AutoDetectGamePath();
+        var detected = ResourcePathDetector.AutoDetectGamePath();
         if (!string.IsNullOrEmpty(detected))
         {
             NwnDocumentsPath = detected;

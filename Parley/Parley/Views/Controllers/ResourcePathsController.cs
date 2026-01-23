@@ -7,6 +7,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace DialogEditor.Views.Controllers
@@ -100,7 +101,7 @@ namespace DialogEditor.Views.Controllers
             if (gamePathTextBox != null)
             {
                 var gamePath = gamePathTextBox.Text ?? "";
-                if (ResourcePathHelper.ValidateGamePath(gamePath) || string.IsNullOrEmpty(gamePath))
+                if (ResourcePathDetector.ValidateGamePath(gamePath) || string.IsNullOrEmpty(gamePath))
                 {
                     settings.NeverwinterNightsPath = gamePath;
                 }
@@ -119,11 +120,11 @@ namespace DialogEditor.Views.Controllers
             if (modulePathTextBox != null)
             {
                 var modulePath = modulePathTextBox.Text ?? "";
-                if (ResourcePathHelper.ValidateModulePath(modulePath) || string.IsNullOrEmpty(modulePath))
+                if (ResourcePathDetector.ValidateModulePath(modulePath) || string.IsNullOrEmpty(modulePath))
                 {
                     settings.CurrentModulePath = modulePath;
 
-                    if (!string.IsNullOrEmpty(modulePath) && ResourcePathHelper.ValidateModulePath(modulePath))
+                    if (!string.IsNullOrEmpty(modulePath) && ResourcePathDetector.ValidateModulePath(modulePath))
                     {
                         settings.AddModulePath(modulePath);
                     }
@@ -249,7 +250,7 @@ namespace DialogEditor.Views.Controllers
 
         public void OnAutoDetectGamePathClick(object? sender, RoutedEventArgs e)
         {
-            var detectedPath = ResourcePathHelper.AutoDetectGamePath();
+            var detectedPath = ResourcePathDetector.AutoDetectGamePath();
             var gamePathTextBox = _window.FindControl<TextBox>("GamePathTextBox");
 
             if (!string.IsNullOrEmpty(detectedPath) && gamePathTextBox != null)
@@ -307,7 +308,7 @@ namespace DialogEditor.Views.Controllers
 
         public void OnAutoDetectBaseGamePathClick(object? sender, RoutedEventArgs e)
         {
-            var detectedPath = ResourcePathHelper.AutoDetectBaseGamePath();
+            var detectedPath = ResourcePathDetector.AutoDetectBaseGamePath();
             var baseGamePathTextBox = _window.FindControl<TextBox>("BaseGamePathTextBox");
 
             if (!string.IsNullOrEmpty(detectedPath) && baseGamePathTextBox != null)
@@ -361,7 +362,7 @@ namespace DialogEditor.Views.Controllers
             var gamePathTextBox = _window.FindControl<TextBox>("GamePathTextBox");
             var gamePath = gamePathTextBox?.Text;
 
-            var detectedPath = ResourcePathHelper.AutoDetectModulePath(gamePath);
+            var detectedPath = ResourcePathDetector.AutoDetectModulePath(gamePath);
             var modulePathTextBox = _window.FindControl<TextBox>("ModulePathTextBox");
 
             if (!string.IsNullOrEmpty(detectedPath) && modulePathTextBox != null)
@@ -422,7 +423,7 @@ namespace DialogEditor.Views.Controllers
             var validation = _window.FindControl<TextBlock>("GamePathValidation");
             if (validation == null) return;
 
-            var result = ResourcePathHelper.ValidateGamePathWithMessage(path);
+            var result = ResourcePathDetector.ValidateGamePathWithMessage(path);
             validation.Text = StatusIndicatorHelper.FormatValidation(result.Message, result.IsValid);
             validation.Foreground = result.IsValid ? _getSuccessBrush() : _getErrorBrush();
         }
@@ -432,7 +433,7 @@ namespace DialogEditor.Views.Controllers
             var validation = _window.FindControl<TextBlock>("BaseGamePathValidation");
             if (validation == null) return;
 
-            var result = ResourcePathHelper.ValidateBaseGamePathWithMessage(path);
+            var result = ResourcePathDetector.ValidateBaseGamePathWithMessage(path);
             validation.Text = StatusIndicatorHelper.FormatValidation(result.Message, result.IsValid);
             validation.Foreground = result.IsValid ? _getSuccessBrush() : _getErrorBrush();
         }
@@ -442,7 +443,7 @@ namespace DialogEditor.Views.Controllers
             var validation = _window.FindControl<TextBlock>("ModulePathValidation");
             if (validation == null) return;
 
-            var result = ResourcePathHelper.ValidateModulePathWithMessage(path);
+            var result = ResourcePathDetector.ValidateModulePathWithMessage(path);
             validation.Text = StatusIndicatorHelper.FormatValidation(result.Message, result.IsValid);
             validation.Foreground = result.IsValid ? _getSuccessBrush() : _getErrorBrush();
         }

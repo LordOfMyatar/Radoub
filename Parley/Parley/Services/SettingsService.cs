@@ -279,7 +279,7 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(SharedSettings.CurrentModulePath) &&
                 !string.IsNullOrEmpty(SharedSettings.NeverwinterNightsPath))
             {
-                var modulePath = ResourcePathHelper.AutoDetectModulePath(SharedSettings.NeverwinterNightsPath);
+                var modulePath = ResourcePathDetector.AutoDetectModulePath(SharedSettings.NeverwinterNightsPath);
                 if (!string.IsNullOrEmpty(modulePath))
                 {
                     SharedSettings.CurrentModulePath = modulePath;

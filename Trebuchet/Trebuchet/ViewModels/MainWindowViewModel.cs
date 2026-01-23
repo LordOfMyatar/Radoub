@@ -109,7 +109,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (!string.IsNullOrEmpty(shared.CurrentModulePath))
         {
             var moduleName = Path.GetFileName(shared.CurrentModulePath);
-            var validation = ResourcePathHelper.ValidateModulePathWithMessage(shared.CurrentModulePath);
+            var validation = ResourcePathDetector.ValidateModulePathWithMessage(shared.CurrentModulePath);
 
             if (validation.IsValid)
             {

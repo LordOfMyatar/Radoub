@@ -1,13 +1,26 @@
 using System.Runtime.InteropServices;
+using Radoub.Formats.Logging;
 
 namespace Radoub.Formats.Settings;
 
 /// <summary>
 /// Helper class for detecting Neverwinter Nights resource paths across platforms.
-/// Adapted from Parley's ResourcePathHelper for shared use.
+/// Consolidated from tool-specific implementations for shared use.
 /// </summary>
 public static class ResourcePathDetector
 {
+    /// <summary>
+    /// Whether to log validation results. Default true.
+    /// Set to false if you need silent validation.
+    /// </summary>
+    public static bool EnableLogging { get; set; } = true;
+
+    private static void Log(LogLevel level, string message)
+    {
+        if (EnableLogging)
+            UnifiedLogger.LogApplication(level, message);
+    }
+
     /// <summary>
     /// Attempts to auto-detect the NWN user documents path (~/Documents/Neverwinter Nights).
     /// This contains modules, override, portraits, etc.
@@ -20,10 +33,12 @@ public static class ResourcePathDetector
         {
             if (ValidateGamePath(path))
             {
+                Log(LogLevel.INFO, $"Auto-detected user data path: {UnifiedLogger.SanitizePath(path)}");
                 return path;
             }
         }
 
+        Log(LogLevel.WARN, "Could not auto-detect user data path");
         return null;
     }
 
@@ -37,12 +52,15 @@ public static class ResourcePathDetector
 
         foreach (var path in possiblePaths)
         {
+            Log(LogLevel.DEBUG, $"Checking base game path: {path}");
             if (ValidateBaseGamePath(path))
             {
+                Log(LogLevel.INFO, $"Auto-detected base game path: {UnifiedLogger.SanitizePath(path)}");
                 return path;
             }
         }
 
+        Log(LogLevel.WARN, "Could not auto-detect base game installation");
         return null;
     }
 
@@ -56,6 +74,7 @@ public static class ResourcePathDetector
             var modulePath = Path.Combine(gamePath, "modules");
             if (ValidateModulePath(modulePath))
             {
+                Log(LogLevel.INFO, $"Found module path in game directory: {UnifiedLogger.SanitizePath(modulePath)}");
                 return modulePath;
             }
         }
@@ -65,10 +84,12 @@ public static class ResourcePathDetector
         {
             if (ValidateModulePath(path))
             {
+                Log(LogLevel.INFO, $"Auto-detected module path: {UnifiedLogger.SanitizePath(path)}");
                 return path;
             }
         }
 
+        Log(LogLevel.WARN, "Could not auto-detect module path");
         return null;
     }
 
@@ -88,6 +109,7 @@ public static class ResourcePathDetector
             var fullPath = Path.Combine(path, dir);
             if (!Directory.Exists(fullPath))
             {
+                Log(LogLevel.DEBUG, $"Game path validation failed: missing '{dir}' directory");
                 return false;
             }
         }
@@ -105,7 +127,14 @@ public static class ResourcePathDetector
             return false;
 
         var dataPath = Path.Combine(path, "data");
-        return Directory.Exists(dataPath);
+        bool valid = Directory.Exists(dataPath);
+
+        if (valid)
+            Log(LogLevel.DEBUG, "Base game path validated: found data\\ folder");
+        else
+            Log(LogLevel.DEBUG, "Base game path validation failed: missing data\\ folder");
+
+        return valid;
     }
 
     /// <summary>
@@ -120,7 +149,10 @@ public static class ResourcePathDetector
         // Check for .mod files
         var modFiles = Directory.GetFiles(path, "*.mod", SearchOption.TopDirectoryOnly);
         if (modFiles.Length > 0)
+        {
+            Log(LogLevel.DEBUG, $"Module path validated: found {modFiles.Length} .mod file(s)");
             return true;
+        }
 
         // Check subdirectories for .mod files
         try
@@ -129,7 +161,10 @@ public static class ResourcePathDetector
             {
                 var subModFiles = Directory.GetFiles(subDir, "*.mod", SearchOption.TopDirectoryOnly);
                 if (subModFiles.Length > 0)
+                {
+                    Log(LogLevel.DEBUG, $"Module path validated: found .mod files in subdirectory {Path.GetFileName(subDir)}");
                     return true;
+                }
             }
         }
         catch
@@ -137,6 +172,7 @@ public static class ResourcePathDetector
             // Ignore access errors
         }
 
+        Log(LogLevel.DEBUG, $"Module path validation failed: no .mod files found in '{path}' or subdirectories");
         return false;
     }
 
@@ -154,9 +190,9 @@ public static class ResourcePathDetector
             return new PathValidationResult(false, "");
 
         if (ValidateBaseGamePath(path))
-            return new PathValidationResult(true, "Valid - found data\\ folder");
+            return new PathValidationResult(true, "✅ Valid base game installation (contains data\\ folder)");
 
-        return new PathValidationResult(false, "Invalid - missing data\\ folder");
+        return new PathValidationResult(false, "❌ Invalid path - missing data\\ folder");
     }
 
     /// <summary>
@@ -168,9 +204,9 @@ public static class ResourcePathDetector
             return new PathValidationResult(false, "");
 
         if (ValidateGamePath(path))
-            return new PathValidationResult(true, "Valid - found ambient and music folders");
+            return new PathValidationResult(true, "✅ Valid game installation path");
 
-        return new PathValidationResult(false, "Invalid - missing required folders");
+        return new PathValidationResult(false, "❌ Invalid path - missing required directories (ambient, music)");
     }
 
     /// <summary>
@@ -182,9 +218,32 @@ public static class ResourcePathDetector
             return new PathValidationResult(false, "");
 
         if (ValidateModulePath(path))
-            return new PathValidationResult(true, "Valid - found .mod files");
+            return new PathValidationResult(true, "✅ Valid module directory");
 
-        return new PathValidationResult(false, "Invalid - no .mod files found");
+        return new PathValidationResult(false, "❌ Invalid path - no .mod files or module directories found");
+    }
+
+    /// <summary>
+    /// Gets the sound directories relative to game path.
+    /// </summary>
+    public static List<string> GetSoundDirectories(string gamePath)
+    {
+        if (string.IsNullOrEmpty(gamePath))
+            return new List<string>();
+
+        var soundDirs = new List<string>();
+        var categories = new[] { "ambient", "dialog", "music", "soundset" };
+
+        foreach (var category in categories)
+        {
+            var path = Path.Combine(gamePath, category);
+            if (Directory.Exists(path))
+            {
+                soundDirs.Add(path);
+            }
+        }
+
+        return soundDirs;
     }
 
     private static List<string> GetPlatformGamePaths()
