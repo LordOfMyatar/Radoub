@@ -7,6 +7,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Jrl;
+using Radoub.Formats.Tokens;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -713,6 +714,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Display text for current language
                 EntryTextBox.Text = TlkService.Instance.ResolveLocString(entItem.Entry.Text, _currentViewLanguage);
 
+                // Update token preview
+                UpdateTokenPreview();
+
                 // Wire up change handlers
                 WireEntryHandlers();
             }
@@ -822,11 +826,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         EntryIdBox.ValueChanged -= OnEntryIdChanged;
         EntryEndBox.IsCheckedChanged -= OnEntryEndChanged;
         EntryTextBox.LostFocus -= OnEntryTextChanged;
+        EntryTextBox.TextChanged -= OnEntryTextPreviewChanged;
 
         // Add handlers
         EntryIdBox.ValueChanged += OnEntryIdChanged;
         EntryEndBox.IsCheckedChanged += OnEntryEndChanged;
         EntryTextBox.LostFocus += OnEntryTextChanged;
+        EntryTextBox.TextChanged += OnEntryTextPreviewChanged;
+    }
+
+    private void OnEntryTextPreviewChanged(object? sender, TextChangedEventArgs e)
+    {
+        // Update the token preview as the user types
+        UpdateTokenPreview();
     }
 
     private void OnCategoryNameChanged(object? sender, RoutedEventArgs e)
@@ -1129,6 +1141,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         e.Handled = true;
                     }
                     break;
+                case Key.T:
+                    // Insert token (Ctrl+T) - only when entry is selected
+                    if (_selectedItem is EntryTreeItem)
+                    {
+                        OnInsertTokenClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
             }
         }
         else if (e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift))
@@ -1231,6 +1251,50 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     new System.Uri("avares://Manifest/Assets/manifest.ico")))
         });
         aboutWindow.Show(this);
+    }
+
+    private async void OnInsertTokenClick(object? sender, RoutedEventArgs e)
+    {
+        // Save current selection in the textbox
+        var caretIndex = EntryTextBox.CaretIndex;
+        var savedText = EntryTextBox.Text ?? "";
+
+        var tokenWindow = new TokenSelectorWindow();
+        var result = await tokenWindow.ShowDialog<bool>(this);
+
+        if (result && !string.IsNullOrEmpty(tokenWindow.SelectedToken))
+        {
+            // Insert token at caret position
+            var newText = savedText.Insert(caretIndex, tokenWindow.SelectedToken);
+            EntryTextBox.Text = newText;
+
+            // Position caret after inserted token
+            EntryTextBox.CaretIndex = caretIndex + tokenWindow.SelectedToken.Length;
+            EntryTextBox.Focus();
+
+            // Update the token preview
+            UpdateTokenPreview();
+        }
+    }
+
+    private void UpdateTokenPreview()
+    {
+        var text = EntryTextBox.Text ?? "";
+        EntryTokenPreview.TokenText = text;
+
+        // Load user color config if available
+        try
+        {
+            var config = UserColorConfigLoader.Load();
+            if (config != null)
+            {
+                EntryTokenPreview.UserColorConfig = config;
+            }
+        }
+        catch
+        {
+            // Ignore config loading errors
+        }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
