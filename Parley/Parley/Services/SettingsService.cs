@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Runtime.CompilerServices;
 using DialogEditor.Utils;
 using Radoub.Formats.Settings;
+using SharedPathHelper = Radoub.Formats.Common.PathHelper;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Services
@@ -278,7 +279,7 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(SharedSettings.CurrentModulePath) &&
                 !string.IsNullOrEmpty(SharedSettings.NeverwinterNightsPath))
             {
-                var modulePath = ResourcePathHelper.AutoDetectModulePath(SharedSettings.NeverwinterNightsPath);
+                var modulePath = ResourcePathDetector.AutoDetectModulePath(SharedSettings.NeverwinterNightsPath);
                 if (!string.IsNullOrEmpty(modulePath))
                 {
                     SharedSettings.CurrentModulePath = modulePath;
@@ -299,7 +300,7 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(SharedSettings.NeverwinterNightsPath) &&
                 !string.IsNullOrEmpty(settings.NeverwinterNightsPath))
             {
-                SharedSettings.NeverwinterNightsPath = ExpandPath(settings.NeverwinterNightsPath);
+                SharedSettings.NeverwinterNightsPath = SharedPathHelper.ExpandPath(settings.NeverwinterNightsPath);
                 migrated = true;
             }
 
@@ -307,7 +308,7 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(SharedSettings.BaseGameInstallPath) &&
                 !string.IsNullOrEmpty(settings.BaseGameInstallPath))
             {
-                SharedSettings.BaseGameInstallPath = ExpandPath(settings.BaseGameInstallPath);
+                SharedSettings.BaseGameInstallPath = SharedPathHelper.ExpandPath(settings.BaseGameInstallPath);
                 migrated = true;
             }
 
@@ -315,7 +316,7 @@ namespace DialogEditor.Services
             if (string.IsNullOrEmpty(SharedSettings.CurrentModulePath) &&
                 !string.IsNullOrEmpty(settings.CurrentModulePath))
             {
-                SharedSettings.CurrentModulePath = ExpandPath(settings.CurrentModulePath);
+                SharedSettings.CurrentModulePath = SharedPathHelper.ExpandPath(settings.CurrentModulePath);
                 migrated = true;
             }
 
@@ -923,7 +924,7 @@ namespace DialogEditor.Services
                     {
                         // Initialize RecentFilesService (#719)
                         RecentFilesService.Instance.Initialize(
-                            ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>()),
+                            SharedPathHelper.ExpandPaths(settings.RecentFiles?.ToList() ?? new List<string>()),
                             settings.MaxRecentFiles);
 
                         // Initialize WindowLayoutService (#719)
@@ -971,7 +972,7 @@ namespace DialogEditor.Services
                         MigrateGamePathsToSharedSettings(settings);
 
                         // Load Parley-specific module paths (recent module history)
-                        _modulePaths = ExpandPaths(settings.ModulePaths?.ToList() ?? new List<string>());
+                        _modulePaths = SharedPathHelper.ExpandPaths(settings.ModulePaths?.ToList() ?? new List<string>());
 
                         // Load logging settings (backwards compatible with old LogRetentionDays)
                         if (settings.LogRetentionSessions > 0)
@@ -1016,11 +1017,11 @@ namespace DialogEditor.Services
                         _spellCheckEnabled = settings.SpellCheckEnabled;
 
                         // Load Radoub tool integration settings (#416)
-                        _manifestPath = ExpandPath(settings.ManifestPath ?? "");
+                        _manifestPath = SharedPathHelper.ExpandPath(settings.ManifestPath ?? "");
 
                         // Load script editor settings (#718)
-                        _externalEditorPath = ExpandPath(settings.ExternalEditorPath ?? "");
-                        _scriptSearchPaths = ExpandPaths(settings.ScriptSearchPaths?.ToList() ?? new List<string>());
+                        _externalEditorPath = SharedPathHelper.ExpandPath(settings.ExternalEditorPath ?? "");
+                        _scriptSearchPaths = SharedPathHelper.ExpandPaths(settings.ScriptSearchPaths?.ToList() ?? new List<string>());
 
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {RecentFilesService.Instance.RecentFiles.Count} recent files, max={RecentFilesService.Instance.MaxRecentFiles}, theme={(UISettingsService.Instance.IsDarkTheme ? "dark" : "light")}, logLevel={_logLevel}, retention={_logRetentionSessions} sessions, autoSave={_autoSaveEnabled}, delay={_autoSaveDelayMs}ms, paramCache={_enableParameterCache}");
                     }
@@ -1046,7 +1047,7 @@ namespace DialogEditor.Services
             {
                 var settings = new SettingsData
                 {
-                    RecentFiles = ContractPaths(RecentFilesService.Instance.RecentFiles), // Use ~ for home directory
+                    RecentFiles = SharedPathHelper.ContractPaths(RecentFilesService.Instance.RecentFiles), // Use ~ for home directory
                     MaxRecentFiles = MaxRecentFiles,
                     WindowLeft = WindowLeft,
                     WindowTop = WindowTop,
@@ -1081,7 +1082,7 @@ namespace DialogEditor.Services
                     NeverwinterNightsPath = "", // DEPRECATED: Use RadoubSettings
                     BaseGameInstallPath = "", // DEPRECATED: Use RadoubSettings
                     CurrentModulePath = "", // DEPRECATED: Use RadoubSettings
-                    ModulePaths = ContractPaths(_modulePaths), // Parley-specific: recent module history
+                    ModulePaths = SharedPathHelper.ContractPaths(_modulePaths), // Parley-specific: recent module history
                     TlkLanguage = "", // DEPRECATED: Use RadoubSettings
                     TlkUseFemale = false, // DEPRECATED: Use RadoubSettings
                     LogRetentionSessions = LogRetentionSessions,
@@ -1101,10 +1102,10 @@ namespace DialogEditor.Services
                     // Spell Check settings (#505)
                     SpellCheckEnabled = SpellCheckEnabled,
                     // Radoub tool integration (#416)
-                    ManifestPath = ContractPath(ManifestPath),
+                    ManifestPath = SharedPathHelper.ContractPath(ManifestPath),
                     // Script editor settings (#718)
-                    ExternalEditorPath = ContractPath(ExternalEditorPath),
-                    ScriptSearchPaths = ContractPaths(_scriptSearchPaths)
+                    ExternalEditorPath = SharedPathHelper.ContractPath(ExternalEditorPath),
+                    ScriptSearchPaths = SharedPathHelper.ContractPaths(_scriptSearchPaths)
                 };
 
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -1126,57 +1127,6 @@ namespace DialogEditor.Services
         public void RemoveRecentFile(string filePath) => RecentFilesService.Instance.RemoveRecentFile(filePath);
         public void ClearRecentFiles() => RecentFilesService.Instance.ClearRecentFiles();
         public void CleanupRecentFiles() => RecentFilesService.Instance.CleanupRecentFiles();
-
-        /// <summary>
-        /// Contracts a path for storage - replaces user home directory with ~
-        /// This makes settings files portable and privacy-safe for sharing
-        /// </summary>
-        private static string ContractPath(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-                return path;
-
-            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            if (!string.IsNullOrEmpty(userProfile) && path.StartsWith(userProfile, StringComparison.OrdinalIgnoreCase))
-            {
-                return "~" + path.Substring(userProfile.Length);
-            }
-
-            return path;
-        }
-
-        /// <summary>
-        /// Expands a path from storage - replaces ~ with user home directory
-        /// </summary>
-        private static string ExpandPath(string path)
-        {
-            if (string.IsNullOrEmpty(path))
-                return path;
-
-            if (path.StartsWith("~"))
-            {
-                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                return userProfile + path.Substring(1);
-            }
-
-            return path;
-        }
-
-        /// <summary>
-        /// Contracts a list of paths for storage
-        /// </summary>
-        private static List<string> ContractPaths(List<string> paths)
-        {
-            return paths.Select(ContractPath).ToList();
-        }
-
-        /// <summary>
-        /// Expands a list of paths from storage
-        /// </summary>
-        private static List<string> ExpandPaths(List<string> paths)
-        {
-            return paths.Select(ExpandPath).ToList();
-        }
 
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {

@@ -15,6 +15,61 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.45] - 2026-01-23
+**Branch**: `radoub/issue-1058` | **PR**: #1068
+
+### Sprint: Cross-Tool Consolidation (#1058)
+
+Reduce code duplication by extracting common utilities to shared libraries.
+
+#### Work Items
+- [x] #940 - Extract PathHelper (ContractPath/ExpandPath) as shared utility
+- [x] #941 - Extract LoggingSettingsService as shared component
+- [x] #942 - Consolidate ResourcePathHelper implementations
+
+#### #940 - PathHelper Extraction
+
+Created `Radoub.Formats.Common.PathHelper` with:
+- `ContractPath()` / `ExpandPath()` - for settings storage (replace ~ with home directory)
+- `ContractPaths()` / `ExpandPaths()` - batch versions
+- `SanitizePathForDisplay()` - for UI display
+
+Removed duplicate implementations from:
+- `Radoub.Formats.Settings.RadoubSettings` (private methods)
+- `Parley.Services.SettingsService` (private methods)
+- `Parley.Utils.PathHelper` (deleted entire file)
+
+#### #941 - LoggingSettings Extraction
+
+Created `Radoub.Formats.Logging.LoggingSettings` class:
+- `LogRetentionSessions` - number of session log folders to keep
+- `LogLevel` - minimum log level to output
+- `Normalize()` - clamps values to valid ranges
+- `ApplyToLogger()` - applies settings to UnifiedLogger
+- `ToLoggerConfig()` - creates LoggerConfig for initialization
+
+Also created `ExtendedLoggingSettings` for tools with debug panels (Parley).
+
+Updated all tools to use shared LoggingSettings:
+- Quartermaster, Fence, Manifest, Trebuchet
+
+#### #942 - ResourcePathDetector Consolidation
+
+Enhanced `Radoub.Formats.Settings.ResourcePathDetector`:
+- Added optional logging via `EnableLogging` property
+- Added `GetSoundDirectories()` method
+- Updated validation messages with emoji indicators
+
+Updated tools to use shared ResourcePathDetector:
+- Parley: ResourcePathsController, SettingsService
+- Trebuchet: MainWindowViewModel, SettingsWindowViewModel
+
+Deleted tool-specific ResourcePathHelper files:
+- `Parley/Parley/Services/ResourcePathHelper.cs`
+- `Trebuchet/Trebuchet/Services/ResourcePathHelper.cs`
+
+---
+
 ## [0.9.44] - 2026-01-23
 **Branch**: `radoub/issue-1064` | **PR**: #1067
 
