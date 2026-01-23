@@ -166,12 +166,17 @@ public class ItemViewModelFactory
     /// <summary>
     /// Format a 2DA label into a human-readable name.
     /// Converts "BASE_ITEM_SHORTSWORD" to "Shortsword".
+    /// Labels without underscores are returned as-is.
     /// </summary>
     private static string FormatLabel(string label)
     {
         // Remove common prefixes
         if (label.StartsWith("BASE_ITEM_", StringComparison.OrdinalIgnoreCase))
             label = label.Substring(10);
+
+        // Only format if label contains underscores (2DA convention)
+        if (!label.Contains('_'))
+            return label;
 
         // Convert underscores to spaces and title case
         return string.Join(" ", label.Split('_')
