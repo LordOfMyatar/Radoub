@@ -17,10 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Bring Manifest up to parity with other Radoub tools.
 
-- [ ] #889 - Settings window should be non-modal
-- [ ] #879 - Add token support to journal editor
-- [ ] #808 - Tree panel MinWidth may be too wide for 1024px screens
-- [ ] #1069 - Add 'New Journal' command to create module.jrl
+- [x] #889 - Settings window already uses non-modal Show()
+- [x] #879 - Add token support to journal editor
+  - Added Token button and Ctrl+T shortcut for token insertion
+  - Added Token Preview expander showing rendered tokens
+  - Added TokenTextBlock and TokenSelectorWindow to Radoub.UI (shared)
+- [x] #808 - Tree panel MinWidth reduced from 200 to 150 for 1024px screens
+- [x] #1069 - Add 'New Journal' command to create module.jrl
+  - File → New Journal (Ctrl+N) creates empty JRL with Save As dialog
+  - Default filename: module.jrl
 
 ---
 
