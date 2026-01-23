@@ -111,8 +111,10 @@
                     <!-- Character Header (Portrait + Name) -->
                     <Border DockPanel.Dock="Top" Padding="10" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1">
                         <StackPanel Spacing="8">
-                            <!-- Portrait Display (NWN medium portraits are 64x100 usable area) -->
-                            <Border x:Name="PortraitBorder" Width="64" Height="100"
+                            <!-- Portrait Display (NWN medium portraits are 64x100 usable area, scaled with font) -->
+                            <Border x:Name="PortraitBorder"
+                                    Width="{DynamicResource PortraitWidth}"
+                                    Height="{DynamicResource PortraitHeight}"
                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                                     BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
                                     BorderThickness="1"

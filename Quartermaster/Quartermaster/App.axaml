@@ -82,6 +82,10 @@
             <x:Double x:Key="GlobalFontSize">14</x:Double>
             <FontFamily x:Key="GlobalFontFamily">$Default</FontFamily>
 
+            <!-- Portrait dimensions (scaled with font size, base: 64x100 @ font 14) -->
+            <x:Double x:Key="PortraitWidth">64</x:Double>
+            <x:Double x:Key="PortraitHeight">100</x:Double>
+
             <!-- Default theme background -->
             <SolidColorBrush x:Key="ThemeBackground">#FFFFFF</SolidColorBrush>
         </ResourceDictionary>
