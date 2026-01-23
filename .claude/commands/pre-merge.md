@@ -5,13 +5,14 @@ Validate the current PR is ready to merge. Runs tests, checks code quality, veri
 ## Usage
 
 ```
-/pre-merge [--skip-tests] [--ui-tests] [--full-tests]
+/pre-merge [--skip-tests] [--ui-tests] [--full-tests] [--no-auto-ui]
 ```
 
 **Flags**:
 - `--skip-tests` - Skip test execution (validation only)
-- `--ui-tests` - Include UI integration tests (default: unit tests only)
+- `--ui-tests` - Force include UI integration tests
 - `--full-tests` - Run all tests regardless of what changed
+- `--no-auto-ui` - Disable auto-detection of UI changes (use unit tests only)
 
 ## Workflow
 
@@ -66,18 +67,57 @@ git diff main...HEAD --name-only
 | `Radoub.*/**` | All affected | Yes |
 | Multiple tools | All affected | Yes |
 
+**Auto-detect UI changes** (unless `--no-auto-ui`):
+
+Check if ANY changed files match UI patterns:
+```bash
+git diff main...HEAD --name-only | grep -E '\.(axaml|axaml\.cs)$|/Views/|/Controls/|/Dialogs/'
+```
+
+**UI test auto-trigger rules**:
+
+| Pattern Match | Auto-include UI Tests |
+|---------------|----------------------|
+| `*.axaml` | Yes |
+| `*.axaml.cs` | Yes |
+| `*/Views/*` | Yes |
+| `*/Controls/*` | Yes |
+| `*/Dialogs/*` | Yes |
+| `*/Windows/*` | Yes |
+| Other `.cs` files | No (unit tests only) |
+
+**Decision logic**:
+1. If `--ui-tests` flag → always include UI tests
+2. If `--no-auto-ui` flag → never auto-include UI tests
+3. If UI patterns detected → auto-include UI tests
+4. Otherwise → unit tests only
+
+**Report auto-detection**:
+If UI tests are auto-included, display:
+```
+ℹ️ UI changes detected - including integration tests
+   Changed UI files: [list first 5 files, then "+ N more" if applicable]
+```
+
 ### Step 3: Build & Test (single script call)
 
 ```powershell
-# Auto-detected scope
+# Unit tests only (no UI changes detected, no --ui-tests flag)
 .\Radoub.IntegrationTests\run-tests.ps1 -Tool [detected] [-SkipShared] -UnitOnly -TechDebt
 
-# With --ui-tests flag (omit -UnitOnly)
+# With --ui-tests flag OR UI changes auto-detected (omit -UnitOnly)
 .\Radoub.IntegrationTests\run-tests.ps1 -Tool [detected] [-SkipShared] -TechDebt
 
 # With --full-tests flag
 .\Radoub.IntegrationTests\run-tests.ps1 -TechDebt
 ```
+
+**Test scope decision**:
+- If `--skip-tests` → skip entirely
+- If `--full-tests` → run everything
+- If `--ui-tests` OR UI changes detected → include UI tests
+- If `--no-auto-ui` → force unit-only even if UI files changed
+- Otherwise → unit tests only
 
 The script handles:
 - Privacy scan (hardcoded paths)
@@ -130,7 +170,9 @@ Flag if >30 days old and code changed.
 | Privacy scan | ✅/⚠️ |
 | Tech debt | ✅/⚠️ |
 | Unit tests | ✅ N passed / ❌ N failed |
-| UI tests | ⏭️ / ✅ N passed |
+| UI tests | ⏭️ Skipped / 🔄 Auto-triggered / ✅ N passed / ❌ N failed |
+
+**UI Test Reason**: [Manual --ui-tests / Auto-detected UI changes / Skipped (no UI changes)]
 
 ### Validation
 | Check | Status |
@@ -163,7 +205,10 @@ The `|| true` handles case where PR is already ready.
 
 ## Notes
 
-- Default: unit tests only (fast)
-- UI tests require `--ui-tests` (slower, hands-off keyboard)
+- Default: unit tests only (fast), unless UI changes detected
+- UI tests auto-triggered when `.axaml`, `Views/`, `Controls/`, `Dialogs/`, or `Windows/` files change
+- Use `--no-auto-ui` to disable auto-detection (force unit-only)
+- Use `--ui-tests` to force UI tests regardless of what changed
 - Shared library changes → include shared tests
 - Wiki updates done separately with `/documentation`
+- **Hands-off keyboard during UI tests** - focus stealing can cause failures
