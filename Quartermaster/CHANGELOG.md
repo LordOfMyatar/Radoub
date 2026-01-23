@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.53-alpha] - 2026-01-22
+**Branch**: `quartermaster/issue-1050` | **PR**: #TBD
+
+### Sprint: Bug Bash - UI Fixes (#1050)
+
+- [ ] #1049 - Item Palette shows BaseRef instead of Type name
+- [ ] #1026 - Filter out bad strref errors in TLK lookups
+- [ ] #1021 - Re-level confirmation dialog missing buttons and scroll
+- [ ] #938 - Portrait doesn't resize with font scaling
+
+---
+
 ## [0.1.52-alpha] - 2026-01-22
 **Branch**: `quartermaster/issue-746` | **PR**: #1054
 
