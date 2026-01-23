@@ -106,9 +106,8 @@ public class SettingsService : INotifyPropertyChanged
     private string _fontFamily = "";
     private string _currentThemeId = "org.fence.theme.light";
 
-    // Logging settings
-    private int _logRetentionSessions = 3;
-    private LogLevel _logLevel = LogLevel.INFO;
+    // Logging settings - using shared LoggingSettings
+    private readonly LoggingSettings _loggingSettings = new();
 
     // Recent files
     private const int DefaultMaxRecentFiles = 10;
@@ -185,28 +184,33 @@ public class SettingsService : INotifyPropertyChanged
         set { if (SetProperty(ref _currentThemeId, value ?? "org.fence.theme.light")) SaveSettings(); }
     }
 
-    // Logging properties
+    // Logging properties - delegate to shared LoggingSettings
     public int LogRetentionSessions
     {
-        get => _logRetentionSessions;
+        get => _loggingSettings.LogRetentionSessions;
         set
         {
-            if (SetProperty(ref _logRetentionSessions, Math.Max(1, Math.Min(10, value))))
+            var clamped = Math.Max(1, Math.Min(10, value));
+            if (_loggingSettings.LogRetentionSessions != clamped)
             {
+                _loggingSettings.LogRetentionSessions = clamped;
+                OnPropertyChanged();
                 SaveSettings();
-                UnifiedLogger.LogSettings(LogLevel.INFO, $"Log retention set to {value} sessions");
+                UnifiedLogger.LogSettings(LogLevel.INFO, $"Log retention set to {clamped} sessions");
             }
         }
     }
 
     public LogLevel CurrentLogLevel
     {
-        get => _logLevel;
+        get => _loggingSettings.LogLevel;
         set
         {
-            if (SetProperty(ref _logLevel, value))
+            if (_loggingSettings.LogLevel != value)
             {
-                UnifiedLogger.SetLogLevel(value);
+                _loggingSettings.LogLevel = value;
+                _loggingSettings.ApplyToLogger();
+                OnPropertyChanged();
                 SaveSettings();
             }
         }
@@ -319,9 +323,11 @@ public class SettingsService : INotifyPropertyChanged
                         ? settings.CurrentThemeId
                         : "org.fence.theme.light";
 
-                    _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
-                    _logLevel = settings.LogLevel;
-                    UnifiedLogger.SetLogLevel(_logLevel); // Apply loaded log level to logger
+                    // Load logging settings from shared model
+                    _loggingSettings.LogRetentionSessions = settings.LogRetentionSessions;
+                    _loggingSettings.LogLevel = settings.LogLevel;
+                    _loggingSettings.Normalize();
+                    _loggingSettings.ApplyToLogger();
 
                     _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
                     // Use default if MaxRecentFiles is 0 (corrupt/old file) or out of range
@@ -361,8 +367,8 @@ public class SettingsService : INotifyPropertyChanged
                 FontSize = FontSize,
                 FontFamily = FontFamily,
                 CurrentThemeId = CurrentThemeId,
-                LogRetentionSessions = LogRetentionSessions,
-                LogLevel = CurrentLogLevel,
+                LogRetentionSessions = _loggingSettings.LogRetentionSessions,
+                LogLevel = _loggingSettings.LogLevel,
                 RecentFiles = _recentFiles,
                 MaxRecentFiles = MaxRecentFiles
             };

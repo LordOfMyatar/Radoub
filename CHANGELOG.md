@@ -24,7 +24,7 @@ Reduce code duplication by extracting common utilities to shared libraries.
 
 #### Work Items
 - [x] #940 - Extract PathHelper (ContractPath/ExpandPath) as shared utility
-- [ ] #941 - Extract LoggingSettingsService as shared component
+- [x] #941 - Extract LoggingSettingsService as shared component
 - [ ] #942 - Consolidate ResourcePathHelper implementations
 
 #### #940 - PathHelper Extraction
@@ -38,6 +38,20 @@ Removed duplicate implementations from:
 - `Radoub.Formats.Settings.RadoubSettings` (private methods)
 - `Parley.Services.SettingsService` (private methods)
 - `Parley.Utils.PathHelper` (deleted entire file)
+
+#### #941 - LoggingSettings Extraction
+
+Created `Radoub.Formats.Logging.LoggingSettings` class:
+- `LogRetentionSessions` - number of session log folders to keep
+- `LogLevel` - minimum log level to output
+- `Normalize()` - clamps values to valid ranges
+- `ApplyToLogger()` - applies settings to UnifiedLogger
+- `ToLoggerConfig()` - creates LoggerConfig for initialization
+
+Also created `ExtendedLoggingSettings` for tools with debug panels (Parley).
+
+Updated all tools to use shared LoggingSettings:
+- Quartermaster, Fence, Manifest, Trebuchet
 
 ---
 

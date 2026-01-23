@@ -92,9 +92,8 @@ namespace Manifest.Services
         private string _fontFamily = "";  // Empty = use theme default
         private string _currentThemeId = "org.manifest.theme.light";
 
-        // Logging settings
-        private int _logRetentionSessions = 3;
-        private LogLevel _logLevel = LogLevel.INFO;
+        // Logging settings - using shared LoggingSettings
+        private readonly LoggingSettings _loggingSettings = new();
 
         // Spell-check settings
         private bool _spellCheckEnabled = true;
@@ -168,28 +167,33 @@ namespace Manifest.Services
             set { if (SetProperty(ref _currentThemeId, value ?? "org.manifest.theme.light")) SaveSettings(); }
         }
 
-        // Logging Settings Properties
+        // Logging Settings Properties - delegate to shared LoggingSettings
         public int LogRetentionSessions
         {
-            get => _logRetentionSessions;
+            get => _loggingSettings.LogRetentionSessions;
             set
             {
-                if (SetProperty(ref _logRetentionSessions, Math.Max(1, Math.Min(10, value))))
+                var clamped = Math.Max(1, Math.Min(10, value));
+                if (_loggingSettings.LogRetentionSessions != clamped)
                 {
+                    _loggingSettings.LogRetentionSessions = clamped;
+                    OnPropertyChanged();
                     SaveSettings();
-                    UnifiedLogger.LogSettings(LogLevel.INFO, $"Log retention set to {value} sessions");
+                    UnifiedLogger.LogSettings(LogLevel.INFO, $"Log retention set to {clamped} sessions");
                 }
             }
         }
 
         public LogLevel CurrentLogLevel
         {
-            get => _logLevel;
+            get => _loggingSettings.LogLevel;
             set
             {
-                if (SetProperty(ref _logLevel, value))
+                if (_loggingSettings.LogLevel != value)
                 {
-                    UnifiedLogger.SetLogLevel(value);
+                    _loggingSettings.LogLevel = value;
+                    _loggingSettings.ApplyToLogger();
+                    OnPropertyChanged();
                     SaveSettings();
                 }
             }
@@ -295,9 +299,11 @@ namespace Manifest.Services
                             ? settings.CurrentThemeId
                             : "org.manifest.theme.light";
 
-                        // Load logging settings
-                        _logRetentionSessions = Math.Max(1, Math.Min(10, settings.LogRetentionSessions));
-                        _logLevel = settings.LogLevel;
+                        // Load logging settings from shared model
+                        _loggingSettings.LogRetentionSessions = settings.LogRetentionSessions;
+                        _loggingSettings.LogLevel = settings.LogLevel;
+                        _loggingSettings.Normalize();
+                        _loggingSettings.ApplyToLogger();
 
                         // Load spell-check settings
                         _spellCheckEnabled = settings.SpellCheckEnabled;
@@ -337,8 +343,8 @@ namespace Manifest.Services
                     FontSize = FontSize,
                     FontFamily = FontFamily,
                     CurrentThemeId = CurrentThemeId,
-                    LogRetentionSessions = LogRetentionSessions,
-                    LogLevel = CurrentLogLevel,
+                    LogRetentionSessions = _loggingSettings.LogRetentionSessions,
+                    LogLevel = _loggingSettings.LogLevel,
                     SpellCheckEnabled = SpellCheckEnabled,
                     RecentFiles = _recentFiles,
                     MaxRecentFiles = MaxRecentFiles
