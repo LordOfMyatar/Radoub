@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.14.0-alpha] - 2026-01-23
+**Branch**: `manifest/issue-1059` | **PR**: #TBD
+
+### Sprint: Feature Parity (#1059)
+
+Bring Manifest up to parity with other Radoub tools.
+
+- [ ] #889 - Settings window should be non-modal
+- [ ] #879 - Add token support to journal editor
+- [ ] #808 - Tree panel MinWidth may be too wide for 1024px screens
+- [ ] #1069 - Add 'New Journal' command to create module.jrl
+
+---
+
 ## [0.13.1-alpha] - 2026-01-15
 **Branch**: `radoub/issue-908` | **PR**: #909
 
