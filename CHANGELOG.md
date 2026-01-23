@@ -51,6 +51,13 @@ Establish foundation for better integration test coverage.
 - Added Fence and Trebuchet isolated settings support in FlaUITestBase
 - Updated run-tests.ps1 to include Manifest, Fence, and Trebuchet UI test entries
 
+**Tests skipped** (Avalonia + FlaUI automation limitations):
+- 15 tests skipped pending better UIA automation support:
+  - NumericUpDown controls don't expose AutomationId reliably via UIA
+  - StackPanel with AutomationId not in automation tree
+  - Popup windows not detected by GetAllTopLevelWindows
+  - TextBox value changes via automation don't trigger PropertyChanged
+
 #### #845 - TLK Test Data
 
 **TlkWriter** (new in Radoub.Formats):
