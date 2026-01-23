@@ -143,7 +143,9 @@ $toolUnitTests = @{
 $toolUiTests = @{
     "Parley" = @{ Name = "Radoub.IntegrationTests.Parley"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Parley" }
     "Quartermaster" = @{ Name = "Radoub.IntegrationTests.Quartermaster"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Quartermaster" }
-    # Manifest and Fence have no UI tests currently
+    "Manifest" = @{ Name = "Radoub.IntegrationTests.Manifest"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Manifest" }
+    "Fence" = @{ Name = "Radoub.IntegrationTests.Fence"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Fence" }
+    "Trebuchet" = @{ Name = "Radoub.IntegrationTests.Trebuchet"; Path = "Radoub.IntegrationTests"; Filter = "FullyQualifiedName~Radoub.IntegrationTests.Trebuchet" }
 }
 
 # Build test list based on parameters

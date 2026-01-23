@@ -15,6 +15,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.44] - 2026-01-23
+**Branch**: `radoub/issue-1064` | **PR**: #1067
+
+### Sprint: Testing - Integration Test Foundation (#1064)
+
+Establish foundation for better integration test coverage.
+
+#### Work Items
+- [x] #1063 - Expand Integration Tests & Update Pre-Merge Triggers
+- [x] #845 - Add TLK test data for string resolution testing
+
+#### #1063 - Pre-Merge & Integration Tests
+
+**Pre-merge skill updated** (`/pre-merge`):
+- Auto-detects UI file changes (`.axaml`, `Views/`, `Controls/`, `Dialogs/`, `Windows/`)
+- Automatically includes UI integration tests when UI code changed
+- New `--no-auto-ui` flag to disable auto-detection
+
+**Quartermaster integration tests** - Value-change tests:
+- Stats panel: Strength, constitution, base HP, natural AC, fortitude save
+- Round-trip test: Modify and save preserves changes
+
+**Fence integration tests** (new):
+- Smoke tests: Launch, menu bar, status bar verification
+- Value-change tests: Store name, tag, sell markup, buy markdown, identify price, black market toggle
+- Round-trip test: Modify and save preserves changes
+
+**Trebuchet integration tests** (new):
+- Smoke tests: Launch, header bar, tool cards, status bar
+- Settings and About button functionality
+
+**Test infrastructure updates**:
+- Added `GetFenceExePath()` and `GetTrebuchetExePath()` to TestPaths
+- Added Fence and Trebuchet isolated settings support in FlaUITestBase
+- Updated run-tests.ps1 to include Manifest, Fence, and Trebuchet UI test entries
+
+**Tests skipped** (Avalonia + FlaUI automation limitations):
+- 15 tests skipped pending better UIA automation support:
+  - NumericUpDown controls don't expose AutomationId reliably via UIA
+  - StackPanel with AutomationId not in automation tree
+  - Popup windows not detected by GetAllTopLevelWindows
+  - TextBox value changes via automation don't trigger PropertyChanged
+
+#### #845 - TLK Test Data
+
+**TlkWriter** (new in Radoub.Formats):
+- Write TLK files programmatically with full round-trip support
+- Windows-1252 encoding for NWN compatibility
+- 14 unit tests covering all functionality
+
+**Test TLK files** (committed):
+- `dialog.tlk`: Base game strings (races, classes, abilities, skills, items) - 1009 entries
+- `custom.tlk`: Custom content strings (CEP-style) - 203 entries
+
+**Test infrastructure**:
+- TlkTestDataGenerator utility for regenerating test files
+- TlkTestDataTests to verify TLK files are valid and contain expected strings
+- Added Radoub.Formats reference to integration tests project
+
+---
+
 ## [0.9.43] - 2026-01-21
 **Branch**: `radoub/issue-1013` | **PR**: #1048
 

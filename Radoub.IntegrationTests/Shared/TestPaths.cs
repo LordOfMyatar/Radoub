@@ -76,6 +76,24 @@ public static class TestPaths
     /// </summary>
     public static string GetQuartermasterTestFile(string filename) => Path.Combine(QuartermasterTestFiles, filename);
 
+    /// <summary>
+    /// Gets the path to a built Fence executable.
+    /// </summary>
+    /// <param name="configuration">Build configuration (Debug or Release)</param>
+    public static string GetFenceExePath(string configuration = "Debug")
+    {
+        return Path.Combine(RepoRoot, "Fence", "Fence", "bin", configuration, "net9.0", "Fence.exe");
+    }
+
+    /// <summary>
+    /// Gets the path to a built Trebuchet executable.
+    /// </summary>
+    /// <param name="configuration">Build configuration (Debug or Release)</param>
+    public static string GetTrebuchetExePath(string configuration = "Debug")
+    {
+        return Path.Combine(RepoRoot, "Trebuchet", "Trebuchet", "bin", configuration, "net9.0", "Trebuchet.exe");
+    }
+
     #region Integration Test Data (Spoofed NWN Environment)
 
     /// <summary>
