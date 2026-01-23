@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.54-alpha] - 2026-01-23
+**Branch**: `quartermaster/issue-1046` | **PR**: #1062
+
+### Tech Debt: Large Files Needing Refactoring (#1046)
+
+- [x] MainWindow.axaml.cs - Removed unused `ResolveConversationPath` method and consolidated `StripCharacterToLevelOne` duplicate
+- [x] MainWindow.Inventory.cs - Added null checks to fix CS8604 warnings
+- [x] ModelService.cs - Removed 3 unused methods: `LoadBodyPartModel`, `GetRaceModelRef`, `IsPartBasedAppearance` (duplicated in AppearanceService)
+- [x] Reviewed MainWindow.FileOps.cs, AdvancedPanel.axaml.cs, UtcFile.cs - already well-organized, no extraction needed
+
+---
+
 ## [0.1.53-alpha] - 2026-01-22
 **Branch**: `quartermaster/issue-1050` | **PR**: #1056
 
