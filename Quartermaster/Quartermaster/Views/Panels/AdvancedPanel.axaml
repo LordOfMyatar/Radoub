@@ -132,7 +132,7 @@
                                       HorizontalAlignment="Left" MinWidth="180"
                                       AutomationProperties.AutomationId="PerceptionComboBox"/>
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Walk Rate:"
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Movement Speed:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
                             <ComboBox Grid.Row="2" Grid.Column="1" x:Name="WalkRateComboBox"
