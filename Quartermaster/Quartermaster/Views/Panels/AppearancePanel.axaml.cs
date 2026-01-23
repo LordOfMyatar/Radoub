@@ -174,7 +174,19 @@ public partial class AppearancePanel : UserControl
     public void SetTextureService(TextureService textureService)
     {
         _textureService = textureService;
-        _modelPreview?.SetTextureService(textureService);
+        if (_modelPreview == null)
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.WARN,
+                "AppearancePanel.SetTextureService: _modelPreview is NULL! TextureService will not be set.");
+        }
+        else
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.INFO,
+                "AppearancePanel.SetTextureService: Setting TextureService on ModelPreviewControl");
+            _modelPreview.SetTextureService(textureService);
+        }
     }
 
     public void LoadCreature(UtcFile? creature)

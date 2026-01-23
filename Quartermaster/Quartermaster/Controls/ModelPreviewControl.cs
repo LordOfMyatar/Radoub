@@ -250,7 +250,23 @@ public class ModelPreviewControl : Control
 
         // Load textures for model if texture service is available
         var meshTextures = new Dictionary<string, SKBitmap?>();
-        if (_textureService != null && !_wireframeMode)
+        var meshCount = _model.GetMeshNodes().Count();
+        var texturesLoaded = 0;
+        var texturesFailed = 0;
+
+        if (_textureService == null)
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.WARN,
+                $"ModelPreviewControl.Render: _textureService is NULL - textures will not load! meshCount={meshCount}");
+        }
+        else if (_wireframeMode)
+        {
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.DEBUG,
+                $"ModelPreviewControl.Render: wireframe mode, skipping textures");
+        }
+        else
         {
             foreach (var mesh in _model.GetMeshNodes())
             {
@@ -263,8 +279,14 @@ public class ModelPreviewControl : Control
                         _textureCache[textureName] = bitmap;
                     }
                     meshTextures[textureName] = bitmap;
+                    if (bitmap != null) texturesLoaded++;
+                    else texturesFailed++;
                 }
             }
+
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.INFO,
+                $"ModelPreviewControl.Render: meshes={meshCount}, texturesLoaded={texturesLoaded}, texturesFailed={texturesFailed}");
         }
 
         // Use custom SkiaSharp drawing operation for 3D rendering
