@@ -13,7 +13,7 @@ public static class PathHelper
     /// <param name="path">The full path to contract.</param>
     /// <returns>Path with user home directory replaced by ~, or original path if not under home.</returns>
     /// <example>
-    /// ContractPath("C:\Users\John\Documents\file.txt") returns "~\Documents\file.txt"
+    /// ContractPath("{UserProfile}\Documents\file.txt") returns "~\Documents\file.txt"
     /// ContractPath("D:\Games\NWN") returns "D:\Games\NWN" (unchanged)
     /// </example>
     public static string ContractPath(string path)
@@ -37,7 +37,7 @@ public static class PathHelper
     /// <param name="path">The full path to sanitize.</param>
     /// <returns>Path with user home directory replaced by ~, or original path if not under home.</returns>
     /// <example>
-    /// SanitizePathForDisplay("C:\Users\John\Documents\file.txt") returns "~\Documents\file.txt"
+    /// SanitizePathForDisplay("{UserProfile}\Documents\file.txt") returns "~\Documents\file.txt"
     /// </example>
     public static string SanitizePathForDisplay(string path)
     {
@@ -76,7 +76,7 @@ public static class PathHelper
     /// <param name="path">The contracted path to expand.</param>
     /// <returns>Path with ~ replaced by user home directory, or original path if no ~.</returns>
     /// <example>
-    /// ExpandPath("~\Documents\file.txt") returns "C:\Users\John\Documents\file.txt"
+    /// ExpandPath("~\Documents\file.txt") returns "{UserProfile}\Documents\file.txt"
     /// ExpandPath("D:\Games\NWN") returns "D:\Games\NWN" (unchanged)
     /// </example>
     public static string ExpandPath(string path)
