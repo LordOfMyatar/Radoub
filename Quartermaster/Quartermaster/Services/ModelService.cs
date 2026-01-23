@@ -543,43 +543,6 @@ public class ModelService
     }
 
     /// <summary>
-    /// Load a body part model for a part-based creature.
-    /// </summary>
-    /// <param name="baseRace">Base race string from appearance.2da (e.g., "pfd0")</param>
-    /// <param name="partType">Part type: head, chest, neck, etc.</param>
-    /// <param name="partNumber">Part variation number (e.g., 1 for _head001)</param>
-    public MdlModel? LoadBodyPartModel(string baseRace, string partType, int partNumber)
-    {
-        if (string.IsNullOrEmpty(baseRace))
-            return null;
-
-        // Format: {baseRace}_{partType}{partNumber:D3}
-        // e.g., pfd0_head001, pfd0_chest002
-        var partName = $"{baseRace}_{partType}{partNumber:D3}";
-        return LoadModel(partName);
-    }
-
-    /// <summary>
-    /// Get the base race model reference for an appearance.
-    /// </summary>
-    public string? GetRaceModelRef(ushort appearanceId)
-    {
-        var race = _gameDataService.Get2DAValue("appearance", appearanceId, "RACE");
-        if (string.IsNullOrEmpty(race) || race == "****")
-            return null;
-        return race.ToLowerInvariant();
-    }
-
-    /// <summary>
-    /// Check if an appearance is part-based (dynamic body parts).
-    /// </summary>
-    public bool IsPartBasedAppearance(ushort appearanceId)
-    {
-        var modelType = _gameDataService.Get2DAValue("appearance", appearanceId, "MODELTYPE");
-        return modelType?.ToUpperInvariant().Contains("P") == true;
-    }
-
-    /// <summary>
     /// Clear the model cache.
     /// </summary>
     public void ClearCache()

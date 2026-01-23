@@ -105,6 +105,12 @@ public partial class MainWindow
     {
         foreach (var paletteItem in items)
         {
+            if (paletteItem.Item == null)
+            {
+                UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot add item to backpack: Item data is null for {paletteItem.ResRef}");
+                continue;
+            }
+
             var nextPos = GetNextBackpackPosition();
 
             var backpackItem = _itemViewModelFactory.CreateBackpackItem(
@@ -188,6 +194,11 @@ public partial class MainWindow
         if (!slot.HasItem || slot.EquippedItem == null) return;
 
         var item = slot.EquippedItem;
+        if (item.Item == null)
+        {
+            UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot unequip: Item data is null for {item.ResRef}");
+            return;
+        }
 
         var nextPos = GetNextBackpackPosition();
         var backpackItem = _itemViewModelFactory.CreateBackpackItem(
