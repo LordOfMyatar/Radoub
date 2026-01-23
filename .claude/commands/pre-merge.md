@@ -28,6 +28,19 @@ git status --porcelain
 
 This prevents running pre-merge with local changes that aren't reflected in the PR.
 
+### Step 0b: Check for Unpushed Commits
+
+```bash
+git log origin/$(git branch --show-current)..HEAD --oneline
+```
+
+**If output is not empty**:
+- ⚠️ STOP and warn: "Unpushed commits detected. Push before running pre-merge."
+- List the unpushed commits
+- Do not proceed with checklist
+
+This prevents validating a PR that doesn't contain all local commits.
+
 ### Step 1: Get PR Info (single gh call)
 
 ```bash

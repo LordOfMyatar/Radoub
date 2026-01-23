@@ -43,7 +43,7 @@
                         </Grid>
 
                         <!-- Column Headers -->
-                        <Grid ColumnDefinitions="100,80,60,60,60">
+                        <Grid ColumnDefinitions="130,140,60,60,60">
                             <TextBlock Grid.Column="0" Text="Ability" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                             <TextBlock Grid.Column="1" Text="Base" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
@@ -57,10 +57,10 @@
                         </Grid>
 
                         <!-- Strength Row -->
-                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="StrRow">
+                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="StrRow">
                             <TextBlock Grid.Column="0" Text="Strength" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="StrBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
+                            <NumericUpDown x:Name="StrBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="135"
                                            AutomationProperties.AutomationId="StrBaseNumeric"/>
                             <TextBlock x:Name="StrRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -69,10 +69,10 @@
                         </Grid>
 
                         <!-- Dexterity Row -->
-                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="DexRow">
+                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="DexRow">
                             <TextBlock Grid.Column="0" Text="Dexterity" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="DexBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
+                            <NumericUpDown x:Name="DexBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="135"
                                            AutomationProperties.AutomationId="DexBaseNumeric"/>
                             <TextBlock x:Name="DexRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -81,10 +81,10 @@
                         </Grid>
 
                         <!-- Constitution Row -->
-                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="ConRow">
+                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="ConRow">
                             <TextBlock Grid.Column="0" Text="Constitution" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="ConBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
+                            <NumericUpDown x:Name="ConBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="135"
                                            AutomationProperties.AutomationId="ConBaseNumeric"/>
                             <TextBlock x:Name="ConRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -93,10 +93,10 @@
                         </Grid>
 
                         <!-- Intelligence Row -->
-                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="IntRow">
+                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="IntRow">
                             <TextBlock Grid.Column="0" Text="Intelligence" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="IntBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
+                            <NumericUpDown x:Name="IntBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="135"
                                            AutomationProperties.AutomationId="IntBaseNumeric"/>
                             <TextBlock x:Name="IntRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -105,10 +105,10 @@
                         </Grid>
 
                         <!-- Wisdom Row -->
-                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="WisRow">
+                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="WisRow">
                             <TextBlock Grid.Column="0" Text="Wisdom" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="WisBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
+                            <NumericUpDown x:Name="WisBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="135"
                                            AutomationProperties.AutomationId="WisBaseNumeric"/>
                             <TextBlock x:Name="WisRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -117,10 +117,10 @@
                         </Grid>
 
                         <!-- Charisma Row -->
-                        <Grid ColumnDefinitions="100,80,60,60,60" AutomationProperties.AutomationId="ChaRow">
+                        <Grid ColumnDefinitions="130,140,60,60,60" AutomationProperties.AutomationId="ChaRow">
                             <TextBlock Grid.Column="0" Text="Charisma" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="ChaBase" Grid.Column="1" Value="10" Minimum="3" Maximum="40" Increment="1"
-                                           FormatString="0" FontSize="{DynamicResource FontSizeSmall}"
+                            <NumericUpDown x:Name="ChaBase" Grid.Column="1" Value="10" Minimum="1" Maximum="255" Increment="1"
+                                           FormatString="0" MinWidth="135"
                                            AutomationProperties.AutomationId="ChaBaseNumeric"/>
                             <TextBlock x:Name="ChaRacial" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -152,7 +152,7 @@
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="BaseHpDisplay">
                                 <TextBlock Text="Base HP" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <NumericUpDown x:Name="BaseHpNumeric" Value="0" Minimum="1" Maximum="9999" Increment="1"
-                                               FormatString="0" FontSize="{DynamicResource FontSizeNormal}" MinWidth="90"
+                                               FormatString="0" MinWidth="135"
                                                AutomationProperties.AutomationId="BaseHpNumeric"
                                                ToolTip.Tip="Hit points from dice rolls (excluding Con bonus)"/>
                                 <TextBlock x:Name="BaseHpNote" Text="(dice rolls)" FontSize="{DynamicResource FontSizeXSmall}"
@@ -187,7 +187,7 @@
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="NaturalAcDisplay">
                                 <TextBlock Text="Natural AC" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <NumericUpDown x:Name="NaturalAcNumeric" Value="0" Minimum="0" Maximum="255" Increment="1"
-                                               FormatString="0" FontSize="{DynamicResource FontSizeNormal}" MinWidth="70"
+                                               FormatString="0" MinWidth="135"
                                                AutomationProperties.AutomationId="NaturalAcNumeric"
                                                ToolTip.Tip="Natural armor class bonus"/>
                             </StackPanel>
@@ -270,48 +270,50 @@
                         <TextBlock Text="Saving Throws" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
                         <!-- Column Headers -->
-                        <Grid ColumnDefinitions="100,60,60,60">
+                        <Grid ColumnDefinitions="90,50,50,140,60">
                             <TextBlock Grid.Column="0" Text="Save" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="1" Text="Base" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="1" Text="Ability" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="2" Text="Ability" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="2" Text="Total" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Grid.Column="3" Text="Total" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
+                            <TextBlock Grid.Column="3" Text="Base" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Grid.Column="4" Text="" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" HorizontalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </Grid>
 
                         <!-- Fortitude Row -->
-                        <Grid ColumnDefinitions="100,70,60,60" AutomationProperties.AutomationId="FortRow">
+                        <Grid ColumnDefinitions="90,50,50,140,60" AutomationProperties.AutomationId="FortRow">
                             <TextBlock Grid.Column="0" Text="Fortitude" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="FortBase" Grid.Column="1" Value="0" Minimum="-127" Maximum="127" Increment="1"
-                                           FormatString="+0;-0;+0" FontSize="{DynamicResource FontSizeSmall}"
-                                           AutomationProperties.AutomationId="FortBaseNumeric"/>
-                            <TextBlock x:Name="FortAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            <TextBlock x:Name="FortAbility" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="FortTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="FortTotal" Grid.Column="2" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <NumericUpDown x:Name="FortBase" Grid.Column="3" Value="0" Minimum="-127" Maximum="127" Increment="1"
+                                           FormatString="+0;-0;+0" MinWidth="135"
+                                           AutomationProperties.AutomationId="FortBaseNumeric"/>
                         </Grid>
 
                         <!-- Reflex Row -->
-                        <Grid ColumnDefinitions="100,70,60,60" AutomationProperties.AutomationId="RefRow">
+                        <Grid ColumnDefinitions="90,50,50,140,60" AutomationProperties.AutomationId="RefRow">
                             <TextBlock Grid.Column="0" Text="Reflex" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="RefBase" Grid.Column="1" Value="0" Minimum="-127" Maximum="127" Increment="1"
-                                           FormatString="+0;-0;+0" FontSize="{DynamicResource FontSizeSmall}"
-                                           AutomationProperties.AutomationId="RefBaseNumeric"/>
-                            <TextBlock x:Name="RefAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            <TextBlock x:Name="RefAbility" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="RefTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="RefTotal" Grid.Column="2" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <NumericUpDown x:Name="RefBase" Grid.Column="3" Value="0" Minimum="-127" Maximum="127" Increment="1"
+                                           FormatString="+0;-0;+0" MinWidth="135"
+                                           AutomationProperties.AutomationId="RefBaseNumeric"/>
                         </Grid>
 
                         <!-- Will Row -->
-                        <Grid ColumnDefinitions="100,70,60,60" AutomationProperties.AutomationId="WillRow">
+                        <Grid ColumnDefinitions="90,50,50,140,60" AutomationProperties.AutomationId="WillRow">
                             <TextBlock Grid.Column="0" Text="Will" VerticalAlignment="Center"/>
-                            <NumericUpDown x:Name="WillBase" Grid.Column="1" Value="0" Minimum="-127" Maximum="127" Increment="1"
-                                           FormatString="+0;-0;+0" FontSize="{DynamicResource FontSizeSmall}"
-                                           AutomationProperties.AutomationId="WillBaseNumeric"/>
-                            <TextBlock x:Name="WillAbility" Grid.Column="2" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            <TextBlock x:Name="WillAbility" Grid.Column="1" Text="+0" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock x:Name="WillTotal" Grid.Column="3" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="WillTotal" Grid.Column="2" Text="+0" FontWeight="Bold" FontSize="{DynamicResource FontSizeMedium}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <NumericUpDown x:Name="WillBase" Grid.Column="3" Value="0" Minimum="-127" Maximum="127" Increment="1"
+                                           FormatString="+0;-0;+0" MinWidth="135"
+                                           AutomationProperties.AutomationId="WillBaseNumeric"/>
                         </Grid>
                     </StackPanel>
                 </Border>

@@ -1,3 +1,4 @@
+using System.Linq;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
 using Radoub.Formats.Uti;
@@ -118,16 +119,69 @@ public class ItemViewModelFactory
         if (nameStrRef != null)
         {
             var resolved = _gameData.GetString(nameStrRef);
-            if (!string.IsNullOrEmpty(resolved))
-                return resolved;
+            if (IsValidTlkString(resolved))
+                return resolved!;
         }
 
-        // Fallback to label
+        // Fallback to label (format it nicely)
         var label = _gameData.Get2DAValue("baseitems", baseItem, "label");
-        if (!string.IsNullOrEmpty(label))
-            return label;
+        if (!string.IsNullOrEmpty(label) && !IsGarbageLabel(label))
+            return FormatLabel(label);
 
         return $"Type {baseItem}";
+    }
+
+    /// <summary>
+    /// Check if a TLK string is valid (not null, not empty, not a placeholder/garbage value).
+    /// </summary>
+    private static bool IsValidTlkString(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        var trimmed = value.Trim();
+
+        // Common placeholder values in NWN TLK files
+        return !trimmed.Equals("BadStrRef", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("Bad Strref", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("DELETED", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("DELETE_ME", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Equals("Padding", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.StartsWith("Bad Str", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.StartsWith("deleted", StringComparison.OrdinalIgnoreCase) &&
+               !trimmed.Contains("deleted", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Check if a label from baseitems.2da is a garbage/placeholder entry.
+    /// </summary>
+    private static bool IsGarbageLabel(string label)
+    {
+        return label.Contains("deleted", StringComparison.OrdinalIgnoreCase) ||
+               label.Contains("padding", StringComparison.OrdinalIgnoreCase) ||
+               label.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase) ||
+               label.Equals("****", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Format a 2DA label into a human-readable name.
+    /// Converts "BASE_ITEM_SHORTSWORD" to "Shortsword".
+    /// Labels without underscores are returned as-is.
+    /// </summary>
+    private static string FormatLabel(string label)
+    {
+        // Remove common prefixes
+        if (label.StartsWith("BASE_ITEM_", StringComparison.OrdinalIgnoreCase))
+            label = label.Substring(10);
+
+        // Only format if label contains underscores (2DA convention)
+        if (!label.Contains('_'))
+            return label;
+
+        // Convert underscores to spaces and title case
+        return string.Join(" ", label.Split('_')
+            .Where(w => w.Length > 0)
+            .Select(w => char.ToUpper(w[0]) + w.Substring(1).ToLower()));
     }
 
     private string ResolvePropertiesDisplay(List<ItemProperty> properties)

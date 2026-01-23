@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.53-alpha] - 2026-01-22
+**Branch**: `quartermaster/issue-1050` | **PR**: #1056
+
+### Sprint: Bug Bash - UI Fixes (#1050)
+
+- [x] #938 - Portrait resizes with font scaling (uses dynamic PortraitWidth/PortraitHeight resources)
+- [x] #1021 - Re-level confirmation dialog now has OK/Cancel buttons and scrollable content
+- [x] #1026 - Bad strref values filtered in item type names (shared fix in Radoub.UI)
+- [x] #1049 - Item Palette shows formatted type names instead of raw BaseRef values
+
+---
+
 ## [0.1.52-alpha] - 2026-01-22
 **Branch**: `quartermaster/issue-746` | **PR**: #1054
 

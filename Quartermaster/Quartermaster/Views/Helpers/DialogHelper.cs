@@ -150,17 +150,45 @@ public static class DialogHelper
         var dialog = new Window
         {
             Title = title,
-            Width = 400,
+            Width = 450,
             SizeToContent = SizeToContent.Height,
-            MinHeight = 150,
-            MaxHeight = 400,
+            MinHeight = 180,
+            MaxHeight = 450,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             CanResize = false
         };
 
         var result = false;
 
-        var panel = new StackPanel { Margin = new Thickness(20), Spacing = 15 };
+        var outerPanel = new DockPanel { Margin = new Thickness(20) };
+
+        // Buttons at bottom (DockPanel.Dock="Bottom")
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 10,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            Margin = new Thickness(0, 15, 0, 0)
+        };
+        DockPanel.SetDock(buttonPanel, Avalonia.Controls.Dock.Bottom);
+
+        var okButton = new Button { Content = "OK", Width = 80 };
+        okButton.Click += (s, e) => { result = true; dialog.Close(); };
+
+        var cancelButton = new Button { Content = "Cancel", Width = 80 };
+        cancelButton.Click += (s, e) => { result = false; dialog.Close(); };
+
+        buttonPanel.Children.Add(okButton);
+        buttonPanel.Children.Add(cancelButton);
+        outerPanel.Children.Add(buttonPanel);
+
+        // Scrollable message area fills remaining space
+        var scrollViewer = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            MaxHeight = 300
+        };
 
         // Warning icon + message
         var messagePanel = new StackPanel
@@ -178,29 +206,13 @@ public static class DialogHelper
         {
             Text = message,
             TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-            MaxWidth = 320
+            MaxWidth = 360
         });
-        panel.Children.Add(messagePanel);
 
-        // Buttons
-        var buttonPanel = new StackPanel
-        {
-            Orientation = Avalonia.Layout.Orientation.Horizontal,
-            Spacing = 10,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
-        };
+        scrollViewer.Content = messagePanel;
+        outerPanel.Children.Add(scrollViewer);
 
-        var okButton = new Button { Content = "OK", Width = 80 };
-        okButton.Click += (s, e) => { result = true; dialog.Close(); };
-
-        var cancelButton = new Button { Content = "Cancel", Width = 80 };
-        cancelButton.Click += (s, e) => { result = false; dialog.Close(); };
-
-        buttonPanel.Children.Add(okButton);
-        buttonPanel.Children.Add(cancelButton);
-        panel.Children.Add(buttonPanel);
-
-        dialog.Content = panel;
+        dialog.Content = outerPanel;
         await dialog.ShowDialog(parent);
 
         return result;
