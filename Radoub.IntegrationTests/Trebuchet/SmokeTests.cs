@@ -82,16 +82,28 @@ public class SmokeTests : TrebuchetTestBase
         var ready = WaitForTitleContains("Trebuchet", DefaultTimeout);
         Assert.True(ready, "Window should be ready");
 
+        // Wait for UI to stabilize
+        Thread.Sleep(1000);
         EnsureFocused();
 
         // Act - Click settings button
         var settingsButton = FindButtonByText("Settings");
         Assert.NotNull(settingsButton);
-        settingsButton.AsButton().Click();
-        Thread.Sleep(500);
+
+        // Use Invoke pattern if available (more reliable than Click)
+        var btn = settingsButton.AsButton();
+        if (btn.Patterns.Invoke.IsSupported)
+        {
+            btn.Patterns.Invoke.Pattern.Invoke();
+        }
+        else
+        {
+            btn.Click();
+        }
+        Thread.Sleep(1000);
 
         // Assert - Settings window should open
-        var settingsWindow = FindPopupByTitle("Settings", 10);
+        var settingsWindow = FindPopupByTitle("Settings", 15);
         Assert.NotNull(settingsWindow);
     }
 
@@ -104,16 +116,28 @@ public class SmokeTests : TrebuchetTestBase
         var ready = WaitForTitleContains("Trebuchet", DefaultTimeout);
         Assert.True(ready, "Window should be ready");
 
+        // Wait for UI to stabilize
+        Thread.Sleep(1000);
         EnsureFocused();
 
         // Act - Click about button
         var aboutButton = FindButtonByText("About");
         Assert.NotNull(aboutButton);
-        aboutButton.AsButton().Click();
-        Thread.Sleep(500);
+
+        // Use Invoke pattern if available (more reliable than Click)
+        var btn = aboutButton.AsButton();
+        if (btn.Patterns.Invoke.IsSupported)
+        {
+            btn.Patterns.Invoke.Pattern.Invoke();
+        }
+        else
+        {
+            btn.Click();
+        }
+        Thread.Sleep(1000);
 
         // Assert - About window should open
-        var aboutWindow = FindPopupByTitle("About", 10);
+        var aboutWindow = FindPopupByTitle("About", 15);
         Assert.NotNull(aboutWindow);
     }
 

@@ -98,8 +98,12 @@ public class ValueChangeTests : FenceTestBase
     /// </summary>
     private void SetNumericValue(string automationId, int newValue)
     {
-        var element = FindElement(automationId);
-        Assert.NotNull(element);
+        // Use extended retries for controls that may take time to load
+        var element = FindElement(automationId, maxRetries: 10);
+        if (element == null)
+        {
+            throw new InvalidOperationException($"Could not find element '{automationId}'. Window title: {MainWindow?.Title}");
+        }
 
         // Try Value pattern first
         if (element.Patterns.Value.IsSupported)
@@ -235,6 +239,9 @@ public class ValueChangeTests : FenceTestBase
             var loaded = WaitForTitleContains("test_store", FileOperationTimeout);
             Assert.True(loaded, "Store should be loaded");
 
+            // Wait for UI to fully initialize after file load
+            Thread.Sleep(1000);
+
             // Act - Change sell markup
             SetNumericValue("SellMarkupBox", 150);
             Thread.Sleep(300);
@@ -263,6 +270,9 @@ public class ValueChangeTests : FenceTestBase
             var loaded = WaitForTitleContains("test_store", FileOperationTimeout);
             Assert.True(loaded, "Store should be loaded");
 
+            // Wait for UI to fully initialize after file load
+            Thread.Sleep(1000);
+
             // Act - Change buy markdown
             SetNumericValue("BuyMarkdownBox", 75);
             Thread.Sleep(300);
@@ -290,6 +300,9 @@ public class ValueChangeTests : FenceTestBase
             StartApplication($"--file \"{tempFile}\"");
             var loaded = WaitForTitleContains("test_store", FileOperationTimeout);
             Assert.True(loaded, "Store should be loaded");
+
+            // Wait for UI to fully initialize after file load
+            Thread.Sleep(1000);
 
             // Act - Change identify price
             SetNumericValue("IdentifyPriceBox", 200);
@@ -356,6 +369,9 @@ public class ValueChangeTests : FenceTestBase
             var loaded = WaitForTitleContains("test_store", FileOperationTimeout);
             Assert.True(loaded, "Store should be loaded");
 
+            // Wait for UI to fully initialize after file load
+            Thread.Sleep(1000);
+
             // Modify sell markup to a distinctive value
             SetNumericValue("SellMarkupBox", 250);
             Thread.Sleep(300);
@@ -371,6 +387,9 @@ public class ValueChangeTests : FenceTestBase
             StartApplication($"--file \"{tempFile}\"");
             loaded = WaitForTitleContains("test_store", FileOperationTimeout);
             Assert.True(loaded, "Store should be loaded in second session");
+
+            // Wait for UI to fully initialize after file load
+            Thread.Sleep(1000);
 
             // Assert - Sell markup should still be 250
             var markup = GetNumericValue("SellMarkupBox");

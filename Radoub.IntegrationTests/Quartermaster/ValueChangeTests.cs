@@ -49,7 +49,10 @@ public class ValueChangeTests : QuartermasterTestBase
     {
         EnsureFocused();
         var navButton = FindNavButton(section);
-        Assert.NotNull(navButton);
+        if (navButton == null)
+        {
+            throw new InvalidOperationException($"Could not find NavButton_{section}. Window title: {MainWindow?.Title}");
+        }
 
         var button = navButton.AsButton();
         if (button.Patterns.Invoke.IsSupported)
@@ -60,7 +63,24 @@ public class ValueChangeTests : QuartermasterTestBase
         {
             button.Click();
         }
-        Thread.Sleep(500); // Wait for panel transition
+
+        // Wait for panel to load - Avalonia panels may take time to fully render
+        Thread.Sleep(1000);
+
+        // Verify the panel is visible by checking for a known element
+        var panelId = section + "Panel";
+        for (int i = 0; i < 10; i++)
+        {
+            var panel = MainWindow?.FindFirstDescendant(cf => cf.ByAutomationId(panelId));
+            if (panel != null)
+            {
+                var bounds = panel.BoundingRectangle;
+                if (bounds.Width > 0 && bounds.Height > 0)
+                    return; // Panel is visible
+            }
+            Thread.Sleep(300);
+            MainWindow = App?.GetMainWindow(Automation!, TimeSpan.FromMilliseconds(500));
+        }
     }
 
     /// <summary>
@@ -96,8 +116,12 @@ public class ValueChangeTests : QuartermasterTestBase
     /// </summary>
     private void SetNumericValue(string automationId, int newValue)
     {
-        var element = FindElement(automationId);
-        Assert.NotNull(element);
+        // Use extended retries for NumericUpDown controls which may take longer to load
+        var element = FindElement(automationId, maxRetries: 10);
+        if (element == null)
+        {
+            throw new InvalidOperationException($"Could not find element '{automationId}'. Window title: {MainWindow?.Title}");
+        }
 
         // Try Value pattern first
         if (element.Patterns.Value.IsSupported)

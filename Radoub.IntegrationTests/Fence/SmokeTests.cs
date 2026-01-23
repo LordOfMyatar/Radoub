@@ -53,8 +53,11 @@ public class SmokeTests : FenceTestBase
         var ready = WaitForTitleContains("Fence", DefaultTimeout);
         Assert.True(ready, "Window should be ready");
 
-        // Assert - Status bar should be visible
-        var statusBar = FindElement("StatusBar");
+        // Wait for UI to fully initialize
+        Thread.Sleep(500);
+
+        // Assert - Status bar should be visible (use extended retries)
+        var statusBar = FindElement("StatusBar", maxRetries: 10);
         Assert.NotNull(statusBar);
         Assert.True(IsElementVisible("StatusBar"), "Status bar should be visible");
     }
