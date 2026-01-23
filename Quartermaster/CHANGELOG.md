@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.54-alpha] - 2026-01-23
-**Branch**: `quartermaster/issue-1046` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1046` | **PR**: #1062
 
 ### Tech Debt: Large Files Needing Refactoring (#1046)
 
