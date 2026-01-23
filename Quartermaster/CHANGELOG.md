@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.54-alpha] - 2026-01-23
+**Branch**: `quartermaster/issue-1046` | **PR**: #TBD
+
+### Tech Debt: Large Files Needing Refactoring (#1046)
+
+- [ ] MainWindow.axaml.cs - Extract equipment slot initialization to separate partial
+- [ ] MainWindow.FileOps.cs - Extract file validation to helper class
+- [ ] AdvancedPanel.axaml.cs - Extract Variables region if it grows further
+- [ ] UtcFile.cs - Document field groupings with region comments
+
+---
+
 ## [0.1.53-alpha] - 2026-01-22
 **Branch**: `quartermaster/issue-1050` | **PR**: #1056
 
