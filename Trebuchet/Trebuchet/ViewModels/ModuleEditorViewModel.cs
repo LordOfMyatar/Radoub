@@ -287,6 +287,7 @@ public partial class ModuleEditorViewModel : ObservableObject
                         $"Found unpacked module directory: {UnifiedLogger.SanitizePath(workingDir)}");
                     _workingDirectoryPath = workingDir;
                     _modFilePath = path;
+                    _modulePath = workingDir;  // Save to working directory, not .mod file
                     await LoadFromDirectoryAsync(workingDir);
                     _isReadOnly = false;
                 }
