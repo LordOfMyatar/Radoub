@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.1-alpha] - 2026-01-24
+**Branch**: `trebuchet/issue-1090` | **PR**: #TBD
+
+### Fix: Module editor corrupts module.ifo - missing area list (#1090)
+
+**Critical bug**: When saving module.ifo changes in Trebuchet's Module Editor, the module becomes corrupted - Aurora Engine cannot find the start location.
+
+- Investigate IfoWriter to ensure all fields are preserved during round-trip
+- Verify area list (Mod_Area_list) is read and written correctly
+- Ensure entry point area reference is maintained
+
+---
+
 ## [1.3.0-alpha] - 2026-01-24
 **Branch**: `trebuchet/issue-1061` | **PR**: #1077
 
