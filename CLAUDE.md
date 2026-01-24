@@ -345,6 +345,21 @@ userDict.AddWord("Waterdeep");
 - [ ] **Create CLAUDE.md** with tool-specific patterns
 - [ ] **Add dictionary support** if tool has text editing fields
 
+### Trebuchet Integration
+
+New tools must integrate with Trebuchet (the Radoub launcher):
+
+- [ ] **Add to ToolLauncherService** - Register tool for discovery and launch
+- [ ] **Support `--file` argument** - Enable launching with a file from Trebuchet's MRU dropdown
+- [ ] **Use Radoub.UI file browsers** - Use `ModuleBrowserWindow`, `ScriptBrowserWindow`, `DialogBrowserWindow`, or create resource-specific browser instead of OS file pickers for module resources
+
+### Testing Requirements
+
+- [ ] **Create unit test project** - `ToolName.Tests/` with xUnit
+- [ ] **Add smoke test** - Basic UI integration test using FlaUI
+- [ ] **Add to run-tests.ps1** - Include tool in `-Tool` ValidateSet parameter
+- [ ] **Test file launch** - Verify `--file` argument opens the file correctly
+
 ### UI Uniformity Checklist (Epic #959)
 
 **Required for all tools** - ensures consistency, performance, and reliability:
