@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 
 namespace RadoubLauncher.Services;
@@ -76,8 +77,14 @@ public class ToolRecentFilesService
             {
                 foreach (var fileElement in filesElement.EnumerateArray())
                 {
-                    var filePath = fileElement.GetString();
-                    if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                    var rawPath = fileElement.GetString();
+                    if (string.IsNullOrEmpty(rawPath))
+                        continue;
+
+                    // Expand ~ to full path (tools store paths with ~ for privacy)
+                    var filePath = PathHelper.ExpandPath(rawPath);
+
+                    if (File.Exists(filePath))
                     {
                         recentFiles.Add(new RecentFileInfo
                         {
