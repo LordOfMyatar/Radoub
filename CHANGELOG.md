@@ -20,7 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Custom File Browser - Manifest & Path Standardization (#1097)
 
-- [ ] #1078 - Standardize RecentFiles storage to use ~ paths
+- [x] #1078 - Standardize RecentFiles storage to use ~ paths
+  - Manifest, Quartermaster, Fence: Use `PathHelper.ContractPaths()` on save, `ExpandPaths()` on load
+  - Trebuchet: Same pattern for RecentModules
+  - Parley already implemented this pattern (reference implementation)
 - [ ] #1085 - [Manifest] Use custom file browser for .jrl files
 
 ---
