@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Styling;
 using System.Threading.Tasks;
 
@@ -16,6 +17,44 @@ namespace DialogEditor.Services
         public DialogFactory(Window owner)
         {
             _owner = owner;
+        }
+
+        /// <summary>
+        /// Apply modal dialog styling for better visibility (#453).
+        /// Adds distinct border and ensures theme-aware background.
+        /// </summary>
+        private static void ApplyModalStyling(Window dialog)
+        {
+            // Get theme colors from application resources
+            var app = Application.Current;
+            if (app?.Resources != null)
+            {
+                // Use sidebar color for dialog background (slightly different from main window)
+                if (app.Resources.TryGetResource("ThemeSidebar", app.ActualThemeVariant, out var sidebarObj)
+                    && sidebarObj is SolidColorBrush sidebarBrush)
+                {
+                    dialog.Background = sidebarBrush;
+                }
+                else if (app.Resources.TryGetResource("ThemeBackground", app.ActualThemeVariant, out var bgObj)
+                    && bgObj is SolidColorBrush bgBrush)
+                {
+                    dialog.Background = bgBrush;
+                }
+
+                // Add accent-colored border for visual distinction
+                if (app.Resources.TryGetResource("ThemeBorder", app.ActualThemeVariant, out var borderObj)
+                    && borderObj is SolidColorBrush borderBrush)
+                {
+                    dialog.BorderBrush = borderBrush;
+                    dialog.BorderThickness = new Thickness(2);
+                }
+                else if (app.Resources.TryGetResource("SystemAccentColor", app.ActualThemeVariant, out var accentObj)
+                    && accentObj is Color accentColor)
+                {
+                    dialog.BorderBrush = new SolidColorBrush(accentColor);
+                    dialog.BorderThickness = new Thickness(2);
+                }
+            }
         }
 
         /// <summary>
@@ -36,6 +75,9 @@ namespace DialogEditor.Services
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 CanResize = false
             };
+
+            // Apply modal styling for better visibility (#453)
+            ApplyModalStyling(dialog);
 
             var panel = new StackPanel { Margin = new Thickness(20) };
 
@@ -109,6 +151,9 @@ namespace DialogEditor.Services
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 CanResize = false
             };
+
+            // Apply modal styling for better visibility (#453)
+            ApplyModalStyling(dialog);
 
             var panel = new StackPanel { Margin = new Thickness(20) };
 
