@@ -17,9 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 **Critical bug**: When saving module.ifo changes in Trebuchet's Module Editor, the module becomes corrupted - Aurora Engine cannot find the start location.
 
-- Investigate IfoWriter to ensure all fields are preserved during round-trip
-- Verify area list (Mod_Area_list) is read and written correctly
-- Ensure entry point area reference is maintained
+**Root cause**: Field name case mismatch (`Mod_Area_List` vs `Mod_Area_list`) and conditional field writing dropped fields.
+
+**Fixes (in Radoub.Formats)**:
+- Fixed `Mod_Area_list` field name case (lowercase 'l' matches actual GFF field)
+- Added 19 missing IFO fields to IfoFile model:
+  - NWN:EE scripts: OnModuleStart, OnPlayerChat, OnPlayerTarget, OnPlayerGuiEvent, OnPlayerTileAction, OnNuiEvent
+  - Metadata: IsSaveGame, StartMovie, DefaultBic, ModuleUuid, PartyControl
+  - Lists: ExpansionList, CutSceneList, GlobalVarList
+- Updated IfoWriter to always write all fields (including empty lists) for round-trip compatibility
+- Added round-trip tests with real module.ifo files
 
 ---
 
