@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.7-alpha] - 2026-01-23
-**Branch**: `fence/issue-1060` | **PR**: #TBD
+**Branch**: `fence/issue-1060` | **PR**: #1071
 
 ### Sprint: Completion Polish (#1060)
 
