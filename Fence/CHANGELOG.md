@@ -31,8 +31,10 @@ Part of Epic #555 (Merchant Editor Tool).
 - **Store Properties panel** - Now collapsible; merged Scripts & Comment into this panel
 - **Buy Restrictions panel** - Moved "Buy Stolen Goods" here (was in Store Properties)
 - **Pricing fields** - Replaced NumericUpDown controls with TextBox for cleaner UI
-- **Infinity column** - Added tooltip, wider column, bold ∞ header for better visibility
+- **Infinity column** - Changed from checkbox to ∞ symbol (click to toggle); added tooltip
+- **Script buttons** - Widened browse/clear buttons from 28 to 38 pixels for better clickability
 - **Panel layout** - Reduced from 3 collapsible panels to 2 (Buy Restrictions + Local Variables)
+- **Name-based store panel mapping** - Items assigned to panels by base item type name (not index) for compatibility
 
 #### Removed
 - **Scripts & Comment expander** - Consolidated into Store Properties panel
