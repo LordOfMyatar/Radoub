@@ -37,11 +37,55 @@ public class ParleyScriptBrowserContext : IScriptBrowserContext
 
             // Fall back to RadoubSettings.CurrentModulePath (set by Trebuchet)
             var modulePath = RadoubSettings.Instance.CurrentModulePath;
-            if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
-                return modulePath;
+            if (!string.IsNullOrEmpty(modulePath))
+            {
+                // If it's a directory, use it directly
+                if (Directory.Exists(modulePath))
+                    return modulePath;
+
+                // If it's a .mod file, find the working directory
+                if (File.Exists(modulePath) && modulePath.EndsWith(".mod", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    var workingDir = FindWorkingDirectory(modulePath);
+                    if (workingDir != null)
+                        return workingDir;
+                }
+            }
 
             return null;
         }
+    }
+
+    /// <summary>
+    /// Find the unpacked working directory for a .mod file.
+    /// Checks for module name folder, temp0, or temp01.
+    /// </summary>
+    private static string? FindWorkingDirectory(string modFilePath)
+    {
+        var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
+        var moduleDir = Path.GetDirectoryName(modFilePath);
+
+        if (string.IsNullOrEmpty(moduleDir))
+            return null;
+
+        // Check in priority order (same as Trebuchet)
+        var candidates = new[]
+        {
+            Path.Combine(moduleDir, moduleName),
+            Path.Combine(moduleDir, "temp0"),
+            Path.Combine(moduleDir, "temp01")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (Directory.Exists(candidate) &&
+                File.Exists(Path.Combine(candidate, "module.ifo")))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     public string? NeverwinterNightsPath => SettingsService.Instance.NeverwinterNightsPath;
