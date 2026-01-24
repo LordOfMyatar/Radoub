@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Common;
 
 namespace Manifest.Services
 {
@@ -308,8 +309,8 @@ namespace Manifest.Services
                         // Load spell-check settings
                         _spellCheckEnabled = settings.SpellCheckEnabled;
 
-                        // Load recent files
-                        _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
+                        // Load recent files (expand ~ to full path for runtime use)
+                        _recentFiles = PathHelper.ExpandPaths(settings.RecentFiles ?? new List<string>()).ToList();
                         _maxRecentFiles = Math.Max(1, Math.Min(20, settings.MaxRecentFiles));
                         // Clean up non-existent files
                         _recentFiles.RemoveAll(f => !File.Exists(f));
@@ -346,7 +347,7 @@ namespace Manifest.Services
                     LogRetentionSessions = _loggingSettings.LogRetentionSessions,
                     LogLevel = _loggingSettings.LogLevel,
                     SpellCheckEnabled = SpellCheckEnabled,
-                    RecentFiles = _recentFiles,
+                    RecentFiles = PathHelper.ContractPaths(_recentFiles).ToList(),  // Use ~ for privacy
                     MaxRecentFiles = MaxRecentFiles
                 };
 

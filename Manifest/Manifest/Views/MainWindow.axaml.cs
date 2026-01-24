@@ -334,21 +334,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task OpenFile()
     {
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = "Open Journal File",
-            AllowMultiple = false,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType("Journal Files") { Patterns = new[] { "*.jrl" } },
-                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
-            }
-        });
+        // Use custom JournalBrowserWindow for consistent UX (#1085)
+        var context = new ManifestBrowserContext(_currentFilePath);
+        var browser = new JournalBrowserWindow(context);
+        await browser.ShowDialog(this);
 
-        if (files.Count > 0)
+        // Check if user selected a journal
+        var selectedEntry = browser.SelectedEntry;
+        if (selectedEntry?.FilePath != null)
         {
-            var file = files[0];
-            await LoadFile(file.Path.LocalPath);
+            await LoadFile(selectedEntry.FilePath);
         }
     }
 

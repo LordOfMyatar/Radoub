@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Common;
 
 namespace RadoubLauncher.Services;
 
@@ -302,7 +303,8 @@ public class SettingsService : INotifyPropertyChanged
                     _loggingSettings.Normalize();
                     _loggingSettings.ApplyToLogger();
 
-                    _recentModules = settings.RecentModules?.ToList() ?? new List<string>();
+                    // Load recent modules (expand ~ to full path for runtime use)
+                    _recentModules = PathHelper.ExpandPaths(settings.RecentModules ?? new List<string>()).ToList();
                     _maxRecentModules = settings.MaxRecentModules > 0 && settings.MaxRecentModules <= 20
                         ? settings.MaxRecentModules
                         : DefaultMaxRecentModules;
@@ -345,7 +347,7 @@ public class SettingsService : INotifyPropertyChanged
                 CurrentThemeId = CurrentThemeId,
                 LogRetentionSessions = _loggingSettings.LogRetentionSessions,
                 LogLevel = _loggingSettings.LogLevel,
-                RecentModules = _recentModules,
+                RecentModules = PathHelper.ContractPaths(_recentModules).ToList(),  // Use ~ for privacy
                 MaxRecentModules = MaxRecentModules
             };
 

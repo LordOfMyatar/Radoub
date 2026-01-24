@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Runtime.CompilerServices;
 using Radoub.Formats.Settings;
+using Radoub.Formats.Common;
 
 namespace Quartermaster.Services;
 
@@ -334,7 +335,8 @@ public class SettingsService : INotifyPropertyChanged
                     _levelHistoryEncoding = settings.LevelHistoryEncoding;
                     _recordLevelHistory = settings.RecordLevelHistory;
 
-                    _recentFiles = settings.RecentFiles?.ToList() ?? new List<string>();
+                    // Load recent files (expand ~ to full path for runtime use)
+                    _recentFiles = PathHelper.ExpandPaths(settings.RecentFiles ?? new List<string>()).ToList();
                     // Use default if MaxRecentFiles is 0 (corrupt/old file) or out of range
                     _maxRecentFiles = settings.MaxRecentFiles > 0 && settings.MaxRecentFiles <= 20
                         ? settings.MaxRecentFiles
@@ -382,7 +384,7 @@ public class SettingsService : INotifyPropertyChanged
                 LogLevel = _loggingSettings.LogLevel,
                 LevelHistoryEncoding = LevelHistoryEncoding,
                 RecordLevelHistory = RecordLevelHistory,
-                RecentFiles = _recentFiles,
+                RecentFiles = PathHelper.ContractPaths(_recentFiles).ToList(),  // Use ~ for privacy
                 MaxRecentFiles = MaxRecentFiles
             };
 

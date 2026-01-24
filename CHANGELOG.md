@@ -15,6 +15,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.46] - 2026-01-24
+**Branch**: `radoub/issue-1097` | **PR**: #1100
+
+### Sprint: Custom File Browser - Manifest & Path Standardization (#1097)
+
+- [x] #1078 - Standardize RecentFiles storage to use ~ paths
+  - Manifest, Quartermaster, Fence: Use `PathHelper.ContractPaths()` on save, `ExpandPaths()` on load
+  - Trebuchet: Same pattern for RecentModules
+  - Parley already implemented this pattern (reference implementation)
+- [x] #1085 - [Manifest] Use custom file browser for .jrl files
+  - Added `JournalBrowserWindow` to Radoub.UI (shared)
+  - See Manifest CHANGELOG for details
+
+---
+
 ## [0.9.45] - 2026-01-23
 **Branch**: `radoub/issue-1058` | **PR**: #1068
 

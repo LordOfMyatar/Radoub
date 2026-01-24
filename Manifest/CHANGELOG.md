@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.14.1-alpha] - 2026-01-24
+**Branch**: `radoub/issue-1097` | **PR**: #1100
+
+### Sprint: Custom File Browser - Manifest & Path Standardization (#1097)
+
+- [x] #1085 - Use custom file browser for .jrl files
+  - File > Open now uses `JournalBrowserWindow` from Radoub.UI
+  - Shows journals from current module directory
+  - Auto-selects when only one journal found (typical case: module.jrl)
+  - Browse button to select different module folder
+
+---
+
 ## [0.14.0-alpha] - 2026-01-23
 **Branch**: `manifest/issue-1059` | **PR**: #1070
 
