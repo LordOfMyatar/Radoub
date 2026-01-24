@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:Radoub.UI.Controls"
+        xmlns:converters="using:MerchantEditor.Converters"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="MerchantEditor.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -11,6 +12,10 @@
         Width="1200" Height="800"
         MinWidth="900" MinHeight="600"
         KeyDown="OnWindowKeyDown">
+
+    <Window.Resources>
+        <converters:InfiniteToSymbolConverter x:Key="InfiniteToSymbolConverter"/>
+    </Window.Resources>
 
     <DockPanel>
         <!-- Menu Bar -->
@@ -129,9 +134,9 @@
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0" x:Name="OnOpenStoreBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
                                  AutomationProperties.AutomationId="OnOpenStoreBox"/>
-                        <Button Grid.Column="1" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseOpenScript"
+                        <Button Grid.Column="1" Content="..." Width="38" Margin="4,0,0,0" Click="OnBrowseOpenScript"
                                 ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseOpenScriptButton"/>
-                        <Button Grid.Column="2" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearOpenScript"
+                        <Button Grid.Column="2" Content="✕" Width="38" Margin="4,0,0,0" Click="OnClearOpenScript"
                                 ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearOpenScriptButton"/>
                     </Grid>
 
@@ -144,9 +149,9 @@
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0" x:Name="OnStoreClosedBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
                                  AutomationProperties.AutomationId="OnStoreClosedBox"/>
-                        <Button Grid.Column="1" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseClosedScript"
+                        <Button Grid.Column="1" Content="..." Width="38" Margin="4,0,0,0" Click="OnBrowseClosedScript"
                                 ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseClosedScriptButton"/>
-                        <Button Grid.Column="2" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearClosedScript"
+                        <Button Grid.Column="2" Content="✕" Width="38" Margin="4,0,0,0" Click="OnClearClosedScript"
                                 ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearClosedScriptButton"/>
                     </Grid>
 
@@ -346,30 +351,30 @@
                                   GridLinesVisibility="Horizontal"
                                   AutomationProperties.AutomationId="StoreInventoryGrid">
                             <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Stock" Width="55" Binding="{Binding Infinite}">
-                                    <DataGridCheckBoxColumn.HeaderTemplate>
+                                <DataGridTemplateColumn Header="∞" Width="45" CanUserSort="True" SortMemberPath="Infinite">
+                                    <DataGridTemplateColumn.HeaderTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="∞" ToolTip.Tip="Infinite stock - item never runs out" FontWeight="Bold" HorizontalAlignment="Center"/>
                                         </DataTemplate>
-                                    </DataGridCheckBoxColumn.HeaderTemplate>
-                                </DataGridCheckBoxColumn>
-                                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="Tag" Width="100" Binding="{Binding Tag}" IsReadOnly="True"/>
-                                <DataGridTemplateColumn Header="ResRef" Width="120">
+                                    </DataGridTemplateColumn.HeaderTemplate>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding ResRef}" VerticalAlignment="Center" Margin="4,0"/>
+                                            <Border Background="Transparent" PointerPressed="OnInfiniteCellClicked">
+                                                <TextBlock Text="{Binding Infinite, Converter={StaticResource InfiniteToSymbolConverter}}"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                           FontWeight="Bold" FontSize="16"
+                                                           Cursor="Hand"
+                                                           ToolTip.Tip="Click to toggle infinite stock"/>
+                                            </Border>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding ResRef}" MaxLength="16" Margin="0"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Sell" Width="60" Binding="{Binding SellPrice}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Buy" Width="60" Binding="{Binding BuyPrice}" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </DockPanel>
@@ -435,9 +440,9 @@
                                   AutomationProperties.AutomationId="ItemPaletteGrid">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}"/>
-                                <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}"/>
                                 <DataGridTextColumn Header="Value" Width="60" Binding="{Binding BaseValue}"/>
+                                <DataGridTextColumn Header="ResRef" Width="120" Binding="{Binding ResRef}"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </DockPanel>

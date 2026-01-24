@@ -14,6 +14,7 @@ public class StoreItemViewModel : INotifyPropertyChanged
     private bool _infinite;
     private int _panelId;
     private string _baseItemType = string.Empty;
+    private int _baseValue;
     private int _sellPrice;
     private int _buyPrice;
 
@@ -53,6 +54,12 @@ public class StoreItemViewModel : INotifyPropertyChanged
     {
         get => _baseItemType;
         set { if (_baseItemType != value) { _baseItemType = value; OnPropertyChanged(); } }
+    }
+
+    public int BaseValue
+    {
+        get => _baseValue;
+        set { if (_baseValue != value) { _baseValue = value; OnPropertyChanged(); } }
     }
 
     public int SellPrice

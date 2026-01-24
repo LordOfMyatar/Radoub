@@ -4,7 +4,7 @@ Create and push a version tag to trigger the GitHub Actions release workflow.
 
 ## Overview
 
-Radoub releases include all tools (Parley, Manifest, Quartermaster) in a single bundle. Individual tool releases are not supported - we release the entire Radoub suite together.
+Radoub releases include all tools (Parley, Manifest, Fence) in a single bundle. Individual tool releases are not supported - we release the entire Radoub suite together.
 
 ## Versioning Strategy
 
@@ -82,7 +82,7 @@ Before releasing:
    Find entries in each tool changelog that are newer than the last release:
    - `Parley/CHANGELOG.md`
    - `Manifest/CHANGELOG.md`
-   - `Quartermaster/CHANGELOG.md`
+   - `Fence/CHANGELOG.md`
    - `CHANGELOG.md` (repo-level, for shared changes)
 
    Look for version sections with dates after the last release date.
@@ -96,10 +96,10 @@ Before releasing:
    1. [###] Refactor: Tech debt (#719)
    2. [-] Extracted WindowLayoutService
 
-   ### Quartermaster v0.1.40-alpha
-   3. [###] Sprint: Portrait & Character Preview (#922)
-   4. [-] Portrait moved to Character panel
-   5. [-] Gender dropdown added
+   ### Fence v0.1.0-alpha
+   3. [###] Sprint: Fence Completion Polish (#1060)
+   4. [-] Name-based store panel mapping
+   5. [-] Infinity symbol toggle for stock
 
    Which items are highlights? (Enter numbers like 1,3 or 'all' or 'none')
    ```
@@ -112,12 +112,12 @@ Before releasing:
    ## What's New
 
    - **Parley**: Tech debt refactoring (#719)
-   - **Quartermaster**: Portrait & Character Preview (#922)
+   - **Fence**: Fence Completion Polish (#1060)
 
    ## Tool Versions
    - Parley: v0.1.120-alpha
    - Manifest: v0.6.0-alpha
-   - Quartermaster: v0.1.40-alpha
+   - Fence: v0.1.0-alpha
 
    ## Other Changes
 
@@ -159,7 +159,7 @@ Before releasing:
 ## Tool Versions Included
 - Parley: v0.1.120-alpha
 - Manifest: v0.6.0-alpha
-- Quartermaster: v0.1.40-alpha
+- Fence: v0.1.0-alpha
 
 ## Changes Since Last Release
 [list of changelog entries from all tools]
@@ -180,6 +180,6 @@ Confirm to create tag `radoub-v0.8.4` and trigger release build.
 The Radoub release creates a combined package with:
 - Parley dialog editor
 - Manifest journal editor
-- Quartermaster creature editor
+- Fence merchant/store editor
 - Shared .NET runtime and dependencies (bundled version)
 - Just the tools (unbundled version - requires .NET 9.0 installed)

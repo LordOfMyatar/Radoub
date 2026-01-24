@@ -56,16 +56,23 @@ jobs:
     - name: Restore Manifest dependencies
       run: dotnet restore Manifest/Manifest/Manifest.csproj -r ${{ matrix.runtime }}
 
-    # Publish both tools to the SAME output folder - DLLs are automatically shared
+    - name: Restore Fence dependencies
+      run: dotnet restore Fence/Fence/Fence.csproj -r ${{ matrix.runtime }}
+
+    # Publish all tools to the SAME output folder - DLLs are automatically shared
     # Parley first (larger, has more dependencies including CEF)
     # IncludePlugins=false excludes plugin SDK files from bundle (plugins not ready for release)
     # InformationalVersion overrides GitInfo's auto-generated version with version+commit
     - name: Publish Parley to shared folder
       run: dotnet publish Parley/Parley/Parley.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:IncludePlugins=false -p:Version=${{ steps.version.outputs.version }} -p:InformationalVersion=${{ steps.version.outputs.version }}+${{ steps.version.outputs.commit }} -o ./publish/Radoub
 
-    # Manifest second - only adds Manifest.exe and Manifest-specific files, DLLs already present
+    # Manifest - only adds Manifest.exe and Manifest-specific files, DLLs already present
     - name: Publish Manifest to shared folder
       run: dotnet publish Manifest/Manifest/Manifest.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -p:InformationalVersion=${{ steps.version.outputs.version }}+${{ steps.version.outputs.commit }} -o ./publish/Radoub
+
+    # Fence - merchant/store editor
+    - name: Publish Fence to shared folder
+      run: dotnet publish Fence/Fence/Fence.csproj -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishReadyToRun=true -p:Version=${{ steps.version.outputs.version }} -p:InformationalVersion=${{ steps.version.outputs.version }}+${{ steps.version.outputs.commit }} -o ./publish/Radoub
 
     - name: Display bundle structure
       shell: bash
@@ -141,6 +148,35 @@ jobs:
         EOF
         chmod +x "./bundle/Manifest.app/Contents/MacOS/Manifest"
 
+        # Fence.app - copy from shared folder
+        mkdir -p "./bundle/Fence.app/Contents/MacOS"
+        mkdir -p "./bundle/Fence.app/Contents/Resources"
+        cp ./publish/Radoub/Fence "./bundle/Fence.app/Contents/MacOS/"
+        cp ./publish/Radoub/*.dylib "./bundle/Fence.app/Contents/MacOS/" 2>/dev/null || true
+        cat > "./bundle/Fence.app/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>Fence</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.lnsdevelopment.fence</string>
+            <key>CFBundleName</key>
+            <string>Fence</string>
+            <key>CFBundleVersion</key>
+            <string>${{ steps.version.outputs.version }}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ steps.version.outputs.version }}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        chmod +x "./bundle/Fence.app/Contents/MacOS/Fence"
+
     # Linux: Make executables
     - name: Set Linux permissions
       if: matrix.os == 'ubuntu-latest'
@@ -148,6 +184,7 @@ jobs:
       run: |
         chmod +x ./publish/Radoub/Parley
         chmod +x ./publish/Radoub/Manifest
+        chmod +x ./publish/Radoub/Fence
 
     # Package bundle - Windows/Linux use the shared folder directly
     - name: Package Windows Bundle
@@ -243,6 +280,7 @@ jobs:
             echo ""
             extract_changelog_section "Parley/CHANGELOG.md" "Parley"
             extract_changelog_section "Manifest/CHANGELOG.md" "Manifest"
+            extract_changelog_section "Fence/CHANGELOG.md" "Fence"
           } > highlights.md
         fi
 
@@ -272,7 +310,7 @@ jobs:
         body: |
           # Radoub ${{ steps.version.outputs.version }}
 
-          Bundled release containing Parley and Manifest editors with shared runtime.
+          Bundled release containing Parley, Manifest, and Fence editors with shared runtime.
 
           ${{ steps.highlights.outputs.highlights }}
 
@@ -282,13 +320,13 @@ jobs:
 
           These bundles include everything needed - just download and run!
 
-          - **Windows**: `Radoub-win-x64.zip` (~100MB)
-            - Extract and run `Radoub/Parley.exe` or `Radoub/Manifest.exe`
-          - **macOS**: `Radoub-osx-arm64.zip` (~110MB)
-            - Extract and open `Parley.app` or `Manifest.app`
+          - **Windows**: `Radoub-win-x64.zip` (~110MB)
+            - Extract and run `Radoub/Parley.exe`, `Radoub/Manifest.exe`, or `Radoub/Fence.exe`
+          - **macOS**: `Radoub-osx-arm64.zip` (~120MB)
+            - Extract and open `Parley.app`, `Manifest.app`, or `Fence.app`
             - Apple Silicon (M1/M2/M3) Macs
-          - **Linux**: `Radoub-linux-x64.tar.gz` (~95MB)
-            - Extract and run `./Radoub/Parley` or `./Radoub/Manifest`
+          - **Linux**: `Radoub-linux-x64.tar.gz` (~105MB)
+            - Extract and run `./Radoub/Parley`, `./Radoub/Manifest`, or `./Radoub/Fence`
 
           ## What's Included
 
@@ -296,10 +334,11 @@ jobs:
           |------|-------------|
           | **Parley** | Dialog editor for `.dlg` files |
           | **Manifest** | Journal editor for `.jrl` files |
+          | **Fence** | Merchant/store editor for `.utm` files |
 
           ## Shared Infrastructure
 
-          Both tools share a single folder with common dependencies:
+          All tools share a single folder with common dependencies:
           - .NET 9 runtime (shared, not duplicated)
           - Avalonia UI framework
           - Radoub.Formats library
@@ -317,12 +356,13 @@ jobs:
           See the individual changelogs:
           - [Parley CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Parley/CHANGELOG.md)
           - [Manifest CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Manifest/CHANGELOG.md)
+          - [Fence CHANGELOG](https://github.com/${{ github.repository }}/blob/main/Fence/CHANGELOG.md)
 
           ## Installation Notes
 
           **macOS**: You may need to allow the apps in System Preferences → Security & Privacy after first launch.
 
-          **Linux**: Make binaries executable: `chmod +x Radoub/Parley Radoub/Manifest`
+          **Linux**: Make binaries executable: `chmod +x Radoub/Parley Radoub/Manifest Radoub/Fence`
 
           ---
           🤖 Generated with [Claude Code](https://claude.com/claude-code)

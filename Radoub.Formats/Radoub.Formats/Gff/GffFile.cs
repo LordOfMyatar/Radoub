@@ -95,12 +95,59 @@ public class GffStruct
 
     /// <summary>
     /// Get a field value with type safety and default fallback.
+    /// Handles numeric type conversions (e.g., DWORD stored as uint but requested as int).
     /// </summary>
     public T GetFieldValue<T>(string label, T defaultValue = default!)
     {
         var field = GetField(label);
-        if (field?.Value is T value)
+        if (field?.Value == null)
+            return defaultValue;
+
+        // Direct type match
+        if (field.Value is T value)
             return value;
+
+        // Handle numeric type conversions (common in GFF files where DWORD/INT are sometimes swapped)
+        var targetType = typeof(T);
+        var sourceValue = field.Value;
+
+        try
+        {
+            // Convert numeric types
+            if (targetType == typeof(int))
+            {
+                return (T)(object)Convert.ToInt32(sourceValue);
+            }
+            if (targetType == typeof(uint))
+            {
+                return (T)(object)Convert.ToUInt32(sourceValue);
+            }
+            if (targetType == typeof(short))
+            {
+                return (T)(object)Convert.ToInt16(sourceValue);
+            }
+            if (targetType == typeof(ushort))
+            {
+                return (T)(object)Convert.ToUInt16(sourceValue);
+            }
+            if (targetType == typeof(byte))
+            {
+                return (T)(object)Convert.ToByte(sourceValue);
+            }
+            if (targetType == typeof(long))
+            {
+                return (T)(object)Convert.ToInt64(sourceValue);
+            }
+            if (targetType == typeof(ulong))
+            {
+                return (T)(object)Convert.ToUInt64(sourceValue);
+            }
+        }
+        catch
+        {
+            // Conversion failed, return default
+        }
+
         return defaultValue;
     }
 }

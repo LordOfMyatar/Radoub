@@ -143,6 +143,7 @@ public partial class MainWindow
                     Infinite = entry.item.Infinite,
                     PanelId = entry.PanelId,
                     BaseItemType = resolved?.BaseItemTypeName ?? "Unknown",
+                    BaseValue = resolved?.BaseCost ?? 0,
                     SellPrice = resolved?.CalculateSellPrice(markUp) ?? 0,
                     BuyPrice = resolved?.CalculateBuyPrice(markDown) ?? 0
                 });
