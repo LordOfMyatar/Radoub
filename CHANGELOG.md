@@ -24,7 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Manifest, Quartermaster, Fence: Use `PathHelper.ContractPaths()` on save, `ExpandPaths()` on load
   - Trebuchet: Same pattern for RecentModules
   - Parley already implemented this pattern (reference implementation)
-- [ ] #1085 - [Manifest] Use custom file browser for .jrl files
+- [x] #1085 - [Manifest] Use custom file browser for .jrl files
+  - Added `JournalBrowserWindow` to Radoub.UI (shared)
+  - See Manifest CHANGELOG for details
 
 ---
 

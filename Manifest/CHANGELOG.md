@@ -15,7 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Custom File Browser - Manifest & Path Standardization (#1097)
 
-- [ ] #1085 - Use custom file browser for .jrl files
+- [x] #1085 - Use custom file browser for .jrl files
+  - File > Open now uses `JournalBrowserWindow` from Radoub.UI
+  - Shows journals from current module directory
+  - Auto-selects when only one journal found (typical case: module.jrl)
+  - Browse button to select different module folder
 
 ---
 
