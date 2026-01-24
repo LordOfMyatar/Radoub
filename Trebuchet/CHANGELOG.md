@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0-alpha] - 2026-01-24
+**Branch**: `trebuchet/issue-1061` | **PR**: #TBD
+
+### Sprint: Launch Workflow
+
+- Module Editor UI Polish (#1038)
+- Launch tool with specific file argument (#1030)
+- Custom file browser for module/game resource paths (#1023)
+
+---
+
 ## [1.2.0-alpha] - 2026-01-20
 **Branch**: `trebuchet/issue-953` | **PR**: #1037
 
