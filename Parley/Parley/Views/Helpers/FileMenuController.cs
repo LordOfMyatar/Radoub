@@ -11,6 +11,7 @@ using DialogEditor.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using DialogEditor.ViewModels;
+using Radoub.UI.Views;
 
 namespace Parley.Views.Helpers
 {
@@ -151,44 +152,23 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Handle File > Open - Open existing dialog file.
+        /// Uses DialogBrowserWindow to browse module dialogs (#1082).
         /// </summary>
         public async void OnOpenClick(object? sender, RoutedEventArgs e)
         {
             try
             {
-                var storageProvider = _window.StorageProvider;
-                if (storageProvider == null)
-                {
-                    ViewModel.StatusMessage = "Storage provider not available";
-                    return;
-                }
+                // Create context for dialog browser - uses current file's directory
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName);
 
-                var options = new FilePickerOpenOptions
-                {
-                    Title = "Open Dialog File",
-                    AllowMultiple = false,
-                    FileTypeFilter = new[]
-                    {
-                        new FilePickerFileType("DLG Dialog Files")
-                        {
-                            Patterns = new[] { "*.dlg" }
-                        },
-                        new FilePickerFileType("JSON Files")
-                        {
-                            Patterns = new[] { "*.json" }
-                        },
-                        new FilePickerFileType("All Files")
-                        {
-                            Patterns = new[] { "*.*" }
-                        }
-                    }
-                };
+                var browser = new DialogBrowserWindow(context);
+                await browser.ShowDialog(_window);
 
-                var files = await storageProvider.OpenFilePickerAsync(options);
-                if (files != null && files.Count > 0)
+                // Check if user selected a dialog
+                var selectedEntry = browser.SelectedEntry;
+                if (selectedEntry?.FilePath != null)
                 {
-                    var file = files[0];
-                    var filePath = file.Path.LocalPath;
+                    var filePath = selectedEntry.FilePath;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Opening file: {UnifiedLogger.SanitizePath(filePath)}");
                     await ViewModel.LoadDialogAsync(filePath);
 
@@ -202,7 +182,6 @@ namespace Parley.Views.Helpers
                     _updateEmbeddedFlowchartAfterLoad();
 
                     // Scan creatures for portrait/soundset display (#786, #915, #916)
-                    // Await the scan so portrait/soundset auto-populates when node is selected
                     if (_scanCreaturesForModule != null)
                     {
                         var moduleDir = Path.GetDirectoryName(filePath);

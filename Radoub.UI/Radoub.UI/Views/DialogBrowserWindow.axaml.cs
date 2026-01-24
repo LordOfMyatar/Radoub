@@ -45,6 +45,7 @@ public partial class DialogBrowserWindow : Window
     private List<DialogEntry> _moduleDialogs = new();
     private List<DialogEntry> _hakDialogs = new();
     private string? _selectedDialog;
+    private DialogEntry? _selectedEntry;
     private string? _overridePath;
     private bool _showHakDialogs;
     private bool _hakDialogsLoaded;
@@ -57,6 +58,11 @@ public partial class DialogBrowserWindow : Window
     /// Gets the selected dialog name. Only valid if confirmed (OK or double-click).
     /// </summary>
     public string? SelectedDialog => _confirmed ? _selectedDialog : null;
+
+    /// <summary>
+    /// Gets the full selected entry with file path info. Only valid if confirmed.
+    /// </summary>
+    public DialogEntry? SelectedEntry => _confirmed ? _selectedEntry : null;
 
     // Parameterless constructor for XAML designer/runtime loader
     public DialogBrowserWindow() : this(null)
@@ -445,11 +451,13 @@ public partial class DialogBrowserWindow : Window
         if (DialogListBox.SelectedItem is DialogEntry dialogEntry)
         {
             _selectedDialog = dialogEntry.Name;
+            _selectedEntry = dialogEntry;
             SelectedDialogLabel.Text = dialogEntry.DisplayName;
         }
         else
         {
             _selectedDialog = null;
+            _selectedEntry = null;
             SelectedDialogLabel.Text = "(none)";
         }
     }
