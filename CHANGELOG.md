@@ -20,8 +20,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Custom File Browsers - Quartermaster & Fence (#1096)
 
-- [ ] #1083 - [Quartermaster] Use custom file browser for .utc/.bic files
-- [ ] #1084 - [Fence] Use custom file browser for .utm files
+- [x] #1083 - [Quartermaster] Use custom file browser for .utc/.bic files
+  - Added `CreatureBrowserWindow` to Radoub.UI (shared)
+  - File > Open now uses custom browser instead of OS file picker
+  - Shows .utc and .bic files from module directory
+  - Filter by file type (All/UTC/BIC)
+- [x] #1084 - [Fence] Use custom file browser for .utm files
+  - Added `StoreBrowserWindow` to Radoub.UI (shared)
+  - File > Open now uses custom browser instead of OS file picker
+  - Shows .utm files from module directory
 
 ---
 

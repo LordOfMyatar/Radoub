@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.8-alpha] - 2026-01-24
+**Branch**: `radoub/issue-1096` | **PR**: #1101
+
+### Sprint: Custom File Browsers (#1096)
+
+- [x] #1084 - Use custom file browser for .utm files
+  - File > Open now uses `StoreBrowserWindow` from Radoub.UI
+  - Shows stores from current module directory
+  - Browse button to select different module folder
+  - Consistent UX with other Radoub tools
+
+---
+
 ## [0.1.7-alpha] - 2026-01-23
 **Branch**: `fence/issue-1060` | **PR**: #1071
 

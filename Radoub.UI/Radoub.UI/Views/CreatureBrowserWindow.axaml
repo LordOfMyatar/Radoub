@@ -1,0 +1,180 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.CreatureBrowserWindow"
+        Title="Creature Browser"
+        MinWidth="600" MinHeight="350"
+        Width="700" Height="400"
+        SizeToContent="Manual"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource ThemeBackground}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        ExtendClientAreaTitleBarHeightHint="30">
+
+    <Window.Styles>
+        <!-- Dark mode selection visibility fix -->
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark1}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Custom Title Bar -->
+        <Border Grid.Row="0" Background="{DynamicResource ThemeTitleBar}"
+                x:Name="TitleBar"
+                PointerPressed="OnTitleBarPointerPressed"
+                DoubleTapped="OnTitleBarDoubleTapped">
+            <StackPanel Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        IsHitTestVisible="False">
+                <TextBlock Text="Creature Browser"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource ThemeTitleBarForeground}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Location Row -->
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Location:"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"
+                           FontSize="11"/>
+                <TextBlock Grid.Column="1"
+                           x:Name="LocationPathLabel"
+                           Text="(auto-detected)"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           TextTrimming="CharacterEllipsis"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="5">
+                    <Button x:Name="ResetLocationButton"
+                            Content="reset"
+                            FontSize="11"
+                            Padding="8,2"
+                            IsVisible="False"
+                            Click="OnResetLocationClick"/>
+                    <Button x:Name="BrowseLocationButton"
+                            Content="browse..."
+                            FontSize="11"
+                            Padding="8,2"
+                            Click="OnBrowseLocationClick"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- File Type Filter -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" Spacing="10">
+                <TextBlock Text="Show:" VerticalAlignment="Center" FontSize="11"/>
+                <RadioButton x:Name="ShowAllRadio" Content="All" IsChecked="True" GroupName="FileType" Checked="OnFileTypeChanged"/>
+                <RadioButton x:Name="ShowUtcRadio" Content="Creature Blueprints (.utc)" GroupName="FileType" Checked="OnFileTypeChanged"/>
+                <RadioButton x:Name="ShowBicRadio" Content="Player Characters (.bic)" GroupName="FileType" Checked="OnFileTypeChanged"/>
+            </StackPanel>
+
+            <!-- Creature List -->
+            <Border Grid.Row="2"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="1"
+                    Padding="5"
+                    Background="{DynamicResource ThemeSidebar}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Creature Count Header -->
+                    <TextBlock Grid.Row="0" x:Name="CreatureCountLabel"
+                               Text="0 creatures"
+                               FontWeight="Bold"
+                               Margin="0,0,0,5"/>
+
+                    <!-- Creatures ListBox -->
+                    <ListBox Grid.Row="1" x:Name="CreatureListBox"
+                             SelectionChanged="OnCreatureSelected"
+                             DoubleTapped="OnCreatureDoubleClicked"
+                             Background="{DynamicResource ThemeSidebar}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding TypeIndicator}" Width="40" Foreground="Gray" FontSize="10" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Selected Creature Display -->
+            <Border Grid.Row="3"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                    BorderThickness="1"
+                    Padding="10"
+                    Margin="0,10,0,10"
+                    Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="Selected:"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <TextBlock Grid.Column="1"
+                               x:Name="SelectedCreatureLabel"
+                               Text="(none)"
+                               VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Dialog Buttons -->
+            <StackPanel Grid.Row="4"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="10">
+                <Button Content="OK"
+                        Width="80"
+                        Click="OnOkClick"
+                        IsDefault="True"/>
+                <Button Content="Cancel"
+                        Width="80"
+                        Click="OnCancelClick"
+                        IsCancel="True"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

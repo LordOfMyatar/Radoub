@@ -8,6 +8,7 @@ using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
+using Radoub.UI.Views;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -333,23 +334,16 @@ public partial class MainWindow
 
     private async Task OpenFile()
     {
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = "Open Creature File",
-            AllowMultiple = false,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType("Creature Files") { Patterns = new[] { "*.utc", "*.bic" } },
-                new FilePickerFileType("Creature Blueprints") { Patterns = new[] { "*.utc" } },
-                new FilePickerFileType("Player Characters") { Patterns = new[] { "*.bic" } },
-                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
-            }
-        });
+        // Use custom CreatureBrowserWindow for consistent UX (#1083)
+        var context = new QuartermasterScriptBrowserContext(_currentFilePath, _gameDataService);
+        var browser = new CreatureBrowserWindow(context);
+        await browser.ShowDialog(this);
 
-        if (files.Count > 0)
+        // Check if user selected a creature
+        var selectedEntry = browser.SelectedEntry;
+        if (selectedEntry?.FilePath != null)
         {
-            var file = files[0];
-            await LoadFile(file.Path.LocalPath);
+            await LoadFile(selectedEntry.FilePath);
         }
     }
 

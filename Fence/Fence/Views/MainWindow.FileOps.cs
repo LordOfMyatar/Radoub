@@ -5,6 +5,7 @@ using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utm;
+using Radoub.UI.Views;
 using System;
 using System.IO;
 using System.Linq;
@@ -56,21 +57,16 @@ public partial class MainWindow
 
     private async void OnOpenClick(object? sender, RoutedEventArgs e)
     {
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = "Open Store",
-            AllowMultiple = false,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType("Store Files") { Patterns = new[] { "*.utm" } },
-                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
-            }
-        });
+        // Use custom StoreBrowserWindow for consistent UX (#1084)
+        var context = new FenceScriptBrowserContext(_currentFilePath, _gameDataService);
+        var browser = new StoreBrowserWindow(context);
+        await browser.ShowDialog(this);
 
-        if (files.Count > 0)
+        // Check if user selected a store
+        var selectedEntry = browser.SelectedEntry;
+        if (selectedEntry?.FilePath != null)
         {
-            var path = files[0].Path.LocalPath;
-            LoadFile(path);
+            LoadFile(selectedEntry.FilePath);
         }
     }
 
