@@ -272,13 +272,12 @@ public partial class ModuleEditorViewModel : ObservableObject
             // Check if path is a .mod file or a directory
             if (File.Exists(path) && path.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
             {
-                // Check for unpacked working directory (same name without .mod extension)
+                // Check for unpacked working directory
                 var moduleName = Path.GetFileNameWithoutExtension(path);
                 var moduleDir = Path.GetDirectoryName(path);
-                var workingDir = moduleDir != null ? Path.Combine(moduleDir, moduleName) : null;
+                var workingDir = FindWorkingDirectory(moduleDir, moduleName);
 
-                if (workingDir != null && Directory.Exists(workingDir) &&
-                    File.Exists(Path.Combine(workingDir, "module.ifo")))
+                if (workingDir != null)
                 {
                     // Unpacked directory exists - load from there (editable)
                     UnifiedLogger.LogApplication(LogLevel.INFO,
@@ -324,6 +323,38 @@ public partial class ModuleEditorViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    /// <summary>
+    /// Find the unpacked working directory for a module.
+    /// NWN toolset uses temp0, temp01, or the module name as working directory.
+    /// </summary>
+    private static string? FindWorkingDirectory(string? moduleDir, string moduleName)
+    {
+        if (string.IsNullOrEmpty(moduleDir))
+            return null;
+
+        // Check in priority order:
+        // 1. Module name folder (e.g., "MyModule/")
+        // 2. temp0 folder (NWN toolset default)
+        // 3. temp01 folder (alternate toolset folder)
+        var candidates = new[]
+        {
+            Path.Combine(moduleDir, moduleName),
+            Path.Combine(moduleDir, "temp0"),
+            Path.Combine(moduleDir, "temp01")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (Directory.Exists(candidate) &&
+                File.Exists(Path.Combine(candidate, "module.ifo")))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     private async Task LoadFromModFileAsync(string modPath)
