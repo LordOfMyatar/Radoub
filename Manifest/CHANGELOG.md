@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.14.1-alpha] - 2026-01-24
+**Branch**: `radoub/issue-1097` | **PR**: #TBD
+
+### Sprint: Custom File Browser - Manifest & Path Standardization (#1097)
+
+- [ ] #1085 - Use custom file browser for .jrl files
+
+---
+
 ## [0.14.0-alpha] - 2026-01-23
 **Branch**: `manifest/issue-1059` | **PR**: #1070
 
