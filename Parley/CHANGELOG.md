@@ -16,9 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Cleanup & Polish
 
 - [ ] #1082 - Use custom file browser for .dlg files
-- [ ] #1039 - Use Radoub.Formats IFO library for module info
+- [x] #1039 - Use Radoub.Formats IFO library for module info
 - [x] #453 - Improve modal window contrast for visibility
 - [x] #1076 - Fix dark theme contrast/color issues (Radoub.UI)
+
+#### #1039 - Migrate to Shared IFO Library
+
+Replaced custom GFF parsing in `ModuleInfoParser` with `Radoub.Formats.Ifo.IfoReader`.
+Removed dead code: GffParser inheritance, manual field extraction.
 
 #### #453 - Modal Window Contrast
 

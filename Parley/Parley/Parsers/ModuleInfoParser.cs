@@ -1,17 +1,15 @@
 using System;
 using System.IO;
-using System.Linq;
-using DialogEditor.Services;
-using Radoub.Formats.Gff;
+using Radoub.Formats.Ifo;
 using Radoub.Formats.Logging;
 
 namespace DialogEditor.Parsers
 {
     /// <summary>
-    /// Parser for module.ifo files (Module Information GFF format).
-    /// Extracts module metadata like module name.
+    /// Helper for extracting module info from module.ifo files.
+    /// Uses Radoub.Formats.Ifo library for parsing.
     /// </summary>
-    public class ModuleInfoParser : GffParser
+    public static class ModuleInfoParser
     {
         /// <summary>
         /// Parse module.ifo file and extract module name.
@@ -29,29 +27,17 @@ namespace DialogEditor.Parsers
                     return null;
                 }
 
-                var buffer = File.ReadAllBytes(ifoPath);
-                var parser = new ModuleInfoParser();
-                var rootStruct = parser.ParseGffFromBuffer(buffer);
+                var ifo = IfoReader.Read(ifoPath);
 
-                if (rootStruct == null)
+                // Get first available localized string from module name
+                var moduleName = ifo.ModuleName.GetDefault();
+                if (!string.IsNullOrWhiteSpace(moduleName))
                 {
-                    UnifiedLogger.LogParser(LogLevel.WARN, "Failed to parse module.ifo");
-                    return null;
+                    UnifiedLogger.LogParser(LogLevel.INFO, $"Module name: {moduleName}");
+                    return moduleName;
                 }
 
-                // Extract Mod_Name field (CExoLocString)
-                var modNameField = rootStruct.Fields.FirstOrDefault(f => f.Label == "Mod_Name");
-                if (modNameField != null && modNameField.Type == GffField.CExoLocString)
-                {
-                    var moduleName = modNameField.Value as string;
-                    if (!string.IsNullOrWhiteSpace(moduleName))
-                    {
-                        UnifiedLogger.LogParser(LogLevel.INFO, $"Module name: {moduleName}");
-                        return moduleName;
-                    }
-                }
-
-                UnifiedLogger.LogParser(LogLevel.WARN, "Mod_Name field not found in module.ifo");
+                UnifiedLogger.LogParser(LogLevel.WARN, "Mod_Name field empty in module.ifo");
                 return null;
             }
             catch (Exception ex)
