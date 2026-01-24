@@ -3,6 +3,7 @@ using System.IO;
 using DialogEditor.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Services;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace DialogEditor.Services;
@@ -26,12 +27,19 @@ public class ParleyScriptBrowserContext : IScriptBrowserContext
     {
         get
         {
+            // First try the open file's directory
             if (!string.IsNullOrEmpty(_dialogFilePath))
             {
                 var dir = Path.GetDirectoryName(_dialogFilePath);
                 if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
                     return dir;
             }
+
+            // Fall back to RadoubSettings.CurrentModulePath (set by Trebuchet)
+            var modulePath = RadoubSettings.Instance.CurrentModulePath;
+            if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
+                return modulePath;
+
             return null;
         }
     }
