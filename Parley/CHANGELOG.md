@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.125-alpha] - 2026-01-24
+**Branch**: `parley/sprint/cleanup-polish` | **PR**: #TBD
+
+### Sprint: Cleanup & Polish
+
+- [ ] #1082 - Use custom file browser for .dlg files
+- [ ] #1039 - Use Radoub.Formats IFO library for module info
+- [ ] #453 - Improve modal window contrast for visibility
+- [ ] #1076 - Fix dark theme contrast/color issues (Radoub.UI)
+
+---
+
 ## [0.1.124-alpha] - 2026-01-19
 **Branch**: `radoub/sprint-988-1010` | **PR**: #1011
 
