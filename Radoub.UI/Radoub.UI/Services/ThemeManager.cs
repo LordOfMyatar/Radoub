@@ -312,6 +312,17 @@ public class ThemeManager
             resources["SystemControlBackgroundAltMediumBrush"] = bgBrush;
             resources["SystemControlBackgroundAltMediumHighBrush"] = bgBrush;
 
+            // DataGrid and ListBox backgrounds
+            resources["DataGridBackground"] = bgBrush;
+            resources["DataGridRowBackground"] = bgBrush;
+            resources["DataGridCellBackground"] = bgBrush;
+            resources["ListBoxBackground"] = bgBrush;
+            resources["ListViewBackground"] = bgBrush;
+            resources["TreeViewBackground"] = bgBrush;
+
+            // ScrollViewer background
+            resources["ScrollViewerBackground"] = bgBrush;
+
             // App-level theme background for windows and dialogs
             resources["ThemeBackground"] = bgBrush;
         }
@@ -325,7 +336,8 @@ public class ThemeManager
             resources["SystemAltMediumColor"] = sidebarColor;
             resources["SystemAltHighColor"] = sidebarColor;
             resources["SystemChromeLowColor"] = sidebarColor;
-            resources["SystemChromeWhiteColor"] = sidebarColor;
+            // Note: Do NOT set SystemChromeWhiteColor to sidebar - FluentTheme expects
+            // this to be white/light for contrast purposes in certain controls
 
             // Panel and container backgrounds
             resources["CardBackgroundFillColorSecondary"] = sidebarBrush;
@@ -412,6 +424,23 @@ public class ThemeManager
             resources["MenuFlyoutPresenterBorderBrush"] = sidebarBrush;
             resources["ContextMenuBackground"] = sidebarBrush;
             resources["MenuBarBackground"] = sidebarBrush;
+
+            // Generic flyout/popup backgrounds (ComboBox dropdowns, AutoComplete, etc.)
+            resources["FlyoutPresenterBackground"] = sidebarBrush;
+            resources["FlyoutBorderThemeBrush"] = sidebarBrush;
+
+            // ComboBox dropdown background
+            resources["ComboBoxDropDownBackground"] = sidebarBrush;
+            resources["ComboBoxDropDownBackgroundPointerOver"] = sidebarBrush;
+            resources["ComboBoxDropDownBackgroundPressed"] = sidebarBrush;
+
+            // ToolTip background
+            resources["ToolTipBackground"] = sidebarBrush;
+
+            // AutoComplete/suggestion popup background
+            resources["AutoCompleteBoxBackground"] = sidebarBrush;
+            resources["AutoCompleteBoxBackgroundPointerOver"] = sidebarBrush;
+            resources["AutoCompleteBoxBackgroundFocused"] = sidebarBrush;
         }
 
         // Accent color - buttons, highlights

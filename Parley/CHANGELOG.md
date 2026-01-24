@@ -18,7 +18,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [ ] #1082 - Use custom file browser for .dlg files
 - [ ] #1039 - Use Radoub.Formats IFO library for module info
 - [ ] #453 - Improve modal window contrast for visibility
-- [ ] #1076 - Fix dark theme contrast/color issues (Radoub.UI)
+- [x] #1076 - Fix dark theme contrast/color issues (Radoub.UI)
+
+#### #1076 - Dark Theme Fixes
+
+**ThemeManager improvements**:
+- Added missing popup/flyout background resources (ComboBox, ToolTip, AutoComplete)
+- Added DataGrid, ListBox, ListView, TreeView background resources
+- Added ScrollViewer background resource
+- Removed problematic `SystemChromeWhiteColor` override that caused contrast issues
 
 ---
 
