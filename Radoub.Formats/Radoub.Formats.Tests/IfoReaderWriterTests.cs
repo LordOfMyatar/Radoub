@@ -336,27 +336,33 @@ public class IfoReaderWriterTests
     }
 
     [Fact]
-    public void Write_EmptyHakList_DoesNotWriteField()
+    public void Write_EmptyHakList_WritesEmptyList()
     {
         var ifo = new IfoFile();
         ifo.HakList.Clear();
 
         var gff = IfoWriter.ToGff(ifo);
 
-        // HAK list field should not be present if empty
-        Assert.Null(gff.RootStruct.GetField("Mod_HakList"));
+        // HAK list field should be present (even if empty) for round-trip compatibility
+        var field = gff.RootStruct.GetField("Mod_HakList");
+        Assert.NotNull(field);
+        Assert.True(field.IsList);
+        Assert.Empty(((GffList)field.Value!).Elements);
     }
 
     [Fact]
-    public void Write_EmptyAreaList_DoesNotWriteField()
+    public void Write_EmptyAreaList_WritesEmptyList()
     {
         var ifo = new IfoFile();
         ifo.AreaList.Clear();
 
         var gff = IfoWriter.ToGff(ifo);
 
-        // Area list field should not be present if empty
-        Assert.Null(gff.RootStruct.GetField("Mod_Area_List"));
+        // Area list field should be present (even if empty) for round-trip compatibility
+        var field = gff.RootStruct.GetField("Mod_Area_list");
+        Assert.NotNull(field);
+        Assert.True(field.IsList);
+        Assert.Empty(((GffList)field.Value!).Elements);
     }
 
     [Fact]
@@ -375,6 +381,144 @@ public class IfoReaderWriterTests
         Assert.Equal(string.Empty, ifo2.Tag);
         Assert.Equal(string.Empty, ifo2.CustomTlk);
         Assert.Equal(string.Empty, ifo2.OnModuleLoad);
+    }
+
+    #endregion
+
+    #region Real File Tests
+
+    [Fact]
+    public void RealFile_RoundTrip_PreservesAreaList()
+    {
+        // Read a real module.ifo file
+        var testFilePath = Path.Combine(AppContext.BaseDirectory, "TestData", "module.ifo");
+        if (!File.Exists(testFilePath))
+        {
+            // Skip if test data not available
+            return;
+        }
+
+        var originalBytes = File.ReadAllBytes(testFilePath);
+        var ifo = IfoReader.Read(originalBytes);
+
+        // Verify area list was read
+        Assert.NotEmpty(ifo.AreaList);
+        var originalAreaCount = ifo.AreaList.Count;
+        var originalAreas = ifo.AreaList.ToList();
+
+        // Round-trip: write and read back
+        var writtenBytes = IfoWriter.Write(ifo);
+        var ifo2 = IfoReader.Read(writtenBytes);
+
+        // Verify area list is preserved
+        Assert.Equal(originalAreaCount, ifo2.AreaList.Count);
+        Assert.Equal(originalAreas, ifo2.AreaList);
+    }
+
+    [Fact]
+    public void RealFile_RoundTrip_PreservesAllFields()
+    {
+        // Read a real module.ifo file
+        var testFilePath = Path.Combine(AppContext.BaseDirectory, "TestData", "module.ifo");
+        if (!File.Exists(testFilePath))
+        {
+            // Skip if test data not available
+            return;
+        }
+
+        var originalBytes = File.ReadAllBytes(testFilePath);
+        var ifo = IfoReader.Read(originalBytes);
+
+        // Capture original values
+        var originalTag = ifo.Tag;
+        var originalEntryArea = ifo.EntryArea;
+        var originalAreaList = ifo.AreaList.ToList();
+        var originalHakList = ifo.HakList.ToList();
+        var originalOnModuleLoad = ifo.OnModuleLoad;
+        var originalMinGameVersion = ifo.MinGameVersion;
+
+        // Round-trip
+        var writtenBytes = IfoWriter.Write(ifo);
+        var ifo2 = IfoReader.Read(writtenBytes);
+
+        // Verify all critical fields are preserved
+        Assert.Equal(originalTag, ifo2.Tag);
+        Assert.Equal(originalEntryArea, ifo2.EntryArea);
+        Assert.Equal(originalAreaList, ifo2.AreaList);
+        Assert.Equal(originalHakList, ifo2.HakList);
+        Assert.Equal(originalOnModuleLoad, ifo2.OnModuleLoad);
+        Assert.Equal(originalMinGameVersion, ifo2.MinGameVersion);
+    }
+
+    [Fact]
+    public void RealFile_GffFieldComparison_WriterOutputMatchesExpected()
+    {
+        // Read a real module.ifo file
+        var testFilePath = Path.Combine(AppContext.BaseDirectory, "TestData", "module.ifo");
+        if (!File.Exists(testFilePath))
+        {
+            return;
+        }
+
+        var originalBytes = File.ReadAllBytes(testFilePath);
+
+        // Read via GFF directly to see original field structure
+        var originalGff = GffReader.Read(originalBytes);
+
+        // Read via IfoReader, write back, and compare GFF structure
+        var ifo = IfoReader.Read(originalBytes);
+        var outputGff = IfoWriter.ToGff(ifo);
+
+        // Check that all fields from original are present in output
+        var originalFieldNames = originalGff.RootStruct.Fields.Select(f => f.Label).ToHashSet();
+        var outputFieldNames = outputGff.RootStruct.Fields.Select(f => f.Label).ToHashSet();
+
+        // Find fields that are in original but not in output
+        var missingFields = originalFieldNames.Except(outputFieldNames).OrderBy(f => f).ToList();
+
+        // Output the missing fields for debugging
+        if (missingFields.Count > 0)
+        {
+            var message = $"Missing fields in IfoWriter output:\n{string.Join("\n", missingFields)}";
+            Assert.Fail(message);
+        }
+    }
+
+    [Fact]
+    public void RealFile_UserModule_RoundTripPreservesAllFields()
+    {
+        // Test with user's actual module.ifo if available
+        var testFilePath = Path.Combine(AppContext.BaseDirectory, "TestData", "real_module.ifo");
+        if (!File.Exists(testFilePath))
+        {
+            return;
+        }
+
+        var originalBytes = File.ReadAllBytes(testFilePath);
+
+        // Read via GFF directly to see original field structure
+        var originalGff = GffReader.Read(originalBytes);
+
+        // Read via IfoReader, write back, and compare GFF structure
+        var ifo = IfoReader.Read(originalBytes);
+        var outputGff = IfoWriter.ToGff(ifo);
+
+        // Check that all fields from original are present in output
+        var originalFieldNames = originalGff.RootStruct.Fields.Select(f => f.Label).ToHashSet();
+        var outputFieldNames = outputGff.RootStruct.Fields.Select(f => f.Label).ToHashSet();
+
+        // Find fields that are in original but not in output
+        var missingFields = originalFieldNames.Except(outputFieldNames).OrderBy(f => f).ToList();
+
+        // Output the missing fields for debugging
+        if (missingFields.Count > 0)
+        {
+            var message = $"Missing fields in IfoWriter output for user module:\n{string.Join("\n", missingFields)}";
+            Assert.Fail(message);
+        }
+
+        // Also verify area list is preserved
+        Assert.Equal(ifo.AreaList.Count, IfoReader.Read(IfoWriter.Write(ifo)).AreaList.Count);
     }
 
     #endregion

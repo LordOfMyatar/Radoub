@@ -25,4 +25,10 @@
     <ProjectReference Include="..\Radoub.Formats\Radoub.Formats.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="TestData\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

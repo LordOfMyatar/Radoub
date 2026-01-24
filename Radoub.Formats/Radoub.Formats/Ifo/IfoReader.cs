@@ -100,10 +100,23 @@ public static class IfoReader
         ifo.OnSpawnButtonDown = root.GetFieldValue<string>("Mod_OnSpawnBtnDn", string.Empty);
         ifo.OnCutsceneAbort = root.GetFieldValue<string>("Mod_OnCutsnAbort", string.Empty);
 
+        // NWN:EE Extended Scripts
+        ifo.OnModuleStart = root.GetFieldValue<string>("Mod_OnModStart", string.Empty);
+        ifo.OnPlayerChat = root.GetFieldValue<string>("Mod_OnPlrChat", string.Empty);
+        ifo.OnPlayerTarget = root.GetFieldValue<string>("Mod_OnPlrTarget", string.Empty);
+        ifo.OnPlayerGuiEvent = root.GetFieldValue<string>("Mod_OnPlrGuiEvt", string.Empty);
+        ifo.OnPlayerTileAction = root.GetFieldValue<string>("Mod_OnPlrTileAct", string.Empty);
+        ifo.OnNuiEvent = root.GetFieldValue<string>("Mod_OnNuiEvent", string.Empty);
+
         // Other Settings
         ifo.XPScale = root.GetFieldValue<byte>("Mod_XPScale", 100);
         ifo.Creator = root.GetFieldValue<string>("Mod_Creator_ID", string.Empty);
         ifo.ModuleVersion = root.GetFieldValue<uint>("Mod_Version", 0);
+        ifo.IsSaveGame = root.GetFieldValue<byte>("Mod_IsSaveGame", 0);
+        ifo.StartMovie = root.GetFieldValue<string>("Mod_StartMovie", string.Empty);
+        ifo.DefaultBic = root.GetFieldValue<string>("Mod_DefaultBic", string.Empty);
+        ifo.ModuleUuid = root.GetFieldValue<string>("Mod_UUID", string.Empty);
+        ifo.PartyControl = root.GetFieldValue<byte>("Mod_PartyControl", 0);
 
         // Area List
         ifo.AreaList = ReadAreaList(root);
@@ -111,7 +124,26 @@ public static class IfoReader
         // Local Variables
         ifo.VarTable = VarTableHelper.ReadVarTable(root);
 
+        // Additional Lists (preserved for round-trip)
+        ifo.ExpansionList = ReadGenericList(root, "Mod_Expan_List");
+        ifo.CutSceneList = ReadGenericList(root, "Mod_CutSceneList");
+        ifo.GlobalVarList = ReadGenericList(root, "Mod_GVar_List");
+
         return ifo;
+    }
+
+    /// <summary>
+    /// Read a generic list of GffStructs for round-trip preservation.
+    /// </summary>
+    private static List<GffStruct> ReadGenericList(GffStruct root, string fieldName)
+    {
+        var result = new List<GffStruct>();
+        var listField = root.GetField(fieldName);
+        if (listField == null || !listField.IsList || listField.Value is not GffList list)
+            return result;
+
+        result.AddRange(list.Elements);
+        return result;
     }
 
     /// <summary>
@@ -165,7 +197,7 @@ public static class IfoReader
     {
         var areaList = new List<string>();
 
-        var areaListField = root.GetField("Mod_Area_List");
+        var areaListField = root.GetField("Mod_Area_list");
         if (areaListField == null || !areaListField.IsList || areaListField.Value is not GffList list)
             return areaList;
 

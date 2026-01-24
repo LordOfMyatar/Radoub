@@ -56,17 +56,12 @@ public static class IfoWriter
         AddLocStringField(root, "Mod_Name", ifo.ModuleName);
         AddLocStringField(root, "Mod_Description", ifo.ModuleDescription);
         AddCExoStringField(root, "Mod_Tag", ifo.Tag);
-        if (!string.IsNullOrEmpty(ifo.ModuleId))
-            AddCExoStringField(root, "Mod_ID", ifo.ModuleId);
-        if (!string.IsNullOrEmpty(ifo.CustomTlk))
-            AddCExoStringField(root, "Mod_CustomTlk", ifo.CustomTlk);
+        AddCExoStringField(root, "Mod_ID", ifo.ModuleId);
+        AddCExoStringField(root, "Mod_CustomTlk", ifo.CustomTlk);
 
         // Version/Requirements
         AddCExoStringField(root, "Mod_MinGameVer", ifo.MinGameVersion);
         AddWordField(root, "Expansion_Pack", ifo.ExpansionPack);
-
-        // HAK List
-        WriteHakList(root, ifo.HakList);
 
         // Time Settings
         AddByteField(root, "Mod_DawnHour", ifo.DawnHour);
@@ -87,6 +82,7 @@ public static class IfoWriter
 
         // Module Scripts
         AddCResRefField(root, "Mod_OnModLoad", ifo.OnModuleLoad);
+        AddCResRefField(root, "Mod_OnModStart", ifo.OnModuleStart);
         AddCResRefField(root, "Mod_OnClientEntr", ifo.OnClientEnter);
         AddCResRefField(root, "Mod_OnClientLeav", ifo.OnClientLeave);
         AddCResRefField(root, "Mod_OnHeartbeat", ifo.OnHeartbeat);
@@ -102,15 +98,32 @@ public static class IfoWriter
         AddCResRefField(root, "Mod_OnUsrDefined", ifo.OnUserDefined);
         AddCResRefField(root, "Mod_OnSpawnBtnDn", ifo.OnSpawnButtonDown);
         AddCResRefField(root, "Mod_OnCutsnAbort", ifo.OnCutsceneAbort);
+        AddCResRefField(root, "Mod_OnPlrChat", ifo.OnPlayerChat);
+        AddCResRefField(root, "Mod_OnPlrTarget", ifo.OnPlayerTarget);
+        AddCResRefField(root, "Mod_OnPlrGuiEvt", ifo.OnPlayerGuiEvent);
+        AddCResRefField(root, "Mod_OnPlrTileAct", ifo.OnPlayerTileAction);
+        AddCResRefField(root, "Mod_OnNuiEvent", ifo.OnNuiEvent);
 
         // Other Settings
         AddByteField(root, "Mod_XPScale", ifo.XPScale);
-        if (!string.IsNullOrEmpty(ifo.Creator))
-            AddCExoStringField(root, "Mod_Creator_ID", ifo.Creator);
+        AddCExoStringField(root, "Mod_Creator_ID", ifo.Creator);
         AddDwordField(root, "Mod_Version", ifo.ModuleVersion);
+        AddByteField(root, "Mod_IsSaveGame", ifo.IsSaveGame);
+        AddCResRefField(root, "Mod_StartMovie", ifo.StartMovie);
+        AddCResRefField(root, "Mod_DefaultBic", ifo.DefaultBic);
+        AddCExoStringField(root, "Mod_UUID", ifo.ModuleUuid);
+        AddByteField(root, "Mod_PartyControl", ifo.PartyControl);
 
         // Area List (preserve from original - don't modify)
         WriteAreaList(root, ifo.AreaList);
+
+        // HAK List (always write - even if empty for round-trip)
+        WriteHakList(root, ifo.HakList);
+
+        // Additional Lists (preserved for round-trip)
+        WriteGenericList(root, "Mod_Expan_List", ifo.ExpansionList);
+        WriteGenericList(root, "Mod_CutSceneList", ifo.CutSceneList);
+        WriteGenericList(root, "Mod_GVar_List", ifo.GlobalVarList);
 
         // Local Variables
         VarTableHelper.WriteVarTable(root, ifo.VarTable);
@@ -119,13 +132,22 @@ public static class IfoWriter
     }
 
     /// <summary>
+    /// Write a generic list of GffStructs for round-trip preservation.
+    /// Always writes the list (even if empty) to ensure round-trip compatibility.
+    /// </summary>
+    private static void WriteGenericList(GffStruct root, string fieldName, List<GffStruct> elements)
+    {
+        var list = new GffList();
+        list.Elements.AddRange(elements);
+        AddListField(root, fieldName, list);
+    }
+
+    /// <summary>
     /// Write the HAK list to a GFF struct.
+    /// Always writes the list (even if empty) to ensure round-trip compatibility.
     /// </summary>
     private static void WriteHakList(GffStruct root, List<string> hakList)
     {
-        if (hakList.Count == 0)
-            return;
-
         var list = new GffList();
         foreach (var hakName in hakList)
         {
@@ -139,12 +161,10 @@ public static class IfoWriter
 
     /// <summary>
     /// Write the area list to a GFF struct.
+    /// Always writes the list (even if empty) to ensure round-trip compatibility.
     /// </summary>
     private static void WriteAreaList(GffStruct root, List<string> areaList)
     {
-        if (areaList.Count == 0)
-            return;
-
         var list = new GffList();
         foreach (var areaResRef in areaList)
         {
@@ -153,6 +173,6 @@ public static class IfoWriter
             list.Elements.Add(areaStruct);
         }
 
-        AddListField(root, "Mod_Area_List", list);
+        AddListField(root, "Mod_Area_list", list);
     }
 }

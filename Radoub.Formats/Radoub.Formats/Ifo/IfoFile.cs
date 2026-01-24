@@ -220,6 +220,38 @@ public class IfoFile
     /// </summary>
     public string OnCutsceneAbort { get; set; } = string.Empty;
 
+    // NWN:EE Extended Scripts (1.69+)
+
+    /// <summary>
+    /// Script run when module starts (after OnModuleLoad).
+    /// </summary>
+    public string OnModuleStart { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Script run when player sends a chat message.
+    /// </summary>
+    public string OnPlayerChat { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Script run when player targets something.
+    /// </summary>
+    public string OnPlayerTarget { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Script run on player GUI events.
+    /// </summary>
+    public string OnPlayerGuiEvent { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Script run on player tile actions.
+    /// </summary>
+    public string OnPlayerTileAction { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Script run on NUI (New User Interface) events. (NWN:EE 1.80+)
+    /// </summary>
+    public string OnNuiEvent { get; set; } = string.Empty;
+
     // Other Settings
 
     /// <summary>
@@ -237,6 +269,31 @@ public class IfoFile
     /// </summary>
     public uint ModuleVersion { get; set; }
 
+    /// <summary>
+    /// Whether this is a savegame (not a module).
+    /// </summary>
+    public byte IsSaveGame { get; set; }
+
+    /// <summary>
+    /// Startup movie to play.
+    /// </summary>
+    public string StartMovie { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Default BIC (character) file for new characters.
+    /// </summary>
+    public string DefaultBic { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Module UUID for identification.
+    /// </summary>
+    public string ModuleUuid { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Party control setting (0 = DM control, 1 = Player control).
+    /// </summary>
+    public byte PartyControl { get; set; }
+
     // Area List (read-only for editing)
 
     /// <summary>
@@ -251,6 +308,23 @@ public class IfoFile
     /// Set via SetLocalInt/SetLocalFloat/SetLocalString script functions.
     /// </summary>
     public List<Variable> VarTable { get; set; } = new();
+
+    // Additional Lists (preserved for round-trip)
+
+    /// <summary>
+    /// Expansion list (additional expansion data).
+    /// </summary>
+    public List<GffStruct> ExpansionList { get; set; } = new();
+
+    /// <summary>
+    /// Cutscene list (cutscene definitions).
+    /// </summary>
+    public List<GffStruct> CutSceneList { get; set; } = new();
+
+    /// <summary>
+    /// Global variable list (savegame only).
+    /// </summary>
+    public List<GffStruct> GlobalVarList { get; set; } = new();
 }
 
 /// <summary>
