@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.47] - 2026-01-24
-**Branch**: `radoub/issue-1096` | **PR**: #TBD
+**Branch**: `radoub/issue-1096` | **PR**: #1101
 
 ### Sprint: Custom File Browsers - Quartermaster & Fence (#1096)
 
