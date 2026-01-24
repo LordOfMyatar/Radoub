@@ -67,11 +67,8 @@
                 Background="{DynamicResource ThemeBackgroundAlt}"
                 BorderBrush="{DynamicResource ThemeBorderBrush}"
                 BorderThickness="1,0,1,1"
-                CornerRadius="0,0,8,8">
-            <Button.Flyout>
-                <MenuFlyout Placement="BottomEdgeAlignedLeft"
-                            Opening="OnFlyoutOpening"/>
-            </Button.Flyout>
+                CornerRadius="0,0,8,8"
+                Click="OnRecentFilesButtonClick">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

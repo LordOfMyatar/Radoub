@@ -2,6 +2,7 @@ using System;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using RadoubLauncher.Services;
 using ToolTipService = Avalonia.Controls.ToolTip;
@@ -44,13 +45,13 @@ public partial class ToolCardControl : UserControl
         }
     }
 
-    private void OnFlyoutOpening(object? sender, EventArgs e)
+    private void OnRecentFilesButtonClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is not MenuFlyout flyout || DataContext is not ToolInfo tool)
+        if (DataContext is not ToolInfo tool)
             return;
 
-        // Clear existing items
-        flyout.Items.Clear();
+        // Create context menu dynamically
+        var contextMenu = new ContextMenu();
 
         // Add "Launch App Only" option first
         var launchAppItem = new MenuItem
@@ -65,7 +66,7 @@ public partial class ToolCardControl : UserControl
                 LaunchToolCommand.Execute(tool);
             }
         };
-        flyout.Items.Add(launchAppItem);
+        contextMenu.Items.Add(launchAppItem);
 
         // Get recent files for this tool
         var recentFiles = ToolRecentFilesService.Instance.GetRecentFiles(tool.Name);
@@ -73,7 +74,7 @@ public partial class ToolCardControl : UserControl
         if (recentFiles.Count > 0)
         {
             // Add separator
-            flyout.Items.Add(new Separator());
+            contextMenu.Items.Add(new Separator());
 
             // Add recent files
             foreach (var file in recentFiles)
@@ -100,19 +101,22 @@ public partial class ToolCardControl : UserControl
                     }
                 };
 
-                flyout.Items.Add(menuItem);
+                contextMenu.Items.Add(menuItem);
             }
         }
         else
         {
             // No recent files - add disabled placeholder
-            flyout.Items.Add(new Separator());
-            flyout.Items.Add(new MenuItem
+            contextMenu.Items.Add(new Separator());
+            contextMenu.Items.Add(new MenuItem
             {
                 Header = "(No recent files)",
                 IsEnabled = false,
                 FontStyle = Avalonia.Media.FontStyle.Italic
             });
         }
+
+        // Show the context menu at the button location
+        contextMenu.Open(RecentFilesButton);
     }
 }
