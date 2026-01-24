@@ -439,6 +439,84 @@ namespace Parley.Views.Helpers
             _controls.WithControl<TextBlock>("ModulePathTextBlock", tb => tb.Text = "");
         }
 
+        /// <summary>
+        /// Initialize module info from RadoubSettings.CurrentModulePath if set.
+        /// Called on startup when no dialog file is loaded.
+        /// </summary>
+        public void InitializeModuleInfoFromSettings()
+        {
+            try
+            {
+                var modulePath = Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath;
+                if (string.IsNullOrEmpty(modulePath))
+                    return;
+
+                // Resolve to working directory if it's a .mod file
+                string? workingDir = null;
+                if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+                {
+                    workingDir = FindWorkingDirectory(modulePath);
+                }
+                else if (Directory.Exists(modulePath))
+                {
+                    workingDir = modulePath;
+                }
+
+                if (string.IsNullOrEmpty(workingDir))
+                    return;
+
+                // Get module name from module.ifo
+                var moduleName = ModuleInfoParser.GetModuleName(workingDir);
+
+                // Sanitize path for display
+                var displayPath = PathHelper.SanitizePathForDisplay(workingDir);
+
+                // Update UI
+                _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
+                    tb.Text = moduleName ?? Path.GetFileName(workingDir));
+                _controls.WithControl<TextBlock>("ModulePathTextBlock", tb =>
+                    tb.Text = displayPath);
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Module info from settings: {moduleName ?? "(unnamed)"} | {displayPath}");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to initialize module info from settings: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Find the unpacked working directory for a .mod file.
+        /// Checks for module name folder, temp0, or temp1.
+        /// </summary>
+        private static string? FindWorkingDirectory(string modFilePath)
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
+            var moduleDir = Path.GetDirectoryName(modFilePath);
+
+            if (string.IsNullOrEmpty(moduleDir))
+                return null;
+
+            // Check in priority order (same as Trebuchet)
+            var candidates = new[]
+            {
+                Path.Combine(moduleDir, moduleName),
+                Path.Combine(moduleDir, "temp0"),
+                Path.Combine(moduleDir, "temp1")
+            };
+
+            foreach (var candidate in candidates)
+            {
+                if (Directory.Exists(candidate) &&
+                    File.Exists(Path.Combine(candidate, "module.ifo")))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
         #endregion
 
         #region Dialog Helpers
