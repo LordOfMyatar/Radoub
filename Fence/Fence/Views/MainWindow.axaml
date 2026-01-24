@@ -362,7 +362,18 @@
                                 <DataGridCheckBoxColumn Header="∞" Width="40" Binding="{Binding Infinite}"/>
                                 <DataGridTextColumn Header="Name" Width="*" Binding="{Binding DisplayName}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Tag" Width="100" Binding="{Binding Tag}" IsReadOnly="True"/>
-                                <DataGridTextColumn Header="ResRef" Width="100" Binding="{Binding ResRef}" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="ResRef" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding ResRef}" VerticalAlignment="Center" Margin="4,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding ResRef}" MaxLength="16" Margin="0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTextColumn Header="Type" Width="100" Binding="{Binding BaseItemType}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Sell" Width="60" Binding="{Binding SellPrice}" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Buy" Width="60" Binding="{Binding BuyPrice}" IsReadOnly="True"/>

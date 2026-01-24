@@ -18,8 +18,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Part of Epic #555 (Merchant Editor Tool).
 
 #### Work Items
-- [ ] #1043 - Add ResRef rename functionality
+- [x] #1043 - Add ResRef rename functionality
 - [ ] #1042 - UI Layout Polish - Consolidate panels and improve usability
+
+#### Added
+- **Editable ResRef column** - Store inventory ResRef can now be edited directly in grid (double-click to edit)
+- **16-character limit** - Aurora Engine ResRef constraint enforced via MaxLength
+- **Character validation** - Warns when ResRef contains non-standard characters (recommend a-z, 0-9, _)
+- **Duplicate detection** - Warns when ResRef already exists in store inventory
 
 ---
 
