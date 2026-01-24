@@ -19,13 +19,23 @@ Part of Epic #555 (Merchant Editor Tool).
 
 #### Work Items
 - [x] #1043 - Add ResRef rename functionality
-- [ ] #1042 - UI Layout Polish - Consolidate panels and improve usability
+- [x] #1042 - UI Layout Polish - Consolidate panels and improve usability
 
 #### Added
 - **Editable ResRef column** - Store inventory ResRef can now be edited directly in grid (double-click to edit)
 - **16-character limit** - Aurora Engine ResRef constraint enforced via MaxLength
 - **Character validation** - Warns when ResRef contains non-standard characters (recommend a-z, 0-9, _)
 - **Duplicate detection** - Warns when ResRef already exists in store inventory
+
+#### Changed
+- **Store Properties panel** - Now collapsible; merged Scripts & Comment into this panel
+- **Buy Restrictions panel** - Moved "Buy Stolen Goods" here (was in Store Properties)
+- **Pricing fields** - Replaced NumericUpDown controls with TextBox for cleaner UI
+- **Infinity column** - Added tooltip, wider column, bold ∞ header for better visibility
+- **Panel layout** - Reduced from 3 collapsible panels to 2 (Buy Restrictions + Local Variables)
+
+#### Removed
+- **Scripts & Comment expander** - Consolidated into Store Properties panel
 
 ---
 

@@ -378,18 +378,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StoreTagBox.Text = _currentStore.Tag;
         StoreResRefBox.Text = _currentStore.ResRef;
 
-        SellMarkupBox.Value = _currentStore.MarkUp;
-        BuyMarkdownBox.Value = _currentStore.MarkDown;
-        IdentifyPriceBox.Value = _currentStore.IdentifyPrice;
+        SellMarkupBox.Text = _currentStore.MarkUp.ToString();
+        BuyMarkdownBox.Text = _currentStore.MarkDown.ToString();
+        IdentifyPriceBox.Text = _currentStore.IdentifyPrice.ToString();
 
         BlackMarketCheck.IsChecked = _currentStore.BlackMarket;
-        BlackMarketMarkdownBox.Value = _currentStore.BM_MarkDown;
+        BlackMarketMarkdownBox.Text = _currentStore.BM_MarkDown.ToString();
 
         MaxBuyPriceCheck.IsChecked = _currentStore.MaxBuyPrice >= 0;
-        MaxBuyPriceBox.Value = Math.Max(0, _currentStore.MaxBuyPrice);
+        MaxBuyPriceBox.Text = Math.Max(0, _currentStore.MaxBuyPrice).ToString();
 
         LimitedGoldCheck.IsChecked = _currentStore.StoreGold >= 0;
-        StoreGoldBox.Value = Math.Max(0, _currentStore.StoreGold);
+        StoreGoldBox.Text = Math.Max(0, _currentStore.StoreGold).ToString();
 
         // Set category (PaletteID) - find matching category by ID, not index
         var categoryIndex = _storeCategories.FindIndex(c => c.Id == _currentStore.PaletteID);
