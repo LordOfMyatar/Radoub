@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -204,6 +206,33 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         _toolLauncher.LaunchTool(tool, args);
+    }
+
+    [RelayCommand]
+    private void LaunchToolWithFile(ToolFileLaunchInfo launchInfo)
+    {
+        if (launchInfo?.Tool == null) return;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Launching {launchInfo.Tool.Name} with file: {Path.GetFileName(launchInfo.FilePath)}");
+
+        _toolLauncher.LaunchToolWithFile(launchInfo.Tool, launchInfo.FilePath);
+    }
+
+    /// <summary>
+    /// Get recent files for a tool (for UI binding).
+    /// </summary>
+    public List<RecentFileInfo> GetToolRecentFiles(string toolName)
+    {
+        return ToolRecentFilesService.Instance.GetRecentFiles(toolName);
+    }
+
+    /// <summary>
+    /// Check if a tool has recent files.
+    /// </summary>
+    public bool ToolHasRecentFiles(string toolName)
+    {
+        return ToolRecentFilesService.Instance.HasRecentFiles(toolName);
     }
 
     [RelayCommand]

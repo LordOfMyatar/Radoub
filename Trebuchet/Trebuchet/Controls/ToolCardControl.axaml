@@ -1,0 +1,92 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:RadoubLauncher.ViewModels"
+             xmlns:svc="using:RadoubLauncher.Services"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="200"
+             x:Class="RadoubLauncher.Controls.ToolCardControl"
+             x:DataType="svc:ToolInfo">
+
+    <!-- Tool Card with Recent Files Dropdown -->
+    <StackPanel>
+        <!-- Main Tool Button -->
+        <Button x:Name="MainToolButton"
+                Padding="0"
+                Background="Transparent"
+                BorderThickness="0"
+                IsEnabled="{Binding IsAvailable}">
+            <Border Background="{DynamicResource ThemeBackgroundAlt}"
+                    BorderBrush="{DynamicResource ThemeBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8,8,0,0"
+                    Padding="20"
+                    Width="180"
+                    Height="140">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <!-- Tool Name -->
+                    <TextBlock Text="{Binding Name}"
+                               FontSize="{DynamicResource FontSizeLarge}"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+
+                    <!-- Description -->
+                    <TextBlock Text="{Binding Description}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Opacity="0.7"
+                               HorizontalAlignment="Center"
+                               Margin="0,4,0,0"/>
+
+                    <!-- File Types -->
+                    <TextBlock Text="{Binding FileTypes}"
+                               FontSize="{DynamicResource FontSizeXSmall}"
+                               Opacity="0.5"
+                               HorizontalAlignment="Center"
+                               Margin="0,2,0,0"/>
+
+                    <!-- Status -->
+                    <Border CornerRadius="4"
+                            Padding="8,2"
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Center"
+                            Background="{Binding IsAvailable, Converter={x:Static vm:BoolToBrushConverter.Instance}}">
+                        <TextBlock Text="{Binding StatusText}"
+                                   FontSize="{DynamicResource FontSizeXSmall}"
+                                   Foreground="White"/>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Button>
+
+        <!-- Recent Files Dropdown Button -->
+        <Button x:Name="RecentFilesButton"
+                Width="180"
+                Padding="8,4"
+                HorizontalContentAlignment="Stretch"
+                IsEnabled="{Binding IsAvailable}"
+                Background="{DynamicResource ThemeBackgroundAlt}"
+                BorderBrush="{DynamicResource ThemeBorderBrush}"
+                BorderThickness="1,0,1,1"
+                CornerRadius="0,0,8,8">
+            <Button.Flyout>
+                <MenuFlyout Placement="BottomEdgeAlignedLeft"
+                            Opening="OnFlyoutOpening"/>
+            </Button.Flyout>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Recent Files"
+                           FontSize="{DynamicResource FontSizeSmall}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Column="1"
+                           Text="&#x25BC;"
+                           FontSize="{DynamicResource FontSizeXSmall}"
+                           VerticalAlignment="Center"
+                           Margin="4,0,0,0"/>
+            </Grid>
+        </Button>
+    </StackPanel>
+</UserControl>
