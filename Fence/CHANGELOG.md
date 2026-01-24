@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.7-alpha] - 2026-01-23
+**Branch**: `fence/issue-1060` | **PR**: #TBD
+
+### Sprint: Completion Polish (#1060)
+
+Part of Epic #555 (Merchant Editor Tool).
+
+#### Work Items
+- [ ] #1043 - Add ResRef rename functionality
+- [ ] #1042 - UI Layout Polish - Consolidate panels and improve usability
+
+---
+
 ## [0.1.6-alpha] - 2026-01-21
 **Branch**: `fence/issue-956` | **PR**: #1047
 
