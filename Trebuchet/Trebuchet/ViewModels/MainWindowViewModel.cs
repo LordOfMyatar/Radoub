@@ -110,19 +110,26 @@ public partial class MainWindowViewModel : ObservableObject
         // Module status with validation
         if (!string.IsNullOrEmpty(shared.CurrentModulePath))
         {
-            var moduleName = Path.GetFileName(shared.CurrentModulePath);
-            var validation = ResourcePathDetector.ValidateModulePathWithMessage(shared.CurrentModulePath);
+            var modulePath = shared.CurrentModulePath;
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
 
-            if (validation.IsValid)
+            // Check if it's a .mod file that exists
+            if (modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase) && File.Exists(modulePath))
             {
                 CurrentModuleName = moduleName;
                 IsModuleValid = true;
             }
+            // Legacy: check if it's a working directory with module.ifo
+            else if (Directory.Exists(modulePath) && File.Exists(Path.Combine(modulePath, "module.ifo")))
+            {
+                CurrentModuleName = Path.GetFileName(modulePath);
+                IsModuleValid = true;
+            }
             else
             {
-                CurrentModuleName = $"{moduleName} (Invalid)";
+                CurrentModuleName = $"{Path.GetFileName(modulePath)} (Invalid)";
                 IsModuleValid = false;
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Module validation failed: {validation.Message}");
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Module validation failed: file not found or invalid format");
             }
         }
         else
@@ -242,30 +249,37 @@ public partial class MainWindowViewModel : ObservableObject
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Open module dialog requested");
 
-        // Modules are extracted to working directories (temp0, temp1, or named folders)
-        // We browse for the extracted module folder, not the .mod file
-        var options = new FolderPickerOpenOptions
+        // Browse for .mod files - the standard module format
+        var options = new FilePickerOpenOptions
         {
-            Title = "Select Module Working Directory (extracted module folder)",
-            AllowMultiple = false
+            Title = "Select Module (.mod file)",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("NWN Module") { Patterns = new[] { "*.mod" } }
+            }
         };
 
-        // Start in NWN documents folder if available (where temp0/temp1/named modules live)
+        // Start in modules folder if available
         var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
-        if (!string.IsNullOrEmpty(nwnPath) && Directory.Exists(nwnPath))
+        if (!string.IsNullOrEmpty(nwnPath))
         {
-            try
+            var modulesPath = Path.Combine(nwnPath, "modules");
+            if (Directory.Exists(modulesPath))
             {
-                options.SuggestedStartLocation = await _parentWindow.StorageProvider
-                    .TryGetFolderFromPathAsync(nwnPath);
-            }
-            catch
-            {
-                // Ignore if path can't be resolved - dialog will use default
+                try
+                {
+                    options.SuggestedStartLocation = await _parentWindow.StorageProvider
+                        .TryGetFolderFromPathAsync(modulesPath);
+                }
+                catch
+                {
+                    // Ignore if path can't be resolved - dialog will use default
+                }
             }
         }
 
-        var result = await _parentWindow.StorageProvider.OpenFolderPickerAsync(options);
+        var result = await _parentWindow.StorageProvider.OpenFilePickerAsync(options);
 
         if (result.Count > 0)
         {
