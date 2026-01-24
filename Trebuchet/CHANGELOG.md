@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.3.0-alpha] - 2026-01-24
-**Branch**: `trebuchet/issue-1061` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1061` | **PR**: #1077
 
 ### Sprint: Launch Workflow
 
