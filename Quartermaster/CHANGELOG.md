@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.55-alpha] - 2026-01-24
+**Branch**: `radoub/issue-1096` | **PR**: #1101
+
+### Sprint: Custom File Browsers (#1096)
+
+- [x] #1083 - Use custom file browser for .utc/.bic files
+  - File > Open now uses `CreatureBrowserWindow` from Radoub.UI
+  - Shows creatures from current module directory
+  - Filter by file type: All, Creature Blueprints (.utc), Player Characters (.bic)
+  - Browse button to select different module folder
+  - Consistent UX with other Radoub tools
+
+---
+
 ## [0.1.54-alpha] - 2026-01-23
 **Branch**: `quartermaster/issue-1046` | **PR**: #1062
 
