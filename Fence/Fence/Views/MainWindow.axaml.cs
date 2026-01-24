@@ -15,6 +15,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Collections.Specialized;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Radoub.UI.Controls;
 using Radoub.UI.Utils;
@@ -36,6 +38,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private UtmFile? _currentStore;
     private string? _currentFilePath;
     private bool _isDirty;
+
+    // Regex for valid ResRef characters (alphanumeric + underscore)
+    private static readonly Regex ValidResRefPattern = new(@"^[a-zA-Z0-9_]*$", RegexOptions.Compiled);
 
     private BaseItemTypeService? _baseItemTypeService;
     private ItemResolutionService? _itemResolutionService;
@@ -81,6 +86,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Wire up data grids for double-click
         StoreInventoryGrid.DoubleTapped += OnStoreInventoryDoubleTapped;
         ItemPaletteGrid.DoubleTapped += OnItemPaletteDoubleTapped;
+
+        // Track property changes on store items for dirty state and validation
+        StoreItems.CollectionChanged += OnStoreItemsCollectionChanged;
 
         // Set up recent files menu
         UpdateRecentFilesMenu();
@@ -370,18 +378,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StoreTagBox.Text = _currentStore.Tag;
         StoreResRefBox.Text = _currentStore.ResRef;
 
-        SellMarkupBox.Value = _currentStore.MarkUp;
-        BuyMarkdownBox.Value = _currentStore.MarkDown;
-        IdentifyPriceBox.Value = _currentStore.IdentifyPrice;
+        SellMarkupBox.Text = _currentStore.MarkUp.ToString();
+        BuyMarkdownBox.Text = _currentStore.MarkDown.ToString();
+        IdentifyPriceBox.Text = _currentStore.IdentifyPrice.ToString();
 
         BlackMarketCheck.IsChecked = _currentStore.BlackMarket;
-        BlackMarketMarkdownBox.Value = _currentStore.BM_MarkDown;
+        BlackMarketMarkdownBox.Text = _currentStore.BM_MarkDown.ToString();
 
         MaxBuyPriceCheck.IsChecked = _currentStore.MaxBuyPrice >= 0;
-        MaxBuyPriceBox.Value = Math.Max(0, _currentStore.MaxBuyPrice);
+        MaxBuyPriceBox.Text = Math.Max(0, _currentStore.MaxBuyPrice).ToString();
 
         LimitedGoldCheck.IsChecked = _currentStore.StoreGold >= 0;
-        StoreGoldBox.Value = Math.Max(0, _currentStore.StoreGold);
+        StoreGoldBox.Text = Math.Max(0, _currentStore.StoreGold).ToString();
 
         // Set category (PaletteID) - find matching category by ID, not index
         var categoryIndex = _storeCategories.FindIndex(c => c.Id == _currentStore.PaletteID);
@@ -485,6 +493,96 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         Title = title;
+    }
+
+    #endregion
+
+    #region ResRef Change Tracking
+
+    private void OnStoreItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        // Subscribe to property changes for new items
+        if (e.NewItems != null)
+        {
+            foreach (StoreItemViewModel item in e.NewItems)
+            {
+                item.PropertyChanged += OnStoreItemPropertyChanged;
+            }
+        }
+
+        // Unsubscribe from removed items
+        if (e.OldItems != null)
+        {
+            foreach (StoreItemViewModel item in e.OldItems)
+            {
+                item.PropertyChanged -= OnStoreItemPropertyChanged;
+            }
+        }
+    }
+
+    private void OnStoreItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (sender is not StoreItemViewModel item)
+            return;
+
+        // Only track ResRef changes (other editable fields like Infinite are tracked elsewhere)
+        if (e.PropertyName != nameof(StoreItemViewModel.ResRef))
+            return;
+
+        var resRef = item.ResRef;
+
+        // Validate ResRef
+        if (!ValidateResRef(resRef, item, out var warning))
+        {
+            // Show warning in status bar
+            UpdateStatusBar(warning);
+        }
+        else
+        {
+            UpdateStatusBar("Ready");
+        }
+
+        // Mark document dirty
+        _isDirty = true;
+        UpdateTitle();
+    }
+
+    /// <summary>
+    /// Validates a ResRef value and returns any warning messages.
+    /// </summary>
+    /// <param name="resRef">The ResRef to validate</param>
+    /// <param name="currentItem">The item being edited (excluded from duplicate check)</param>
+    /// <param name="warning">Warning message if validation fails</param>
+    /// <returns>True if valid, false if there are issues</returns>
+    private bool ValidateResRef(string resRef, StoreItemViewModel currentItem, out string warning)
+    {
+        warning = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(resRef))
+        {
+            warning = "Warning: ResRef is empty";
+            return false;
+        }
+
+        // Check for invalid characters
+        if (!ValidResRefPattern.IsMatch(resRef))
+        {
+            warning = "Warning: ResRef contains non-standard characters (use a-z, 0-9, _)";
+            return false;
+        }
+
+        // Check for duplicates in store
+        var duplicate = StoreItems.FirstOrDefault(i =>
+            i != currentItem &&
+            string.Equals(i.ResRef, resRef, StringComparison.OrdinalIgnoreCase));
+
+        if (duplicate != null)
+        {
+            warning = $"Warning: ResRef '{resRef}' already exists in store";
+            return false;
+        }
+
+        return true;
     }
 
     #endregion

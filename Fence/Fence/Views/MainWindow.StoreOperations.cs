@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Utm;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MerchantEditor.Views;
@@ -13,6 +14,68 @@ namespace MerchantEditor.Views;
 /// </summary>
 public partial class MainWindow
 {
+    #region Base Item to Store Panel Mapping
+
+    // Store panel mapping by item type NAME (case-insensitive)
+    // This is more robust than hardcoded indices since baseitems.2da row numbers
+    // can vary between NWN versions or with custom content
+    private static readonly HashSet<string> ArmorTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Armor", "Belt", "Boots", "Cloak", "Gloves", "Helmet",
+        "Large Shield", "Small Shield", "Tower Shield", "Bracer",
+        "Light Armor", "Medium Armor", "Heavy Armor"
+    };
+
+    private static readonly HashSet<string> WeaponTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Shortsword", "Longsword", "Battleaxe", "Bastardsword", "Bastard Sword",
+        "Light Flail", "Warhammer", "War Hammer", "Heavy Crossbow", "Light Crossbow",
+        "Longbow", "Long Bow", "Light Mace", "Halberd", "Shortbow", "Short Bow",
+        "Two-Bladed Sword", "Greatsword", "Great Sword", "Bolt", "Bullet",
+        "Dagger", "Arrow", "Greataxe", "Great Axe", "Morningstar", "Morning Star",
+        "Quarterstaff", "Quarter Staff", "Rapier", "Scimitar", "Scythe",
+        "Club", "Sickle", "Spear", "Handaxe", "Hand Axe", "Kama", "Katana",
+        "Kukri", "Nunchaku", "Sai", "Siangham", "Dart", "Light Hammer",
+        "Throwing Axe", "Dire Mace", "Double Axe", "Heavy Flail", "Sling",
+        "Shuriken", "Trident", "Whip", "Dwarven Waraxe", "Dwarven War Axe",
+        "Warmage", "Magic Staff"
+    };
+
+    private static readonly HashSet<string> PotionScrollTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Potion", "Scroll", "Kit", "Trap Kit", "Healer's Kit", "Healers Kit",
+        "Thieves' Tools", "Thieves Tools"
+    };
+
+    private static readonly HashSet<string> RingsAmuletTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Amulet", "Ring"
+    };
+
+    /// <summary>
+    /// Determine which store panel an item belongs to based on its base item type NAME.
+    /// Uses name-based matching for compatibility with different baseitems.2da versions.
+    /// </summary>
+    private static int GetStorePanelForBaseItemType(string baseItemTypeName)
+    {
+        if (string.IsNullOrEmpty(baseItemTypeName))
+            return StorePanels.Miscellaneous;
+
+        if (ArmorTypeNames.Contains(baseItemTypeName))
+            return StorePanels.Armor;
+        if (WeaponTypeNames.Contains(baseItemTypeName))
+            return StorePanels.Weapons;
+        if (PotionScrollTypeNames.Contains(baseItemTypeName))
+            return StorePanels.Potions;
+        if (RingsAmuletTypeNames.Contains(baseItemTypeName))
+            return StorePanels.RingsAmulets;
+
+        // Default to Miscellaneous for gems, wands, rods, misc items, etc.
+        return StorePanels.Miscellaneous;
+    }
+
+    #endregion
+
     #region Store Inventory Operations
 
     private void OnRemoveFromStore(object? sender, RoutedEventArgs e)
@@ -79,6 +142,21 @@ public partial class MainWindow
         StoreInventoryGrid.ItemsSource = StoreItems;
     }
 
+    private void OnInfiniteCellClicked(object? sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        // Get the data context (StoreItemViewModel) from the clicked element
+        if (sender is Avalonia.Controls.Border border && border.DataContext is StoreItemViewModel item)
+        {
+            item.Infinite = !item.Infinite;
+            _isDirty = true;
+            UpdateTitle();
+
+            // Refresh the grid to show updated symbol
+            StoreInventoryGrid.ItemsSource = null;
+            StoreInventoryGrid.ItemsSource = StoreItems;
+        }
+    }
+
     private void OnAddToStore(object? sender, RoutedEventArgs e)
     {
         AddSelectedPaletteItems();
@@ -90,17 +168,31 @@ public partial class MainWindow
         if (selectedItems == null || selectedItems.Count == 0)
             return;
 
+        // Get current markup/markdown values
+        var markUp = int.TryParse(SellMarkupBox.Text, out var mu) ? mu : 100;
+        var markDown = int.TryParse(BuyMarkdownBox.Text, out var md) ? md : 50;
+
         foreach (var item in selectedItems)
         {
+            var sellPrice = (int)Math.Ceiling(item.BaseValue * markUp / 100.0);
+            var buyPrice = (int)Math.Floor(item.BaseValue * markDown / 100.0);
+            var panelId = GetStorePanelForBaseItemType(item.BaseItemType);
+
+            // Debug: Log panel assignment for troubleshooting
+            Radoub.Formats.Logging.UnifiedLogger.LogApplication(
+                Radoub.Formats.Logging.LogLevel.DEBUG,
+                $"Adding item: {item.ResRef} | Type: {item.BaseItemType} | Panel: {panelId} ({StorePanels.GetPanelName(panelId)})");
+
             StoreItems.Add(new StoreItemViewModel
             {
                 ResRef = item.ResRef,
                 DisplayName = item.DisplayName,
                 Infinite = false,
-                PanelId = StorePanels.Miscellaneous, // Default panel
+                PanelId = panelId,
                 BaseItemType = item.BaseItemType,
-                SellPrice = 0,
-                BuyPrice = 0
+                BaseValue = item.BaseValue,
+                SellPrice = sellPrice,
+                BuyPrice = buyPrice
             });
         }
 

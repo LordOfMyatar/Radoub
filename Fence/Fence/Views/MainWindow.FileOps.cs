@@ -117,8 +117,8 @@ public partial class MainWindow
         // Get markup values from UI thread
         await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
-            markUp = (int)(SellMarkupBox.Value ?? 100);
-            markDown = (int)(BuyMarkdownBox.Value ?? 50);
+            markUp = int.TryParse(SellMarkupBox.Text, out var mu) ? mu : 100;
+            markDown = int.TryParse(BuyMarkdownBox.Text, out var md) ? md : 50;
         });
 
         // Collect all items to resolve
@@ -143,6 +143,7 @@ public partial class MainWindow
                     Infinite = entry.item.Infinite,
                     PanelId = entry.PanelId,
                     BaseItemType = resolved?.BaseItemTypeName ?? "Unknown",
+                    BaseValue = resolved?.BaseCost ?? 0,
                     SellPrice = resolved?.CalculateSellPrice(markUp) ?? 0,
                     BuyPrice = resolved?.CalculateBuyPrice(markDown) ?? 0
                 });
@@ -251,15 +252,15 @@ public partial class MainWindow
         _currentStore.LocName.SetString(0, StoreNameBox.Text ?? ""); // 0 = English male
         _currentStore.Tag = StoreTagBox.Text ?? "";
 
-        _currentStore.MarkUp = (int)(SellMarkupBox.Value ?? 100);
-        _currentStore.MarkDown = (int)(BuyMarkdownBox.Value ?? 50);
-        _currentStore.IdentifyPrice = (int)(IdentifyPriceBox.Value ?? 100);
+        _currentStore.MarkUp = int.TryParse(SellMarkupBox.Text, out var markUp) ? markUp : 100;
+        _currentStore.MarkDown = int.TryParse(BuyMarkdownBox.Text, out var markDown) ? markDown : 50;
+        _currentStore.IdentifyPrice = int.TryParse(IdentifyPriceBox.Text, out var identifyPrice) ? identifyPrice : 100;
 
         _currentStore.BlackMarket = BlackMarketCheck.IsChecked ?? false;
-        _currentStore.BM_MarkDown = (int)(BlackMarketMarkdownBox.Value ?? 25);
+        _currentStore.BM_MarkDown = int.TryParse(BlackMarketMarkdownBox.Text, out var bmMarkDown) ? bmMarkDown : 25;
 
-        _currentStore.MaxBuyPrice = (MaxBuyPriceCheck.IsChecked ?? false) ? (int)(MaxBuyPriceBox.Value ?? 0) : -1;
-        _currentStore.StoreGold = (LimitedGoldCheck.IsChecked ?? false) ? (int)(StoreGoldBox.Value ?? 0) : -1;
+        _currentStore.MaxBuyPrice = (MaxBuyPriceCheck.IsChecked ?? false) && int.TryParse(MaxBuyPriceBox.Text, out var maxBuy) ? maxBuy : -1;
+        _currentStore.StoreGold = (LimitedGoldCheck.IsChecked ?? false) && int.TryParse(StoreGoldBox.Text, out var storeGold) ? storeGold : -1;
 
         // Update category (PaletteID) - use category ID from mapping, not dropdown index
         var selectedCategoryIndex = Math.Max(0, StoreCategoryBox.SelectedIndex);
@@ -319,15 +320,15 @@ public partial class MainWindow
         StoreNameBox.Text = "";
         StoreTagBox.Text = "";
         StoreResRefBox.Text = "";
-        SellMarkupBox.Value = 100;
-        BuyMarkdownBox.Value = 50;
-        IdentifyPriceBox.Value = 100;
+        SellMarkupBox.Text = "100";
+        BuyMarkdownBox.Text = "50";
+        IdentifyPriceBox.Text = "100";
         BlackMarketCheck.IsChecked = false;
-        BlackMarketMarkdownBox.Value = 25;
+        BlackMarketMarkdownBox.Text = "25";
         MaxBuyPriceCheck.IsChecked = false;
-        MaxBuyPriceBox.Value = 0;
+        MaxBuyPriceBox.Text = "0";
         LimitedGoldCheck.IsChecked = false;
-        StoreGoldBox.Value = 0;
+        StoreGoldBox.Text = "0";
 
         // Clear buy restrictions
         BuyAllRadio.IsChecked = true;

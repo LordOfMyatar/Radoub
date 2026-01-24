@@ -10,6 +10,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.7-alpha] - 2026-01-23
+**Branch**: `fence/issue-1060` | **PR**: #1071
+
+### Sprint: Completion Polish (#1060)
+
+Part of Epic #555 (Merchant Editor Tool).
+
+#### Work Items
+- [x] #1043 - Add ResRef rename functionality
+- [x] #1042 - UI Layout Polish - Consolidate panels and improve usability
+
+#### Added
+- **Editable ResRef column** - Store inventory ResRef can now be edited directly in grid (double-click to edit)
+- **16-character limit** - Aurora Engine ResRef constraint enforced via MaxLength
+- **Character validation** - Warns when ResRef contains non-standard characters (recommend a-z, 0-9, _)
+- **Duplicate detection** - Warns when ResRef already exists in store inventory
+
+#### Changed
+- **Store Properties panel** - Now collapsible; merged Scripts & Comment into this panel
+- **Buy Restrictions panel** - Moved "Buy Stolen Goods" here (was in Store Properties)
+- **Pricing fields** - Replaced NumericUpDown controls with TextBox for cleaner UI
+- **Infinity column** - Changed from checkbox to ∞ symbol (click to toggle); added tooltip
+- **Script buttons** - Widened browse/clear buttons from 28 to 38 pixels for better clickability
+- **Panel layout** - Reduced from 3 collapsible panels to 2 (Buy Restrictions + Local Variables)
+- **Name-based store panel mapping** - Items assigned to panels by base item type name (not index) for compatibility
+
+#### Removed
+- **Scripts & Comment expander** - Consolidated into Store Properties panel
+
+---
+
 ## [0.1.6-alpha] - 2026-01-21
 **Branch**: `fence/issue-956` | **PR**: #1047
 

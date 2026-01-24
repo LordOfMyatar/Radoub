@@ -10,7 +10,7 @@ namespace MerchantEditor.Services;
 /// </summary>
 public class PaletteCacheService
 {
-    private const int CacheVersion = 1;
+    private const int CacheVersion = 2; // Added BaseItemIndex
     private readonly GameDataCacheService<CachedPaletteItem> _cacheService;
 
     public PaletteCacheService()
@@ -52,6 +52,7 @@ public class CachedPaletteItem
     public string ResRef { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string BaseItemType { get; set; } = string.Empty;
+    public int BaseItemIndex { get; set; }
     public int BaseValue { get; set; }
     public bool IsStandard { get; set; }
 }
