@@ -24,8 +24,10 @@ public partial class ModuleEditorViewModel : ObservableObject
     private Window? _parentWindow;
     private string? _modulePath;
     private string? _modFilePath;
+    private string? _workingDirectoryPath;
     private IfoFile? _ifoFile;
     private bool _isFromModFile;
+    private bool _isReadOnly;
 
     // Status
 
@@ -40,6 +42,11 @@ public partial class ModuleEditorViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isModuleLoaded;
+
+    [ObservableProperty]
+    private bool _isModuleReadOnly;
+
+    public bool CanSave => IsModuleLoaded && !IsModuleReadOnly && HasUnsavedChanges;
 
     // Module Metadata
 
@@ -258,16 +265,40 @@ public partial class ModuleEditorViewModel : ObservableObject
         {
             _modulePath = path;
             _modFilePath = null;
+            _workingDirectoryPath = null;
             _isFromModFile = false;
+            _isReadOnly = false;
 
             // Check if path is a .mod file or a directory
             if (File.Exists(path) && path.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
             {
-                await LoadFromModFileAsync(path);
+                // Check for unpacked working directory (same name without .mod extension)
+                var moduleName = Path.GetFileNameWithoutExtension(path);
+                var moduleDir = Path.GetDirectoryName(path);
+                var workingDir = moduleDir != null ? Path.Combine(moduleDir, moduleName) : null;
+
+                if (workingDir != null && Directory.Exists(workingDir) &&
+                    File.Exists(Path.Combine(workingDir, "module.ifo")))
+                {
+                    // Unpacked directory exists - load from there (editable)
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Found unpacked module directory: {UnifiedLogger.SanitizePath(workingDir)}");
+                    _workingDirectoryPath = workingDir;
+                    _modFilePath = path;
+                    await LoadFromDirectoryAsync(workingDir);
+                    _isReadOnly = false;
+                }
+                else
+                {
+                    // No unpacked directory - load from .mod file (read-only)
+                    await LoadFromModFileAsync(path);
+                    _isReadOnly = true;
+                }
             }
             else if (Directory.Exists(path))
             {
                 await LoadFromDirectoryAsync(path);
+                _isReadOnly = false;
             }
             else
             {
@@ -277,8 +308,11 @@ public partial class ModuleEditorViewModel : ObservableObject
 
             PopulateViewModelFromIfo();
             IsModuleLoaded = true;
+            IsModuleReadOnly = _isReadOnly;
             HasUnsavedChanges = false;
-            StatusText = $"Loaded: {Path.GetFileName(_modulePath)}";
+
+            var statusSuffix = _isReadOnly ? " (Read-only - module not unpacked)" : "";
+            StatusText = $"Loaded: {Path.GetFileName(_modulePath)}{statusSuffix}";
         }
         catch (Exception ex)
         {

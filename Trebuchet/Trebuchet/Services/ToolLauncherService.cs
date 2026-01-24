@@ -22,6 +22,16 @@ public class ToolInfo
 }
 
 /// <summary>
+/// Information for launching a tool with a specific file.
+/// Used as command parameter for launch-with-file actions.
+/// </summary>
+public class ToolFileLaunchInfo
+{
+    public required ToolInfo Tool { get; init; }
+    public required string FilePath { get; init; }
+}
+
+/// <summary>
 /// Service for discovering and launching Radoub tools.
 /// </summary>
 public class ToolLauncherService

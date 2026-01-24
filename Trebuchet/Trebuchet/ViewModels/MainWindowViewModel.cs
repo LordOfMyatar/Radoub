@@ -1,10 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
@@ -62,6 +63,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool HasRecentModules => RecentModules.Count > 0;
 
+    public bool CanEditModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
     public bool CanTestModule => IsGameAvailable && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
     public bool CanLoadModule => CanTestModule;
 
@@ -108,19 +110,26 @@ public partial class MainWindowViewModel : ObservableObject
         // Module status with validation
         if (!string.IsNullOrEmpty(shared.CurrentModulePath))
         {
-            var moduleName = Path.GetFileName(shared.CurrentModulePath);
-            var validation = ResourcePathDetector.ValidateModulePathWithMessage(shared.CurrentModulePath);
+            var modulePath = shared.CurrentModulePath;
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
 
-            if (validation.IsValid)
+            // Check if it's a .mod file that exists
+            if (modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase) && File.Exists(modulePath))
             {
                 CurrentModuleName = moduleName;
                 IsModuleValid = true;
             }
+            // Legacy: check if it's a working directory with module.ifo
+            else if (Directory.Exists(modulePath) && File.Exists(Path.Combine(modulePath, "module.ifo")))
+            {
+                CurrentModuleName = Path.GetFileName(modulePath);
+                IsModuleValid = true;
+            }
             else
             {
-                CurrentModuleName = $"{moduleName} (Invalid)";
+                CurrentModuleName = $"{Path.GetFileName(modulePath)} (Invalid)";
                 IsModuleValid = false;
-                UnifiedLogger.LogApplication(LogLevel.WARN, $"Module validation failed: {validation.Message}");
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Module validation failed: file not found or invalid format");
             }
         }
         else
@@ -166,6 +175,7 @@ public partial class MainWindowViewModel : ObservableObject
         // Update module-dependent properties when module changes
         if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
         {
+            OnPropertyChanged(nameof(CanEditModule));
             OnPropertyChanged(nameof(CanTestModule));
             OnPropertyChanged(nameof(CanLoadModule));
         }
@@ -207,43 +217,49 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void LaunchToolWithFile(ToolFileLaunchInfo launchInfo)
+    {
+        if (launchInfo?.Tool == null) return;
+
+        UnifiedLogger.LogApplication(LogLevel.INFO,
+            $"Launching {launchInfo.Tool.Name} with file: {Path.GetFileName(launchInfo.FilePath)}");
+
+        _toolLauncher.LaunchToolWithFile(launchInfo.Tool, launchInfo.FilePath);
+    }
+
+    /// <summary>
+    /// Get recent files for a tool (for UI binding).
+    /// </summary>
+    public List<RecentFileInfo> GetToolRecentFiles(string toolName)
+    {
+        return ToolRecentFilesService.Instance.GetRecentFiles(toolName);
+    }
+
+    /// <summary>
+    /// Check if a tool has recent files.
+    /// </summary>
+    public bool ToolHasRecentFiles(string toolName)
+    {
+        return ToolRecentFilesService.Instance.HasRecentFiles(toolName);
+    }
+
+    [RelayCommand]
     private async Task OpenModule()
     {
         if (_parentWindow == null) return;
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Open module dialog requested");
 
-        // Modules are extracted to working directories (temp0, temp1, or named folders)
-        // We browse for the extracted module folder, not the .mod file
-        var options = new FolderPickerOpenOptions
-        {
-            Title = "Select Module Working Directory (extracted module folder)",
-            AllowMultiple = false
-        };
-
-        // Start in NWN documents folder if available (where temp0/temp1/named modules live)
+        // Use the custom module browser
         var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
-        if (!string.IsNullOrEmpty(nwnPath) && Directory.Exists(nwnPath))
-        {
-            try
-            {
-                options.SuggestedStartLocation = await _parentWindow.StorageProvider
-                    .TryGetFolderFromPathAsync(nwnPath);
-            }
-            catch
-            {
-                // Ignore if path can't be resolved - dialog will use default
-            }
-        }
+        var browser = new ModuleBrowserWindow(nwnPath);
+        var result = await browser.ShowDialog<string?>(_parentWindow);
 
-        var result = await _parentWindow.StorageProvider.OpenFolderPickerAsync(options);
-
-        if (result.Count > 0)
+        if (!string.IsNullOrEmpty(result))
         {
-            var selectedPath = result[0].Path.LocalPath;
-            RadoubSettings.Instance.CurrentModulePath = selectedPath;
-            SettingsService.Instance.AddRecentModule(selectedPath);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened module: {UnifiedLogger.SanitizePath(selectedPath)}");
+            RadoubSettings.Instance.CurrentModulePath = result;
+            SettingsService.Instance.AddRecentModule(result);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened module: {UnifiedLogger.SanitizePath(result)}");
         }
     }
 
