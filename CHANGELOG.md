@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.46] - 2026-01-24
-**Branch**: `radoub/issue-1097` | **PR**: #TBD
+**Branch**: `radoub/issue-1097` | **PR**: #1100
 
 ### Sprint: Custom File Browser - Manifest & Path Standardization (#1097)
 
