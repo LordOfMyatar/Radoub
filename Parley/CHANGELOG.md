@@ -10,6 +10,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.125-alpha] - 2026-01-24
+**Branch**: `parley/sprint/cleanup-polish` | **PR**: #1087
+
+### Sprint: Cleanup & Polish
+
+- [x] #1082 - Use custom file browser for .dlg files
+- [x] #1039 - Use Radoub.Formats IFO library for module info
+- [x] #453 - Improve modal window contrast for visibility
+- [x] #1076 - Fix dark theme contrast/color issues (Radoub.UI)
+
+#### #1082 - Custom Dialog Browser for Open
+
+File > Open now uses `DialogBrowserWindow` from Radoub.UI instead of OS file picker.
+- Shows dialogs from current module directory
+- Search/filter functionality
+- Consistent UX with other Radoub browsers
+
+#### #1039 - Migrate to Shared IFO Library
+
+Replaced custom GFF parsing in `ModuleInfoParser` with `Radoub.Formats.Ifo.IfoReader`.
+Removed dead code: GffParser inheritance, manual field extraction.
+
+#### #453 - Modal Window Contrast
+
+Added visual styling to DialogFactory confirmation dialogs:
+- Sidebar background color (distinct from main window)
+- Accent-colored border for visual distinction
+- Theme-aware (works in both light and dark modes)
+
+Follow-up: #1088 - Standardize modal dialogs across all tools
+
+#### #1076 - Dark Theme Fixes
+
+**ThemeManager improvements**:
+- Added missing popup/flyout background resources (ComboBox, ToolTip, AutoComplete)
+- Added DataGrid, ListBox, ListView, TreeView background resources
+- Added ScrollViewer background resource
+- Removed problematic `SystemChromeWhiteColor` override that caused contrast issues
+
+---
+
 ## [0.1.124-alpha] - 2026-01-19
 **Branch**: `radoub/sprint-988-1010` | **PR**: #1011
 

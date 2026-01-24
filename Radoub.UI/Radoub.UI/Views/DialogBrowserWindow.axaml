@@ -117,7 +117,11 @@
         </Grid>
 
         <!-- Dialog List -->
-        <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1" Padding="5">
+        <Border Grid.Row="2"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderThickness="1"
+                Padding="5"
+                Background="{DynamicResource ThemeSidebar}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -133,7 +137,8 @@
                 <!-- Dialogs ListBox -->
                 <ListBox Grid.Row="1" x:Name="DialogListBox"
                          SelectionChanged="OnDialogSelected"
-                         DoubleTapped="OnDialogDoubleClicked">
+                         DoubleTapped="OnDialogDoubleClicked"
+                         Background="{DynamicResource ThemeSidebar}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding DisplayName}"/>

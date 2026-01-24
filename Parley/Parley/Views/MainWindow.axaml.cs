@@ -275,6 +275,12 @@ namespace DialogEditor.Views
             PopulateRecentFilesMenu();
             await _services.WindowPersistence.HandleStartupFileAsync(_viewModel);
 
+            // If no file was loaded, try to show module info from RadoubSettings
+            if (string.IsNullOrEmpty(_viewModel.CurrentFilePath))
+            {
+                _controllers.FileMenu.InitializeModuleInfoFromSettings();
+            }
+
             if (SettingsService.Instance.FlowchartVisible)
             {
                 _controllers.Flowchart.RestoreOnStartup();

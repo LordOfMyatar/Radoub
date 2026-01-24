@@ -11,6 +11,7 @@ using DialogEditor.Services;
 using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using DialogEditor.ViewModels;
+using Radoub.UI.Views;
 
 namespace Parley.Views.Helpers
 {
@@ -151,44 +152,23 @@ namespace Parley.Views.Helpers
 
         /// <summary>
         /// Handle File > Open - Open existing dialog file.
+        /// Uses DialogBrowserWindow to browse module dialogs (#1082).
         /// </summary>
         public async void OnOpenClick(object? sender, RoutedEventArgs e)
         {
             try
             {
-                var storageProvider = _window.StorageProvider;
-                if (storageProvider == null)
-                {
-                    ViewModel.StatusMessage = "Storage provider not available";
-                    return;
-                }
+                // Create context for dialog browser - uses current file's directory
+                var context = new ParleyScriptBrowserContext(ViewModel.CurrentFileName);
 
-                var options = new FilePickerOpenOptions
-                {
-                    Title = "Open Dialog File",
-                    AllowMultiple = false,
-                    FileTypeFilter = new[]
-                    {
-                        new FilePickerFileType("DLG Dialog Files")
-                        {
-                            Patterns = new[] { "*.dlg" }
-                        },
-                        new FilePickerFileType("JSON Files")
-                        {
-                            Patterns = new[] { "*.json" }
-                        },
-                        new FilePickerFileType("All Files")
-                        {
-                            Patterns = new[] { "*.*" }
-                        }
-                    }
-                };
+                var browser = new DialogBrowserWindow(context);
+                await browser.ShowDialog(_window);
 
-                var files = await storageProvider.OpenFilePickerAsync(options);
-                if (files != null && files.Count > 0)
+                // Check if user selected a dialog
+                var selectedEntry = browser.SelectedEntry;
+                if (selectedEntry?.FilePath != null)
                 {
-                    var file = files[0];
-                    var filePath = file.Path.LocalPath;
+                    var filePath = selectedEntry.FilePath;
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Opening file: {UnifiedLogger.SanitizePath(filePath)}");
                     await ViewModel.LoadDialogAsync(filePath);
 
@@ -202,7 +182,6 @@ namespace Parley.Views.Helpers
                     _updateEmbeddedFlowchartAfterLoad();
 
                     // Scan creatures for portrait/soundset display (#786, #915, #916)
-                    // Await the scan so portrait/soundset auto-populates when node is selected
                     if (_scanCreaturesForModule != null)
                     {
                         var moduleDir = Path.GetDirectoryName(filePath);
@@ -458,6 +437,84 @@ namespace Parley.Views.Helpers
         {
             _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb => tb.Text = "No module loaded");
             _controls.WithControl<TextBlock>("ModulePathTextBlock", tb => tb.Text = "");
+        }
+
+        /// <summary>
+        /// Initialize module info from RadoubSettings.CurrentModulePath if set.
+        /// Called on startup when no dialog file is loaded.
+        /// </summary>
+        public void InitializeModuleInfoFromSettings()
+        {
+            try
+            {
+                var modulePath = Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath;
+                if (string.IsNullOrEmpty(modulePath))
+                    return;
+
+                // Resolve to working directory if it's a .mod file
+                string? workingDir = null;
+                if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+                {
+                    workingDir = FindWorkingDirectory(modulePath);
+                }
+                else if (Directory.Exists(modulePath))
+                {
+                    workingDir = modulePath;
+                }
+
+                if (string.IsNullOrEmpty(workingDir))
+                    return;
+
+                // Get module name from module.ifo
+                var moduleName = ModuleInfoParser.GetModuleName(workingDir);
+
+                // Sanitize path for display
+                var displayPath = PathHelper.SanitizePathForDisplay(workingDir);
+
+                // Update UI
+                _controls.WithControl<TextBlock>("ModuleNameTextBlock", tb =>
+                    tb.Text = moduleName ?? Path.GetFileName(workingDir));
+                _controls.WithControl<TextBlock>("ModulePathTextBlock", tb =>
+                    tb.Text = displayPath);
+
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Module info from settings: {moduleName ?? "(unnamed)"} | {displayPath}");
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to initialize module info from settings: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Find the unpacked working directory for a .mod file.
+        /// Checks for module name folder, temp0, or temp1.
+        /// </summary>
+        private static string? FindWorkingDirectory(string modFilePath)
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
+            var moduleDir = Path.GetDirectoryName(modFilePath);
+
+            if (string.IsNullOrEmpty(moduleDir))
+                return null;
+
+            // Check in priority order (same as Trebuchet)
+            var candidates = new[]
+            {
+                Path.Combine(moduleDir, moduleName),
+                Path.Combine(moduleDir, "temp0"),
+                Path.Combine(moduleDir, "temp1")
+            };
+
+            foreach (var candidate in candidates)
+            {
+                if (Directory.Exists(candidate) &&
+                    File.Exists(Path.Combine(candidate, "module.ifo")))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         #endregion
