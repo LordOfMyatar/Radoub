@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Logging;
@@ -64,6 +63,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool HasRecentModules => RecentModules.Count > 0;
 
+    public bool CanEditModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
     public bool CanTestModule => IsGameAvailable && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
     public bool CanLoadModule => CanTestModule;
 
@@ -175,6 +175,7 @@ public partial class MainWindowViewModel : ObservableObject
         // Update module-dependent properties when module changes
         if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
         {
+            OnPropertyChanged(nameof(CanEditModule));
             OnPropertyChanged(nameof(CanTestModule));
             OnPropertyChanged(nameof(CanLoadModule));
         }
@@ -249,44 +250,16 @@ public partial class MainWindowViewModel : ObservableObject
 
         UnifiedLogger.LogApplication(LogLevel.INFO, "Open module dialog requested");
 
-        // Browse for .mod files - the standard module format
-        var options = new FilePickerOpenOptions
-        {
-            Title = "Select Module (.mod file)",
-            AllowMultiple = false,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType("NWN Module") { Patterns = new[] { "*.mod" } }
-            }
-        };
-
-        // Start in modules folder if available
+        // Use the custom module browser
         var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
-        if (!string.IsNullOrEmpty(nwnPath))
-        {
-            var modulesPath = Path.Combine(nwnPath, "modules");
-            if (Directory.Exists(modulesPath))
-            {
-                try
-                {
-                    options.SuggestedStartLocation = await _parentWindow.StorageProvider
-                        .TryGetFolderFromPathAsync(modulesPath);
-                }
-                catch
-                {
-                    // Ignore if path can't be resolved - dialog will use default
-                }
-            }
-        }
+        var browser = new ModuleBrowserWindow(nwnPath);
+        var result = await browser.ShowDialog<string?>(_parentWindow);
 
-        var result = await _parentWindow.StorageProvider.OpenFilePickerAsync(options);
-
-        if (result.Count > 0)
+        if (!string.IsNullOrEmpty(result))
         {
-            var selectedPath = result[0].Path.LocalPath;
-            RadoubSettings.Instance.CurrentModulePath = selectedPath;
-            SettingsService.Instance.AddRecentModule(selectedPath);
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened module: {UnifiedLogger.SanitizePath(selectedPath)}");
+            RadoubSettings.Instance.CurrentModulePath = result;
+            SettingsService.Instance.AddRecentModule(result);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened module: {UnifiedLogger.SanitizePath(result)}");
         }
     }
 

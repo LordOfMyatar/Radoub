@@ -15,9 +15,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Launch Workflow
 
-- Module Editor UI Polish (#1038)
-- Launch tool with specific file argument (#1030)
-- Custom file browser for module/game resource paths (#1023)
+#### Tool Launch with Recent Files (#1030)
+- Add dropdown menu below each tool card for quick file access
+- Display tool's MRU (Most Recently Used) files from settings
+- Validate files exist before showing in menu
+- "Launch App Only" option at top of dropdown
+- Support PathHelper ~ expansion for Parley's contracted paths
+
+#### Custom Module Browser (#1023)
+- Add ModuleBrowserWindow to Radoub.UI for browsing .mod files
+- Replace OS file picker with custom browser in Open Module
+- Show module name and file size in list
+- Search/filter modules by name
+- Browse to alternate folders if needed
+- Consistent UI with existing Script/Dialog browsers
+
+#### Module Editor Improvements (#1038)
+- Detect unpacked working directory for module editing
+- If `<modulename>/module.ifo` exists alongside `.mod`, load from there (editable)
+- If no unpacked directory, load from `.mod` file (read-only with status message)
+- Add `CanEditModule` binding - Edit button disabled when no valid module selected
+
+#### Services
+- Add ToolRecentFilesService for reading tool MRU from settings JSON
+- Add ToolFileLaunchInfo for passing file path with tool launch
+
+#### Follow-up Issues Created
+- #1080 - Unpack module files for editing
+- #1081 - Build/pack module from working directory
 
 ---
 

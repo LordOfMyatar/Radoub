@@ -50,6 +50,7 @@
                                 Padding="8,4"/>
                         <Button Content="Edit..."
                                 Command="{Binding OpenModuleEditorCommand}"
+                                IsEnabled="{Binding CanEditModule}"
                                 Padding="8,4"
                                 ToolTip.Tip="Edit module settings (IFO)"/>
                     </StackPanel>
