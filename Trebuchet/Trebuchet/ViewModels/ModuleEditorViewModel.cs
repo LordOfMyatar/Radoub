@@ -341,12 +341,12 @@ public partial class ModuleEditorViewModel : ObservableObject
         // Check in priority order:
         // 1. Module name folder (e.g., "MyModule/")
         // 2. temp0 folder (NWN toolset default)
-        // 3. temp01 folder (alternate toolset folder)
+        // 3. temp1 folder (alternate toolset folder)
         var candidates = new[]
         {
             Path.Combine(moduleDir, moduleName),
             Path.Combine(moduleDir, "temp0"),
-            Path.Combine(moduleDir, "temp01")
+            Path.Combine(moduleDir, "temp1")
         };
 
         foreach (var candidate in candidates)

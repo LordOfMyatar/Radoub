@@ -73,7 +73,7 @@ public class ParleyScriptBrowserContext : IScriptBrowserContext
         {
             Path.Combine(moduleDir, moduleName),
             Path.Combine(moduleDir, "temp0"),
-            Path.Combine(moduleDir, "temp01")
+            Path.Combine(moduleDir, "temp1")
         };
 
         foreach (var candidate in candidates)
