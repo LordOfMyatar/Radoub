@@ -73,100 +73,98 @@
             </Grid.RowDefinitions>
 
             <!-- Store Properties Panel -->
-            <Expander Grid.Row="0" Header="Store Properties" IsExpanded="True" Margin="0,0,0,8"
-                      AutomationProperties.AutomationId="StorePropertiesExpander">
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,4,0,0"
-                        AutomationProperties.AutomationId="StorePropertiesPanel">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+            <Border Grid.Row="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,8"
+                    AutomationProperties.AutomationId="StorePropertiesPanel">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Row 0: Name, Tag, ResRef, Category -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <controls:SpellCheckTextBox Grid.Row="0" Grid.Column="1" x:Name="StoreNameBox" AutomationProperties.AutomationId="StoreNameBox"/>
+
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Tag:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Grid.Row="0" Grid.Column="4" x:Name="StoreTagBox" AutomationProperties.AutomationId="StoreTagBox"/>
+
+                    <TextBlock Grid.Row="0" Grid.Column="6" Text="ResRef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Grid.Row="0" Grid.Column="7" x:Name="StoreResRefBox" IsReadOnly="True" AutomationProperties.AutomationId="StoreResRefBox"/>
+
+                    <TextBlock Grid.Row="0" Grid.Column="9" Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox Grid.Row="0" Grid.Column="10" x:Name="StoreCategoryBox" MinWidth="150" AutomationProperties.AutomationId="StoreCategoryBox"/>
+
+                    <!-- Row 1: Pricing -->
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Sell Markup %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="SellMarkupBox" Margin="0,8,0,0" AutomationProperties.AutomationId="SellMarkupBox"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="3" Text="Buy Markdown %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <TextBox Grid.Row="1" Grid.Column="4" x:Name="BuyMarkdownBox" Margin="0,8,0,0" AutomationProperties.AutomationId="BuyMarkdownBox"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="6" Text="Identify Price:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <TextBox Grid.Row="1" Grid.Column="7" x:Name="IdentifyPriceBox" Margin="0,8,0,0" AutomationProperties.AutomationId="IdentifyPriceBox"/>
+
+                    <!-- Row 2: Scripts and Comment -->
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="OnOpenStore:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="20"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="20"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="20"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
-                        <!-- Row 0: Name, Tag, ResRef, Category -->
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <controls:SpellCheckTextBox Grid.Row="0" Grid.Column="1" x:Name="StoreNameBox" AutomationProperties.AutomationId="StoreNameBox"/>
-
-                        <TextBlock Grid.Row="0" Grid.Column="3" Text="Tag:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox Grid.Row="0" Grid.Column="4" x:Name="StoreTagBox" AutomationProperties.AutomationId="StoreTagBox"/>
-
-                        <TextBlock Grid.Row="0" Grid.Column="6" Text="ResRef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox Grid.Row="0" Grid.Column="7" x:Name="StoreResRefBox" IsReadOnly="True" AutomationProperties.AutomationId="StoreResRefBox"/>
-
-                        <TextBlock Grid.Row="0" Grid.Column="9" Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <ComboBox Grid.Row="0" Grid.Column="9" x:Name="StoreCategoryBox" Width="120" Margin="60,0,0,0" AutomationProperties.AutomationId="StoreCategoryBox"/>
-
-                        <!-- Row 1: Pricing -->
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Sell Markup %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" x:Name="SellMarkupBox" Margin="0,8,0,0" AutomationProperties.AutomationId="SellMarkupBox"/>
-
-                        <TextBlock Grid.Row="1" Grid.Column="3" Text="Buy Markdown %:" VerticalAlignment="Center" Margin="0,8,8,0"/>
-                        <TextBox Grid.Row="1" Grid.Column="4" x:Name="BuyMarkdownBox" Margin="0,8,0,0" AutomationProperties.AutomationId="BuyMarkdownBox"/>
-
-                        <TextBlock Grid.Row="1" Grid.Column="6" Text="Identify Price:" VerticalAlignment="Center" Margin="0,8,8,0"/>
-                        <TextBox Grid.Row="1" Grid.Column="7" x:Name="IdentifyPriceBox" Margin="0,8,0,0" AutomationProperties.AutomationId="IdentifyPriceBox"/>
-
-                        <!-- Row 2: Scripts -->
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="OnOpenStore:" VerticalAlignment="Center" Margin="0,8,8,0"/>
-                        <Grid Grid.Row="2" Grid.Column="1" Margin="0,8,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" x:Name="OnOpenStoreBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
-                                     AutomationProperties.AutomationId="OnOpenStoreBox"/>
-                            <Button Grid.Column="1" Content="..." Width="24" Margin="2,0,0,0" Click="OnBrowseOpenScript"
-                                    ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseOpenScriptButton"/>
-                            <Button Grid.Column="2" Content="✕" Width="24" Margin="2,0,0,0" Click="OnClearOpenScript"
-                                    ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearOpenScriptButton"/>
-                        </Grid>
-
-                        <TextBlock Grid.Row="2" Grid.Column="3" Text="OnStoreClosed:" VerticalAlignment="Center" Margin="0,8,8,0"/>
-                        <Grid Grid.Row="2" Grid.Column="4" Margin="0,8,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" x:Name="OnStoreClosedBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
-                                     AutomationProperties.AutomationId="OnStoreClosedBox"/>
-                            <Button Grid.Column="1" Content="..." Width="24" Margin="2,0,0,0" Click="OnBrowseClosedScript"
-                                    ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseClosedScriptButton"/>
-                            <Button Grid.Column="2" Content="✕" Width="24" Margin="2,0,0,0" Click="OnClearClosedScript"
-                                    ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearClosedScriptButton"/>
-                        </Grid>
-
-                        <TextBlock Grid.Row="2" Grid.Column="6" Text="Comment:" VerticalAlignment="Top" Margin="0,8,8,0"/>
-                        <TextBox Grid.Row="2" Grid.Column="7" Grid.ColumnSpan="3" x:Name="CommentBox"
-                                 AcceptsReturn="True" TextWrapping="Wrap" Height="50" Margin="0,8,0,0"
-                                 Watermark="Developer notes..."
-                                 AutomationProperties.AutomationId="CommentBox"/>
-
-                        <!-- Row 3: Flags (without Buy Stolen - moved to Buy Restrictions) -->
-                        <WrapPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="10" Margin="0,8,0,0" Orientation="Horizontal">
-                            <CheckBox x:Name="MaxBuyPriceCheck" Content="Max Buy Price:" Margin="0,0,8,0" AutomationProperties.AutomationId="MaxBuyPriceCheck"/>
-                            <TextBox x:Name="MaxBuyPriceBox" Width="80" IsEnabled="{Binding IsChecked, ElementName=MaxBuyPriceCheck}" AutomationProperties.AutomationId="MaxBuyPriceBox"/>
-                            <CheckBox x:Name="LimitedGoldCheck" Content="Limited Gold:" Margin="16,0,8,0" AutomationProperties.AutomationId="LimitedGoldCheck"/>
-                            <TextBox x:Name="StoreGoldBox" Width="80" IsEnabled="{Binding IsChecked, ElementName=LimitedGoldCheck}" AutomationProperties.AutomationId="StoreGoldBox"/>
-                        </WrapPanel>
+                        <TextBox Grid.Column="0" x:Name="OnOpenStoreBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
+                                 AutomationProperties.AutomationId="OnOpenStoreBox"/>
+                        <Button Grid.Column="1" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseOpenScript"
+                                ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseOpenScriptButton"/>
+                        <Button Grid.Column="2" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearOpenScript"
+                                ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearOpenScriptButton"/>
                     </Grid>
-                </Border>
-            </Expander>
+
+                    <TextBlock Grid.Row="2" Grid.Column="3" Text="OnStoreClosed:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <Grid Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" x:Name="OnStoreClosedBox" MaxLength="16" FontFamily="Consolas" Watermark="(none)"
+                                 AutomationProperties.AutomationId="OnStoreClosedBox"/>
+                        <Button Grid.Column="1" Content="..." Width="28" Margin="4,0,0,0" Click="OnBrowseClosedScript"
+                                ToolTip.Tip="Browse for script" AutomationProperties.AutomationId="BrowseClosedScriptButton"/>
+                        <Button Grid.Column="2" Content="✕" Width="28" Margin="4,0,0,0" Click="OnClearClosedScript"
+                                ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearClosedScriptButton"/>
+                    </Grid>
+
+                    <TextBlock Grid.Row="2" Grid.Column="6" Text="Comment:" VerticalAlignment="Top" Margin="0,8,8,0"/>
+                    <TextBox Grid.Row="2" Grid.Column="7" Grid.ColumnSpan="4" x:Name="CommentBox"
+                             AcceptsReturn="True" TextWrapping="Wrap" Height="50" Margin="0,8,0,0"
+                             Watermark="Developer notes..."
+                             AutomationProperties.AutomationId="CommentBox"/>
+
+                    <!-- Row 3: Flags (without Buy Stolen - moved to Buy Restrictions) -->
+                    <WrapPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="11" Margin="0,8,0,0" Orientation="Horizontal">
+                        <CheckBox x:Name="MaxBuyPriceCheck" Content="Max Buy Price:" Margin="0,0,8,0" AutomationProperties.AutomationId="MaxBuyPriceCheck"/>
+                        <TextBox x:Name="MaxBuyPriceBox" Width="80" IsEnabled="{Binding IsChecked, ElementName=MaxBuyPriceCheck}" AutomationProperties.AutomationId="MaxBuyPriceBox"/>
+                        <CheckBox x:Name="LimitedGoldCheck" Content="Limited Gold:" Margin="16,0,8,0" AutomationProperties.AutomationId="LimitedGoldCheck"/>
+                        <TextBox x:Name="StoreGoldBox" Width="80" IsEnabled="{Binding IsChecked, ElementName=LimitedGoldCheck}" AutomationProperties.AutomationId="StoreGoldBox"/>
+                    </WrapPanel>
+                </Grid>
+            </Border>
 
             <!-- Collapsible Panels (side by side) -->
             <Grid Grid.Row="1" Margin="0,0,0,8">
