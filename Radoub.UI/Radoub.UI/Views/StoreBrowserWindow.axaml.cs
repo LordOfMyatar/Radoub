@@ -27,7 +27,8 @@ public class StoreBrowserEntry
 public partial class StoreBrowserWindow : Window
 {
     private readonly IScriptBrowserContext? _context;
-    private List<StoreBrowserEntry> _stores = new();
+    private List<StoreBrowserEntry> _allStores = new();
+    private List<StoreBrowserEntry> _filteredStores = new();
     private StoreBrowserEntry? _selectedEntry;
     private string? _overridePath;
     private bool _confirmed;
@@ -128,7 +129,8 @@ public partial class StoreBrowserWindow : Window
 
     private void LoadStores()
     {
-        _stores.Clear();
+        _allStores.Clear();
+        _filteredStores.Clear();
         StoreListBox.Items.Clear();
 
         var currentDir = GetCurrentDirectory();
@@ -146,32 +148,18 @@ public partial class StoreBrowserWindow : Window
             foreach (var storeFile in storeFiles)
             {
                 var storeName = Path.GetFileNameWithoutExtension(storeFile);
-                _stores.Add(new StoreBrowserEntry
+                _allStores.Add(new StoreBrowserEntry
                 {
                     Name = storeName,
                     FilePath = storeFile
                 });
             }
 
-            _stores = _stores.OrderBy(s => s.Name).ToList();
+            _allStores = _allStores.OrderBy(s => s.Name).ToList();
 
-            foreach (var store in _stores)
-            {
-                StoreListBox.Items.Add(store);
-            }
+            ApplyFilter();
 
-            if (_stores.Count == 0)
-            {
-                StoreCountLabel.Text = "No .utm files found in module folder";
-                StoreCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
-            }
-            else
-            {
-                StoreCountLabel.Text = $"{_stores.Count} store{(_stores.Count == 1 ? "" : "s")}";
-                StoreCountLabel.Foreground = new SolidColorBrush(Colors.White);
-            }
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Store Browser: Found {_stores.Count} stores in {UnifiedLogger.SanitizePath(currentDir)}");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Store Browser: Found {_allStores.Count} stores in {UnifiedLogger.SanitizePath(currentDir)}");
         }
         catch (Exception ex)
         {
@@ -179,6 +167,47 @@ public partial class StoreBrowserWindow : Window
             StoreCountLabel.Text = $"Error: {ex.Message}";
             StoreCountLabel.Foreground = new SolidColorBrush(Colors.Red);
         }
+    }
+
+    private void ApplyFilter()
+    {
+        StoreListBox.Items.Clear();
+
+        var searchText = SearchBox?.Text?.Trim() ?? "";
+
+        if (string.IsNullOrEmpty(searchText))
+        {
+            _filteredStores = _allStores.ToList();
+        }
+        else
+        {
+            _filteredStores = _allStores
+                .Where(s => s.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        foreach (var store in _filteredStores)
+        {
+            StoreListBox.Items.Add(store);
+        }
+
+        if (_filteredStores.Count == 0)
+        {
+            StoreCountLabel.Text = _allStores.Count == 0
+                ? "No .utm files found in module folder"
+                : "No matches for filter";
+            StoreCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
+        }
+        else
+        {
+            StoreCountLabel.Text = $"{_filteredStores.Count} store{(_filteredStores.Count == 1 ? "" : "s")}";
+            StoreCountLabel.Foreground = new SolidColorBrush(Colors.White);
+        }
+    }
+
+    private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplyFilter();
     }
 
     private void OnStoreSelected(object? sender, SelectionChangedEventArgs e)

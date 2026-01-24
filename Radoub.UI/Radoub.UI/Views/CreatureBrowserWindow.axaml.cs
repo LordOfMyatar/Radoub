@@ -20,12 +20,12 @@ public class CreatureBrowserEntry
     public string Name { get; set; } = "";
     public string? FilePath { get; set; }
     public bool IsBic { get; set; }
-    public string Source { get; set; } = "Module"; // "Module" or "LocalVault"
-    public string TypeIndicator => IsBic ? $"[BIC:{Source}]" : "[UTC]";
+    public string Source { get; set; } = "Module"; // "Module", "LocalVault", or "ServerVault"
+    public string TypeIndicator => IsBic ? $"[BIC:{Source}]" : "[UTC:Module]";
 }
 
 /// <summary>
-/// Browser window for selecting creature files (.utc/.bic) from a module directory.
+/// Browser window for selecting creature files (.utc/.bic) from module directory and vaults.
 /// </summary>
 public partial class CreatureBrowserWindow : Window
 {
@@ -140,19 +140,22 @@ public partial class CreatureBrowserWindow : Window
         var hasModuleDir = !string.IsNullOrEmpty(currentDir) && Directory.Exists(currentDir);
         var localVaultPath = GetLocalVaultPath();
         var hasLocalVault = !string.IsNullOrEmpty(localVaultPath) && Directory.Exists(localVaultPath);
+        var serverVaultPath = GetServerVaultPath();
+        var hasServerVault = !string.IsNullOrEmpty(serverVaultPath) && Directory.Exists(serverVaultPath);
 
-        if (!hasModuleDir && !hasLocalVault)
+        if (!hasModuleDir && !hasLocalVault && !hasServerVault)
         {
-            CreatureCountLabel.Text = "No module folder or localvault found";
+            CreatureCountLabel.Text = "No module folder or vaults found";
             CreatureCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
             return;
         }
 
         try
         {
-            // Load UTC files from module directory
+            // Load files from module directory
             if (hasModuleDir)
             {
+                // UTC files (creature blueprints)
                 var utcFiles = Directory.GetFiles(currentDir!, "*.utc", SearchOption.TopDirectoryOnly);
                 foreach (var file in utcFiles)
                 {
@@ -165,7 +168,7 @@ public partial class CreatureBrowserWindow : Window
                     });
                 }
 
-                // Load BIC files from module directory
+                // BIC files from module directory
                 var bicFiles = Directory.GetFiles(currentDir!, "*.bic", SearchOption.TopDirectoryOnly);
                 foreach (var file in bicFiles)
                 {
@@ -185,18 +188,41 @@ public partial class CreatureBrowserWindow : Window
                 var localVaultBics = Directory.GetFiles(localVaultPath!, "*.bic", SearchOption.TopDirectoryOnly);
                 foreach (var file in localVaultBics)
                 {
-                    // Avoid duplicates if same file exists in both locations
-                    var name = Path.GetFileNameWithoutExtension(file);
-                    if (!_allCreatures.Any(c => c.Name == name && c.IsBic))
+                    _allCreatures.Add(new CreatureBrowserEntry
                     {
-                        _allCreatures.Add(new CreatureBrowserEntry
+                        Name = Path.GetFileNameWithoutExtension(file),
+                        FilePath = file,
+                        IsBic = true,
+                        Source = "LocalVault"
+                    });
+                }
+            }
+
+            // Load BIC files from servervault (scan subdirectories - each player has a folder)
+            if (hasServerVault)
+            {
+                try
+                {
+                    // ServerVault has subdirectories per player
+                    foreach (var playerDir in Directory.GetDirectories(serverVaultPath!))
+                    {
+                        var serverVaultBics = Directory.GetFiles(playerDir, "*.bic", SearchOption.TopDirectoryOnly);
+                        foreach (var file in serverVaultBics)
                         {
-                            Name = name,
-                            FilePath = file,
-                            IsBic = true,
-                            Source = "Vault"
-                        });
+                            var playerName = Path.GetFileName(playerDir);
+                            _allCreatures.Add(new CreatureBrowserEntry
+                            {
+                                Name = $"{Path.GetFileNameWithoutExtension(file)} ({playerName})",
+                                FilePath = file,
+                                IsBic = true,
+                                Source = "ServerVault"
+                            });
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Error scanning servervault: {ex.Message}");
                 }
             }
 
@@ -211,6 +237,7 @@ public partial class CreatureBrowserWindow : Window
                 if (sanitized != null) sources.Add(sanitized);
             }
             if (hasLocalVault) sources.Add("localvault");
+            if (hasServerVault) sources.Add("servervault");
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Creature Browser: Found {_allCreatures.Count} creatures from {string.Join(", ", sources)}");
         }
         catch (Exception ex)
@@ -234,15 +261,45 @@ public partial class CreatureBrowserWindow : Window
         return Directory.Exists(localVault) ? localVault : null;
     }
 
+    /// <summary>
+    /// Get the servervault path for server-stored player character BIC files.
+    /// </summary>
+    private string? GetServerVaultPath()
+    {
+        var nwnPath = _context?.NeverwinterNightsPath;
+        if (string.IsNullOrEmpty(nwnPath))
+            return null;
+
+        var serverVault = Path.Combine(nwnPath, "servervault");
+        return Directory.Exists(serverVault) ? serverVault : null;
+    }
+
     private void ApplyFilter()
     {
         CreatureListBox.Items.Clear();
 
-        bool showUtc = ShowAllRadio.IsChecked == true || ShowUtcRadio.IsChecked == true;
-        bool showBic = ShowAllRadio.IsChecked == true || ShowBicRadio.IsChecked == true;
+        bool showModule = ShowModuleCheck.IsChecked == true;
+        bool showLocalVault = ShowLocalVaultCheck.IsChecked == true;
+        bool showServerVault = ShowServerVaultCheck.IsChecked == true;
+        var searchText = SearchBox?.Text?.Trim() ?? "";
 
         _filteredCreatures = _allCreatures
-            .Where(c => (showUtc && !c.IsBic) || (showBic && c.IsBic))
+            .Where(c =>
+            {
+                // Source filter
+                var sourceMatch = (c.Source == "Module" && showModule) ||
+                                  (c.Source == "LocalVault" && showLocalVault) ||
+                                  (c.Source == "ServerVault" && showServerVault);
+                if (!sourceMatch) return false;
+
+                // Search filter
+                if (!string.IsNullOrEmpty(searchText))
+                {
+                    return c.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+                }
+
+                return true;
+            })
             .ToList();
 
         foreach (var creature in _filteredCreatures)
@@ -252,27 +309,33 @@ public partial class CreatureBrowserWindow : Window
 
         if (_filteredCreatures.Count == 0)
         {
-            CreatureCountLabel.Text = "No creature files found";
+            CreatureCountLabel.Text = _allCreatures.Count == 0
+                ? "No creature files found"
+                : "No matches for filter";
             CreatureCountLabel.Foreground = new SolidColorBrush(Colors.Orange);
         }
         else
         {
-            var utcCount = _filteredCreatures.Count(c => !c.IsBic);
-            var bicCount = _filteredCreatures.Count(c => c.IsBic);
+            var moduleCount = _filteredCreatures.Count(c => c.Source == "Module");
+            var localVaultCount = _filteredCreatures.Count(c => c.Source == "LocalVault");
+            var serverVaultCount = _filteredCreatures.Count(c => c.Source == "ServerVault");
 
-            if (ShowAllRadio.IsChecked == true)
-            {
-                CreatureCountLabel.Text = $"{_filteredCreatures.Count} creature{(_filteredCreatures.Count == 1 ? "" : "s")} ({utcCount} UTC, {bicCount} BIC)";
-            }
-            else
-            {
-                CreatureCountLabel.Text = $"{_filteredCreatures.Count} creature{(_filteredCreatures.Count == 1 ? "" : "s")}";
-            }
+            var parts = new List<string>();
+            if (moduleCount > 0) parts.Add($"{moduleCount} module");
+            if (localVaultCount > 0) parts.Add($"{localVaultCount} localvault");
+            if (serverVaultCount > 0) parts.Add($"{serverVaultCount} servervault");
+
+            CreatureCountLabel.Text = $"{_filteredCreatures.Count} creature{(_filteredCreatures.Count == 1 ? "" : "s")} ({string.Join(", ", parts)})";
             CreatureCountLabel.Foreground = new SolidColorBrush(Colors.White);
         }
     }
 
-    private void OnFileTypeChanged(object? sender, RoutedEventArgs e)
+    private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplyFilter();
+    }
+
+    private void OnSourceFilterChanged(object? sender, RoutedEventArgs e)
     {
         ApplyFilter();
     }
