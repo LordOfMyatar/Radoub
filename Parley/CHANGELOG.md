@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.125-alpha] - 2026-01-24
-**Branch**: `parley/sprint/cleanup-polish` | **PR**: #TBD
+**Branch**: `parley/sprint/cleanup-polish` | **PR**: #1087
 
 ### Sprint: Cleanup & Polish
 
