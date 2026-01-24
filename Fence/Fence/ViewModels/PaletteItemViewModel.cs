@@ -11,6 +11,7 @@ public class PaletteItemViewModel : INotifyPropertyChanged
     private string _resRef = string.Empty;
     private string _displayName = string.Empty;
     private string _baseItemType = string.Empty;
+    private int _baseItemIndex;
     private int _baseValue;
     private bool _isStandard = true;
 
@@ -32,6 +33,12 @@ public class PaletteItemViewModel : INotifyPropertyChanged
     {
         get => _baseItemType;
         set { if (_baseItemType != value) { _baseItemType = value; OnPropertyChanged(); } }
+    }
+
+    public int BaseItemIndex
+    {
+        get => _baseItemIndex;
+        set { if (_baseItemIndex != value) { _baseItemIndex = value; OnPropertyChanged(); } }
     }
 
     public int BaseValue

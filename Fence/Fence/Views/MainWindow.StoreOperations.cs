@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Utm;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MerchantEditor.Views;
@@ -13,6 +14,110 @@ namespace MerchantEditor.Views;
 /// </summary>
 public partial class MainWindow
 {
+    #region Base Item to Store Panel Mapping
+
+    // Base item indices that belong to each store panel
+    // Based on NWN base item categories from baseitems.2da
+    private static readonly HashSet<int> ArmorItems = new()
+    {
+        16,  // Armor
+        17,  // Belt
+        19,  // Boots
+        21,  // Cloak
+        26,  // Gloves
+        28,  // Helmet
+        32,  // Large Shield
+        34,  // Light Armor (obsolete but may exist)
+        36,  // Medium Armor (obsolete but may exist)
+        14,  // Small Shield
+        59,  // Bracer
+        52,  // Tower Shield
+        78,  // Armor (heavy)
+    };
+
+    private static readonly HashSet<int> WeaponItems = new()
+    {
+        0,   // Shortsword
+        1,   // Longsword
+        2,   // Battleaxe
+        3,   // Bastardsword
+        4,   // Light Flail
+        5,   // Warhammer
+        6,   // Heavy Crossbow
+        7,   // Light Crossbow
+        8,   // Longbow
+        9,   // Light Mace
+        10,  // Halberd
+        11,  // Shortbow
+        12,  // Two-Bladed Sword
+        13,  // Greatsword
+        18,  // Bolt
+        20,  // Bullet
+        22,  // Dagger
+        25,  // Arrow
+        27,  // Greataxe
+        29,  // Morning Star
+        30,  // Quarterstaff
+        31,  // Rapier
+        33,  // Scimitar
+        35,  // Scythe
+        37,  // Club
+        38,  // Sickle
+        39,  // Spear
+        40,  // Handaxe
+        41,  // Kama
+        42,  // Katana
+        43,  // Kukri
+        44,  // Nunchaku
+        45,  // Sai
+        46,  // Siangham  // (was Shuriken - corrected)
+        47,  // Dart
+        50,  // Light Hammer
+        51,  // Throwing Axe
+        53,  // Dire Mace
+        54,  // Double Axe
+        55,  // Heavy Flail
+        56,  // Sling
+        57,  // Shuriken
+        58,  // Trident
+        60,  // Whip
+        63,  // Dwarven Waraxe
+        64,  // Warmage (Staff)
+    };
+
+    private static readonly HashSet<int> PotionScrollItems = new()
+    {
+        49,  // Potion
+        75,  // Scroll
+        71,  // Kit (also in misc sometimes)
+    };
+
+    private static readonly HashSet<int> RingsAmuletItems = new()
+    {
+        15,  // Amulet
+        48,  // Ring
+    };
+
+    /// <summary>
+    /// Determine which store panel an item belongs to based on its base item type.
+    /// </summary>
+    private static int GetStorePanelForBaseItem(int baseItemIndex)
+    {
+        if (ArmorItems.Contains(baseItemIndex))
+            return StorePanels.Armor;
+        if (WeaponItems.Contains(baseItemIndex))
+            return StorePanels.Weapons;
+        if (PotionScrollItems.Contains(baseItemIndex))
+            return StorePanels.Potions;
+        if (RingsAmuletItems.Contains(baseItemIndex))
+            return StorePanels.RingsAmulets;
+
+        // Default to Miscellaneous for gems, wands, rods, misc items, etc.
+        return StorePanels.Miscellaneous;
+    }
+
+    #endregion
+
     #region Store Inventory Operations
 
     private void OnRemoveFromStore(object? sender, RoutedEventArgs e)
@@ -97,7 +202,7 @@ public partial class MainWindow
                 ResRef = item.ResRef,
                 DisplayName = item.DisplayName,
                 Infinite = false,
-                PanelId = StorePanels.Miscellaneous, // Default panel
+                PanelId = GetStorePanelForBaseItem(item.BaseItemIndex),
                 BaseItemType = item.BaseItemType,
                 SellPrice = 0,
                 BuyPrice = 0
