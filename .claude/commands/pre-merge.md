@@ -101,15 +101,17 @@ If UI tests are auto-included, display:
 
 ### Step 3: Build & Test (single script call)
 
+**IMPORTANT**: Use full absolute path to run-tests.ps1 since relative paths fail in PowerShell from Bash.
+
 ```powershell
 # Unit tests only (no UI changes detected, no --ui-tests flag)
-.\Radoub.IntegrationTests\run-tests.ps1 -Tool [detected] [-SkipShared] -UnitOnly -TechDebt
+powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -UnitOnly -TechDebt
 
 # With --ui-tests flag OR UI changes auto-detected (omit -UnitOnly)
-.\Radoub.IntegrationTests\run-tests.ps1 -Tool [detected] [-SkipShared] -TechDebt
+powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -Tool [detected] [-SkipShared] -TechDebt
 
 # With --full-tests flag
-.\Radoub.IntegrationTests\run-tests.ps1 -TechDebt
+powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" -TechDebt
 ```
 
 **Test scope decision**:
@@ -196,8 +198,8 @@ The `|| true` handles case where PR is already ready.
 ## Test Script Reference
 
 ```powershell
-.\Radoub.IntegrationTests\run-tests.ps1
-    -Tool [Parley|Quartermaster|Manifest|Fence]
+powershell -ExecutionPolicy Bypass -File "d:\LOM\workspace\Radoub\Radoub.IntegrationTests\run-tests.ps1" `
+    -Tool [Parley|Quartermaster|Manifest|Fence] `
     -SkipShared      # Skip Radoub.* tests
     -UnitOnly        # Skip UI tests (default for pre-merge)
     -TechDebt        # Include large file scan
