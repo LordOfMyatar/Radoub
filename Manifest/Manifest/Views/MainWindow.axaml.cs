@@ -7,6 +7,7 @@ using Radoub.Formats.Logging;
 using Radoub.Formats.Common;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Jrl;
+using Radoub.Formats.Tokens;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -311,6 +312,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         await OpenFile();
     }
 
+    private async void OnNewJournalClick(object? sender, RoutedEventArgs e)
+    {
+        await CreateNewJournal();
+    }
+
     private async void OnOpenFromModuleClick(object? sender, RoutedEventArgs e)
     {
         await OpenFromModule();
@@ -445,6 +451,83 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UnifiedLogger.LogJournal(LogLevel.ERROR, $"Failed to save journal: {ex.Message}");
             UpdateStatus($"Error saving file: {ex.Message}");
             await ShowErrorDialog("Save Error", $"Failed to save journal file:\n{ex.Message}");
+        }
+    }
+
+    private async Task CreateNewJournal()
+    {
+        // Check for unsaved changes
+        if (_isDirty)
+        {
+            var result = await ShowUnsavedChangesDialog();
+            if (result == "Save")
+            {
+                await SaveFile();
+            }
+            else if (result == "Cancel")
+            {
+                return;
+            }
+            // Discard - continue creating new file
+        }
+
+        // Prompt for save location with default filename
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Create New Journal",
+            DefaultExtension = "jrl",
+            SuggestedFileName = "module.jrl",
+            FileTypeChoices = new[]
+            {
+                new FilePickerFileType("Journal Files") { Patterns = new[] { "*.jrl" } }
+            }
+        });
+
+        if (file == null)
+        {
+            return; // User cancelled
+        }
+
+        var filePath = file.Path.LocalPath;
+
+        try
+        {
+            // Create empty JRL structure
+            var newJrl = new JrlFile
+            {
+                FileType = "JRL ",
+                FileVersion = "V3.2",
+                Categories = new List<JournalCategory>()
+            };
+
+            // Save the empty file
+            JrlWriter.Write(newJrl, filePath);
+
+            // Load the newly created file
+            _currentJrl = newJrl;
+            _currentFilePath = filePath;
+            _isDirty = false;
+
+            UpdateTree();
+            UpdateTitle();
+            UpdateStatusBarCounts();
+            UpdateStatus($"Created: {Path.GetFileName(filePath)}");
+
+            // Add to recent files
+            SettingsService.Instance.AddRecentFile(filePath);
+            UpdateRecentFilesMenu();
+
+            OnPropertyChanged(nameof(HasFile));
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(CanAddEntry));
+
+            UnifiedLogger.LogJournal(LogLevel.INFO, $"Created new journal: {UnifiedLogger.SanitizePath(filePath)}");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogJournal(LogLevel.ERROR, $"Failed to create journal: {ex.Message}");
+            UpdateStatus($"Error creating file: {ex.Message}");
+            await ShowErrorDialog("Create Error", $"Failed to create journal file:\n{ex.Message}");
         }
     }
 
@@ -713,6 +796,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Display text for current language
                 EntryTextBox.Text = TlkService.Instance.ResolveLocString(entItem.Entry.Text, _currentViewLanguage);
 
+                // Update token preview
+                UpdateTokenPreview();
+
                 // Wire up change handlers
                 WireEntryHandlers();
             }
@@ -822,11 +908,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         EntryIdBox.ValueChanged -= OnEntryIdChanged;
         EntryEndBox.IsCheckedChanged -= OnEntryEndChanged;
         EntryTextBox.LostFocus -= OnEntryTextChanged;
+        EntryTextBox.TextChanged -= OnEntryTextPreviewChanged;
 
         // Add handlers
         EntryIdBox.ValueChanged += OnEntryIdChanged;
         EntryEndBox.IsCheckedChanged += OnEntryEndChanged;
         EntryTextBox.LostFocus += OnEntryTextChanged;
+        EntryTextBox.TextChanged += OnEntryTextPreviewChanged;
+    }
+
+    private void OnEntryTextPreviewChanged(object? sender, TextChangedEventArgs e)
+    {
+        // Update the token preview as the user types
+        UpdateTokenPreview();
     }
 
     private void OnCategoryNameChanged(object? sender, RoutedEventArgs e)
@@ -1111,6 +1205,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             switch (e.Key)
             {
+                case Key.N:
+                    _ = CreateNewJournal();
+                    e.Handled = true;
+                    break;
                 case Key.O:
                     _ = OpenFile();
                     e.Handled = true;
@@ -1126,6 +1224,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     if (CanAddEntry)
                     {
                         OnAddEntryClick(sender, new RoutedEventArgs());
+                        e.Handled = true;
+                    }
+                    break;
+                case Key.T:
+                    // Insert token (Ctrl+T) - only when entry is selected
+                    if (_selectedItem is EntryTreeItem)
+                    {
+                        OnInsertTokenClick(sender, new RoutedEventArgs());
                         e.Handled = true;
                     }
                     break;
@@ -1231,6 +1337,50 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     new System.Uri("avares://Manifest/Assets/manifest.ico")))
         });
         aboutWindow.Show(this);
+    }
+
+    private async void OnInsertTokenClick(object? sender, RoutedEventArgs e)
+    {
+        // Save current selection in the textbox
+        var caretIndex = EntryTextBox.CaretIndex;
+        var savedText = EntryTextBox.Text ?? "";
+
+        var tokenWindow = new TokenSelectorWindow();
+        var result = await tokenWindow.ShowDialog<bool>(this);
+
+        if (result && !string.IsNullOrEmpty(tokenWindow.SelectedToken))
+        {
+            // Insert token at caret position
+            var newText = savedText.Insert(caretIndex, tokenWindow.SelectedToken);
+            EntryTextBox.Text = newText;
+
+            // Position caret after inserted token
+            EntryTextBox.CaretIndex = caretIndex + tokenWindow.SelectedToken.Length;
+            EntryTextBox.Focus();
+
+            // Update the token preview
+            UpdateTokenPreview();
+        }
+    }
+
+    private void UpdateTokenPreview()
+    {
+        var text = EntryTextBox.Text ?? "";
+        EntryTokenPreview.TokenText = text;
+
+        // Load user color config if available
+        try
+        {
+            var config = UserColorConfigLoader.Load();
+            if (config != null)
+            {
+                EntryTokenPreview.UserColorConfig = config;
+            }
+        }
+        catch
+        {
+            // Ignore config loading errors
+        }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

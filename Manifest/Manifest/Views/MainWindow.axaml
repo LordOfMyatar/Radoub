@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:Manifest.Controls"
+        xmlns:uicontrols="clr-namespace:Radoub.UI.Controls;assembly=Radoub.UI"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="Manifest.Views.MainWindow"
         x:Name="MainWindowInstance"
@@ -16,6 +17,8 @@
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
+                <MenuItem Header="_New Journal" Click="OnNewJournalClick" InputGesture="Ctrl+N"/>
+                <Separator/>
                 <MenuItem Header="_Open..." Click="OnOpenClick" InputGesture="Ctrl+O"/>
                 <MenuItem Header="Open _Recent" x:Name="RecentFilesMenu"/>
                 <MenuItem Header="_Save" Click="OnSaveClick" InputGesture="Ctrl+S" IsEnabled="{Binding HasFile}"/>
@@ -70,7 +73,7 @@
         <!-- Main Content -->
         <Grid x:Name="MainGrid">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300" MinWidth="200"/>
+                <ColumnDefinition Width="300" MinWidth="150"/>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*" MinWidth="200"/>
             </Grid.ColumnDefinitions>
@@ -161,9 +164,19 @@
 
                                 <!-- Text first - largest and most important -->
                                 <StackPanel Spacing="5">
-                                    <TextBlock Text="Text:"/>
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Text="Text:" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Content="Token..." Click="OnInsertTokenClick"
+                                                ToolTip.Tip="Insert NWN token (Ctrl+T)" Padding="8,2"/>
+                                    </Grid>
                                     <controls:SpellCheckTextBox x:Name="EntryTextBox" Height="200" AcceptsReturn="True" TextWrapping="Wrap"
                                              ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                                    <!-- Token Preview -->
+                                    <Expander Header="Token Preview" IsExpanded="False" Padding="0">
+                                        <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Padding="8" Margin="0,5,0,0">
+                                            <uicontrols:TokenTextBlock x:Name="EntryTokenPreview" TextWrapping="Wrap" MinHeight="40"/>
+                                        </Border>
+                                    </Expander>
                                 </StackPanel>
 
                                 <!-- ID and End checkbox - wrap on narrow screens -->
