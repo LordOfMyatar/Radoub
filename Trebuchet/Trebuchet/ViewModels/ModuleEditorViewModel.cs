@@ -220,11 +220,45 @@ public partial class ModuleEditorViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
     private string _onCutsceneAbort = string.Empty;
 
+    // NWN:EE Extended Scripts
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    private string _onModuleStart = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    private string _onPlayerChat = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    private string _onPlayerTarget = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    private string _onPlayerGuiEvent = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    private string _onPlayerTileAction = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    private string _onNuiEvent = string.Empty;
+
     // Other Settings
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
     private byte _xpScale = 100;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    private string _defaultBic = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    private string _startMovie = string.Empty;
 
     // Variables
 
@@ -456,8 +490,18 @@ public partial class ModuleEditorViewModel : ObservableObject
         OnSpawnButtonDown = _ifoFile.OnSpawnButtonDown;
         OnCutsceneAbort = _ifoFile.OnCutsceneAbort;
 
+        // NWN:EE Extended Scripts
+        OnModuleStart = _ifoFile.OnModuleStart;
+        OnPlayerChat = _ifoFile.OnPlayerChat;
+        OnPlayerTarget = _ifoFile.OnPlayerTarget;
+        OnPlayerGuiEvent = _ifoFile.OnPlayerGuiEvent;
+        OnPlayerTileAction = _ifoFile.OnPlayerTileAction;
+        OnNuiEvent = _ifoFile.OnNuiEvent;
+
         // Other
         XpScale = _ifoFile.XPScale;
+        DefaultBic = _ifoFile.DefaultBic;
+        StartMovie = _ifoFile.StartMovie;
 
         // Variables
         Variables = new ObservableCollection<VariableViewModel>(
@@ -517,8 +561,18 @@ public partial class ModuleEditorViewModel : ObservableObject
         _ifoFile.OnSpawnButtonDown = OnSpawnButtonDown;
         _ifoFile.OnCutsceneAbort = OnCutsceneAbort;
 
+        // NWN:EE Extended Scripts
+        _ifoFile.OnModuleStart = OnModuleStart;
+        _ifoFile.OnPlayerChat = OnPlayerChat;
+        _ifoFile.OnPlayerTarget = OnPlayerTarget;
+        _ifoFile.OnPlayerGuiEvent = OnPlayerGuiEvent;
+        _ifoFile.OnPlayerTileAction = OnPlayerTileAction;
+        _ifoFile.OnNuiEvent = OnNuiEvent;
+
         // Other
         _ifoFile.XPScale = XpScale;
+        _ifoFile.DefaultBic = DefaultBic;
+        _ifoFile.StartMovie = StartMovie;
 
         // Variables
         _ifoFile.VarTable = Variables.Select(v => v.ToVariable()).ToList();
@@ -776,7 +830,15 @@ public partial class ModuleEditorViewModel : ObservableObject
     partial void OnOnUserDefinedChanged(string value) => MarkChanged();
     partial void OnOnSpawnButtonDownChanged(string value) => MarkChanged();
     partial void OnOnCutsceneAbortChanged(string value) => MarkChanged();
+    partial void OnOnModuleStartChanged(string value) => MarkChanged();
+    partial void OnOnPlayerChatChanged(string value) => MarkChanged();
+    partial void OnOnPlayerTargetChanged(string value) => MarkChanged();
+    partial void OnOnPlayerGuiEventChanged(string value) => MarkChanged();
+    partial void OnOnPlayerTileActionChanged(string value) => MarkChanged();
+    partial void OnOnNuiEventChanged(string value) => MarkChanged();
     partial void OnXpScaleChanged(byte value) => MarkChanged();
+    partial void OnDefaultBicChanged(string value) => MarkChanged();
+    partial void OnStartMovieChanged(string value) => MarkChanged();
 
     private void MarkChanged()
     {
