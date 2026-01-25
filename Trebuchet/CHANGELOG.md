@@ -15,9 +15,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: IFO GUI & Module Management (#1095)
 
-- [ ] #1093 - Expose DefaultBic and new IFO fields in GUI
+- [x] #1093 - Expose DefaultBic and new IFO fields in GUI
 - [x] #1080 - Unpack module files (.mod) for editing
 - [x] #1081 - Build/pack module from working directory
+
+#### IFO Fields in GUI (#1093)
+- Add DefaultBic field to Version tab (default character file for new players)
+- Add StartMovie field to Version tab (startup movie to play)
+- Add new "NWN:EE Scripts" tab with 6 extended event scripts:
+  - OnModuleStart, OnPlayerChat, OnPlayerTarget
+  - OnPlayerGuiEvent, OnPlayerTileAction, OnNuiEvent (1.80+)
 
 #### Build/Pack Module (#1081)
 - Add "Build" button to main window header (visible when unpacked working directory exists)
