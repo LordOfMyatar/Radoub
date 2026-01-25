@@ -51,27 +51,45 @@ public class ScriptCompilerService
 
     private void DiscoverCompiler()
     {
-        // Look for bundled compiler in tools/ subfolder relative to executable
         var exeDir = AppContext.BaseDirectory;
-        var toolsPath = Path.Combine(exeDir, "tools", "nwn_script_comp.exe");
 
+        // Determine platform-specific executable name
+        var compilerName = GetPlatformCompilerName();
+
+        // Look for bundled compiler in tools/ subfolder relative to executable
+        var toolsPath = Path.Combine(exeDir, "tools", compilerName);
         if (File.Exists(toolsPath))
         {
             CompilerPath = toolsPath;
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Script compiler found at bundled location");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Script compiler found: {compilerName}");
             return;
         }
 
         // Also check same directory as exe (for development)
-        var sameDirPath = Path.Combine(exeDir, "nwn_script_comp.exe");
+        var sameDirPath = Path.Combine(exeDir, compilerName);
         if (File.Exists(sameDirPath))
         {
             CompilerPath = sameDirPath;
-            UnifiedLogger.LogApplication(LogLevel.INFO, "Script compiler found in application directory");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Script compiler found in app directory: {compilerName}");
             return;
         }
 
-        UnifiedLogger.LogApplication(LogLevel.WARN, "Script compiler not found - compilation disabled");
+        UnifiedLogger.LogApplication(LogLevel.WARN, $"Script compiler not found ({compilerName}) - compilation disabled");
+    }
+
+    /// <summary>
+    /// Get the platform-specific compiler executable name.
+    /// </summary>
+    private static string GetPlatformCompilerName()
+    {
+        if (OperatingSystem.IsWindows())
+            return "nwn_script_comp.exe";
+        else if (OperatingSystem.IsMacOS())
+            return "nwn_script_comp_macos";
+        else if (OperatingSystem.IsLinux())
+            return "nwn_script_comp_linux";
+        else
+            return "nwn_script_comp";  // Fallback
     }
 
     /// <summary>

@@ -76,9 +76,28 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
 
-    public string CompilerStatusText => IsCompilerAvailable
-        ? "Compiler found: nwn_script_comp.exe"
-        : "Compiler not found. Place nwn_script_comp.exe in Trebuchet/tools/ folder.";
+    public string CompilerStatusText
+    {
+        get
+        {
+            var compilerName = GetPlatformCompilerName();
+            return IsCompilerAvailable
+                ? $"Compiler found: {compilerName}"
+                : $"Compiler not found. Place {compilerName} in Trebuchet/tools/ folder.";
+        }
+    }
+
+    private static string GetPlatformCompilerName()
+    {
+        if (OperatingSystem.IsWindows())
+            return "nwn_script_comp.exe";
+        else if (OperatingSystem.IsMacOS())
+            return "nwn_script_comp_macos";
+        else if (OperatingSystem.IsLinux())
+            return "nwn_script_comp_linux";
+        else
+            return "nwn_script_comp";
+    }
 
     public ObservableCollection<string> AvailableLogLevels { get; } = new()
     {

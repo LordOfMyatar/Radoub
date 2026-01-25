@@ -3,20 +3,29 @@ Trebuchet External Tools
 
 This folder contains bundled external tools used by Trebuchet.
 
-Required Files
---------------
-- nwn_script_comp.exe - NWScript compiler from neverwinter.nim
+Required Files (Platform-Specific)
+----------------------------------
+Download the appropriate file for your platform:
+
+- Windows: nwn_script_comp.exe
+- macOS:   nwn_script_comp_macos
+- Linux:   nwn_script_comp_linux
 
 Download Instructions
 ---------------------
-Download nwn_script_comp.exe from:
+Download from neverwinter.nim releases:
 https://github.com/niv/neverwinter.nim/releases
 
-Place the executable in this folder for Trebuchet to detect it automatically.
+Place the executable for your platform in this folder.
+Trebuchet will automatically detect the correct binary.
+
+Note: On macOS/Linux you may need to mark the file as executable:
+  chmod +x nwn_script_comp_macos
+  chmod +x nwn_script_comp_linux
 
 License
 -------
-nwn_script_comp.exe is part of neverwinter.nim by Bernhard Stöckner (niv).
+nwn_script_comp is part of neverwinter.nim by Bernhard Stöckner (niv).
 Licensed under MIT License.
 
 Source: https://github.com/niv/neverwinter.nim
