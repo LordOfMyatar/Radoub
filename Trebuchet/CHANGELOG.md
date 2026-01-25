@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.6.0-alpha] - 2026-01-25
-**Branch**: `trebuchet/issue-1116` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1116` | **PR**: #1117
 
 ### Feature: NWScript Compiler Integration (#1116)
 
