@@ -202,6 +202,8 @@
                                 <CheckBox x:Name="WordWrapCheckBox" Content="Word Wrap"
                                           IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=TreeViewWordWrap, Mode=TwoWay}"
                                           VerticalAlignment="Center"
+                                          Checked="OnWordWrapChanged"
+                                          Unchecked="OnWordWrapChanged"
                                           ToolTip.Tip="Wrap long dialog text in tree view (#903)"/>
                             </StackPanel>
 

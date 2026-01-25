@@ -50,6 +50,18 @@ namespace DialogEditor.Views
             }
         }
 
+        /// <summary>
+        /// Handle Word Wrap checkbox change - refresh tree to apply new TextWrapping (#903)
+        /// </summary>
+        private void OnWordWrapChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            // Refresh tree view to apply new word wrap setting
+            _viewModel.RefreshTreeViewColors();
+            var enabled = SettingsService.Instance.TreeViewWordWrap;
+            _viewModel.StatusMessage = enabled ? "Word wrap enabled" : "Word wrap disabled";
+            UnifiedLogger.LogUI(LogLevel.INFO, $"TreeView word wrap toggled: {enabled}");
+        }
+
         private void ExpandAllTreeViewItems(TreeView treeView)
         {
             // Avalonia approach: Work directly with ViewModel data
