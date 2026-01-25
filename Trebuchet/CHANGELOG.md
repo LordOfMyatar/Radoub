@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.5.0-alpha] - 2026-01-25
-**Branch**: `trebuchet/issue-1092` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1092` | **PR**: #1107
 
 ### Feature: IFO Field Version Validation for Backward Compatibility (#1092)
 
