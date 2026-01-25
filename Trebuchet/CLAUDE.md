@@ -8,9 +8,12 @@ Project guidance for Claude Code sessions working with the Trebuchet (Radoub Lau
 
 **Trebuchet** is the central hub for the Radoub toolset. It provides:
 
-- **Tool Launcher** - Discover and launch Parley, Manifest, Quartermaster, Fence
-- **Global Settings Manager** - Game paths, TLK configuration, theme/font preferences (Sprint 2)
-- **Module Info Editor** - Edit module.ifo properties (Sprint 3)
+- **Tool Launcher** - Discover and launch Parley, Manifest, Quartermaster, Fence with recent file support
+- **Module Editor** - Edit module.ifo properties (metadata, scripts, HAKs, variables, entry points)
+- **Module Management** - Unpack, edit, and build/pack modules
+- **Game Launcher** - Launch NWN:EE with selected module for testing
+- **Global Settings** - Game paths, TLK configuration, theme/font preferences
+- **Theme Editor** - Create and customize themes
 
 ---
 
@@ -20,18 +23,28 @@ Project guidance for Claude Code sessions working with the Trebuchet (Radoub Lau
 Trebuchet/
 ├── CHANGELOG.md
 ├── CLAUDE.md (this file)
+├── NonPublic/           # Research docs, not published
 ├── Trebuchet/
 │   ├── Trebuchet.csproj
 │   ├── App.axaml(.cs)
 │   ├── Program.cs
 │   ├── Services/
-│   │   ├── CommandLineService.cs   # CLI args parsing
-│   │   ├── SettingsService.cs      # Tool-specific settings
-│   │   └── ToolLauncherService.cs  # Discover and launch tools
+│   │   ├── CommandLineService.cs      # CLI args parsing (--help, --safemode, --module)
+│   │   ├── GameLauncherService.cs     # Launch NWN:EE with module
+│   │   ├── SettingsService.cs         # Tool-specific settings (window, recent modules)
+│   │   ├── ToolLauncherService.cs     # Discover and launch Radoub tools
+│   │   ├── ToolRecentFilesService.cs  # Read tool MRU from settings
+│   │   └── UpdateService.cs           # Check for updates
 │   ├── ViewModels/
-│   │   └── MainWindowViewModel.cs
+│   │   ├── MainWindowViewModel.cs
+│   │   ├── ModuleEditorViewModel.cs   # IFO editing logic
+│   │   ├── SettingsWindowViewModel.cs
+│   │   └── ThemeEditorViewModel.cs
 │   ├── Views/
-│   │   └── MainWindow.axaml(.cs)
+│   │   ├── MainWindow.axaml(.cs)
+│   │   ├── ModuleEditorWindow.axaml(.cs)  # Module.ifo editor
+│   │   ├── SettingsWindow.axaml(.cs)
+│   │   └── ThemeEditorWindow.axaml(.cs)
 │   ├── Themes/
 │   │   ├── light.json
 │   │   └── dark.json
@@ -47,8 +60,43 @@ Trebuchet/
 
 ### Dependencies
 
-- `Radoub.Formats` - Shared settings, file format parsers
-- `Radoub.UI` - Theme manager, shared UI services
+- `Radoub.Formats` - GFF/ERF/IFO parsers, shared settings
+- `Radoub.UI` - Theme manager, resource browsers, shared UI components
+
+---
+
+## Current Features (v1.5.0-alpha)
+
+### Tool Launcher
+- Discover installed Radoub tools (Parley, Manifest, Quartermaster, Fence)
+- Launch tools with optional file argument
+- Recent files dropdown per tool (reads from tool's settings.json)
+
+### Module Editor
+- **Metadata Tab**: Module name, description, tag, custom TLK
+- **Version Tab**: Minimum game version, expansions, XP scale, DefaultBic, StartMovie
+- **HAK Files Tab**: Ordered list with add/remove/reorder
+- **Time Tab**: Dawn/dusk hours, minutes per hour, start date/time
+- **Entry Point Tab**: Starting area dropdown, X/Y/Z coordinates
+- **Scripts Tab**: All 16 standard module event scripts
+- **NWN:EE Scripts Tab**: 6 extended event scripts (OnModuleStart, OnPlayerChat, etc.)
+- **Variables Tab**: Add/edit/remove module-level local variables
+
+### Module Management
+- **Unpack**: Extract .mod to working directory for editing
+- **Build**: Pack working directory back to .mod with automatic backup
+- **Version Validation**: Warn if NWN:EE features target older minimum version
+
+### Game Launcher
+- **Test Module**: Launch with `+TestNewModule` (auto-selects first character)
+- **Load Module**: Launch with `+LoadNewModule` (shows character select)
+
+### Settings & Themes
+- Game installation path configuration
+- TLK language/gender selection
+- Theme selection (light, dark, custom)
+- Font size/family preferences
+- Theme Editor for creating custom themes
 
 ---
 
@@ -94,6 +142,16 @@ launcher.LaunchTool("Parley");  // Launch by name
 launcher.LaunchTool(tool, "--file myfile.dlg");  // Launch with args
 ```
 
+### GameLauncherService
+
+Launches NWN:EE with module for testing:
+
+```csharp
+var launcher = new GameLauncherService();
+await launcher.LaunchGameWithModule(modulePath, GameLaunchMode.Test);  // +TestNewModule
+await launcher.LaunchGameWithModule(modulePath, GameLaunchMode.Load);  // +LoadNewModule
+```
+
 ### SettingsService
 
 Tool-specific settings stored at `~/Radoub/Trebuchet/TrebuchetSettings.json`:
@@ -113,48 +171,52 @@ Global settings at `~/Radoub/RadoubSettings.json`:
 
 ---
 
+## Module Editor Architecture
+
+The Module Editor uses IFO parsing from `Radoub.Formats`:
+
+- **IfoFile**: Model class with typed accessors for all IFO fields
+- **IfoReader**: Parse module.ifo GFF to IfoFile
+- **IfoWriter**: Write IfoFile back to GFF format
+- **ErfWriter**: Update .mod files with backup support
+
+### Working Directory Pattern
+
+```
+modules/
+├── mymodule.mod           # Packed module (read-only in editor)
+└── mymodule/              # Unpacked working directory (editable)
+    ├── module.ifo
+    ├── area001.are
+    ├── area001.git
+    └── ...
+```
+
+When a working directory exists alongside the .mod file, Trebuchet loads from there (editable mode). Otherwise, it loads from the packed .mod (read-only).
+
+---
+
 ## Theme System
 
 Uses `Radoub.UI.ThemeManager` for consistent theming across tools:
 
-- Theme files in `Themes/` folder (light, dark, vscode-dark, fluent-light, accessibility themes)
+- Theme files in `Themes/` folder (light, dark, custom)
 - Theme ID format: `org.radoub.theme.{name}` (universal IDs for shared themes)
 - On startup, Trebuchet copies bundled themes to `~/Radoub/Themes/` so other tools can access them
-- Accessibility: Font size scaling, high contrast support, colorblind themes (deuteranopia, protanopia, tritanopia)
+- Accessibility: Font size scaling, high contrast support
 
 ---
 
 ## Commit Standards
 
-Use `[Radoub]` prefix (Trebuchet is part of Radoub infrastructure):
+Use `[Trebuchet]` prefix for Trebuchet-specific work:
 
 ```
-[Radoub] feat: Add tool launcher service for Trebuchet (#907)
-[Radoub] fix: Handle missing tools gracefully in Trebuchet
+[Trebuchet] feat: Add NWScript compiler integration (#1116)
+[Trebuchet] fix: Handle missing module.ifo gracefully
 ```
 
----
-
-## MVP Sprints
-
-### Sprint 1: Tool Launcher (Current)
-- [x] Project structure
-- [x] MainWindow with tool cards
-- [x] ToolLauncherService
-- [x] Theme support
-- [ ] Test builds and tool launching
-
-### Sprint 2: Global Settings UI
-- [ ] SettingsWindow
-- [ ] Game path configuration
-- [ ] TLK settings
-- [ ] Theme/font selection
-
-### Sprint 3: Module Info Editor
-- [ ] ModuleInfoWindow
-- [ ] IFO reading/display
-- [ ] IFO editing and saving
-- [ ] ErfWriter (if needed)
+Use `[Radoub]` for changes to shared infrastructure (Radoub.Formats, Radoub.UI).
 
 ---
 
@@ -166,11 +228,33 @@ Before committing:
 2. App launches without errors
 3. Tool cards display correctly
 4. Tools launch when clicked (if installed)
+5. Module Editor opens and saves without corruption
+
+### Manual Test Checklist
+
+- [ ] Open packed module - shows read-only status
+- [ ] Unpack module - creates working directory
+- [ ] Edit IFO fields - save succeeds
+- [ ] Build module - creates .mod with backup
+- [ ] Launch game with module - NWN:EE starts correctly
+- [ ] Launch tools from cards - tools open
+
+---
+
+## Upcoming Features
+
+### NWScript Compiler Integration (#1116)
+- Bundle neverwinter.nim's `nwn_script_comp.exe`
+- Compile .nss files before packing
+- Checkbox to enable/disable compilation (for large modules)
+- Timestamp comparison: prompt if .nss newer than .ncs
 
 ---
 
 ## Resources
 
-- [Research Notes](../NonPublic/Trebuchet/Research_907_Launcher_Architecture.md)
+- [Trebuchet CHANGELOG](CHANGELOG.md)
 - [RadoubSettings.cs](../Radoub.Formats/Radoub.Formats/Settings/RadoubSettings.cs)
 - [ThemeManager.cs](../Radoub.UI/Radoub.UI/Services/ThemeManager.cs)
+- [IfoFile.cs](../Radoub.Formats/Radoub.Formats/Aurora/Ifo/IfoFile.cs)
+- [neverwinter.nim](https://github.com/niv/neverwinter.nim) - Reference implementation

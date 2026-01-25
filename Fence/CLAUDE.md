@@ -2,6 +2,8 @@
 
 Tool-specific guidance for Claude Code sessions working on Fence.
 
+**Read the repository-level [CLAUDE.md](../CLAUDE.md) first** for shared conventions.
+
 ---
 
 ## Overview
@@ -12,7 +14,7 @@ Tool-specific guidance for Claude Code sessions working on Fence.
 - **Tool Name**: Fence
 - **File Type**: `.utm` (Store Blueprint)
 - **Internal Namespace**: `MerchantEditor`
-- **Parent Epic**: #555 (Merchant Editor Tool)
+- **Current Version**: See `CHANGELOG.md` for latest version
 
 ---
 
@@ -30,6 +32,7 @@ Fence/
 │   ├── Services/
 │   │   ├── CommandLineService.cs
 │   │   ├── ItemResolutionService.cs
+│   │   ├── PaletteCacheService.cs     # Cached palette loading
 │   │   └── SettingsService.cs
 │   ├── Views/
 │   │   ├── MainWindow.axaml[.cs]
@@ -47,6 +50,7 @@ Fence/
 2. **Double-click transfer** - Double-click adds/removes items from store
 3. **Non-modal dialogs** - All windows (Settings, About, warnings) are non-blocking
 4. **Checkbox restrictions** - WillOnlyBuy/WillNotBuy are checkboxes, not dual-list pickers
+5. **Name-based panel mapping** - Items assigned to store panels by base item type name (not index) for compatibility
 
 ---
 
@@ -77,6 +81,39 @@ UTM files are GFF-based store blueprints containing:
 
 ---
 
+## Current Features (v0.1.8-alpha)
+
+### Store Properties
+- Edit all store metadata (name, tag, gold, prices)
+- Markup/Markdown percentages with pricing preview
+- Collapsible panels for organized editing
+
+### Store Inventory
+- View and edit store contents
+- Editable ResRef column with validation (16 char limit, Aurora-safe characters)
+- Infinite stock toggle (∞ symbol)
+- Duplicate ResRef detection
+
+### Item Palette
+- Load items from BIF archives
+- Search and filter by type
+- Standard/Custom content filtering
+- Double-click to add to store
+
+### Scripts & Variables
+- OnOpenStore, OnStoreClose scripts
+- Local variable editing
+
+### Buy Restrictions
+- WillOnlyBuy/WillNotBuy checkboxes by base item type
+- Buy stolen goods option
+
+### Custom File Browser
+- File > Open uses `StoreBrowserWindow` from Radoub.UI
+- Browse module directories for UTM files
+
+---
+
 ## Development Guidelines
 
 ### Build Commands
@@ -86,6 +123,9 @@ dotnet build Fence/Fence/Fence.csproj
 
 # Build all tools
 dotnet build Radoub.sln
+
+# Run Fence
+dotnet run --project Fence/Fence/Fence.csproj
 ```
 
 ### Testing
@@ -115,34 +155,23 @@ dialog.Show(this);
 
 ---
 
-## Current Status
+## Commit Conventions
 
-### Phase 1 (Complete)
-- [x] Project scaffold with theming
-- [x] UTM file loading and display
-- [x] Store properties editing
-- [x] Inventory display with Tag column
-- [x] Item palette population from BIF archives
-- [x] Item name resolution (LocalizedName → TLK StrRef → ResRef fallback)
-- [x] Settings window
-- [x] WillOnlyBuy/WillNotBuy checkboxes
-- [x] Price calculation based on markup/markdown
+Use `[Fence]` prefix:
 
-### Phase 2 (TODO)
-- [ ] Create new store (File → New)
-- [ ] Add/remove items between palette and store
-- [ ] Search/filter for both grids
-- [ ] Type filter dropdown
-- [ ] Standard/Custom content checkboxes
-- [ ] Double-click transfer
-- [ ] Unit tests
+```bash
+[Fence] fix: Correct ResRef validation (#123)
+[Fence] feat: Add bulk item import (#456)
+```
+
+Changes go in `Fence/CHANGELOG.md` (not Radoub CHANGELOG).
 
 ---
 
 ## Resources
 
-- **BioWare Store Format**: `Documentation/BioWare_Markdown_Docs/`
-- **UTM Parser**: `Radoub.Formats/Radoub.Formats/Utm/`
+- **UTM Parser**: `Radoub.Formats/Radoub.Formats/Aurora/Utm/`
 - **Shared UI**: `Radoub.UI/`
+- **StoreBrowserWindow**: `Radoub.UI/Radoub.UI/Views/StoreBrowserWindow.axaml`
 
 ---

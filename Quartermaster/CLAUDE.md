@@ -10,12 +10,15 @@ Tool-specific guidance for Claude Code sessions working with Quartermaster.
 
 **Quartermaster** is a creature and inventory editor for Neverwinter Nights. It edits UTC (creature blueprint) and BIC (player character) files.
 
+**Current Version**: See `CHANGELOG.md` for latest version
+
 ### Core Features
 
-- View and edit creature inventory (equipment + backpack)
+- Edit creature stats, abilities, skills, feats, spells, inventory
+- Appearance preview rendering
 - Load items from module directory, Override, HAK, and BIF archives
 - Support for both UTC (creature blueprints) and BIC (player characters)
-- Sidebar navigation with Stats, Classes, Skills, Feats, Spells, Inventory, Advanced, Scripts sections
+- Sidebar navigation with Stats, Classes, Skills, Feats, Spells, Inventory, Advanced, Appearance, Scripts sections
 
 ### Project Structure
 
@@ -36,18 +39,49 @@ Quartermaster/
 │   │       ├── ClassesPanel.axaml(.cs) - Class levels, alignment, identity
 │   │       ├── SkillsPanel.axaml(.cs) - Skill ranks
 │   │       ├── FeatsPanel.axaml(.cs) - Feats and special abilities
+│   │       ├── SpellsPanel.axaml(.cs) - Known/memorized spells
 │   │       ├── ScriptsPanel.axaml(.cs) - Event scripts
-│   │       ├── AdvancedPanel.axaml(.cs) - Flags, behavior, appearance
-│   │       ├── InventoryPanel.axaml(.cs) - Equipment and backpack
-│   │       └── PlaceholderPanel.axaml(.cs) - Coming soon (Spells)
+│   │       ├── AdvancedPanel.axaml(.cs) - Flags, behavior, variables
+│   │       ├── AppearancePanel.axaml(.cs) - Visual appearance with preview
+│   │       └── InventoryPanel.axaml(.cs) - Equipment and backpack
 │   └── Services/
 │       ├── CommandLineService.cs - CLI argument parsing
 │       ├── SettingsService.cs - User preferences
-│       └── ThemeManager.cs - Theme switching
+│       ├── AppearanceService.cs - Appearance rendering
+│       └── ModelService.cs - 3D model handling
 └── Quartermaster.Tests/ (unit tests)
     ├── CommandLineServiceTests.cs
     └── SettingsServiceTests.cs
 ```
+
+---
+
+## Current Features (v0.1.55-alpha)
+
+### Editing Capabilities
+- **Stats**: Ability scores, HP, AC, attack bonus, saves (editing)
+- **Classes**: Class levels, alignment, deity, race, gender
+- **Skills**: Skill ranks with progress bars (editing)
+- **Feats**: Add/remove feats and special abilities
+- **Spells**: Known spells, memorized spells, metamagic support
+- **Inventory**: Equipment slots and backpack with item details
+- **Advanced**: Flags, behavior, appearance values, local variables
+- **Appearance**: Visual preview with body part rendering
+- **Scripts**: All creature event scripts + conversation resref
+
+### File Operations
+- Open UTC and BIC files via custom `CreatureBrowserWindow`
+- Save with automatic backup
+- Recent files list
+- Re-level character to level 1
+
+### Item Resolution
+
+Items are resolved in this order:
+1. **Module directory** - Same folder as the UTC/BIC file
+2. **Override folder** - User's NWN Override directory
+3. **HAK files** - Module-specific HAK archives
+4. **BIF archives** - Base game data
 
 ---
 
@@ -71,14 +105,15 @@ Each section in the sidebar has its own UserControl in `Views/Panels/`:
 
 | Panel | Status |
 |-------|--------|
-| StatsPanel | Basic display (read-only) - ability scores, combat stats, saves |
-| ClassesPanel | Class levels, alignment, identity (race, gender, deity) |
-| SkillsPanel | Skill ranks with progress bars |
-| FeatsPanel | Feats and special abilities |
-| ScriptsPanel | Event scripts and conversation resref |
-| AdvancedPanel | Flags, behavior, appearance, blueprint info |
-| InventoryPanel | Functional (equipment + backpack + palette) |
-| PlaceholderPanel | "Coming Soon" for Spells section |
+| StatsPanel | Editable - ability scores, HP, saves, movement |
+| ClassesPanel | Editable - class levels, alignment, identity |
+| SkillsPanel | Editable - skill ranks with progress bars |
+| FeatsPanel | Editable - add/remove feats and special abilities |
+| SpellsPanel | Editable - known/memorized spells with metamagic |
+| ScriptsPanel | Editable - event scripts and conversation resref |
+| AdvancedPanel | Editable - flags, behavior, appearance, variables |
+| AppearancePanel | View - appearance preview rendering |
+| InventoryPanel | View - equipment + backpack + palette |
 
 To add a new panel:
 1. Create UserControl in `Views/Panels/`
@@ -88,22 +123,11 @@ To add a new panel:
 
 ### Services
 
-All services follow similar patterns to Parley:
+All services follow similar patterns:
 
 - **Singleton pattern** with `Instance` property
 - **Environment variable override** for testing (e.g., `QUARTERMASTER_SETTINGS_DIR`)
 - **INotifyPropertyChanged** for bindable settings
-
-### Item Resolution
-
-Items are resolved in this order:
-
-1. **Module directory** - Same folder as the UTC/BIC file
-2. **Override folder** - User's NWN Override directory
-3. **HAK files** - Module-specific HAK archives
-4. **BIF archives** - Base game data
-
-Use `GameDataService` for steps 2-4. See `CreatePlaceholderItem()` in MainWindow.Inventory.cs.
 
 ---
 
@@ -115,7 +139,7 @@ Use `GameDataService` for steps 2-4. See `CreatePlaceholderItem()` in MainWindow
 dotnet test Quartermaster/Quartermaster.Tests
 ```
 
-21 tests covering:
+21+ tests covering:
 - CommandLineService argument parsing
 - SettingsService property constraints
 
@@ -136,19 +160,21 @@ Quartermaster uses these shared libraries:
 | Library | Purpose |
 |---------|---------|
 | Radoub.Formats | UTC, BIC, UTI file parsing |
-| Radoub.UI | ItemListView, EquipmentSlotsPanel, ItemFilterPanel |
+| Radoub.UI | ItemListView, EquipmentSlotsPanel, ItemFilterPanel, CreatureBrowserWindow |
 | Radoub.Formats.Services | GameDataService for BIF/TLK access |
 
 ---
 
-## Commit Prefixes
+## Commit Conventions
 
-Use `[Quartermaster]` prefix for commits:
+Use `[Quartermaster]` prefix:
 
-```
-[Quartermaster] feat: Add stats editing (#XXX)
+```bash
+[Quartermaster] feat: Add appearance preview (#746)
 [Quartermaster] fix: Correct BIC save corruption (#XXX)
 ```
+
+Changes go in `Quartermaster/CHANGELOG.md` (not Radoub CHANGELOG).
 
 ---
 
@@ -200,16 +226,10 @@ Navigation buttons are NOT tabs - they're styled buttons with `.NavButton` class
 
 ---
 
-## Known Limitations
+## Resources
 
-Current alpha state:
-
-- All panels are read-only (no editing yet)
-- Spells panel shows "Coming Soon" placeholder
-- Item editing not implemented (view-only for inventory)
-- No drag-drop between equipment and backpack
-- 2DA/TLK name resolution uses hardcoded fallbacks for common values
-
-See Epic #544 for roadmap.
+- [Quartermaster CHANGELOG](CHANGELOG.md)
+- [UTC Format Spec](https://github.com/LordOfMyatar/Radoub/wiki)
+- [BIC Format Spec](https://github.com/LordOfMyatar/Radoub/wiki)
 
 ---
