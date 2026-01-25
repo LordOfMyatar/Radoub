@@ -88,7 +88,12 @@ public static class ErfWriter
             }
 
             // Write key entry
-            var resRefBytes = Encoding.ASCII.GetBytes(entry.ResRef.PadRight(16)[..16]);
+            // ResRef must be null-padded, not space-padded (Aurora Engine format)
+            var resRefBytes = new byte[16];
+            var nameBytes = Encoding.ASCII.GetBytes(entry.ResRef);
+            var copyLen = Math.Min(nameBytes.Length, 16);
+            Array.Copy(nameBytes, 0, resRefBytes, 0, copyLen);
+            // Remaining bytes are already 0 (null) from byte[] initialization
             Array.Copy(resRefBytes, 0, keyList, keyOffset, 16);
             BitConverter.GetBytes((uint)i).CopyTo(keyList, keyOffset + 16); // ResId = index
             BitConverter.GetBytes(entry.ResourceType).CopyTo(keyList, keyOffset + 20);
