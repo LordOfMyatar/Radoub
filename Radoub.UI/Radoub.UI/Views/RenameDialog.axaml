@@ -2,11 +2,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Radoub.UI.Views.RenameDialog"
         Title="Rename"
-        MinWidth="450" MinHeight="380"
+        MinWidth="450" MinHeight="500"
+        MaxHeight="700"
         SizeToContent="WidthAndHeight"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Grid Margin="20" MinWidth="410">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -54,13 +56,13 @@
         <!-- Warning about references -->
         <Border Grid.Row="4"
                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderBrush="Orange"
+                BorderBrush="{DynamicResource ThemeWarning}"
                 BorderThickness="1"
                 CornerRadius="4"
                 Padding="10"
                 Margin="0,0,0,10">
             <StackPanel>
-                <TextBlock Text="⚠ Important:" FontWeight="SemiBold" Foreground="Orange" Margin="0,0,0,5"/>
+                <TextBlock Text="⚠ Important:" FontWeight="SemiBold" Foreground="{DynamicResource ThemeWarning}" Margin="0,0,0,5"/>
                 <TextBlock TextWrapping="Wrap"
                            Text="This renames the file only. You must manually update any scripts or triggers that reference this resource in Aurora Toolset."/>
             </StackPanel>
@@ -86,4 +88,5 @@
             <Button Content="Cancel" MinWidth="90" Click="OnCancelClick"/>
         </StackPanel>
     </Grid>
+    </ScrollViewer>
 </Window>
