@@ -15,9 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Fixes & Polish
 
-- [ ] #905 - Flowchart font doesn't follow theme settings
-- [ ] #810 - Speaker row controls overflow on screens < 1000px
-- [ ] #903 - TreeView text needs word wrap option
+- [x] #903 - TreeView text needs word wrap option
+  - Added Word Wrap checkbox to Dialog Tree toolbar
+  - Toggling immediately refreshes tree with new wrapping behavior
+  - Setting persists across sessions
+
+- [x] #905 - Flowchart font follows theme settings
+  - Node text and labels now use GlobalFontSize
+  - Placeholder and status bar also follow theme
+
+- [x] #810 - Speaker row controls overflow (verified already fixed)
+  - WrapPanel implemented in PR #822 (2026-01-10)
+  - Controls wrap to new row on narrow screens
 
 ---
 
