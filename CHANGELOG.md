@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.48] - 2026-01-25
+**Branch**: `radoub/issue-675` | **PR**: #TBD
+
+### Cross-tool ResRef Rename Functionality (#675)
+
+Add ability to rename blueprint ResRef across all tools that edit resource files:
+- Quartermaster: UTC/BIC files (creature blueprints)
+- Fence: UTM files (merchant blueprints)
+- Parley: DLG files (dialog blueprints)
+
+---
+
 ## [0.9.47] - 2026-01-24
 **Branch**: `radoub/issue-1096` | **PR**: #1101
 
