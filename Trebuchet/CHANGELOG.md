@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.0-alpha] - 2026-01-25
+**Branch**: `trebuchet/issue-1092` | **PR**: #1107
+
+### Feature: IFO Field Version Validation for Backward Compatibility (#1092)
+
+- Version-aware field writing: Check `Mod_MinGameVer` before writing version-specific fields
+- Validation on save: Warn user if NWN:EE features target older version
+- Field documentation: Document which fields require which minimum version
+
+---
+
 ## [1.4.0-alpha] - 2026-01-24
 **Branch**: `trebuchet/issue-1095` | **PR**: #1102
 
