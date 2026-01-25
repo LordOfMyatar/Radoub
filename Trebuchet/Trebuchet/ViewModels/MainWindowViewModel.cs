@@ -70,9 +70,9 @@ public partial class MainWindowViewModel : ObservableObject
     public bool CanLoadModule => CanTestModule;
 
     /// <summary>
-    /// Can build when an unpacked working directory exists for the current module.
+    /// Can build when a module is selected.
     /// </summary>
-    public bool CanBuildModule => IsModuleValid && HasUnpackedWorkingDirectory();
+    public bool CanBuildModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
 
     [ObservableProperty]
     private bool _isBuilding;
