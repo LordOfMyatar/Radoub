@@ -24,6 +24,11 @@
                            Foreground="{DynamicResource ThemeAccentForeground}"
                            VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Unpack"
+                            Command="{Binding UnpackCommand}"
+                            IsVisible="{Binding CanUnpack}"
+                            ToolTip.Tip="Extract module contents to a folder for editing"
+                            Padding="16,6"/>
                     <Button Content="Save"
                             Command="{Binding SaveCommand}"
                             IsEnabled="{Binding HasUnsavedChanges}"

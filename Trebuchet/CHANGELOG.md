@@ -16,8 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: IFO GUI & Module Management (#1095)
 
 - [ ] #1093 - Expose DefaultBic and new IFO fields in GUI
-- [ ] #1080 - Unpack module files (.mod) for editing
+- [x] #1080 - Unpack module files (.mod) for editing
 - [ ] #1081 - Build/pack module from working directory
+
+#### Unpack Module (#1080)
+- Add "Unpack" button in Module Editor header (visible for packed modules)
+- Extract all resources from .mod file to `<modulename>/` directory
+- Auto-reload in editable mode after unpacking
+- Uses memory-efficient streaming (doesn't load entire MOD into RAM)
 
 ---
 

@@ -43,13 +43,22 @@ public partial class ModuleEditorViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
+    [NotifyPropertyChangedFor(nameof(CanUnpack))]
+    [NotifyCanExecuteChangedFor(nameof(UnpackCommand))]
     private bool _isModuleLoaded;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
+    [NotifyPropertyChangedFor(nameof(CanUnpack))]
+    [NotifyCanExecuteChangedFor(nameof(UnpackCommand))]
     private bool _isModuleReadOnly;
 
     public bool CanSave => IsModuleLoaded && !IsModuleReadOnly && HasUnsavedChanges;
+
+    /// <summary>
+    /// Can unpack when loaded from .mod file (read-only state indicates packed module).
+    /// </summary>
+    public bool CanUnpack => IsModuleLoaded && IsModuleReadOnly && !string.IsNullOrEmpty(_modFilePath);
 
     // Module Metadata
 
@@ -565,6 +574,91 @@ public partial class ModuleEditorViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    // Unpack Command
+
+    [RelayCommand(CanExecute = nameof(CanUnpack))]
+    private async Task UnpackAsync()
+    {
+        if (string.IsNullOrEmpty(_modFilePath))
+        {
+            StatusText = "No MOD file to unpack";
+            return;
+        }
+
+        // Default unpack directory: same folder as .mod, with module name
+        var moduleName = Path.GetFileNameWithoutExtension(_modFilePath);
+        var moduleDir = Path.GetDirectoryName(_modFilePath);
+        var targetDir = Path.Combine(moduleDir!, moduleName);
+
+        // Check if directory already exists
+        if (Directory.Exists(targetDir))
+        {
+            // For now, we'll skip if exists - future: could prompt user
+            StatusText = $"Directory already exists: {moduleName}/";
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Unpack target already exists: {UnifiedLogger.SanitizePath(targetDir)}");
+
+            // Reload from unpacked directory to switch to editable mode
+            await LoadModuleAsync(_modFilePath);
+            return;
+        }
+
+        IsLoading = true;
+        StatusText = "Unpacking module...";
+
+        try
+        {
+            var resourceCount = await Task.Run(() => UnpackModuleToDirectory(_modFilePath, targetDir));
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Unpacked {resourceCount} resources to {UnifiedLogger.SanitizePath(targetDir)}");
+
+            // Reload module from unpacked directory (now editable)
+            StatusText = $"Unpacked {resourceCount} files. Reloading...";
+            await LoadModuleAsync(_modFilePath);
+
+            StatusText = $"Unpacked to {moduleName}/ - Now editable";
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Unpack failed: {ex.Message}");
+            StatusText = $"Unpack failed: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Extract all resources from a MOD file to a directory.
+    /// </summary>
+    private static int UnpackModuleToDirectory(string modFilePath, string targetDir)
+    {
+        // Create target directory
+        Directory.CreateDirectory(targetDir);
+
+        // Read ERF metadata (doesn't load resource data into memory)
+        var erf = ErfReader.ReadMetadataOnly(modFilePath);
+
+        var count = 0;
+        foreach (var resource in erf.Resources)
+        {
+            // Get file extension for this resource type
+            var extension = ResourceTypes.GetExtension(resource.ResourceType);
+            var fileName = $"{resource.ResRef}{extension}";
+            var filePath = Path.Combine(targetDir, fileName);
+
+            // Extract resource data from MOD file
+            var data = ErfReader.ExtractResource(modFilePath, resource);
+
+            // Write to file
+            File.WriteAllBytes(filePath, data);
+            count++;
+        }
+
+        return count;
     }
 
     // HAK List Commands
