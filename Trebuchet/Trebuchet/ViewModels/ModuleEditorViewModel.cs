@@ -774,9 +774,9 @@ public partial class ModuleEditorViewModel : ObservableObject
         var message = $"This module contains NWN:EE-specific data:\n\n{fieldList}\n\n" +
             $"Minimum required version: {requiredVersion}\n\n" +
             "If you set the minimum version lower than required:\n" +
-            "- The module may fail to load on older game versions\n" +
-            "- EE-only scripts will not fire\n" +
-            "- Features like DefaultBic may be ignored\n\n" +
+            "- The game will still load the module (unknown fields are ignored)\n" +
+            "- EE-only scripts will not fire on older versions\n" +
+            "- Opening in the 1.69 Aurora Toolset and saving will permanently remove these fields\n\n" +
             "Do you want to unlock the version field?";
 
         if (_parentWindow == null) return;
