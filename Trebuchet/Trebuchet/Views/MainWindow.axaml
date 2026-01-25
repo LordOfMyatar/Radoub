@@ -53,6 +53,11 @@
                                 IsEnabled="{Binding CanEditModule}"
                                 Padding="8,4"
                                 ToolTip.Tip="Edit module settings (IFO)"/>
+                        <Button Content="Build"
+                                Command="{Binding BuildModuleCommand}"
+                                IsEnabled="{Binding CanBuildModule}"
+                                Padding="8,4"
+                                ToolTip.Tip="Pack working directory into .mod file"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -82,6 +87,20 @@
                     <TextBlock Text="{Binding TlkStatusText}"
                                Opacity="0.7"
                                VerticalAlignment="Center"/>
+                    <!-- Build Status -->
+                    <TextBlock Text="|" Opacity="0.3" VerticalAlignment="Center"
+                               IsVisible="{Binding BuildStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                IsVisible="{Binding BuildStatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <ProgressBar IsIndeterminate="True"
+                                     Width="80"
+                                     Height="6"
+                                     IsVisible="{Binding IsBuilding}"
+                                     VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding BuildStatusText}"
+                                   Opacity="0.7"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Update Status -->
