@@ -17,7 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [ ] #1093 - Expose DefaultBic and new IFO fields in GUI
 - [x] #1080 - Unpack module files (.mod) for editing
-- [ ] #1081 - Build/pack module from working directory
+- [x] #1081 - Build/pack module from working directory
+
+#### Build/Pack Module (#1081)
+- Add "Build" button to main window header (visible when unpacked working directory exists)
+- Pack working directory into .mod file with automatic timestamped backup
+- Build status shown in status bar with progress indicator
+- Uses ErfWriter to create proper MOD archives with null-padded ResRefs
+
+#### Bug Fix: ERF writer null-padding
+- Fixed ErfWriter using space-padding instead of null-padding for ResRefs
+- This was causing module.ifo to not be found after rebuild
+- ErfReader now also trims trailing spaces for backward compatibility
 
 #### Unpack Module (#1080)
 - Add "Unpack" button in Module Editor header (visible for packed modules)
