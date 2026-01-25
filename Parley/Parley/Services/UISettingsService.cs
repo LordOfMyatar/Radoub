@@ -32,6 +32,9 @@ namespace DialogEditor.Services
         // Flowchart node display settings (#813)
         private int _flowchartNodeMaxLines = 3; // 1-6 lines, default 3
 
+        // TreeView display settings (#903)
+        private bool _treeViewWordWrap = false; // Default: OFF (traditional single-line display)
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
@@ -55,7 +58,8 @@ namespace DialogEditor.Services
             string? currentThemeId,
             string flowchartLayout,
             bool allowScrollbarAutoHide,
-            int flowchartNodeMaxLines = 3)
+            int flowchartNodeMaxLines = 3,
+            bool treeViewWordWrap = false)
         {
             _fontSize = Math.Max(8, Math.Min(24, fontSize));
             _fontFamily = fontFamily ?? "";
@@ -76,6 +80,7 @@ namespace DialogEditor.Services
             _flowchartLayout = flowchartLayout ?? "Floating";
             _allowScrollbarAutoHide = allowScrollbarAutoHide;
             _flowchartNodeMaxLines = Math.Max(1, Math.Min(6, flowchartNodeMaxLines));
+            _treeViewWordWrap = treeViewWordWrap;
         }
 
         public double FontSize
@@ -179,6 +184,24 @@ namespace DialogEditor.Services
                 {
                     SettingsChanged?.Invoke();
                     UnifiedLogger.LogUI(LogLevel.INFO, $"Flowchart node max lines set to {clampedValue}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Enable word wrap in TreeView dialog text (#903).
+        /// When enabled, long dialog lines wrap within a constrained width.
+        /// Default: OFF (traditional single-line display).
+        /// </summary>
+        public bool TreeViewWordWrap
+        {
+            get => _treeViewWordWrap;
+            set
+            {
+                if (SetProperty(ref _treeViewWordWrap, value))
+                {
+                    SettingsChanged?.Invoke();
+                    UnifiedLogger.LogUI(LogLevel.INFO, $"TreeView word wrap set to {value}");
                 }
             }
         }

@@ -737,6 +737,16 @@ namespace DialogEditor.Services
             set => UISettingsService.Instance.FlowchartNodeMaxLines = value;
         }
 
+        /// <summary>
+        /// Enable word wrap in TreeView dialog text (#903).
+        /// When enabled, long dialog lines wrap within a constrained width.
+        /// </summary>
+        public bool TreeViewWordWrap
+        {
+            get => UISettingsService.Instance.TreeViewWordWrap;
+            set => UISettingsService.Instance.TreeViewWordWrap = value;
+        }
+
         // NPC Speaker Visual Preferences (Issue #16, #36, #179)
         // Now delegates to SpeakerPreferencesService for storage in separate file
         public Dictionary<string, SpeakerPreferences> NpcSpeakerPreferences
@@ -952,7 +962,8 @@ namespace DialogEditor.Services
                             settings.CurrentThemeId,
                             settings.FlowchartLayout ?? "Floating",
                             settings.AllowScrollbarAutoHide,
-                            settings.FlowchartNodeMaxLines);
+                            settings.FlowchartNodeMaxLines,
+                            settings.TreeViewWordWrap);
 
                         // Issue #179: Migrate speaker preferences to separate file
                         // Store temporarily for migration, then clear from main settings
@@ -1071,6 +1082,7 @@ namespace DialogEditor.Services
                     FlowchartVisible = FlowchartVisible,
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
                     FlowchartNodeMaxLines = FlowchartNodeMaxLines, // Issue #813
+                    TreeViewWordWrap = TreeViewWordWrap, // Issue #903
                     // Issue #179: NpcSpeakerPreferences moved to SpeakerPreferences.json
                     // Keep NpcSpeakerPreferences = null to avoid saving back to main settings
                     EnableNpcTagColoring = EnableNpcTagColoring, // Issue #16, #36
@@ -1175,6 +1187,7 @@ namespace DialogEditor.Services
             public bool FlowchartVisible { get; set; } = false;
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
             public int FlowchartNodeMaxLines { get; set; } = 3; // Issue #813: 1-6 lines, default 3
+            public bool TreeViewWordWrap { get; set; } = false; // Issue #903: Default OFF
             public Dictionary<string, SpeakerPreferences>? NpcSpeakerPreferences { get; set; } // Issue #16, #36
             public bool EnableNpcTagColoring { get; set; } = true; // Issue #16, #36: Default ON
             public bool ShowDeleteConfirmation { get; set; } = true; // Issue #14: Default ON
