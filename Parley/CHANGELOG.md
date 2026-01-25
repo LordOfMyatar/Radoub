@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.126-alpha] - 2026-01-24
+**Branch**: `parley/issue-1098` | **PR**: #TBD
+
+### Sprint: Bug Fixes & Polish
+
+- [ ] #905 - Flowchart font doesn't follow theme settings
+- [ ] #810 - Speaker row controls overflow on screens < 1000px
+- [ ] #903 - TreeView text needs word wrap option
+
+---
+
 ## [0.1.125-alpha] - 2026-01-24
 **Branch**: `parley/sprint/cleanup-polish` | **PR**: #1087
 
