@@ -8,6 +8,8 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Radoub.Formats.Common;
+using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Utils;
@@ -66,6 +68,17 @@ public partial class MainWindowViewModel : ObservableObject
     public bool CanEditModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
     public bool CanTestModule => IsGameAvailable && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
     public bool CanLoadModule => CanTestModule;
+
+    /// <summary>
+    /// Can build when a module is selected.
+    /// </summary>
+    public bool CanBuildModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
+
+    [ObservableProperty]
+    private bool _isBuilding;
+
+    [ObservableProperty]
+    private string _buildStatusText = "";
 
     public MainWindowViewModel()
     {
@@ -178,6 +191,8 @@ public partial class MainWindowViewModel : ObservableObject
             OnPropertyChanged(nameof(CanEditModule));
             OnPropertyChanged(nameof(CanTestModule));
             OnPropertyChanged(nameof(CanLoadModule));
+            OnPropertyChanged(nameof(CanBuildModule));
+            BuildModuleCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -394,5 +409,196 @@ public partial class MainWindowViewModel : ObservableObject
 
         UnifiedLogger.LogApplication(LogLevel.INFO, $"Launching NWN:EE with +LoadNewModule \"{moduleName}\"");
         _gameLauncher.LaunchWithModule(moduleName, testMode: false);
+    }
+
+    /// <summary>
+    /// Check if an unpacked working directory exists for the current module.
+    /// </summary>
+    private bool HasUnpackedWorkingDirectory()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (string.IsNullOrEmpty(modulePath))
+            return false;
+
+        // If it's a .mod file, check for unpacked directory
+        if (modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase) && File.Exists(modulePath))
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDir = Path.GetDirectoryName(modulePath);
+            if (string.IsNullOrEmpty(moduleDir))
+                return false;
+
+            var workingDir = Path.Combine(moduleDir, moduleName);
+            return Directory.Exists(workingDir) && File.Exists(Path.Combine(workingDir, "module.ifo"));
+        }
+
+        // If it's already a directory path, check if module.ifo exists
+        if (Directory.Exists(modulePath))
+        {
+            return File.Exists(Path.Combine(modulePath, "module.ifo"));
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Get the working directory path for the current module.
+    /// </summary>
+    private string? GetWorkingDirectoryPath()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (string.IsNullOrEmpty(modulePath))
+            return null;
+
+        if (modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase) && File.Exists(modulePath))
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDir = Path.GetDirectoryName(modulePath);
+            if (string.IsNullOrEmpty(moduleDir))
+                return null;
+
+            var workingDir = Path.Combine(moduleDir, moduleName);
+            if (Directory.Exists(workingDir))
+                return workingDir;
+        }
+        else if (Directory.Exists(modulePath))
+        {
+            return modulePath;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Get the .mod file path for the current module.
+    /// </summary>
+    private string? GetModFilePath()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (string.IsNullOrEmpty(modulePath))
+            return null;
+
+        if (modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            return modulePath;
+
+        // If it's a directory, look for .mod file in parent
+        if (Directory.Exists(modulePath))
+        {
+            var dirName = Path.GetFileName(modulePath);
+            var parentDir = Path.GetDirectoryName(modulePath);
+            if (!string.IsNullOrEmpty(parentDir))
+            {
+                var modPath = Path.Combine(parentDir, dirName + ".mod");
+                if (File.Exists(modPath))
+                    return modPath;
+            }
+        }
+
+        return null;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanBuildModule))]
+    private async Task BuildModuleAsync()
+    {
+        var workingDir = GetWorkingDirectoryPath();
+        var modFilePath = GetModFilePath();
+
+        if (string.IsNullOrEmpty(workingDir) || string.IsNullOrEmpty(modFilePath))
+        {
+            BuildStatusText = "Cannot build: no working directory found";
+            UnifiedLogger.LogApplication(LogLevel.WARN, "Build failed: no working directory");
+            return;
+        }
+
+        IsBuilding = true;
+        BuildStatusText = "Building module...";
+
+        try
+        {
+            var (resourceCount, backupPath) = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
+
+            if (!string.IsNullOrEmpty(backupPath))
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Created backup: {UnifiedLogger.SanitizePath(backupPath)}");
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Built {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
+
+            BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Build failed: {ex.Message}");
+            BuildStatusText = $"Build failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBuilding = false;
+        }
+    }
+
+    /// <summary>
+    /// Pack a working directory into a .mod file.
+    /// </summary>
+    private static (int resourceCount, string? backupPath) PackDirectoryToMod(string workingDir, string modFilePath)
+    {
+        string? backupPath = null;
+
+        // Create backup of existing .mod file
+        if (File.Exists(modFilePath))
+        {
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var directory = Path.GetDirectoryName(modFilePath) ?? ".";
+            var fileName = Path.GetFileNameWithoutExtension(modFilePath);
+            backupPath = Path.Combine(directory, $"{fileName}_backup_{timestamp}.mod");
+            File.Copy(modFilePath, backupPath, overwrite: false);
+        }
+
+        // Collect all files from working directory
+        var files = Directory.GetFiles(workingDir);
+        var resourceData = new Dictionary<(string ResRef, ushort Type), byte[]>();
+        var resources = new List<ErfResourceEntry>();
+
+        foreach (var filePath in files)
+        {
+            var fileName = Path.GetFileName(filePath);
+            var extension = Path.GetExtension(filePath);
+            var resRef = Path.GetFileNameWithoutExtension(filePath);
+
+            // Get resource type from extension
+            var resourceType = ResourceTypes.FromExtension(extension);
+            if (resourceType == ResourceTypes.Invalid)
+            {
+                // Skip unknown file types
+                continue;
+            }
+
+            var data = File.ReadAllBytes(filePath);
+            var key = (resRef.ToLowerInvariant(), resourceType);
+
+            resourceData[key] = data;
+            resources.Add(new ErfResourceEntry
+            {
+                ResRef = resRef,
+                ResourceType = resourceType,
+                ResId = (uint)resources.Count
+            });
+        }
+
+        // Create ERF structure
+        var erf = new ErfFile
+        {
+            FileType = "MOD ",
+            FileVersion = "V1.0",
+            BuildYear = (uint)(DateTime.Now.Year - 1900),
+            BuildDay = (uint)DateTime.Now.DayOfYear
+        };
+        erf.Resources.AddRange(resources);
+
+        // Write to .mod file
+        ErfWriter.Write(erf, modFilePath, resourceData);
+
+        return (resources.Count, backupPath);
     }
 }

@@ -137,10 +137,10 @@ public static class ErfReader
             if (resOffset + ResourceEntrySize > resourceListBuffer.Length)
                 break;
 
-            // Read key entry
+            // Read key entry - trim nulls and spaces (some tools use space-padding)
             var rawResRef = Encoding.ASCII.GetString(keyListBuffer, keyOffset, 16);
             var nullIndex = rawResRef.IndexOf('\0');
-            var resRef = nullIndex >= 0 ? rawResRef.Substring(0, nullIndex) : rawResRef;
+            var resRef = nullIndex >= 0 ? rawResRef.Substring(0, nullIndex) : rawResRef.TrimEnd();
             var resId = BitConverter.ToUInt32(keyListBuffer, keyOffset + 16);
             var resourceType = BitConverter.ToUInt16(keyListBuffer, keyOffset + 20);
 
@@ -278,10 +278,10 @@ public static class ErfReader
             if (resOffset + ResourceEntrySize > buffer.Length)
                 throw new InvalidDataException($"Resource entry {i} extends beyond file boundary");
 
-            // Read key entry - trim nulls and any garbage after first null
+            // Read key entry - trim nulls and spaces (some tools use space-padding)
             var rawResRef = Encoding.ASCII.GetString(buffer, keyOffset, 16);
             var nullIndex = rawResRef.IndexOf('\0');
-            var resRef = nullIndex >= 0 ? rawResRef.Substring(0, nullIndex) : rawResRef;
+            var resRef = nullIndex >= 0 ? rawResRef.Substring(0, nullIndex) : rawResRef.TrimEnd();
             var resId = BitConverter.ToUInt32(buffer, keyOffset + 16);
             var resourceType = BitConverter.ToUInt16(buffer, keyOffset + 20);
             // Bytes 22-23: Unused (2 bytes)

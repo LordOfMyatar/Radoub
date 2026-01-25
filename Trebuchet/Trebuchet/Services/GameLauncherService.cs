@@ -97,14 +97,20 @@ public class GameLauncherService
     /// <summary>
     /// Extract the module name from a full module path.
     /// </summary>
-    /// <param name="modulePath">Full path to module directory</param>
-    /// <returns>Module name (folder name only)</returns>
+    /// <param name="modulePath">Full path to module directory or .mod file</param>
+    /// <returns>Module name (without .mod extension)</returns>
     public static string? GetModuleNameFromPath(string? modulePath)
     {
         if (string.IsNullOrEmpty(modulePath))
             return null;
 
-        // Get the folder name from the path
+        // Handle .mod file paths
+        if (modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+        {
+            return Path.GetFileNameWithoutExtension(modulePath);
+        }
+
+        // Handle directory paths
         var dirInfo = new DirectoryInfo(modulePath);
         return dirInfo.Name;
     }

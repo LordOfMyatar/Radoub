@@ -24,6 +24,11 @@
                            Foreground="{DynamicResource ThemeAccentForeground}"
                            VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Unpack"
+                            Command="{Binding UnpackCommand}"
+                            IsVisible="{Binding CanUnpack}"
+                            ToolTip.Tip="Extract module contents to a folder for editing"
+                            Padding="16,6"/>
                     <Button Content="Save"
                             Command="{Binding SaveCommand}"
                             IsEnabled="{Binding HasUnsavedChanges}"
@@ -120,6 +125,32 @@
                                            Maximum="200"
                                            MinWidth="120"
                                            HorizontalAlignment="Left"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Default Character (BIC)" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                            <TextBox Text="{Binding DefaultBic}"
+                                     Watermark="ResRef without extension"
+                                     Width="300"
+                                     HorizontalAlignment="Left"/>
+                            <TextBlock Text="Pre-generated character for new players. The .bic file must be inside the module (not localvault). Enter just the ResRef, e.g. 'mychar' not 'mychar.bic'."
+                                       FontSize="11"
+                                       Opacity="0.7"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Startup Movie" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                            <TextBox Text="{Binding StartMovie}"
+                                     Watermark="Movie file name"
+                                     Width="300"
+                                     HorizontalAlignment="Left"/>
+                            <TextBlock Text="Bink video to play when module loads"
+                                       FontSize="11"
+                                       Opacity="0.7"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,0"/>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -361,6 +392,55 @@
                             <TextBox Text="{Binding OnCutsceneAbort}" Watermark="Script ResRef"/>
                         </StackPanel>
                     </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- NWN:EE Scripts Tab -->
+            <TabItem Header="NWN:EE Scripts">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="8">
+                        <TextBlock Text="These scripts require NWN:EE (1.69+)"
+                                   FontStyle="Italic"
+                                   Opacity="0.7"/>
+
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
+                            <Grid.Styles>
+                                <Style Selector="StackPanel">
+                                    <Setter Property="Margin" Value="0,0,16,12"/>
+                                </Style>
+                            </Grid.Styles>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0">
+                                <TextBlock Text="On Module Start"/>
+                                <TextBox Text="{Binding OnModuleStart}" Watermark="Script ResRef"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="1">
+                                <TextBlock Text="On Player Chat"/>
+                                <TextBox Text="{Binding OnPlayerChat}" Watermark="Script ResRef"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="0">
+                                <TextBlock Text="On Player Target"/>
+                                <TextBox Text="{Binding OnPlayerTarget}" Watermark="Script ResRef"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1">
+                                <TextBlock Text="On Player GUI Event"/>
+                                <TextBox Text="{Binding OnPlayerGuiEvent}" Watermark="Script ResRef"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="0">
+                                <TextBlock Text="On Player Tile Action"/>
+                                <TextBox Text="{Binding OnPlayerTileAction}" Watermark="Script ResRef"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="1">
+                                <TextBlock Text="On NUI Event (1.80+)"/>
+                                <TextBox Text="{Binding OnNuiEvent}" Watermark="Script ResRef"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
                 </ScrollViewer>
             </TabItem>
 

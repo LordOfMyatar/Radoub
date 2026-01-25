@@ -10,6 +10,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.4.0-alpha] - 2026-01-24
+**Branch**: `trebuchet/issue-1095` | **PR**: #1102
+
+### Sprint: IFO GUI & Module Management (#1095)
+
+- [x] #1093 - Expose DefaultBic and new IFO fields in GUI
+- [x] #1080 - Unpack module files (.mod) for editing
+- [x] #1081 - Build/pack module from working directory
+
+#### IFO Fields in GUI (#1093)
+- Add DefaultBic field to Version tab (default character file for new players)
+- Add StartMovie field to Version tab (startup movie to play)
+- Add new "NWN:EE Scripts" tab with 6 extended event scripts:
+  - OnModuleStart, OnPlayerChat, OnPlayerTarget
+  - OnPlayerGuiEvent, OnPlayerTileAction, OnNuiEvent (1.80+)
+
+#### Build/Pack Module (#1081)
+- Add "Build" button to main window header (visible when unpacked working directory exists)
+- Pack working directory into .mod file with automatic timestamped backup
+- Build status shown in status bar with progress indicator
+- Uses ErfWriter to create proper MOD archives with null-padded ResRefs
+
+#### Bug Fix: ERF writer null-padding
+- Fixed ErfWriter using space-padding instead of null-padding for ResRefs
+- This was causing module.ifo to not be found after rebuild
+- ErfReader now also trims trailing spaces for backward compatibility
+
+#### Unpack Module (#1080)
+- Add "Unpack" button in Module Editor header (visible for packed modules)
+- Extract all resources from .mod file to `<modulename>/` directory
+- Auto-reload in editable mode after unpacking
+- Uses memory-efficient streaming (doesn't load entire MOD into RAM)
+
+---
+
 ## [1.3.1-alpha] - 2026-01-24
 **Branch**: `trebuchet/issue-1090` | **PR**: #1091
 
