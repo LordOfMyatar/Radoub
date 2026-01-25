@@ -130,10 +130,10 @@
                         <StackPanel>
                             <TextBlock Text="Default Character (BIC)" FontWeight="SemiBold" Margin="0,16,0,0"/>
                             <TextBox Text="{Binding DefaultBic}"
-                                     Watermark="BIC file name (without .bic)"
+                                     Watermark="ResRef without extension"
                                      Width="300"
                                      HorizontalAlignment="Left"/>
-                            <TextBlock Text="Default character for new players (pre-generated character file)"
+                            <TextBlock Text="Pre-generated character for new players. The .bic file must be inside the module (not localvault). Enter just the ResRef, e.g. 'mychar' not 'mychar.bic'."
                                        FontSize="11"
                                        Opacity="0.7"
                                        TextWrapping="Wrap"
