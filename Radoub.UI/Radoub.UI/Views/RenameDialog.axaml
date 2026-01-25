@@ -2,17 +2,19 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Radoub.UI.Views.RenameDialog"
         Title="Rename"
-        Width="450" Height="280"
+        MinWidth="450" MinHeight="380"
+        SizeToContent="WidthAndHeight"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
 
-    <Grid Margin="20">
+    <Grid Margin="20" MinWidth="410">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -35,7 +37,6 @@
         <TextBlock Grid.Row="2" x:Name="CharCountText"
                    Text="0 / 16 characters"
                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                   FontSize="12"
                    Margin="0,0,0,10"/>
 
         <!-- Validation Messages -->
@@ -50,24 +51,39 @@
                        Foreground="White"/>
         </Border>
 
-        <!-- Rules Info -->
+        <!-- Warning about references -->
         <Border Grid.Row="4"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="Orange"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="⚠ Important:" FontWeight="SemiBold" Foreground="Orange" Margin="0,0,0,5"/>
+                <TextBlock TextWrapping="Wrap"
+                           Text="This renames the file only. You must manually update any scripts or triggers that reference this resource in Aurora Toolset."/>
+            </StackPanel>
+        </Border>
+
+        <!-- Rules Info -->
+        <Border Grid.Row="5"
                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                 CornerRadius="4"
                 Padding="10"
-                VerticalAlignment="Top">
+                Margin="0,0,0,15">
             <StackPanel>
                 <TextBlock Text="Aurora Engine naming rules:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                <TextBlock Text="• Maximum 16 characters" FontSize="12"/>
-                <TextBlock Text="• Lowercase letters only" FontSize="12"/>
-                <TextBlock Text="• Letters, numbers, and underscores only" FontSize="12"/>
+                <TextBlock Text="• Maximum 16 characters"/>
+                <TextBlock Text="• Lowercase letters only"/>
+                <TextBlock Text="• Letters, numbers, and underscores only"/>
             </StackPanel>
         </Border>
 
         <!-- Buttons -->
-        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
-            <Button x:Name="RenameButton" Content="Rename" Width="90" Click="OnRenameClick" IsEnabled="False"/>
-            <Button Content="Cancel" Width="90" Click="OnCancelClick"/>
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button x:Name="RenameButton" Content="Rename" MinWidth="90" Click="OnRenameClick" IsEnabled="False"/>
+            <Button Content="Cancel" MinWidth="90" Click="OnCancelClick"/>
         </StackPanel>
     </Grid>
 </Window>
