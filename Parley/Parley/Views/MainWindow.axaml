@@ -25,6 +25,9 @@
     <Window.Resources>
         <!-- Converter for End flag: true = 0.5 opacity (faded), false = 1.0 opacity (normal) -->
         <models:BoolToOpacityConverter x:Key="BoolToOpacityConverter"/>
+        <!-- Converters for TreeView word wrap (#903) -->
+        <models:BoolToTextWrappingConverter x:Key="BoolToTextWrappingConverter"/>
+        <models:BoolToMaxWidthConverter x:Key="BoolToMaxWidthConverter"/>
     </Window.Resources>
 
     <Grid x:Name="MainGrid">
@@ -194,7 +197,14 @@
                                 <Button Name="CollapseAllButton" Content="▶ Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
                                 <Separator Width="1" Margin="5,0"/>
                                 <Button Name="AddNodeButton" Content="+ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
-                                <Button Name="DeleteNodeButton" Content="✖ Delete" Click="OnDeleteNodeClick" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
+                                <Button Name="DeleteNodeButton" Content="✖ Delete" Click="OnDeleteNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
+                                <Separator Width="1" Margin="5,0"/>
+                                <CheckBox x:Name="WordWrapCheckBox" Content="Word Wrap"
+                                          IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=TreeViewWordWrap, Mode=TwoWay}"
+                                          VerticalAlignment="Center"
+                                          Checked="OnWordWrapChanged"
+                                          Unchecked="OnWordWrapChanged"
+                                          ToolTip.Tip="Wrap long dialog text in tree view (#903)"/>
                             </StackPanel>
 
                             <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
@@ -270,8 +280,10 @@
                                                        VerticalAlignment="Center"/>
                                             <!-- Issue #901: Child links show with reduced opacity to distinguish from primary nodes -->
                                             <!-- Issue #999: Explicit foreground for dark theme visibility -->
+                                            <!-- Issue #903: Word wrap controlled by setting -->
                                             <TextBlock Text="{Binding DialogText}"
-                                                       TextWrapping="Wrap"
+                                                       TextWrapping="{Binding Source={x:Static services:SettingsService.Instance}, Path=TreeViewWordWrap, Converter={StaticResource BoolToTextWrappingConverter}}"
+                                                       MaxWidth="{Binding Source={x:Static services:SettingsService.Instance}, Path=TreeViewWordWrap, Converter={StaticResource BoolToMaxWidthConverter}}"
                                                        VerticalAlignment="Center"
                                                        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
                                                        Opacity="{Binding TextOpacity}"/>

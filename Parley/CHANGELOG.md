@@ -10,6 +10,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.126-alpha] - 2026-01-24
+**Branch**: `parley/issue-1098` | **PR**: #1104
+
+### Sprint: Bug Fixes & Polish
+
+- [x] #903 - TreeView text needs word wrap option
+  - Added Word Wrap checkbox to Dialog Tree toolbar
+  - Toggling immediately refreshes tree with new wrapping behavior
+  - Setting persists across sessions
+
+- [x] #905 - Flowchart font follows theme settings
+  - Node text and labels now use GlobalFontSize
+  - Placeholder and status bar also follow theme
+
+- [x] #810 - Speaker row controls overflow (verified already fixed)
+  - WrapPanel implemented in PR #822 (2026-01-10)
+  - Controls wrap to new row on narrow screens
+
+---
+
 ## [0.1.125-alpha] - 2026-01-24
 **Branch**: `parley/sprint/cleanup-polish` | **PR**: #1087
 

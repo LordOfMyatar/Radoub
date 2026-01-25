@@ -150,14 +150,16 @@
                                     </MultiBinding>
                                 </Border.BorderThickness>
                                 <StackPanel Spacing="2">
-                                    <!-- Speaker label -->
+                                    <!-- Speaker label - slightly smaller than global font (#905) -->
                                     <TextBlock Text="{Binding Speaker}"
-                                               FontSize="10"
+                                               FontSize="{DynamicResource GlobalFontSize}"
                                                FontWeight="Bold"
+                                               Opacity="0.7"
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                     <!-- Node text - uses MaxLines for truncation with ellipsis (#813) -->
+                                    <!-- Issue #905: Font size follows theme settings -->
                                     <TextBlock Text="{Binding DisplayText}"
-                                               FontSize="11"
+                                               FontSize="{DynamicResource GlobalFontSize}"
                                                TextWrapping="Wrap"
                                                TextTrimming="CharacterEllipsis"
                                                MaxLines="{Binding DataContext.NodeMaxLines, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -204,12 +206,13 @@
                 <StackPanel VerticalAlignment="Center"
                             HorizontalAlignment="Center"
                             Spacing="10">
+                    <!-- Issue #905: Font sizes follow theme settings -->
                     <TextBlock Text="Flowchart View"
-                               FontSize="18"
+                               FontSize="{DynamicResource GlobalFontSize}"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
                     <TextBlock Text="Open a dialog file to view the flowchart"
-                               FontSize="14"
+                               FontSize="{DynamicResource GlobalFontSize}"
                                HorizontalAlignment="Center"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                 </StackPanel>
@@ -221,7 +224,7 @@
                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
                 Padding="8,4">
             <TextBlock Text="{Binding StatusText}"
-                       FontSize="11"
+                       FontSize="{DynamicResource GlobalFontSize}"
                        VerticalAlignment="Center"/>
         </Border>
     </Grid>

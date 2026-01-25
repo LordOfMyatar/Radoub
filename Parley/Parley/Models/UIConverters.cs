@@ -46,4 +46,30 @@ namespace DialogEditor.Models
             throw new NotImplementedException();
         }
     }
+
+    /// <summary>
+    /// Converts boolean to MaxWidth value for word wrap support (#903).
+    /// true = constrained width (parameter or default 400), false = double.PositiveInfinity (no limit)
+    /// </summary>
+    public class BoolToMaxWidthConverter : IValueConverter
+    {
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            if (value is bool boolValue && boolValue)
+            {
+                // Parse parameter for custom width, default to 400
+                if (parameter is string paramStr && double.TryParse(paramStr, out double width))
+                {
+                    return width;
+                }
+                return 400.0;
+            }
+            return double.PositiveInfinity;
+        }
+
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
