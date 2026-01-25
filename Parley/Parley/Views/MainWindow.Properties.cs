@@ -124,7 +124,7 @@ namespace DialogEditor.Views
             _services.PropertyPopulator.ClearAllFields();
 
             // Populate Conversation Settings (dialog-level properties) - always populate these
-            _services.PropertyPopulator.PopulateConversationSettings(_viewModel.CurrentDialog);
+            _services.PropertyPopulator.PopulateConversationSettings(_viewModel.CurrentDialog, _viewModel.CurrentFilePath);
 
             // Issue #19: If ROOT node selected, keep only conversation settings enabled
             // All node-specific properties should remain disabled

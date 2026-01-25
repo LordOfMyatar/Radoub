@@ -1,0 +1,73 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.RenameDialog"
+        Title="Rename"
+        Width="450" Height="280"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Current Name -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="Current name:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="CurrentNameBox" IsReadOnly="True" FontFamily="Consolas, Courier New, monospace"/>
+        </StackPanel>
+
+        <!-- New Name -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="New name:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="NewNameBox" FontFamily="Consolas, Courier New, monospace"
+                     TextChanged="OnNewNameChanged"
+                     KeyDown="OnNewNameKeyDown"
+                     Watermark="Enter new name (max 16 characters)"/>
+        </StackPanel>
+
+        <!-- Character Count -->
+        <TextBlock Grid.Row="2" x:Name="CharCountText"
+                   Text="0 / 16 characters"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   FontSize="12"
+                   Margin="0,0,0,10"/>
+
+        <!-- Validation Messages -->
+        <Border Grid.Row="3" x:Name="ValidationBorder"
+                Background="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,10"
+                IsVisible="False">
+            <TextBlock x:Name="ValidationText"
+                       TextWrapping="Wrap"
+                       Foreground="White"/>
+        </Border>
+
+        <!-- Rules Info -->
+        <Border Grid.Row="4"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                CornerRadius="4"
+                Padding="10"
+                VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="Aurora Engine naming rules:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBlock Text="• Maximum 16 characters" FontSize="12"/>
+                <TextBlock Text="• Lowercase letters only" FontSize="12"/>
+                <TextBlock Text="• Letters, numbers, and underscores only" FontSize="12"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button x:Name="RenameButton" Content="Rename" Width="90" Click="OnRenameClick" IsEnabled="False"/>
+            <Button Content="Cancel" Width="90" Click="OnCancelClick"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -21,6 +21,7 @@ public partial class AdvancedPanel : BasePanelControl
     private TextBox? _commentTextBox;
     private Button? _copyResRefButton;
     private Button? _copyTagButton;
+    private Button? _renameResRefButton;
     private Grid? _resRefRow;
     private Grid? _commentRow;
     private Grid? _paletteCategoryRow;
@@ -63,6 +64,7 @@ public partial class AdvancedPanel : BasePanelControl
     public event EventHandler? BehaviorChanged;
     public event EventHandler? PaletteCategoryChanged;
     public event EventHandler? VariablesChanged;
+    public event EventHandler? RenameRequested;
 
     public AdvancedPanel()
     {
@@ -79,6 +81,7 @@ public partial class AdvancedPanel : BasePanelControl
         _commentTextBox = this.FindControl<TextBox>("CommentTextBox");
         _copyResRefButton = this.FindControl<Button>("CopyResRefButton");
         _copyTagButton = this.FindControl<Button>("CopyTagButton");
+        _renameResRefButton = this.FindControl<Button>("RenameResRefButton");
         _resRefRow = this.FindControl<Grid>("ResRefRow");
         _commentRow = this.FindControl<Grid>("CommentRow");
         _paletteCategoryRow = this.FindControl<Grid>("PaletteCategoryRow");
@@ -112,6 +115,8 @@ public partial class AdvancedPanel : BasePanelControl
             _copyResRefButton.Click += OnCopyResRefClick;
         if (_copyTagButton != null)
             _copyTagButton.Click += OnCopyTagClick;
+        if (_renameResRefButton != null)
+            _renameResRefButton.Click += OnRenameResRefClick;
         if (_tagTextBox != null)
             _tagTextBox.TextChanged += OnTagTextChanged;
         if (_commentTextBox != null)
@@ -478,6 +483,20 @@ public partial class AdvancedPanel : BasePanelControl
             if (clipboard != null)
                 await clipboard.SetTextAsync(text);
         }
+    }
+
+    private void OnRenameResRefClick(object? sender, RoutedEventArgs e)
+    {
+        RenameRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Updates the ResRef display after a successful rename.
+    /// </summary>
+    public void UpdateResRefDisplay(string newResRef)
+    {
+        if (_templateResRefTextBox != null)
+            _templateResRefTextBox.Text = newResRef;
     }
 
     private void OnTagTextChanged(object? sender, TextChangedEventArgs e)

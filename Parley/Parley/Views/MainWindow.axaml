@@ -545,6 +545,27 @@
                             <StackPanel x:Name="ConversationSettingsPanel">
                                 <TextBlock Text="Conversation Settings" FontWeight="Bold" Margin="0,0,0,5"/>
 
+                            <!-- Dialog Name / ResRef -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Dialog Name:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBox Grid.Column="1" x:Name="DialogNameTextBox"
+                                         FontFamily="Consolas, Courier New, monospace"
+                                         IsReadOnly="True"
+                                         ToolTip.Tip="Read-only. Click Rename to change."
+                                         AutomationProperties.AutomationId="DialogNameTextBox"/>
+                                <Button Grid.Column="2" x:Name="RenameDialogButton"
+                                        Content="Rename" Padding="8,2" Margin="5,0,0,0"
+                                        FontSize="{DynamicResource FontSizeSmall}"
+                                        Click="OnRenameDialogClick"
+                                        AutomationProperties.AutomationId="RenameDialogButton"
+                                        ToolTip.Tip="Rename dialog file"/>
+                            </Grid>
+
                             <CheckBox x:Name="PreventZoomCheckBox" Content="Prevent Camera Zoom (Cutscene Mode)"
                                       Margin="0,0,0,5" Checked="OnConversationSettingChanged" Unchecked="OnConversationSettingChanged"
                                       ToolTip.Tip="When checked, prevents camera zoom-in during conversation (useful for cutscenes)"/>

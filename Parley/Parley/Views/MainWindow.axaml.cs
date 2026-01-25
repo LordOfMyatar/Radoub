@@ -766,6 +766,81 @@ namespace DialogEditor.Views
             _selectedNode = null; // Clear local selection reference
         }
 
+        private async void OnRenameDialogClick(object? sender, RoutedEventArgs e)
+        {
+            await RenameCurrentDialogAsync();
+        }
+
+        /// <summary>
+        /// Renames the current dialog file using save-rename-reload workflow (#675).
+        /// </summary>
+        private async Task RenameCurrentDialogAsync()
+        {
+            var filePath = _viewModel.CurrentFilePath;
+            if (string.IsNullOrEmpty(filePath))
+            {
+                _viewModel.StatusMessage = "No file loaded to rename";
+                return;
+            }
+
+            var directory = System.IO.Path.GetDirectoryName(filePath) ?? "";
+            var currentName = System.IO.Path.GetFileNameWithoutExtension(filePath);
+            var extension = System.IO.Path.GetExtension(filePath);
+
+            // Show rename dialog
+            var newName = await Radoub.UI.Views.RenameDialog.ShowAsync(this, currentName, directory, extension);
+            if (string.IsNullOrEmpty(newName))
+            {
+                return; // User cancelled
+            }
+
+            // Check if file has unsaved changes
+            if (_viewModel.HasUnsavedChanges)
+            {
+                // Save before renaming
+                SaveCurrentNodeProperties();
+                var saved = await _viewModel.SaveDialogAsync(filePath);
+                if (!saved)
+                {
+                    _viewModel.StatusMessage = "Failed to save file before renaming";
+                    return;
+                }
+            }
+
+            var newFilePath = System.IO.Path.Combine(directory, newName + extension);
+
+            try
+            {
+                // Rename file on disk
+                System.IO.File.Move(filePath, newFilePath);
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Renamed file: {UnifiedLogger.SanitizePath(filePath)} -> {UnifiedLogger.SanitizePath(newFilePath)}");
+
+                // Update view model to point to new file
+                _viewModel.CurrentFileName = newFilePath;
+
+                // Save file to ensure internal state is consistent
+                await _viewModel.SaveDialogAsync(newFilePath);
+
+                // Update dialog name text box
+                var dialogNameTextBox = this.FindControl<TextBox>("DialogNameTextBox");
+                if (dialogNameTextBox != null)
+                {
+                    dialogNameTextBox.Text = newName;
+                }
+
+                // Update recent files
+                PopulateRecentFilesMenu();
+
+                _viewModel.StatusMessage = $"Renamed to: {newName}{extension}";
+            }
+            catch (System.IO.IOException ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename file: {ex.Message}");
+                _viewModel.StatusMessage = $"Failed to rename: {ex.Message}";
+            }
+        }
+
         private void OnExitClick(object? sender, RoutedEventArgs e)
             => _controllers.FileMenu.OnExitClick(sender, e);
 

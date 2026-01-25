@@ -109,7 +109,19 @@
                     <TextBox Grid.Row="0" Grid.Column="4" x:Name="StoreTagBox" AutomationProperties.AutomationId="StoreTagBox"/>
 
                     <TextBlock Grid.Row="0" Grid.Column="6" Text="ResRef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBox Grid.Row="0" Grid.Column="7" x:Name="StoreResRefBox" IsReadOnly="True" AutomationProperties.AutomationId="StoreResRefBox"/>
+                    <Grid Grid.Row="0" Grid.Column="7">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" x:Name="StoreResRefBox" IsReadOnly="True" AutomationProperties.AutomationId="StoreResRefBox"
+                                 ToolTip.Tip="Read-only. Click Rename to change."/>
+                        <Button Grid.Column="1" x:Name="RenameResRefButton" Content="Rename" Padding="8,2" Margin="5,0,0,0"
+                                FontSize="{DynamicResource FontSizeSmall}"
+                                Click="OnRenameResRefClick"
+                                AutomationProperties.AutomationId="RenameResRefButton"
+                                ToolTip.Tip="Rename file and update ResRef"/>
+                    </Grid>
 
                     <TextBlock Grid.Row="0" Grid.Column="9" Text="Category:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <ComboBox Grid.Row="0" Grid.Column="10" x:Name="StoreCategoryBox" MinWidth="150" AutomationProperties.AutomationId="StoreCategoryBox"/>

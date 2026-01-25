@@ -20,10 +20,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Cross-tool ResRef Rename Functionality (#675)
 
-Add ability to rename blueprint ResRef across all tools that edit resource files:
-- Quartermaster: UTC/BIC files (creature blueprints)
-- Fence: UTM files (merchant blueprints)
-- Parley: DLG files (dialog blueprints)
+Add ability to rename blueprint ResRef across all tools that edit resource files.
+
+**Shared Components (Radoub.UI)**:
+- `AuroraFilenameValidator` - validates Aurora Engine naming rules (16 chars max, lowercase, alphanumeric + underscore)
+- `RenameDialog` - shared modal dialog with live validation, character count, duplicate detection
+
+**Tool Implementations**:
+- **Quartermaster**: Rename button on Advanced tab next to Blueprint ResRef Copy button
+  - Updates TemplateResRef field and renames file on disk
+  - BIC files show message to use Save As instead (no ResRef field)
+- **Fence**: Rename button next to ResRef field in store properties
+  - Updates ResRef field and renames file on disk
+- **Parley**: Dialog Name field with Rename button in Node tab's Conversation Settings
+  - Displayed above "Prevent Camera Zoom" option for root node
+  - Renames .dlg file on disk
+
+**Workflow**: All tools use safe save-rename-reload pattern:
+1. Prompt to save if dirty
+2. Rename file on disk (File.Move)
+3. Update internal ResRef/name field
+4. Save to persist changes
+5. Update UI
 
 ---
 
