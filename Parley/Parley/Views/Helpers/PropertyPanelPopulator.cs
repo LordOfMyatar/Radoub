@@ -58,9 +58,18 @@ namespace Parley.Views.Helpers
         /// <summary>
         /// Populates conversation-level settings (always visible regardless of node selection).
         /// </summary>
-        public void PopulateConversationSettings(Dialog? dialog)
+        public void PopulateConversationSettings(Dialog? dialog, string? filePath = null)
         {
             if (dialog == null) return;
+
+            // Update dialog name from file path (#675)
+            var dialogNameTextBox = _window.FindControl<TextBox>("DialogNameTextBox");
+            if (dialogNameTextBox != null)
+            {
+                dialogNameTextBox.Text = string.IsNullOrEmpty(filePath)
+                    ? ""
+                    : Path.GetFileNameWithoutExtension(filePath);
+            }
 
             var preventZoomCheckBox = _window.FindControl<CheckBox>("PreventZoomCheckBox");
             if (preventZoomCheckBox != null)

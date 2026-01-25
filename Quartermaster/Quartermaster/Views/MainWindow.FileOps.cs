@@ -699,4 +699,93 @@ public partial class MainWindow
     }
 
     #endregion
+
+    #region Rename File
+
+    /// <summary>
+    /// Handles rename request from AdvancedPanel.
+    /// </summary>
+    private async void OnRenameRequested(object? sender, EventArgs e)
+    {
+        await RenameCurrentFileAsync();
+    }
+
+    /// <summary>
+    /// Renames the current file using a safe save-rename-reload workflow.
+    /// </summary>
+    private async Task RenameCurrentFileAsync()
+    {
+        if (_currentCreature == null || string.IsNullOrEmpty(_currentFilePath))
+        {
+            UpdateStatus("No file loaded to rename");
+            return;
+        }
+
+        // BIC files don't have ResRef, cannot be renamed this way
+        if (_isBicFile)
+        {
+            DialogHelper.ShowMessageDialog(this, "Cannot Rename",
+                "Player character (BIC) files cannot be renamed using this feature.\n\n" +
+                "Use File > Save As instead.");
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(_currentFilePath) ?? "";
+        var currentName = Path.GetFileNameWithoutExtension(_currentFilePath);
+        var extension = Path.GetExtension(_currentFilePath);
+
+        // Show rename dialog
+        var newName = await RenameDialog.ShowAsync(this, currentName, directory, extension);
+        if (string.IsNullOrEmpty(newName))
+        {
+            return; // User cancelled
+        }
+
+        // Check if file has unsaved changes
+        if (_isDirty)
+        {
+            var result = await DialogHelper.ShowConfirmationDialog(this, "Save Changes",
+                "The file has unsaved changes. Save before renaming?");
+
+            if (!result)
+            {
+                return; // User cancelled
+            }
+
+            // Save current file
+            await SaveFile();
+        }
+
+        var newFilePath = Path.Combine(directory, newName + extension);
+
+        try
+        {
+            // Rename file on disk
+            File.Move(_currentFilePath, newFilePath);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Renamed file: {UnifiedLogger.SanitizePath(_currentFilePath)} -> {UnifiedLogger.SanitizePath(newFilePath)}");
+
+            // Update internal ResRef to match new filename
+            _currentCreature.TemplateResRef = newName;
+
+            // Save file to persist the new ResRef
+            _currentFilePath = newFilePath;
+            await SaveFile();
+
+            // Update UI
+            AdvancedPanelContent.UpdateResRefDisplay(newName);
+            UpdateTitle();
+            UpdateRecentFilesMenu();
+
+            UpdateStatus($"Renamed to: {newName}{extension}");
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename file: {ex.Message}");
+            DialogHelper.ShowMessageDialog(this, "Rename Failed",
+                $"Could not rename file:\n\n{ex.Message}");
+        }
+    }
+
+    #endregion
 }

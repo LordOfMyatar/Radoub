@@ -1,0 +1,92 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Radoub.UI.Views.RenameDialog"
+        Title="Rename"
+        MinWidth="450" MinHeight="500"
+        MaxHeight="700"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid Margin="20" MinWidth="410">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Current Name -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="Current name:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="CurrentNameBox" IsReadOnly="True" FontFamily="Consolas, Courier New, monospace"/>
+        </StackPanel>
+
+        <!-- New Name -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="New name:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <TextBox x:Name="NewNameBox" FontFamily="Consolas, Courier New, monospace"
+                     TextChanged="OnNewNameChanged"
+                     KeyDown="OnNewNameKeyDown"
+                     Watermark="Enter new name (max 16 characters)"/>
+        </StackPanel>
+
+        <!-- Character Count -->
+        <TextBlock Grid.Row="2" x:Name="CharCountText"
+                   Text="0 / 16 characters"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   Margin="0,0,0,10"/>
+
+        <!-- Validation Messages -->
+        <Border Grid.Row="3" x:Name="ValidationBorder"
+                Background="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,10"
+                IsVisible="False">
+            <TextBlock x:Name="ValidationText"
+                       TextWrapping="Wrap"
+                       Foreground="White"/>
+        </Border>
+
+        <!-- Warning about references -->
+        <Border Grid.Row="4"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderBrush="{DynamicResource ThemeWarning}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="⚠ Important:" FontWeight="SemiBold" Foreground="{DynamicResource ThemeWarning}" Margin="0,0,0,5"/>
+                <TextBlock TextWrapping="Wrap"
+                           Text="This renames the file only. You must manually update any scripts or triggers that reference this resource in Aurora Toolset."/>
+            </StackPanel>
+        </Border>
+
+        <!-- Rules Info -->
+        <Border Grid.Row="5"
+                Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                CornerRadius="4"
+                Padding="10"
+                Margin="0,0,0,15">
+            <StackPanel>
+                <TextBlock Text="Aurora Engine naming rules:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                <TextBlock Text="• Maximum 16 characters"/>
+                <TextBlock Text="• Lowercase letters only"/>
+                <TextBlock Text="• Letters, numbers, and underscores only"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button x:Name="RenameButton" Content="Rename" MinWidth="90" Click="OnRenameClick" IsEnabled="False"/>
+            <Button Content="Cancel" MinWidth="90" Click="OnCancelClick"/>
+        </StackPanel>
+    </Grid>
+    </ScrollViewer>
+</Window>

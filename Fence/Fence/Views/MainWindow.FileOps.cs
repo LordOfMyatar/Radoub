@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -421,6 +422,126 @@ public partial class MainWindow
                 PopulateRecentFilesMenuItems();
             }
         }
+    }
+
+    #endregion
+
+    #region Rename File
+
+    /// <summary>
+    /// Handles rename button click.
+    /// </summary>
+    private async void OnRenameResRefClick(object? sender, RoutedEventArgs e)
+    {
+        await RenameCurrentFileAsync();
+    }
+
+    /// <summary>
+    /// Renames the current file using a safe save-rename-reload workflow.
+    /// </summary>
+    private async System.Threading.Tasks.Task RenameCurrentFileAsync()
+    {
+        if (_currentStore == null || string.IsNullOrEmpty(_currentFilePath))
+        {
+            UpdateStatusBar("No file loaded to rename");
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(_currentFilePath) ?? "";
+        var currentName = Path.GetFileNameWithoutExtension(_currentFilePath);
+        var extension = Path.GetExtension(_currentFilePath);
+
+        // Show rename dialog
+        var newName = await RenameDialog.ShowAsync(this, currentName, directory, extension);
+        if (string.IsNullOrEmpty(newName))
+        {
+            return; // User cancelled
+        }
+
+        // Check if file has unsaved changes
+        if (_isDirty)
+        {
+            var confirmed = await ShowConfirmationDialogAsync("Save Changes",
+                "The file has unsaved changes. Save before renaming?");
+
+            if (!confirmed)
+            {
+                return; // User cancelled
+            }
+
+            // Save current file
+            await SaveFile(_currentFilePath);
+        }
+
+        var newFilePath = Path.Combine(directory, newName + extension);
+
+        try
+        {
+            // Rename file on disk
+            File.Move(_currentFilePath, newFilePath);
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Renamed file: {UnifiedLogger.SanitizePath(_currentFilePath)} -> {UnifiedLogger.SanitizePath(newFilePath)}");
+
+            // Update internal ResRef to match new filename
+            _currentStore.ResRef = newName;
+
+            // Save file to persist the new ResRef
+            _currentFilePath = newFilePath;
+            await SaveFile(_currentFilePath);
+
+            // Update UI
+            StoreResRefBox.Text = newName;
+            UpdateTitle();
+            UpdateRecentFilesMenu();
+
+            UpdateStatusBar($"Renamed to: {newName}{extension}");
+        }
+        catch (IOException ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to rename file: {ex.Message}");
+            ShowError($"Could not rename file:\n\n{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Shows a confirmation dialog and returns true if user confirms.
+    /// </summary>
+    private async System.Threading.Tasks.Task<bool> ShowConfirmationDialogAsync(string title, string message)
+    {
+        var confirmed = false;
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 400,
+            Height = 150,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+
+        var okButton = new Button { Content = "OK", Width = 80 };
+        var cancelButton = new Button { Content = "Cancel", Width = 80, Margin = new Thickness(10, 0, 0, 0) };
+
+        okButton.Click += (s, e) => { confirmed = true; dialog.Close(); };
+        cancelButton.Click += (s, e) => dialog.Close();
+
+        dialog.Content = new StackPanel
+        {
+            Margin = new Thickness(20),
+            Spacing = 15,
+            Children =
+            {
+                new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap },
+                new StackPanel
+                {
+                    Orientation = Avalonia.Layout.Orientation.Horizontal,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                    Children = { okButton, cancelButton }
+                }
+            }
+        };
+
+        await dialog.ShowDialog(this);
+        return confirmed;
     }
 
     #endregion

@@ -24,7 +24,7 @@
 
                         <StackPanel Spacing="8">
                             <!-- Blueprint ResRef (UTC only - hidden for BIC) -->
-                            <Grid x:Name="ResRefRow" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                            <Grid x:Name="ResRefRow" ColumnDefinitions="Auto,200,Auto,Auto" ColumnSpacing="10">
                                 <TextBlock Grid.Column="0" Text="Blueprint ResRef:"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                            VerticalAlignment="Center" Width="100"/>
@@ -32,11 +32,15 @@
                                          FontFamily="Consolas, Courier New, monospace"
                                          IsReadOnly="True"
                                          AutomationProperties.AutomationId="TemplateResRefTextBox"
-                                         ToolTip.Tip="Read-only. Use File > Rename to change."/>
+                                         ToolTip.Tip="Read-only. Click Rename to change."/>
                                 <Button Grid.Column="2" x:Name="CopyResRefButton"
                                         Content="Copy" Padding="8,2" FontSize="{DynamicResource FontSizeSmall}"
                                         AutomationProperties.AutomationId="CopyResRefButton"
                                         ToolTip.Tip="Copy ResRef to clipboard"/>
+                                <Button Grid.Column="3" x:Name="RenameResRefButton"
+                                        Content="Rename" Padding="8,2" FontSize="{DynamicResource FontSizeSmall}"
+                                        AutomationProperties.AutomationId="RenameResRefButton"
+                                        ToolTip.Tip="Rename file and update ResRef"/>
                             </Grid>
 
                             <!-- Tag (editable - both UTC and BIC) -->
