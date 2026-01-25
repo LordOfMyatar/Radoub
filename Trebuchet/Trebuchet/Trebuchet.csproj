@@ -33,6 +33,15 @@
     </Content>
   </ItemGroup>
 
+  <!-- Copy bundled tools to output directory (preserves tools\ folder structure) -->
+  <!-- nwn_script_comp.exe from neverwinter.nim (MIT license) for NWScript compilation -->
+  <ItemGroup>
+    <Content Include="tools\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>tools\%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
   <ItemGroup>
     <!-- All Avalonia packages must use same version (11.3.11) -->
     <PackageReference Include="Avalonia" Version="11.3.11" />

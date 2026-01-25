@@ -219,6 +219,26 @@
                     </Grid>
                 </StackPanel>
 
+                <!-- Build Settings Section -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Build Settings"
+                               FontSize="{DynamicResource FontSizeLarge}"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="Configure module build behavior"
+                               Opacity="0.7"
+                               FontSize="{DynamicResource FontSizeSmall}"/>
+
+                    <StackPanel Margin="0,8,0,0" Spacing="8">
+                        <CheckBox IsChecked="{Binding CompileScriptsEnabled}"
+                                  Content="Compile NWScript files before building"
+                                  IsEnabled="{Binding IsCompilerAvailable}"/>
+                        <TextBlock Text="{Binding CompilerStatusText}"
+                                   Opacity="0.7"
+                                   FontSize="{DynamicResource FontSizeSmall}"
+                                   Margin="24,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
                 <!-- Tool Paths Section (Read-Only Info) -->
                 <StackPanel Spacing="8">
                     <TextBlock Text="Detected Tools"

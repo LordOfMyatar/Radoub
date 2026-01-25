@@ -114,6 +114,9 @@ public class SettingsService : INotifyPropertyChanged
     private List<string> _recentModules = new();
     private int _maxRecentModules = DefaultMaxRecentModules;
 
+    // Build settings
+    private bool _compileScriptsEnabled = false;
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     private SettingsService()
@@ -226,6 +229,17 @@ public class SettingsService : INotifyPropertyChanged
         }
     }
 
+    // Build Settings
+    /// <summary>
+    /// Whether to compile NWScript files before building the module.
+    /// When enabled, the Build command will compile .nss files to .ncs before packing.
+    /// </summary>
+    public bool CompileScriptsEnabled
+    {
+        get => _compileScriptsEnabled;
+        set { if (SetProperty(ref _compileScriptsEnabled, value)) SaveSettings(); }
+    }
+
     public void AddRecentModule(string modulePath)
     {
         if (string.IsNullOrEmpty(modulePath))
@@ -316,6 +330,9 @@ public class SettingsService : INotifyPropertyChanged
                         UnifiedLogger.LogApplication(LogLevel.INFO, $"Removed {removedCount} missing modules from recent list");
                     }
 
+                    // Build settings
+                    _compileScriptsEnabled = settings.CompileScriptsEnabled;
+
                     UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded settings: {_recentModules.Count} recent modules");
                 }
             }
@@ -348,7 +365,8 @@ public class SettingsService : INotifyPropertyChanged
                 LogRetentionSessions = _loggingSettings.LogRetentionSessions,
                 LogLevel = _loggingSettings.LogLevel,
                 RecentModules = PathHelper.ContractPaths(_recentModules).ToList(),  // Use ~ for privacy
-                MaxRecentModules = MaxRecentModules
+                MaxRecentModules = MaxRecentModules,
+                CompileScriptsEnabled = CompileScriptsEnabled
             };
 
             var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
@@ -398,5 +416,8 @@ public class SettingsService : INotifyPropertyChanged
 
         public List<string> RecentModules { get; set; } = new();
         public int MaxRecentModules { get; set; } = DefaultMaxRecentModules;
+
+        // Build settings
+        public bool CompileScriptsEnabled { get; set; } = false;
     }
 }

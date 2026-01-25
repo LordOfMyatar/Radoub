@@ -70,6 +70,16 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     public string LogRetentionText => $"{LogRetentionSessions} session{(LogRetentionSessions == 1 ? "" : "s")}";
 
+    // Build settings
+    [ObservableProperty]
+    private bool _compileScriptsEnabled;
+
+    public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
+
+    public string CompilerStatusText => IsCompilerAvailable
+        ? "Compiler found: nwn_script_comp.exe"
+        : "Compiler not found. Place nwn_script_comp.exe in Trebuchet/tools/ folder.";
+
     public ObservableCollection<string> AvailableLogLevels { get; } = new()
     {
         "DEBUG", "INFO", "WARN", "ERROR"
@@ -130,6 +140,9 @@ public partial class SettingsWindowViewModel : ObservableObject
         // Logging settings
         LogRetentionSessions = localSettings.LogRetentionSessions;
         SelectedLogLevel = localSettings.CurrentLogLevel.ToString();
+
+        // Build settings
+        CompileScriptsEnabled = localSettings.CompileScriptsEnabled;
 
         // Shared theme setting
         UseSharedTheme = sharedSettings.UseSharedTheme;
@@ -292,6 +305,9 @@ public partial class SettingsWindowViewModel : ObservableObject
         {
             localSettings.CurrentLogLevel = logLevel;
         }
+
+        // Build settings
+        localSettings.CompileScriptsEnabled = CompileScriptsEnabled;
 
         // Shared theme setting
         sharedSettings.UseSharedTheme = UseSharedTheme;
