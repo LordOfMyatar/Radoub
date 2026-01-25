@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.48] - 2026-01-25
-**Branch**: `radoub/issue-675` | **PR**: #TBD
+**Branch**: `radoub/issue-675` | **PR**: #1106
 
 ### Cross-tool ResRef Rename Functionality (#675)
 
