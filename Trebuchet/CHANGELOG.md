@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.4.0-alpha] - 2026-01-24
+**Branch**: `trebuchet/issue-1095` | **PR**: #TBD
+
+### Sprint: IFO GUI & Module Management (#1095)
+
+- [ ] #1093 - Expose DefaultBic and new IFO fields in GUI
+- [ ] #1080 - Unpack module files (.mod) for editing
+- [ ] #1081 - Build/pack module from working directory
+
+---
+
 ## [1.3.1-alpha] - 2026-01-24
 **Branch**: `trebuchet/issue-1090` | **PR**: #1091
 
