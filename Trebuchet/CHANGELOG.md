@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.4.0-alpha] - 2026-01-24
-**Branch**: `trebuchet/issue-1095` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1095` | **PR**: #1102
 
 ### Sprint: IFO GUI & Module Management (#1095)
 
