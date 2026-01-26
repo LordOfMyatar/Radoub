@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.56-alpha] - 2026-01-25
+**Branch**: `quartermaster/issue-1055` | **PR**: #TBD
+
+### Feature: Migrate 3D Renderer to Silk.NET/OpenGL (#1055)
+
+- [ ] Implement `OpenGlControlBase` subclass for GPU-accelerated rendering
+- [ ] Create GLSL shaders for textured rendering
+- [ ] Support PLT textures (pre-rendered to RGBA)
+- [ ] Add proper depth testing
+- [ ] Maintain existing rotation/zoom controls
+- [ ] Cross-platform compatibility (Windows, Linux, macOS)
+- [ ] Remove dead SkiaSharp renderer code (`ModelRenderOperation`, `RenderFacesInDepthOrder`, etc.)
+
+---
+
 ## [0.1.55-alpha] - 2026-01-24
 **Branch**: `radoub/issue-1096` | **PR**: #1101
 
