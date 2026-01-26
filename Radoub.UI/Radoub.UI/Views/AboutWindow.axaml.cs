@@ -15,6 +15,7 @@ namespace Radoub.UI.Views;
 public partial class AboutWindow : Window
 {
     private string _githubUrl = "https://github.com/LordOfMyatar/Radoub";
+    private string? _thirdPartyUrl;
 
     public AboutWindow()
     {
@@ -82,15 +83,35 @@ public partial class AboutWindow : Window
             additionalInfoText.Text = config.AdditionalInfo;
             additionalInfoText.IsVisible = true;
         }
+
+        // Third-party credits link
+        var thirdPartyLinkText = this.FindControl<TextBlock>("ThirdPartyLinkText");
+        if (thirdPartyLinkText != null && !string.IsNullOrEmpty(config.ThirdPartyUrl))
+        {
+            _thirdPartyUrl = config.ThirdPartyUrl;
+            thirdPartyLinkText.Text = config.ThirdPartyLinkText ?? config.ThirdPartyUrl;
+            thirdPartyLinkText.IsVisible = true;
+        }
     }
 
     private void OnGitHubLinkClick(object? sender, PointerPressedEventArgs e)
+    {
+        OpenUrl(_githubUrl);
+    }
+
+    private void OnThirdPartyLinkClick(object? sender, PointerPressedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_thirdPartyUrl))
+            OpenUrl(_thirdPartyUrl);
+    }
+
+    private void OpenUrl(string url)
     {
         try
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = _githubUrl,
+                FileName = url,
                 UseShellExecute = true
             });
         }
@@ -141,4 +162,14 @@ public class AboutWindowConfig
     /// Additional info text (tool-specific details, feature list, etc.)
     /// </summary>
     public string? AdditionalInfo { get; init; }
+
+    /// <summary>
+    /// Third-party component URL (clickable link, e.g., GitHub repo)
+    /// </summary>
+    public string? ThirdPartyUrl { get; init; }
+
+    /// <summary>
+    /// Display text for third-party link. If null, shows the URL itself.
+    /// </summary>
+    public string? ThirdPartyLinkText { get; init; }
 }

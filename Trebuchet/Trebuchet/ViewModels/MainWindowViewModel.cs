@@ -361,8 +361,9 @@ public partial class MainWindowViewModel : ObservableObject
                 "Fence - Merchant Editor\n\n" +
                 "Third-Party Components:\n" +
                 "nwn_script_comp - NWScript Compiler (MIT License)\n" +
-                "  by Bernhard Stöckner (niv)\n" +
-                "  github.com/niv/neverwinter.nim"
+                "by Bernhard Stöckner (niv)",
+            ThirdPartyUrl = "https://github.com/niv/neverwinter.nim",
+            ThirdPartyLinkText = "github.com/niv/neverwinter.nim"
         });
         aboutWindow.Show(_parentWindow);  // Non-modal about window
     }
