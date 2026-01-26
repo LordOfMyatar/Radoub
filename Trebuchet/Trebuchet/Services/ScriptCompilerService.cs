@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 
@@ -101,6 +102,9 @@ public class ScriptCompilerService
     {
         var staleScripts = new List<StaleScriptInfo>();
 
+        // Ensure path is expanded (~ -> user home)
+        workingDirectory = PathHelper.ExpandPath(workingDirectory);
+
         if (!Directory.Exists(workingDirectory))
             return staleScripts;
 
@@ -155,6 +159,11 @@ public class ScriptCompilerService
         string? gamePath = null,
         CancellationToken cancellationToken = default)
     {
+        // Ensure paths are expanded (~ -> user home)
+        nssPath = PathHelper.ExpandPath(nssPath);
+        gamePath = PathHelper.ExpandPath(gamePath ?? "");
+        if (string.IsNullOrEmpty(gamePath)) gamePath = null;
+
         if (!IsCompilerAvailable)
         {
             return new CompilationResult
@@ -176,10 +185,10 @@ public class ScriptCompilerService
             args.Append("-c ");
             args.Append($"\"{nssPath}\"");
 
-            // Add game path for includes if available
+            // Add game path for includes if available (--root for NWN installation)
             if (!string.IsNullOrEmpty(gamePath) && Directory.Exists(gamePath))
             {
-                args.Append($" -n \"{gamePath}\"");
+                args.Append($" --root \"{gamePath}\"");
             }
 
             var startInfo = new ProcessStartInfo
@@ -192,6 +201,9 @@ public class ScriptCompilerService
                 CreateNoWindow = true,
                 WorkingDirectory = Path.GetDirectoryName(nssPath) ?? "."
             };
+
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Running: {CompilerPath} {args} (cwd: {startInfo.WorkingDirectory})");
 
             using var process = new Process { StartInfo = startInfo };
             var output = new StringBuilder();
@@ -222,10 +234,19 @@ public class ScriptCompilerService
                 return result;
             }
 
+            // Wait again without timeout to ensure async output handlers finish
+            // This is required when using BeginOutputReadLine/BeginErrorReadLine
+            await Task.Run(() => process.WaitForExit(), cancellationToken);
+
             result.Output = output.ToString();
             result.ErrorOutput = error.ToString();
             result.ExitCode = process.ExitCode;
             result.Success = process.ExitCode == 0;
+
+            // Debug: log compilation result
+            var scriptName = Path.GetFileName(nssPath);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Compile {scriptName}: exit={result.ExitCode}, success={result.Success}, stderr={error.ToString().Length} chars");
 
             if (!result.Success && string.IsNullOrEmpty(result.ErrorMessage))
             {
@@ -260,13 +281,16 @@ public class ScriptCompilerService
     {
         var batchResult = new BatchCompilationResult();
 
+        // Ensure path is expanded (~ -> user home)
+        workingDirectory = PathHelper.ExpandPath(workingDirectory);
+
         if (!IsCompilerAvailable)
         {
             batchResult.ErrorMessage = "Compiler not available";
             return batchResult;
         }
 
-        var gamePath = RadoubSettings.Instance.BaseGameInstallPath;
+        var gamePath = PathHelper.ExpandPath(RadoubSettings.Instance.BaseGameInstallPath);
 
         // Get scripts to compile
         List<string> scriptsToCompile;
@@ -301,6 +325,10 @@ public class ScriptCompilerService
 
             var result = await CompileScriptAsync(scriptPath, gamePath, cancellationToken);
             batchResult.Results.Add(result);
+
+            // Always log the result for each script at INFO level
+            UnifiedLogger.LogApplication(LogLevel.INFO,
+                $"Compiled {scriptName}: exit={result.ExitCode}, success={result.Success}");
 
             if (result.Success)
             {

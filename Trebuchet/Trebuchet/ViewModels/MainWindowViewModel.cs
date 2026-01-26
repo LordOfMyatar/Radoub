@@ -86,6 +86,27 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private int _staleScriptCount;
 
+    /// <summary>
+    /// Whether script compilation is enabled (bound to checkbox near Build button).
+    /// </summary>
+    public bool CompileScriptsEnabled
+    {
+        get => SettingsService.Instance.CompileScriptsEnabled;
+        set
+        {
+            if (SettingsService.Instance.CompileScriptsEnabled != value)
+            {
+                SettingsService.Instance.CompileScriptsEnabled = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the NWScript compiler is available.
+    /// </summary>
+    public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
+
     public MainWindowViewModel()
     {
         _toolLauncher = ToolLauncherService.Instance;
@@ -573,12 +594,7 @@ public partial class MainWindowViewModel : ObservableObject
 
             // Pack the module
             BuildStatusText = "Packing module...";
-            var (resourceCount, backupPath) = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
-
-            if (!string.IsNullOrEmpty(backupPath))
-            {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Created backup: {UnifiedLogger.SanitizePath(backupPath)}");
-            }
+            var resourceCount = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Built {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
@@ -647,20 +663,8 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>
     /// Pack a working directory into a .mod file.
     /// </summary>
-    private static (int resourceCount, string? backupPath) PackDirectoryToMod(string workingDir, string modFilePath)
+    private static int PackDirectoryToMod(string workingDir, string modFilePath)
     {
-        string? backupPath = null;
-
-        // Create backup of existing .mod file
-        if (File.Exists(modFilePath))
-        {
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var directory = Path.GetDirectoryName(modFilePath) ?? ".";
-            var fileName = Path.GetFileNameWithoutExtension(modFilePath);
-            backupPath = Path.Combine(directory, $"{fileName}_backup_{timestamp}.mod");
-            File.Copy(modFilePath, backupPath, overwrite: false);
-        }
-
         // Collect all files from working directory
         var files = Directory.GetFiles(workingDir);
         var resourceData = new Dictionary<(string ResRef, ushort Type), byte[]>();
@@ -705,6 +709,6 @@ public partial class MainWindowViewModel : ObservableObject
         // Write to .mod file
         ErfWriter.Write(erf, modFilePath, resourceData);
 
-        return (resources.Count, backupPath);
+        return resources.Count;
     }
 }
