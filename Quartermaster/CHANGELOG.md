@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.56-alpha] - 2026-01-25
-**Branch**: `quartermaster/issue-1055` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1055` | **PR**: #1129
 
 ### Feature: Migrate 3D Renderer to Silk.NET/OpenGL (#1055)
 
