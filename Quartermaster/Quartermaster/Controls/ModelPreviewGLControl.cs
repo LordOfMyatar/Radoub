@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Avalonia;
@@ -396,14 +397,15 @@ void main()
             return;
         }
 
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnOpenGlRender: Rendering model, meshDrawCalls={_meshDrawCalls.Count}, indexCount={_indexCount}");
-
         // Update mesh data if needed
         if (_needsMeshUpdate)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnOpenGlRender: Updating mesh buffers for model with {_model.GetMeshNodes().Count()} meshes");
             UpdateMeshBuffers();
             _needsMeshUpdate = false;
         }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnOpenGlRender: Rendering model, meshDrawCalls={_meshDrawCalls.Count}, indexCount={_indexCount}");
 
         // Update textures if needed
         if (_needsTextureUpdate)
@@ -482,7 +484,11 @@ void main()
 
     private void UpdateMeshBuffers()
     {
-        if (_gl == null || _model == null) return;
+        if (_gl == null || _model == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateMeshBuffers: Skipping - gl={_gl != null}, model={_model != null}");
+            return;
+        }
 
         _meshDrawCalls.Clear();
 
@@ -491,8 +497,12 @@ void main()
         var indices = new List<uint>();
         uint baseVertex = 0;
 
-        foreach (var mesh in _model.GetMeshNodes())
+        var meshNodes = _model.GetMeshNodes().ToList();
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateMeshBuffers: Processing {meshNodes.Count} mesh nodes");
+
+        foreach (var mesh in meshNodes)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateMeshBuffers: Mesh has {mesh.Vertices.Length} vertices, {mesh.Faces.Length} faces");
             if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
                 continue;
 
