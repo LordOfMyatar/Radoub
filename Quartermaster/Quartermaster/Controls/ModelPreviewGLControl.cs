@@ -12,7 +12,7 @@ using Avalonia.OpenGL.Controls;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
-using Silk.NET.OpenGL;
+using Silk.NET.OpenGLES;
 
 namespace Quartermaster.Controls;
 
@@ -52,8 +52,11 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private bool _needsTextureUpdate;
     private bool _needsMeshUpdate;
 
-    // Shader source code
-    private const string VertexShaderSource = @"#version 330 core
+    // Shader source code - GLSL ES 300 for ANGLE compatibility on Windows
+    // Avalonia uses ANGLE which provides OpenGL ES, not desktop OpenGL
+    private const string VertexShaderSource = @"#version 300 es
+precision highp float;
+
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoord;
@@ -69,13 +72,16 @@ uniform mat4 projection;
 void main()
 {
     FragPos = vec3(model * vec4(aPosition, 1.0));
-    Normal = mat3(transpose(inverse(model))) * aNormal;
+    // Simplified normal matrix - works for uniform scaling
+    Normal = mat3(model) * aNormal;
     TexCoord = aTexCoord;
     gl_Position = projection * view * model * vec4(aPosition, 1.0);
 }
 ";
 
-    private const string FragmentShaderSource = @"#version 330 core
+    private const string FragmentShaderSource = @"#version 300 es
+precision highp float;
+
 out vec4 FragColor;
 
 in vec3 FragPos;
@@ -360,23 +366,37 @@ void main()
 
     protected override void OnOpenGlRender(GlInterface gl, int fb)
     {
-        if (_gl == null) return;
+        if (_gl == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnOpenGlRender: _gl is null");
+            return;
+        }
 
         var bounds = Bounds;
         var width = (int)bounds.Width;
         var height = (int)bounds.Height;
 
-        if (width <= 0 || height <= 0) return;
+        if (width <= 0 || height <= 0)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnOpenGlRender: Invalid bounds {width}x{height}");
+            return;
+        }
 
         // Bind the framebuffer Avalonia gave us
         _gl.BindFramebuffer(FramebufferTarget.Framebuffer, (uint)fb);
         _gl.Viewport(0, 0, (uint)width, (uint)height);
 
-        // Clear with dark background
-        _gl.ClearColor(0.15f, 0.15f, 0.18f, 1.0f);
+        // Clear with visible background color (blue-ish gray for debugging)
+        _gl.ClearColor(0.2f, 0.2f, 0.3f, 1.0f);
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        if (_model == null) return;
+        if (_model == null)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnOpenGlRender: No model to render");
+            return;
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnOpenGlRender: Rendering model, meshDrawCalls={_meshDrawCalls.Count}, indexCount={_indexCount}");
 
         // Update mesh data if needed
         if (_needsMeshUpdate)
