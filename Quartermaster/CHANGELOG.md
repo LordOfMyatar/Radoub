@@ -15,13 +15,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Feature: Migrate 3D Renderer to Silk.NET/OpenGL (#1055)
 
-- [ ] Implement `OpenGlControlBase` subclass for GPU-accelerated rendering
-- [ ] Create GLSL shaders for textured rendering
-- [ ] Support PLT textures (pre-rendered to RGBA)
-- [ ] Add proper depth testing
-- [ ] Maintain existing rotation/zoom controls
-- [ ] Cross-platform compatibility (Windows, Linux, macOS)
-- [ ] Remove dead SkiaSharp renderer code (`ModelRenderOperation`, `RenderFacesInDepthOrder`, etc.)
+Replaced the SkiaSharp-based CPU renderer with a GPU-accelerated OpenGL renderer using Silk.NET.
+
+#### Added
+- `ModelPreviewGLControl` - GPU-accelerated 3D preview control using Avalonia's `OpenGlControlBase`
+- GLSL vertex and fragment shaders with per-pixel lighting
+- Proper depth buffer for correct occlusion (no more painter's algorithm)
+- Perspective-correct texture mapping (GPU handles this automatically)
+- Per-mesh texture binding for PLT textures
+- Mipmap generation for better texture quality at distance
+
+#### Changed
+- AppearancePanel now uses `ModelPreviewGLControl` instead of `ModelPreviewControl`
+- 3D model rotation/zoom controls updated to use new renderer
+
+#### Removed
+- `ModelPreviewControl` - Old SkiaSharp-based CPU renderer
+- `ModelRenderOperation` - ICustomDrawOperation for SkiaSharp
+- Painter's algorithm depth sorting code
 
 ---
 

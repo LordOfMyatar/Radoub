@@ -41,6 +41,7 @@
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.11" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.11" />
     <PackageReference Include="Avalonia.Skia" Version="11.3.11" />
+    <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" />
     <PackageReference Include="Avalonia.Diagnostics" Version="11.3.11">

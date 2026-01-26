@@ -215,28 +215,28 @@ public partial class AppearancePanel
     // 3D Preview control handlers
     private void OnRotateLeftClicked(object? sender, RoutedEventArgs e)
     {
-        _modelPreview?.Rotate(-0.3f);
+        _modelPreviewGL?.Rotate(-0.3f);
     }
 
     private void OnRotateRightClicked(object? sender, RoutedEventArgs e)
     {
-        _modelPreview?.Rotate(0.3f);
+        _modelPreviewGL?.Rotate(0.3f);
     }
 
     private void OnResetViewClicked(object? sender, RoutedEventArgs e)
     {
-        _modelPreview?.ResetView();
+        _modelPreviewGL?.ResetView();
     }
 
     private void OnZoomInClicked(object? sender, RoutedEventArgs e)
     {
-        if (_modelPreview != null)
-            _modelPreview.Zoom *= 1.2f;
+        if (_modelPreviewGL != null)
+            _modelPreviewGL.Zoom *= 1.2f;
     }
 
     private void OnZoomOutClicked(object? sender, RoutedEventArgs e)
     {
-        if (_modelPreview != null)
-            _modelPreview.Zoom /= 1.2f;
+        if (_modelPreviewGL != null)
+            _modelPreviewGL.Zoom /= 1.2f;
     }
 }

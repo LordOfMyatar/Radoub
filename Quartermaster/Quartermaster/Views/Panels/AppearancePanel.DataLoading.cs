@@ -140,13 +140,13 @@ public partial class AppearancePanel
 
     private void UpdateModelPreview()
     {
-        if (_modelService == null || _currentCreature == null || _modelPreview == null)
+        if (_modelService == null || _currentCreature == null || _modelPreviewGL == null)
             return;
 
         try
         {
             // Set body colors
-            _modelPreview.SetCharacterColors(
+            _modelPreviewGL.SetCharacterColors(
                 _currentCreature.Color_Skin,
                 _currentCreature.Color_Hair,
                 _currentCreature.Color_Tattoo1,
@@ -156,18 +156,18 @@ public partial class AppearancePanel
             var armorColors = _modelService.GetArmorColors(_currentCreature);
             if (armorColors != null)
             {
-                _modelPreview.SetArmorColors(
+                _modelPreviewGL.SetArmorColors(
                     armorColors.Value.metal1, armorColors.Value.metal2,
                     armorColors.Value.cloth1, armorColors.Value.cloth2,
                     armorColors.Value.leather1, armorColors.Value.leather2);
             }
 
             var model = _modelService.LoadCreatureModel(_currentCreature);
-            _modelPreview.Model = model;
+            _modelPreviewGL.Model = model;
         }
         catch (Exception)
         {
-            _modelPreview.Model = null;
+            _modelPreviewGL.Model = null;
         }
     }
 
