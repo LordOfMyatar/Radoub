@@ -80,6 +80,33 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _buildStatusText = "";
 
+    [ObservableProperty]
+    private bool _hasBuildLog;
+
+    [ObservableProperty]
+    private int _staleScriptCount;
+
+    /// <summary>
+    /// Whether script compilation is enabled (bound to checkbox near Build button).
+    /// </summary>
+    public bool CompileScriptsEnabled
+    {
+        get => SettingsService.Instance.CompileScriptsEnabled;
+        set
+        {
+            if (SettingsService.Instance.CompileScriptsEnabled != value)
+            {
+                SettingsService.Instance.CompileScriptsEnabled = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the NWScript compiler is available.
+    /// </summary>
+    public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
+
     public MainWindowViewModel()
     {
         _toolLauncher = ToolLauncherService.Instance;
@@ -327,7 +354,16 @@ public partial class MainWindowViewModel : ObservableObject
             ToolName = "Trebuchet",
             Subtitle = "Radoub Launcher for Neverwinter Nights",
             Version = VersionHelper.GetVersion(),
-            AdditionalInfo = "Radoub Toolset includes:\nParley - Dialog Editor\nManifest - Journal Editor\nQuartermaster - Creature/Item Editor\nFence - Merchant Editor"
+            AdditionalInfo = "Radoub Toolset includes:\n" +
+                "Parley - Dialog Editor\n" +
+                "Manifest - Journal Editor\n" +
+                "Quartermaster - Creature/Item Editor\n" +
+                "Fence - Merchant Editor\n\n" +
+                "Third-Party Components:\n" +
+                "nwn_script_comp - NWScript Compiler (MIT License)\n" +
+                "by Bernhard Stöckner (niv)",
+            ThirdPartyUrl = "https://github.com/niv/neverwinter.nim",
+            ThirdPartyLinkText = "github.com/niv/neverwinter.nim"
         });
         aboutWindow.Show(_parentWindow);  // Non-modal about window
     }
@@ -511,21 +547,63 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         IsBuilding = true;
-        BuildStatusText = "Building module...";
 
         try
         {
-            var (resourceCount, backupPath) = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
+            // Check for stale scripts (always check, regardless of compile setting)
+            var compilerService = ScriptCompilerService.Instance;
+            var staleScripts = compilerService.FindStaleScripts(workingDir);
 
-            if (!string.IsNullOrEmpty(backupPath))
+            // If compile scripts is enabled and compiler is available, compile first
+            if (SettingsService.Instance.CompileScriptsEnabled && compilerService.IsCompilerAvailable)
             {
-                UnifiedLogger.LogApplication(LogLevel.INFO, $"Created backup: {UnifiedLogger.SanitizePath(backupPath)}");
+                if (staleScripts.Count > 0)
+                {
+                    BuildStatusText = $"Compiling {staleScripts.Count} scripts...";
+
+                    var compileResult = await compilerService.CompileAllScriptsAsync(
+                        workingDir,
+                        compileAll: false,
+                        progress: (current, total, name) =>
+                        {
+                            BuildStatusText = $"Compiling {current}/{total}: {name}";
+                        });
+
+                    if (!compileResult.Success)
+                    {
+                        // Write log file for failed compilation
+                        var logPath = compilerService.WriteCompilationLog(compileResult, workingDir);
+                        BuildStatusText = $"Build failed: {compileResult.FailedScripts.Count} scripts failed - View Log";
+                        _lastBuildLogPath = logPath;
+                        HasBuildLog = true;
+                        UnifiedLogger.LogApplication(LogLevel.WARN,
+                            $"Compilation failed for {compileResult.FailedScripts.Count} scripts");
+                        return;
+                    }
+
+                    UnifiedLogger.LogApplication(LogLevel.INFO,
+                        $"Compiled {compileResult.SuccessCount} scripts successfully");
+                }
             }
+            else if (staleScripts.Count > 0 && !SettingsService.Instance.CompileScriptsEnabled)
+            {
+                // Not compiling but there are stale scripts - warn user
+                var staleCount = staleScripts.Count;
+                UnifiedLogger.LogApplication(LogLevel.INFO,
+                    $"Found {staleCount} scripts with outdated .ncs files (compilation disabled)");
+            }
+
+            // Pack the module
+            BuildStatusText = "Packing module...";
+            var resourceCount = await Task.Run(() => PackDirectoryToMod(workingDir, modFilePath));
 
             UnifiedLogger.LogApplication(LogLevel.INFO,
                 $"Built {resourceCount} resources to {UnifiedLogger.SanitizePath(modFilePath)}");
 
             BuildStatusText = $"Built {resourceCount} files to {Path.GetFileName(modFilePath)}";
+            _lastBuildLogPath = null;
+            HasBuildLog = false;
+            StaleScriptCount = 0;  // Reset stale count after successful build
         }
         catch (Exception ex)
         {
@@ -538,23 +616,56 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    // Store path to last build log for "View Log" functionality
+    private string? _lastBuildLogPath;
+
+    [RelayCommand]
+    private void OpenBuildLog()
+    {
+        if (string.IsNullOrEmpty(_lastBuildLogPath) || !File.Exists(_lastBuildLogPath))
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, "No build log available");
+            return;
+        }
+
+        try
+        {
+            // Open log file with default text editor
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = _lastBuildLogPath,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open build log: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Check for stale scripts in the current module's working directory.
+    /// Called when module changes or before build.
+    /// </summary>
+    public void CheckStaleScripts()
+    {
+        var workingDir = GetWorkingDirectoryPath();
+        if (string.IsNullOrEmpty(workingDir))
+        {
+            StaleScriptCount = 0;
+            return;
+        }
+
+        var staleScripts = ScriptCompilerService.Instance.FindStaleScripts(workingDir);
+        StaleScriptCount = staleScripts.Count;
+    }
+
     /// <summary>
     /// Pack a working directory into a .mod file.
     /// </summary>
-    private static (int resourceCount, string? backupPath) PackDirectoryToMod(string workingDir, string modFilePath)
+    private static int PackDirectoryToMod(string workingDir, string modFilePath)
     {
-        string? backupPath = null;
-
-        // Create backup of existing .mod file
-        if (File.Exists(modFilePath))
-        {
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var directory = Path.GetDirectoryName(modFilePath) ?? ".";
-            var fileName = Path.GetFileNameWithoutExtension(modFilePath);
-            backupPath = Path.Combine(directory, $"{fileName}_backup_{timestamp}.mod");
-            File.Copy(modFilePath, backupPath, overwrite: false);
-        }
-
         // Collect all files from working directory
         var files = Directory.GetFiles(workingDir);
         var resourceData = new Dictionary<(string ResRef, ushort Type), byte[]>();
@@ -599,6 +710,6 @@ public partial class MainWindowViewModel : ObservableObject
         // Write to .mod file
         ErfWriter.Write(erf, modFilePath, resourceData);
 
-        return (resources.Count, backupPath);
+        return resources.Count;
     }
 }

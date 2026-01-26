@@ -70,6 +70,35 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     public string LogRetentionText => $"{LogRetentionSessions} session{(LogRetentionSessions == 1 ? "" : "s")}";
 
+    // Build settings
+    [ObservableProperty]
+    private bool _compileScriptsEnabled;
+
+    public bool IsCompilerAvailable => ScriptCompilerService.Instance.IsCompilerAvailable;
+
+    public string CompilerStatusText
+    {
+        get
+        {
+            var compilerName = GetPlatformCompilerName();
+            return IsCompilerAvailable
+                ? $"Compiler found: {compilerName}"
+                : $"Compiler not found. Place {compilerName} in Trebuchet/tools/ folder.";
+        }
+    }
+
+    private static string GetPlatformCompilerName()
+    {
+        if (OperatingSystem.IsWindows())
+            return "nwn_script_comp.exe";
+        else if (OperatingSystem.IsMacOS())
+            return "nwn_script_comp_macos";
+        else if (OperatingSystem.IsLinux())
+            return "nwn_script_comp_linux";
+        else
+            return "nwn_script_comp";
+    }
+
     public ObservableCollection<string> AvailableLogLevels { get; } = new()
     {
         "DEBUG", "INFO", "WARN", "ERROR"
@@ -130,6 +159,9 @@ public partial class SettingsWindowViewModel : ObservableObject
         // Logging settings
         LogRetentionSessions = localSettings.LogRetentionSessions;
         SelectedLogLevel = localSettings.CurrentLogLevel.ToString();
+
+        // Build settings
+        CompileScriptsEnabled = localSettings.CompileScriptsEnabled;
 
         // Shared theme setting
         UseSharedTheme = sharedSettings.UseSharedTheme;
@@ -292,6 +324,9 @@ public partial class SettingsWindowViewModel : ObservableObject
         {
             localSettings.CurrentLogLevel = logLevel;
         }
+
+        // Build settings
+        localSettings.CompileScriptsEnabled = CompileScriptsEnabled;
 
         // Shared theme setting
         sharedSettings.UseSharedTheme = UseSharedTheme;

@@ -58,6 +58,16 @@
                                 IsEnabled="{Binding CanBuildModule}"
                                 Padding="8,4"
                                 ToolTip.Tip="Pack working directory into .mod file"/>
+                        <CheckBox Content="Compile"
+                                  IsChecked="{Binding CompileScriptsEnabled}"
+                                  IsEnabled="{Binding IsCompilerAvailable}"
+                                  VerticalAlignment="Center"
+                                  ToolTip.Tip="Compile NWScript files before building"/>
+                        <Button Content="View Log"
+                                Command="{Binding OpenBuildLogCommand}"
+                                IsVisible="{Binding HasBuildLog}"
+                                Padding="8,4"
+                                ToolTip.Tip="Open compilation error log"/>
                     </StackPanel>
                 </StackPanel>
 

@@ -10,6 +10,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.0-alpha] - 2026-01-25
+**Branch**: `trebuchet/issue-1116` | **PR**: #1117
+
+### Feature: NWScript Compiler Integration (#1116)
+
+#### Script Compilation
+- Bundle neverwinter.nim's `nwn_script_comp.exe` for NWScript compilation
+- Add "Compile NWScript files before building" checkbox in Settings > Build Settings
+- Compile only stale scripts (.nss newer than .ncs) for faster builds
+- Progress feedback during compilation: "Compiling 3/10: myscript.nss"
+
+#### Stale Script Detection
+- Automatic detection of scripts needing recompilation
+- Compare .nss vs .ncs timestamps before build
+- Show count of stale scripts when compilation is disabled
+
+#### Build Log
+- Write detailed compilation log on failure: `~/Radoub/Trebuchet/logs/build_<timestamp>.log`
+- Status bar shows "Build failed: X scripts failed - View Log"
+- Click status or use View Log command to open log file
+
+#### Attribution
+- Add neverwinter.nim MIT license to About window
+- Include README.txt in tools/ folder with license text
+- Source: https://github.com/niv/neverwinter.nim
+
+---
+
 ## [1.5.0-alpha] - 2026-01-25
 **Branch**: `trebuchet/issue-1092` | **PR**: #1107
 
