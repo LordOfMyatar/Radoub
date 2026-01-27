@@ -651,7 +651,7 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void OnClearCacheClick(object? sender, RoutedEventArgs e)
+    private async void OnClearCacheClick(object? sender, RoutedEventArgs e)
     {
         if (_mainWindow == null)
             return;
@@ -670,7 +670,7 @@ public partial class SettingsWindow : Window
 
         try
         {
-            _mainWindow.ClearAndReloadPaletteCache();
+            await _mainWindow.ClearAndReloadPaletteCacheAsync();
 
             if (cacheStatusText != null)
             {

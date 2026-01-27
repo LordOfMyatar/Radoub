@@ -356,14 +356,17 @@ public partial class MainWindow
     /// <summary>
     /// Clear and reload all palette caches. Called from Settings.
     /// </summary>
-    public void ClearAndReloadPaletteCache()
+    public async Task ClearAndReloadPaletteCacheAsync()
     {
         _modularCacheService.ClearAllCaches();
         _cachedPaletteData = null;
         _paletteLoaded = false;
         _lastModuleDirectory = null;
         InventoryPanelContent.PaletteItems.Clear();
-        StartGameItemsLoad();
+
+        // Rebuild cache and reload into UI
+        await BuildAllCachesAsync();
+        await LoadPaletteItemsAsync();
     }
 
     /// <summary>
