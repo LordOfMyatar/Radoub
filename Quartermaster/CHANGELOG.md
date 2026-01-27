@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.58-alpha] - 2026-01-27
-**Branch**: `quartermaster/issue-1124` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1124` | **PR**: #1136
 
 ### Refactor: Split FeatsPanel.axaml.cs (#1124)
 
