@@ -10,6 +10,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.58-alpha] - 2026-01-27
+**Branch**: `quartermaster/issue-1124` | **PR**: #1136
+
+### Refactor: Split FeatsPanel.axaml.cs (#1124)
+
+Split the 1,195-line FeatsPanel.axaml.cs into focused partial classes for better maintainability.
+
+#### Changed
+- Split `FeatsPanel.axaml.cs` (1,195 LOC) into 5 partial class files:
+  - `FeatsPanel.axaml.cs` (435 LOC) - Core initialization, loading, ViewModel creation
+  - `FeatsPanel.Search.cs` (80 LOC) - Search and filter functionality
+  - `FeatsPanel.Display.cs` (320 LOC) - Summary display, assigned feats list, theme helpers
+  - `FeatsPanel.Selection.cs` (99 LOC) - Feat add/remove operations
+  - `FeatsPanel.SpecialAbilities.cs` (172 LOC) - Special abilities management
+- Moved `FeatListViewModel` (177 LOC) to `ViewModels/FeatListViewModel.cs`
+- Moved `SpecialAbilityViewModel` (56 LOC) to `ViewModels/SpecialAbilityViewModel.cs`
+
+All files now under 500 LOC threshold. No functional changes.
+
+---
+
 ## [0.1.57-alpha] - 2026-01-27
 **Branch**: `quartermaster/issue-1036` | **PR**: #1135
 
