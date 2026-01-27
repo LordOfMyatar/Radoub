@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.58-alpha] - 2026-01-27
+**Branch**: `quartermaster/issue-1124` | **PR**: #TBD
+
+### Refactor: Split FeatsPanel.axaml.cs (#1124)
+
+Split the 1,195-line FeatsPanel.axaml.cs into focused partial classes for better maintainability.
+
+#### Changed
+- (Changes will be documented as work progresses)
+
+---
+
 ## [0.1.57-alpha] - 2026-01-27
 **Branch**: `quartermaster/issue-1036` | **PR**: #1135
 
