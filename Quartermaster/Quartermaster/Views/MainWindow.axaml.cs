@@ -766,6 +766,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnSettingsClick(object? sender, RoutedEventArgs e)
     {
         var settingsWindow = new SettingsWindow();
+        settingsWindow.SetMainWindow(this);
         settingsWindow.Show(this);
     }
 

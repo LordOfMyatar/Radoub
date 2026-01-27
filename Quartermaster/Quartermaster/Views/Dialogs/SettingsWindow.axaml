@@ -79,6 +79,49 @@
                 </ScrollViewer>
             </TabItem>
 
+            <!-- Cache Tab -->
+            <TabItem Header="Cache">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="10" Spacing="15">
+                        <!-- Item Palette Cache -->
+                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Item Palette Cache" FontWeight="Bold"/>
+                                <TextBlock Text="The item palette is cached per-source (BIF, Override, HAK) to improve startup performance. Clear the cache if you've added new items to your game installation."
+                                          TextWrapping="Wrap" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                <!-- Cache Info -->
+                                <Border Background="{DynamicResource ThemeBackgroundBrush}" Padding="10" CornerRadius="3" Margin="0,5,0,0">
+                                    <StackPanel Spacing="4">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Status: " FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="CacheStatusText" Grid.Column="1" Text="Checking..."/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Items: " FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="CacheItemCountText" Grid.Column="1" Text="-"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Size: " FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="CacheSizeText" Grid.Column="1" Text="-"/>
+                                        </Grid>
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="Sources: " FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="CacheSourcesText" Grid.Column="1" Text="-"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Clear and Reload Button -->
+                                <Button x:Name="ClearCacheButton" Content="Clear and Reload Cache"
+                                       Click="OnClearCacheClick"
+                                       HorizontalAlignment="Left" Margin="0,5,0,0" Padding="15,8"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <!-- UI Settings Tab -->
             <TabItem Header="UI Settings">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

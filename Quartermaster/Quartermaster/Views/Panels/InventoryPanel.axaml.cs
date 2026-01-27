@@ -71,6 +71,32 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
     public ObservableCollection<ItemViewModel> BackpackItems => _backpackItems;
     public ObservableCollection<ItemViewModel> PaletteItems => _paletteItems;
 
+    /// <summary>
+    /// Efficiently set all palette items at once, avoiding per-item UI updates.
+    /// </summary>
+    public void SetPaletteItems(System.Collections.Generic.List<ItemViewModel> items)
+    {
+        // Disconnect filter temporarily to avoid per-item filter updates
+        if (_paletteFilter != null)
+        {
+            _paletteFilter.Items = null;
+        }
+
+        // Clear and add all items
+        _paletteItems.Clear();
+        foreach (var item in items)
+        {
+            _paletteItems.Add(item);
+        }
+
+        // Reconnect filter and trigger single refresh
+        if (_paletteFilter != null)
+        {
+            _paletteFilter.Items = _paletteItems;
+            _paletteFilter.ApplyFilter();
+        }
+    }
+
     public InventoryPanel()
     {
         InitializeComponent();

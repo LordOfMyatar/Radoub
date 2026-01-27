@@ -25,12 +25,23 @@ namespace Quartermaster.Views.Dialogs;
 public partial class SettingsWindow : Window
 {
     private bool _isInitializing = true;
+    private MainWindow? _mainWindow;
 
     public SettingsWindow()
     {
         InitializeComponent();
         LoadSettings();
+        UpdateCacheInfo();
         _isInitializing = false;
+    }
+
+    /// <summary>
+    /// Set the main window reference for cache operations.
+    /// </summary>
+    public void SetMainWindow(MainWindow mainWindow)
+    {
+        _mainWindow = mainWindow;
+        UpdateCacheInfo();
     }
 
     private void InitializeComponent()
@@ -588,6 +599,102 @@ public partial class SettingsWindow : Window
         }
 
         SettingsService.Instance.LogRetentionSessions = retention;
+    }
+
+    #endregion
+
+    #region Cache Management
+
+    private void UpdateCacheInfo()
+    {
+        var cacheStatusText = this.FindControl<TextBlock>("CacheStatusText");
+        var cacheItemCountText = this.FindControl<TextBlock>("CacheItemCountText");
+        var cacheSizeText = this.FindControl<TextBlock>("CacheSizeText");
+        var cacheSourcesText = this.FindControl<TextBlock>("CacheSourcesText");
+
+        if (cacheStatusText == null) return;
+
+        var stats = _mainWindow?.GetPaletteCacheStatistics();
+
+        if (stats != null && stats.TotalItems > 0)
+        {
+            cacheStatusText.Text = "Cached";
+            cacheStatusText.Foreground = GetSuccessBrush();
+
+            if (cacheItemCountText != null)
+                cacheItemCountText.Text = $"{stats.TotalItems:N0}";
+
+            if (cacheSizeText != null)
+                cacheSizeText.Text = $"{stats.TotalSizeKB:N1} KB";
+
+            if (cacheSourcesText != null)
+            {
+                var sources = stats.SourceCounts
+                    .Select(kv => $"{kv.Key}: {kv.Value:N0}")
+                    .ToList();
+                cacheSourcesText.Text = sources.Count > 0 ? string.Join(", ", sources) : "-";
+            }
+        }
+        else
+        {
+            cacheStatusText.Text = "No cache";
+            cacheStatusText.Foreground = GetWarningBrush();
+
+            if (cacheItemCountText != null)
+                cacheItemCountText.Text = "-";
+
+            if (cacheSizeText != null)
+                cacheSizeText.Text = "-";
+
+            if (cacheSourcesText != null)
+                cacheSourcesText.Text = "-";
+        }
+    }
+
+    private async void OnClearCacheClick(object? sender, RoutedEventArgs e)
+    {
+        if (_mainWindow == null)
+            return;
+
+        var cacheStatusText = this.FindControl<TextBlock>("CacheStatusText");
+        var clearCacheButton = this.FindControl<Button>("ClearCacheButton");
+
+        if (cacheStatusText != null)
+        {
+            cacheStatusText.Text = "Rebuilding...";
+            cacheStatusText.Foreground = GetWarningBrush();
+        }
+
+        if (clearCacheButton != null)
+            clearCacheButton.IsEnabled = false;
+
+        try
+        {
+            await _mainWindow.ClearAndReloadPaletteCacheAsync();
+
+            if (cacheStatusText != null)
+            {
+                cacheStatusText.Text = "Rebuilt";
+                cacheStatusText.Foreground = GetSuccessBrush();
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Cache rebuild failed: {ex.Message}");
+
+            if (cacheStatusText != null)
+            {
+                cacheStatusText.Text = "Rebuild failed";
+                cacheStatusText.Foreground = GetErrorBrush();
+            }
+        }
+        finally
+        {
+            if (clearCacheButton != null)
+                clearCacheButton.IsEnabled = true;
+
+            UpdateCacheInfo();
+        }
     }
 
     #endregion
