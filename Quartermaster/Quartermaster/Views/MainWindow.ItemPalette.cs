@@ -268,11 +268,8 @@ public partial class MainWindow
                 return vms;
             });
 
-            // Add all at once to UI
-            foreach (var vm in viewModels)
-            {
-                InventoryPanelContent.PaletteItems.Add(vm);
-            }
+            // Set all items at once (efficient - avoids per-item filter updates)
+            InventoryPanelContent.SetPaletteItems(viewModels);
 
             _paletteLoaded = true;
             UpdateStatus($"Ready - {viewModels.Count:N0} items loaded");
