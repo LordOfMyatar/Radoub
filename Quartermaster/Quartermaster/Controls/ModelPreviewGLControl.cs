@@ -4,16 +4,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Mdl;
-using Silk.NET.OpenGLES;
+using Silk.NET.OpenGL;
 
 namespace Quartermaster.Controls;
 
@@ -52,6 +50,7 @@ public class ModelPreviewGLControl : OpenGlControlBase
     private PltColorIndices _colorIndices = new();
     private bool _needsTextureUpdate;
     private bool _needsMeshUpdate;
+    private bool _logOncePerModel;
 
     // Shader source code - GLSL ES 300 for ANGLE compatibility on Windows
     // Avalonia uses ANGLE which provides OpenGL ES, not desktop OpenGL
@@ -69,6 +68,7 @@ out vec2 TexCoord;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform float verticalOffset;
 
 void main()
 {
@@ -76,7 +76,10 @@ void main()
     // Simplified normal matrix - works for uniform scaling
     Normal = mat3(model) * aNormal;
     TexCoord = aTexCoord;
-    gl_Position = projection * view * model * vec4(aPosition, 1.0);
+    vec4 pos = projection * view * model * vec4(aPosition, 1.0);
+    // Apply vertical offset to center model on screen
+    pos.y -= verticalOffset;
+    gl_Position = pos;
 }
 ";
 
@@ -125,6 +128,8 @@ void main()
         {
             _model = value;
             _needsMeshUpdate = true;
+            _needsTextureUpdate = true;  // New model needs textures loaded
+            _logOncePerModel = true;
             CenterCamera();
             RequestNextFrameRendering();
         }
@@ -301,6 +306,10 @@ void main()
                 var log = _gl.GetProgramInfoLog(_shaderProgram);
                 UnifiedLogger.LogApplication(LogLevel.ERROR, $"Shader link error: {log}");
             }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "Shaders compiled and linked successfully");
+            }
 
             _gl.DeleteShader(vertexShader);
             _gl.DeleteShader(fragmentShader);
@@ -310,16 +319,7 @@ void main()
             _vbo = _gl.GenBuffer();
             _ebo = _gl.GenBuffer();
 
-            // Enable depth testing
-            _gl.Enable(EnableCap.DepthTest);
-            _gl.DepthFunc(DepthFunction.Less);
-
-            // Enable backface culling
-            _gl.Enable(EnableCap.CullFace);
-            _gl.CullFace(TriangleFace.Back);
-            _gl.FrontFace(FrontFaceDirection.Ccw);
-
-            UnifiedLogger.LogApplication(LogLevel.INFO, "OpenGL renderer initialized successfully");
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"OpenGL initialized: VAO={_vao}, VBO={_vbo}, EBO={_ebo}");
         }
         catch (Exception ex)
         {
@@ -369,7 +369,6 @@ void main()
     {
         if (_gl == null)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnOpenGlRender: _gl is null");
             return;
         }
 
@@ -379,33 +378,36 @@ void main()
 
         if (width <= 0 || height <= 0)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnOpenGlRender: Invalid bounds {width}x{height}");
             return;
         }
 
-        // Bind the framebuffer Avalonia gave us
-        _gl.BindFramebuffer(FramebufferTarget.Framebuffer, (uint)fb);
+        // Clear with visible background color (blue-ish gray)
+        // Note: Avalonia already binds the correct framebuffer before calling OnOpenGlRender
+        _gl.ClearColor(0.2f, 0.2f, 0.3f, 1.0f);
+        _gl.Clear((uint)(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit));
+        _gl.Enable(EnableCap.DepthTest);
+        _gl.DepthFunc(DepthFunction.Less);  // Ensure proper depth comparison
         _gl.Viewport(0, 0, (uint)width, (uint)height);
 
-        // Clear with visible background color (blue-ish gray for debugging)
-        _gl.ClearColor(0.2f, 0.2f, 0.3f, 1.0f);
-        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        // Check for any GL errors after basic setup
+        var err = _gl.GetError();
+        if (err != GLEnum.NoError)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"GL error after clear/viewport: {err}");
+        }
 
         if (_model == null)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, "OnOpenGlRender: No model to render");
             return;
         }
 
-        // Update mesh data if needed
+        // Update mesh data if needed - this also updates _cameraTarget and _modelRadius
         if (_needsMeshUpdate)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnOpenGlRender: Updating mesh buffers for model with {_model.GetMeshNodes().Count()} meshes");
             UpdateMeshBuffers();
             _needsMeshUpdate = false;
+            // Note: We continue rendering with the updated values
         }
-
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"OnOpenGlRender: Rendering model, meshDrawCalls={_meshDrawCalls.Count}, indexCount={_indexCount}");
 
         // Update textures if needed
         if (_needsTextureUpdate)
@@ -414,38 +416,75 @@ void main()
             _needsTextureUpdate = false;
         }
 
+        if (_indexCount == 0)
+        {
+            return;
+        }
+
+        // Disable culling for debugging - NWN models may have inconsistent winding
+        _gl.Disable(EnableCap.CullFace);
+
         // Set up matrices
         var aspect = (float)width / height;
-        var projection = Matrix4x4.CreatePerspectiveFieldOfView(
-            MathF.PI / 4f, // 45 degree FOV
-            aspect,
-            0.1f,
-            1000.0f);
 
-        // Camera distance based on model size
-        var cameraDistance = _modelRadius * 3.0f / _zoom;
-        var cameraPos = new Vector3(0, -cameraDistance, 0);
+        // Base scale factor to fit model in view (without zoom) - use 0.45 to leave margin
+        float baseScale = 0.45f / Math.Max(_modelRadius, 0.001f);
+        float scale = baseScale * _zoom;
 
-        var view = Matrix4x4.CreateLookAt(
-            cameraPos,
-            Vector3.Zero,
-            Vector3.UnitZ);
+        // Orthographic projection - height is fixed at 2.0, width adjusts for aspect
+        // Use tighter near/far planes for better depth precision
+        var projection = Matrix4x4.CreateOrthographic(2.0f * aspect, 2.0f, -10f, 10f);
 
-        // Model rotation - NWN uses Z-up
-        var model = Matrix4x4.CreateTranslation(-_cameraTarget) *
-                   Matrix4x4.CreateRotationZ(_rotationY) *
-                   Matrix4x4.CreateRotationX(_rotationX);
+        // View matrix: identity (offset is done in shader for testing)
+        var view = Matrix4x4.Identity;
+
+        // Model matrix: rotate around origin, then scale
+        // Centering is done via shader uniform to avoid matrix math issues
+        //
+        // Transform order (right to left in matrix multiplication):
+        // 1. User yaw rotation around Z axis
+        // 2. Tilt from Z-up (NWN) to Y-up (screen)
+        // 3. User pitch rotation
+        // 4. Scale to fit in view
+
+        // Step 1: User yaw rotation around model Z axis
+        var m = Matrix4x4.CreateRotationZ(_rotationY);
+
+        // Step 2: Tilt from Z-up to Y-up (rotate 90° around X)
+        m = Matrix4x4.CreateRotationX(MathF.PI / 2) * m;
+
+        // Step 3: User pitch rotation around X axis
+        m = Matrix4x4.CreateRotationX(_rotationX) * m;
+
+        // Step 4: Scale to fit in view (scale the rotated model)
+        m = Matrix4x4.CreateScale(scale) * m;
+
+        var modelMatrix = m;
 
         // Use shader
         _gl.UseProgram(_shaderProgram);
 
         // Set uniforms
-        SetUniformMatrix4("model", model);
+        SetUniformMatrix4("model", modelMatrix);
         SetUniformMatrix4("view", view);
         SetUniformMatrix4("projection", projection);
 
+        // Vertical offset to center the model on screen
+        // The model's Z center maps to Y after the 90° tilt, then gets scaled
+        // We offset in clip space to move the model down so its center is at screen center
+        float verticalOffset = _cameraTarget.Z * scale;
+        var offsetLoc = _gl.GetUniformLocation(_shaderProgram, "verticalOffset");
+        _gl.Uniform1(offsetLoc, verticalOffset);
+
+        // Debug logging for centering issues - only log once per model
+        if (_logOncePerModel)
+        {
+            _logOncePerModel = false;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: center.Z={_cameraTarget.Z:F3}, scale={scale:F3}, verticalOffset={verticalOffset:F3}, uniformLoc={offsetLoc}");
+        }
+
         // Lighting - from upper front right
-        var lightDir = Vector3.Normalize(new Vector3(0.5f, -0.5f, 0.8f));
+        var lightDir = Vector3.Normalize(new Vector3(0.5f, 0.5f, 0.8f));
         SetUniformVec3("lightDir", lightDir);
         SetUniformVec3("lightColor", new Vector3(0.8f, 0.8f, 0.8f));
         SetUniformVec3("ambientColor", new Vector3(0.3f, 0.3f, 0.3f));
@@ -472,11 +511,22 @@ void main()
             else
             {
                 SetUniformBool("hasTexture", false);
-                SetUniformVec3("flatColor", new Vector3(0.7f, 0.65f, 0.6f)); // Neutral skin tone
+                SetUniformVec3("flatColor", new Vector3(1.0f, 0.0f, 0.0f)); // Bright red for debugging
             }
 
-            nint offset = drawCall.IndexOffset;
-            _gl.DrawElements(PrimitiveType.Triangles, (uint)drawCall.IndexCount, DrawElementsType.UnsignedInt, in offset);
+            // Use unsafe pointer for DrawElements offset
+            unsafe
+            {
+                _gl.DrawElements(PrimitiveType.Triangles, (uint)drawCall.IndexCount,
+                    DrawElementsType.UnsignedInt, (void*)drawCall.IndexOffset);
+            }
+        }
+
+        // Check for errors after drawing
+        var drawErr = _gl.GetError();
+        if (drawErr != GLEnum.NoError)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"GL error after draw: {drawErr}");
         }
 
         _gl.BindVertexArray(0);
@@ -486,7 +536,7 @@ void main()
     {
         if (_gl == null || _model == null)
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateMeshBuffers: Skipping - gl={_gl != null}, model={_model != null}");
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"UpdateMeshBuffers called but gl={_gl != null}, model={_model != null}");
             return;
         }
 
@@ -497,17 +547,39 @@ void main()
         var indices = new List<uint>();
         uint baseVertex = 0;
 
-        var meshNodes = _model.GetMeshNodes().ToList();
-        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateMeshBuffers: Processing {meshNodes.Count} mesh nodes");
-
-        foreach (var mesh in meshNodes)
+        int meshIndex = 0;
+        int skippedMeshes = 0;
+        foreach (var mesh in _model.GetMeshNodes())
         {
-            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"UpdateMeshBuffers: Mesh has {mesh.Vertices.Length} vertices, {mesh.Faces.Length} faces");
+            meshIndex++;
             if (mesh.Vertices.Length == 0 || mesh.Faces.Length == 0)
+            {
+                skippedMeshes++;
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Skipping mesh {meshIndex}: verts={mesh.Vertices.Length}, faces={mesh.Faces.Length}");
                 continue;
+            }
 
             var nodePosition = mesh.Position;
             var hasUVs = mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length == mesh.Vertices.Length;
+            var hasNormals = mesh.Normals.Length == mesh.Vertices.Length;
+
+            // Debug: check for data consistency issues
+            if (mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length != mesh.Vertices.Length)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' UV count mismatch: {mesh.TextureCoords[0].Length} UVs vs {mesh.Vertices.Length} vertices");
+            }
+            if (mesh.Normals.Length > 0 && mesh.Normals.Length != mesh.Vertices.Length)
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"  Mesh {meshIndex} '{mesh.Name}' normal count mismatch: {mesh.Normals.Length} normals vs {mesh.Vertices.Length} vertices");
+            }
+
+            // For head meshes, log additional debug info
+            if (mesh.Name?.ToLowerInvariant().Contains("head") == true)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  HEAD MESH '{mesh.Name}': pos={nodePosition}, verts={mesh.Vertices.Length}, " +
+                    $"faces={mesh.Faces.Length}, hasUVs={hasUVs}, hasNormals={hasNormals}");
+            }
 
             // Track draw call for this mesh
             var drawCall = new MeshDrawCall
@@ -526,19 +598,28 @@ void main()
                 vertices.Add(v.Y);
                 vertices.Add(v.Z);
 
-                // Normal - calculate from first face that uses this vertex
-                Vector3 normal = Vector3.UnitZ;
-                foreach (var face in mesh.Faces)
+                // Normal - use pre-computed normals from mesh if available
+                Vector3 normal;
+                if (hasNormals)
                 {
-                    if (face.VertexIndex0 == i || face.VertexIndex1 == i || face.VertexIndex2 == i)
+                    normal = mesh.Normals[i];
+                }
+                else
+                {
+                    // Fallback: calculate from first face that uses this vertex
+                    normal = Vector3.UnitZ;
+                    foreach (var face in mesh.Faces)
                     {
-                        var v0 = mesh.Vertices[face.VertexIndex0];
-                        var v1 = mesh.Vertices[face.VertexIndex1];
-                        var v2 = mesh.Vertices[face.VertexIndex2];
-                        var e1 = v1 - v0;
-                        var e2 = v2 - v0;
-                        normal = Vector3.Normalize(Vector3.Cross(e1, e2));
-                        break;
+                        if (face.VertexIndex0 == i || face.VertexIndex1 == i || face.VertexIndex2 == i)
+                        {
+                            var v0 = mesh.Vertices[face.VertexIndex0];
+                            var v1 = mesh.Vertices[face.VertexIndex1];
+                            var v2 = mesh.Vertices[face.VertexIndex2];
+                            var e1 = v1 - v0;
+                            var e2 = v2 - v0;
+                            normal = Vector3.Normalize(Vector3.Cross(e1, e2));
+                            break;
+                        }
                     }
                 }
                 vertices.Add(normal.X);
@@ -582,6 +663,42 @@ void main()
 
         _indexCount = indices.Count;
 
+        // Calculate actual bounds from vertex data and update camera target
+        if (vertices.Count >= 8)
+        {
+            float minX = float.MaxValue, maxX = float.MinValue;
+            float minY = float.MaxValue, maxY = float.MinValue;
+            float minZ = float.MaxValue, maxZ = float.MinValue;
+            for (int i = 0; i < vertices.Count; i += 8)
+            {
+                minX = Math.Min(minX, vertices[i]);
+                maxX = Math.Max(maxX, vertices[i]);
+                minY = Math.Min(minY, vertices[i + 1]);
+                maxY = Math.Max(maxY, vertices[i + 1]);
+                minZ = Math.Min(minZ, vertices[i + 2]);
+                maxZ = Math.Max(maxZ, vertices[i + 2]);
+            }
+
+            // Update camera target to actual geometric center of vertices
+            _cameraTarget = new Vector3(
+                (minX + maxX) * 0.5f,
+                (minY + maxY) * 0.5f,
+                (minZ + maxZ) * 0.5f);
+
+            // Calculate radius from bounds
+            float sizeX = maxX - minX;
+            float sizeY = maxY - minY;
+            float sizeZ = maxZ - minZ;
+            _modelRadius = Math.Max(Math.Max(sizeX, sizeY), sizeZ) * 0.5f;
+
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Vertex bounds: X=[{minX:F2},{maxX:F2}] Y=[{minY:F2},{maxY:F2}] Z=[{minZ:F2},{maxZ:F2}], center={_cameraTarget}, radius={_modelRadius:F2}");
+
+            // Request another frame to use the updated center
+            RequestNextFrameRendering();
+        }
+
+        UnifiedLogger.LogApplication(LogLevel.INFO, $"UpdateMeshBuffers: model={_model?.Name ?? "null"}, {_meshDrawCalls.Count} meshes ({skippedMeshes} skipped), {vertices.Count / 8} vertices, {_indexCount / 3} triangles");
+
         if (_indexCount == 0) return;
 
         // Upload to GPU
@@ -598,17 +715,20 @@ void main()
             new ReadOnlySpan<uint>(indexArray), BufferUsageARB.StaticDraw);
 
         // Set up vertex attributes
-        // Position (location 0)
-        _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
-        _gl.EnableVertexAttribArray(0);
+        unsafe
+        {
+            // Position (location 0)
+            _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), (void*)0);
+            _gl.EnableVertexAttribArray(0);
 
-        // Normal (location 1)
-        _gl.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
-        _gl.EnableVertexAttribArray(1);
+            // Normal (location 1)
+            _gl.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+            _gl.EnableVertexAttribArray(1);
 
-        // TexCoord (location 2)
-        _gl.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 6 * sizeof(float));
-        _gl.EnableVertexAttribArray(2);
+            // TexCoord (location 2)
+            _gl.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+            _gl.EnableVertexAttribArray(2);
+        }
 
         _gl.BindVertexArray(0);
     }
@@ -639,6 +759,9 @@ void main()
             _textureCache.Remove(key);
 
         // Load new textures
+        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+            $"UpdateTextures: {textureNames.Count} textures, colors: skin={_colorIndices.Skin}, hair={_colorIndices.Hair}, " +
+            $"metal1={_colorIndices.Metal1}, metal2={_colorIndices.Metal2}, cloth1={_colorIndices.Cloth1}, cloth2={_colorIndices.Cloth2}");
         foreach (var texName in textureNames)
         {
             if (_textureCache.ContainsKey(texName))
@@ -647,12 +770,19 @@ void main()
             try
             {
                 var textureData = _textureService.LoadTexture(texName, _colorIndices);
-                if (textureData == null) continue;
+                if (textureData == null)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Texture '{texName}' returned null");
+                    continue;
+                }
 
                 var (width, height, pixels) = textureData.Value;
                 var texId = UploadTexture(width, height, pixels);
                 if (texId != 0)
+                {
                     _textureCache[texName] = texId;
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  Loaded texture '{texName}' ({width}x{height}) -> texId={texId}");
+                }
             }
             catch (Exception ex)
             {
@@ -687,9 +817,18 @@ void main()
         return texId;
     }
 
+    private bool _loggedUniforms;
     private void SetUniformMatrix4(string name, Matrix4x4 matrix)
     {
         var location = _gl!.GetUniformLocation(_shaderProgram, name);
+        if (!_loggedUniforms && name == "projection")
+        {
+            _loggedUniforms = true;
+            var modelLoc = _gl.GetUniformLocation(_shaderProgram, "model");
+            var viewLoc = _gl.GetUniformLocation(_shaderProgram, "view");
+            var projLoc = location;
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Uniform locations: model={modelLoc}, view={viewLoc}, projection={projLoc}");
+        }
         if (location >= 0)
         {
             // Convert Matrix4x4 to float array (column-major order for OpenGL)
@@ -729,5 +868,43 @@ void main()
         {
             _gl.Uniform1(location, value);
         }
+    }
+
+    private void SetUniformFloat(string name, float value)
+    {
+        var location = _gl!.GetUniformLocation(_shaderProgram, name);
+        if (location >= 0)
+        {
+            _gl.Uniform1(location, value);
+        }
+    }
+
+    /// <summary>
+    /// Determines if a texture name represents a body/skin texture that should render behind armor.
+    /// NWN body part textures follow naming conventions like:
+    /// - pXX_bodyYYY (player body parts)
+    /// - pXX_headYYY (player heads)
+    /// - cXX_bodyYYY (creature body parts)
+    /// Armor textures don't contain these patterns.
+    /// </summary>
+    private static bool IsBodyTexture(string? textureName)
+    {
+        if (string.IsNullOrEmpty(textureName))
+            return false;
+
+        var name = textureName.ToLowerInvariant();
+
+        // Body part patterns for player/creature models
+        // These render BEHIND armor to prevent z-fighting
+        return name.Contains("_body") ||
+               name.Contains("_head") ||
+               name.Contains("_neck") ||
+               name.Contains("_hand") ||
+               name.Contains("_foot") ||
+               name.Contains("_shin") ||
+               name.Contains("_thigh") ||
+               name.Contains("_bicep") ||
+               name.Contains("_forearm") ||
+               name.Contains("_pelvis");
     }
 }

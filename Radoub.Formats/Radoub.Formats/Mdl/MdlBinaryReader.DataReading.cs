@@ -13,6 +13,8 @@ public partial class MdlBinaryReader
         var vertices = new Vector3[count];
         if (_rawData.Length == 0 || offset + count * 12 > _rawData.Length)
         {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] ReadVertices BOUNDS CHECK FAILED: offset={offset}, count={count}, rawDataLen={_rawData.Length}, needed={(uint)(offset + count * 12)}");
             return vertices;
         }
 
@@ -25,14 +27,26 @@ public partial class MdlBinaryReader
             vertices[i] = ReadVector3(reader);
         }
 
-        // Debug: log first few vertices
+        // Debug: log first few vertices and check for suspicious values
         if (count > 0)
         {
             var sb = new StringBuilder();
-            sb.Append($"[MDL] ReadVertices: offset={offset}, count={count}, first 3: ");
+            sb.Append($"[MDL] ReadVertices: offset={offset}, count={count}, rawDataLen={_rawData.Length}, first 3: ");
+            float maxCoord = 0;
             for (int i = 0; i < Math.Min(3, count); i++)
             {
                 sb.Append($"[{vertices[i].X:F3},{vertices[i].Y:F3},{vertices[i].Z:F3}] ");
+                maxCoord = Math.Max(maxCoord, Math.Max(Math.Abs(vertices[i].X), Math.Max(Math.Abs(vertices[i].Y), Math.Abs(vertices[i].Z))));
+            }
+            // Check all vertices for extreme values that might indicate wrong data
+            for (int i = 0; i < count; i++)
+            {
+                maxCoord = Math.Max(maxCoord, Math.Max(Math.Abs(vertices[i].X), Math.Max(Math.Abs(vertices[i].Y), Math.Abs(vertices[i].Z))));
+            }
+            sb.Append($"maxCoord={maxCoord:F2}");
+            if (maxCoord > 10.0f)
+            {
+                sb.Append(" [SUSPICIOUS - body parts should be < 2m]");
             }
             Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG, sb.ToString());
         }
@@ -56,6 +70,30 @@ public partial class MdlBinaryReader
         {
             coords[i] = new Vector2(reader.ReadSingle(), reader.ReadSingle());
         }
+
+        // Debug: log first few UVs to verify they're in valid range [0,1]
+        if (count > 0)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append($"[MDL] ReadTexCoords: offset={offset}, count={count}, first 3: ");
+            int outOfRange = 0;
+            for (int i = 0; i < Math.Min(3, count); i++)
+            {
+                sb.Append($"[{coords[i].X:F3},{coords[i].Y:F3}] ");
+            }
+            // Check for out-of-range UVs
+            for (int i = 0; i < count; i++)
+            {
+                if (coords[i].X < -1 || coords[i].X > 2 || coords[i].Y < -1 || coords[i].Y > 2)
+                    outOfRange++;
+            }
+            if (outOfRange > 0)
+            {
+                sb.Append($"[WARN: {outOfRange} UVs out of range]");
+            }
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG, sb.ToString());
+        }
+
         return coords;
     }
 
