@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.57-alpha] - 2026-01-27
+**Branch**: `quartermaster/issue-1036` | **PR**: #TBD
+
+### Feature: Item Palette Modular Caching (#1036)
+
+Refactor item palette caching to use per-source cache files with independent invalidation.
+
+---
+
 ## [0.1.56-alpha] - 2026-01-25
 **Branch**: `quartermaster/issue-1055` | **PR**: #1129
 
