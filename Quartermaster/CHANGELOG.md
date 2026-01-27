@@ -17,6 +17,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Refactor item palette caching to use per-source cache files with independent invalidation.
 
+#### Added
+- `ModularPaletteCacheService` with per-source granularity (BIF, Override, HAK)
+- Cache tab in Settings UI with status, item count, size, and per-source breakdown
+- "Clear and Reload Cache" button that rebuilds cache and refreshes UI
+- `SetPaletteItems()` method for efficient bulk palette loading
+
+#### Changed
+- BIF cache invalidates only when `BaseGameInstallPath` changes
+- Override cache invalidates only when `NeverwinterNightsPath` changes
+- HAK caches track individual file modification times
+- Module folder items scanned fresh (no caching - already unpacked)
+- Removed batched UI loading with `Task.Delay()` - now adds all items at once
+
+#### Removed
+- Old monolithic `PaletteCacheService` (replaced by modular version)
+
 ---
 
 ## [0.1.56-alpha] - 2026-01-25
