@@ -65,7 +65,7 @@ public partial class AppearancePanel : UserControl
 
     // 3D Preview
     private Border? _modelPreviewContainer;
-    private ModelPreviewControl? _modelPreview;
+    private ModelPreviewGLControl? _modelPreviewGL;
     private Button? _rotateLeftButton;
     private Button? _rotateRightButton;
     private Button? _resetViewButton;
@@ -146,7 +146,7 @@ public partial class AppearancePanel : UserControl
 
         // 3D Preview
         _modelPreviewContainer = this.FindControl<Border>("ModelPreviewContainer");
-        _modelPreview = this.FindControl<ModelPreviewControl>("ModelPreview");
+        _modelPreviewGL = this.FindControl<ModelPreviewGLControl>("ModelPreviewGL");
         _rotateLeftButton = this.FindControl<Button>("RotateLeftButton");
         _rotateRightButton = this.FindControl<Button>("RotateRightButton");
         _resetViewButton = this.FindControl<Button>("ResetViewButton");
@@ -174,7 +174,7 @@ public partial class AppearancePanel : UserControl
     public void SetTextureService(TextureService textureService)
     {
         _textureService = textureService;
-        _modelPreview?.SetTextureService(textureService);
+        _modelPreviewGL?.SetTextureService(textureService);
     }
 
     public void LoadCreature(UtcFile? creature)
@@ -232,7 +232,7 @@ public partial class AppearancePanel : UserControl
     /// </summary>
     public void SetPreviewModel(MdlModel? model)
     {
-        if (_modelPreview != null)
-            _modelPreview.Model = model;
+        if (_modelPreviewGL != null)
+            _modelPreviewGL.Model = model;
     }
 }

@@ -17,7 +17,7 @@ public partial class MdlBinaryReader
         var meshHeaderStart = reader.BaseStream.Position;
 
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-            $"[MDL] ParseMeshNode: meshHeaderStart=0x{meshHeaderStart:X4}");
+            $"[MDL] ParseMeshNode '{mesh.Name}': meshHeaderStart=0x{meshHeaderStart:X4}");
 
         // 0x000: Skip mesh routines (2 uint32 = 8 bytes)
         reader.BaseStream.Position += 8;
@@ -49,7 +49,10 @@ public partial class MdlBinaryReader
         reader.ReadUInt32();
 
         // 0x078: Textures (4 x 64 bytes = 256 bytes)
+        var textureOffset = reader.BaseStream.Position;
         mesh.Bitmap = ReadFixedString(reader, 64);   // Texture0
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            $"[MDL] Mesh texture0 at 0x{textureOffset:X4} (relative 0x{textureOffset - meshHeaderStart:X4}): '{mesh.Bitmap}'");
         mesh.Bitmap2 = ReadFixedString(reader, 64);  // Texture1
         ReadFixedString(reader, 64);                  // Texture2
         ReadFixedString(reader, 64);                  // Texture3
@@ -102,7 +105,16 @@ public partial class MdlBinaryReader
         var normalsRawOffset = PointerToRawOffset(normalsOffset);
 
         Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-            $"[MDL] Mesh vertexDataPtr=0x{vertexDataOffset:X8} -> rawOffset={vertexRawOffset}, normalsPtr=0x{normalsOffset:X8} -> rawOffset={normalsRawOffset}, vertexCount={vertexCount}, faceCount={faceCount}");
+            $"[MDL] Mesh '{mesh.Name}': vertexDataPtr=0x{vertexDataOffset:X8} -> rawOffset={vertexRawOffset}, normalsPtr=0x{normalsOffset:X8} -> rawOffset={normalsRawOffset}, vertexCount={vertexCount}, faceCount={faceCount}, rawDataLen={_rawData.Length}");
+
+        // Log raw bytes at vertex offset for debugging
+        if (vertexRawOffset != 0xFFFFFFFF && vertexRawOffset != uint.MaxValue && vertexRawOffset + 24 <= _rawData.Length)
+        {
+            var rawBytes = new byte[24];
+            Array.Copy(_rawData, (int)vertexRawOffset, rawBytes, 0, 24);
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                $"[MDL] Mesh '{mesh.Name}': raw bytes at vertexOffset: {BitConverter.ToString(rawBytes)}");
+        }
 
         // Detect and skip average normal header if present
         vertexRawOffset = DetectAndSkipAverageNormal(vertexRawOffset, vertexCount);
@@ -113,6 +125,8 @@ public partial class MdlBinaryReader
         if (vertexCount > 0 && actualVertexOffset != 0xFFFFFFFF && actualVertexOffset != uint.MaxValue)
         {
             mesh.Vertices = ReadVertices(actualVertexOffset, vertexCount);
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                $"[MDL] Mesh '{mesh.Name}': Read {mesh.Vertices?.Length ?? 0} vertices");
         }
 
         if (vertexCount > 0 && actualNormalsOffset != 0xFFFFFFFF && actualNormalsOffset != uint.MaxValue)
@@ -147,6 +161,33 @@ public partial class MdlBinaryReader
         if (faceCount > 0 && faceArrayBufferOffset != 0xFFFFFFFF && faceArrayBufferOffset != uint.MaxValue)
         {
             mesh.Faces = ReadFaces(faceArrayBufferOffset, (int)faceCount);
+
+            // Validate face indices against vertex count
+            if (mesh.Faces != null && mesh.Vertices != null)
+            {
+                int maxIdx = 0;
+                int minIdx = int.MaxValue;
+                foreach (var face in mesh.Faces)
+                {
+                    maxIdx = Math.Max(maxIdx, Math.Max(face.VertexIndex0, Math.Max(face.VertexIndex1, face.VertexIndex2)));
+                    minIdx = Math.Min(minIdx, Math.Min(face.VertexIndex0, Math.Min(face.VertexIndex1, face.VertexIndex2)));
+                }
+                if (maxIdx >= mesh.Vertices.Length)
+                {
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                        $"[MDL] Mesh '{mesh.Name}': Face indices out of bounds! minIndex={minIdx}, maxIndex={maxIdx}, vertexCount={mesh.Vertices.Length}");
+                }
+                else
+                {
+                    // Log sample face and vertices for debugging
+                    var f0 = mesh.Faces[0];
+                    var v0 = mesh.Vertices[f0.VertexIndex0];
+                    var v1 = mesh.Vertices[f0.VertexIndex1];
+                    var v2 = mesh.Vertices[f0.VertexIndex2];
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                        $"[MDL] Mesh '{mesh.Name}': {mesh.Faces.Length} faces, idx range [{minIdx},{maxIdx}], vtxCount={mesh.Vertices.Length}. Face0: [{f0.VertexIndex0},{f0.VertexIndex1},{f0.VertexIndex2}] -> v0=({v0.X:F3},{v0.Y:F3},{v0.Z:F3})");
+                }
+            }
         }
 
         // Parse type-specific data
@@ -171,6 +212,10 @@ public partial class MdlBinaryReader
 
     /// <summary>
     /// Detect and skip "average normal" header that some NWN body part MDL files have.
+    /// The average normal is a 12-byte header (3 floats) prepended to vertex data.
+    /// Detection cases:
+    /// 1. First vector is zero (0,0,0) - placeholder/padding header
+    /// 2. First vector is unit normal (~1.0 magnitude) AND either axis-aligned OR second vector is small
     /// </summary>
     private uint DetectAndSkipAverageNormal(uint vertexRawOffset, int vertexCount)
     {
@@ -185,22 +230,49 @@ public partial class MdlBinaryReader
         float vz = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 8);
         float vMag = (float)Math.Sqrt(vx * vx + vy * vy + vz * vz);
 
-        // If first vector looks like a unit normal (not at origin)
-        if (vMag > 0.98f && vMag < 1.02f && !(vx == 0 && vy == 0 && vz == 0))
-        {
-            // Check if second vector has small magnitude (typical for local-space positions)
-            float v2x = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 12);
-            float v2y = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 16);
-            float v2z = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 20);
-            float v2Mag = (float)Math.Sqrt(v2x * v2x + v2y * v2y + v2z * v2z);
+        float v2x = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 12);
+        float v2y = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 16);
+        float v2z = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 20);
+        float v2Mag = (float)Math.Sqrt(v2x * v2x + v2y * v2y + v2z * v2z);
 
-            if (v2Mag < 0.3f)
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            $"[MDL] AvgNormal check at offset {vertexRawOffset}: v1=({vx:F4},{vy:F4},{vz:F4}) mag={vMag:F4}, v2=({v2x:F4},{v2y:F4},{v2z:F4}) mag={v2Mag:F4}");
+
+        bool shouldSkip = false;
+        string skipReason = "";
+
+        // Case 1: First vector is zero - this is a placeholder/padding, skip it
+        // Zero vertex at origin would create triangles connecting to (0,0,0)
+        if (vMag < 0.0001f && v2Mag > 0.001f)
+        {
+            shouldSkip = true;
+            skipReason = "zero placeholder";
+        }
+        else
+        {
+            // Case 2: First vector is a unit normal (magnitude very close to 1.0)
+            bool isUnitNormal = vMag > 0.98f && vMag < 1.02f;
+
+            // Common average normal values are exactly (0,0,1) or (0,0,-1) pointing up/down
+            bool isAxisAlignedNormal = (Math.Abs(vx) < 0.001f && Math.Abs(vy) < 0.001f && Math.Abs(vz - 1.0f) < 0.01f) ||
+                                       (Math.Abs(vx) < 0.001f && Math.Abs(vy) < 0.001f && Math.Abs(vz + 1.0f) < 0.01f);
+
+            // Second vector (actual first vertex) should have small magnitude for body parts
+            // Body part vertices are typically within -0.5 to 0.5 range in local space
+            bool secondVectorSmall = v2Mag < 0.5f;
+
+            if (isUnitNormal && (isAxisAlignedNormal || secondVectorSmall))
             {
-                // First vector is an "average normal" header - skip it
-                vertexRawOffset += 12;
-                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-                    $"[MDL] Skipping average normal header ({vx:F2},{vy:F2},{vz:F2}), actual positions start at offset {vertexRawOffset}");
+                shouldSkip = true;
+                skipReason = "unit normal header";
             }
+        }
+
+        if (shouldSkip)
+        {
+            vertexRawOffset += 12;
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                $"[MDL] Skipping {skipReason} ({vx:F4},{vy:F4},{vz:F4}), actual positions start at offset {vertexRawOffset}");
         }
 
         return vertexRawOffset;

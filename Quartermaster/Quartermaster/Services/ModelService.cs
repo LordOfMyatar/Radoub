@@ -290,27 +290,29 @@ public class ModelService
                     // Position the mesh at the bone location
                     trimesh.Position = bonePosition;
 
-                    // If no bitmap set, derive texture name from model name
-                    // NWN body parts often have empty bitmap field but texture follows naming convention
-                    if (string.IsNullOrEmpty(trimesh.Bitmap))
+                    // ALWAYS derive texture name for body parts - the texture field in body part MDLs
+                    // often contains stale/garbage data from reused file structures. NWN expects
+                    // body part textures to follow the naming convention: {prefix}_{partType}{number:D3}
+                    // For race-specific parts (head), try the original race prefix first
+                    // For limbs (which use human fallback models), use human texture prefix
+                    var derivedTexture = partName; // Default to model name (e.g., pme0_head001)
+
+                    // Check if this is a fallback model (human prefix loaded for non-human creature)
+                    // If so, use the human texture; otherwise use race-specific texture
+                    var isHumanFallback = partName.StartsWith("pmh0_") || partName.StartsWith("pfh0_");
+                    if (!isHumanFallback)
                     {
-                        // For race-specific parts (head), try the original race prefix first
-                        // For limbs (which use human fallback models), use human texture prefix
-                        var derivedTexture = partName; // Default to model name (e.g., pme0_head001)
+                        // Race-specific model - use race texture first (e.g., pme0_head001)
+                        derivedTexture = $"{basePrefix}_{partType}{partNumber:D3}";
+                    }
+                    // else: human fallback model - partName already has correct texture name
 
-                        // Check if this is a fallback model (human prefix loaded for non-human creature)
-                        // If so, use the human texture; otherwise use race-specific texture
-                        var isHumanFallback = partName.StartsWith("pmh0_") || partName.StartsWith("pfh0_");
-                        if (!isHumanFallback)
-                        {
-                            // Race-specific model - use race texture first (e.g., pme0_head001)
-                            derivedTexture = $"{basePrefix}_{partType}{partNumber:D3}";
-                        }
-                        // else: human fallback model - partName already has correct texture name
-
-                        trimesh.Bitmap = derivedTexture;
-                        UnifiedLogger.LogApplication(LogLevel.INFO,
-                            $"TryAddBodyPart: Derived texture '{derivedTexture}' for mesh '{trimesh.Name}'");
+                    var oldBitmap = trimesh.Bitmap;
+                    trimesh.Bitmap = derivedTexture;
+                    if (!string.IsNullOrEmpty(oldBitmap) && oldBitmap != derivedTexture)
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                            $"TryAddBodyPart: Overriding stale texture '{oldBitmap}' with '{derivedTexture}' for mesh '{trimesh.Name}'");
                     }
 
                     // Add to composite's root (or create root if needed)

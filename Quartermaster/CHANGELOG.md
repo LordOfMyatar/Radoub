@@ -10,6 +10,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.56-alpha] - 2026-01-25
+**Branch**: `quartermaster/issue-1055` | **PR**: #1129
+
+### Feature: Migrate 3D Renderer to Silk.NET/OpenGL (#1055)
+
+Replaced the SkiaSharp-based CPU renderer with a GPU-accelerated OpenGL renderer using Silk.NET.
+
+#### Added
+- `ModelPreviewGLControl` - GPU-accelerated 3D preview control using Avalonia's `OpenGlControlBase`
+- GLSL vertex and fragment shaders with per-pixel lighting
+- Proper depth buffer for correct occlusion (no more painter's algorithm)
+- Perspective-correct texture mapping (GPU handles this automatically)
+- Per-mesh texture binding for PLT textures
+- Mipmap generation for better texture quality at distance
+
+#### Changed
+- AppearancePanel now uses `ModelPreviewGLControl` instead of `ModelPreviewControl`
+- 3D model rotation/zoom controls updated to use new renderer
+
+#### Removed
+- `ModelPreviewControl` - Old SkiaSharp-based CPU renderer
+- `ModelRenderOperation` - ICustomDrawOperation for SkiaSharp
+- Painter's algorithm depth sorting code
+
+---
+
 ## [0.1.55-alpha] - 2026-01-24
 **Branch**: `radoub/issue-1096` | **PR**: #1101
 

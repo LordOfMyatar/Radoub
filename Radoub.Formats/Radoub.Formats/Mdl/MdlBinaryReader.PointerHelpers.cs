@@ -33,11 +33,17 @@ public partial class MdlBinaryReader
 
     /// <summary>
     /// Convert a memory pointer or offset to a raw data buffer offset.
+    /// 0xFFFFFFFF means "not present" (null pointer).
+    /// 0 is a valid offset meaning "start of raw data buffer".
     /// </summary>
     private uint PointerToRawOffset(uint pointer)
     {
-        if (pointer == 0xFFFFFFFF || pointer == 0)
-            return pointer; // Pass through sentinel values
+        // 0xFFFFFFFF is the null/invalid sentinel - pass through
+        if (pointer == 0xFFFFFFFF)
+            return pointer;
+
+        // 0 is a VALID offset meaning "start of raw data buffer"
+        // (unlike model data pointers which may use 0 as null)
 
         if (_rawDataFileOffset == 0 || _rawData.Length == 0)
             return uint.MaxValue; // No raw data section

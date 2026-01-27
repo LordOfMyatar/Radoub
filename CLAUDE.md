@@ -842,6 +842,42 @@ Select-String "CharacterPanel" .\.claude\cache\github-data.json
 
 ---
 
+## Session Log Searching
+
+A script for searching Radoub tool session logs with regex patterns.
+
+**Location**: `.claude/scripts/Search-SessionLogs.ps1`
+
+**Usage**:
+```powershell
+# List recent sessions
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.claude\scripts\Search-SessionLogs.ps1" -ListSessions -MostRecent 5
+
+# Search with regex (supports alternation)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.claude\scripts\Search-SessionLogs.ps1" -Pattern "error|warn|exception"
+
+# Search specific tool with context
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.claude\scripts\Search-SessionLogs.ps1" -Tool Fence -Pattern "focus|keyboard" -Context 2 -MostRecent 3
+
+# Case-sensitive search
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\.claude\scripts\Search-SessionLogs.ps1" -Pattern "ERROR" -CaseSensitive
+```
+
+**Parameters**:
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `-Tool` | Parley | Tool to search (Parley, Manifest, Quartermaster, Fence, Trebuchet) |
+| `-Pattern` | (required) | Regex pattern - supports `this\|that\|other` |
+| `-MostRecent` | 1 | Number of recent sessions to search |
+| `-Context` | 0 | Lines of context before/after matches |
+| `-MaxResults` | 50 | Truncate results at this count |
+| `-CaseSensitive` | false | Enable case-sensitive matching |
+| `-ListSessions` | - | List available sessions without searching |
+
+**Log Location**: `~/Radoub/{Tool}/Logs/Session_YYYYMMDD_HHMMSS/`
+
+---
+
 ## Resources
 
 - **Wiki**: `d:\LOM\workspace\Radoub.wiki\` (local clone of https://github.com/LordOfMyatar/Radoub/wiki)
