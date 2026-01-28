@@ -17,7 +17,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Radoub.UI.Controls;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
@@ -75,13 +74,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Wire up event handlers
         Closing += OnWindowClosing;
-        PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(HasFile))
-            {
-                // Update UI bindings
-            }
-        };
 
         // Wire up data grids for double-click
         StoreInventoryGrid.DoubleTapped += OnStoreInventoryDoubleTapped;
@@ -195,22 +187,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Fence: Failed to create GameDataService: {ex.Message}");
             return null;
         }
-    }
-
-    private void LoadBaseItemTypes()
-    {
-        if (_baseItemTypeService == null) return;
-
-        SelectableBaseItemTypes.Clear();
-
-        var types = _baseItemTypeService.GetBaseItemTypes();
-        foreach (var type in types)
-        {
-            SelectableBaseItemTypes.Add(new SelectableBaseItemTypeViewModel(type.BaseItemIndex, type.DisplayName));
-        }
-
-        ItemTypeCheckboxes.ItemsSource = SelectableBaseItemTypes;
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded {SelectableBaseItemTypes.Count} base item types for buy restrictions");
     }
 
     /// <summary>

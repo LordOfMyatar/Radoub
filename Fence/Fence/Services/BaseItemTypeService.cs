@@ -209,7 +209,7 @@ public class BaseItemTypeService
             new(81, "Miscellaneous (T)", "BASE_ITEM_MISCTHIN"),
             new(95, "Whip", "BASE_ITEM_WHIP"),
             new(108, "Dart", "BASE_ITEM_DART"),
-            new(109, "Throwing Star", "BASE_ITEM_DIREMACE")
+            new(109, "Throwing Star", "BASE_ITEM_THROWINGSTAR")
         };
 
         return _cachedTypes.OrderBy(t => t.DisplayName).ToList();

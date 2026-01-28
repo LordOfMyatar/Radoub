@@ -4,6 +4,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using MerchantEditor.Services;
 using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 using System;
@@ -76,8 +77,9 @@ public partial class SettingsWindow : Window
             CacheStatusText.Text = "Rebuilt";
             CacheStatusText.Foreground = GetSuccessBrush();
         }
-        catch
+        catch (Exception ex)
         {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Cache rebuild failed: {ex.Message}");
             CacheStatusText.Text = "Rebuild failed";
             CacheStatusText.Foreground = GetErrorBrush();
         }
