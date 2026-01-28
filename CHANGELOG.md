@@ -15,6 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.49] - 2026-01-27
+**Branch**: `radoub/issue-1138` | **PR**: #TBD
+
+### Sprint: Multi-Tool Tech Debt Cleanup (#1138)
+
+Address findings from recent Fence and Trebuchet code reviews. Creates shared utilities that benefit other tools.
+
+- [ ] #1118 - Trebuchet code review findings: quality, maintainability improvements
+- [ ] #1119 - Fence: Extract shared TLK validation and label formatting utilities
+- [ ] #1121 - Fence: Code review cleanup: dead code, bugs, and minor issues
+
+---
+
 ## [0.9.48] - 2026-01-25
 **Branch**: `radoub/issue-675` | **PR**: #1106
 

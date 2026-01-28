@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.9-alpha] - 2026-01-27
+**Branch**: `radoub/issue-1138` | **PR**: #TBD
+
+### Sprint: Multi-Tool Tech Debt Cleanup (#1138)
+
+- [ ] #1119 - Extract shared TLK validation and label formatting utilities
+- [ ] #1121 - Code review cleanup: dead code, bugs, and minor issues
+
+---
+
 ## [0.1.8-alpha] - 2026-01-24
 **Branch**: `radoub/issue-1096` | **PR**: #1101
 

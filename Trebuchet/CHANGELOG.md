@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.1-alpha] - 2026-01-27
+**Branch**: `radoub/issue-1138` | **PR**: #TBD
+
+### Sprint: Multi-Tool Tech Debt Cleanup (#1138)
+
+- [ ] #1118 - Code review findings: quality, maintainability improvements
+
+---
+
 ## [1.6.0-alpha] - 2026-01-25
 **Branch**: `trebuchet/issue-1116` | **PR**: #1117
 
