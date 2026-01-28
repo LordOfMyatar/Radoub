@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using Radoub.Formats.Common;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 
@@ -50,7 +50,7 @@ public class BaseItemTypeService
                 continue;
 
             // Skip garbage labels entirely
-            if (IsGarbageLabel(label))
+            if (TlkHelper.IsGarbageLabel(label))
                 continue;
 
             // Get display name from TLK
@@ -60,11 +60,11 @@ public class BaseItemTypeService
             {
                 var tlkName = _gameDataService.GetString(nameStrRef);
                 // Filter garbage TLK values
-                displayName = IsValidTlkString(tlkName) ? tlkName! : FormatLabel(label);
+                displayName = TlkHelper.IsValidTlkString(tlkName) ? tlkName! : TlkHelper.FormatBaseItemLabel(label);
             }
             else
             {
-                displayName = FormatLabel(label);
+                displayName = TlkHelper.FormatBaseItemLabel(label);
             }
 
             _cachedTypes.Add(new BaseItemTypeInfo(i, displayName, label));
@@ -83,49 +83,6 @@ public class BaseItemTypeService
     public void ClearCache()
     {
         _cachedTypes = null;
-    }
-
-    private static string FormatLabel(string label)
-    {
-        // Convert "BASE_ITEM_SHORTSWORD" to "Shortsword"
-        if (label.StartsWith("BASE_ITEM_", StringComparison.OrdinalIgnoreCase))
-            label = label.Substring(10);
-
-        // Convert underscores to spaces and title case
-        return string.Join(" ", label.Split('_')
-            .Select(w => char.ToUpper(w[0]) + w.Substring(1).ToLower()));
-    }
-
-    /// <summary>
-    /// Check if a label from baseitems.2da is a garbage/placeholder entry.
-    /// </summary>
-    private static bool IsGarbageLabel(string label)
-    {
-        return label.Contains("deleted", StringComparison.OrdinalIgnoreCase) ||
-               label.Contains("padding", StringComparison.OrdinalIgnoreCase) ||
-               label.StartsWith("xp2spec", StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// Check if a TLK string is valid (not null, not empty, not a placeholder value).
-    /// </summary>
-    private static bool IsValidTlkString(string? value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return false;
-
-        var trimmed = value.Trim();
-
-        // Common placeholder values in NWN TLK files
-        return !trimmed.Equals("BadStrRef", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("Bad Strref", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("DELETED", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("DELETE_ME", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Equals("Padding", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.StartsWith("Bad Str", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.StartsWith("Xp2spec", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.StartsWith("deleted", StringComparison.OrdinalIgnoreCase) &&
-               !trimmed.Contains("deleted", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
