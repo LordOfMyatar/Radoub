@@ -15,7 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Multi-Tool Tech Debt Cleanup (#1138)
 
-- [ ] #1118 - Code review findings: quality, maintainability improvements
+- [x] #1118 - Code review findings: quality, maintainability improvements
+  - Replace 6 bare catch blocks with specific exception types
+  - Add exception logging where previously silent
+  - Document best-effort process.Kill() pattern with comment
+  - Update BoolToBrushConverter to use theme-aware disabled brush
+  - Document magic color numbers with Material Design references
 
 ---
 

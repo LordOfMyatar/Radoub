@@ -22,9 +22,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Address findings from recent Fence and Trebuchet code reviews. Creates shared utilities that benefit other tools.
 
-- [ ] #1118 - Trebuchet code review findings: quality, maintainability improvements
-- [ ] #1119 - Fence: Extract shared TLK validation and label formatting utilities
-- [ ] #1121 - Fence: Code review cleanup: dead code, bugs, and minor issues
+- [x] #1118 - Trebuchet code review findings: quality, maintainability improvements
+- [x] #1119 - Fence: Extract shared TLK validation and label formatting utilities
+- [x] #1121 - Fence: Code review cleanup: dead code, bugs, and minor issues
+
+#### Shared Utilities (Radoub.Formats)
+- **TlkHelper** - shared TLK string validation and label formatting
+  - `IsValidTlkString()` - validates TLK strings, rejects placeholders like "BadStrRef"
+  - `IsGarbageLabel()` - detects deleted/padding 2DA labels
+  - `FormatBaseItemLabel()` - converts BASE_ITEM_X to readable names
+
+#### Shared UI (Radoub.UI)
+- **BrushManager** - added `GetDisabledBrush()` for theme-aware disabled state
+- Added DEBUG logging when theme resources use fallback colors
 
 ---
 

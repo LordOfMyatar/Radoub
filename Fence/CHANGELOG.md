@@ -15,8 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Multi-Tool Tech Debt Cleanup (#1138)
 
-- [ ] #1119 - Extract shared TLK validation and label formatting utilities
-- [ ] #1121 - Code review cleanup: dead code, bugs, and minor issues
+- [x] #1119 - Extract shared TLK validation and label formatting utilities
+  - Moved duplicate TLK validation to shared `TlkHelper` in Radoub.Formats
+  - Moved duplicate label formatting to shared utility
+- [x] #1121 - Code review cleanup: dead code, bugs, and minor issues
+  - Remove unused `LoadBaseItemTypes()` method
+  - Remove unused `ValidateAndRefreshRecentFilesAsync()` method
+  - Remove empty PropertyChanged handler
+  - Add exception logging to bare catch in SettingsWindow
+  - Fix item #109 label bug (was BASE_ITEM_DIREMACE, now BASE_ITEM_THROWINGSTAR)
 
 ---
 
