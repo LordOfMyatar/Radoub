@@ -137,8 +137,9 @@ public partial class MainWindowViewModel : ObservableObject
         {
             VersionText = $"v{VersionHelper.GetVersion()}";
         }
-        catch
+        catch (Exception ex)
         {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not get version info: {ex.Message}");
             VersionText = "v0.1.0";
         }
     }

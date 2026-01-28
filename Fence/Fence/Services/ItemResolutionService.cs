@@ -181,15 +181,15 @@ public class ItemResolutionService
     {
         // 1. Try localized name string first
         var defaultString = uti.LocalizedName.GetDefault();
-        if (!string.IsNullOrEmpty(defaultString) && !IsInvalidTlkString(defaultString))
-            return defaultString;
+        if (TlkHelper.IsValidTlkString(defaultString))
+            return defaultString!;
 
         // 2. Fall back to TLK reference if LocalizedName has a StrRef
         if (uti.LocalizedName.StrRef != 0xFFFFFFFF && _gameDataService != null)
         {
             var tlkString = _gameDataService.GetString(uti.LocalizedName.StrRef);
-            if (!string.IsNullOrEmpty(tlkString) && !IsInvalidTlkString(tlkString))
-                return tlkString;
+            if (TlkHelper.IsValidTlkString(tlkString))
+                return tlkString!;
         }
 
         // 3. Fall back to ResRef from UTI
@@ -198,25 +198,6 @@ public class ItemResolutionService
 
         // 4. Final fallback to the resRef we were looking for
         return resRef;
-    }
-
-    /// <summary>
-    /// Check if a TLK string is a placeholder/garbage value that should be skipped.
-    /// </summary>
-    private static bool IsInvalidTlkString(string value)
-    {
-        var trimmed = value.Trim();
-
-        // Common placeholder values in NWN TLK files
-        return trimmed.Equals("BadStrRef", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.Equals("BadStreff", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.Equals("DELETED", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.Equals("DELETE_ME", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.Equals("Padding", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.Equals("PAdding", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.StartsWith("Bad Str", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.StartsWith("Xp2spec", StringComparison.OrdinalIgnoreCase) ||
-               trimmed.Contains("deleted", StringComparison.OrdinalIgnoreCase);
     }
 
     private string GetBaseItemTypeName(int baseItemIndex)
@@ -229,36 +210,18 @@ public class ItemResolutionService
         if (!string.IsNullOrEmpty(nameStrRef) && nameStrRef != "****")
         {
             var name = _gameDataService.GetString(nameStrRef);
-            if (!string.IsNullOrEmpty(name) && !IsInvalidTlkString(name))
-                return name;
+            if (TlkHelper.IsValidTlkString(name))
+                return name!;
         }
 
         // Fall back to label
         var label = _gameDataService.Get2DAValue("baseitems", baseItemIndex, "label");
         if (!string.IsNullOrEmpty(label) && label != "****")
         {
-            return FormatLabel(label);
+            return TlkHelper.FormatBaseItemLabel(label);
         }
 
         return $"Type {baseItemIndex}";
-    }
-
-    private static string FormatLabel(string label)
-    {
-        // Convert "BASE_ITEM_SHORTSWORD" to "Shortsword"
-        if (label.StartsWith("BASE_ITEM_", StringComparison.OrdinalIgnoreCase))
-            label = label.Substring(10);
-
-        // Convert underscores to spaces and title case
-        var words = label.Split('_');
-        for (int i = 0; i < words.Length; i++)
-        {
-            if (words[i].Length > 0)
-            {
-                words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1).ToLower();
-            }
-        }
-        return string.Join(" ", words);
     }
 
     private static ResolvedItemData CreateFallbackData(string resRef)

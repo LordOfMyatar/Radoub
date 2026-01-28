@@ -15,6 +15,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.49] - 2026-01-27
+**Branch**: `radoub/issue-1138` | **PR**: #1139
+
+### Sprint: Multi-Tool Tech Debt Cleanup (#1138)
+
+Address findings from recent Fence and Trebuchet code reviews. Creates shared utilities that benefit other tools.
+
+- [x] #1118 - Trebuchet code review findings: quality, maintainability improvements
+- [x] #1119 - Fence: Extract shared TLK validation and label formatting utilities
+- [x] #1121 - Fence: Code review cleanup: dead code, bugs, and minor issues
+
+#### Shared Utilities (Radoub.Formats)
+- **TlkHelper** - shared TLK string validation and label formatting
+  - `IsValidTlkString()` - validates TLK strings, rejects placeholders like "BadStrRef"
+  - `IsGarbageLabel()` - detects deleted/padding 2DA labels
+  - `FormatBaseItemLabel()` - converts BASE_ITEM_X to readable names
+
+#### Shared UI (Radoub.UI)
+- **BrushManager** - added `GetDisabledBrush()` for theme-aware disabled state
+- Added DEBUG logging when theme resources use fallback colors
+
+---
+
 ## [0.9.48] - 2026-01-25
 **Branch**: `radoub/issue-675` | **PR**: #1106
 

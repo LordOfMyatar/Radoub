@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.1-alpha] - 2026-01-27
+**Branch**: `radoub/issue-1138` | **PR**: #1139
+
+### Sprint: Multi-Tool Tech Debt Cleanup (#1138)
+
+- [x] #1118 - Code review findings: quality, maintainability improvements
+  - Replace 6 bare catch blocks with specific exception types
+  - Add exception logging where previously silent
+  - Document best-effort process.Kill() pattern with comment
+  - Update BoolToBrushConverter to use theme-aware disabled brush
+  - Document magic color numbers with Material Design references
+
+---
+
 ## [1.6.0-alpha] - 2026-01-25
 **Branch**: `trebuchet/issue-1116` | **PR**: #1117
 

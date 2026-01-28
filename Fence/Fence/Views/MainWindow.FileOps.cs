@@ -346,11 +346,7 @@ public partial class MainWindow
 
     private void UpdateRecentFilesMenu()
     {
-        // Populate menu immediately with current list
         PopulateRecentFilesMenuItems();
-
-        // Background validation disabled - was causing crashes
-        // _ = ValidateAndRefreshRecentFilesAsync();
     }
 
     private void PopulateRecentFilesMenuItems()
@@ -386,22 +382,6 @@ public partial class MainWindow
             UpdateRecentFilesMenu();
         };
         RecentFilesMenu.Items.Add(clearItem);
-    }
-
-    private async System.Threading.Tasks.Task ValidateAndRefreshRecentFilesAsync()
-    {
-        var countBefore = SettingsService.Instance.RecentFiles.Count;
-        await SettingsService.Instance.ValidateRecentFilesAsync();
-        var countAfter = SettingsService.Instance.RecentFiles.Count;
-
-        // Refresh menu if files were removed - must be on UI thread
-        if (countAfter < countBefore)
-        {
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                PopulateRecentFilesMenuItems();
-            });
-        }
     }
 
     private async void OnRecentFileClick(object? sender, RoutedEventArgs e)

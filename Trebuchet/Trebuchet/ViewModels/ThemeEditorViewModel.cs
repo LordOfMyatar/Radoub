@@ -316,8 +316,9 @@ public class ThemeEditorViewModel : INotifyPropertyChanged
         {
             return new SolidColorBrush(Color.Parse(colorString));
         }
-        catch
+        catch (FormatException)
         {
+            // Color.Parse failed - use fallback color
             return new SolidColorBrush(fallback);
         }
     }
