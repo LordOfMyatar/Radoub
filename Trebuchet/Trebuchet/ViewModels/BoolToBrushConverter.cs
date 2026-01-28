@@ -15,18 +15,15 @@ public class BoolToBrushConverter : IValueConverter
 {
     public static readonly BoolToBrushConverter Instance = new();
 
-    // Fallback for disabled (not in BrushManager)
-    private static readonly IBrush DisabledBrush = new SolidColorBrush(Color.Parse("#9E9E9E"));
-
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool isAvailable)
         {
             return isAvailable
                 ? BrushManager.GetSuccessBrush()
-                : DisabledBrush;
+                : BrushManager.GetDisabledBrush();
         }
-        return DisabledBrush;
+        return BrushManager.GetDisabledBrush();
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -70,7 +67,8 @@ public class ModuleValidityToBgConverter : IValueConverter
 {
     public static readonly ModuleValidityToBgConverter Instance = new();
 
-    // Semi-transparent dark for valid (visible contrast against accent header)
+    // Semi-transparent black (50% opacity) for valid state badge background
+    // Provides contrast against accent header color without being too dark
     private static readonly IBrush ValidBrush = new SolidColorBrush(Color.Parse("#80000000"));
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

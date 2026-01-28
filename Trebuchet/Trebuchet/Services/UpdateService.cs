@@ -283,8 +283,9 @@ public class UpdateService : INotifyPropertyChanged
 
             return false;
         }
-        catch
+        catch (FormatException)
         {
+            // Version string parsing failed - assume no update available
             return false;
         }
     }

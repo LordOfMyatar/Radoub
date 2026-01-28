@@ -305,9 +305,9 @@ public class ToolLauncherService
                 return Path.GetDirectoryName(exePath);
             }
         }
-        catch
+        catch (Exception)
         {
-            // Ignore errors getting process path
+            // Environment.ProcessPath can throw if process info is unavailable
         }
         return null;
     }

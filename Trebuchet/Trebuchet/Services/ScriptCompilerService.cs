@@ -228,7 +228,8 @@ public class ScriptCompilerService
 
             if (!completed)
             {
-                try { process.Kill(); } catch { }
+                // Best-effort process termination - ignore errors (process may have already exited)
+                try { process.Kill(); } catch (Exception) { }
                 result.Success = false;
                 result.ErrorMessage = "Compilation timed out";
                 return result;
