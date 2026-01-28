@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.49] - 2026-01-27
-**Branch**: `radoub/issue-1138` | **PR**: #TBD
+**Branch**: `radoub/issue-1138` | **PR**: #1139
 
 ### Sprint: Multi-Tool Tech Debt Cleanup (#1138)
 
