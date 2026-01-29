@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.59-alpha] - 2026-01-28
+**Branch**: `quartermaster/issue-1137` | **PR**: #TBD
+
+### Sprint: Code Quality Improvements (#1137)
+
+Non-breaking quality improvements from recent code review findings.
+
+#### Work Items
+- [ ] #1122 - Replace bare catch blocks with specific exception handling
+- [ ] #1123 - Fix unsafe null-forgiving operators
+- [ ] #1127 - Add cancellation tokens to fire-and-forget async operations
+- [ ] #1128 - Code quality improvements (duplication, logging, validation)
+
+---
+
 ## [0.1.58-alpha] - 2026-01-27
 **Branch**: `quartermaster/issue-1124` | **PR**: #1136
 
