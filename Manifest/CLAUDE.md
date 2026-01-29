@@ -86,6 +86,16 @@ dotnet test Radoub.IntegrationTests --filter "FullyQualifiedName~Manifest"
 - Open JRL → Save JRL → Compare binary output
 - Verify all categories/entries preserved
 
+### Cross-Tool CLI Tests
+
+**Location**: `Manifest.Tests/CommandLineServiceTests.cs`
+
+Manifest has unique `--quest` and `--entry` flags for cross-tool navigation from Parley:
+- `--quest <tag>` - Navigate to a specific quest after opening
+- `--entry <id>` - Select a specific entry (requires --quest)
+
+Example cross-tool invocation: `Manifest.exe --file module.jrl -q my_quest -e 100`
+
 ---
 
 ## Commit Conventions

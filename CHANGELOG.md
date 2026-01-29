@@ -22,17 +22,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Audio system and cross-tool workflow test coverage.
 
-- [ ] #851 - Add audio system unit tests (Parley)
-- [ ] #850 - Add cross-tool integration tests
+- [x] #851 - Add audio system unit tests (Parley)
+- [x] #850 - Add cross-tool integration tests
 
-#### Audio System Tests (Parley)
-- SoundCache tests (5 tests) - cache hit/miss, invalidation, eviction, error handling
-- SoundValidator tests (4 tests) - mono/stereo detection, format validation
-- SoundExtractor tests (5 tests) - override/HAK/BIF extraction, priority order
+#### Audio System Tests (Parley) - `SoundValidatorTests.cs`
+- 12 unit tests for SoundValidator
+- Mono/stereo detection (NWN requires mono for conversation audio)
+- WAV format validation (RIFF/WAVE header parsing)
+- Non-WAV format detection (MP3, BMU with .wav extension)
+- Filename length validation (16 char NWN limit)
+- Sample rate validation warnings
 
-#### Cross-Tool Tests
-- CLI argument building tests - ExternalToolLauncher builds correct args
-- CommandLineService parsing tests - incoming arg parsing validation
+#### Cross-Tool Tests - `CommandLineServiceTests.cs`
+- 22 unit tests for Manifest CommandLineService
+- Quest/entry navigation parsing (`--quest <tag>`, `--entry <id>`)
+- Cross-tool invocation patterns from Parley
+- Quartermaster already has comprehensive CLI tests
 
 ---
 
