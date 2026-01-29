@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Radoub.Formats.Common;
@@ -31,6 +32,7 @@ public class CreatureDisplayService
 
     public CreatureDisplayService(IGameDataService gameDataService)
     {
+        ArgumentNullException.ThrowIfNull(gameDataService);
         _gameDataService = gameDataService;
 
         // Initialize cache services

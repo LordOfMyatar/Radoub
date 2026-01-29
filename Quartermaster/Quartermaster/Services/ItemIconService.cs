@@ -22,6 +22,7 @@ public class ItemIconService
 
     public ItemIconService(IGameDataService gameDataService)
     {
+        ArgumentNullException.ThrowIfNull(gameDataService);
         _gameDataService = gameDataService;
         _imageService = new ImageService(gameDataService);
         _bitmapCache = new ConcurrentDictionary<string, Bitmap?>();
