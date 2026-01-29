@@ -132,6 +132,18 @@ dotnet test Radoub.IntegrationTests --filter "FullyQualifiedName~Parley"
 - `OrphanNodeTests.cs:DeletingLinkParent_ShouldOrphanLinkedNodes`
 - `OrphanContainerIntegrationTests.cs:DeletingParentEntry_CreatesOrphanContainer_AndPersistsToFile`
 
+### Audio System Tests
+
+**Location**: `Parley.Tests/SoundValidatorTests.cs`
+
+Tests for sound file validation against NWN specifications:
+- Mono/stereo detection (NWN requires mono for conversation audio)
+- WAV format validation (RIFF/WAVE header parsing)
+- Non-WAV format detection (MP3, BMU with .wav extension)
+- Filename length validation (16 char NWN limit)
+
+**Test Data**: `Parley.Tests/TestData/Audio/` contains WAV files for testing
+
 ---
 
 ## Commit Conventions

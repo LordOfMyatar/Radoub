@@ -582,6 +582,32 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ---
 
+## Bash File Operations on Windows
+
+**Use forward slashes and Unix commands** - they work in Git Bash on Windows:
+
+```bash
+# Copy files (WORKS)
+cp d:/LOM/workspace/Radoub/source/file.txt d:/LOM/workspace/Radoub/dest/
+
+# Create directories (WORKS)
+mkdir -p d:/LOM/workspace/Radoub/new/path/
+
+# List files (WORKS)
+ls -la d:/LOM/workspace/Radoub/some/path/
+
+# Remove and recreate (WORKS)
+rm d:/path/to/file && mkdir d:/path/to/dir
+```
+
+**AVOID**:
+- Backslashes in paths (escaping issues)
+- PowerShell with `$` variables (get stripped)
+- `cmd /c` commands (quoting problems)
+- `xcopy` with `/Y` flags (parsing issues)
+
+---
+
 ## Code Quality Standards
 
 **Game Data Sourcing (MANDATORY)**:

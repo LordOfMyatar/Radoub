@@ -15,6 +15,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.50] - 2026-01-29
+**Branch**: `radoub/issue-1066` | **PR**: #1146
+
+### Sprint: Testing - Audio & Cross-Tool Workflows (#1066)
+
+Audio system and cross-tool workflow test coverage.
+
+- [x] #851 - Add audio system unit tests (Parley)
+- [x] #850 - Add cross-tool integration tests
+
+#### Audio System Tests (Parley) - `SoundValidatorTests.cs`
+- 12 unit tests for SoundValidator
+- Mono/stereo detection (NWN requires mono for conversation audio)
+- WAV format validation (RIFF/WAVE header parsing)
+- Non-WAV format detection (MP3, BMU with .wav extension)
+- Filename length validation (16 char NWN limit)
+- Sample rate validation warnings
+
+#### Cross-Tool Tests - `CommandLineServiceTests.cs`
+- 22 unit tests for Manifest CommandLineService
+- Quest/entry navigation parsing (`--quest <tag>`, `--entry <id>`)
+- Cross-tool invocation patterns from Parley
+- Quartermaster already has comprehensive CLI tests
+
+---
+
 ## [0.9.49] - 2026-01-27
 **Branch**: `radoub/issue-1138` | **PR**: #1139
 
