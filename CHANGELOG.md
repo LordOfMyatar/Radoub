@@ -15,6 +15,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.50] - 2026-01-29
+**Branch**: `radoub/issue-1066` | **PR**: #TBD
+
+### Sprint: Testing - Audio & Cross-Tool Workflows (#1066)
+
+Audio system and cross-tool workflow test coverage.
+
+- [ ] #851 - Add audio system unit tests (Parley)
+- [ ] #850 - Add cross-tool integration tests
+
+#### Audio System Tests (Parley)
+- SoundCache tests (5 tests) - cache hit/miss, invalidation, eviction, error handling
+- SoundValidator tests (4 tests) - mono/stereo detection, format validation
+- SoundExtractor tests (5 tests) - override/HAK/BIF extraction, priority order
+
+#### Cross-Tool Tests
+- CLI argument building tests - ExternalToolLauncher builds correct args
+- CommandLineService parsing tests - incoming arg parsing validation
+
+---
+
 ## [0.9.49] - 2026-01-27
 **Branch**: `radoub/issue-1138` | **PR**: #1139
 
