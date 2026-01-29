@@ -10,6 +10,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.60-alpha] - 2026-01-29
+**Branch**: `quartermaster/issue-1126` | **PR**: #1147
+
+### Refactor: Split StatsPanel.axaml.cs (#1126)
+
+Split the 830-line StatsPanel.axaml.cs into focused partial classes for better maintainability.
+
+#### Changed
+- Split `StatsPanel.axaml.cs` (830 LOC) into 4 partial class files:
+  - `StatsPanel.axaml.cs` (314 LOC) - Core initialization, loading, field definitions
+  - `StatsPanel.Abilities.cs` (245 LOC) - STR/DEX/CON/INT/WIS/CHA handling, ability points summary
+  - `StatsPanel.Combat.cs` (209 LOC) - HP, AC, BAB, CR calculations and display
+  - `StatsPanel.Saves.cs` (101 LOC) - Fortitude, Reflex, Will saving throw handling
+
+---
+
 ## [0.1.59-alpha] - 2026-01-28
 **Branch**: `quartermaster/issue-1137` | **PR**: #1140
 
