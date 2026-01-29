@@ -1,8 +1,11 @@
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
+using Radoub.UI.Services;
 using System;
 using System.ComponentModel;
+using System.IO;
 
 namespace Quartermaster.ViewModels;
 
@@ -123,9 +126,10 @@ public class FeatListViewModel : INotifyPropertyChanged
                 {
                     _iconBitmap = _iconService.GetFeatIcon(FeatId);
                 }
-                catch
+                catch (Exception ex) when (ex is FileNotFoundException or InvalidOperationException or ArgumentException)
                 {
-                    // Silently fail - no icon
+                    // Icon not available - expected for some feats
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not load feat icon for ID {FeatId}: {ex.Message}");
                 }
             }
             return _iconBitmap;

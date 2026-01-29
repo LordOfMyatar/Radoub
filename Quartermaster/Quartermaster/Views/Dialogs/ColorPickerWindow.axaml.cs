@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
@@ -24,9 +25,11 @@ public partial class ColorPickerWindow : Window
     public bool Confirmed { get; private set; }
     public byte SelectedColorIndex { get; private set; }
 
-    public ColorPickerWindow() : this(null!, "", 0)
-    {
-    }
+    /// <summary>
+    /// Designer-only constructor. Do not use at runtime.
+    /// </summary>
+    [Obsolete("Designer use only", error: true)]
+    public ColorPickerWindow() => throw new NotSupportedException("Use parameterized constructor");
 
     public ColorPickerWindow(PaletteColorService paletteColorService, string paletteName, byte currentColorIndex)
     {

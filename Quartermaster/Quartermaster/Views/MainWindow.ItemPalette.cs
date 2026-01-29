@@ -38,7 +38,7 @@ public partial class MainWindow
     /// Initialize palette loading - pre-warm cache in background but don't populate UI.
     /// Called on app startup.
     /// </summary>
-    public void StartGameItemsLoad()
+    public void StartGameItemsLoad(CancellationToken windowToken)
     {
         if (!_gameDataService.IsConfigured)
         {
@@ -46,33 +46,45 @@ public partial class MainWindow
             return;
         }
 
+        // Link to window cancellation token
+        _paletteCacheCts?.Cancel();
+        _paletteCacheCts = CancellationTokenSource.CreateLinkedTokenSource(windowToken);
+
         // Pre-warm cache in background (non-blocking)
-        _ = PreWarmCacheAsync();
+        _ = PreWarmCacheAsync(_paletteCacheCts.Token);
     }
 
     /// <summary>
     /// Pre-warm the cache in background so it's ready when user navigates to Inventory.
     /// Uses modular caching - only rebuilds sources that need updating.
     /// </summary>
-    private async Task PreWarmCacheAsync()
+    private async Task PreWarmCacheAsync(CancellationToken token)
     {
         try
         {
+            token.ThrowIfCancellationRequested();
+
             // Try to load aggregated cache from existing source caches
-            _cachedPaletteData = await Task.Run(() => _modularCacheService.GetAggregatedCache());
+            _cachedPaletteData = await Task.Run(() => _modularCacheService.GetAggregatedCache(), token);
 
             if (_cachedPaletteData != null && _cachedPaletteData.Count > 0)
             {
                 UnifiedLogger.LogInventory(LogLevel.INFO, $"Cache pre-warmed from existing sources: {_cachedPaletteData.Count} items");
 
                 // Check if any sources need rebuilding
-                _ = RebuildStaleCachesAsync();
+                _ = RebuildStaleCachesAsync(token);
                 return;
             }
 
+            token.ThrowIfCancellationRequested();
+
             // No valid caches - build all from scratch
             UnifiedLogger.LogInventory(LogLevel.INFO, "Building palette caches in background...");
-            await BuildAllCachesAsync();
+            await BuildAllCachesAsync(token);
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Cache pre-warm cancelled");
         }
         catch (Exception ex)
         {
@@ -84,12 +96,8 @@ public partial class MainWindow
     /// Rebuild only the source caches that are stale or missing.
     /// Runs in background without blocking UI.
     /// </summary>
-    private async Task RebuildStaleCachesAsync()
+    private async Task RebuildStaleCachesAsync(CancellationToken token)
     {
-        _paletteCacheCts?.Cancel();
-        _paletteCacheCts = new CancellationTokenSource();
-        var token = _paletteCacheCts.Token;
-
         var sourcesToRebuild = new List<GameResourceSource>();
 
         // Check which sources need rebuilding
@@ -110,52 +118,57 @@ public partial class MainWindow
 
         UnifiedLogger.LogInventory(LogLevel.INFO, $"Rebuilding {sourcesToRebuild.Count} stale cache(s): {string.Join(", ", sourcesToRebuild)}");
 
-        await Task.Run(async () =>
+        try
         {
-            foreach (var source in sourcesToRebuild)
+            await Task.Run(async () =>
             {
-                if (token.IsCancellationRequested)
-                    break;
+                foreach (var source in sourcesToRebuild)
+                {
+                    token.ThrowIfCancellationRequested();
+                    await BuildSourceCacheAsync(source, token);
+                }
+            }, token);
 
-                await BuildSourceCacheAsync(source, token);
+            // Refresh aggregated cache
+            if (!token.IsCancellationRequested)
+            {
+                _modularCacheService.InvalidateAggregatedCache();
+                _cachedPaletteData = _modularCacheService.GetAggregatedCache();
             }
-        }, token);
-
-        // Refresh aggregated cache
-        if (!token.IsCancellationRequested)
+        }
+        catch (OperationCanceledException)
         {
-            _modularCacheService.InvalidateAggregatedCache();
-            _cachedPaletteData = _modularCacheService.GetAggregatedCache();
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Cache rebuild cancelled");
         }
     }
 
     /// <summary>
     /// Build all source caches from scratch.
     /// </summary>
-    private async Task BuildAllCachesAsync()
+    private async Task BuildAllCachesAsync(CancellationToken token)
     {
-        _paletteCacheCts?.Cancel();
-        _paletteCacheCts = new CancellationTokenSource();
-        var token = _paletteCacheCts.Token;
-
-        await Task.Run(async () =>
+        try
         {
-            // Build each source independently
-            await BuildSourceCacheAsync(GameResourceSource.Bif, token);
-            if (token.IsCancellationRequested) return;
+            await Task.Run(async () =>
+            {
+                // Build each source independently
+                await BuildSourceCacheAsync(GameResourceSource.Bif, token);
+                token.ThrowIfCancellationRequested();
 
-            await BuildSourceCacheAsync(GameResourceSource.Override, token);
-            if (token.IsCancellationRequested) return;
+                await BuildSourceCacheAsync(GameResourceSource.Override, token);
+                token.ThrowIfCancellationRequested();
 
-            // HAKs would be built here when HAK support is added
-            // For now, HAK items are included with Override
-        }, token);
+                // HAKs would be built here when HAK support is added
+                // For now, HAK items are included with Override
+            }, token);
 
-        // Load aggregated result
-        if (!token.IsCancellationRequested)
-        {
+            // Load aggregated result
             _cachedPaletteData = _modularCacheService.GetAggregatedCache();
             UnifiedLogger.LogInventory(LogLevel.INFO, $"All caches built: {_cachedPaletteData?.Count ?? 0} total items");
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Cache build cancelled");
         }
     }
 
@@ -219,7 +232,7 @@ public partial class MainWindow
     /// Load palette items into the UI. Called when user navigates to Inventory panel.
     /// Uses cached data if available, otherwise waits for cache to be ready.
     /// </summary>
-    public async Task LoadPaletteItemsAsync()
+    public async Task LoadPaletteItemsAsync(CancellationToken token)
     {
         if (_paletteLoaded)
             return;
@@ -231,8 +244,10 @@ public partial class MainWindow
             // Wait for cache if not ready
             if (_cachedPaletteData == null)
             {
-                await PreWarmCacheAsync();
+                await PreWarmCacheAsync(token);
             }
+
+            token.ThrowIfCancellationRequested();
 
             if (_cachedPaletteData == null || _cachedPaletteData.Count == 0)
             {
@@ -253,6 +268,7 @@ public partial class MainWindow
                 var vms = new List<ItemViewModel>(_cachedPaletteData.Count);
                 foreach (var cached in _cachedPaletteData)
                 {
+                    token.ThrowIfCancellationRequested();
                     vms.Add(new ItemViewModel
                     {
                         ResRef = cached.ResRef,
@@ -266,7 +282,7 @@ public partial class MainWindow
                     });
                 }
                 return vms;
-            });
+            }, token);
 
             // Set all items at once (efficient - avoids per-item filter updates)
             InventoryPanelContent.SetPaletteItems(viewModels);
@@ -274,6 +290,11 @@ public partial class MainWindow
             _paletteLoaded = true;
             UpdateStatus($"Ready - {viewModels.Count:N0} items loaded");
             UnifiedLogger.LogInventory(LogLevel.INFO, $"Palette loaded: {viewModels.Count} items");
+        }
+        catch (OperationCanceledException)
+        {
+            UnifiedLogger.LogInventory(LogLevel.DEBUG, "Palette load cancelled");
+            UpdateStatus("Ready");
         }
         catch (Exception ex)
         {
@@ -358,6 +379,13 @@ public partial class MainWindow
     /// </summary>
     public async Task ClearAndReloadPaletteCacheAsync()
     {
+        // Create new CTS for this operation (links to window CTS if available)
+        _paletteCacheCts?.Cancel();
+        _paletteCacheCts = _windowCts != null
+            ? CancellationTokenSource.CreateLinkedTokenSource(_windowCts.Token)
+            : new CancellationTokenSource();
+        var token = _paletteCacheCts.Token;
+
         _modularCacheService.ClearAllCaches();
         _cachedPaletteData = null;
         _paletteLoaded = false;
@@ -365,8 +393,8 @@ public partial class MainWindow
         InventoryPanelContent.PaletteItems.Clear();
 
         // Rebuild cache and reload into UI
-        await BuildAllCachesAsync();
-        await LoadPaletteItemsAsync();
+        await BuildAllCachesAsync(token);
+        await LoadPaletteItemsAsync(token);
     }
 
     /// <summary>

@@ -16,6 +16,7 @@ public class CharacterSheetService
 
     public CharacterSheetService(CreatureDisplayService displayService)
     {
+        ArgumentNullException.ThrowIfNull(displayService);
         _displayService = displayService;
     }
 

@@ -10,6 +10,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.59-alpha] - 2026-01-28
+**Branch**: `quartermaster/issue-1137` | **PR**: #1140
+
+### Sprint: Code Quality Improvements (#1137)
+
+Non-breaking quality improvements from recent code review findings.
+
+#### Work Items
+- [x] #1122 - Replace bare catch blocks with specific exception handling
+- [x] #1123 - Fix unsafe null-forgiving operators
+- [x] #1127 - Add cancellation tokens to fire-and-forget async operations
+- [x] #1128 - Code quality improvements (duplication, logging, validation)
+
+#### Details
+
+**#1122 - Bare catch blocks** (11 instances fixed):
+- App.axaml.cs, SettingsWindow.axaml.cs: Font handling (ArgumentException)
+- SpellListViewModel, FeatListViewModel, SkillsPanel, InventoryPanel: Icon loading
+- ModularPaletteCacheService: Cache file operations (IOException, JsonException)
+- AppearanceService: Faction file parsing
+
+**#1123 - Null-forgiving operators**:
+- Designer constructors marked [Obsolete(error: true)]
+- TextureService cache uses nullable Dictionary
+- MainWindow service fields documented as safe (guaranteed initialization)
+
+**#1127 - Cancellation tokens**:
+- CancellationTokenSource pattern for MainWindow async operations
+- Token propagation through LoadPaletteItemsAsync, InitializeCachesAsync
+- Proper cancellation on window close
+
+**#1128 - Parameter validation**:
+- Added ArgumentNullException.ThrowIfNull to service constructors:
+  FeatService, ClassService, CreatureDisplayService, CharacterSheetService, ItemIconService
+
+---
+
 ## [0.1.58-alpha] - 2026-01-27
 **Branch**: `quartermaster/issue-1124` | **PR**: #1136
 

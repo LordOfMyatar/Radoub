@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,6 +20,10 @@ public class FeatService
 
     public FeatService(IGameDataService gameDataService, SkillService skillService, FeatCacheService cacheService)
     {
+        ArgumentNullException.ThrowIfNull(gameDataService);
+        ArgumentNullException.ThrowIfNull(skillService);
+        ArgumentNullException.ThrowIfNull(cacheService);
+
         _gameDataService = gameDataService;
         _skillService = skillService;
         _cacheService = cacheService;

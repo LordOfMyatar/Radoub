@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Markup.Xaml;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
@@ -77,7 +78,8 @@ public partial class App : Application
         UnifiedLogger.CleanupOldSessions(SettingsService.Instance.LogRetentionSessions);
 
         // Initialize spell-checking (async, non-blocking)
-        _ = SpellCheckService.Instance.InitializeAsync();
+        // No cancellation needed - singleton service that should complete during app lifetime
+        _ = InitializeSpellCheckAsync();
     }
 
     /// <summary>
@@ -186,11 +188,11 @@ public partial class App : Application
                     Resources["GlobalFontFamily"] = new FontFamily(settings.FontFamily);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {settings.FontFamily}");
                 }
-                catch
+                catch (ArgumentException ex)
                 {
                     // Invalid font family - fall back to system default
                     Resources["GlobalFontFamily"] = FontFamily.Default;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default (fallback)");
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Invalid font family '{settings.FontFamily}': {ex.Message}. Using system default.");
                 }
             }
             else
@@ -199,6 +201,18 @@ public partial class App : Application
                 Resources["GlobalFontFamily"] = FontFamily.Default;
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default");
             }
+        }
+    }
+
+    private static async Task InitializeSpellCheckAsync()
+    {
+        try
+        {
+            await SpellCheckService.Instance.InitializeAsync();
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Spell-check initialization failed: {ex.Message}");
         }
     }
 

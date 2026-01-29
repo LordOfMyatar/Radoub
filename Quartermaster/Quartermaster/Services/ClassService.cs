@@ -21,6 +21,10 @@ public class ClassService
 
     public ClassService(IGameDataService gameDataService, SkillService skillService, FeatService featService)
     {
+        ArgumentNullException.ThrowIfNull(gameDataService);
+        ArgumentNullException.ThrowIfNull(skillService);
+        ArgumentNullException.ThrowIfNull(featService);
+
         _gameDataService = gameDataService;
         _skillService = skillService;
         _featService = featService;

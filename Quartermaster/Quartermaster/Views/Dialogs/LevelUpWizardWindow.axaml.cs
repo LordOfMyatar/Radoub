@@ -92,9 +92,11 @@ public partial class LevelUpWizardWindow : Window
 
     public bool Confirmed { get; private set; }
 
-    public LevelUpWizardWindow() : this(null!, null!)
-    {
-    }
+    /// <summary>
+    /// Designer-only constructor. Do not use at runtime.
+    /// </summary>
+    [Obsolete("Designer use only", error: true)]
+    public LevelUpWizardWindow() => throw new NotSupportedException("Use parameterized constructor");
 
     public LevelUpWizardWindow(CreatureDisplayService displayService, UtcFile creature)
     {
