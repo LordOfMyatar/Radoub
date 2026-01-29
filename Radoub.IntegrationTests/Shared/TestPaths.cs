@@ -118,6 +118,17 @@ public static class TestPaths
     public static string GetTestHakFile(string filename) => Path.Combine(TestHakDirectory, filename);
 
     /// <summary>
+    /// Gets the test ambient sounds directory within the spoofed game root.
+    /// Contains WAV files for audio validation tests.
+    /// </summary>
+    public static string TestAmbientDirectory => Path.Combine(TestGameRoot, "ambient");
+
+    /// <summary>
+    /// Gets a specific test audio file path.
+    /// </summary>
+    public static string GetTestAudioFile(string filename) => Path.Combine(TestAmbientDirectory, filename);
+
+    /// <summary>
     /// Gets the test module directory (unpacked module with dlg, utc, scripts, etc.).
     /// </summary>
     public static string TestModuleDirectory => Path.Combine(TestDataRoot, "TestModule");

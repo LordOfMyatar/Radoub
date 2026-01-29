@@ -23,8 +23,4 @@
     <ProjectReference Include="..\Parley\Parley.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="TestData\Audio\**\*" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
 </Project>
