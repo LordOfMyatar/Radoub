@@ -254,9 +254,9 @@ public class ModularPaletteCacheService
                         }
                     }
                 }
-                catch
+                catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
                 {
-                    // Skip invalid cache files
+                    UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Skipping invalid cache file '{Path.GetFileName(hakCache)}': {ex.Message}");
                 }
             }
         }
@@ -306,9 +306,9 @@ public class ModularPaletteCacheService
                 {
                     File.Delete(file);
                 }
-                catch
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
-                    // Ignore deletion errors
+                    UnifiedLogger.LogInventory(LogLevel.WARN, $"Could not delete cache file '{Path.GetFileName(file)}': {ex.Message}");
                 }
             }
             UnifiedLogger.LogInventory(LogLevel.INFO, "Cleared all palette caches");
@@ -341,9 +341,9 @@ public class ModularPaletteCacheService
                     stats.SourceCounts[cache.Source] = cache.Items.Count;
                 }
             }
-            catch
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
             {
-                // Skip invalid files
+                UnifiedLogger.LogInventory(LogLevel.DEBUG, $"Could not read cache file '{Path.GetFileName(file)}': {ex.Message}");
             }
         }
 

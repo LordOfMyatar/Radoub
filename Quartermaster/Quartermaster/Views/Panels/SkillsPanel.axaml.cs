@@ -7,9 +7,11 @@ using Avalonia.Styling;
 using Quartermaster.Services;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
+using Radoub.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 
 namespace Quartermaster.Views.Panels;
@@ -673,9 +675,10 @@ public class SkillViewModel : System.ComponentModel.INotifyPropertyChanged
                 {
                     _iconBitmap = _iconService.GetSkillIcon(SkillId);
                 }
-                catch
+                catch (Exception ex) when (ex is FileNotFoundException or InvalidOperationException or ArgumentException)
                 {
-                    // Silently fail - no icon
+                    // Icon not available - expected for some skills
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not load skill icon for ID {SkillId}: {ex.Message}");
                 }
             }
             return _iconBitmap;

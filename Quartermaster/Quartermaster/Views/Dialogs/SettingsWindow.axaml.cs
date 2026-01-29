@@ -286,9 +286,9 @@ public partial class SettingsWindow : Window
                     possiblePaths.Add(nwnPath);
                 }
             }
-            catch
+            catch (Exception ex) when (ex is System.Security.SecurityException or IOException or UnauthorizedAccessException)
             {
-                // Registry access failed - continue with hardcoded paths
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Registry access failed: {ex.Message}. Using hardcoded paths.");
             }
 
             // Common Steam locations
@@ -536,9 +536,9 @@ public partial class SettingsWindow : Window
             {
                 previewText.FontFamily = new FontFamily(settings.FontFamily);
             }
-            catch
+            catch (ArgumentException ex)
             {
-                // Invalid font family - ignore
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Invalid font family for preview: {ex.Message}");
             }
         }
     }

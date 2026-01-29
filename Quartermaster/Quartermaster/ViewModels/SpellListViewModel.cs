@@ -1,9 +1,12 @@
 using System;
+using System.IO;
 using System.Windows.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Quartermaster.Services;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Utc;
+using Radoub.UI.Services;
 
 namespace Quartermaster.ViewModels;
 
@@ -50,9 +53,10 @@ public class SpellListViewModel : BindableBase
                 {
                     _iconBitmap = _iconService.GetSpellIcon(SpellId);
                 }
-                catch
+                catch (Exception ex) when (ex is FileNotFoundException or InvalidOperationException or ArgumentException)
                 {
-                    // Silently fail - no icon
+                    // Icon not available - expected for some spells
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not load spell icon for ID {SpellId}: {ex.Message}");
                 }
             }
             return _iconBitmap;

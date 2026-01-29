@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Services;
 
@@ -417,9 +420,9 @@ public class AppearanceService
                     }
                 }
             }
-            catch
+            catch (Exception ex) when (ex is IOException or InvalidOperationException or FormatException)
             {
-                // Fall through to defaults if parsing fails
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Could not load factions from repute.fac: {ex.Message}. Using defaults.");
             }
         }
 

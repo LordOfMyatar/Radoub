@@ -4,10 +4,12 @@ using Avalonia.Markup.Xaml;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Services;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -436,8 +438,9 @@ public partial class InventoryPanel : UserControl, INotifyPropertyChanged
                     var asset = Avalonia.Platform.AssetLoader.Open(uri);
                     _itemIcon.Source = new Avalonia.Media.Imaging.Bitmap(asset);
                 }
-                catch
+                catch (Exception ex) when (ex is UriFormatException or FileNotFoundException or InvalidOperationException)
                 {
+                    UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not load item icon from '{item.IconPath}': {ex.Message}");
                     _itemIcon.Source = null;
                 }
             }

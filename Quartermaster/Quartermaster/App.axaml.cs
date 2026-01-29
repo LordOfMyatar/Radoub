@@ -186,11 +186,11 @@ public partial class App : Application
                     Resources["GlobalFontFamily"] = new FontFamily(settings.FontFamily);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Applied font family: {settings.FontFamily}");
                 }
-                catch
+                catch (ArgumentException ex)
                 {
                     // Invalid font family - fall back to system default
                     Resources["GlobalFontFamily"] = FontFamily.Default;
-                    UnifiedLogger.LogApplication(LogLevel.DEBUG, "Applied font family: System Default (fallback)");
+                    UnifiedLogger.LogApplication(LogLevel.WARN, $"Invalid font family '{settings.FontFamily}': {ex.Message}. Using system default.");
                 }
             }
             else
