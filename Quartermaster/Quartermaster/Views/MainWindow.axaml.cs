@@ -19,6 +19,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Quartermaster.Views;
@@ -44,6 +45,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ItemIconService _itemIconService = null!;
     private AudioService _audioService = null!;
     private bool _servicesInitialized;
+
+    // Cancellation token for async operations - cancelled on window close
+    private CancellationTokenSource? _windowCts;
 
     // Equipment slots collection (shared with InventoryPanel)
     private ObservableCollection<EquipmentSlotViewModel> _equipmentSlots = new();
@@ -260,7 +264,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             case "Inventory":
                 InventoryPanelContent.IsVisible = true;
                 // Load palette items on-demand when first navigating to Inventory
-                _ = LoadPaletteItemsAsync();
+                if (_windowCts != null)
+                    _ = LoadPaletteItemsAsync(_windowCts.Token);
                 break;
             case "Appearance":
                 AppearancePanelContent.IsVisible = true;
@@ -288,35 +293,49 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         Opened -= OnWindowOpened;
 
+        // Create cancellation token for async operations
+        _windowCts = new CancellationTokenSource();
+
         UpdateStatus("Initializing...");
         UpdateRecentFilesMenu();
 
         // Fire and forget - don't block UI thread
         // Service init and all loading happens in background
-        _ = InitializeAndLoadAsync();
+        _ = InitializeAndLoadAsync(_windowCts.Token);
     }
 
-    private async Task InitializeAndLoadAsync()
+    private async Task InitializeAndLoadAsync(CancellationToken token)
     {
-        // Initialize services on background thread - this is the expensive part
-        await InitializeServicesAsync();
-
-        // Now initialize panels that depend on services (must be on UI thread)
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+        try
         {
-            InitializePanels();
-        });
+            // Initialize services on background thread - this is the expensive part
+            await InitializeServicesAsync();
 
-        // Fire-and-forget cache and item loading in parallel
-        _ = InitializeCachesAsync();
-        StartGameItemsLoad();
+            token.ThrowIfCancellationRequested();
 
-        await HandleStartupFileAsync();
+            // Now initialize panels that depend on services (must be on UI thread)
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                InitializePanels();
+            });
 
-        await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            token.ThrowIfCancellationRequested();
+
+            // Fire-and-forget cache and item loading in parallel
+            _ = InitializeCachesAsync(token);
+            StartGameItemsLoad(token);
+
+            await HandleStartupFileAsync();
+
+            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                UpdateStatus("Ready");
+            });
+        }
+        catch (OperationCanceledException)
         {
-            UpdateStatus("Ready");
-        });
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, "Window initialization cancelled");
+        }
     }
 
     private async Task InitializeServicesAsync()
@@ -346,15 +365,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UnifiedLogger.LogApplication(LogLevel.INFO, "Quartermaster services initialized");
     }
 
-    private async Task InitializeCachesAsync()
+    private async Task InitializeCachesAsync(CancellationToken token)
     {
         if (_gameDataService.IsConfigured)
         {
             UpdateStatus("Loading game data caches...");
             try
             {
+                token.ThrowIfCancellationRequested();
                 await _creatureDisplayService.InitializeCachesAsync();
                 UnifiedLogger.LogApplication(LogLevel.INFO, "Game data caches initialized");
+            }
+            catch (OperationCanceledException)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "Cache initialization cancelled");
+                return;
             }
             catch (Exception ex)
             {
@@ -442,6 +467,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         else
         {
+            // Cancel all async operations
+            _windowCts?.Cancel();
+            _windowCts?.Dispose();
+
             SaveWindowPosition();
             _audioService.Dispose();
             _gameDataService.Dispose();
