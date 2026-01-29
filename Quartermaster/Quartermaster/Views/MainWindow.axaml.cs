@@ -33,7 +33,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string _currentSection = "Character";
     private Button? _selectedNavButton;
 
-    // Game data service for BIF/TLK lookups - initialized in OnWindowOpened
+    // Services initialized in InitializeServicesAsync, awaited before any use.
+    // SAFETY: null! is intentional - services are guaranteed initialized before:
+    // - InitializePanels() is called (awaits InitializeServicesAsync first)
+    // - Any file operations occur (panels receive services in InitializePanels)
+    // - UI events fire (Opened handler completes setup before user interaction)
     private IGameDataService _gameDataService = null!;
     private CreatureDisplayService _creatureDisplayService = null!;
     private ItemViewModelFactory _itemViewModelFactory = null!;

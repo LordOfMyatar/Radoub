@@ -41,9 +41,11 @@ public partial class ClassBrowserWindow : Window
     public bool Confirmed { get; private set; }
     public int? SelectedClassId { get; private set; }
 
-    public ClassBrowserWindow() : this(null!, null)
-    {
-    }
+    /// <summary>
+    /// Designer-only constructor. Do not use at runtime.
+    /// </summary>
+    [Obsolete("Designer use only", error: true)]
+    public ClassBrowserWindow() => throw new NotSupportedException("Use parameterized constructor");
 
     public ClassBrowserWindow(ClassService classService, UtcFile? creature)
     {

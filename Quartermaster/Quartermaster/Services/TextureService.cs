@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 using Radoub.Formats.Plt;
 using Radoub.Formats.Services;
 using Radoub.Formats.Tga;
+using Radoub.UI.Services;
 
 namespace Quartermaster.Services;
 
@@ -14,7 +16,7 @@ namespace Quartermaster.Services;
 public class TextureService
 {
     private readonly IGameDataService _gameDataService;
-    private readonly Dictionary<string, PaletteData> _paletteCache = new();
+    private readonly Dictionary<string, PaletteData?> _paletteCache = new();
     private readonly Dictionary<string, byte[]?> _renderedTextureCache = new();
 
     public TextureService(IGameDataService gameDataService)
@@ -205,7 +207,7 @@ public class TextureService
         var tgaData = _gameDataService.FindResource(paletteResRef, ResourceTypes.Tga);
         if (tgaData == null || tgaData.Length == 0)
         {
-            _paletteCache[paletteResRef] = null!;
+            _paletteCache[paletteResRef] = null;
             return null;
         }
 
@@ -216,9 +218,10 @@ public class TextureService
             _paletteCache[paletteResRef] = palette;
             return palette;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            _paletteCache[paletteResRef] = null!;
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Failed to load palette '{paletteResRef}': {ex.Message}");
+            _paletteCache[paletteResRef] = null;
             return null;
         }
     }
