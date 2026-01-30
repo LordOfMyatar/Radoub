@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       checks: write
@@ -34,23 +34,23 @@ jobs:
     - name: Run Manifest.Tests with coverage
       id: manifest-tests
       run: |
-        dotnet test Manifest/Manifest.Tests/Manifest.Tests.csproj `
-          --configuration Release `
-          --no-build `
-          --verbosity normal `
-          --logger "trx;LogFileName=manifest-results.trx" `
-          --collect:"XPlat Code Coverage" `
+        dotnet test Manifest/Manifest.Tests/Manifest.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=manifest-results.trx" \
+          --collect:"XPlat Code Coverage" \
           --results-directory ./TestResults/Manifest
       continue-on-error: true
 
     - name: Run Radoub.Formats.Tests with coverage
       id: formats-tests
       run: |
-        dotnet test Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj `
-          --configuration Release `
-          --verbosity normal `
-          --logger "trx;LogFileName=formats-results.trx" `
-          --collect:"XPlat Code Coverage" `
+        dotnet test Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj \
+          --configuration Release \
+          --verbosity normal \
+          --logger "trx;LogFileName=formats-results.trx" \
+          --collect:"XPlat Code Coverage" \
           --results-directory ./TestResults/Formats
       continue-on-error: true
 
@@ -80,19 +80,32 @@ jobs:
         reporter: dotnet-trx
         fail-on-error: false
 
+    - name: Code Coverage Summary
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: './TestResults/**/coverage.cobertura.xml'
+        badge: true
+        format: markdown
+        output: both
+        thresholds: '50 75'
+
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: code-coverage-results.md
+
     - name: Report test results
       if: always()
       run: |
-        $manifestResult = "${{ steps.manifest-tests.outcome }}"
-        $formatsResult = "${{ steps.formats-tests.outcome }}"
+        echo "Test Results:"
+        echo "  Manifest.Tests: ${{ steps.manifest-tests.outcome }}"
+        echo "  Radoub.Formats.Tests: ${{ steps.formats-tests.outcome }}"
 
-        Write-Host "Test Results:"
-        Write-Host "  Manifest.Tests: $manifestResult"
-        Write-Host "  Radoub.Formats.Tests: $formatsResult"
-
-        if ($manifestResult -eq "success" -and $formatsResult -eq "success") {
-          Write-Host "✅ All tests passed"
-        } else {
-          Write-Host "❌ Some tests failed"
+        if [[ "${{ steps.manifest-tests.outcome }}" == "success" && "${{ steps.formats-tests.outcome }}" == "success" ]]; then
+          echo "✅ All tests passed"
+        else
+          echo "❌ Some tests failed"
           exit 1
-        }
+        fi
