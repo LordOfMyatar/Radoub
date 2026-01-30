@@ -42,6 +42,7 @@ jobs:
       working-directory: ./Radoub.Formats
 
     - name: Run tests with coverage
+      shell: bash
       run: |
         dotnet test Radoub.Formats.Tests/Radoub.Formats.Tests.csproj \
           --configuration Release \

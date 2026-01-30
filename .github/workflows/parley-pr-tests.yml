@@ -42,6 +42,7 @@ jobs:
       working-directory: ./Parley
 
     - name: Run tests with coverage
+      shell: bash
       run: |
         dotnet test Parley.Tests/Parley.Tests.csproj \
           --configuration Release \
