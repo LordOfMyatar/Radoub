@@ -225,14 +225,14 @@
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="BabDisplay">
                                 <TextBlock Text="Base Attack" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="BabValue" Text="+0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
-                                <TextBlock x:Name="BabBreakdown" Text="" FontSize="{DynamicResource FontSizeXSmall}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
+                                <TextBlock x:Name="BabBreakdown" Text="" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource ThemeInfo}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="AprDisplay">
                                 <TextBlock Text="Attacks/Round" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="AprValue" Text="1" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
-                                <TextBlock x:Name="AttackSequence" Text="" FontSize="{DynamicResource FontSizeXSmall}"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                <TextBlock x:Name="AttackSequence" Text="" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource ThemeInfo}"
                                            ToolTip.Tip="Attack bonus sequence at full BAB"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
