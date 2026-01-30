@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.51] - 2026-01-29
-**Branch**: `radoub/issue-1099` | **PR**: #TBD
+**Branch**: `radoub/issue-1099` | **PR**: #1148
 
 ### Sprint: Testing Infrastructure (#1099)
 
