@@ -512,7 +512,7 @@ public partial class SpellsPanel
         // Get theme-aware font sizes
         var normalFontSize = this.FindResource("FontSizeNormal") as double? ?? 14;
 
-        // Collect memorized spells by class and level
+        // Collect memorized spells by class and EFFECTIVE level (accounting for metamagic)
         var classMemorized = new List<(int classIndex, string className, int[] memorizedCounts, bool isSpontaneous)>();
 
         for (int i = 0; i < _currentCreature.ClassList.Count; i++)
@@ -521,14 +521,20 @@ public partial class SpellsPanel
             var className = _displayService.GetClassName(classEntry.Class) ?? $"Class {classEntry.Class}";
             var isSpontaneous = _displayService.IsSpontaneousCaster(classEntry.Class);
 
-            // Count memorized spells by level - count ALL entries in the list
+            // Count memorized spells by EFFECTIVE level (base + metamagic cost)
+            // NWN stores spells at base level with metamagic flag, but slots used = effective level
             var counts = new int[10];
             bool hasAnyMemorized = false;
-            for (int level = 0; level <= 9; level++)
+            for (int baseLevel = 0; baseLevel <= 9; baseLevel++)
             {
-                // Each entry in MemorizedSpells represents one memorized slot
-                counts[level] = classEntry.MemorizedSpells[level].Count;
-                if (counts[level] > 0) hasAnyMemorized = true;
+                foreach (var memSpell in classEntry.MemorizedSpells[baseLevel])
+                {
+                    int effectiveLevel = GetEffectiveSpellLevel(baseLevel, memSpell.SpellMetaMagic);
+                    // Clamp to valid range (can't exceed level 9)
+                    effectiveLevel = System.Math.Min(effectiveLevel, 9);
+                    counts[effectiveLevel]++;
+                    hasAnyMemorized = true;
+                }
             }
 
             // Only include if has memorized spells and is not spontaneous
@@ -700,5 +706,32 @@ public partial class SpellsPanel
             0x20 => "Still Spell",
             _ => "None"
         };
+    }
+
+    /// <summary>
+    /// Calculates the total spell level cost adjustment from metamagic flags.
+    /// NWN metamagic costs: Empower +2, Extend +1, Maximize +3, Quicken +4, Silent +1, Still +1.
+    /// </summary>
+    public static int GetMetamagicLevelCost(byte metamagic)
+    {
+        if (metamagic == 0) return 0;
+
+        int cost = 0;
+        if ((metamagic & 0x01) != 0) cost += 2;  // Empower
+        if ((metamagic & 0x02) != 0) cost += 1;  // Extend
+        if ((metamagic & 0x04) != 0) cost += 3;  // Maximize
+        if ((metamagic & 0x08) != 0) cost += 4;  // Quicken
+        if ((metamagic & 0x10) != 0) cost += 1;  // Silent
+        if ((metamagic & 0x20) != 0) cost += 1;  // Still
+
+        return cost;
+    }
+
+    /// <summary>
+    /// Calculates the effective spell level (base level + metamagic cost).
+    /// </summary>
+    public static int GetEffectiveSpellLevel(int baseLevel, byte metamagic)
+    {
+        return baseLevel + GetMetamagicLevelCost(metamagic);
     }
 }

@@ -567,7 +567,38 @@ public class CreatureDisplayService
 
         stats.TotalBab = stats.BaseBab + stats.EquipmentBonus;
 
+        // Calculate APR from BAB: 1 attack at BAB 1-5, +1 per 5 BAB, max 4 at BAB 16+
+        stats.AttacksPerRound = CalculateAttacksPerRound(stats.TotalBab);
+
+        // Build attack sequence string (e.g., "+16/+11/+6/+1")
+        stats.AttackSequence = BuildAttackSequence(stats.TotalBab, stats.AttacksPerRound);
+
         return stats;
+    }
+
+    /// <summary>
+    /// Calculates attacks per round from BAB.
+    /// NWN formula: 1 attack at BAB 1-5, +1 attack per 5 BAB, max 4 attacks at BAB 16+.
+    /// </summary>
+    public static int CalculateAttacksPerRound(int bab)
+    {
+        if (bab <= 0) return 1;
+        return 1 + Math.Min(3, (bab - 1) / 5);
+    }
+
+    /// <summary>
+    /// Builds the attack sequence string (e.g., "+16/+11/+6/+1").
+    /// </summary>
+    public static string BuildAttackSequence(int bab, int apr)
+    {
+        if (apr <= 1) return FormatBonus(bab);
+
+        var attacks = new List<string>();
+        for (int i = 0; i < apr; i++)
+        {
+            attacks.Add(FormatBonus(bab - (i * 5)));
+        }
+        return string.Join("/", attacks);
     }
 
     /// <summary>
@@ -767,6 +798,16 @@ public class CombatStats
     public int BaseBab { get; set; }
     public int EquipmentBonus { get; set; }
     public int TotalBab { get; set; }
+
+    /// <summary>
+    /// Attacks per round from BAB (1-4).
+    /// </summary>
+    public int AttacksPerRound { get; set; }
+
+    /// <summary>
+    /// Attack sequence string (e.g., "+16/+11/+6/+1").
+    /// </summary>
+    public string AttackSequence { get; set; } = "";
 }
 
 /// <summary>

@@ -50,6 +50,7 @@ public partial class StatsPanel : UserControl
 
     // Combat stats controls
     private TextBlock? _babValue, _babBreakdown;
+    private TextBlock? _aprValue, _attackSequence;
     private TextBlock? _crTotalDisplay;
     private TextBlock? _crValueDisplay;
     private NumericUpDown? _crAdjustNumeric;
@@ -133,6 +134,8 @@ public partial class StatsPanel : UserControl
         // Combat stats
         _babValue = this.FindControl<TextBlock>("BabValue");
         _babBreakdown = this.FindControl<TextBlock>("BabBreakdown");
+        _aprValue = this.FindControl<TextBlock>("AprValue");
+        _attackSequence = this.FindControl<TextBlock>("AttackSequence");
         _crTotalDisplay = this.FindControl<TextBlock>("CrTotalDisplay");
         _crValueDisplay = this.FindControl<TextBlock>("CrValueDisplay");
         _crAdjustNumeric = this.FindControl<NumericUpDown>("CRAdjustNumeric");
@@ -293,6 +296,8 @@ public partial class StatsPanel : UserControl
         // Clear combat stats
         SetText(_babValue, "+0");
         SetText(_babBreakdown, "");
+        SetText(_aprValue, "1");
+        SetText(_attackSequence, "");
         SetText(_crTotalDisplay, "0");
         SetText(_crValueDisplay, "0");
         if (_crAdjustNumeric != null)

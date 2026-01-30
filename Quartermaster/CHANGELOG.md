@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.61-alpha] - 2026-01-29
+**Branch**: `quartermaster/issue-1057` | **PR**: #1152
+
+### Sprint: Stats & Display Polish (#1057)
+
+Improve Quartermaster's display of combat-relevant statistics and complete appearance panel functionality.
+
+#### Work Items
+- [x] #1032 - Display AB/APR in Stats Panel
+- [x] #1031 - Appearance panel missing tattoo display
+- [x] #1053 - Metamagic slot counting by effective level
+
+#### #1031 - Tattoo Color Controls Always Enabled
+- Moved Colors section (Skin, Hair, Tattoo1, Tattoo2) outside Body Parts section
+- Colors now always enabled regardless of appearance type (static vs part-based)
+- Previously, color controls were disabled for static appearances (non-part-based creatures)
+- Added tooltips explaining that tattoo colors only affect pixels painted in body PLT textures
+- Note: NWN doesn't have tattoo "style" selection - patterns are baked into model textures
+
+#### #1032 - Display AB/APR in Stats Panel
+- Added Attacks Per Round (APR) display to Combat section
+- Shows APR calculated from BAB: 1 attack at BAB 1-5, +1 per 5 BAB, max 4 at BAB 16+
+- Displays attack sequence string (e.g., "+16/+11/+6/+1") as tooltip/subtitle
+- Combat section now shows: Base Attack, Attacks/Round, Challenge Rating
+
+#### #1053 - Metamagic Slot Counting by Effective Level
+- Memorized Spells table now counts slots at effective level (base + metamagic cost)
+- Example: Level 3 Fireball with Extend (+1) now consumes a level 4 slot
+- Added `GetMetamagicLevelCost()` helper: Empower +2, Extend +1, Maximize +3, Quicken +4, Silent +1, Still +1
+- Added `GetEffectiveSpellLevel()` helper for base + metamagic calculation
+- NWN stores spells at base level with metamagic flag; game calculates effective level at runtime
+
+---
+
 ## [0.1.60-alpha] - 2026-01-29
 **Branch**: `quartermaster/issue-1126` | **PR**: #1147
 
