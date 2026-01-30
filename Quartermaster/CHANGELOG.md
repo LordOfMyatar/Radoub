@@ -26,6 +26,8 @@ Improve Quartermaster's display of combat-relevant statistics and complete appea
 - Moved Colors section (Skin, Hair, Tattoo1, Tattoo2) outside Body Parts section
 - Colors now always enabled regardless of appearance type (static vs part-based)
 - Previously, color controls were disabled for static appearances (non-part-based creatures)
+- Added tooltips explaining that tattoo colors only affect pixels painted in body PLT textures
+- Note: NWN doesn't have tattoo "style" selection - patterns are baked into model textures
 
 ---
 
