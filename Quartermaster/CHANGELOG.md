@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.61-alpha] - 2026-01-29
-**Branch**: `quartermaster/issue-1057` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1057` | **PR**: #1152
 
 ### Sprint: Stats & Display Polish (#1057)
 
