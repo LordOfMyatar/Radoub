@@ -206,66 +206,74 @@
                                               HorizontalAlignment="Stretch" FontSize="{DynamicResource FontSizeXSmall}" Padding="4,2"/>
                                 </Grid>
 
-                                <!-- Colors Section -->
-                                <TextBlock Text="Colors" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeSmall}" Margin="0,6,0,2"/>
-                                <Grid ColumnDefinitions="55,88,55,88" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="6">
-                                    <!-- Skin / Hair -->
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Skin:" FontSize="{DynamicResource FontSizeSmall}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                        <NumericUpDown x:Name="SkinColorNumeric"
-                                                       Minimum="0" Maximum="175" Value="0"
-                                                       FormatString="0"
-                                                       Width="56" FontSize="{DynamicResource FontSizeXSmall}"
-                                                       AutomationProperties.AutomationId="SkinColorNumeric"/>
-                                        <Border x:Name="SkinColorSwatch" Width="18" Height="18"
-                                                CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                                Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Hair:" FontSize="{DynamicResource FontSizeSmall}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Spacing="8">
-                                        <NumericUpDown x:Name="HairColorNumeric"
-                                                       Minimum="0" Maximum="175" Value="0"
-                                                       FormatString="0"
-                                                       Width="56" FontSize="{DynamicResource FontSizeXSmall}"
-                                                       AutomationProperties.AutomationId="HairColorNumeric"/>
-                                        <Border x:Name="HairColorSwatch" Width="18" Height="18"
-                                                CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                                Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-
-                                    <!-- Tattoo 1 / Tattoo 2 -->
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Tat 1:" FontSize="{DynamicResource FontSizeSmall}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                        <NumericUpDown x:Name="Tattoo1ColorNumeric"
-                                                       Minimum="0" Maximum="175" Value="0"
-                                                       FormatString="0"
-                                                       Width="56" FontSize="{DynamicResource FontSizeXSmall}"
-                                                       AutomationProperties.AutomationId="Tattoo1ColorNumeric"/>
-                                        <Border x:Name="Tattoo1ColorSwatch" Width="18" Height="18"
-                                                CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                                Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Tat 2:" FontSize="{DynamicResource FontSizeSmall}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Spacing="8">
-                                        <NumericUpDown x:Name="Tattoo2ColorNumeric"
-                                                       Minimum="0" Maximum="175" Value="0"
-                                                       FormatString="0"
-                                                       Width="56" FontSize="{DynamicResource FontSizeXSmall}"
-                                                       AutomationProperties.AutomationId="Tattoo2ColorNumeric"/>
-                                        <Border x:Name="Tattoo2ColorSwatch" Width="18" Height="18"
-                                                CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                                                Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Grid>
                             </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Colors Section - separate from Body Parts so it's always enabled -->
+                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="12">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Colors" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
+                            <Grid ColumnDefinitions="55,88,55,88" RowDefinitions="Auto,Auto" RowSpacing="4" ColumnSpacing="6">
+                                <!-- Skin / Hair -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Skin:" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                    <NumericUpDown x:Name="SkinColorNumeric"
+                                                   Minimum="0" Maximum="175" Value="0"
+                                                   FormatString="0"
+                                                   Width="56" FontSize="{DynamicResource FontSizeXSmall}"
+                                                   AutomationProperties.AutomationId="SkinColorNumeric"/>
+                                    <Border x:Name="SkinColorSwatch" Width="18" Height="18"
+                                            CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                            Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Hair:" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Spacing="8">
+                                    <NumericUpDown x:Name="HairColorNumeric"
+                                                   Minimum="0" Maximum="175" Value="0"
+                                                   FormatString="0"
+                                                   Width="56" FontSize="{DynamicResource FontSizeXSmall}"
+                                                   AutomationProperties.AutomationId="HairColorNumeric"/>
+                                    <Border x:Name="HairColorSwatch" Width="18" Height="18"
+                                            CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                            Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Tattoo 1 / Tattoo 2 -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Tat 1:" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                    <NumericUpDown x:Name="Tattoo1ColorNumeric"
+                                                   Minimum="0" Maximum="175" Value="0"
+                                                   FormatString="0"
+                                                   Width="56" FontSize="{DynamicResource FontSizeXSmall}"
+                                                   AutomationProperties.AutomationId="Tattoo1ColorNumeric"/>
+                                    <Border x:Name="Tattoo1ColorSwatch" Width="18" Height="18"
+                                            CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                            Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Tat 2:" FontSize="{DynamicResource FontSizeSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" Spacing="8">
+                                    <NumericUpDown x:Name="Tattoo2ColorNumeric"
+                                                   Minimum="0" Maximum="175" Value="0"
+                                                   FormatString="0"
+                                                   Width="56" FontSize="{DynamicResource FontSizeXSmall}"
+                                                   AutomationProperties.AutomationId="Tattoo2ColorNumeric"/>
+                                    <Border x:Name="Tattoo2ColorSwatch" Width="18" Height="18"
+                                            CornerRadius="2" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
+                                            Background="{DynamicResource ThemeBorder}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </StackPanel>

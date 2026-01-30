@@ -19,8 +19,13 @@ Improve Quartermaster's display of combat-relevant statistics and complete appea
 
 #### Work Items
 - [ ] #1032 - Display AB/APR in Stats Panel
-- [ ] #1031 - Appearance panel missing tattoo display
+- [x] #1031 - Appearance panel missing tattoo display
 - [ ] #1053 - Metamagic slot counting by effective level
+
+#### #1031 - Tattoo Color Controls Always Enabled
+- Moved Colors section (Skin, Hair, Tattoo1, Tattoo2) outside Body Parts section
+- Colors now always enabled regardless of appearance type (static vs part-based)
+- Previously, color controls were disabled for static appearances (non-part-based creatures)
 
 ---
 
