@@ -23,9 +23,24 @@ After collecting answers, proceed through all exploration and analysis without f
 
 ## Workflow
 
+### Step 0: Ensure Cache is Fresh
+
+```bash
+pwsh -File .claude/scripts/Refresh-GitHubCache.ps1
+```
+
 ### Step 1: Understand the Request
 
-If issue number provided:
+If issue number provided, check cache first:
+```bash
+# Get issue details from cache (avoids API call)
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View issue -Number [number]
+
+# Search for related issues
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "[keyword]"
+```
+
+**Fallback** (if issue not in cache - closed issues, etc.):
 ```bash
 gh issue view [number] --json title,body,labels,comments
 ```
@@ -39,14 +54,10 @@ If topic description provided, clarify with user if needed.
 
 ### Step 2: Codebase Exploration
 
-Search for related code:
-```bash
-# Find related files
-git grep -l "[keyword]" --include="*.cs"
-
-# Check existing implementations
-grep -r "class.*[FeatureName]" --include="*.cs"
-```
+Use native tools (not bash grep) for codebase exploration:
+- **Glob** for finding files by pattern
+- **Grep** for searching content
+- **Task tool with Explore agent** for open-ended exploration
 
 Identify:
 - Existing patterns that could be reused

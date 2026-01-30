@@ -74,7 +74,10 @@ Extract key terms from the issue title (remove prefixes like `[Tool]`, `feat:`, 
 
 ```bash
 # Search cache for issues with similar keywords
-grep -i "keyword1\|keyword2" .claude/cache/github-data.json | head -20
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "keyword"
+
+# Filter by tool if needed
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View search -Query "keyword" -Tool parley
 ```
 
 **Patterns to detect**:
