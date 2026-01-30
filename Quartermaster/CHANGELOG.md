@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.61-alpha] - 2026-01-29
+**Branch**: `quartermaster/issue-1057` | **PR**: #TBD
+
+### Sprint: Stats & Display Polish (#1057)
+
+Improve Quartermaster's display of combat-relevant statistics and complete appearance panel functionality.
+
+#### Work Items
+- [ ] #1032 - Display AB/APR in Stats Panel
+- [ ] #1031 - Appearance panel missing tattoo display
+- [ ] #1053 - Metamagic slot counting by effective level
+
+---
+
 ## [0.1.60-alpha] - 2026-01-29
 **Branch**: `quartermaster/issue-1126` | **PR**: #1147
 
