@@ -36,6 +36,10 @@ Add shared settings for custom content configuration across all Radoub tools.
 - `GetCustomTlk()` now loads from `RadoubSettings.CustomTlkPath`
 - Cache invalidation on `CustomTlkPath` changes
 
+#### Trebuchet Module Editor
+- Module load now syncs `CustomTlk` to `RadoubSettings.CustomTlkPath`
+- TLK path resolved from module directory or NWN documents tlk folder
+
 **Note**: Custom TLK and HAK list are per-module settings configured in Module Editor (from module.ifo).
 The shared `CustomTlkPath` and `HakSearchPaths` are internal infrastructure for tools to resolve resources.
 

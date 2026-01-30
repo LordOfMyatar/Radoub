@@ -370,6 +370,7 @@ public partial class ModuleEditorViewModel : ObservableObject
             }
 
             PopulateViewModelFromIfo();
+            SyncToRadoubSettings();
             IsModuleLoaded = true;
             IsModuleReadOnly = _isReadOnly;
             IsVersionUnlocked = false;  // Always start with version locked
@@ -524,6 +525,72 @@ public partial class ModuleEditorViewModel : ObservableObject
         // Variables
         Variables = new ObservableCollection<VariableViewModel>(
             _ifoFile.VarTable.Select(v => new VariableViewModel(v)));
+    }
+
+    /// <summary>
+    /// Sync module's custom content settings to RadoubSettings for cross-tool use.
+    /// Called after loading a module so other tools can access the custom TLK.
+    /// </summary>
+    private void SyncToRadoubSettings()
+    {
+        var settings = RadoubSettings.Instance;
+
+        // Resolve CustomTlk name to full path
+        if (!string.IsNullOrEmpty(CustomTlk))
+        {
+            var tlkPath = ResolveTlkPath(CustomTlk);
+            if (!string.IsNullOrEmpty(tlkPath))
+            {
+                settings.CustomTlkPath = tlkPath;
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Set shared CustomTlkPath: {UnifiedLogger.SanitizePath(tlkPath)}");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"Custom TLK not found: {CustomTlk}");
+                settings.CustomTlkPath = "";
+            }
+        }
+        else
+        {
+            settings.CustomTlkPath = "";
+        }
+    }
+
+    /// <summary>
+    /// Resolve a TLK name (without extension) to a full path.
+    /// Searches in the module directory, then NWN documents tlk folder.
+    /// </summary>
+    private string? ResolveTlkPath(string tlkName)
+    {
+        if (string.IsNullOrEmpty(tlkName)) return null;
+
+        var tlkFileName = tlkName.EndsWith(".tlk", StringComparison.OrdinalIgnoreCase)
+            ? tlkName
+            : tlkName + ".tlk";
+
+        // Check module directory first
+        if (!string.IsNullOrEmpty(_modulePath))
+        {
+            var moduleDir = Directory.Exists(_modulePath) ? _modulePath : Path.GetDirectoryName(_modulePath);
+            if (!string.IsNullOrEmpty(moduleDir))
+            {
+                var moduleTlkPath = Path.Combine(moduleDir, tlkFileName);
+                if (File.Exists(moduleTlkPath))
+                    return moduleTlkPath;
+            }
+        }
+
+        // Check NWN documents tlk folder
+        var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
+        if (!string.IsNullOrEmpty(nwnPath))
+        {
+            var tlkFolder = Path.Combine(nwnPath, "tlk");
+            var tlkPath = Path.Combine(tlkFolder, tlkFileName);
+            if (File.Exists(tlkPath))
+                return tlkPath;
+        }
+
+        return null;
     }
 
     private void UpdateIfoFromViewModel()
