@@ -22,10 +22,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Improve test infrastructure across Radoub.
 
-- [ ] #1094 - Add Trebuchet to run-tests.ps1 ValidateSet
-- [ ] #1086 - [Trebuchet] Create integration test suite
+- [x] #1094 - Add Trebuchet to run-tests.ps1 ValidateSet
+- [x] #1086 - [Trebuchet] Create integration test suite
 - [ ] #852 - [Radoub.Formats] Corrupted file handling tests
 - [ ] #854 - Test metrics and coverage reporting to CI
+
+#### #1094 - Add Trebuchet to run-tests.ps1
+- Added Trebuchet to `-Tool` parameter ValidateSet
+- Added Trebuchet to privacy scan directories
+- Added usage example for Trebuchet tests
+
+#### #1086 - Trebuchet Test Suite
+- Created `Trebuchet.Tests` unit test project (38 tests)
+- **CommandLineServiceTests** (9 tests): argument parsing for `--help`, `--safemode`, `--module`
+- **SettingsServiceTests** (29 tests): property validation, clamping, persistence
+- Added Trebuchet.Tests to Radoub.sln and run-tests.ps1
+- Existing smoke tests in `Radoub.IntegrationTests/Trebuchet/` provide UI coverage
 
 ---
 

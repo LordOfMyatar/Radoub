@@ -139,6 +139,7 @@ $toolUnitTests = @{
     "Manifest" = @{ Name = "Manifest.Tests"; Path = "Manifest\Manifest.Tests" }
     "Quartermaster" = @{ Name = "Quartermaster.Tests"; Path = "Quartermaster\Quartermaster.Tests" }
     "Fence" = @{ Name = "Fence.Tests"; Path = "Fence\Fence.Tests" }
+    "Trebuchet" = @{ Name = "Trebuchet.Tests"; Path = "Trebuchet\Trebuchet.Tests" }
 }
 
 $toolUiTests = @{
