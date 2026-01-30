@@ -221,14 +221,21 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Combat" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
 
-                        <Grid ColumnDefinitions="*,*">
+                        <Grid ColumnDefinitions="*,*,*">
                             <StackPanel Grid.Column="0" Margin="0,0,10,0" AutomationProperties.AutomationId="BabDisplay">
                                 <TextBlock Text="Base Attack" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="BabValue" Text="+0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
                                 <TextBlock x:Name="BabBreakdown" Text="" FontSize="{DynamicResource FontSizeXSmall}"
                                            Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="1" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0" AutomationProperties.AutomationId="AprDisplay">
+                                <TextBlock Text="Attacks/Round" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                <TextBlock x:Name="AprValue" Text="1" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"/>
+                                <TextBlock x:Name="AttackSequence" Text="" FontSize="{DynamicResource FontSizeXSmall}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                                           ToolTip.Tip="Attack bonus sequence at full BAB"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" x:Name="CrDisplaySection" AutomationProperties.AutomationId="CrDisplay">
                                 <TextBlock Text="Challenge Rating" FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                                 <TextBlock x:Name="CrTotalDisplay" Text="0" FontSize="{DynamicResource FontSizeLarge}" FontWeight="Bold"
                                            AutomationProperties.AutomationId="CrTotalDisplay"

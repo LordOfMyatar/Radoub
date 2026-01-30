@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Improve Quartermaster's display of combat-relevant statistics and complete appearance panel functionality.
 
 #### Work Items
-- [ ] #1032 - Display AB/APR in Stats Panel
+- [x] #1032 - Display AB/APR in Stats Panel
 - [x] #1031 - Appearance panel missing tattoo display
 - [ ] #1053 - Metamagic slot counting by effective level
 
@@ -28,6 +28,12 @@ Improve Quartermaster's display of combat-relevant statistics and complete appea
 - Previously, color controls were disabled for static appearances (non-part-based creatures)
 - Added tooltips explaining that tattoo colors only affect pixels painted in body PLT textures
 - Note: NWN doesn't have tattoo "style" selection - patterns are baked into model textures
+
+#### #1032 - Display AB/APR in Stats Panel
+- Added Attacks Per Round (APR) display to Combat section
+- Shows APR calculated from BAB: 1 attack at BAB 1-5, +1 per 5 BAB, max 4 at BAB 16+
+- Displays attack sequence string (e.g., "+16/+11/+6/+1") as tooltip/subtitle
+- Combat section now shows: Base Attack, Attacks/Round, Challenge Rating
 
 ---
 

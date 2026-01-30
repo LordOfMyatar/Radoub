@@ -188,6 +188,8 @@ public partial class StatsPanel
         {
             SetText(_babValue, "+0");
             SetText(_babBreakdown, "");
+            SetText(_aprValue, "1");
+            SetText(_attackSequence, "");
             return;
         }
 
@@ -205,5 +207,9 @@ public partial class StatsPanel
         {
             SetText(_babBreakdown, $"(from class levels)");
         }
+
+        // Display APR and attack sequence
+        SetText(_aprValue, combatStats.AttacksPerRound.ToString());
+        SetText(_attackSequence, combatStats.AttackSequence);
     }
 }
