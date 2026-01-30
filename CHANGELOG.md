@@ -15,6 +15,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.52] - 2026-01-29
+**Branch**: `radoub/issue-1105` | **PR**: #1157
+
+### Feature: Add TLK, HAK, and Language to shared RadoubSettings (#1105)
+
+Add shared settings for custom content configuration across all Radoub tools.
+
+#### RadoubSettings (Radoub.Formats)
+- Added `CustomTlkPath` property for module-specific TLK files (set programmatically when module loads)
+- Added `HakSearchPaths` list with add/remove/clear/set methods
+- Added `GetAllHakSearchPaths()` to enumerate all HAK search locations (default + additional)
+
+#### GameDataService Integration
+- `BuildConfig()` now uses `HakSearchPaths` from shared settings
+- HAK scanning enabled when additional paths configured (opt-in for performance)
+- Custom TLK loaded from `CustomTlkPath` setting
+
+#### Manifest TlkService
+- `GetCustomTlk()` now loads from `RadoubSettings.CustomTlkPath`
+- Cache invalidation on `CustomTlkPath` changes
+
+#### Trebuchet Module Editor
+- Module load now syncs `CustomTlk` to `RadoubSettings.CustomTlkPath`
+- TLK path resolved from module directory or NWN documents tlk folder
+
+**Note**: Custom TLK and HAK list are per-module settings configured in Module Editor (from module.ifo).
+The shared `CustomTlkPath` and `HakSearchPaths` are internal infrastructure for tools to resolve resources.
+
+---
+
 ## [0.9.51] - 2026-01-29
 **Branch**: `radoub/issue-1099` | **PR**: #1148
 

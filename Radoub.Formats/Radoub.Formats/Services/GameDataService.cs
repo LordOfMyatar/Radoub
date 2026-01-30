@@ -204,6 +204,9 @@ public class GameDataService : IGameDataService
         var tlkPath = settings.GetTlkPath(settings.EffectiveLanguage, settings.PreferredGender);
         LoadBaseTlk(tlkPath);
 
+        // Load custom TLK if configured
+        LoadCustomTlk(config.CustomTlkPath);
+
         UnifiedLogger.Log(LogLevel.INFO, $"GameDataService initialized: IsConfigured={IsConfigured}", "GameDataService", "GameData");
     }
 
@@ -225,7 +228,7 @@ public class GameDataService : IGameDataService
             }
         }
 
-        // Override path and HAK path
+        // Override path
         if (!string.IsNullOrEmpty(settings.NeverwinterNightsPath))
         {
             var overridePath = Path.Combine(settings.NeverwinterNightsPath, "override");
@@ -233,14 +236,23 @@ public class GameDataService : IGameDataService
             {
                 config.OverridePath = overridePath;
             }
+        }
 
-            // Scan HAK folder for all .hak files
-            var hakPath = Path.Combine(settings.NeverwinterNightsPath, "hak");
-            if (Directory.Exists(hakPath))
+        // HAK paths - scan all configured search paths
+        // Only scan additional configured paths (not default hak folder) for performance
+        // Users who want HAK scanning should add paths in Trebuchet settings
+        var additionalHakPaths = settings.HakSearchPaths;
+        if (additionalHakPaths.Count > 0)
+        {
+            config.EnableHakScanning = true;
+            foreach (var hakSearchPath in additionalHakPaths)
             {
-                var hakFiles = Directory.GetFiles(hakPath, "*.hak", SearchOption.TopDirectoryOnly);
-                config.HakPaths.AddRange(hakFiles);
-                UnifiedLogger.Log(LogLevel.INFO, $"Found {hakFiles.Length} HAK files in {hakPath}", "GameDataService", "GameData");
+                if (Directory.Exists(hakSearchPath))
+                {
+                    var hakFiles = Directory.GetFiles(hakSearchPath, "*.hak", SearchOption.TopDirectoryOnly);
+                    config.HakPaths.AddRange(hakFiles);
+                    UnifiedLogger.Log(LogLevel.INFO, $"HAK scanning enabled: Found {hakFiles.Length} HAK files in {hakSearchPath}", "GameDataService", "GameData");
+                }
             }
         }
 
@@ -249,6 +261,13 @@ public class GameDataService : IGameDataService
         if (!string.IsNullOrEmpty(tlkPath) && File.Exists(tlkPath))
         {
             config.TlkPath = tlkPath;
+        }
+
+        // Custom TLK path (module-specific)
+        if (!string.IsNullOrEmpty(settings.CustomTlkPath) && File.Exists(settings.CustomTlkPath))
+        {
+            config.CustomTlkPath = settings.CustomTlkPath;
+            UnifiedLogger.Log(LogLevel.INFO, $"Custom TLK configured: {settings.CustomTlkPath}", "GameDataService", "GameData");
         }
 
         return config;

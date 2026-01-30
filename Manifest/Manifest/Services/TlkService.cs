@@ -64,7 +64,8 @@ public class TlkService : IDisposable
     {
         if (e.PropertyName is nameof(RadoubSettings.BaseGameInstallPath) or
             nameof(RadoubSettings.TlkLanguage) or
-            nameof(RadoubSettings.TlkUseFemale))
+            nameof(RadoubSettings.TlkUseFemale) or
+            nameof(RadoubSettings.CustomTlkPath))
         {
             InvalidateCache();
         }
@@ -320,9 +321,27 @@ public class TlkService : IDisposable
 
     private TlkFile? GetCustomTlk()
     {
-        // Custom TLK loading would go here
-        // For now, return null - custom TLK support can be added when needed
-        return _customTlk;
+        lock (_lock)
+        {
+            if (_customTlk != null)
+                return _customTlk;
+
+            var customTlkPath = RadoubSettings.Instance.CustomTlkPath;
+            if (string.IsNullOrEmpty(customTlkPath) || !File.Exists(customTlkPath))
+                return null;
+
+            try
+            {
+                _customTlk = TlkReader.Read(customTlkPath);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Loaded custom TLK: {_customTlk.Count} entries");
+                return _customTlk;
+            }
+            catch (Exception ex)
+            {
+                UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to load custom TLK: {ex.Message}");
+                return null;
+            }
+        }
     }
 
     /// <summary>

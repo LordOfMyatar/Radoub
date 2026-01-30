@@ -114,6 +114,7 @@
                                   Margin="0,8,0,0"
                                   MinWidth="200"/>
                     </Grid>
+
                 </StackPanel>
 
                 <!-- Appearance Section -->
