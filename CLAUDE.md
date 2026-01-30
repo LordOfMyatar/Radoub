@@ -582,29 +582,69 @@ Follow the same standards as Parley (see `Parley/CLAUDE.md`):
 
 ---
 
-## Bash File Operations on Windows
+## Shell Usage on Windows
 
-**Use forward slashes and Unix commands** - they work in Git Bash on Windows:
+### Prefer Script Files Over Inline Commands
 
+**DO**: Use `-File` with PowerShell scripts
 ```bash
-# Copy files (WORKS)
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View status
+pwsh -File .claude/scripts/Refresh-GitHubCache.ps1 -Force
+```
+
+**AVOID**: Inline PowerShell with `-Command` (escaping nightmare)
+```bash
+# BAD - requires \$ escaping, breaks easily
+pwsh -Command "\$data = Get-Content file.json | ConvertFrom-Json; \$data.property"
+```
+
+### When to Use Each Shell
+
+| Task | Use | Example |
+|------|-----|---------|
+| Git operations | Bash | `git status`, `git commit` |
+| GitHub CLI | Bash | `gh issue view 123`, `gh pr create` |
+| File operations | Bash | `cp`, `mkdir -p`, `rm -f` |
+| Complex data processing | PowerShell script | `Get-CacheData.ps1` |
+| JSON parsing | PowerShell script | Custom `.ps1` files |
+
+### Bash on Windows (Git Bash)
+
+**Use forward slashes** - they work:
+```bash
 cp d:/LOM/workspace/Radoub/source/file.txt d:/LOM/workspace/Radoub/dest/
-
-# Create directories (WORKS)
 mkdir -p d:/LOM/workspace/Radoub/new/path/
-
-# List files (WORKS)
 ls -la d:/LOM/workspace/Radoub/some/path/
-
-# Remove and recreate (WORKS)
-rm d:/path/to/file && mkdir d:/path/to/dir
 ```
 
 **AVOID**:
 - Backslashes in paths (escaping issues)
-- PowerShell with `$` variables (get stripped)
 - `cmd /c` commands (quoting problems)
-- `xcopy` with `/Y` flags (parsing issues)
+- `grep` with regex alternation `\|` (use PowerShell search instead)
+
+### PowerShell Script Patterns
+
+**Good patterns** (in `.ps1` files):
+```powershell
+# Normal variables - no escaping needed
+$data = Get-Content $CacheFile | ConvertFrom-Json
+$age = (Get-Date) - (Get-Item $CacheFile).LastWriteTime
+
+# String interpolation works naturally
+Write-Host "Found $($results.Count) items"
+```
+
+**Avoid in slash commands**:
+- Inline `pwsh -Command "..."` blocks with variable escaping
+- Multi-line PowerShell embedded in markdown
+- Complex logic that should be in a script file
+
+### Slash Command Best Practices
+
+1. **Keep bash simple**: `gh`, `git`, file ops only
+2. **Complex logic → script file**: Add to `.claude/scripts/`
+3. **Call scripts with `-File`**: Clean, no escaping issues
+4. **Parameters over string building**: Use `-Param value` not string concatenation
 
 ---
 

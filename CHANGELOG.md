@@ -15,6 +15,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.51] - 2026-01-29
+**Branch**: `radoub/issue-1099` | **PR**: #1148
+
+### Sprint: Testing Infrastructure (#1099)
+
+Improve test infrastructure across Radoub.
+
+- [x] #1094 - Add Trebuchet to run-tests.ps1 ValidateSet
+- [x] #1086 - [Trebuchet] Create integration test suite
+- [x] #852 - [Radoub.Formats] Corrupted file handling tests
+- [x] #854 - Test metrics and coverage reporting to CI
+
+#### #1094 - Add Trebuchet to run-tests.ps1
+- Added Trebuchet to `-Tool` parameter ValidateSet
+- Added Trebuchet to privacy scan directories
+- Added usage example for Trebuchet tests
+
+#### #1086 - Trebuchet Test Suite
+- Created `Trebuchet.Tests` unit test project (38 tests)
+- **CommandLineServiceTests** (9 tests): argument parsing for `--help`, `--safemode`, `--module`
+- **SettingsServiceTests** (29 tests): property validation, clamping, persistence
+- Added Trebuchet.Tests to Radoub.sln and run-tests.ps1
+- Existing smoke tests in `Radoub.IntegrationTests/Trebuchet/` provide UI coverage
+
+#### #852 - Corrupted File Handling Tests
+- Added `CorruptedFileTests.cs` with 25 tests for malformed file handling
+- **GFF Parser** (6 tests): truncated header, invalid offset, negative count, truncated field data, empty file, invalid signature
+- **KEY Parser** (4 tests): truncated file, empty file, invalid signature, offset overflow
+- **BIF Parser** (3 tests): truncated file, empty file, invalid signature
+- **ERF Parser** (4 tests): truncated file, empty file, invalid signature, resource offset overflow
+- **TLK Parser** (4 tests): truncated string data, empty file, invalid signature, bad string offset
+- **2DA Parser** (4 tests): binary garbage, empty file, missing newline, very long line
+- All tests verify parsers fail gracefully (exceptions) rather than crashing or hanging
+
+#### #854 - CI Coverage Reporting
+- Added code coverage collection (`--collect:"XPlat Code Coverage"`) to all test workflows
+- Added test result artifacts (TRX + coverage files) for debugging
+- **formats-pr-tests.yml**: Coverage summary and PR comments (Ubuntu)
+- **parley-pr-tests.yml**: Coverage summary and PR comments (Ubuntu)
+- **quartermaster-pr-tests.yml**: Test reports with dorny/test-reporter
+- **manifest-pr-tests.yml**: Test reports with dorny/test-reporter
+- Uses `irongut/CodeCoverageSummary` for markdown badge generation
+- Uses `marocchino/sticky-pull-request-comment` for PR coverage comments
+
+---
+
 ## [0.9.50] - 2026-01-29
 **Branch**: `radoub/issue-1066` | **PR**: #1146
 

@@ -19,7 +19,7 @@ The cache stores GitHub data fetched via GraphQL in `.claude/cache/github-data.j
 
 **Benefits:**
 - Single API call fetches all data (vs. multiple `gh issue list` calls)
-- 4-hour freshness window reduces API calls during active sessions
+- 1-hour freshness window reduces API calls during active sessions
 - Skills read from cache for instant access
 
 **Used by:** `/backlog`, `/sprint-planning`, `/grooming`
@@ -29,26 +29,7 @@ The cache stores GitHub data fetched via GraphQL in `.claude/cache/github-data.j
 ### Show Status (default)
 
 ```bash
-# Check if cache exists and its age
-pwsh -Command "
-    \$cache = '.claude/cache/github-data.json'
-    if (Test-Path \$cache) {
-        \$data = Get-Content \$cache | ConvertFrom-Json
-        \$age = (Get-Date) - (Get-Item \$cache).LastWriteTime
-        \$ageStr = if (\$age.TotalHours -ge 1) { '{0:N1} hours' -f \$age.TotalHours } else { '{0:N0} minutes' -f \$age.TotalMinutes }
-        \$fresh = if (\$age.TotalHours -lt 4) { 'Yes' } else { 'No (stale)' }
-        Write-Host 'Cache Status'
-        Write-Host '------------'
-        Write-Host \"Age: \$ageStr\"
-        Write-Host \"Fresh: \$fresh\"
-        Write-Host \"Issues: \$(\$data.summary.totalOpenIssues) open (\$(\$data.summary.staleIssues) stale)\"
-        Write-Host \"PRs: \$(\$data.summary.totalOpenPRs) open\"
-        Write-Host \"Missing tool label: \$(\$data.summary.missingToolLabel)\"
-        Write-Host \"Missing type label: \$(\$data.summary.missingTypeLabel)\"
-    } else {
-        Write-Host 'No cache exists. Run /cache refresh to create.'
-    }
-"
+pwsh -File .claude/scripts/Get-CacheData.ps1 -View status
 ```
 
 ### Refresh
@@ -74,7 +55,7 @@ echo "Cache cleared."
 {
   "fetchedAt": "2026-01-16T12:00:00Z",
   "repository": "LordOfMyatar/Radoub",
-  "maxAgeHours": 4,
+  "maxAgeHours": 1,
   "issues": [...],
   "pullRequests": [...],
   "summary": {
@@ -116,7 +97,7 @@ Skills should:
 2. Use `Get-CacheData.ps1 -View list` for batch operations
 3. Use `Get-CacheData.ps1 -View issue -Number N` when body is needed
 
-The refresh script exits immediately if cache is fresh (< 4 hours).
+The refresh script exits immediately if cache is fresh (< 1 hour).
 
 ## Output Format
 
