@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.52] - 2026-01-29
+**Branch**: `radoub/issue-1105` | **PR**: #TBD
+
+### Feature: Add TLK, HAK, and Language to shared RadoubSettings (#1105)
+
+Add shared settings for custom content configuration across all Radoub tools.
+
+- [ ] Add `CustomTlkPath`, `HakPaths`, and `Language` to RadoubSettings
+- [ ] Trebuchet: UI to configure TLK, HAK paths, and language
+- [ ] All tools: Read and use shared settings
+- [ ] Quartermaster: Re-enable HAK scanning with shared HAK paths
+
+---
+
 ## [0.9.51] - 2026-01-29
 **Branch**: `radoub/issue-1099` | **PR**: #1148
 
