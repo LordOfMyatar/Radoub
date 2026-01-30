@@ -20,7 +20,7 @@ Improve Quartermaster's display of combat-relevant statistics and complete appea
 #### Work Items
 - [x] #1032 - Display AB/APR in Stats Panel
 - [x] #1031 - Appearance panel missing tattoo display
-- [ ] #1053 - Metamagic slot counting by effective level
+- [x] #1053 - Metamagic slot counting by effective level
 
 #### #1031 - Tattoo Color Controls Always Enabled
 - Moved Colors section (Skin, Hair, Tattoo1, Tattoo2) outside Body Parts section
@@ -34,6 +34,13 @@ Improve Quartermaster's display of combat-relevant statistics and complete appea
 - Shows APR calculated from BAB: 1 attack at BAB 1-5, +1 per 5 BAB, max 4 at BAB 16+
 - Displays attack sequence string (e.g., "+16/+11/+6/+1") as tooltip/subtitle
 - Combat section now shows: Base Attack, Attacks/Round, Challenge Rating
+
+#### #1053 - Metamagic Slot Counting by Effective Level
+- Memorized Spells table now counts slots at effective level (base + metamagic cost)
+- Example: Level 3 Fireball with Extend (+1) now consumes a level 4 slot
+- Added `GetMetamagicLevelCost()` helper: Empower +2, Extend +1, Maximize +3, Quicken +4, Silent +1, Still +1
+- Added `GetEffectiveSpellLevel()` helper for base + metamagic calculation
+- NWN stores spells at base level with metamagic flag; game calculates effective level at runtime
 
 ---
 
