@@ -25,7 +25,7 @@ Improve test infrastructure across Radoub.
 - [x] #1094 - Add Trebuchet to run-tests.ps1 ValidateSet
 - [x] #1086 - [Trebuchet] Create integration test suite
 - [x] #852 - [Radoub.Formats] Corrupted file handling tests
-- [ ] #854 - Test metrics and coverage reporting to CI
+- [x] #854 - Test metrics and coverage reporting to CI
 
 #### #1094 - Add Trebuchet to run-tests.ps1
 - Added Trebuchet to `-Tool` parameter ValidateSet
@@ -48,6 +48,16 @@ Improve test infrastructure across Radoub.
 - **TLK Parser** (4 tests): truncated string data, empty file, invalid signature, bad string offset
 - **2DA Parser** (4 tests): binary garbage, empty file, missing newline, very long line
 - All tests verify parsers fail gracefully (exceptions) rather than crashing or hanging
+
+#### #854 - CI Coverage Reporting
+- Added code coverage collection (`--collect:"XPlat Code Coverage"`) to all test workflows
+- Added test result artifacts (TRX + coverage files) for debugging
+- **formats-pr-tests.yml**: Coverage summary and PR comments (Ubuntu)
+- **parley-pr-tests.yml**: Coverage summary and PR comments (Ubuntu)
+- **quartermaster-pr-tests.yml**: Test reports with dorny/test-reporter
+- **manifest-pr-tests.yml**: Test reports with dorny/test-reporter
+- Uses `irongut/CodeCoverageSummary` for markdown badge generation
+- Uses `marocchino/sticky-pull-request-comment` for PR coverage comments
 
 ---
 

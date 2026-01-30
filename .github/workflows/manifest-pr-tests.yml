@@ -11,6 +11,10 @@ on:
 jobs:
   test:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
 
     steps:
     - name: Checkout code
@@ -27,15 +31,54 @@ jobs:
     - name: Build Manifest.Tests
       run: dotnet build Manifest/Manifest.Tests/Manifest.Tests.csproj --configuration Release --no-restore
 
-    - name: Run Manifest.Tests
+    - name: Run Manifest.Tests with coverage
       id: manifest-tests
-      run: dotnet test Manifest/Manifest.Tests/Manifest.Tests.csproj --configuration Release --no-build --verbosity normal
+      run: |
+        dotnet test Manifest/Manifest.Tests/Manifest.Tests.csproj `
+          --configuration Release `
+          --no-build `
+          --verbosity normal `
+          --logger "trx;LogFileName=manifest-results.trx" `
+          --collect:"XPlat Code Coverage" `
+          --results-directory ./TestResults/Manifest
       continue-on-error: true
 
-    - name: Run Radoub.Formats.Tests
+    - name: Run Radoub.Formats.Tests with coverage
       id: formats-tests
-      run: dotnet test Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj --configuration Release --verbosity normal
+      run: |
+        dotnet test Radoub.Formats/Radoub.Formats.Tests/Radoub.Formats.Tests.csproj `
+          --configuration Release `
+          --verbosity normal `
+          --logger "trx;LogFileName=formats-results.trx" `
+          --collect:"XPlat Code Coverage" `
+          --results-directory ./TestResults/Formats
       continue-on-error: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: manifest-test-results
+        path: ./TestResults
+        retention-days: 30
+
+    - name: Test Report - Manifest
+      uses: dorny/test-reporter@v2
+      if: always()
+      with:
+        name: Manifest Test Results
+        path: './TestResults/Manifest/manifest-results.trx'
+        reporter: dotnet-trx
+        fail-on-error: false
+
+    - name: Test Report - Formats
+      uses: dorny/test-reporter@v2
+      if: always()
+      with:
+        name: Formats Test Results (Manifest PR)
+        path: './TestResults/Formats/formats-results.trx'
+        reporter: dotnet-trx
+        fail-on-error: false
 
     - name: Report test results
       if: always()
