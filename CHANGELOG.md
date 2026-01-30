@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.51] - 2026-01-29
+**Branch**: `radoub/issue-1099` | **PR**: #TBD
+
+### Sprint: Testing Infrastructure (#1099)
+
+Improve test infrastructure across Radoub.
+
+- [ ] #1094 - Add Trebuchet to run-tests.ps1 ValidateSet
+- [ ] #1086 - [Trebuchet] Create integration test suite
+- [ ] #852 - [Radoub.Formats] Corrupted file handling tests
+- [ ] #854 - Test metrics and coverage reporting to CI
+
+---
+
 ## [0.9.50] - 2026-01-29
 **Branch**: `radoub/issue-1066` | **PR**: #1146
 
