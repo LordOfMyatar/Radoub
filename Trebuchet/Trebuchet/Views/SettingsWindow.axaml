@@ -115,61 +115,6 @@
                                   MinWidth="200"/>
                     </Grid>
 
-                    <!-- Custom TLK Path -->
-                    <StackPanel Margin="0,12,0,0" Spacing="4">
-                        <TextBlock Text="Custom TLK (Module-specific):"
-                                   FontWeight="SemiBold"/>
-                        <Grid ColumnDefinitions="*,Auto,Auto">
-                            <TextBox Grid.Column="0"
-                                     Text="{Binding CustomTlkPath}"
-                                     Watermark="Optional: Path to module's custom .tlk file"
-                                     Margin="0,0,8,0"/>
-                            <Button Grid.Column="1"
-                                    Content="Browse..."
-                                    Command="{Binding BrowseCustomTlkPathCommand}"
-                                    Margin="0,0,4,0"
-                                    Padding="8,4"/>
-                            <Button Grid.Column="2"
-                                    Content="Clear"
-                                    Command="{Binding ClearCustomTlkPathCommand}"
-                                    Padding="8,4"/>
-                        </Grid>
-                        <TextBlock Text="{Binding CustomTlkValidation}"
-                                   Foreground="{Binding CustomTlkValidationColor}"
-                                   FontSize="{DynamicResource FontSizeSmall}"
-                                   IsVisible="{Binding HasCustomTlkValidation}"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- HAK Search Paths Section -->
-                <StackPanel Spacing="8">
-                    <TextBlock Text="HAK Search Paths"
-                               FontSize="{DynamicResource FontSizeLarge}"
-                               FontWeight="SemiBold"/>
-                    <TextBlock Text="Additional folders to search for .hak files (beyond the default NWN/hak/ folder)"
-                               Opacity="0.7"
-                               FontSize="{DynamicResource FontSizeSmall}"/>
-
-                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Margin="0,8,0,0">
-                        <ListBox Grid.Row="0" Grid.Column="0"
-                                 ItemsSource="{Binding HakSearchPaths}"
-                                 SelectedItem="{Binding SelectedHakPath}"
-                                 Height="100"
-                                 Margin="0,0,8,0"/>
-                        <StackPanel Grid.Row="0" Grid.Column="1"
-                                    Spacing="4"
-                                    VerticalAlignment="Top">
-                            <Button Content="Add..."
-                                    Command="{Binding AddHakSearchPathCommand}"
-                                    Padding="8,4"
-                                    Width="80"/>
-                            <Button Content="Remove"
-                                    Command="{Binding RemoveHakSearchPathCommand}"
-                                    IsEnabled="{Binding SelectedHakPath, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                    Padding="8,4"
-                                    Width="80"/>
-                        </StackPanel>
-                    </Grid>
                 </StackPanel>
 
                 <!-- Appearance Section -->

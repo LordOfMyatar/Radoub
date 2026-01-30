@@ -50,23 +50,6 @@ public partial class SettingsWindowViewModel : ObservableObject
     [ObservableProperty]
     private string _selectedGender = "Male";
 
-    // Custom content paths
-    [ObservableProperty]
-    private string _customTlkPath = "";
-
-    [ObservableProperty]
-    private string _customTlkValidation = "";
-
-    [ObservableProperty]
-    private IBrush _customTlkValidationColor = SuccessBrush;
-
-    public bool HasCustomTlkValidation => !string.IsNullOrEmpty(CustomTlkValidation);
-
-    public ObservableCollection<string> HakSearchPaths { get; } = new();
-
-    [ObservableProperty]
-    private string? _selectedHakPath;
-
     [ObservableProperty]
     private string _selectedTheme = "Light";
 
@@ -173,14 +156,6 @@ public partial class SettingsWindowViewModel : ObservableObject
         SelectedGender = sharedSettings.TlkUseFemale ? "Female" : "Male";
         FontSizeScale = localSettings.FontSizeScale;
 
-        // Custom content paths
-        CustomTlkPath = sharedSettings.CustomTlkPath ?? "";
-        HakSearchPaths.Clear();
-        foreach (var path in sharedSettings.HakSearchPaths)
-        {
-            HakSearchPaths.Add(path);
-        }
-
         // Logging settings
         LogRetentionSessions = localSettings.LogRetentionSessions;
         SelectedLogLevel = localSettings.CurrentLogLevel.ToString();
@@ -200,10 +175,6 @@ public partial class SettingsWindowViewModel : ObservableObject
         {
             ValidateNwnDocumentsPath(NwnDocumentsPath);
         }
-        if (!string.IsNullOrEmpty(CustomTlkPath))
-        {
-            ValidateCustomTlkPath(CustomTlkPath);
-        }
     }
 
     partial void OnGameInstallPathChanged(string value)
@@ -214,11 +185,6 @@ public partial class SettingsWindowViewModel : ObservableObject
     partial void OnNwnDocumentsPathChanged(string value)
     {
         ValidateNwnDocumentsPath(value);
-    }
-
-    partial void OnCustomTlkPathChanged(string value)
-    {
-        ValidateCustomTlkPath(value);
     }
 
     private void ValidateGameInstallPath(string path)
@@ -249,33 +215,6 @@ public partial class SettingsWindowViewModel : ObservableObject
         NwnDocumentsValidation = result.Message;
         NwnDocumentsValidationColor = result.IsValid ? SuccessBrush : ErrorBrush;
         OnPropertyChanged(nameof(HasNwnDocumentsValidation));
-    }
-
-    private void ValidateCustomTlkPath(string path)
-    {
-        if (string.IsNullOrEmpty(path))
-        {
-            CustomTlkValidation = "";
-            OnPropertyChanged(nameof(HasCustomTlkValidation));
-            return;
-        }
-
-        if (System.IO.File.Exists(path) && path.EndsWith(".tlk", StringComparison.OrdinalIgnoreCase))
-        {
-            CustomTlkValidation = "✓ TLK file found";
-            CustomTlkValidationColor = SuccessBrush;
-        }
-        else if (!System.IO.File.Exists(path))
-        {
-            CustomTlkValidation = "File not found";
-            CustomTlkValidationColor = ErrorBrush;
-        }
-        else
-        {
-            CustomTlkValidation = "Not a .tlk file";
-            CustomTlkValidationColor = ErrorBrush;
-        }
-        OnPropertyChanged(nameof(HasCustomTlkValidation));
     }
 
     partial void OnFontSizeScaleChanged(double value)
@@ -368,84 +307,6 @@ public partial class SettingsWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task BrowseCustomTlkPath()
-    {
-        var tlkDir = System.IO.Path.Combine(NwnDocumentsPath, "tlk");
-        IStorageFolder? startFolder = null;
-
-        if (System.IO.Directory.Exists(tlkDir))
-        {
-            startFolder = await _window.StorageProvider.TryGetFolderFromPathAsync(new Uri(tlkDir));
-        }
-        else if (!string.IsNullOrEmpty(NwnDocumentsPath) && System.IO.Directory.Exists(NwnDocumentsPath))
-        {
-            startFolder = await _window.StorageProvider.TryGetFolderFromPathAsync(new Uri(NwnDocumentsPath));
-        }
-
-        var files = await _window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-        {
-            Title = "Select Custom TLK File",
-            AllowMultiple = false,
-            SuggestedStartLocation = startFolder,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType("TLK Files") { Patterns = new[] { "*.tlk" } }
-            }
-        });
-
-        if (files.Count > 0)
-        {
-            CustomTlkPath = files[0].Path.LocalPath;
-        }
-    }
-
-    [RelayCommand]
-    private void ClearCustomTlkPath()
-    {
-        CustomTlkPath = "";
-    }
-
-    [RelayCommand]
-    private async Task AddHakSearchPath()
-    {
-        var hakDir = System.IO.Path.Combine(NwnDocumentsPath, "hak");
-        IStorageFolder? startFolder = null;
-
-        if (System.IO.Directory.Exists(hakDir))
-        {
-            startFolder = await _window.StorageProvider.TryGetFolderFromPathAsync(new Uri(hakDir));
-        }
-
-        var folders = await _window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-        {
-            Title = "Select HAK Search Folder",
-            AllowMultiple = false,
-            SuggestedStartLocation = startFolder
-        });
-
-        if (folders.Count > 0)
-        {
-            var path = folders[0].Path.LocalPath;
-            // Normalize and check for duplicates
-            var normalized = System.IO.Path.GetFullPath(path);
-            if (!HakSearchPaths.Contains(normalized, StringComparer.OrdinalIgnoreCase))
-            {
-                HakSearchPaths.Add(normalized);
-            }
-        }
-    }
-
-    [RelayCommand]
-    private void RemoveHakSearchPath()
-    {
-        if (SelectedHakPath != null)
-        {
-            HakSearchPaths.Remove(SelectedHakPath);
-            SelectedHakPath = null;
-        }
-    }
-
-    [RelayCommand]
     private void Save()
     {
         var sharedSettings = RadoubSettings.Instance;
@@ -456,10 +317,6 @@ public partial class SettingsWindowViewModel : ObservableObject
         sharedSettings.TlkLanguage = SelectedLanguage;
         sharedSettings.TlkUseFemale = SelectedGender == "Female";
         localSettings.FontSizeScale = FontSizeScale;
-
-        // Custom content paths
-        sharedSettings.CustomTlkPath = CustomTlkPath;
-        sharedSettings.SetHakSearchPaths(HakSearchPaths);
 
         // Logging settings
         localSettings.LogRetentionSessions = LogRetentionSessions;
