@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.52] - 2026-01-29
-**Branch**: `radoub/issue-1105` | **PR**: #TBD
+**Branch**: `radoub/issue-1105` | **PR**: #1157
 
 ### Feature: Add TLK, HAK, and Language to shared RadoubSettings (#1105)
 
