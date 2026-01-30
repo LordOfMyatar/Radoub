@@ -239,11 +239,21 @@ public class GameDataService : IGameDataService
         }
 
         // HAK paths - scan all configured search paths
-        foreach (var hakSearchPath in settings.GetAllHakSearchPaths())
+        // Only scan additional configured paths (not default hak folder) for performance
+        // Users who want HAK scanning should add paths in Trebuchet settings
+        var additionalHakPaths = settings.HakSearchPaths;
+        if (additionalHakPaths.Count > 0)
         {
-            var hakFiles = Directory.GetFiles(hakSearchPath, "*.hak", SearchOption.TopDirectoryOnly);
-            config.HakPaths.AddRange(hakFiles);
-            UnifiedLogger.Log(LogLevel.INFO, $"Found {hakFiles.Length} HAK files in {hakSearchPath}", "GameDataService", "GameData");
+            config.EnableHakScanning = true;
+            foreach (var hakSearchPath in additionalHakPaths)
+            {
+                if (Directory.Exists(hakSearchPath))
+                {
+                    var hakFiles = Directory.GetFiles(hakSearchPath, "*.hak", SearchOption.TopDirectoryOnly);
+                    config.HakPaths.AddRange(hakFiles);
+                    UnifiedLogger.Log(LogLevel.INFO, $"HAK scanning enabled: Found {hakFiles.Length} HAK files in {hakSearchPath}", "GameDataService", "GameData");
+                }
+            }
         }
 
         // TLK path
