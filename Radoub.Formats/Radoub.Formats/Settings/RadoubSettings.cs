@@ -63,6 +63,10 @@ public class RadoubSettings : INotifyPropertyChanged
     private string _neverwinterNightsPath = "";
     private string _currentModulePath = "";
 
+    // Custom content paths
+    private string _customTlkPath = "";  // Path to custom TLK file (module-specific)
+    private List<string> _hakSearchPaths = new();  // Additional HAK search paths
+
     // TLK settings
     private string _tlkLanguage = "";  // Empty = auto-detect from OS or default to English
     private bool _tlkUseFemale = false;
@@ -118,6 +122,120 @@ public class RadoubSettings : INotifyPropertyChanged
     {
         get => _currentModulePath;
         set { if (SetProperty(ref _currentModulePath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Path to custom TLK file for the current module.
+    /// Module's CustomTlk reference (from module.ifo) is a name without extension;
+    /// this is the full resolved path to the actual .tlk file.
+    /// Empty = no custom TLK loaded.
+    /// </summary>
+    public string CustomTlkPath
+    {
+        get => _customTlkPath;
+        set { if (SetProperty(ref _customTlkPath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Additional search paths for HAK files, beyond the default NeverwinterNightsPath/hak/.
+    /// Useful for custom content packs (CEP, PRC, etc.) stored in non-standard locations.
+    /// Paths are searched in order: default hak folder first, then these paths.
+    /// </summary>
+    public IReadOnlyList<string> HakSearchPaths => _hakSearchPaths.AsReadOnly();
+
+    /// <summary>
+    /// Add a HAK search path if not already present.
+    /// </summary>
+    public void AddHakSearchPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        var normalized = Path.GetFullPath(path);
+        if (!_hakSearchPaths.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+        {
+            _hakSearchPaths.Add(normalized);
+            OnPropertyChanged(nameof(HakSearchPaths));
+            SaveSettings();
+        }
+    }
+
+    /// <summary>
+    /// Remove a HAK search path.
+    /// </summary>
+    public bool RemoveHakSearchPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+
+        var normalized = Path.GetFullPath(path);
+        var index = _hakSearchPaths.FindIndex(p => string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+        {
+            _hakSearchPaths.RemoveAt(index);
+            OnPropertyChanged(nameof(HakSearchPaths));
+            SaveSettings();
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Clear all additional HAK search paths.
+    /// </summary>
+    public void ClearHakSearchPaths()
+    {
+        if (_hakSearchPaths.Count > 0)
+        {
+            _hakSearchPaths.Clear();
+            OnPropertyChanged(nameof(HakSearchPaths));
+            SaveSettings();
+        }
+    }
+
+    /// <summary>
+    /// Set all HAK search paths at once.
+    /// </summary>
+    public void SetHakSearchPaths(IEnumerable<string> paths)
+    {
+        _hakSearchPaths.Clear();
+        foreach (var path in paths)
+        {
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                var normalized = Path.GetFullPath(path);
+                if (!_hakSearchPaths.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+                {
+                    _hakSearchPaths.Add(normalized);
+                }
+            }
+        }
+        OnPropertyChanged(nameof(HakSearchPaths));
+        SaveSettings();
+    }
+
+    /// <summary>
+    /// Get all HAK search paths including the default hak folder.
+    /// Returns paths in search order: default hak folder first, then additional paths.
+    /// </summary>
+    public IEnumerable<string> GetAllHakSearchPaths()
+    {
+        // Default hak folder from NeverwinterNightsPath
+        if (!string.IsNullOrEmpty(_neverwinterNightsPath))
+        {
+            var defaultHakPath = Path.Combine(_neverwinterNightsPath, "hak");
+            if (Directory.Exists(defaultHakPath))
+            {
+                yield return defaultHakPath;
+            }
+        }
+
+        // Additional search paths
+        foreach (var path in _hakSearchPaths)
+        {
+            if (Directory.Exists(path))
+            {
+                yield return path;
+            }
+        }
     }
 
     /// <summary>
@@ -396,6 +514,13 @@ public class RadoubSettings : INotifyPropertyChanged
                     _tlkUseFemale = data.TlkUseFemale;
                     _defaultLanguage = data.DefaultLanguage;
 
+                    // Custom content paths
+                    _customTlkPath = PathHelper.ExpandPath(data.CustomTlkPath ?? "");
+                    _hakSearchPaths = (data.HakSearchPaths ?? new List<string>())
+                        .Select(PathHelper.ExpandPath)
+                        .Where(p => !string.IsNullOrEmpty(p))
+                        .ToList();
+
                     // Theme settings
                     _sharedThemeId = data.SharedThemeId ?? "";
                     _useSharedTheme = data.UseSharedTheme;
@@ -432,6 +557,10 @@ public class RadoubSettings : INotifyPropertyChanged
                 TlkLanguage = _tlkLanguage,
                 TlkUseFemale = _tlkUseFemale,
                 DefaultLanguage = _defaultLanguage,
+
+                // Custom content paths
+                CustomTlkPath = PathHelper.ContractPath(_customTlkPath),
+                HakSearchPaths = _hakSearchPaths.Select(PathHelper.ContractPath).ToList(),
 
                 // Theme settings
                 SharedThemeId = _sharedThemeId,
@@ -477,6 +606,10 @@ public class RadoubSettings : INotifyPropertyChanged
         public string? TlkLanguage { get; set; }
         public bool TlkUseFemale { get; set; }
         public Language DefaultLanguage { get; set; } = Language.English;
+
+        // Custom content paths
+        public string? CustomTlkPath { get; set; }
+        public List<string>? HakSearchPaths { get; set; }
 
         // Theme settings (shared across all tools)
         public string? SharedThemeId { get; set; }
