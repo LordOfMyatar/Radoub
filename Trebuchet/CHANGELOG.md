@@ -10,6 +10,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.7.0-alpha] - 2026-01-31
+**Branch**: `trebuchet/issue-1150` | **PR**: #TBD
+
+### Sprint: Module Editor Polish (#1150)
+
+- [ ] #1111 - CustomTlk browse button
+- [ ] #1110 - DefaultBic browse button with auto-save
+- [ ] #1109 - Variable name field auto-focus
+- [ ] #1108 - Script field browse and edit buttons
+- [ ] #1103 - Smart DefaultBic handling for Test vs Load
+
+---
+
 ## [1.6.1-alpha] - 2026-01-27
 **Branch**: `radoub/issue-1138` | **PR**: #1139
 
