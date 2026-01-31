@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Radoub.Formats.Common;
@@ -11,7 +14,10 @@ using Radoub.Formats.Erf;
 using Radoub.Formats.Gff;
 using Radoub.Formats.Ifo;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Services;
 using Radoub.Formats.Settings;
+using Radoub.UI.Views;
+using RadoubLauncher.Services;
 
 namespace RadoubLauncher.ViewModels;
 
@@ -28,6 +34,12 @@ public partial class ModuleEditorViewModel : ObservableObject
     private IfoFile? _ifoFile;
     private bool _isFromModFile;
     private bool _isReadOnly;
+    private IGameDataService? _gameDataService;
+
+    /// <summary>
+    /// Raised when a new variable is added, to allow the View to auto-focus the name field.
+    /// </summary>
+    public event EventHandler? VariableAdded;
 
     // Status
 
@@ -273,6 +285,26 @@ public partial class ModuleEditorViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
     private string _defaultBic = string.Empty;
 
+    /// <summary>
+    /// Whether a default character (BIC) is enabled for this module.
+    /// When enabled, Load Module is disabled (only Test Module works).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    [NotifyPropertyChangedFor(nameof(IsDefaultBicDropdownEnabled))]
+    private bool _useDefaultBic;
+
+    /// <summary>
+    /// Available BIC files found in the module's working directory.
+    /// </summary>
+    [ObservableProperty]
+    private ObservableCollection<string> _availableBicFiles = new();
+
+    /// <summary>
+    /// Whether the DefaultBic dropdown should be enabled.
+    /// </summary>
+    public bool IsDefaultBicDropdownEnabled => UseDefaultBic && AvailableBicFiles.Count > 0;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
     private string _startMovie = string.Empty;
@@ -300,6 +332,28 @@ public partial class ModuleEditorViewModel : ObservableObject
 
     public ModuleEditorViewModel()
     {
+        // Initialize GameDataService for script browser (built-in scripts from game BIFs)
+        _ = InitializeGameDataServiceAsync();
+    }
+
+    private async Task InitializeGameDataServiceAsync()
+    {
+        try
+        {
+            _gameDataService = await Task.Run(() => new GameDataService());
+            if (_gameDataService.IsConfigured)
+            {
+                UnifiedLogger.LogApplication(LogLevel.INFO, "ModuleEditor: GameDataService initialized");
+            }
+            else
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, "ModuleEditor: GameDataService not configured (no game path)");
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"ModuleEditor: Failed to initialize GameDataService: {ex.Message}");
+        }
     }
 
     public void SetParentWindow(Window window)
@@ -371,6 +425,7 @@ public partial class ModuleEditorViewModel : ObservableObject
 
             PopulateViewModelFromIfo();
             SyncToRadoubSettings();
+            SyncDefaultBicToSettings();
             IsModuleLoaded = true;
             IsModuleReadOnly = _isReadOnly;
             IsVersionUnlocked = false;  // Always start with version locked
@@ -519,12 +574,100 @@ public partial class ModuleEditorViewModel : ObservableObject
 
         // Other
         XpScale = _ifoFile.XPScale;
-        DefaultBic = _ifoFile.DefaultBic;
         StartMovie = _ifoFile.StartMovie;
+
+        // Scan for available BIC files before setting DefaultBic
+        ScanForBicFiles();
+
+        // Set DefaultBic and UseDefaultBic checkbox state
+        // Find matching BIC in available files (case-insensitive) to ensure ComboBox selection works
+        var ifoDefaultBic = _ifoFile.DefaultBic;
+        if (!string.IsNullOrEmpty(ifoDefaultBic))
+        {
+            var matchingBic = AvailableBicFiles.FirstOrDefault(
+                b => string.Equals(b, ifoDefaultBic, StringComparison.OrdinalIgnoreCase));
+            DefaultBic = matchingBic ?? ifoDefaultBic;  // Use matching case if found
+            UseDefaultBic = true;
+        }
+        else
+        {
+            DefaultBic = string.Empty;
+            UseDefaultBic = false;
+        }
 
         // Variables
         Variables = new ObservableCollection<VariableViewModel>(
-            _ifoFile.VarTable.Select(v => new VariableViewModel(v)));
+            _ifoFile.VarTable.Select(v =>
+            {
+                var vm = new VariableViewModel(v);
+                vm.SetUniquenessCheck(IsVariableNameUnique);
+                return vm;
+            }));
+    }
+
+    /// <summary>
+    /// Scan the working directory for available .bic files.
+    /// </summary>
+    private void ScanForBicFiles()
+    {
+        AvailableBicFiles.Clear();
+
+        if (string.IsNullOrEmpty(_modulePath))
+            return;
+
+        string? searchDir = null;
+
+        // Determine the directory to scan
+        if (Directory.Exists(_modulePath))
+        {
+            // _modulePath is already a directory
+            searchDir = _modulePath;
+        }
+        else if (!string.IsNullOrEmpty(_workingDirectoryPath) && Directory.Exists(_workingDirectoryPath))
+        {
+            // Use the unpacked working directory
+            searchDir = _workingDirectoryPath;
+        }
+
+        if (string.IsNullOrEmpty(searchDir))
+            return;
+
+        try
+        {
+            var bicFiles = Directory.GetFiles(searchDir, "*.bic", SearchOption.TopDirectoryOnly);
+            foreach (var bicFile in bicFiles.OrderBy(f => f))
+            {
+                var resRef = Path.GetFileNameWithoutExtension(bicFile);
+                AvailableBicFiles.Add(resRef);
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Found {AvailableBicFiles.Count} BIC files in module directory");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to scan for BIC files: {ex.Message}");
+        }
+
+        OnPropertyChanged(nameof(IsDefaultBicDropdownEnabled));
+    }
+
+    /// <summary>
+    /// Sync the DefaultBic setting to RadoubSettings for MainWindow to check.
+    /// </summary>
+    private void SyncDefaultBicToSettings()
+    {
+        var settings = RadoubSettings.Instance;
+
+        // Set the shared DefaultBic property (used by MainWindow to disable Load Module)
+        if (UseDefaultBic && !string.IsNullOrEmpty(DefaultBic))
+        {
+            settings.CurrentModuleDefaultBic = DefaultBic;
+        }
+        else
+        {
+            settings.CurrentModuleDefaultBic = string.Empty;
+        }
     }
 
     /// <summary>
@@ -593,6 +736,252 @@ public partial class ModuleEditorViewModel : ObservableObject
         return null;
     }
 
+    /// <summary>
+    /// Browse for a custom TLK file.
+    /// </summary>
+    [RelayCommand]
+    private async Task BrowseCustomTlkAsync()
+    {
+        if (_parentWindow == null) return;
+
+        var storage = _parentWindow.StorageProvider;
+
+        // Build list of suggested starting locations
+        var suggestedLocations = new List<IStorageFolder>();
+
+        // Prefer NWN documents tlk folder
+        var nwnPath = RadoubSettings.Instance.NeverwinterNightsPath;
+        if (!string.IsNullOrEmpty(nwnPath))
+        {
+            var tlkFolder = Path.Combine(nwnPath, "tlk");
+            if (Directory.Exists(tlkFolder))
+            {
+                var folder = await storage.TryGetFolderFromPathAsync(tlkFolder);
+                if (folder != null)
+                    suggestedLocations.Add(folder);
+            }
+        }
+
+        // Also try module directory
+        if (!string.IsNullOrEmpty(_modulePath))
+        {
+            var moduleDir = Directory.Exists(_modulePath) ? _modulePath : Path.GetDirectoryName(_modulePath);
+            if (!string.IsNullOrEmpty(moduleDir) && Directory.Exists(moduleDir))
+            {
+                var folder = await storage.TryGetFolderFromPathAsync(moduleDir);
+                if (folder != null)
+                    suggestedLocations.Add(folder);
+            }
+        }
+
+        var options = new FilePickerOpenOptions
+        {
+            Title = "Select Custom TLK File",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("TLK Files") { Patterns = new[] { "*.tlk" } },
+                new FilePickerFileType("All Files") { Patterns = new[] { "*.*" } }
+            },
+            SuggestedStartLocation = suggestedLocations.FirstOrDefault()
+        };
+
+        var result = await storage.OpenFilePickerAsync(options);
+
+        if (result.Count > 0)
+        {
+            var selectedFile = result[0];
+            var filePath = selectedFile.TryGetLocalPath();
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                // Store just the name without extension (as IFO expects)
+                CustomTlk = Path.GetFileNameWithoutExtension(filePath);
+                UnifiedLogger.LogApplication(LogLevel.INFO, $"Selected custom TLK: {CustomTlk}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Browse for a script using the shared ScriptBrowserWindow.
+    /// </summary>
+    /// <param name="scriptFieldName">The name of the script property to update (e.g., "OnModuleLoad")</param>
+    [RelayCommand]
+    private async Task BrowseScriptAsync(string scriptFieldName)
+    {
+        if (_parentWindow == null) return;
+
+        // Create context with current module's working directory
+        var context = new TrebuchetScriptBrowserContext(_workingDirectoryPath ?? _modulePath, _gameDataService);
+        var browser = new ScriptBrowserWindow(context);
+
+        var result = await browser.ShowDialog<string?>(_parentWindow);
+
+        if (!string.IsNullOrEmpty(result))
+        {
+            // Use reflection to set the script property
+            SetScriptProperty(scriptFieldName, result);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Selected script for {scriptFieldName}: {result}");
+        }
+    }
+
+    /// <summary>
+    /// Open a script file in the system's default editor.
+    /// If the file doesn't exist, offers to create it.
+    /// </summary>
+    /// <param name="scriptFieldName">The name of the script property to edit</param>
+    [RelayCommand]
+    private async Task EditScriptAsync(string scriptFieldName)
+    {
+        var scriptName = GetScriptProperty(scriptFieldName);
+        if (string.IsNullOrEmpty(scriptName))
+        {
+            StatusText = "No script to edit - select or enter a script name first";
+            return;
+        }
+
+        // Find the script file in the module directory
+        var searchDir = _workingDirectoryPath ?? _modulePath;
+        if (string.IsNullOrEmpty(searchDir) || !Directory.Exists(searchDir))
+        {
+            StatusText = "Module directory not available";
+            return;
+        }
+
+        var scriptPath = Path.Combine(searchDir, $"{scriptName}.nss");
+        if (!File.Exists(scriptPath))
+        {
+            // Offer to create the file
+            if (_parentWindow != null && await ConfirmCreateScriptAsync(scriptName))
+            {
+                try
+                {
+                    // Create empty script file with header comment
+                    var scriptContent = $$"""
+                        // {{scriptName}}.nss
+                        // Created by Trebuchet Module Editor
+
+                        void main()
+                        {
+
+                        }
+                        """;
+                    await File.WriteAllTextAsync(scriptPath, scriptContent);
+                    UnifiedLogger.LogApplication(LogLevel.INFO, $"Created new script: {UnifiedLogger.SanitizePath(scriptPath)}");
+                    StatusText = $"Created {scriptName}.nss";
+                }
+                catch (Exception ex)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to create script: {ex.Message}");
+                    StatusText = $"Failed to create script: {ex.Message}";
+                    return;
+                }
+            }
+            else
+            {
+                return; // User cancelled or no parent window
+            }
+        }
+
+        try
+        {
+            // Open with system default editor
+            var psi = new ProcessStartInfo
+            {
+                FileName = scriptPath,
+                UseShellExecute = true
+            };
+            Process.Start(psi);
+            UnifiedLogger.LogApplication(LogLevel.INFO, $"Opened script in editor: {UnifiedLogger.SanitizePath(scriptPath)}");
+            StatusText = $"Opened {scriptName}.nss in editor";
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to open script: {ex.Message}");
+            StatusText = $"Failed to open script: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Show confirmation dialog to create a new script file.
+    /// </summary>
+    private async Task<bool> ConfirmCreateScriptAsync(string scriptName)
+    {
+        if (_parentWindow == null) return false;
+
+        var tcs = new TaskCompletionSource<bool>();
+
+        var messageText = new Avalonia.Controls.TextBlock
+        {
+            Text = $"Script file '{scriptName}.nss' does not exist.\n\nDo you want to create it?",
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        };
+
+        var createButton = new Avalonia.Controls.Button
+        {
+            Content = "Create",
+            Margin = new Avalonia.Thickness(8, 0, 0, 0),
+            Padding = new Avalonia.Thickness(16, 6)
+        };
+
+        var cancelButton = new Avalonia.Controls.Button
+        {
+            Content = "Cancel",
+            Padding = new Avalonia.Thickness(16, 6)
+        };
+
+        var buttonPanel = new Avalonia.Controls.StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Margin = new Avalonia.Thickness(0, 16, 0, 0),
+            Children = { cancelButton, createButton }
+        };
+
+        var contentPanel = new Avalonia.Controls.StackPanel
+        {
+            Margin = new Avalonia.Thickness(20),
+            Children = { messageText, buttonPanel }
+        };
+
+        var dialog = new Avalonia.Controls.Window
+        {
+            Title = "Create Script?",
+            Width = 350,
+            SizeToContent = Avalonia.Controls.SizeToContent.Height,
+            WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Content = contentPanel
+        };
+
+        createButton.Click += (_, _) => { tcs.TrySetResult(true); dialog.Close(); };
+        cancelButton.Click += (_, _) => { tcs.TrySetResult(false); dialog.Close(); };
+        dialog.Closed += (_, _) => tcs.TrySetResult(false); // Handle window close button
+
+        dialog.Show(_parentWindow);
+        return await tcs.Task;
+    }
+
+    /// <summary>
+    /// Set a script property by name using reflection.
+    /// </summary>
+    private void SetScriptProperty(string propertyName, string value)
+    {
+        var property = GetType().GetProperty(propertyName);
+        if (property != null && property.CanWrite)
+        {
+            property.SetValue(this, value);
+        }
+    }
+
+    /// <summary>
+    /// Get a script property value by name using reflection.
+    /// </summary>
+    private string? GetScriptProperty(string propertyName)
+    {
+        var property = GetType().GetProperty(propertyName);
+        return property?.GetValue(this) as string;
+    }
+
     private void UpdateIfoFromViewModel()
     {
         if (_ifoFile == null) return;
@@ -656,8 +1045,10 @@ public partial class ModuleEditorViewModel : ObservableObject
 
         // Other
         _ifoFile.XPScale = XpScale;
-        _ifoFile.DefaultBic = DefaultBic;
         _ifoFile.StartMovie = StartMovie;
+
+        // Only set DefaultBic if checkbox is checked
+        _ifoFile.DefaultBic = UseDefaultBic ? DefaultBic : string.Empty;
 
         // Variables
         _ifoFile.VarTable = Variables.Select(v => v.ToVariable()).ToList();
@@ -975,10 +1366,25 @@ public partial class ModuleEditorViewModel : ObservableObject
     [RelayCommand]
     private void AddVariable()
     {
-        var newVar = new VariableViewModel(Variable.CreateInt("NewVariable", 0));
+        var newVar = new VariableViewModel(Variable.CreateInt("", 0));
+        newVar.SetUniquenessCheck(IsVariableNameUnique);
         Variables.Add(newVar);
         SelectedVariable = newVar;
         HasUnsavedChanges = true;
+
+        // Notify View to auto-focus the name field
+        VariableAdded?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Check if a variable name is unique within the collection.
+    /// </summary>
+    private bool IsVariableNameUnique(string name, VariableViewModel currentVar)
+    {
+        if (string.IsNullOrEmpty(name)) return true; // Empty names handled separately
+
+        return !Variables.Any(v => v != currentVar &&
+            string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase));
     }
 
     [RelayCommand]
@@ -1035,7 +1441,33 @@ public partial class ModuleEditorViewModel : ObservableObject
     partial void OnOnPlayerTileActionChanged(string value) => MarkChanged();
     partial void OnOnNuiEventChanged(string value) => MarkChanged();
     partial void OnXpScaleChanged(byte value) => MarkChanged();
-    partial void OnDefaultBicChanged(string value) => MarkChanged();
+    partial void OnDefaultBicChanged(string value)
+    {
+        MarkChanged();
+        // Sync to RadoubSettings so MainWindow can check if DefaultBic is set
+        SyncDefaultBicToSettings();
+    }
+
+    partial void OnUseDefaultBicChanged(bool value)
+    {
+        MarkChanged();
+        OnPropertyChanged(nameof(IsDefaultBicDropdownEnabled));
+
+        if (!value)
+        {
+            // Clear DefaultBic when unchecked
+            DefaultBic = string.Empty;
+        }
+        else if (AvailableBicFiles.Count > 0 && string.IsNullOrEmpty(DefaultBic))
+        {
+            // Auto-select first BIC if available and none selected
+            DefaultBic = AvailableBicFiles[0];
+        }
+
+        // Sync to RadoubSettings so MainWindow can check if DefaultBic is set
+        SyncDefaultBicToSettings();
+    }
+
     partial void OnStartMovieChanged(string value) => MarkChanged();
 
     private void MarkChanged()
@@ -1051,8 +1483,11 @@ public partial class ModuleEditorViewModel : ObservableObject
 /// <summary>
 /// ViewModel for a single variable in the VarTable.
 /// </summary>
-public partial class VariableViewModel : ObservableObject
+public partial class VariableViewModel : ObservableObject, System.ComponentModel.INotifyDataErrorInfo
 {
+    private readonly Dictionary<string, List<string>> _errors = new();
+    private Func<string, VariableViewModel, bool>? _isNameUnique;
+
     [ObservableProperty]
     private string _name;
 
@@ -1061,6 +1496,18 @@ public partial class VariableViewModel : ObservableObject
 
     [ObservableProperty]
     private string _valueString;
+
+    /// <summary>
+    /// Validation error message for the Value field (shown in UI).
+    /// </summary>
+    [ObservableProperty]
+    private string? _valueError;
+
+    /// <summary>
+    /// Validation error message for the Name field (shown in UI).
+    /// </summary>
+    [ObservableProperty]
+    private string? _nameError;
 
     public static ObservableCollection<VariableType> VariableTypes { get; } = new()
     {
@@ -1082,14 +1529,117 @@ public partial class VariableViewModel : ObservableObject
         };
     }
 
+    /// <summary>
+    /// Set the uniqueness check function. Called by parent ViewModel.
+    /// </summary>
+    public void SetUniquenessCheck(Func<string, VariableViewModel, bool> isNameUnique)
+    {
+        _isNameUnique = isNameUnique;
+    }
+
+    partial void OnNameChanged(string value)
+    {
+        ValidateName();
+    }
+
+    partial void OnTypeChanged(VariableType value)
+    {
+        // Re-validate when type changes
+        ValidateValue();
+    }
+
+    partial void OnValueStringChanged(string value)
+    {
+        ValidateValue();
+    }
+
+    private void ValidateName()
+    {
+        ClearErrors(nameof(Name));
+        NameError = null;
+
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            AddError(nameof(Name), "Name is required");
+            NameError = "Name is required";
+            return;
+        }
+
+        if (_isNameUnique != null && !_isNameUnique(Name, this))
+        {
+            AddError(nameof(Name), "Name must be unique");
+            NameError = "Name must be unique";
+        }
+    }
+
+    private void ValidateValue()
+    {
+        ClearErrors(nameof(ValueString));
+        ValueError = null;
+
+        switch (Type)
+        {
+            case VariableType.Int:
+                if (!string.IsNullOrEmpty(ValueString) && !int.TryParse(ValueString, out _))
+                {
+                    AddError(nameof(ValueString), "Must be a valid integer");
+                    ValueError = "Must be a valid integer";
+                }
+                break;
+
+            case VariableType.Float:
+                if (!string.IsNullOrEmpty(ValueString) && !float.TryParse(ValueString, out _))
+                {
+                    AddError(nameof(ValueString), "Must be a valid number");
+                    ValueError = "Must be a valid number";
+                }
+                break;
+        }
+    }
+
     public Variable ToVariable()
     {
         return Type switch
         {
-            VariableType.Int => Variable.CreateInt(Name, int.TryParse(ValueString, out var i) ? i : 0),
-            VariableType.Float => Variable.CreateFloat(Name, float.TryParse(ValueString, out var f) ? f : 0f),
-            VariableType.String => Variable.CreateString(Name, ValueString),
-            _ => Variable.CreateInt(Name, 0)
+            VariableType.Int => Variable.CreateInt(Name ?? "", int.TryParse(ValueString, out var i) ? i : 0),
+            VariableType.Float => Variable.CreateFloat(Name ?? "", float.TryParse(ValueString, out var f) ? f : 0f),
+            VariableType.String => Variable.CreateString(Name ?? "", ValueString ?? ""),
+            _ => Variable.CreateInt(Name ?? "", 0)
         };
+    }
+
+    // INotifyDataErrorInfo implementation
+    public bool HasErrors => _errors.Count > 0;
+
+    public event EventHandler<System.ComponentModel.DataErrorsChangedEventArgs>? ErrorsChanged;
+
+    public System.Collections.IEnumerable GetErrors(string? propertyName)
+    {
+        if (string.IsNullOrEmpty(propertyName))
+            return _errors.SelectMany(e => e.Value);
+
+        return _errors.TryGetValue(propertyName, out var errors) ? errors : Enumerable.Empty<string>();
+    }
+
+    private void AddError(string propertyName, string error)
+    {
+        if (!_errors.ContainsKey(propertyName))
+            _errors[propertyName] = new List<string>();
+
+        if (!_errors[propertyName].Contains(error))
+        {
+            _errors[propertyName].Add(error);
+            ErrorsChanged?.Invoke(this, new System.ComponentModel.DataErrorsChangedEventArgs(propertyName));
+            OnPropertyChanged(nameof(HasErrors));
+        }
+    }
+
+    private void ClearErrors(string propertyName)
+    {
+        if (_errors.Remove(propertyName))
+        {
+            ErrorsChanged?.Invoke(this, new System.ComponentModel.DataErrorsChangedEventArgs(propertyName));
+            OnPropertyChanged(nameof(HasErrors));
+        }
     }
 }

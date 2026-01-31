@@ -195,7 +195,25 @@
                             Command="{Binding LaunchLoadModuleCommand}"
                             IsEnabled="{Binding CanLoadModule}"
                             Padding="16,8"
-                            ToolTip.Tip="Launch with current module, show character select"/>
+                            ToolTip.Tip="{Binding LoadModuleTooltip}"/>
+                </StackPanel>
+
+                <!-- DefaultBic Setting -->
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,12,0,0">
+                    <CheckBox Content="Use Default Character"
+                              IsChecked="{Binding UseDefaultBic}"
+                              VerticalAlignment="Center"
+                              ToolTip.Tip="When enabled, new players use the selected pre-generated character. Only Test Module works with DefaultBic."/>
+                    <ComboBox ItemsSource="{Binding AvailableBicFiles}"
+                              SelectedItem="{Binding SelectedDefaultBic}"
+                              IsEnabled="{Binding IsDefaultBicDropdownEnabled}"
+                              Width="180"
+                              VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding NoBicFilesMessage}"
+                               FontSize="{DynamicResource FontSizeSmall}"
+                               Foreground="{DynamicResource ThemeWarning}"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding !HasBicFilesAvailable}"/>
                 </StackPanel>
 
                 <TextBlock Text="Game not configured - set Base Game Path in Settings"

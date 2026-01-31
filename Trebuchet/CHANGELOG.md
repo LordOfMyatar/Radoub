@@ -10,6 +10,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.7.0-alpha] - 2026-01-31
+**Branch**: `trebuchet/issue-1150` | **PR**: #1159
+
+### Sprint: Module Editor Polish (#1150)
+
+- [x] #1110, #1103 - DefaultBic checkbox with dropdown
+  - Add "Use Default Character" checkbox + dropdown in MainWindow Launch Game section
+  - Removed duplicate from Module Editor Version tab (MainWindow is the canonical location)
+  - Populate dropdown with .bic files found in module folder
+  - When checked, sets DefaultBic in module.ifo (auto-saves)
+  - When DefaultBic is set, "Load Module" button is disabled with dynamic tooltip
+  - Auto-reads DefaultBic from module IFO when module is selected (including at startup)
+  - Case-insensitive matching for existing DefaultBic values
+- [x] #1111 - CustomTlk browse button
+  - Add "..." browse button next to CustomTlk text field
+  - Opens file picker starting in NWN documents tlk folder or module directory
+  - Sets CustomTlk field to selected filename (without extension)
+- [x] #1109 - Variable name field auto-focus
+  - When adding a new variable, DataGrid enters edit mode for the Name field
+  - User can immediately type the variable name without clicking
+  - New variables start with empty name (not "NewVariable")
+  - Add validation for Int and Float variable values with error feedback
+  - Add validation for unique variable names (case-insensitive)
+  - Show validation errors inline with red border and error message
+- [x] #1108 - Script field browse and edit buttons
+  - Add "..." browse button next to all 22 script fields (16 standard + 6 NWN:EE)
+  - Opens shared ScriptBrowserWindow with module scripts, HAK scripts, and built-in game scripts
+  - Add "Edit" button to open script file in system's default editor
+  - If script file doesn't exist, offers to create it with template
+  - Uses IGameDataService for built-in script lookup from game BIF files
+  - Add TrebuchetScriptBrowserContext for module-specific paths
+
+---
+
 ## [1.6.1-alpha] - 2026-01-27
 **Branch**: `radoub/issue-1138` | **PR**: #1139
 
