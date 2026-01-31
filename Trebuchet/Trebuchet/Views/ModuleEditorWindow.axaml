@@ -8,6 +8,10 @@
         MinWidth="600" MinHeight="500"
         WindowStartupLocation="CenterOwner">
 
+    <Window.Resources>
+        <vm:BoolToErrorBrushConverter x:Key="BoolToErrorBrushConverter"/>
+    </Window.Resources>
+
     <Design.DataContext>
         <vm:ModuleEditorViewModel/>
     </Design.DataContext>
@@ -87,8 +91,15 @@
 
                         <StackPanel>
                             <TextBlock Text="Custom TLK" FontWeight="SemiBold"/>
-                            <TextBox Text="{Binding CustomTlk}"
-                                     Watermark="Custom TLK file name (without .tlk)"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBox Text="{Binding CustomTlk}"
+                                         Watermark="Custom TLK file name (without .tlk)"
+                                         Width="250"/>
+                                <Button Content="..."
+                                        Command="{Binding BrowseCustomTlkCommand}"
+                                        ToolTip.Tip="Browse for TLK file"
+                                        Width="32"/>
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -142,30 +153,6 @@
                                            Maximum="200"
                                            MinWidth="120"
                                            HorizontalAlignment="Left"/>
-                        </StackPanel>
-
-                        <StackPanel>
-                            <CheckBox Content="Use Default Character (BIC)"
-                                      IsChecked="{Binding UseDefaultBic}"
-                                      FontWeight="SemiBold"
-                                      Margin="0,16,0,8"/>
-                            <ComboBox ItemsSource="{Binding AvailableBicFiles}"
-                                      SelectedItem="{Binding DefaultBic}"
-                                      IsEnabled="{Binding IsDefaultBicDropdownEnabled}"
-                                      Width="300"
-                                      HorizontalAlignment="Left"
-                                      Margin="24,0,0,0"/>
-                            <TextBlock Text="When enabled, new players use the selected pre-generated character. The .bic file must be inside the module folder (not localvault). Load Module is disabled when DefaultBic is set - only Test Module works."
-                                       FontSize="11"
-                                       Opacity="0.7"
-                                       TextWrapping="Wrap"
-                                       Margin="24,4,0,0"
-                                       MaxWidth="450"/>
-                            <TextBlock Text="No .bic files found in module folder."
-                                       FontSize="11"
-                                       Foreground="Orange"
-                                       IsVisible="{Binding !AvailableBicFiles.Count}"
-                                       Margin="24,4,0,0"/>
                         </StackPanel>
 
                         <StackPanel>
@@ -335,89 +322,153 @@
                 <ScrollViewer>
                     <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="8">
                         <Grid.Styles>
-                            <Style Selector="StackPanel">
+                            <Style Selector="StackPanel.scriptField">
                                 <Setter Property="Margin" Value="0,0,16,12"/>
                             </Style>
                         </Grid.Styles>
 
-                        <StackPanel Grid.Row="0" Grid.Column="0">
+                        <StackPanel Grid.Row="0" Grid.Column="0" Classes="scriptField">
                             <TextBlock Text="On Module Load"/>
-                            <TextBox Text="{Binding OnModuleLoad}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnModuleLoad}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnModuleLoad" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnModuleLoad" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="0" Grid.Column="1">
+                        <StackPanel Grid.Row="0" Grid.Column="1" Classes="scriptField">
                             <TextBlock Text="On Client Enter"/>
-                            <TextBox Text="{Binding OnClientEnter}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnClientEnter}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnClientEnter" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnClientEnter" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1" Grid.Column="0">
+                        <StackPanel Grid.Row="1" Grid.Column="0" Classes="scriptField">
                             <TextBlock Text="On Client Leave"/>
-                            <TextBox Text="{Binding OnClientLeave}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnClientLeave}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnClientLeave" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnClientLeave" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1" Grid.Column="1">
+                        <StackPanel Grid.Row="1" Grid.Column="1" Classes="scriptField">
                             <TextBlock Text="On Heartbeat"/>
-                            <TextBox Text="{Binding OnHeartbeat}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnHeartbeat}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnHeartbeat" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnHeartbeat" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="2" Grid.Column="0">
+                        <StackPanel Grid.Row="2" Grid.Column="0" Classes="scriptField">
                             <TextBlock Text="On Acquire Item"/>
-                            <TextBox Text="{Binding OnAcquireItem}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnAcquireItem}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnAcquireItem" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnAcquireItem" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="2" Grid.Column="1">
+                        <StackPanel Grid.Row="2" Grid.Column="1" Classes="scriptField">
                             <TextBlock Text="On Activate Item"/>
-                            <TextBox Text="{Binding OnActivateItem}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnActivateItem}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnActivateItem" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnActivateItem" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="3" Grid.Column="0">
+                        <StackPanel Grid.Row="3" Grid.Column="0" Classes="scriptField">
                             <TextBlock Text="On Unacquire Item"/>
-                            <TextBox Text="{Binding OnUnacquireItem}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnUnacquireItem}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnUnacquireItem" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnUnacquireItem" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="3" Grid.Column="1">
+                        <StackPanel Grid.Row="3" Grid.Column="1" Classes="scriptField">
                             <TextBlock Text="On Player Death"/>
-                            <TextBox Text="{Binding OnPlayerDeath}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnPlayerDeath}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerDeath" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerDeath" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="4" Grid.Column="0">
+                        <StackPanel Grid.Row="4" Grid.Column="0" Classes="scriptField">
                             <TextBlock Text="On Player Dying"/>
-                            <TextBox Text="{Binding OnPlayerDying}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnPlayerDying}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerDying" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerDying" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="4" Grid.Column="1">
+                        <StackPanel Grid.Row="4" Grid.Column="1" Classes="scriptField">
                             <TextBlock Text="On Player Rest"/>
-                            <TextBox Text="{Binding OnPlayerRest}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnPlayerRest}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerRest" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerRest" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="5" Grid.Column="0">
+                        <StackPanel Grid.Row="5" Grid.Column="0" Classes="scriptField">
                             <TextBlock Text="On Player Equip Item"/>
-                            <TextBox Text="{Binding OnPlayerEquipItem}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnPlayerEquipItem}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerEquipItem" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerEquipItem" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="5" Grid.Column="1">
+                        <StackPanel Grid.Row="5" Grid.Column="1" Classes="scriptField">
                             <TextBlock Text="On Player Unequip Item"/>
-                            <TextBox Text="{Binding OnPlayerUnequipItem}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnPlayerUnequipItem}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerUnequipItem" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerUnequipItem" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="6" Grid.Column="0">
+                        <StackPanel Grid.Row="6" Grid.Column="0" Classes="scriptField">
                             <TextBlock Text="On Player Level Up"/>
-                            <TextBox Text="{Binding OnPlayerLevelUp}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnPlayerLevelUp}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerLevelUp" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerLevelUp" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="6" Grid.Column="1">
+                        <StackPanel Grid.Row="6" Grid.Column="1" Classes="scriptField">
                             <TextBlock Text="On User Defined"/>
-                            <TextBox Text="{Binding OnUserDefined}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnUserDefined}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnUserDefined" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnUserDefined" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="7" Grid.Column="0">
+                        <StackPanel Grid.Row="7" Grid.Column="0" Classes="scriptField">
                             <TextBlock Text="On Spawn Button"/>
-                            <TextBox Text="{Binding OnSpawnButtonDown}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnSpawnButtonDown}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnSpawnButtonDown" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnSpawnButtonDown" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="7" Grid.Column="1">
+                        <StackPanel Grid.Row="7" Grid.Column="1" Classes="scriptField">
                             <TextBlock Text="On Cutscene Abort"/>
-                            <TextBox Text="{Binding OnCutsceneAbort}" Watermark="Script ResRef"/>
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox Text="{Binding OnCutsceneAbort}" Watermark="Script ResRef" Width="150"/>
+                                <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnCutsceneAbort" ToolTip.Tip="Browse scripts" Width="28"/>
+                                <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnCutsceneAbort" ToolTip.Tip="Open in editor"/>
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
                 </ScrollViewer>
@@ -433,39 +484,63 @@
 
                         <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto">
                             <Grid.Styles>
-                                <Style Selector="StackPanel">
+                                <Style Selector="StackPanel.scriptField">
                                     <Setter Property="Margin" Value="0,0,16,12"/>
                                 </Style>
                             </Grid.Styles>
 
-                            <StackPanel Grid.Row="0" Grid.Column="0">
+                            <StackPanel Grid.Row="0" Grid.Column="0" Classes="scriptField">
                                 <TextBlock Text="On Module Start"/>
-                                <TextBox Text="{Binding OnModuleStart}" Watermark="Script ResRef"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBox Text="{Binding OnModuleStart}" Watermark="Script ResRef" Width="150"/>
+                                    <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnModuleStart" ToolTip.Tip="Browse scripts" Width="28"/>
+                                    <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnModuleStart" ToolTip.Tip="Open in editor"/>
+                                </StackPanel>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="0" Grid.Column="1">
+                            <StackPanel Grid.Row="0" Grid.Column="1" Classes="scriptField">
                                 <TextBlock Text="On Player Chat"/>
-                                <TextBox Text="{Binding OnPlayerChat}" Watermark="Script ResRef"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBox Text="{Binding OnPlayerChat}" Watermark="Script ResRef" Width="150"/>
+                                    <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerChat" ToolTip.Tip="Browse scripts" Width="28"/>
+                                    <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerChat" ToolTip.Tip="Open in editor"/>
+                                </StackPanel>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="1" Grid.Column="0">
+                            <StackPanel Grid.Row="1" Grid.Column="0" Classes="scriptField">
                                 <TextBlock Text="On Player Target"/>
-                                <TextBox Text="{Binding OnPlayerTarget}" Watermark="Script ResRef"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBox Text="{Binding OnPlayerTarget}" Watermark="Script ResRef" Width="150"/>
+                                    <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerTarget" ToolTip.Tip="Browse scripts" Width="28"/>
+                                    <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerTarget" ToolTip.Tip="Open in editor"/>
+                                </StackPanel>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="1" Grid.Column="1">
+                            <StackPanel Grid.Row="1" Grid.Column="1" Classes="scriptField">
                                 <TextBlock Text="On Player GUI Event"/>
-                                <TextBox Text="{Binding OnPlayerGuiEvent}" Watermark="Script ResRef"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBox Text="{Binding OnPlayerGuiEvent}" Watermark="Script ResRef" Width="150"/>
+                                    <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerGuiEvent" ToolTip.Tip="Browse scripts" Width="28"/>
+                                    <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerGuiEvent" ToolTip.Tip="Open in editor"/>
+                                </StackPanel>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.Column="0">
+                            <StackPanel Grid.Row="2" Grid.Column="0" Classes="scriptField">
                                 <TextBlock Text="On Player Tile Action"/>
-                                <TextBox Text="{Binding OnPlayerTileAction}" Watermark="Script ResRef"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBox Text="{Binding OnPlayerTileAction}" Watermark="Script ResRef" Width="150"/>
+                                    <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnPlayerTileAction" ToolTip.Tip="Browse scripts" Width="28"/>
+                                    <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnPlayerTileAction" ToolTip.Tip="Open in editor"/>
+                                </StackPanel>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.Column="1">
+                            <StackPanel Grid.Row="2" Grid.Column="1" Classes="scriptField">
                                 <TextBlock Text="On NUI Event (1.80+)"/>
-                                <TextBox Text="{Binding OnNuiEvent}" Watermark="Script ResRef"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBox Text="{Binding OnNuiEvent}" Watermark="Script ResRef" Width="150"/>
+                                    <Button Content="..." Command="{Binding BrowseScriptCommand}" CommandParameter="OnNuiEvent" ToolTip.Tip="Browse scripts" Width="28"/>
+                                    <Button Content="Edit" Command="{Binding EditScriptCommand}" CommandParameter="OnNuiEvent" ToolTip.Tip="Open in editor"/>
+                                </StackPanel>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
@@ -475,7 +550,8 @@
             <!-- Variables Tab -->
             <TabItem Header="Variables">
                 <Grid RowDefinitions="*,Auto" Margin="8">
-                    <DataGrid Grid.Row="0"
+                    <DataGrid x:Name="VariablesDataGrid"
+                              Grid.Row="0"
                               ItemsSource="{Binding Variables}"
                               SelectedItem="{Binding SelectedVariable}"
                               AutoGenerateColumns="False"
@@ -484,9 +560,23 @@
                               HeadersVisibility="Column"
                               MinHeight="200">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name"
-                                                Binding="{Binding Name}"
-                                                Width="*"/>
+                            <DataGridTemplateColumn Header="Name" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:VariableViewModel">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBox Text="{Binding Name}"
+                                                     HorizontalAlignment="Stretch"
+                                                     MinWidth="100"
+                                                     BorderBrush="{Binding HasErrors, Converter={StaticResource BoolToErrorBrushConverter}}"/>
+                                            <TextBlock Text="{Binding NameError}"
+                                                       Foreground="{DynamicResource ThemeError}"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTemplateColumn Header="Type" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate x:DataType="vm:VariableViewModel">
@@ -496,9 +586,23 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Value"
-                                                Binding="{Binding ValueString}"
-                                                Width="*"/>
+                            <DataGridTemplateColumn Header="Value" Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="vm:VariableViewModel">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBox Text="{Binding ValueString}"
+                                                     HorizontalAlignment="Stretch"
+                                                     MinWidth="100"
+                                                     BorderBrush="{Binding HasErrors, Converter={StaticResource BoolToErrorBrushConverter}}"/>
+                                            <TextBlock Text="{Binding ValueError}"
+                                                       Foreground="{DynamicResource ThemeError}"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center"
+                                                       IsVisible="{Binding ValueError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
 

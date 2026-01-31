@@ -178,6 +178,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         // Check for updates on startup (fire and forget)
         _ = CheckForUpdatesAsync();
+
+        // Scan for BIC files if a module is already selected at startup
+        if (!string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath))
+        {
+            _ = ReadModuleDefaultBicAsync();
+        }
     }
 
     private void LoadVersionInfo()
@@ -568,11 +574,18 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 var files = Directory.GetFiles(workingDir, "*.bic", SearchOption.TopDirectoryOnly);
                 bicFiles.AddRange(files.Select(f => Path.GetFileNameWithoutExtension(f)).OrderBy(f => f));
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"BIC scan: Found {bicFiles.Count} files in {UnifiedLogger.SanitizePath(workingDir)}");
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore scan errors
+                UnifiedLogger.LogApplication(LogLevel.WARN, $"BIC scan failed: {ex.Message}");
             }
+        }
+        else
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"BIC scan: Working dir not found. workingDir={workingDir ?? "null"}, exists={!string.IsNullOrEmpty(workingDir) && Directory.Exists(workingDir)}");
         }
 
         // Read DefaultBic from IFO

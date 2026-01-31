@@ -202,7 +202,6 @@
                 <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,12,0,0">
                     <CheckBox Content="Use Default Character"
                               IsChecked="{Binding UseDefaultBic}"
-                              IsEnabled="{Binding HasBicFilesAvailable}"
                               VerticalAlignment="Center"
                               ToolTip.Tip="When enabled, new players use the selected pre-generated character. Only Test Module works with DefaultBic."/>
                     <ComboBox ItemsSource="{Binding AvailableBicFiles}"
@@ -212,7 +211,7 @@
                               VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding NoBicFilesMessage}"
                                FontSize="{DynamicResource FontSizeSmall}"
-                               Opacity="0.6"
+                               Foreground="{DynamicResource ThemeWarning}"
                                VerticalAlignment="Center"
                                IsVisible="{Binding !HasBicFilesAvailable}"/>
                 </StackPanel>
