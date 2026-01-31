@@ -1,0 +1,15 @@
+<local:FileBrowserPanelBase xmlns="https://github.com/avaloniaui"
+                           xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                           xmlns:local="clr-namespace:Radoub.UI.Controls"
+                           x:Class="Radoub.UI.Controls.DialogBrowserPanel"
+                           HeaderTextContent="Dialogs">
+
+    <local:FileBrowserPanelBase.FilterOptionsContent>
+        <CheckBox x:Name="ShowHakCheckBox"
+                  Content="Show HAK"
+                  ToolTip.Tip="Include dialogs from HAK files"
+                  IsChecked="False"
+                  Margin="0,4,0,0"/>
+    </local:FileBrowserPanelBase.FilterOptionsContent>
+
+</local:FileBrowserPanelBase>
