@@ -26,11 +26,11 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10,10,20,10" Spacing="15">
                         <!-- Base Game Installation Path -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Base Game Installation Path (Optional)" FontWeight="Bold"/>
                                 <TextBlock Text="Path to Neverwinter Nights game installation (e.g., Steam: steamapps\common\Neverwinter Nights - contains data\ folder with base game resources)"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox x:Name="BaseGamePathTextBox" Grid.Column="0"
@@ -46,11 +46,11 @@
                         </Border>
 
                         <!-- User Data Directory Path -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="User Data Directory Path" FontWeight="Bold"/>
                                 <TextBlock Text="Path to user data directory (Documents\Neverwinter Nights - contains modules, custom sounds, etc.)"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox x:Name="GamePathTextBox" Grid.Column="0"
@@ -67,11 +67,11 @@
 
                         <!-- Module Directory Path - DISABLED (using .dlg file location) -->
                         <!--
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Module Directory Path" FontWeight="Bold"/>
                                 <TextBlock Text="Path to module directory (contains .mod files or extracted module folders)"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <TextBox x:Name="ModulePathTextBox" Grid.Column="0"
@@ -86,11 +86,11 @@
                             </StackPanel>
                         </Border>
 
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Recent Modules" FontWeight="Bold"/>
                                 <TextBlock Text="Quickly switch between recently used module directories"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                                 <ListBox x:Name="RecentModulesListBox" Height="100"
                                         SelectionChanged="OnRecentModuleSelected"/>
@@ -102,11 +102,11 @@
                         -->
 
                         <!-- External Script Editor -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="External Script Editor (Optional)" FontWeight="Bold"/>
                                 <TextBlock Text="Path to external text editor for viewing .nss scripts (VS Code, Notepad++, etc.). Leave empty to use system default."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBox x:Name="ExternalEditorPathTextBox" Grid.Column="0"
                                             Watermark="C:\Program Files\Microsoft VS Code\Code.exe"/>
@@ -117,11 +117,11 @@
                         </Border>
 
                         <!-- TLK Language Settings -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="TLK Language Settings" FontWeight="Bold"/>
                                 <TextBlock Text="For dialogs using StrRef values, select which language to display from the game's Talk Table (TLK) files."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                                 <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
                                     <!-- Language Selection -->
@@ -146,11 +146,11 @@
 
                                     <!-- TLK Status -->
                                     <TextBlock x:Name="TlkLanguageStatus" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
-                                              Text="" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                                              Text="" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                                 </Grid>
 
                                 <TextBlock Text="Note: Only affects dialogs that use StrRef values pointing to TLK. Dialogs with embedded text are not affected."
-                                          TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontStyle="Italic"/>
+                                          TextWrapping="Wrap" FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontStyle="Italic"/>
                             </StackPanel>
                         </Border>
 
@@ -171,11 +171,11 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10,10,20,10" Spacing="15">
                         <!-- Theme -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Theme" FontWeight="Bold"/>
                                 <TextBlock Text="Choose a color theme for Parley. Accessibility themes are optimized for color blindness."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                                 <!-- Standard Themes -->
                                 <TextBlock Text="Standard Themes" FontWeight="SemiBold" Margin="0,10,0,5"/>
@@ -201,7 +201,7 @@
                                     <Button Content="Get Themes" Click="OnGetThemesClick" Padding="10,5"
                                            ToolTip.Tip="Browse community themes on GitHub"/>
                                     <TextBlock x:Name="EasterEggHint" Text="💡 Tip: Click here for hidden themes..."
-                                              FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"
+                                              FontSize="10" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" VerticalAlignment="Center"
                                               Opacity="0.6" Cursor="Hand"
                                               PointerPressed="OnEasterEggHintClick"/>
                                 </StackPanel>
@@ -209,7 +209,7 @@
                         </Border>
 
                         <!-- Font Settings -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Font Settings" FontWeight="Bold"/>
 
@@ -247,7 +247,7 @@
                         </Border>
 
                         <!-- Scrollbar Settings -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Scrollbar Settings" FontWeight="Bold"/>
                                 <CheckBox x:Name="AllowScrollbarAutoHideCheckBox"
@@ -255,16 +255,16 @@
                                          Checked="OnAllowScrollbarAutoHideChanged"
                                          Unchecked="OnAllowScrollbarAutoHideChanged"/>
                                 <TextBlock Text="When unchecked, scrollbars remain visible (requires restart)"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="25,0,0,0"/>
+                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="25,0,0,0"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Flowchart Node Text Lines (#813) -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Flowchart Node Text" FontWeight="Bold"/>
                                 <TextBlock Text="Maximum lines of text to display in flowchart nodes before truncation"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Slider x:Name="FlowchartNodeMaxLinesSlider" Grid.Column="0"
                                            Minimum="1" Maximum="6" Value="3"
@@ -274,12 +274,12 @@
                                               Text="3 lines" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                 </Grid>
                                 <TextBlock Text="Hover over truncated text to see full content in tooltip"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                         </Border>
 
                         <!-- NPC Tag Coloring (Issue #16, #36) -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="NPC Speaker Coloring" FontWeight="Bold"/>
                                 <CheckBox x:Name="EnableNpcTagColoringCheckBox"
@@ -287,12 +287,12 @@
                                          Checked="OnEnableNpcTagColoringChanged"
                                          Unchecked="OnEnableNpcTagColoringChanged"/>
                                 <TextBlock Text="When disabled, all NPCs use theme's default NPC color (red square) and PC color (blue circle)"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="25,0,0,0"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="25,0,0,0"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Dialog Warnings (Issue #484) -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Dialog Warnings" FontWeight="Bold"/>
                                 <CheckBox x:Name="SimulatorShowWarningsCheckBox"
@@ -300,12 +300,12 @@
                                          Checked="OnSimulatorShowWarningsChanged"
                                          Unchecked="OnSimulatorShowWarningsChanged"/>
                                 <TextBlock Text="Displays ⚠ icons next to NPC entries that will never be reached because a prior sibling has no condition script"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="25,0,0,0"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="25,0,0,0"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Spell Check (Issue #505) -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Spell Check" FontWeight="Bold"/>
                                 <CheckBox x:Name="SpellCheckEnabledCheckBox"
@@ -313,7 +313,7 @@
                                          Checked="OnSpellCheckEnabledChanged"
                                          Unchecked="OnSpellCheckEnabledChanged"/>
                                 <TextBlock Text="Underlines misspelled words in dialog text and comments. Right-click for suggestions."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="25,0,0,0"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="25,0,0,0"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -325,7 +325,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10,10,20,10" Spacing="15">
                         <!-- Log Level -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Log Level" FontWeight="Bold"/>
                                 <ComboBox x:Name="LogLevelComboBox" SelectionChanged="OnLogLevelChanged"/>
@@ -333,11 +333,11 @@
                         </Border>
 
                         <!-- Log Retention -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Log Retention" FontWeight="Bold"/>
                                 <TextBlock Text="Number of recent sessions to keep (default: 3)"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Slider x:Name="LogRetentionSlider" Grid.Column="0"
                                            Minimum="1" Maximum="10" Value="3"
@@ -350,7 +350,7 @@
                         </Border>
 
                         <!-- Debug Panel Visibility -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Debug Panel" FontWeight="Bold"/>
                                 <CheckBox x:Name="ShowDebugPanelCheckBox"
@@ -358,7 +358,7 @@
                                          Checked="OnShowDebugPanelChanged"
                                          Unchecked="OnShowDebugPanelChanged"/>
                                 <TextBlock Text="Display the debug console tab in the main window"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="25,0,0,0"/>
+                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="25,0,0,0"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -370,7 +370,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10,10,20,10" Spacing="15">
                         <!-- Enable Auto-Save -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <CheckBox x:Name="AutoSaveEnabledCheckBox"
                                          Content="Enable Auto-Save"
@@ -378,16 +378,16 @@
                                          Checked="OnAutoSaveEnabledChanged"
                                          Unchecked="OnAutoSaveEnabledChanged"/>
                                 <TextBlock Text="Automatically save dialog file after changes"
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Auto-Save Interval -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Auto-Save Interval" FontWeight="Bold"/>
                                 <TextBlock Text="Set auto-save interval. 0 = fast debounce (2 seconds after last change), 1-60 = periodic save every N minutes."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Slider x:Name="AutoSaveIntervalSlider" Grid.Column="0"
@@ -420,7 +420,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10,10,20,10" Spacing="15">
                         <!-- Enable Parameter Cache -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <CheckBox x:Name="EnableParameterCacheCheckBox"
                                          Content="Enable Parameter Value Caching"
@@ -428,16 +428,16 @@
                                          Checked="OnParameterCacheSettingChanged"
                                          Unchecked="OnParameterCacheSettingChanged"/>
                                 <TextBlock Text="Cache recently used parameter values for faster entry. Values are stored per script and sorted by most recently used."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Max Values Per Parameter -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Max Cached Values Per Parameter" FontWeight="Bold"/>
                                 <TextBlock Text="Maximum number of values to cache for each parameter (range: 5-50, default: 10)"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Slider x:Name="MaxCachedValuesSlider" Grid.Column="0"
                                            Minimum="5" Maximum="50" Value="10"
@@ -450,11 +450,11 @@
                         </Border>
 
                         <!-- Max Cached Scripts -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Max Cached Scripts" FontWeight="Bold"/>
                                 <TextBlock Text="Maximum number of scripts to cache parameters for (range: 100-10000, default: 1000)"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <Slider x:Name="MaxCachedScriptsSlider" Grid.Column="0"
                                            Minimum="100" Maximum="10000" Value="1000"
@@ -487,21 +487,21 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10,10,20,10" Spacing="15">
                         <!-- Primary Language -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Primary Language" FontWeight="Bold"/>
                                 <TextBlock Text="Select the main language for spell checking. Additional languages can be installed in the Dictionaries folder."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                 <ComboBox x:Name="PrimaryLanguageComboBox" SelectionChanged="OnPrimaryLanguageChanged"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Custom Dictionaries -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="Custom Dictionaries" FontWeight="Bold"/>
                                 <TextBlock Text="Enable or disable domain-specific terminology. Changes apply immediately."
-                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                          TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                                 <ListBox x:Name="CustomDictionariesListBox" MinHeight="100" MaxHeight="300"/>
                             </StackPanel>
                         </Border>

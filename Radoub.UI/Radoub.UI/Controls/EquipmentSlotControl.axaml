@@ -21,7 +21,7 @@
                      Text="{Binding Name, FallbackValue=Slot}"
                      FontSize="10"
                      HorizontalAlignment="Center"
-                     Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                     Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                      TextTrimming="CharacterEllipsis"
                      MaxWidth="70"/>
 
@@ -30,7 +30,7 @@
                   Width="64"
                   Height="64"
                   BorderThickness="1"
-                  BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                  BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                   Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                   CornerRadius="4">
             <Grid>

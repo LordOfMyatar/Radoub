@@ -132,7 +132,7 @@
                 </Grid.ColumnDefinitions>
 
             <!-- Sidebar -->
-            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,1,0"
+            <Border Grid.Column="0"
                     AutomationProperties.AutomationId="Sidebar">
                 <DockPanel>
                     <!-- Character Header (Portrait + Name) -->

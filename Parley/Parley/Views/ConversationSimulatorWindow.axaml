@@ -62,7 +62,7 @@
         <!-- NPC Text Display -->
         <Border Grid.Row="1"
                 Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
                 CornerRadius="4"
                 Padding="15"
@@ -108,7 +108,7 @@
                             IsVisible="{Binding ConditionScript, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="Condition:"
                                FontSize="11"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                     <TextBlock Text="{Binding ConditionScript}"
                                FontSize="11"
                                FontFamily="Consolas,Courier New,monospace"/>
@@ -117,7 +117,7 @@
                             IsVisible="{Binding ActionScript, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="Action:"
                                FontSize="11"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                     <TextBlock Text="{Binding ActionScript}"
                                FontSize="11"
                                FontFamily="Consolas,Courier New,monospace"/>
@@ -145,7 +145,7 @@
         <!-- Replies List -->
         <Border Grid.Row="4"
                 Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
                 CornerRadius="4"
                 Padding="10"
@@ -198,7 +198,7 @@
                            Margin="0,0,0,10"/>
                 <TextBlock Text="{Binding StatusMessage}"
                            FontSize="12"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
@@ -329,11 +329,11 @@
                            FontWeight="SemiBold"
                            Foreground="#FFFFAA00"/>
                 <TextBlock Text="{Binding TtsUnavailableReason}"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            TextWrapping="Wrap"/>
                 <TextBlock Text="{Binding TtsInstallInstructions}"
                            FontSize="11"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            TextWrapping="Wrap"/>
             </StackPanel>
         </Border>

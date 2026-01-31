@@ -90,7 +90,7 @@
                           Width="5"
                           HorizontalAlignment="Stretch"
                           ResizeDirection="Columns"
-                          Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           AutomationProperties.AutomationId="StoreBrowserSplitter"/>
 
             <!-- Inner grid for main content -->

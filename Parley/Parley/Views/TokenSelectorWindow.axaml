@@ -53,7 +53,7 @@
 
                     <!-- Example Panel -->
                     <Border Grid.Column="1"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
                             Padding="10" Margin="5,0,0,0">
                         <StackPanel>
                             <TextBlock Text="Example" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -90,7 +90,7 @@
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Action" FontWeight="Bold" Foreground="#00FF00" Width="80"/>
-                            <TextBlock Text="[Character actions]" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Text="[Character actions]" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                         </StackPanel>
                     </RadioButton>
 
@@ -107,7 +107,7 @@
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Highlight" FontWeight="Bold" Foreground="#0080FF" Width="80"/>
-                            <TextBlock Text="[Important text]" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Text="[Important text]" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                         </StackPanel>
                     </RadioButton>
 
@@ -151,14 +151,14 @@
 
                     <!-- Preview -->
                     <Border Grid.Row="4"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
                             Padding="10" Margin="0,10,0,0">
                         <StackPanel>
                             <TextBlock Text="Preview" FontWeight="Bold" Margin="0,0,0,10"/>
                             <TextBlock x:Name="HighlightPreviewRaw"
                                        Text="&lt;StartAction&gt;[Chef waves]&lt;/Start&gt;"
                                        TextWrapping="Wrap"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        FontFamily="Consolas"
                                        FontSize="11"/>
                             <TextBlock x:Name="HighlightPreviewFormatted"
@@ -183,7 +183,7 @@
 
                     <!-- Info Text -->
                     <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,10"
-                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="11">
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="11">
                         Custom color tokens require matching SetCustomToken() calls in your module scripts.
                         Configure colors in ~/Radoub/token-colors.json
                     </TextBlock>
@@ -206,7 +206,7 @@
                                             Width="16" Height="16"
                                             CornerRadius="2"
                                             Background="{Binding HexColor}"
-                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"/>
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"/>
 
                                     <!-- Color name -->
                                     <TextBlock Grid.Column="1"
@@ -217,7 +217,7 @@
                                     <!-- Token preview -->
                                     <TextBlock Grid.Column="2"
                                                Text="{Binding OpenToken}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                FontFamily="Consolas"
                                                FontSize="10"
                                                VerticalAlignment="Center"/>
@@ -228,14 +228,14 @@
 
                     <!-- Preview -->
                     <Border Grid.Row="2"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
                             Padding="10" Margin="0,10,0,0">
                         <StackPanel>
                             <TextBlock Text="Preview" FontWeight="Bold" Margin="0,0,0,10"/>
                             <TextBlock x:Name="ColorPreviewRaw"
                                        Text="Select a color"
                                        TextWrapping="Wrap"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        FontFamily="Consolas"
                                        FontSize="11"/>
                             <TextBlock x:Name="ColorPreviewSample"
@@ -250,7 +250,7 @@
 
         <!-- Token Output -->
         <Border Grid.Row="1"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
                 Padding="10"
                 Margin="0,10,0,10"
