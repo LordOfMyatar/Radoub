@@ -94,6 +94,9 @@ public partial class MainWindow
 
             OnPropertyChanged(nameof(HasFile));
 
+            // Update store browser panel (#1144)
+            UpdateStoreBrowserCurrentFile(filePath);
+
             // Load inventory async to avoid blocking UI during item resolution
             _ = PopulateStoreInventoryAsync(filePath);
         }
@@ -241,6 +244,11 @@ public partial class MainWindow
             UnifiedLogger.LogApplication(LogLevel.ERROR, $"Failed to save store: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Public async method for auto-save from store browser panel (#1144).
+    /// </summary>
+    private System.Threading.Tasks.Task SaveFileAsync(string filePath) => SaveFile(filePath);
 
     private void UpdateStoreFromUI()
     {
