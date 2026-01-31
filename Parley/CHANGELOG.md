@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.127-alpha] - 2026-01-31
+**Branch**: `parley/issue-1143` | **PR**: #TBD
+
+### Feature: Integrate DialogBrowserPanel as collapsible left panel (#1143)
+
+Part of Epic #1141 (File Browser Panel). Depends on #1142 (FileBrowserPanelBase).
+
+- [ ] Add collapsible left panel to MainWindow
+- [ ] Integrate DialogBrowserPanel control
+- [ ] Search box with filter
+- [ ] "Show HAK" checkbox for HAK scanning
+- [ ] Single-click loads file with auto-save
+- [ ] Current file highlighted
+- [ ] Panel width persisted in settings
+- [ ] Collapsible via View menu or splitter
+
+---
+
 ## [0.1.126-alpha] - 2026-01-24
 **Branch**: `parley/issue-1098` | **PR**: #1104
 
