@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.63-alpha] - 2026-01-31
+**Branch**: `quartermaster/issue-1153` | **PR**: #TBD
+
+### Sprint: 3D Preview & Appearance Fixes (#1153)
+
+Fix visual issues in creature display.
+
+#### Work Items
+- [ ] #1134 - 3D Preview: Texture/Coloring Issues After Geometry Fix
+
+---
+
 ## [0.1.62-alpha] - 2026-01-31
 **Branch**: `quartermaster/issue-1145` | **PR**: #1169
 
