@@ -106,8 +106,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        // Note: StoreBrowserPanel gets NWN path from RadoubSettings internally
-        // The context is only needed for HAK scanning
+        // Set initial module path from RadoubSettings (set by Trebuchet)
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (!string.IsNullOrEmpty(modulePath))
+        {
+            // If it's a .mod file, find the working directory
+            if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            {
+                modulePath = FindWorkingDirectory(modulePath);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
+        {
+            storeBrowserPanel.ModulePath = modulePath;
+            UnifiedLogger.LogUI(LogLevel.INFO, $"StoreBrowserPanel initialized with module path from Trebuchet");
+        }
 
         // Subscribe to file selection events
         storeBrowserPanel.FileSelected += OnStoreBrowserFileSelected;
@@ -122,6 +136,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UpdateStoreBrowserMenuState();
 
         UnifiedLogger.LogUI(LogLevel.INFO, "StoreBrowserPanel initialized");
+    }
+
+    /// <summary>
+    /// Find the unpacked working directory for a .mod file.
+    /// Checks for module name folder, temp0, or temp1.
+    /// </summary>
+    private static string? FindWorkingDirectory(string modFilePath)
+    {
+        var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
+        var moduleDir = Path.GetDirectoryName(modFilePath);
+
+        if (string.IsNullOrEmpty(moduleDir))
+            return null;
+
+        // Check in priority order (same as Trebuchet)
+        var candidates = new[]
+        {
+            Path.Combine(moduleDir, moduleName),
+            Path.Combine(moduleDir, "temp0"),
+            Path.Combine(moduleDir, "temp1")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (Directory.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
     }
 
     /// <summary>
