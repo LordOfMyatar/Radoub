@@ -17,17 +17,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Add a collapsible left panel to Quartermaster's MainWindow that displays all .utc/.bic files from the current module, vaults, and HAKs, enabling single-click navigation.
 
-#### Requirements
-- [ ] Search box at top of panel
-- [ ] Source checkboxes: Module, LocalVault, ServerVault, HAK
-- [ ] Current file highlighted
-- [ ] Single-click → auto-save + load
-- [ ] Collapsible via View menu or splitter
-- [ ] Panel width persisted in settings
+#### Features Implemented
+- [x] Search box at top of panel (inherited from FileBrowserPanelBase)
+- [x] Source checkboxes: Module, LocalVault, ServerVault, HAK
+- [x] Current file highlighted when loading a creature
+- [x] Single-click → auto-save + load
+- [x] Collapsible via View menu (F4 shortcut) or collapse button
+- [x] Panel width persisted in settings
 
 #### HAK Support
-- Add HAK scanning for .utc files (ResourceTypes.Utc = 2027)
-- Use same caching pattern as DialogBrowserWindow/StoreBrowserWindow
+- Added HAK scanning for .utc files (ResourceTypes.Utc = 2027)
+- Uses same caching pattern as StoreBrowserPanel
+- Static cache persists across panel instances for performance
 
 ---
 
