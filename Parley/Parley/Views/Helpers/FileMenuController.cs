@@ -44,6 +44,7 @@ namespace Parley.Views.Helpers
         private readonly Func<ScriptParameterUIManager> _getParameterUIManager;
         private readonly Func<Task<bool>> _showSaveAsDialogAsync;
         private readonly Func<string, Task>? _scanCreaturesForModule;
+        private readonly Action<string>? _updateDialogBrowserCurrentFile;
 
         public FileMenuController(
             Window window,
@@ -56,7 +57,8 @@ namespace Parley.Views.Helpers
             Action clearFlowcharts,
             Func<ScriptParameterUIManager> getParameterUIManager,
             Func<Task<bool>> showSaveAsDialogAsync,
-            Func<string, Task>? scanCreaturesForModule = null)
+            Func<string, Task>? scanCreaturesForModule = null,
+            Action<string>? updateDialogBrowserCurrentFile = null)
         {
             _window = window ?? throw new ArgumentNullException(nameof(window));
             _controls = controls ?? throw new ArgumentNullException(nameof(controls));
@@ -69,6 +71,7 @@ namespace Parley.Views.Helpers
             _getParameterUIManager = getParameterUIManager ?? throw new ArgumentNullException(nameof(getParameterUIManager));
             _showSaveAsDialogAsync = showSaveAsDialogAsync ?? throw new ArgumentNullException(nameof(showSaveAsDialogAsync));
             _scanCreaturesForModule = scanCreaturesForModule;
+            _updateDialogBrowserCurrentFile = updateDialogBrowserCurrentFile;
         }
 
         private MainViewModel ViewModel => _getViewModel();
@@ -180,6 +183,9 @@ namespace Parley.Views.Helpers
 
                     // Update embedded flowchart if in side-by-side mode
                     _updateEmbeddedFlowchartAfterLoad();
+
+                    // Update dialog browser panel highlight (#1143)
+                    _updateDialogBrowserCurrentFile?.Invoke(filePath);
 
                     // Scan creatures for portrait/soundset display (#786, #915, #916)
                     if (_scanCreaturesForModule != null)

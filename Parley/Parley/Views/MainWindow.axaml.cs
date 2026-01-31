@@ -208,7 +208,8 @@ namespace DialogEditor.Views
                 clearFlowcharts: () => _controllers.Flowchart.ClearAll(),
                 getParameterUIManager: () => _services.ParameterUI,
                 showSaveAsDialogAsync: ShowSaveAsDialogAsync,
-                scanCreaturesForModule: ScanCreaturesForModuleAsync);
+                scanCreaturesForModule: ScanCreaturesForModuleAsync,
+                updateDialogBrowserCurrentFile: UpdateDialogBrowserCurrentFile);
 
             _controllers.EditMenu = new EditMenuController(
                 window: this,
@@ -401,6 +402,19 @@ namespace DialogEditor.Views
         {
             _services.WindowPersistence.SetDialogBrowserPanelVisible(!isCollapsed);
             UpdateDialogBrowserMenuState();
+        }
+
+        /// <summary>
+        /// Updates the DialogBrowserPanel's current file highlight (#1143).
+        /// Called by FileMenuController after File > Open loads a file.
+        /// </summary>
+        private void UpdateDialogBrowserCurrentFile(string filePath)
+        {
+            var dialogBrowserPanel = this.FindControl<DialogBrowserPanel>("DialogBrowserPanel");
+            if (dialogBrowserPanel != null)
+            {
+                dialogBrowserPanel.CurrentFilePath = filePath;
+            }
         }
 
         /// <summary>
