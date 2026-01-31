@@ -855,8 +855,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
-        // Only handle Ctrl shortcuts - don't interfere with normal text input
-        if (e.KeyModifiers == KeyModifiers.Control)
+        // Handle function keys without modifiers
+        if (e.KeyModifiers == KeyModifiers.None)
+        {
+            switch (e.Key)
+            {
+                case Key.F4:
+                    // Toggle store browser panel (#1144)
+                    OnToggleStoreBrowserClick(null, e);
+                    e.Handled = true;
+                    return;
+            }
+        }
+        // Handle Ctrl shortcuts - don't interfere with normal text input
+        else if (e.KeyModifiers == KeyModifiers.Control)
         {
             switch (e.Key)
             {
