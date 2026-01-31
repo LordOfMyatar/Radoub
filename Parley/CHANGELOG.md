@@ -17,14 +17,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Part of Epic #1141 (File Browser Panel). Depends on #1142 (FileBrowserPanelBase).
 
-- [ ] Add collapsible left panel to MainWindow
-- [ ] Integrate DialogBrowserPanel control
-- [ ] Search box with filter
-- [ ] "Show HAK" checkbox for HAK scanning
-- [ ] Single-click loads file with auto-save
-- [ ] Current file highlighted
-- [ ] Panel width persisted in settings
-- [ ] Collapsible via View menu or splitter
+Added a collapsible left panel to MainWindow that displays all .dlg files from the current
+module and HAKs, enabling single-click navigation between dialogs.
+
+#### Layout
+```
+┌─────────────────────────────────────────────────────┐
+│ Menu Bar                                            │
+├────────┬────────────────────────────────────────────┤
+│ Dialog │                                            │
+│ List   │  Existing Parley Content                   │
+│        │  (TreeView, Flowchart, Properties)         │
+│ [dlg1] │                                            │
+│ [dlg2] │                                            │
+│ [dlg3] │                                            │
+│        │                                            │
+├────────┴────────────────────────────────────────────┤
+│ Status Bar                                          │
+└─────────────────────────────────────────────────────┘
+```
+
+#### Features
+- [x] Collapsible left panel with resizable splitter
+- [x] Search box to filter dialogs by name
+- [x] "Show HAK" checkbox to include dialogs from HAK files
+- [x] Single-click loads file (auto-saves current if unsaved)
+- [x] Current file highlighted in list
+- [x] Panel width persisted in settings
+- [x] Toggle via View menu (F4 keyboard shortcut)
+
+#### Implementation
+- Uses `DialogBrowserPanel` from Radoub.UI (shared with DialogBrowserWindow)
+- Panel width stored in `WindowLayoutService.DialogBrowserPanelWidth`
+- Panel visibility stored in `WindowLayoutService.DialogBrowserPanelVisible`
+- Auto-save on single-click prevents data loss when switching files
+- HAK files cannot be opened directly (shows info message)
 
 ---
 

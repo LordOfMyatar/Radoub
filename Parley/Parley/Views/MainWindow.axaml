@@ -5,6 +5,7 @@
         xmlns:models="using:DialogEditor.Models"
         xmlns:services="using:DialogEditor.Services"
         xmlns:controls="using:DialogEditor.Controls"
+        xmlns:radoubControls="using:Radoub.UI.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
@@ -116,6 +117,7 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="_View">
+                <MenuItem x:Name="DialogBrowserMenuItem" Header="_Dialog Browser" Click="OnToggleDialogBrowserClick" InputGesture="F4"/>
                 <MenuItem Header="_Flowchart">
                     <MenuItem Header="_Open Flowchart" Click="OnFlowchartClick" InputGesture="F5"/>
                     <Separator/>
@@ -166,17 +168,40 @@
         </Border>
 
 <!-- Main Content Area (spans rows 3-5 for left/right layout) -->
-        <!-- DRAGON: Grid layout only - tree data binding in TreeView below -->
-        <Grid Grid.Row="3" Grid.RowSpan="3" x:Name="MainContentGrid">
+        <!-- Outer grid: Dialog Browser Panel | Main Content -->
+        <Grid Grid.Row="3" Grid.RowSpan="3" x:Name="OuterContentGrid">
             <Grid.ColumnDefinitions>
-                <!-- Tree+Text area - use proportional width for 1024x768 support -->
-                <ColumnDefinition Width="2*" MinWidth="400"/>
+                <!-- Dialog browser panel (#1143) - collapsible left panel -->
+                <ColumnDefinition Width="200" MinWidth="0"/>
                 <ColumnDefinition Width="5"/>
-                <!-- Properties area - reduced minimum for small screens -->
-                <ColumnDefinition Width="*" MinWidth="280"/>
-                <ColumnDefinition Width="0"/>  <!-- Flowchart splitter (hidden by default, index 3) -->
-                <ColumnDefinition Width="0"/>  <!-- Embedded flowchart (hidden by default, index 4) -->
+                <!-- Main content area -->
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
+
+            <!-- Dialog Browser Panel (#1143) -->
+            <radoubControls:DialogBrowserPanel x:Name="DialogBrowserPanel"
+                                               Grid.Column="0"
+                                               Margin="5,5,0,5"/>
+
+            <!-- Dialog Browser Splitter -->
+            <GridSplitter x:Name="DialogBrowserSplitter"
+                          Grid.Column="1"
+                          Width="5"
+                          HorizontalAlignment="Stretch"
+                          ResizeDirection="Columns"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+
+            <!-- Inner grid: Tree/Text | Properties | Flowchart -->
+            <Grid Grid.Column="2" x:Name="MainContentGrid">
+                <Grid.ColumnDefinitions>
+                    <!-- Tree+Text area - use proportional width for 1024x768 support -->
+                    <ColumnDefinition Width="2*" MinWidth="400"/>
+                    <ColumnDefinition Width="5"/>
+                    <!-- Properties area - reduced minimum for small screens -->
+                    <ColumnDefinition Width="*" MinWidth="280"/>
+                    <ColumnDefinition Width="0"/>  <!-- Flowchart splitter (hidden by default, index 3) -->
+                    <ColumnDefinition Width="0"/>  <!-- Embedded flowchart (hidden by default, index 4) -->
+                </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="400" MinHeight="200"/>
@@ -909,7 +934,8 @@
                     IsVisible="False">
                 <views:FlowchartPanel x:Name="EmbeddedFlowchartPanel"/>
             </Border>
-        </Grid>
+            </Grid>  <!-- End MainContentGrid (inner) -->
+        </Grid>  <!-- End OuterContentGrid -->
 
         <!-- Status Bar -->
         <Border Grid.Row="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="0,1,0,0" Padding="5,2">
