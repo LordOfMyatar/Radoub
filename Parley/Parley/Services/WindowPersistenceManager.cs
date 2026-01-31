@@ -161,6 +161,105 @@ namespace DialogEditor.Services
                 // Watch for splitter changes
                 mainContentGrid.PropertyChanged += OnMainContentGridPropertyChanged;
             }
+
+            // Restore dialog browser panel (#1143)
+            RestoreDialogBrowserPanel();
+        }
+
+        /// <summary>
+        /// Restores dialog browser panel state from settings (#1143)
+        /// </summary>
+        public void RestoreDialogBrowserPanel()
+        {
+            var settings = SettingsService.Instance;
+            var outerContentGrid = _findControl("OuterContentGrid") as Grid;
+            var dialogBrowserPanel = _findControl("DialogBrowserPanel") as Control;
+            var dialogBrowserSplitter = _findControl("DialogBrowserSplitter") as Control;
+
+            if (outerContentGrid != null && outerContentGrid.ColumnDefinitions.Count >= 2)
+            {
+                // Column 0 = dialog browser panel, Column 1 = splitter
+                var dialogBrowserColumn = outerContentGrid.ColumnDefinitions[0];
+                var dialogBrowserSplitterColumn = outerContentGrid.ColumnDefinitions[1];
+
+                if (settings.DialogBrowserPanelVisible)
+                {
+                    dialogBrowserColumn.Width = new GridLength(settings.DialogBrowserPanelWidth, GridUnitType.Pixel);
+                    dialogBrowserSplitterColumn.Width = new GridLength(5, GridUnitType.Pixel);
+                    if (dialogBrowserPanel != null) dialogBrowserPanel.IsVisible = true;
+                    if (dialogBrowserSplitter != null) dialogBrowserSplitter.IsVisible = true;
+                }
+                else
+                {
+                    dialogBrowserColumn.Width = new GridLength(0, GridUnitType.Pixel);
+                    dialogBrowserSplitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
+                    if (dialogBrowserPanel != null) dialogBrowserPanel.IsVisible = false;
+                    if (dialogBrowserSplitter != null) dialogBrowserSplitter.IsVisible = false;
+                }
+
+                // Watch for splitter changes
+                outerContentGrid.PropertyChanged += OnOuterContentGridPropertyChanged;
+            }
+        }
+
+        /// <summary>
+        /// Saves dialog browser panel size when outer grid layout changes
+        /// </summary>
+        private void OnOuterContentGridPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            SaveDialogBrowserPanelSize();
+        }
+
+        /// <summary>
+        /// Saves dialog browser panel width to settings (#1143)
+        /// </summary>
+        public void SaveDialogBrowserPanelSize()
+        {
+            var outerContentGrid = _findControl("OuterContentGrid") as Grid;
+
+            if (outerContentGrid != null && outerContentGrid.ColumnDefinitions.Count > 0)
+            {
+                var dialogBrowserColumn = outerContentGrid.ColumnDefinitions[0];
+
+                if (dialogBrowserColumn.Width.IsAbsolute && dialogBrowserColumn.Width.Value > 0)
+                {
+                    SettingsService.Instance.DialogBrowserPanelWidth = dialogBrowserColumn.Width.Value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets dialog browser panel visibility (#1143)
+        /// </summary>
+        public void SetDialogBrowserPanelVisible(bool visible)
+        {
+            var settings = SettingsService.Instance;
+            settings.DialogBrowserPanelVisible = visible;
+
+            var outerContentGrid = _findControl("OuterContentGrid") as Grid;
+            var dialogBrowserPanel = _findControl("DialogBrowserPanel") as Control;
+            var dialogBrowserSplitter = _findControl("DialogBrowserSplitter") as Control;
+
+            if (outerContentGrid != null && outerContentGrid.ColumnDefinitions.Count >= 2)
+            {
+                var dialogBrowserColumn = outerContentGrid.ColumnDefinitions[0];
+                var dialogBrowserSplitterColumn = outerContentGrid.ColumnDefinitions[1];
+
+                if (visible)
+                {
+                    dialogBrowserColumn.Width = new GridLength(settings.DialogBrowserPanelWidth, GridUnitType.Pixel);
+                    dialogBrowserSplitterColumn.Width = new GridLength(5, GridUnitType.Pixel);
+                    if (dialogBrowserPanel != null) dialogBrowserPanel.IsVisible = true;
+                    if (dialogBrowserSplitter != null) dialogBrowserSplitter.IsVisible = true;
+                }
+                else
+                {
+                    dialogBrowserColumn.Width = new GridLength(0, GridUnitType.Pixel);
+                    dialogBrowserSplitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
+                    if (dialogBrowserPanel != null) dialogBrowserPanel.IsVisible = false;
+                    if (dialogBrowserSplitter != null) dialogBrowserSplitter.IsVisible = false;
+                }
+            }
         }
 
         /// <summary>

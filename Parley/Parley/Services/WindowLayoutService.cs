@@ -34,6 +34,10 @@ namespace DialogEditor.Services
         private double _flowchartPanelWidth = 400; // Width of embedded flowchart panel (SideBySide mode)
         private bool _flowchartVisible = false; // Is flowchart visible (any mode)?
 
+        // Dialog browser panel settings (#1143)
+        private double _dialogBrowserPanelWidth = 200; // Width of dialog browser left panel
+        private bool _dialogBrowserPanelVisible = true; // Is dialog browser panel visible?
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
@@ -64,7 +68,9 @@ namespace DialogEditor.Services
             double flowchartWindowHeight,
             bool flowchartWindowOpen,
             double flowchartPanelWidth,
-            bool flowchartVisible)
+            bool flowchartVisible,
+            double dialogBrowserPanelWidth = 200,
+            bool dialogBrowserPanelVisible = true)
         {
             _windowLeft = windowLeft;
             _windowTop = windowTop;
@@ -83,7 +89,10 @@ namespace DialogEditor.Services
             _flowchartPanelWidth = Math.Max(200, flowchartPanelWidth);
             _flowchartVisible = flowchartVisible;
 
-            UnifiedLogger.LogUI(LogLevel.DEBUG, $"WindowLayoutService initialized: Main={_windowWidth}x{_windowHeight}, Flowchart={_flowchartWindowWidth}x{_flowchartWindowHeight}");
+            _dialogBrowserPanelWidth = Math.Max(150, dialogBrowserPanelWidth);
+            _dialogBrowserPanelVisible = dialogBrowserPanelVisible;
+
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"WindowLayoutService initialized: Main={_windowWidth}x{_windowHeight}, Flowchart={_flowchartWindowWidth}x{_flowchartWindowHeight}, DialogBrowser={_dialogBrowserPanelWidth}");
         }
 
         #region Main Window Properties
@@ -178,6 +187,22 @@ namespace DialogEditor.Services
         {
             get => _flowchartVisible;
             set { if (SetProperty(ref _flowchartVisible, value)) SettingsChanged?.Invoke(); }
+        }
+
+        #endregion
+
+        #region Dialog Browser Panel Properties (#1143)
+
+        public double DialogBrowserPanelWidth
+        {
+            get => _dialogBrowserPanelWidth;
+            set { if (SetProperty(ref _dialogBrowserPanelWidth, Math.Max(150, value))) SettingsChanged?.Invoke(); }
+        }
+
+        public bool DialogBrowserPanelVisible
+        {
+            get => _dialogBrowserPanelVisible;
+            set { if (SetProperty(ref _dialogBrowserPanelVisible, value)) SettingsChanged?.Invoke(); }
         }
 
         #endregion

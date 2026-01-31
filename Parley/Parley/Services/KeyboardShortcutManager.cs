@@ -65,6 +65,7 @@ namespace DialogEditor.Services
 
             // No modifier shortcuts
             _noModifierShortcuts[Key.Delete] = handler.OnDeleteNode;
+            _noModifierShortcuts[Key.F4] = handler.OnToggleDialogBrowser; // Issue #1143: F4 to toggle dialog browser panel
             _noModifierShortcuts[Key.F5] = handler.OnOpenFlowchart; // Issue #339: F5 to open flowchart
             _noModifierShortcuts[Key.F6] = handler.OnOpenConversationSimulator; // Issue #478: F6 to open conversation simulator
 
@@ -194,6 +195,7 @@ namespace DialogEditor.Services
             shortcuts.Add("Ctrl+Shift+Down - Move Node Down");
 
             // View
+            shortcuts.Add("F4 - Toggle Dialog Browser");
             shortcuts.Add("F5 - Open Flowchart");
             shortcuts.Add("F6 - Open Conversation Simulator");
 
@@ -244,6 +246,7 @@ namespace DialogEditor.Services
         void OnGoToParentNode(); // Issue #149: Jump from link to parent node
 
         // View operations
+        void OnToggleDialogBrowser(); // Issue #1143: F4 to toggle dialog browser panel
         void OnOpenFlowchart(); // Issue #339: F5 to open flowchart
         void OnOpenConversationSimulator(); // Issue #478: F6 to open conversation simulator
 

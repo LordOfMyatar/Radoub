@@ -27,6 +27,7 @@ using Parley.Services;
 using Parley.Views.Helpers;
 using DialogEditor.Views;
 using Radoub.Formats.Ssf;
+using Radoub.UI.Controls;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
 
@@ -207,7 +208,8 @@ namespace DialogEditor.Views
                 clearFlowcharts: () => _controllers.Flowchart.ClearAll(),
                 getParameterUIManager: () => _services.ParameterUI,
                 showSaveAsDialogAsync: ShowSaveAsDialogAsync,
-                scanCreaturesForModule: ScanCreaturesForModuleAsync);
+                scanCreaturesForModule: ScanCreaturesForModuleAsync,
+                updateDialogBrowserCurrentFile: UpdateDialogBrowserCurrentFile);
 
             _controllers.EditMenu = new EditMenuController(
                 window: this,
@@ -289,6 +291,9 @@ namespace DialogEditor.Views
             // Initialize portrait service with game data path (#915)
             InitializePortraitService();
 
+            // Initialize dialog browser panel (#1143)
+            InitializeDialogBrowserPanel();
+
             // #988: Warm up GameDataService in background to avoid lag on first NPC click
             // KEY/BIF/TLK loading is lazy - prime it during startup instead of on first use
             _ = WarmupGameDataServiceAsync();
@@ -341,6 +346,181 @@ namespace DialogEditor.Views
                     PortraitService.Instance.SetGameDataPath(dataPath);
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Portrait service initialized with game data path");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Initializes dialog browser panel with context and event handlers (#1143).
+        /// </summary>
+        private void InitializeDialogBrowserPanel()
+        {
+            var dialogBrowserPanel = this.FindControl<DialogBrowserPanel>("DialogBrowserPanel");
+            if (dialogBrowserPanel == null)
+            {
+                UnifiedLogger.LogUI(LogLevel.WARN, "DialogBrowserPanel not found");
+                return;
+            }
+
+            // Create context for HAK file discovery
+            var context = new ParleyScriptBrowserContext(_viewModel.CurrentFilePath, _services.GameData);
+
+            // Set initial module path from RadoubSettings
+            var modulePath = Radoub.Formats.Settings.RadoubSettings.Instance.CurrentModulePath;
+            if (!string.IsNullOrEmpty(modulePath))
+            {
+                // If it's a .mod file, find the working directory
+                if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+                {
+                    modulePath = FindWorkingDirectory(modulePath);
+                }
+                else if (!Directory.Exists(modulePath))
+                {
+                    modulePath = null;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(modulePath))
+            {
+                dialogBrowserPanel.ModulePath = modulePath;
+                UnifiedLogger.LogUI(LogLevel.INFO, $"DialogBrowserPanel initialized with module path");
+            }
+
+            // Subscribe to file selection events
+            dialogBrowserPanel.FileSelected += OnDialogBrowserFileSelected;
+
+            // Subscribe to collapse/expand events (#1143)
+            dialogBrowserPanel.CollapsedChanged += OnDialogBrowserCollapsedChanged;
+
+            // Update menu item checkmark
+            UpdateDialogBrowserMenuState();
+        }
+
+        /// <summary>
+        /// Handles collapse/expand button clicks from DialogBrowserPanel (#1143).
+        /// </summary>
+        private void OnDialogBrowserCollapsedChanged(object? sender, bool isCollapsed)
+        {
+            _services.WindowPersistence.SetDialogBrowserPanelVisible(!isCollapsed);
+            UpdateDialogBrowserMenuState();
+        }
+
+        /// <summary>
+        /// Updates the DialogBrowserPanel's current file highlight (#1143).
+        /// Called by FileMenuController after File > Open loads a file.
+        /// </summary>
+        private void UpdateDialogBrowserCurrentFile(string filePath)
+        {
+            var dialogBrowserPanel = this.FindControl<DialogBrowserPanel>("DialogBrowserPanel");
+            if (dialogBrowserPanel != null)
+            {
+                dialogBrowserPanel.CurrentFilePath = filePath;
+            }
+        }
+
+        /// <summary>
+        /// Find the unpacked working directory for a .mod file.
+        /// </summary>
+        private static string? FindWorkingDirectory(string modFilePath)
+        {
+            var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
+            var moduleDir = Path.GetDirectoryName(modFilePath);
+
+            if (string.IsNullOrEmpty(moduleDir))
+                return null;
+
+            var candidates = new[]
+            {
+                Path.Combine(moduleDir, moduleName),
+                Path.Combine(moduleDir, "temp0"),
+                Path.Combine(moduleDir, "temp1")
+            };
+
+            foreach (var candidate in candidates)
+            {
+                if (Directory.Exists(candidate) &&
+                    File.Exists(Path.Combine(candidate, "module.ifo")))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Handles file selection in the dialog browser panel (#1143).
+        /// </summary>
+        private async void OnDialogBrowserFileSelected(object? sender, FileSelectedEventArgs e)
+        {
+            // Only load on single click (per issue requirements)
+            // Double-click could be used for something else in the future
+            if (e.Entry == null)
+                return;
+
+            var filePath = e.Entry.FilePath;
+
+            // Handle HAK files - they need extraction first
+            if (e.Entry.IsFromHak && !string.IsNullOrEmpty(e.Entry.HakPath))
+            {
+                _viewModel.StatusMessage = $"Cannot open dialogs from HAK directly - use HAK editor to extract first";
+                return;
+            }
+
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                _viewModel.StatusMessage = $"File not found: {e.Entry.Name}";
+                return;
+            }
+
+            // Check for unsaved changes and auto-save if needed
+            if (_viewModel.HasUnsavedChanges)
+            {
+                // Auto-save current file before loading new one
+                if (!string.IsNullOrEmpty(_viewModel.CurrentFilePath))
+                {
+                    _viewModel.StatusMessage = "Auto-saving current dialog...";
+                    await _viewModel.SaveDialogAsync(_viewModel.CurrentFilePath);
+                }
+            }
+
+            // Load the selected dialog
+            _viewModel.StatusMessage = $"Loading {e.Entry.Name}...";
+            await _viewModel.LoadDialogAsync(filePath);
+
+            // Update flowchart after loading (same as File menu pattern)
+            UpdateEmbeddedFlowchartAfterLoad();
+
+            // Update the current file highlight in the browser panel
+            var dialogBrowserPanel = this.FindControl<DialogBrowserPanel>("DialogBrowserPanel");
+            if (dialogBrowserPanel != null)
+            {
+                dialogBrowserPanel.CurrentFilePath = filePath;
+            }
+
+            // Refresh the dialog browser to show the new file as selected
+            PopulateRecentFilesMenu();
+        }
+
+        /// <summary>
+        /// Toggle dialog browser panel visibility (View menu) (#1143).
+        /// </summary>
+        private void OnToggleDialogBrowserClick(object? sender, RoutedEventArgs e)
+        {
+            var settings = SettingsService.Instance;
+            _services.WindowPersistence.SetDialogBrowserPanelVisible(!settings.DialogBrowserPanelVisible);
+            UpdateDialogBrowserMenuState();
+        }
+
+        /// <summary>
+        /// Updates the dialog browser menu item checkmark state (#1143).
+        /// </summary>
+        private void UpdateDialogBrowserMenuState()
+        {
+            var menuItem = this.FindControl<MenuItem>("DialogBrowserMenuItem");
+            if (menuItem != null)
+            {
+                var isVisible = SettingsService.Instance.DialogBrowserPanelVisible;
+                menuItem.Icon = isVisible ? new TextBlock { Text = "✓" } : null;
             }
         }
 
@@ -518,6 +698,9 @@ namespace DialogEditor.Views
         void IKeyboardShortcutHandler.OnMoveNodeUp() => OnMoveNodeUpClick(null, null!);
         void IKeyboardShortcutHandler.OnMoveNodeDown() => OnMoveNodeDownClick(null, null!);
         void IKeyboardShortcutHandler.OnGoToParentNode() => _controllers.TreeView.OnGoToParentNodeClick(null, null!);
+
+        // View operations - Issue #1143: F4 to toggle dialog browser
+        void IKeyboardShortcutHandler.OnToggleDialogBrowser() => OnToggleDialogBrowserClick(null, null!);
 
         // View operations - Issue #339: F5 to open flowchart
         void IKeyboardShortcutHandler.OnOpenFlowchart() => OnFlowchartClick(null, null!);

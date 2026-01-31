@@ -77,6 +77,11 @@ public interface IFileBrowserPanel
     event EventHandler<FileSelectedEventArgs>? FileSelected;
 
     /// <summary>
+    /// Raised when the panel's collapsed state changes.
+    /// </summary>
+    event EventHandler<bool>? CollapsedChanged;
+
+    /// <summary>
     /// Refresh the file list from current sources.
     /// </summary>
     Task RefreshAsync();

@@ -10,6 +10,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.127-alpha] - 2026-01-31
+**Branch**: `parley/issue-1143` | **PR**: #1164
+
+### Feature: Integrate DialogBrowserPanel as collapsible left panel (#1143)
+
+Part of Epic #1141 (File Browser Panel). Depends on #1142 (FileBrowserPanelBase).
+
+Added a collapsible left panel to MainWindow that displays all .dlg files from the current
+module and HAKs, enabling single-click navigation between dialogs.
+
+#### Layout
+```
+┌─────────────────────────────────────────────────────┐
+│ Menu Bar                                            │
+├────────┬────────────────────────────────────────────┤
+│ Dialog │                                            │
+│ List   │  Existing Parley Content                   │
+│        │  (TreeView, Flowchart, Properties)         │
+│ [dlg1] │                                            │
+│ [dlg2] │                                            │
+│ [dlg3] │                                            │
+│        │                                            │
+├────────┴────────────────────────────────────────────┤
+│ Status Bar                                          │
+└─────────────────────────────────────────────────────┘
+```
+
+#### Features
+- [x] Collapsible left panel with resizable splitter
+- [x] Search box to filter dialogs by name
+- [x] "Show HAK" checkbox to include dialogs from HAK files
+- [x] Single-click loads file (auto-saves current if unsaved)
+- [x] Current file highlighted in list
+- [x] Panel width persisted in settings
+- [x] Toggle via View menu (F4 keyboard shortcut)
+
+#### Implementation
+- Uses `DialogBrowserPanel` from Radoub.UI (shared with DialogBrowserWindow)
+- Panel width stored in `WindowLayoutService.DialogBrowserPanelWidth`
+- Panel visibility stored in `WindowLayoutService.DialogBrowserPanelVisible`
+- Auto-save on single-click prevents data loss when switching files
+- HAK files cannot be opened directly (shows info message)
+
+---
+
 ## [0.1.126-alpha] - 2026-01-24
 **Branch**: `parley/issue-1098` | **PR**: #1104
 

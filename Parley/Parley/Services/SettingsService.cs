@@ -477,6 +477,19 @@ namespace DialogEditor.Services
             set => WindowLayoutService.Instance.FlowchartVisible = value;
         }
 
+        // Dialog Browser Panel Properties - DELEGATED to WindowLayoutService (#1143)
+        public double DialogBrowserPanelWidth
+        {
+            get => WindowLayoutService.Instance.DialogBrowserPanelWidth;
+            set => WindowLayoutService.Instance.DialogBrowserPanelWidth = value;
+        }
+
+        public bool DialogBrowserPanelVisible
+        {
+            get => WindowLayoutService.Instance.DialogBrowserPanelVisible;
+            set => WindowLayoutService.Instance.DialogBrowserPanelVisible = value;
+        }
+
         // Game Settings Properties - DELEGATED to shared RadoubSettings (#412)
         // Changes here are automatically persisted to ~/Radoub/RadoubSettings.json
         // and shared with other Radoub tools (Manifest, etc.)
@@ -952,7 +965,9 @@ namespace DialogEditor.Services
                             settings.FlowchartWindowHeight,
                             settings.FlowchartWindowOpen,
                             settings.FlowchartPanelWidth,
-                            settings.FlowchartVisible);
+                            settings.FlowchartVisible,
+                            settings.DialogBrowserPanelWidth,
+                            settings.DialogBrowserPanelVisible);
 
                         // Initialize UISettingsService (#719)
                         UISettingsService.Instance.Initialize(
@@ -1080,6 +1095,9 @@ namespace DialogEditor.Services
                     FlowchartWindowOpen = FlowchartWindowOpen,
                     FlowchartPanelWidth = FlowchartPanelWidth,
                     FlowchartVisible = FlowchartVisible,
+                    // Dialog browser panel settings (#1143)
+                    DialogBrowserPanelWidth = DialogBrowserPanelWidth,
+                    DialogBrowserPanelVisible = DialogBrowserPanelVisible,
                     AllowScrollbarAutoHide = AllowScrollbarAutoHide, // Issue #63
                     FlowchartNodeMaxLines = FlowchartNodeMaxLines, // Issue #813
                     TreeViewWordWrap = TreeViewWordWrap, // Issue #903
@@ -1185,6 +1203,9 @@ namespace DialogEditor.Services
             public bool FlowchartWindowOpen { get; set; } = false;
             public double FlowchartPanelWidth { get; set; } = 400;
             public bool FlowchartVisible { get; set; } = false;
+            // Dialog browser panel settings (#1143)
+            public double DialogBrowserPanelWidth { get; set; } = 200;
+            public bool DialogBrowserPanelVisible { get; set; } = true;
             public bool AllowScrollbarAutoHide { get; set; } = false; // Issue #63: Default always visible
             public int FlowchartNodeMaxLines { get; set; } = 3; // Issue #813: 1-6 lines, default 3
             public bool TreeViewWordWrap { get; set; } = false; // Issue #903: Default OFF
