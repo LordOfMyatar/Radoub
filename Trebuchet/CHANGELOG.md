@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [1.7.0-alpha] - 2026-01-31
-**Branch**: `trebuchet/issue-1150` | **PR**: #TBD
+**Branch**: `trebuchet/issue-1150` | **PR**: #1159
 
 ### Sprint: Module Editor Polish (#1150)
 
