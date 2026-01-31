@@ -18,6 +18,7 @@ using System.Runtime.CompilerServices;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using Radoub.UI.Controls;
+using Radoub.UI.Services;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
 
@@ -85,8 +86,269 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Set up recent files menu
         UpdateRecentFilesMenu();
 
+        // Initialize store browser panel (#1144)
+        InitializeStoreBrowserPanel();
+
         UnifiedLogger.LogApplication(LogLevel.INFO, "Fence MainWindow initialized");
     }
+
+    #region Store Browser Panel (#1144)
+
+    /// <summary>
+    /// Initializes store browser panel with context and event handlers (#1144).
+    /// </summary>
+    private void InitializeStoreBrowserPanel()
+    {
+        var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+        if (storeBrowserPanel == null)
+        {
+            UnifiedLogger.LogUI(LogLevel.WARN, "StoreBrowserPanel not found");
+            return;
+        }
+
+        // Set initial module path from RadoubSettings (set by Trebuchet)
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (!string.IsNullOrEmpty(modulePath))
+        {
+            // If it's a .mod file, find the working directory
+            if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+            {
+                modulePath = FindWorkingDirectory(modulePath);
+            }
+        }
+
+        if (!string.IsNullOrEmpty(modulePath) && Directory.Exists(modulePath))
+        {
+            storeBrowserPanel.ModulePath = modulePath;
+            UnifiedLogger.LogUI(LogLevel.INFO, $"StoreBrowserPanel initialized with module path from Trebuchet");
+        }
+
+        // Subscribe to file selection events
+        storeBrowserPanel.FileSelected += OnStoreBrowserFileSelected;
+
+        // Subscribe to collapse/expand events
+        storeBrowserPanel.CollapsedChanged += OnStoreBrowserCollapsedChanged;
+
+        // Restore panel state from settings
+        RestoreStoreBrowserPanelState();
+
+        // Update menu item checkmark
+        UpdateStoreBrowserMenuState();
+
+        UnifiedLogger.LogUI(LogLevel.INFO, "StoreBrowserPanel initialized");
+    }
+
+    /// <summary>
+    /// Find the unpacked working directory for a .mod file.
+    /// Checks for module name folder, temp0, or temp1.
+    /// </summary>
+    private static string? FindWorkingDirectory(string modFilePath)
+    {
+        var moduleName = Path.GetFileNameWithoutExtension(modFilePath);
+        var moduleDir = Path.GetDirectoryName(modFilePath);
+
+        if (string.IsNullOrEmpty(moduleDir))
+            return null;
+
+        // Check in priority order (same as Trebuchet)
+        var candidates = new[]
+        {
+            Path.Combine(moduleDir, moduleName),
+            Path.Combine(moduleDir, "temp0"),
+            Path.Combine(moduleDir, "temp1")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (Directory.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Restores store browser panel state from settings (#1144).
+    /// </summary>
+    private void RestoreStoreBrowserPanelState()
+    {
+        var settings = SettingsService.Instance;
+        var outerContentGrid = this.FindControl<Grid>("OuterContentGrid");
+        var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+        var storeBrowserSplitter = this.FindControl<GridSplitter>("StoreBrowserSplitter");
+
+        if (outerContentGrid == null || storeBrowserPanel == null || storeBrowserSplitter == null)
+            return;
+
+        var storeBrowserColumn = outerContentGrid.ColumnDefinitions[0];
+        var storeBrowserSplitterColumn = outerContentGrid.ColumnDefinitions[1];
+
+        if (settings.StoreBrowserPanelVisible)
+        {
+            storeBrowserColumn.Width = new GridLength(settings.StoreBrowserPanelWidth, GridUnitType.Pixel);
+            storeBrowserSplitterColumn.Width = new GridLength(5, GridUnitType.Pixel);
+            storeBrowserPanel.IsVisible = true;
+            storeBrowserSplitter.IsVisible = true;
+        }
+        else
+        {
+            storeBrowserColumn.Width = new GridLength(0, GridUnitType.Pixel);
+            storeBrowserSplitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
+            storeBrowserPanel.IsVisible = false;
+            storeBrowserSplitter.IsVisible = false;
+        }
+    }
+
+    /// <summary>
+    /// Saves store browser panel width to settings (#1144).
+    /// </summary>
+    private void SaveStoreBrowserPanelSize()
+    {
+        var outerContentGrid = this.FindControl<Grid>("OuterContentGrid");
+        if (outerContentGrid == null) return;
+
+        var storeBrowserColumn = outerContentGrid.ColumnDefinitions[0];
+        if (storeBrowserColumn.Width.IsAbsolute && storeBrowserColumn.Width.Value > 0)
+        {
+            SettingsService.Instance.StoreBrowserPanelWidth = storeBrowserColumn.Width.Value;
+        }
+    }
+
+    /// <summary>
+    /// Sets store browser panel visibility (#1144).
+    /// </summary>
+    private void SetStoreBrowserPanelVisible(bool visible)
+    {
+        var settings = SettingsService.Instance;
+        settings.StoreBrowserPanelVisible = visible;
+
+        var outerContentGrid = this.FindControl<Grid>("OuterContentGrid");
+        var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+        var storeBrowserSplitter = this.FindControl<GridSplitter>("StoreBrowserSplitter");
+
+        if (outerContentGrid == null || storeBrowserPanel == null || storeBrowserSplitter == null)
+            return;
+
+        var storeBrowserColumn = outerContentGrid.ColumnDefinitions[0];
+        var storeBrowserSplitterColumn = outerContentGrid.ColumnDefinitions[1];
+
+        if (visible)
+        {
+            storeBrowserColumn.Width = new GridLength(settings.StoreBrowserPanelWidth, GridUnitType.Pixel);
+            storeBrowserSplitterColumn.Width = new GridLength(5, GridUnitType.Pixel);
+            storeBrowserPanel.IsVisible = true;
+            storeBrowserSplitter.IsVisible = true;
+        }
+        else
+        {
+            // Save current width before hiding
+            if (storeBrowserColumn.Width.IsAbsolute && storeBrowserColumn.Width.Value > 0)
+            {
+                settings.StoreBrowserPanelWidth = storeBrowserColumn.Width.Value;
+            }
+
+            storeBrowserColumn.Width = new GridLength(0, GridUnitType.Pixel);
+            storeBrowserSplitterColumn.Width = new GridLength(0, GridUnitType.Pixel);
+            storeBrowserPanel.IsVisible = false;
+            storeBrowserSplitter.IsVisible = false;
+        }
+
+        UpdateStoreBrowserMenuState();
+    }
+
+    /// <summary>
+    /// Handles collapse/expand button clicks from StoreBrowserPanel (#1144).
+    /// </summary>
+    private void OnStoreBrowserCollapsedChanged(object? sender, bool isCollapsed)
+    {
+        SetStoreBrowserPanelVisible(!isCollapsed);
+    }
+
+    /// <summary>
+    /// Updates the StoreBrowserPanel's current file highlight (#1144).
+    /// </summary>
+    private void UpdateStoreBrowserCurrentFile(string? filePath)
+    {
+        var storeBrowserPanel = this.FindControl<StoreBrowserPanel>("StoreBrowserPanel");
+        if (storeBrowserPanel != null)
+        {
+            storeBrowserPanel.CurrentFilePath = filePath;
+
+            // Update module path if we have a file
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                var modulePath = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(modulePath))
+                {
+                    storeBrowserPanel.ModulePath = modulePath;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles file selection in the store browser panel (#1144).
+    /// </summary>
+    private async void OnStoreBrowserFileSelected(object? sender, FileSelectedEventArgs e)
+    {
+        // Only load on single click (per issue requirements)
+        if (e.Entry.IsFromHak)
+        {
+            // HAK files can't be edited directly - show info
+            UpdateStatusBar($"HAK stores are read-only: {e.Entry.Name}");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(e.Entry.FilePath))
+        {
+            UnifiedLogger.LogUI(LogLevel.WARN, $"StoreBrowserPanel: No file path for {e.Entry.Name}");
+            return;
+        }
+
+        // Skip if this is already the loaded file
+        if (string.Equals(_currentFilePath, e.Entry.FilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            UnifiedLogger.LogUI(LogLevel.DEBUG, $"StoreBrowserPanel: File already loaded: {e.Entry.Name}");
+            return;
+        }
+
+        // Auto-save if dirty
+        if (_isDirty && _currentStore != null && !string.IsNullOrEmpty(_currentFilePath))
+        {
+            UpdateStatusBar("Auto-saving...");
+            await SaveFileAsync(_currentFilePath);
+        }
+
+        // Load the selected file
+        LoadFile(e.Entry.FilePath);
+
+        // Update the current file highlight
+        UpdateStoreBrowserCurrentFile(e.Entry.FilePath);
+    }
+
+    /// <summary>
+    /// Toggles store browser panel visibility from View menu (#1144).
+    /// </summary>
+    private void OnToggleStoreBrowserClick(object? sender, RoutedEventArgs e)
+    {
+        var settings = SettingsService.Instance;
+        SetStoreBrowserPanelVisible(!settings.StoreBrowserPanelVisible);
+    }
+
+    /// <summary>
+    /// Updates View menu checkmark for Store Browser item (#1144).
+    /// </summary>
+    private void UpdateStoreBrowserMenuState()
+    {
+        var menuItem = this.FindControl<MenuItem>("StoreBrowserMenuItem");
+        if (menuItem != null)
+        {
+            var isVisible = SettingsService.Instance.StoreBrowserPanelVisible;
+            menuItem.Icon = isVisible ? new TextBlock { Text = "✓" } : null;
+        }
+    }
+
+    #endregion
 
     private void OnWindowOpened(object? sender, EventArgs e)
     {
@@ -312,6 +574,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         SaveWindowPosition();
+        SaveStoreBrowserPanelSize();
     }
 
     private void ShowUnsavedChangesWarning()
@@ -592,8 +855,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnWindowKeyDown(object? sender, KeyEventArgs e)
     {
-        // Only handle Ctrl shortcuts - don't interfere with normal text input
-        if (e.KeyModifiers == KeyModifiers.Control)
+        // Handle function keys without modifiers
+        if (e.KeyModifiers == KeyModifiers.None)
+        {
+            switch (e.Key)
+            {
+                case Key.F4:
+                    // Toggle store browser panel (#1144)
+                    OnToggleStoreBrowserClick(null, e);
+                    e.Handled = true;
+                    return;
+            }
+        }
+        // Handle Ctrl shortcuts - don't interfere with normal text input
+        else if (e.KeyModifiers == KeyModifiers.Control)
         {
             switch (e.Key)
             {

@@ -102,6 +102,10 @@ public class SettingsService : INotifyPropertyChanged
     private double _leftPanelWidth = 450;
     private double _rightPanelWidth = 400;
 
+    // Store browser panel settings (#1144)
+    private double _storeBrowserPanelWidth = 200;
+    private bool _storeBrowserPanelVisible = true;
+
     // UI settings
     private double _fontSize = 14;
     private string _fontFamily = "";
@@ -164,6 +168,19 @@ public class SettingsService : INotifyPropertyChanged
     {
         get => _rightPanelWidth;
         set { if (SetProperty(ref _rightPanelWidth, Math.Max(250, Math.Min(700, value)))) SaveSettings(); }
+    }
+
+    // Store browser panel properties (#1144)
+    public double StoreBrowserPanelWidth
+    {
+        get => _storeBrowserPanelWidth;
+        set { if (SetProperty(ref _storeBrowserPanelWidth, Math.Max(150, Math.Min(400, value)))) SaveSettings(); }
+    }
+
+    public bool StoreBrowserPanelVisible
+    {
+        get => _storeBrowserPanelVisible;
+        set { if (SetProperty(ref _storeBrowserPanelVisible, value)) SaveSettings(); }
     }
 
     // UI properties
@@ -318,6 +335,10 @@ public class SettingsService : INotifyPropertyChanged
                     _leftPanelWidth = Math.Max(250, Math.Min(700, settings.LeftPanelWidth));
                     _rightPanelWidth = Math.Max(250, Math.Min(700, settings.RightPanelWidth));
 
+                    // Store browser panel (#1144)
+                    _storeBrowserPanelWidth = Math.Max(150, Math.Min(400, settings.StoreBrowserPanelWidth));
+                    _storeBrowserPanelVisible = settings.StoreBrowserPanelVisible;
+
                     _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
                     _fontFamily = settings.FontFamily ?? "";
                     _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
@@ -366,6 +387,8 @@ public class SettingsService : INotifyPropertyChanged
                 WindowMaximized = WindowMaximized,
                 LeftPanelWidth = LeftPanelWidth,
                 RightPanelWidth = RightPanelWidth,
+                StoreBrowserPanelWidth = StoreBrowserPanelWidth,
+                StoreBrowserPanelVisible = StoreBrowserPanelVisible,
                 FontSize = FontSize,
                 FontFamily = FontFamily,
                 CurrentThemeId = CurrentThemeId,
@@ -413,6 +436,10 @@ public class SettingsService : INotifyPropertyChanged
         public bool WindowMaximized { get; set; } = false;
         public double LeftPanelWidth { get; set; } = 450;
         public double RightPanelWidth { get; set; } = 400;
+
+        // Store browser panel (#1144)
+        public double StoreBrowserPanelWidth { get; set; } = 200;
+        public bool StoreBrowserPanelVisible { get; set; } = true;
 
         public double FontSize { get; set; } = 14;
         public string FontFamily { get; set; } = "";

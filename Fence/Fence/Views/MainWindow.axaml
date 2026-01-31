@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:Radoub.UI.Controls"
+        xmlns:radoubControls="using:Radoub.UI.Controls"
         xmlns:converters="using:MerchantEditor.Converters"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="MerchantEditor.Views.MainWindow"
@@ -38,6 +39,8 @@
                 <MenuItem Header="_Delete Selected" Click="OnDeleteClick" InputGesture="Delete" IsEnabled="{Binding HasSelection, ElementName=MainWindowInstance}"/>
             </MenuItem>
             <MenuItem Header="_View">
+                <MenuItem x:Name="StoreBrowserMenuItem" Header="_Store Browser" Click="OnToggleStoreBrowserClick" InputGesture="F4"/>
+                <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
@@ -66,16 +69,40 @@
             </Grid>
         </Border>
 
-        <!-- Main Content -->
-        <Grid x:Name="MainGrid" Margin="8">
-            <Grid.RowDefinitions>
-                <!-- Store Properties -->
-                <RowDefinition Height="Auto"/>
-                <!-- Collapsible panels (side by side) -->
-                <RowDefinition Height="Auto"/>
-                <!-- Inventory and Palette -->
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <!-- Main Content Area with Store Browser Panel -->
+        <Grid x:Name="OuterContentGrid" Margin="8">
+            <Grid.ColumnDefinitions>
+                <!-- Store browser panel (#1144) - collapsible left panel -->
+                <ColumnDefinition Width="200" MinWidth="0"/>
+                <ColumnDefinition Width="5"/>
+                <!-- Main content area -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Store Browser Panel (#1144) -->
+            <radoubControls:StoreBrowserPanel x:Name="StoreBrowserPanel"
+                                              Grid.Column="0"
+                                              Margin="0,0,0,0"/>
+
+            <!-- Store Browser Splitter -->
+            <GridSplitter x:Name="StoreBrowserSplitter"
+                          Grid.Column="1"
+                          Width="5"
+                          HorizontalAlignment="Stretch"
+                          ResizeDirection="Columns"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                          AutomationProperties.AutomationId="StoreBrowserSplitter"/>
+
+            <!-- Inner grid for main content -->
+            <Grid Grid.Column="2" x:Name="MainGrid">
+                <Grid.RowDefinitions>
+                    <!-- Store Properties -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Collapsible panels (side by side) -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Inventory and Palette -->
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
             <!-- Store Properties Panel -->
             <Border Grid.Row="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,8"
@@ -459,6 +486,7 @@
                         </DataGrid>
                     </DockPanel>
                 </Border>
+            </Grid>
             </Grid>
         </Grid>
     </DockPanel>

@@ -10,6 +10,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.10-alpha] - 2026-01-31
+**Branch**: `fence/issue-1144` | **PR**: #1168
+
+### Feat: Integrate StoreBrowserPanel as collapsible left panel (#1144)
+
+Part of Epic #1141 (File Browser Panel).
+
+#### Added
+- **Store browser panel** - Collapsible left panel showing all .utm files from current module
+- **HAK scanning support** - "Show HAK" checkbox scans HAK files for .utm resources
+- **HAK caching** - Scanned HAK contents cached with modification time validation
+- **Single-click navigation** - Click a store to auto-save current file and load the new one
+- **Current file highlight** - Currently loaded file highlighted in the list
+- **View menu toggle** - View → Store Browser (F4) to show/hide panel
+- **Panel width persistence** - Panel width saved to settings and restored on launch
+
+#### Changed
+- **MainWindow layout** - Outer grid now has store browser panel, splitter, and main content
+
+---
+
 ## [0.1.9-alpha] - 2026-01-27
 **Branch**: `radoub/issue-1138` | **PR**: #1139
 
