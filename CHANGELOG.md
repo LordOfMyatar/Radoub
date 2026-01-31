@@ -15,6 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.53] - 2026-01-31
+**Branch**: `radoub/issue-1142` | **PR**: #1163
+
+### Feature: Create FileBrowserPanelBase control (#1142)
+
+Part of Epic #1141 (File Browser Panel).
+
+---
+
 ## [0.9.52] - 2026-01-29
 **Branch**: `radoub/issue-1105` | **PR**: #1157
 
