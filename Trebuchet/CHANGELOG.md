@@ -16,11 +16,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Module Editor Polish (#1150)
 
 - [x] #1110, #1103 - DefaultBic checkbox with dropdown
-  - Add "Use Default Character (BIC)" checkbox in Module Editor Version tab
+  - Add "Use Default Character" checkbox + dropdown in MainWindow Launch Game section
+  - Also available in Module Editor Version tab
   - Populate dropdown with .bic files found in module folder
-  - When checked, sets DefaultBic in module.ifo
-  - When DefaultBic is set, "Load Module" button is disabled (only "Test Module" works)
+  - When checked, sets DefaultBic in module.ifo (auto-saves)
+  - When DefaultBic is set, "Load Module" button is disabled with dynamic tooltip
   - Auto-reads DefaultBic from module IFO when module is selected
+  - Case-insensitive matching for existing DefaultBic values
 - [ ] #1111 - CustomTlk browse button
 - [ ] #1109 - Variable name field auto-focus
 - [ ] #1108 - Script field browse and edit buttons

@@ -546,8 +546,20 @@ public partial class ModuleEditorViewModel : ObservableObject
         ScanForBicFiles();
 
         // Set DefaultBic and UseDefaultBic checkbox state
-        DefaultBic = _ifoFile.DefaultBic;
-        UseDefaultBic = !string.IsNullOrEmpty(_ifoFile.DefaultBic);
+        // Find matching BIC in available files (case-insensitive) to ensure ComboBox selection works
+        var ifoDefaultBic = _ifoFile.DefaultBic;
+        if (!string.IsNullOrEmpty(ifoDefaultBic))
+        {
+            var matchingBic = AvailableBicFiles.FirstOrDefault(
+                b => string.Equals(b, ifoDefaultBic, StringComparison.OrdinalIgnoreCase));
+            DefaultBic = matchingBic ?? ifoDefaultBic;  // Use matching case if found
+            UseDefaultBic = true;
+        }
+        else
+        {
+            DefaultBic = string.Empty;
+            UseDefaultBic = false;
+        }
 
         // Variables
         Variables = new ObservableCollection<VariableViewModel>(
