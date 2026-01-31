@@ -11,14 +11,13 @@ public class StoreBrowserEntry : FileBrowserEntry
 /// Store browser panel for embedding in Fence's main window.
 /// Provides .utm file list from module directory.
 /// </summary>
-public partial class StoreBrowserPanel : FileBrowserPanelBase
+public class StoreBrowserPanel : FileBrowserPanelBase
 {
     public StoreBrowserPanel()
     {
-        InitializeComponent();
-
         FileExtension = ".utm";
         SearchWatermark = "Type to filter stores...";
+        HeaderTextContent = "Stores";
     }
 
     protected override string FormatCountLabel(int moduleCount, int hakCount, int totalCount)

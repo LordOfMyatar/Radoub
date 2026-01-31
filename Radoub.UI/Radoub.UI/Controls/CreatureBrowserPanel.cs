@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
 using Radoub.Formats.Logging;
 using Radoub.UI.Services;
 
@@ -30,9 +32,12 @@ public class CreatureBrowserEntry : FileBrowserEntry
 /// Creature browser panel for embedding in Quartermaster's main window.
 /// Provides .utc/.bic file list from module and vaults.
 /// </summary>
-public partial class CreatureBrowserPanel : FileBrowserPanelBase
+public class CreatureBrowserPanel : FileBrowserPanelBase
 {
     private readonly IScriptBrowserContext? _context;
+    private readonly CheckBox _showModuleCheck;
+    private readonly CheckBox _showLocalVaultCheck;
+    private readonly CheckBox _showServerVaultCheck;
     private List<CreatureBrowserEntry> _vaultEntries = new();
 
     public CreatureBrowserPanel() : this(null)
@@ -42,18 +47,43 @@ public partial class CreatureBrowserPanel : FileBrowserPanelBase
     public CreatureBrowserPanel(IScriptBrowserContext? context)
     {
         _context = context;
-        InitializeComponent();
 
         FileExtension = ".utc";
         SearchWatermark = "Type to filter creatures...";
+        HeaderTextContent = "Creatures";
 
-        // Wire up filter checkboxes
-        if (ShowModuleCheck != null)
-            ShowModuleCheck.IsCheckedChanged += OnFilterChanged;
-        if (ShowLocalVaultCheck != null)
-            ShowLocalVaultCheck.IsCheckedChanged += OnFilterChanged;
-        if (ShowServerVaultCheck != null)
-            ShowServerVaultCheck.IsCheckedChanged += OnFilterChanged;
+        // Create filter checkboxes
+        _showModuleCheck = new CheckBox
+        {
+            Content = "Module (.utc)",
+            IsChecked = true
+        };
+        _showLocalVaultCheck = new CheckBox
+        {
+            Content = "Local Vault (.bic)",
+            IsChecked = true
+        };
+        _showServerVaultCheck = new CheckBox
+        {
+            Content = "Server Vault (.bic)",
+            IsChecked = false
+        };
+
+        _showModuleCheck.IsCheckedChanged += OnFilterChanged;
+        _showLocalVaultCheck.IsCheckedChanged += OnFilterChanged;
+        _showServerVaultCheck.IsCheckedChanged += OnFilterChanged;
+
+        // Create filter options panel
+        var filterPanel = new StackPanel
+        {
+            Spacing = 4,
+            Margin = new Thickness(0, 4, 0, 0)
+        };
+        filterPanel.Children.Add(_showModuleCheck);
+        filterPanel.Children.Add(_showLocalVaultCheck);
+        filterPanel.Children.Add(_showServerVaultCheck);
+
+        FilterOptionsContent = filterPanel;
     }
 
     private void OnFilterChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -207,9 +237,9 @@ public partial class CreatureBrowserPanel : FileBrowserPanelBase
 
     protected override IEnumerable<FileBrowserEntry> ApplyCustomFilters(IEnumerable<FileBrowserEntry> entries)
     {
-        bool showModule = ShowModuleCheck?.IsChecked == true;
-        bool showLocalVault = ShowLocalVaultCheck?.IsChecked == true;
-        bool showServerVault = ShowServerVaultCheck?.IsChecked == true;
+        bool showModule = _showModuleCheck.IsChecked == true;
+        bool showLocalVault = _showLocalVaultCheck.IsChecked == true;
+        bool showServerVault = _showServerVaultCheck.IsChecked == true;
 
         return entries.Where(e =>
         {
@@ -236,13 +266,13 @@ public partial class CreatureBrowserPanel : FileBrowserPanelBase
         var parts = new List<string>();
         if (moduleCount > 0) parts.Add($"{moduleCount} module");
 
-        // Vault counts are in hakCount parameter (reusing for additional sources)
+        // Vault counts
         var localCount = _vaultEntries.Count(e => e.Source == "LocalVault");
         var serverCount = _vaultEntries.Count(e => e.Source == "ServerVault");
 
-        if (localCount > 0 && ShowLocalVaultCheck?.IsChecked == true)
+        if (localCount > 0 && _showLocalVaultCheck.IsChecked == true)
             parts.Add($"{localCount} vault");
-        if (serverCount > 0 && ShowServerVaultCheck?.IsChecked == true)
+        if (serverCount > 0 && _showServerVaultCheck.IsChecked == true)
             parts.Add($"{serverCount} server");
 
         return string.Join(" + ", parts);

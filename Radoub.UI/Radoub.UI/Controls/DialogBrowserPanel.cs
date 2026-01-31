@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Radoub.Formats.Common;
 using Radoub.Formats.Erf;
 using Radoub.Formats.Logging;
@@ -33,9 +32,10 @@ internal class DialogHakCacheEntry
 /// Dialog browser panel for embedding in Parley's main window.
 /// Provides file list with optional HAK scanning.
 /// </summary>
-public partial class DialogBrowserPanel : FileBrowserPanelBase
+public class DialogBrowserPanel : FileBrowserPanelBase
 {
     private readonly IScriptBrowserContext? _context;
+    private readonly CheckBox _showHakCheckBox;
     private bool _showHakDialogs;
     private bool _hakDialogsLoaded;
     private List<DialogBrowserEntry> _hakDialogs = new();
@@ -50,16 +50,22 @@ public partial class DialogBrowserPanel : FileBrowserPanelBase
     public DialogBrowserPanel(IScriptBrowserContext? context)
     {
         _context = context;
-        InitializeComponent();
 
         FileExtension = ".dlg";
         SearchWatermark = "Type to filter dialogs...";
+        HeaderTextContent = "Dialogs";
 
-        // Wire up HAK checkbox
-        if (ShowHakCheckBox != null)
+        // Create and wire up HAK checkbox
+        _showHakCheckBox = new CheckBox
         {
-            ShowHakCheckBox.IsCheckedChanged += OnShowHakChanged;
-        }
+            Content = "Show HAK",
+            IsChecked = false,
+            Margin = new Avalonia.Thickness(0, 4, 0, 0)
+        };
+        ToolTip.SetTip(_showHakCheckBox, "Include dialogs from HAK files");
+        _showHakCheckBox.IsCheckedChanged += OnShowHakChanged;
+
+        FilterOptionsContent = _showHakCheckBox;
     }
 
     /// <summary>
@@ -73,14 +79,14 @@ public partial class DialogBrowserPanel : FileBrowserPanelBase
             if (_showHakDialogs != value)
             {
                 _showHakDialogs = value;
-                ShowHakCheckBox.IsChecked = value;
+                _showHakCheckBox.IsChecked = value;
             }
         }
     }
 
     private async void OnShowHakChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        _showHakDialogs = ShowHakCheckBox.IsChecked == true;
+        _showHakDialogs = _showHakCheckBox.IsChecked == true;
         UnifiedLogger.LogApplication(LogLevel.INFO, $"DialogBrowserPanel: Show HAK dialogs = {_showHakDialogs}");
 
         if (_showHakDialogs && !_hakDialogsLoaded)
