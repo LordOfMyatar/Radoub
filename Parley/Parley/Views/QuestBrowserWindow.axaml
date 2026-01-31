@@ -79,7 +79,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Quest List (Left) -->
-            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -99,7 +99,7 @@
                                 <StackPanel Orientation="Vertical" Margin="2">
                                     <TextBlock Text="{Binding Tag}" FontWeight="Bold"/>
                                     <TextBlock Text="{Binding DisplayName}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                FontSize="11"
                                                TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
@@ -110,10 +110,11 @@
             </Border>
 
             <!-- Splitter -->
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"/>
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
+                              Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
             <!-- Entry List (Right) -->
-            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
+            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -161,7 +162,7 @@
 
         <!-- Entry Preview -->
         <Border Grid.Row="2"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
                 Padding="10"
                 Margin="0,10,0,0"
@@ -172,14 +173,14 @@
                 <TextBlock x:Name="EntryPreviewTextBlock"
                            Text="Select an entry to preview its text"
                            TextWrapping="Wrap"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            FontStyle="Italic"/>
             </ScrollViewer>
         </Border>
 
         <!-- Selected Display -->
         <Border Grid.Row="3"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
                 Padding="10"
                 Margin="0,10,0,10"

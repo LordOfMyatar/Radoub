@@ -14,7 +14,7 @@
                            FontWeight="Bold"/>
 
                 <!-- Classes Section - 8 slots per Beamdog EE -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -113,7 +113,7 @@
                 </Border>
 
                 <!-- Alignment Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -178,7 +178,7 @@
                 </Border>
 
                 <!-- Auto-Levelup Package Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">

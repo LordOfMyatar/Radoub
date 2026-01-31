@@ -20,7 +20,7 @@
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                 <!-- QuickBar 1: Normal (F1-F12) -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -38,7 +38,7 @@
                                 <DataTemplate>
                                     <Border Width="60" Height="60" Margin="2"
                                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                             BorderThickness="1"
                                             CornerRadius="4"
                                             ToolTip.Tip="{Binding TooltipText}">
@@ -67,7 +67,7 @@
                 </Border>
 
                 <!-- QuickBar 2: Shift (Shift+F1-F12) -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -85,7 +85,7 @@
                                 <DataTemplate>
                                     <Border Width="60" Height="60" Margin="2"
                                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                             BorderThickness="1"
                                             CornerRadius="4"
                                             ToolTip.Tip="{Binding TooltipText}">
@@ -112,7 +112,7 @@
                 </Border>
 
                 <!-- QuickBar 3: Ctrl (Ctrl+F1-F12) -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -130,7 +130,7 @@
                                 <DataTemplate>
                                     <Border Width="60" Height="60" Margin="2"
                                             Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                            BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                             BorderThickness="1"
                                             CornerRadius="4"
                                             ToolTip.Tip="{Binding TooltipText}">

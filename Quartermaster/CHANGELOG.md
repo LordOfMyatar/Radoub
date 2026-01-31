@@ -10,6 +10,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.62-alpha] - 2026-01-31
+**Branch**: `quartermaster/issue-1145` | **PR**: #1169
+
+### Feature: Integrate CreatureBrowserPanel as collapsible left panel (#1145)
+
+Add a collapsible left panel to Quartermaster's MainWindow that displays all .utc/.bic files from the current module, vaults, and HAKs, enabling single-click navigation.
+
+#### Features Implemented
+- [x] Search box at top of panel (inherited from FileBrowserPanelBase)
+- [x] Source checkboxes: Module, LocalVault, ServerVault, HAK
+- [x] Current file highlighted when loading a creature
+- [x] Single-click → auto-save + load
+- [x] Collapsible via View menu (F4 shortcut) or collapse button
+- [x] Panel width persisted in settings
+
+#### HAK Support
+- Added HAK scanning for .utc files (ResourceTypes.Utc = 2027)
+- Uses same caching pattern as StoreBrowserPanel
+- Static cache persists across panel instances for performance
+
+---
+
 ## [0.1.61-alpha] - 2026-01-29
 **Branch**: `quartermaster/issue-1057` | **PR**: #1152
 

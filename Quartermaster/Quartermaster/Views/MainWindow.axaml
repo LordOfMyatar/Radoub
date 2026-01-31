@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:Radoub.UI.Controls"
+        xmlns:radoubControls="using:Radoub.UI.Controls"
         xmlns:panels="using:Quartermaster.Views.Panels"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="Quartermaster.Views.MainWindow"
@@ -72,6 +73,8 @@
                 <MenuItem Header="_Down-Level (Save Copy)..." Click="OnDownLevelClick" IsEnabled="{Binding HasFile, ElementName=MainWindowInstance}" ToolTip.Tip="Save a level 1 copy to a new file"/>
             </MenuItem>
             <MenuItem Header="_View">
+                <MenuItem x:Name="CreatureBrowserMenuItem" Header="_Creature Browser" Click="OnToggleCreatureBrowserClick" InputGesture="F4"/>
+                <Separator/>
                 <MenuItem Header="_Settings..." Click="OnSettingsClick"/>
             </MenuItem>
             <MenuItem Header="_Help">
@@ -80,7 +83,7 @@
         </Menu>
 
         <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0" Padding="5,2"
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0" Padding="5,2"
                 AutomationProperties.AutomationId="StatusBar">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -94,29 +97,53 @@
             </Grid>
         </Border>
 
-        <!-- Main Content - Sidebar + Content Layout -->
-        <Grid x:Name="MainGrid">
+        <!-- Main Content - Creature Browser + Sidebar + Content Layout -->
+        <Grid x:Name="OuterContentGrid">
             <Grid.ColumnDefinitions>
-                <!-- Sidebar - slightly wider default for portrait/name comfort -->
-                <ColumnDefinition Width="220"/>
+                <!-- Creature browser panel (#1145) - collapsible left panel -->
+                <ColumnDefinition Width="200" MinWidth="0"/>
                 <ColumnDefinition Width="5"/>
-                <!-- Content Area -->
+                <!-- Sidebar + Content -->
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
+            <!-- Creature Browser Panel (#1145) -->
+            <radoubControls:CreatureBrowserPanel x:Name="CreatureBrowserPanel"
+                                                  Grid.Column="0"
+                                                  Margin="0,0,0,0"/>
+
+            <!-- Creature Browser Splitter -->
+            <GridSplitter x:Name="CreatureBrowserSplitter"
+                          Grid.Column="1"
+                          Width="5"
+                          HorizontalAlignment="Stretch"
+                          ResizeDirection="Columns"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                          AutomationProperties.AutomationId="CreatureBrowserSplitter"/>
+
+            <!-- Inner grid for Sidebar + Content -->
+            <Grid Grid.Column="2" x:Name="MainGrid">
+                <Grid.ColumnDefinitions>
+                    <!-- Sidebar - slightly wider default for portrait/name comfort -->
+                    <ColumnDefinition Width="220"/>
+                    <ColumnDefinition Width="5"/>
+                    <!-- Content Area -->
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
             <!-- Sidebar -->
-            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,1,0"
+            <Border Grid.Column="0"
                     AutomationProperties.AutomationId="Sidebar">
                 <DockPanel>
                     <!-- Character Header (Portrait + Name) -->
-                    <Border DockPanel.Dock="Top" Padding="10" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1">
+                    <Border DockPanel.Dock="Top" Padding="10" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1">
                         <StackPanel Spacing="8">
                             <!-- Portrait Display (NWN medium portraits are 64x100 usable area, scaled with font) -->
                             <Border x:Name="PortraitBorder"
                                     Width="{DynamicResource PortraitWidth}"
                                     Height="{DynamicResource PortraitHeight}"
                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
                                     HorizontalAlignment="Center"
@@ -257,7 +284,7 @@
 
             <!-- Splitter -->
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                          Background="{DynamicResource SystemBaseMediumLowColor}"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           AutomationProperties.AutomationId="SidebarSplitter"/>
 
             <!-- Content Area -->
@@ -308,6 +335,7 @@
                                           AutomationProperties.AutomationId="QuickBarPanel"/>
                 </Grid>
             </Border>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>

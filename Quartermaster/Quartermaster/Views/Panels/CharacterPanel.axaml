@@ -15,7 +15,7 @@
                            FontWeight="Bold"/>
 
                 <!-- Name Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -41,7 +41,7 @@
                 </Border>
 
                 <!-- Identity Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -108,7 +108,7 @@
                 </Border>
 
                 <!-- Voice & Dialog Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -179,7 +179,7 @@
 
                 <!-- Player Character Section (BIC only) -->
                 <Border x:Name="PlayerCharacterSection"
-                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"
@@ -217,7 +217,7 @@
 
                 <!-- Biography Section (BIC only) -->
                 <Border x:Name="BiographySection"
-                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"

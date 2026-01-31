@@ -158,11 +158,11 @@
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
                 <TextBlock Text="|"
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            VerticalAlignment="Center"/>
                 <TextBlock x:Name="ModulePathTextBlock"
                            Text=""
-                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                            VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
@@ -189,7 +189,7 @@
                           Width="5"
                           HorizontalAlignment="Stretch"
                           ResizeDirection="Columns"
-                          Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
             <!-- Inner grid: Tree/Text | Properties | Flowchart -->
             <Grid Grid.Column="2" x:Name="MainContentGrid">
@@ -214,7 +214,7 @@
                         Grid.Row="0" Grid.Column="0" Margin="5">
                 <!-- Dialog Tree Tab -->
                 <TabItem Header="Dialog Tree" AutomationProperties.AutomationId="DialogTreeTab">
-                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
                         <DockPanel>
                             <!-- Tree Control Buttons -->
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
@@ -328,10 +328,10 @@
 
             <!-- Horizontal splitter between Dialog Tree and Text Entry -->
             <GridSplitter Grid.Row="1" Grid.Column="0" Height="5" HorizontalAlignment="Stretch"
-                          ResizeDirection="Rows" Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                          ResizeDirection="Rows" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
             <!-- Text Entry Panel (bottom left) -->
-            <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Margin="5" Padding="5">
+            <Border Grid.Row="2" Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5" Padding="5">
                 <DockPanel>
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
                         <Grid.ColumnDefinitions>
@@ -403,7 +403,7 @@
 
             <!-- Vertical splitter between left panels and properties -->
             <GridSplitter Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                          ResizeDirection="Columns" Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                          ResizeDirection="Columns" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
             <!-- Tabbed Properties Panel (full height right side) -->
             <!-- DRAGON: Do not modify x:Name attributes or event handlers - only visual layout -->
@@ -439,7 +439,7 @@
                         </Grid>
 
                         <TextBlock Text="Condition Parameters:" Margin="0,5,0,2"/>
-                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" MaxHeight="200" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ConditionsParametersGrid" MinHeight="60" MaxHeight="200" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="0,0,0,5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -472,7 +472,7 @@
                         </Border>
 
                         <Expander Header="Conditional Script Preview" IsExpanded="False" Margin="0,5,0,5">
-                            <Border x:Name="ConditionalScriptPreviewGrid" MaxHeight="150" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1">
+                            <Border x:Name="ConditionalScriptPreviewGrid" MaxHeight="150" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1">
                                 <ScrollViewer x:Name="ConditionalScriptPreviewScrollViewer"
                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                                     <TextBox x:Name="ConditionalScriptPreviewTextBox"
@@ -511,7 +511,7 @@
                         </Grid>
 
                         <TextBlock Text="Action Parameters:" Margin="0,5,0,2"/>
-                        <Border x:Name="ActionsParametersGrid" MinHeight="60" MaxHeight="200" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Margin="0,0,0,5">
+                        <Border x:Name="ActionsParametersGrid" MinHeight="60" MaxHeight="200" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="0,0,0,5">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -544,7 +544,7 @@
                         </Border>
 
                         <Expander Header="Action Script Preview" IsExpanded="False" Margin="0,5,0,5">
-                            <Border x:Name="ActionScriptPreviewGrid" MaxHeight="150" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1">
+                            <Border x:Name="ActionScriptPreviewGrid" MaxHeight="150" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1">
                                 <ScrollViewer x:Name="ActionScriptPreviewScrollViewer"
                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                                     <TextBox x:Name="ActionScriptPreviewTextBox"
@@ -636,7 +636,7 @@
                             <!-- DRAGON: NodeTypeTextBlock x:Name must remain for code-behind references -->
                             <TextBlock x:Name="NodeTypeTextBlock" Text=""
                                        FontStyle="Italic"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        Margin="0,0,0,10"
                                        TextWrapping="Wrap"/>
 
@@ -650,7 +650,7 @@
                                             Width="64" Height="100"
                                             Margin="0,0,10,0"
                                             VerticalAlignment="Top"
-                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                             BorderThickness="1"
                                             IsVisible="False"
                                             ToolTip.Tip="NPC Portrait">
@@ -660,7 +660,7 @@
                                     <StackPanel Orientation="Vertical" VerticalAlignment="Top">
                                         <TextBlock x:Name="SoundsetInfoTextBlock"
                                                    FontSize="12"
-                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                    TextWrapping="Wrap"
                                                    MaxWidth="150"
                                                    ToolTip.Tip="Soundset info from creature lookup"/>
@@ -731,7 +731,7 @@
 
                             <!-- Quest Name Display (read-only info) -->
                             <TextBlock x:Name="QuestNameTextBlock"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        FontStyle="Italic"
                                        Margin="5,0,0,5"
                                        Text=""
@@ -755,7 +755,7 @@
                             <!-- Quest Entry Details (text preview and end status) -->
                             <StackPanel Orientation="Horizontal" Margin="5,0,0,10">
                                 <TextBlock x:Name="QuestEntryPreviewTextBlock"
-                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                            FontStyle="Italic"
                                            Text=""
                                            TextWrapping="NoWrap"
@@ -770,7 +770,7 @@
                             <!-- Link Properties -->
                             <Separator Margin="0,5"/>
                             <TextBlock x:Name="IsChildTextBlock"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                        FontStyle="Italic"
                                        Margin="0,5,0,10"
                                        Text=""
@@ -816,7 +816,7 @@
                                     Margin="5,0,0,0"/>
                             <TextBlock Text="(Auto-clears after 30 days)"
                                       VerticalAlignment="Center"
-                                      Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                      Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                       FontSize="11"
                                       Margin="10,0,0,0"/>
                         </StackPanel>
@@ -857,12 +857,12 @@
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                                     <TextBlock Text="{Binding Speaker}"
-                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                               FontSize="11"
                                                               Margin="0,0,8,0"
                                                               IsVisible="{Binding Speaker, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                                     <TextBlock Text="{Binding TimeAgo}"
-                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                                              Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                               FontSize="11"
                                                               FontStyle="Italic"/>
                                                 </StackPanel>
@@ -893,12 +893,12 @@
                                 <ComboBoxItem Content="Trace"/>
                             </ComboBox>
                             <TextBlock Text="(Last 1000 entries)" VerticalAlignment="Center"
-                                      Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" FontSize="11" Margin="10,0,0,0"/>
+                                      Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" FontSize="11" Margin="10,0,0,0"/>
                         </StackPanel>
 
 
                         <!-- Debug ListBox (virtualized by default for performance) -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
                             <ListBox x:Name="DebugListBox"
                                      ItemsSource="{Binding DebugMessages}"
                                      Background="Transparent"
@@ -924,13 +924,13 @@
             <GridSplitter x:Name="FlowchartSplitter"
                           Grid.Row="0" Grid.RowSpan="3" Grid.Column="3"
                           Width="5" HorizontalAlignment="Stretch"
-                          ResizeDirection="Columns" Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                          ResizeDirection="Columns" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           IsVisible="False"/>
 
             <!-- Embedded Flowchart Panel (Side-by-Side mode) -->
             <Border x:Name="EmbeddedFlowchartBorder"
                     Grid.Row="0" Grid.RowSpan="3" Grid.Column="4"
-                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Margin="0,5,5,5"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="0,5,5,5"
                     IsVisible="False">
                 <views:FlowchartPanel x:Name="EmbeddedFlowchartPanel"/>
             </Border>
@@ -938,7 +938,7 @@
         </Grid>  <!-- End OuterContentGrid -->
 
         <!-- Status Bar -->
-        <Border Grid.Row="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="0,1,0,0" Padding="5,2">
+        <Border Grid.Row="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0" Padding="5,2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -948,7 +948,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"/>
                 <TextBlock Grid.Column="1" Text="{Binding LastSavedTime}" Foreground="{DynamicResource SystemAccentColor}" FontStyle="Italic" Margin="20,0,0,0"/>
-                <TextBlock Grid.Column="2" Text="{Binding LoadedFileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="20,0,0,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding LoadedFileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="20,0,0,0"/>
                 <ProgressBar Grid.Column="3" Width="100" Height="16"
                              IsIndeterminate="{Binding IsLoading}"
                              IsVisible="{Binding IsLoading}" Margin="10,0,0,0"/>

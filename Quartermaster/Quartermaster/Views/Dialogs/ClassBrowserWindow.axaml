@@ -81,7 +81,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- Class List Panel -->
-            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="5">
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -105,7 +105,7 @@
                                     <TextBlock Text="{Binding DisplayIcon}" Width="16"/>
                                     <TextBlock Text="{Binding DisplayName}"/>
                                     <TextBlock Text="{Binding QualificationBadge}"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                                FontStyle="Italic"/>
                                 </StackPanel>
                             </DataTemplate>
@@ -115,11 +115,11 @@
             </Border>
 
             <!-- Splitter -->
-            <GridSplitter Grid.Column="1" Width="5" Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+            <GridSplitter Grid.Column="1" Width="5" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           ResizeDirection="Columns"/>
 
             <!-- Class Details Panel -->
-            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}" BorderThickness="1" Padding="10">
+            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -154,7 +154,7 @@
                     <!-- Prerequisites Section (for prestige classes) -->
                     <Border Grid.Row="2" x:Name="PrerequisitesPanel"
                             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="1"
                             Padding="10"
                             Margin="0,0,0,10"
@@ -179,7 +179,7 @@
                         <TextBlock x:Name="DescriptionTextBlock"
                                    TextWrapping="Wrap"
                                    Text="Select a class to view its description."
-                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                     </ScrollViewer>
                 </Grid>
             </Border>
@@ -187,7 +187,7 @@
 
         <!-- Selected Class Display -->
         <Border Grid.Row="2"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
                 Padding="10"
                 Margin="0,10,0,10"

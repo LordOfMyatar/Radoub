@@ -103,6 +103,10 @@ public class SettingsService : INotifyPropertyChanged
     private double _rightPanelWidth = 400;
     private double _sidebarWidth = 200;
 
+    // Creature browser panel settings (#1145)
+    private double _creatureBrowserPanelWidth = 200;
+    private bool _creatureBrowserPanelVisible = true;
+
     // UI settings
     private double _fontSize = 14;
     private string _fontFamily = "";
@@ -175,6 +179,19 @@ public class SettingsService : INotifyPropertyChanged
     {
         get => _sidebarWidth;
         set { if (SetProperty(ref _sidebarWidth, Math.Max(150, Math.Min(300, value)))) SaveSettings(); }
+    }
+
+    // Creature browser panel properties (#1145)
+    public double CreatureBrowserPanelWidth
+    {
+        get => _creatureBrowserPanelWidth;
+        set { if (SetProperty(ref _creatureBrowserPanelWidth, Math.Max(150, Math.Min(400, value)))) SaveSettings(); }
+    }
+
+    public bool CreatureBrowserPanelVisible
+    {
+        get => _creatureBrowserPanelVisible;
+        set { if (SetProperty(ref _creatureBrowserPanelVisible, value)) SaveSettings(); }
     }
 
     // UI properties
@@ -320,6 +337,10 @@ public class SettingsService : INotifyPropertyChanged
                     _rightPanelWidth = Math.Max(250, Math.Min(800, settings.RightPanelWidth));
                     _sidebarWidth = Math.Max(150, Math.Min(300, settings.SidebarWidth));
 
+                    // Creature browser panel (#1145)
+                    _creatureBrowserPanelWidth = Math.Max(150, Math.Min(400, settings.CreatureBrowserPanelWidth));
+                    _creatureBrowserPanelVisible = settings.CreatureBrowserPanelVisible;
+
                     _fontSize = Math.Max(8, Math.Min(24, settings.FontSize));
                     _fontFamily = settings.FontFamily ?? "";
                     _currentThemeId = !string.IsNullOrEmpty(settings.CurrentThemeId)
@@ -377,6 +398,8 @@ public class SettingsService : INotifyPropertyChanged
                 LeftPanelWidth = LeftPanelWidth,
                 RightPanelWidth = RightPanelWidth,
                 SidebarWidth = SidebarWidth,
+                CreatureBrowserPanelWidth = CreatureBrowserPanelWidth,
+                CreatureBrowserPanelVisible = CreatureBrowserPanelVisible,
                 FontSize = FontSize,
                 FontFamily = FontFamily,
                 CurrentThemeId = CurrentThemeId,
@@ -427,6 +450,10 @@ public class SettingsService : INotifyPropertyChanged
         public double LeftPanelWidth { get; set; } = 350;
         public double RightPanelWidth { get; set; } = 400;
         public double SidebarWidth { get; set; } = 200;
+
+        // Creature browser panel (#1145)
+        public double CreatureBrowserPanelWidth { get; set; } = 200;
+        public bool CreatureBrowserPanelVisible { get; set; } = true;
 
         public double FontSize { get; set; } = 14;
         public string FontFamily { get; set; } = "";

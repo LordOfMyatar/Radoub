@@ -19,7 +19,7 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
             <TextBlock x:Name="TitleLabel" Text="Select Color" FontWeight="SemiBold" VerticalAlignment="Center"/>
             <Border x:Name="CurrentColorSwatch" Width="50" Height="26"
-                    CornerRadius="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1"
+                    CornerRadius="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" VerticalAlignment="Center"/>
             <TextBlock x:Name="CurrentColorLabel" Text="Index: 0" VerticalAlignment="Center"
                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
