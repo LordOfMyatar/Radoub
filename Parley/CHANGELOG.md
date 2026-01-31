@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.127-alpha] - 2026-01-31
-**Branch**: `parley/issue-1143` | **PR**: #TBD
+**Branch**: `parley/issue-1143` | **PR**: #1164
 
 ### Feature: Integrate DialogBrowserPanel as collapsible left panel (#1143)
 
