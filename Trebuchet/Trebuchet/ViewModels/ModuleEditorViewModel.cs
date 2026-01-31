@@ -273,6 +273,26 @@ public partial class ModuleEditorViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
     private string _defaultBic = string.Empty;
 
+    /// <summary>
+    /// Whether a default character (BIC) is enabled for this module.
+    /// When enabled, Load Module is disabled (only Test Module works).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
+    [NotifyPropertyChangedFor(nameof(IsDefaultBicDropdownEnabled))]
+    private bool _useDefaultBic;
+
+    /// <summary>
+    /// Available BIC files found in the module's working directory.
+    /// </summary>
+    [ObservableProperty]
+    private ObservableCollection<string> _availableBicFiles = new();
+
+    /// <summary>
+    /// Whether the DefaultBic dropdown should be enabled.
+    /// </summary>
+    public bool IsDefaultBicDropdownEnabled => UseDefaultBic && AvailableBicFiles.Count > 0;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUnsavedChanges))]
     private string _startMovie = string.Empty;
@@ -371,6 +391,7 @@ public partial class ModuleEditorViewModel : ObservableObject
 
             PopulateViewModelFromIfo();
             SyncToRadoubSettings();
+            SyncDefaultBicToSettings();
             IsModuleLoaded = true;
             IsModuleReadOnly = _isReadOnly;
             IsVersionUnlocked = false;  // Always start with version locked
@@ -519,12 +540,83 @@ public partial class ModuleEditorViewModel : ObservableObject
 
         // Other
         XpScale = _ifoFile.XPScale;
-        DefaultBic = _ifoFile.DefaultBic;
         StartMovie = _ifoFile.StartMovie;
+
+        // Scan for available BIC files before setting DefaultBic
+        ScanForBicFiles();
+
+        // Set DefaultBic and UseDefaultBic checkbox state
+        DefaultBic = _ifoFile.DefaultBic;
+        UseDefaultBic = !string.IsNullOrEmpty(_ifoFile.DefaultBic);
 
         // Variables
         Variables = new ObservableCollection<VariableViewModel>(
             _ifoFile.VarTable.Select(v => new VariableViewModel(v)));
+    }
+
+    /// <summary>
+    /// Scan the working directory for available .bic files.
+    /// </summary>
+    private void ScanForBicFiles()
+    {
+        AvailableBicFiles.Clear();
+
+        if (string.IsNullOrEmpty(_modulePath))
+            return;
+
+        string? searchDir = null;
+
+        // Determine the directory to scan
+        if (Directory.Exists(_modulePath))
+        {
+            // _modulePath is already a directory
+            searchDir = _modulePath;
+        }
+        else if (!string.IsNullOrEmpty(_workingDirectoryPath) && Directory.Exists(_workingDirectoryPath))
+        {
+            // Use the unpacked working directory
+            searchDir = _workingDirectoryPath;
+        }
+
+        if (string.IsNullOrEmpty(searchDir))
+            return;
+
+        try
+        {
+            var bicFiles = Directory.GetFiles(searchDir, "*.bic", SearchOption.TopDirectoryOnly);
+            foreach (var bicFile in bicFiles.OrderBy(f => f))
+            {
+                var resRef = Path.GetFileNameWithoutExtension(bicFile);
+                AvailableBicFiles.Add(resRef);
+            }
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"Found {AvailableBicFiles.Count} BIC files in module directory");
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.WARN, $"Failed to scan for BIC files: {ex.Message}");
+        }
+
+        OnPropertyChanged(nameof(IsDefaultBicDropdownEnabled));
+    }
+
+    /// <summary>
+    /// Sync the DefaultBic setting to RadoubSettings for MainWindow to check.
+    /// </summary>
+    private void SyncDefaultBicToSettings()
+    {
+        var settings = RadoubSettings.Instance;
+
+        // Set the shared DefaultBic property (used by MainWindow to disable Load Module)
+        if (UseDefaultBic && !string.IsNullOrEmpty(DefaultBic))
+        {
+            settings.CurrentModuleDefaultBic = DefaultBic;
+        }
+        else
+        {
+            settings.CurrentModuleDefaultBic = string.Empty;
+        }
     }
 
     /// <summary>
@@ -656,8 +748,10 @@ public partial class ModuleEditorViewModel : ObservableObject
 
         // Other
         _ifoFile.XPScale = XpScale;
-        _ifoFile.DefaultBic = DefaultBic;
         _ifoFile.StartMovie = StartMovie;
+
+        // Only set DefaultBic if checkbox is checked
+        _ifoFile.DefaultBic = UseDefaultBic ? DefaultBic : string.Empty;
 
         // Variables
         _ifoFile.VarTable = Variables.Select(v => v.ToVariable()).ToList();
@@ -1035,7 +1129,33 @@ public partial class ModuleEditorViewModel : ObservableObject
     partial void OnOnPlayerTileActionChanged(string value) => MarkChanged();
     partial void OnOnNuiEventChanged(string value) => MarkChanged();
     partial void OnXpScaleChanged(byte value) => MarkChanged();
-    partial void OnDefaultBicChanged(string value) => MarkChanged();
+    partial void OnDefaultBicChanged(string value)
+    {
+        MarkChanged();
+        // Sync to RadoubSettings so MainWindow can check if DefaultBic is set
+        SyncDefaultBicToSettings();
+    }
+
+    partial void OnUseDefaultBicChanged(bool value)
+    {
+        MarkChanged();
+        OnPropertyChanged(nameof(IsDefaultBicDropdownEnabled));
+
+        if (!value)
+        {
+            // Clear DefaultBic when unchecked
+            DefaultBic = string.Empty;
+        }
+        else if (AvailableBicFiles.Count > 0 && string.IsNullOrEmpty(DefaultBic))
+        {
+            // Auto-select first BIC if available and none selected
+            DefaultBic = AvailableBicFiles[0];
+        }
+
+        // Sync to RadoubSettings so MainWindow can check if DefaultBic is set
+        SyncDefaultBicToSettings();
+    }
+
     partial void OnStartMovieChanged(string value) => MarkChanged();
 
     private void MarkChanged()

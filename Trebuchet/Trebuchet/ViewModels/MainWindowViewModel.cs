@@ -67,7 +67,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool CanEditModule => IsModuleValid && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
     public bool CanTestModule => IsGameAvailable && !string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModulePath);
-    public bool CanLoadModule => CanTestModule;
+
+    /// <summary>
+    /// Load Module is disabled when DefaultBic is set (only Test Module works with pre-generated characters).
+    /// </summary>
+    public bool CanLoadModule => CanTestModule && string.IsNullOrEmpty(RadoubSettings.Instance.CurrentModuleDefaultBic);
 
     /// <summary>
     /// Can build when a module is selected.
@@ -216,11 +220,20 @@ public partial class MainWindowViewModel : ObservableObject
         // Update module-dependent properties when module changes
         if (e.PropertyName == nameof(RadoubSettings.CurrentModulePath))
         {
+            // Read DefaultBic from the module's IFO to correctly enable/disable Load Module button
+            _ = ReadModuleDefaultBicAsync();
+
             OnPropertyChanged(nameof(CanEditModule));
             OnPropertyChanged(nameof(CanTestModule));
             OnPropertyChanged(nameof(CanLoadModule));
             OnPropertyChanged(nameof(CanBuildModule));
             BuildModuleCommand.NotifyCanExecuteChanged();
+        }
+
+        // Update Load Module button when DefaultBic changes
+        if (e.PropertyName == nameof(RadoubSettings.CurrentModuleDefaultBic))
+        {
+            OnPropertyChanged(nameof(CanLoadModule));
         }
     }
 
@@ -411,6 +424,82 @@ public partial class MainWindowViewModel : ObservableObject
     private void OpenReleasePage()
     {
         UpdateService.Instance.OpenReleasePage();
+    }
+
+    /// <summary>
+    /// Read the DefaultBic value from the current module's IFO file.
+    /// Called when module changes to correctly enable/disable Load Module button.
+    /// </summary>
+    private async Task ReadModuleDefaultBicAsync()
+    {
+        var modulePath = RadoubSettings.Instance.CurrentModulePath;
+        if (string.IsNullOrEmpty(modulePath))
+        {
+            RadoubSettings.Instance.CurrentModuleDefaultBic = string.Empty;
+            return;
+        }
+
+        try
+        {
+            var defaultBic = await Task.Run(() => ReadDefaultBicFromModule(modulePath));
+            RadoubSettings.Instance.CurrentModuleDefaultBic = defaultBic;
+
+            if (!string.IsNullOrEmpty(defaultBic))
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Module uses DefaultBic: {defaultBic}");
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Could not read DefaultBic from module: {ex.Message}");
+            RadoubSettings.Instance.CurrentModuleDefaultBic = string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Read the DefaultBic value from a module's IFO file.
+    /// </summary>
+    private static string ReadDefaultBicFromModule(string modulePath)
+    {
+        Radoub.Formats.Ifo.IfoFile? ifoFile = null;
+
+        if (File.Exists(modulePath) && modulePath.EndsWith(".mod", StringComparison.OrdinalIgnoreCase))
+        {
+            // Check for unpacked working directory first
+            var moduleName = Path.GetFileNameWithoutExtension(modulePath);
+            var moduleDir = Path.GetDirectoryName(modulePath);
+            if (!string.IsNullOrEmpty(moduleDir))
+            {
+                var workingDir = Path.Combine(moduleDir, moduleName);
+                var ifoPath = Path.Combine(workingDir, "module.ifo");
+                if (File.Exists(ifoPath))
+                {
+                    ifoFile = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
+                }
+            }
+
+            // Fall back to reading from .mod file
+            if (ifoFile == null)
+            {
+                var erf = ErfReader.ReadMetadataOnly(modulePath);
+                var ifoEntry = erf.FindResource("module", ResourceTypes.Ifo);
+                if (ifoEntry != null)
+                {
+                    var ifoData = ErfReader.ExtractResource(modulePath, ifoEntry);
+                    ifoFile = Radoub.Formats.Ifo.IfoReader.Read(ifoData);
+                }
+            }
+        }
+        else if (Directory.Exists(modulePath))
+        {
+            var ifoPath = Path.Combine(modulePath, "module.ifo");
+            if (File.Exists(ifoPath))
+            {
+                ifoFile = Radoub.Formats.Ifo.IfoReader.Read(ifoPath);
+            }
+        }
+
+        return ifoFile?.DefaultBic ?? string.Empty;
     }
 
     [RelayCommand]

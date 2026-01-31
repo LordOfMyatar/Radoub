@@ -195,7 +195,7 @@
                             Command="{Binding LaunchLoadModuleCommand}"
                             IsEnabled="{Binding CanLoadModule}"
                             Padding="16,8"
-                            ToolTip.Tip="Launch with current module, show character select"/>
+                            ToolTip.Tip="Launch with current module, show character select. Disabled when module uses DefaultBic."/>
                 </StackPanel>
 
                 <TextBlock Text="Game not configured - set Base Game Path in Settings"

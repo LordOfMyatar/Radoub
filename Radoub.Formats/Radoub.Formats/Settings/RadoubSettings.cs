@@ -63,6 +63,10 @@ public class RadoubSettings : INotifyPropertyChanged
     private string _neverwinterNightsPath = "";
     private string _currentModulePath = "";
 
+    // Runtime-only: Current module's DefaultBic (not persisted)
+    // Used by MainWindow to disable Load Module when DefaultBic is set
+    private string _currentModuleDefaultBic = "";
+
     // Custom content paths
     private string _customTlkPath = "";  // Path to custom TLK file (module-specific)
     private List<string> _hakSearchPaths = new();  // Additional HAK search paths
@@ -122,6 +126,17 @@ public class RadoubSettings : INotifyPropertyChanged
     {
         get => _currentModulePath;
         set { if (SetProperty(ref _currentModulePath, value ?? "")) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// The DefaultBic value from the current module's IFO (runtime only, not persisted).
+    /// When set, indicates the module uses a pre-generated character for testing.
+    /// Used by MainWindow to disable "Load Module" button (only "Test Module" works with DefaultBic).
+    /// </summary>
+    public string CurrentModuleDefaultBic
+    {
+        get => _currentModuleDefaultBic;
+        set => SetProperty(ref _currentModuleDefaultBic, value ?? "");
     }
 
     /// <summary>
