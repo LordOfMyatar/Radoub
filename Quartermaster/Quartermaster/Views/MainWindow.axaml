@@ -118,7 +118,7 @@
                           Width="5"
                           HorizontalAlignment="Stretch"
                           ResizeDirection="Columns"
-                          Background="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                          Background="{DynamicResource SystemBaseMediumLowColor}"
                           AutomationProperties.AutomationId="CreatureBrowserSplitter"/>
 
             <!-- Inner grid for Sidebar + Content -->
