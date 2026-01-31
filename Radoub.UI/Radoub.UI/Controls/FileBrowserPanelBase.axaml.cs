@@ -28,6 +28,11 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
     public event EventHandler<FileSelectedEventArgs>? FileSelected;
 
     /// <summary>
+    /// Raised when the panel's collapsed state changes.
+    /// </summary>
+    public event EventHandler<bool>? CollapsedChanged;
+
+    /// <summary>
     /// The header text displayed at the top of the panel.
     /// </summary>
     public static readonly StyledProperty<string> HeaderTextProperty =
@@ -78,8 +83,12 @@ public partial class FileBrowserPanelBase : UserControl, IFileBrowserPanel
         get => _isCollapsed;
         set
         {
-            _isCollapsed = value;
-            UpdateCollapsedState();
+            if (_isCollapsed != value)
+            {
+                _isCollapsed = value;
+                UpdateCollapsedState();
+                CollapsedChanged?.Invoke(this, value);
+            }
         }
     }
 

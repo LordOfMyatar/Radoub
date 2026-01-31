@@ -387,7 +387,19 @@ namespace DialogEditor.Views
             // Subscribe to file selection events
             dialogBrowserPanel.FileSelected += OnDialogBrowserFileSelected;
 
+            // Subscribe to collapse/expand events (#1143)
+            dialogBrowserPanel.CollapsedChanged += OnDialogBrowserCollapsedChanged;
+
             // Update menu item checkmark
+            UpdateDialogBrowserMenuState();
+        }
+
+        /// <summary>
+        /// Handles collapse/expand button clicks from DialogBrowserPanel (#1143).
+        /// </summary>
+        private void OnDialogBrowserCollapsedChanged(object? sender, bool isCollapsed)
+        {
+            _services.WindowPersistence.SetDialogBrowserPanelVisible(!isCollapsed);
             UpdateDialogBrowserMenuState();
         }
 
