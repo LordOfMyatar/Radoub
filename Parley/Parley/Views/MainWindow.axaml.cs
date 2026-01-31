@@ -461,6 +461,9 @@ namespace DialogEditor.Views
             _viewModel.StatusMessage = $"Loading {e.Entry.Name}...";
             await _viewModel.LoadDialogAsync(filePath);
 
+            // Update flowchart after loading (same as File menu pattern)
+            UpdateEmbeddedFlowchartAfterLoad();
+
             // Update the current file highlight in the browser panel
             var dialogBrowserPanel = this.FindControl<DialogBrowserPanel>("DialogBrowserPanel");
             if (dialogBrowserPanel != null)
