@@ -60,7 +60,7 @@
         <!-- File list -->
         <Border Grid.Row="2"
                 Margin="8,4,8,8"
-                BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
                 Background="{DynamicResource ThemeBackground}">
             <Grid RowDefinitions="Auto,*">

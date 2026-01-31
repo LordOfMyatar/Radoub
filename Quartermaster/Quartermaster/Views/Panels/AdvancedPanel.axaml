@@ -14,7 +14,7 @@
                            FontWeight="Bold"/>
 
                 <!-- Blueprint/Identity Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"
@@ -87,7 +87,7 @@
                 </Border>
 
                 <!-- Flags Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -107,7 +107,7 @@
                 </Border>
 
                 <!-- Behavior Section -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">
@@ -162,7 +162,7 @@
 
                 <!-- Local Variables Section (UTC only - hidden for BIC) -->
                 <Border x:Name="VariablesSection"
-                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">

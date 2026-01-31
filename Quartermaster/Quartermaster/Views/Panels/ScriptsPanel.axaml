@@ -20,7 +20,7 @@
                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
 
                 <!-- Scripts List -->
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15">

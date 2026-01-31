@@ -30,7 +30,7 @@
             </Grid.RowDefinitions>
 
             <!-- Equipment Slots Panel -->
-            <Border Grid.Row="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+            <Border Grid.Row="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5" Padding="5">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Equipment" FontWeight="Bold" Margin="0,0,0,5"/>
                     <controls:EquipmentSlotsPanel x:Name="EquipmentPanel"
@@ -41,11 +41,11 @@
 
             <!-- Splitter -->
             <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
-                          Background="{DynamicResource SystemBaseMediumLowColor}"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           AutomationProperties.AutomationId="EquipmentBackpackSplitter"/>
 
             <!-- Backpack List -->
-            <Border Grid.Row="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+            <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5" Padding="5">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Backpack" FontWeight="Bold" Margin="0,0,0,5"/>
 
@@ -73,11 +73,11 @@
 
         <!-- Splitter -->
         <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                      Background="{DynamicResource SystemBaseMediumLowColor}"
+                      Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                       AutomationProperties.AutomationId="InventoryPaletteSplitter"/>
 
         <!-- Middle Panel: Item Palette -->
-        <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="5">
+        <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5" Padding="5">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Item Palette" FontWeight="Bold" Margin="0,0,0,5"/>
 
@@ -109,11 +109,11 @@
 
         <!-- Splitter -->
         <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch"
-                      Background="{DynamicResource SystemBaseMediumLowColor}"
+                      Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                       AutomationProperties.AutomationId="PaletteDetailsSplitter"/>
 
         <!-- Right Panel: Item Details -->
-        <Border Grid.Column="4" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" Margin="5" Padding="10">
+        <Border Grid.Column="4" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5" Padding="10">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Item Details" FontWeight="Bold" Margin="0,0,0,10"/>
 
@@ -135,7 +135,7 @@
                         <!-- Icon -->
                         <Border HorizontalAlignment="Center"
                                 Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-                                BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="1"
                                 Padding="10"
                                 CornerRadius="4">
@@ -163,7 +163,7 @@
                                    AutomationProperties.AutomationId="ItemTypeText"/>
 
                         <!-- Properties Section -->
-                        <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                 BorderThickness="0,1,0,0"
                                 Padding="0,10,0,0"
                                 Margin="0,5,0,0">

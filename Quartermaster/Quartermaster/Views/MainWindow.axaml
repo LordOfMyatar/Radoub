@@ -83,7 +83,7 @@
         </Menu>
 
         <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0" Padding="5,2"
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0" Padding="5,2"
                 AutomationProperties.AutomationId="StatusBar">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -118,7 +118,7 @@
                           Width="5"
                           HorizontalAlignment="Stretch"
                           ResizeDirection="Columns"
-                          Background="{DynamicResource SystemBaseMediumLowColor}"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           AutomationProperties.AutomationId="CreatureBrowserSplitter"/>
 
             <!-- Inner grid for Sidebar + Content -->
@@ -132,18 +132,18 @@
                 </Grid.ColumnDefinitions>
 
             <!-- Sidebar -->
-            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,1,0"
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,1,0"
                     AutomationProperties.AutomationId="Sidebar">
                 <DockPanel>
                     <!-- Character Header (Portrait + Name) -->
-                    <Border DockPanel.Dock="Top" Padding="10" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1">
+                    <Border DockPanel.Dock="Top" Padding="10" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1">
                         <StackPanel Spacing="8">
                             <!-- Portrait Display (NWN medium portraits are 64x100 usable area, scaled with font) -->
                             <Border x:Name="PortraitBorder"
                                     Width="{DynamicResource PortraitWidth}"
                                     Height="{DynamicResource PortraitHeight}"
                                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                    BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
                                     HorizontalAlignment="Center"
@@ -284,7 +284,7 @@
 
             <!-- Splitter -->
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                          Background="{DynamicResource SystemBaseMediumLowColor}"
+                          Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           AutomationProperties.AutomationId="SidebarSplitter"/>
 
             <!-- Content Area -->

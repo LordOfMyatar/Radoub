@@ -19,7 +19,7 @@
                                FontWeight="Bold"/>
 
                     <!-- Model Selection Section -->
-                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
                             Padding="12">
@@ -55,7 +55,7 @@
                     </Border>
 
                     <!-- Body Parts Section -->
-                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
                             Padding="12"
@@ -211,7 +211,7 @@
                     </Border>
 
                     <!-- Colors Section - separate from Body Parts so it's always enabled -->
-                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
                             Padding="12">
@@ -283,13 +283,13 @@
 
             <!-- RIGHT PANEL: 3D Model Preview -->
             <Border Grid.Column="1"
-                    BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                     BorderThickness="1,0,0,0"
                     Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
                 <Grid RowDefinitions="Auto,*,Auto">
                     <!-- Preview Header -->
                     <Border Grid.Row="0" Padding="10"
-                            BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="0,0,0,1">
                         <TextBlock Text="Model Preview" FontWeight="SemiBold" FontSize="{DynamicResource FontSizeNormal}"/>
                     </Border>
@@ -302,7 +302,7 @@
 
                     <!-- Preview Controls -->
                     <Border Grid.Row="2" Padding="10"
-                            BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                             BorderThickness="0,1,0,0">
                         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
                             <Button x:Name="RotateLeftButton" Content="↺" Width="32" Height="32"

@@ -119,7 +119,7 @@
                 <!-- Header Row -->
                 <Border Grid.Row="0"
                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                        BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                        BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1,1,1,0"
                         CornerRadius="4,4,0,0"
                         Padding="10,8,25,8">
@@ -136,7 +136,7 @@
                 <!-- Virtualized Feats Items using ListBox -->
                 <ListBox Grid.Row="1"
                          x:Name="FeatsList"
-                         BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                         BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                          BorderThickness="1,0,1,1"
                          Background="Transparent"
                          SelectionMode="Single">
@@ -215,7 +215,7 @@
                       Margin="0,10,0,0"
                       IsExpanded="False"
                       x:Name="SpecialAbilitiesExpander">
-                <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                         BorderThickness="1"
                         CornerRadius="4"
                         Padding="15"

@@ -51,7 +51,7 @@
         <!-- Status Bar (top position for visibility during loading) -->
         <Border DockPanel.Dock="Top"
                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                 BorderThickness="1"
                 CornerRadius="4"
                 Padding="8,4"
@@ -105,7 +105,7 @@
                 </Grid.RowDefinitions>
 
             <!-- Store Properties Panel -->
-            <Border Grid.Row="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,8"
+            <Border Grid.Row="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,8"
                     AutomationProperties.AutomationId="StorePropertiesPanel">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -221,7 +221,7 @@
                 <!-- Buy Restrictions Panel -->
                 <Expander Grid.Column="0" Header="Buy Restrictions" IsExpanded="False"
                           AutomationProperties.AutomationId="BuyRestrictionsExpander">
-                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
                         <StackPanel Spacing="8">
                             <!-- Buy Stolen Goods (moved from Store Properties) -->
                             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -231,7 +231,7 @@
                                 <TextBlock Text="%" VerticalAlignment="Center" IsVisible="{Binding IsChecked, ElementName=BlackMarketCheck}"/>
                             </StackPanel>
 
-                            <Separator Height="1" Background="{DynamicResource SystemBaseMediumLowColor}" Margin="0,4"/>
+                            <Separator Height="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="0,4"/>
 
                             <!-- Mode Selection -->
                             <StackPanel Spacing="4">
@@ -276,7 +276,7 @@
                 <!-- Local Variables Panel -->
                 <Expander Grid.Column="2" Header="Local Variables" IsExpanded="False"
                           AutomationProperties.AutomationId="VariablesExpander">
-                    <Border BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,4,0,0">
                         <DockPanel>
                             <!-- Action Buttons -->
                             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
@@ -347,7 +347,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Store Inventory Panel -->
-                <Border Grid.Column="0" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4"
+                <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4"
                         AutomationProperties.AutomationId="StoreInventoryPanel">
                     <DockPanel>
                         <!-- Header -->
@@ -356,7 +356,7 @@
                         </Border>
 
                         <!-- Search/Filter Bar -->
-                        <Border DockPanel.Dock="Top" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1">
+                        <Border DockPanel.Dock="Top" Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -368,11 +368,11 @@
                         </Border>
 
                         <!-- Action Buttons (must dock before DataGrid fills remaining space) -->
-                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
+                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Content="Select All" Click="OnSelectAllStoreItems" ToolTip.Tip="Select all items in the store" AutomationProperties.AutomationId="SelectAllStoreButton"/>
                                 <Button Content="Remove" Click="OnRemoveFromStore" ToolTip.Tip="Remove selected items from store" AutomationProperties.AutomationId="RemoveFromStoreButton"/>
-                                <Separator Width="1" Background="{DynamicResource SystemBaseMediumLowColor}" Margin="4,2"/>
+                                <Separator Width="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="4,2"/>
                                 <Button Content="∞ Selected" Click="OnSetInfinite" ToolTip.Tip="Set selected items to infinite stock" AutomationProperties.AutomationId="SetInfiniteButton"/>
                                 <Button Content="∞ All" Click="OnSetAllInfinite" ToolTip.Tip="Set ALL items to infinite stock" AutomationProperties.AutomationId="SetAllInfiniteButton"/>
                                 <Button Content="Clear ∞" Click="OnClearInfinite" ToolTip.Tip="Clear infinite flag on selected items" AutomationProperties.AutomationId="ClearInfiniteButton"/>
@@ -421,11 +421,11 @@
 
                 <!-- Splitter -->
                 <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch"
-                              Background="{DynamicResource SystemBaseMediumLowColor}"
+                              Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                               AutomationProperties.AutomationId="MainSplitter"/>
 
                 <!-- Item Palette Panel -->
-                <Border Grid.Column="2" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="1" CornerRadius="4"
+                <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" CornerRadius="4"
                         AutomationProperties.AutomationId="ItemPalettePanel">
                     <DockPanel>
                         <!-- Header -->
@@ -434,7 +434,7 @@
                         </Border>
 
                         <!-- Filter Bar -->
-                        <Border DockPanel.Dock="Top" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,0,0,1">
+                        <Border DockPanel.Dock="Top" Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1">
                             <StackPanel Spacing="4">
                                 <!-- Search -->
                                 <Grid>
@@ -461,7 +461,7 @@
                         </Border>
 
                         <!-- Action Buttons (must dock before DataGrid fills remaining space) -->
-                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemBaseMediumLowColor}" BorderThickness="0,1,0,0">
+                        <Border DockPanel.Dock="Bottom" Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Content="Add to Store" Click="OnAddToStore" AutomationProperties.AutomationId="AddToStoreButton"/>
                             </StackPanel>
