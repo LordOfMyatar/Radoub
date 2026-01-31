@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.10-alpha] - 2026-01-31
-**Branch**: `fence/issue-1144` | **PR**: #TBD
+**Branch**: `fence/issue-1144` | **PR**: #1168
 
 ### Feat: Integrate StoreBrowserPanel as collapsible left panel (#1144)
 
