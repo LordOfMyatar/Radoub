@@ -10,6 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.10-alpha] - 2026-01-31
+**Branch**: `fence/issue-1144` | **PR**: #TBD
+
+### Feat: Integrate StoreBrowserPanel as collapsible left panel (#1144)
+
+Part of Epic #1141 (File Browser Panel).
+
+- [ ] Add HAK scanning for .utm files to StoreBrowserWindow
+- [ ] Create StoreBrowserPanel for embedding in MainWindow
+- [ ] Add collapsible left panel with GridSplitter
+- [ ] Search box at top of panel
+- [ ] "Show HAK" checkbox
+- [ ] Current file highlighted
+- [ ] Single-click → auto-save + load
+- [ ] Remember panel width in settings
+
+---
+
 ## [0.1.9-alpha] - 2026-01-27
 **Branch**: `radoub/issue-1138` | **PR**: #1139
 
