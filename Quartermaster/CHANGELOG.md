@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.62-alpha] - 2026-01-31
-**Branch**: `quartermaster/issue-1145` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1145` | **PR**: #1169
 
 ### Feature: Integrate CreatureBrowserPanel as collapsible left panel (#1145)
 
