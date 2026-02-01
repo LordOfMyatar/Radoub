@@ -34,17 +34,20 @@ sealed class Program
             SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
-        // Initialize unified logging - use shared settings if enabled
-        var sharedSettings = RadoubSettings.Instance;
-        var logLevel = sharedSettings.UseSharedLogging ? sharedSettings.SharedLogLevel : LogLevel.INFO;
-        var retainSessions = sharedSettings.UseSharedLogging ? sharedSettings.SharedLogRetentionSessions : 10;
-
+        // Initialize unified logging FIRST with defaults (before any code that might log)
         UnifiedLogger.Configure(new LoggerConfig
         {
             AppName = "Fence",
-            LogLevel = logLevel,
-            RetainSessions = retainSessions
+            LogLevel = LogLevel.INFO,
+            RetainSessions = 10
         });
+
+        // Then apply shared settings if enabled
+        var sharedSettings = RadoubSettings.Instance;
+        if (sharedSettings.UseSharedLogging)
+        {
+            UnifiedLogger.SetLogLevel(sharedSettings.SharedLogLevel);
+        }
 
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
