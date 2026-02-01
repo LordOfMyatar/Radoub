@@ -173,6 +173,8 @@ public static class PltLayers
 
     /// <summary>
     /// Get the palette filename for a layer.
+    /// Note: NWN base game only includes primary palettes (*01).
+    /// Secondary palettes (*02) may not exist and will fall back to primary.
     /// </summary>
     public static string GetPaletteResRef(int layerId) => layerId switch
     {
@@ -181,11 +183,11 @@ public static class PltLayers
         Metal1 => "pal_armor01",
         Metal2 => "pal_armor02",
         Cloth1 => "pal_cloth01",
-        Cloth2 => "pal_cloth02",
+        Cloth2 => "pal_cloth01",  // NWN uses cloth01 for both cloth layers
         Leather1 => "pal_leath01",
-        Leather2 => "pal_leath02",
+        Leather2 => "pal_leath01", // NWN uses leath01 for both leather layers
         Tattoo1 => "pal_tattoo01",
-        Tattoo2 => "pal_tattoo02",
+        Tattoo2 => "pal_tattoo01", // NWN uses tattoo01 for both tattoo layers
         _ => "pal_skin01"
     };
 }
