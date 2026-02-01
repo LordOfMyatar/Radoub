@@ -18,7 +18,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Fix visual issues in creature display.
 
 #### Work Items
-- [ ] #1134 - 3D Preview: Texture/Coloring Issues After Geometry Fix
+- [x] #1134 - 3D Preview: Texture/Coloring Issues After Geometry Fix
+
+#### Fixes Applied
+
+##### Lighting Improvements
+- Simplified fragment shader to use soft shading model instead of complex multi-light setup
+- Increased minimum brightness for back-facing surfaces (50% base lighting)
+- New lighting matches Aurora Toolset's preview appearance more closely
+
+##### PLT Texture Fixes
+- Fixed secondary palette layers (Cloth2, Leather2, Tattoo2) falling back to grayscale
+- NWN base game only includes primary palettes; secondary layers now correctly use primary palettes
+- Added diagnostic logging for PLT layer distribution and palette loading
 
 ---
 
