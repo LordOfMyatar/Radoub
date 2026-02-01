@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.55] - 2026-02-01
-**Branch**: `radoub/issue-1185` | **PR**: #TBD
+**Branch**: `radoub/issue-1185` | **PR**: #1187
 
 ### Sprint: Mixed Quick Wins (#1185)
 
