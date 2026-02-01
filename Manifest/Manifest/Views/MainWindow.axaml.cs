@@ -1360,22 +1360,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void UpdateTokenPreview()
     {
-        var text = EntryTextBox.Text ?? "";
-        EntryTokenPreview.TokenText = text;
-
-        // Load user color config if available
+        // Load user color config BEFORE setting text
+        // This ensures the parser is configured before processing tokens
+        UserColorConfig? config = null;
         try
         {
-            var config = UserColorConfigLoader.Load();
-            if (config != null)
-            {
-                EntryTokenPreview.UserColorConfig = config;
-            }
+            config = UserColorConfigLoader.Load();
         }
         catch
         {
             // Ignore config loading errors
         }
+
+        // Always assign config (even if null) to ensure property changed fires
+        EntryTokenPreview.UserColorConfig = config;
+
+        // Then set text - parser will now use the configured color mappings
+        var text = EntryTextBox.Text ?? "";
+        EntryTokenPreview.TokenText = text;
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

@@ -20,7 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Fixes - Manifest & Logging (#1151)
 
-- [ ] #1113 - Logging not respecting Trebuchet settings
+- [x] #1113 - Logging not respecting Trebuchet settings
+  - Added SharedLogLevel, SharedLogRetentionSessions to RadoubSettings
+  - All tools read logging config from shared settings at startup
+  - Trebuchet syncs its logging settings to shared settings
 
 ---
 

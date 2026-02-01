@@ -15,8 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Bug Fixes - Manifest & Logging (#1151)
 
-- [ ] #1115 - Token preview sometimes doesn't show color
-- [ ] #1114 - Duplicate theme list entries
+- [x] #1115 - Token preview sometimes doesn't show color
+  - Fixed property assignment order in UpdateTokenPreview() - config must be set before text
+- [x] #1114 - Duplicate theme list entries (already fixed in prior commit)
 
 ---
 
