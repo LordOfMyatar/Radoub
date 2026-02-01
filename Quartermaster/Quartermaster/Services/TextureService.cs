@@ -55,12 +55,23 @@ public class TextureService
 
             // Load all required palettes
             var palettes = new Dictionary<int, PaletteData>();
+            var paletteLoadInfo = new List<string>();
             for (int layerId = 0; layerId <= 9; layerId++)
             {
-                var palette = LoadPalette(PltLayers.GetPaletteResRef(layerId));
+                var paletteResRef = PltLayers.GetPaletteResRef(layerId);
+                var palette = LoadPalette(paletteResRef);
                 if (palette != null)
+                {
                     palettes[layerId] = palette;
+                    paletteLoadInfo.Add($"L{layerId}:OK");
+                }
+                else
+                {
+                    paletteLoadInfo.Add($"L{layerId}:MISS");
+                }
             }
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[PLT] {pltResRef}: Palettes [{string.Join(", ", paletteLoadInfo)}]");
 
             // Set up color indices for each layer
             var layerColors = new Dictionary<int, int>
@@ -76,6 +87,11 @@ public class TextureService
                 [PltLayers.Tattoo1] = colorIndices.Tattoo1,
                 [PltLayers.Tattoo2] = colorIndices.Tattoo2
             };
+
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[PLT] {pltResRef}: Colors Skin={colorIndices.Skin}, Hair={colorIndices.Hair}, " +
+                $"M1={colorIndices.Metal1}, M2={colorIndices.Metal2}, C1={colorIndices.Cloth1}, " +
+                $"C2={colorIndices.Cloth2}, L1={colorIndices.Leather1}, L2={colorIndices.Leather2}");
 
             // Render the PLT
             var pixels = PltReader.Render(pltFile, palettes, layerColors);
@@ -214,6 +230,8 @@ public class TextureService
         try
         {
             var tgaImage = TgaReader.Read(tgaData);
+            UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                $"[Palette] Loaded '{paletteResRef}': {tgaImage.Width}x{tgaImage.Height}");
             var palette = new PaletteData(tgaImage.Width, tgaImage.Height, tgaImage.Pixels);
             _paletteCache[paletteResRef] = palette;
             return palette;

@@ -94,17 +94,24 @@ in vec2 TexCoord;
 
 uniform sampler2D diffuseTexture;
 uniform vec3 lightDir;
-uniform vec3 lightColor;
-uniform vec3 ambientColor;
+uniform float lightIntensity;
+uniform float shadowSoftness;
 uniform bool hasTexture;
 uniform vec3 flatColor;
 
 void main()
 {
     vec3 norm = normalize(Normal);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
-    vec3 ambient = ambientColor;
+
+    // Simple diffuse shading with high ambient to match Aurora Toolset style
+    // Aurora uses very soft lighting with minimal shadows
+    float NdotL = dot(norm, lightDir);
+
+    // Soft shading: remap [-1,1] to [shadowSoftness, 1.0]
+    // This ensures even back-facing surfaces get some light
+    float shade = NdotL * 0.5 + 0.5;  // Remap to [0, 1]
+    shade = mix(shadowSoftness, 1.0, shade);  // Remap to [shadowSoftness, 1.0]
+    shade *= lightIntensity;
 
     vec3 baseColor;
     if (hasTexture) {
@@ -113,7 +120,7 @@ void main()
         baseColor = flatColor;
     }
 
-    vec3 result = (ambient + diffuse) * baseColor;
+    vec3 result = shade * baseColor;
     FragColor = vec4(result, 1.0);
 }
 ";
@@ -483,11 +490,18 @@ void main()
             UnifiedLogger.LogApplication(LogLevel.INFO, $"Render: center.Z={_cameraTarget.Z:F3}, scale={scale:F3}, verticalOffset={verticalOffset:F3}, uniformLoc={offsetLoc}");
         }
 
-        // Lighting - from upper front right
-        var lightDir = Vector3.Normalize(new Vector3(0.5f, 0.5f, 0.8f));
+        // Lighting setup - designed to match Aurora Toolset's preview appearance
+        // Aurora uses very soft, even lighting with minimal harsh shadows
+        // Light comes from upper front
+        var lightDir = Vector3.Normalize(new Vector3(0.0f, 0.5f, 1.0f));
         SetUniformVec3("lightDir", lightDir);
-        SetUniformVec3("lightColor", new Vector3(0.8f, 0.8f, 0.8f));
-        SetUniformVec3("ambientColor", new Vector3(0.3f, 0.3f, 0.3f));
+
+        // Light intensity: overall brightness multiplier (1.0 = full texture color)
+        SetUniformFloat("lightIntensity", 1.0f);
+
+        // Shadow softness: minimum brightness for surfaces facing away from light
+        // Higher value = softer shadows (0.4 means back-facing surfaces get 40% light)
+        SetUniformFloat("shadowSoftness", 0.5f);
 
         // Bind VAO and draw
         _gl.BindVertexArray(_vao);

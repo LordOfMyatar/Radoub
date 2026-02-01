@@ -10,6 +10,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.63-alpha] - 2026-01-31
+**Branch**: `quartermaster/issue-1153` | **PR**: #1170
+
+### Sprint: 3D Preview & Appearance Fixes (#1153)
+
+Fix visual issues in creature display.
+
+#### Work Items
+- [x] #1134 - 3D Preview: Texture/Coloring Issues After Geometry Fix
+
+#### Fixes Applied
+
+##### Lighting Improvements
+- Simplified fragment shader to use soft shading model instead of complex multi-light setup
+- Increased minimum brightness for back-facing surfaces (50% base lighting)
+- New lighting matches Aurora Toolset's preview appearance more closely
+
+##### PLT Texture Fixes
+- Fixed secondary palette layers (Cloth2, Leather2, Tattoo2) falling back to grayscale
+- NWN base game only includes primary palettes; secondary layers now correctly use primary palettes
+- Added diagnostic logging for PLT layer distribution and palette loading
+
+---
+
 ## [0.1.62-alpha] - 2026-01-31
 **Branch**: `quartermaster/issue-1145` | **PR**: #1169
 
