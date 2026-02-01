@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.63-alpha] - 2026-02-01
-**Branch**: `quartermaster/issue-1171` | **PR**: #TBD
+**Branch**: `quartermaster/issue-1171` | **PR**: #1172
 
 ### Feature: Restart MDL Format Implementation (#1171)
 
