@@ -24,7 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Capitalized "browse..." → "Browse..." in 7 browser windows (Radoub.UI + Parley)
   - Added ellipsis to quest browse buttons in Parley MainWindow
 - [x] #1112 - Add Clear Recent Modules button (Trebuchet)
-- [ ] #1019 - Expose comments field for UTC files (QM)
+- [x] #1019 - Expose comments field for UTC files (QM)
+  - Already implemented in Advanced panel (Sprint #1016)
+  - Comment field visible for UTC files, hidden for BIC files
+  - Supports multiline text with word wrap
 
 **Removed from sprint:**
 - #1114 - Already completed
