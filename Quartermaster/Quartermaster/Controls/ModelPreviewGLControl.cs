@@ -640,12 +640,12 @@ void main()
                 vertices.Add(normal.Y);
                 vertices.Add(normal.Z);
 
-                // Texcoord
+                // Texcoord - flip V for OpenGL (origin at bottom-left vs NWN's top-left)
                 if (hasUVs)
                 {
                     var uv = mesh.TextureCoords[0][i];
                     vertices.Add(uv.X);
-                    vertices.Add(1.0f - uv.Y); // Flip V
+                    vertices.Add(1.0f - uv.Y);
                 }
                 else
                 {

@@ -121,8 +121,13 @@ public partial class MdlBinaryReader
         var faces = new MdlFace[count];
         if (_modelData.Length == 0 || offset + count * FaceSize > _modelData.Length)
         {
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.WARN,
+                $"[MDL] ReadFaces BOUNDS CHECK: offset={offset}, count={count}, modelDataLen={_modelData.Length}");
             return faces;
         }
+
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            $"[MDL] ReadFaces: offset={offset}, count={count}, faceSize={FaceSize}");
 
         using var stream = new MemoryStream(_modelData);
         using var reader = new BinaryReader(stream);
@@ -130,6 +135,7 @@ public partial class MdlBinaryReader
         stream.Position = offset;
         for (int i = 0; i < count; i++)
         {
+            var faceStartPos = stream.Position;
             var face = new MdlFace();
             face.PlaneNormal = ReadVector3(reader);
             face.PlaneDistance = reader.ReadSingle();
@@ -144,6 +150,14 @@ public partial class MdlBinaryReader
             face.VertexIndex0 = reader.ReadUInt16();
             face.VertexIndex1 = reader.ReadUInt16();
             face.VertexIndex2 = reader.ReadUInt16();
+
+            // Log first few faces in detail
+            if (i < 3)
+            {
+                Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                    $"[MDL] Face[{i}] @{faceStartPos}: normal=({face.PlaneNormal.X:F2},{face.PlaneNormal.Y:F2},{face.PlaneNormal.Z:F2}), " +
+                    $"adj=[{face.AdjacentFace0},{face.AdjacentFace1},{face.AdjacentFace2}], idx=[{face.VertexIndex0},{face.VertexIndex1},{face.VertexIndex2}]");
+            }
 
             faces[i] = face;
         }

@@ -116,22 +116,23 @@ public partial class MdlBinaryReader
                 $"[MDL] Mesh '{mesh.Name}': raw bytes at vertexOffset: {BitConverter.ToString(rawBytes)}");
         }
 
-        // Detect and skip average normal header if present
+        // NWN body part MDLs have a 12-byte "average normal" header at vertex[0].
+        // This must be skipped or the geometry breaks (spikes to 0,0,1).
+        // xoreos may handle this differently or body parts may work differently there.
+        uint originalVertexOffset = vertexRawOffset;
         vertexRawOffset = DetectAndSkipAverageNormal(vertexRawOffset, vertexCount);
+        bool skippedHeader = (vertexRawOffset != originalVertexOffset);
 
-        uint actualVertexOffset = vertexRawOffset;
-        uint actualNormalsOffset = normalsRawOffset;
-
-        if (vertexCount > 0 && actualVertexOffset != 0xFFFFFFFF && actualVertexOffset != uint.MaxValue)
+        if (vertexCount > 0 && vertexRawOffset != 0xFFFFFFFF && vertexRawOffset != uint.MaxValue)
         {
-            mesh.Vertices = ReadVertices(actualVertexOffset, vertexCount);
+            mesh.Vertices = ReadVertices(vertexRawOffset, vertexCount);
             Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
-                $"[MDL] Mesh '{mesh.Name}': Read {mesh.Vertices?.Length ?? 0} vertices");
+                $"[MDL] Mesh '{mesh.Name}': Read {mesh.Vertices?.Length ?? 0} vertices (skippedHeader={skippedHeader})");
         }
 
-        if (vertexCount > 0 && actualNormalsOffset != 0xFFFFFFFF && actualNormalsOffset != uint.MaxValue)
+        if (vertexCount > 0 && normalsRawOffset != 0xFFFFFFFF && normalsRawOffset != uint.MaxValue)
         {
-            mesh.Normals = ReadVertices(actualNormalsOffset, vertexCount);
+            mesh.Normals = ReadVertices(normalsRawOffset, vertexCount);
         }
 
         // Read texture coordinates
@@ -143,13 +144,44 @@ public partial class MdlBinaryReader
                 var tvertRawOffset = PointerToRawOffset(tvertOffsets[i]);
                 if (tvertRawOffset != 0xFFFFFFFF && tvertRawOffset != uint.MaxValue)
                 {
+                    // Detailed logging to understand data layout
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                        $"[MDL] Mesh '{mesh.Name}' DATA LAYOUT: vtxPtr=0x{vertexDataOffset:X}, vtxRawOff={originalVertexOffset}(+{vertexRawOffset - originalVertexOffset}), uvPtr=0x{tvertOffsets[i]:X}, uvRawOff={tvertRawOffset}, vtxCount={vertexCount}");
+
+                    // Calculate expected layout to check for header presence
+                    uint expectedUvOffset = originalVertexOffset + (uint)(vertexCount * 12);  // vertices * 12 bytes each
+                    uint expectedUvOffsetWithHeader = originalVertexOffset + (uint)((vertexCount + 1) * 12);  // +1 for header
+
+                    string matchResult = tvertRawOffset == expectedUvOffset ? "noHeader" : (tvertRawOffset == expectedUvOffsetWithHeader ? "withHeader" : "neither");
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                        $"[MDL] Mesh '{mesh.Name}' OFFSET ANALYSIS: actualUvOff={tvertRawOffset}, expectedIfNoHeader={expectedUvOffset}, expectedIfHeader={expectedUvOffsetWithHeader}, match={matchResult}");
+
+                    // Log first 3 vertices and UVs for alignment check
+                    if (vertexRawOffset + 36 <= _rawData.Length && tvertRawOffset + 24 <= _rawData.Length)
+                    {
+                        var sb = new System.Text.StringBuilder();
+                        sb.Append($"[MDL] Mesh '{mesh.Name}' ALIGNMENT CHECK (skippedVtxHeader={skippedHeader}):\n");
+                        for (int vi = 0; vi < 3 && vi < vertexCount; vi++)
+                        {
+                            int vtxOff = (int)vertexRawOffset + vi * 12;
+                            int uvOff = (int)tvertRawOffset + vi * 8;
+                            float vx = BitConverter.ToSingle(_rawData, vtxOff);
+                            float vy = BitConverter.ToSingle(_rawData, vtxOff + 4);
+                            float vz = BitConverter.ToSingle(_rawData, vtxOff + 8);
+                            float u = BitConverter.ToSingle(_rawData, uvOff);
+                            float v = BitConverter.ToSingle(_rawData, uvOff + 4);
+                            sb.Append($"  [{vi}] vtx@{vtxOff}=({vx:F4},{vy:F4},{vz:F4}) uv@{uvOff}=({u:F4},{v:F4})\n");
+                        }
+                        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG, sb.ToString());
+                    }
+
                     texCoordsList.Add(ReadTexCoords(tvertRawOffset, vertexCount));
                 }
             }
             mesh.TextureCoords = texCoordsList.ToArray();
         }
 
-        // Read vertex colors
+        // Read vertex colors - DO NOT skip color header even if we skipped vertex header
         var colorsRawOffset = PointerToRawOffset(colorsOffset);
         if (vertexCount > 0 && colorsRawOffset != 0xFFFFFFFF && colorsRawOffset != uint.MaxValue)
         {
