@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.14.2-alpha] - 2026-02-01
-**Branch**: `radoub/issue-1151` | **PR**: #TBD
+**Branch**: `radoub/issue-1151` | **PR**: #1180
 
 ### Sprint: Bug Fixes - Manifest & Logging (#1151)
 
