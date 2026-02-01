@@ -117,7 +117,10 @@ public partial class MdlBinaryReader
         }
 
         // Detect and skip average normal header if present
+        // This header is prepended to ALL raw data arrays (vertices, UVs, normals)
+        var originalVertexRawOffset = vertexRawOffset;
         vertexRawOffset = DetectAndSkipAverageNormal(vertexRawOffset, vertexCount);
+        uint avgNormalSkip = vertexRawOffset - originalVertexRawOffset;  // Usually 0 or 12
 
         uint actualVertexOffset = vertexRawOffset;
         uint actualNormalsOffset = normalsRawOffset;
@@ -134,7 +137,8 @@ public partial class MdlBinaryReader
             mesh.Normals = ReadVertices(actualNormalsOffset, vertexCount);
         }
 
-        // Read texture coordinates
+        // Read texture coordinates - apply same average normal skip as vertices
+        // The UV offset in MDL header is relative to the same base that vertex offset uses
         if (textureCount > 0 && vertexCount > 0)
         {
             var texCoordsList = new List<Vector2[]>();
@@ -143,7 +147,11 @@ public partial class MdlBinaryReader
                 var tvertRawOffset = PointerToRawOffset(tvertOffsets[i]);
                 if (tvertRawOffset != 0xFFFFFFFF && tvertRawOffset != uint.MaxValue)
                 {
-                    texCoordsList.Add(ReadTexCoords(tvertRawOffset, vertexCount));
+                    // Apply same offset adjustment as vertices
+                    var adjustedTvertOffset = tvertRawOffset + avgNormalSkip;
+                    Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                        $"[MDL] Mesh '{mesh.Name}': UV[{i}] offset {tvertRawOffset} + {avgNormalSkip} = {adjustedTvertOffset}");
+                    texCoordsList.Add(ReadTexCoords(adjustedTvertOffset, vertexCount));
                 }
             }
             mesh.TextureCoords = texCoordsList.ToArray();

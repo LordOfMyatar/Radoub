@@ -66,6 +66,7 @@ public static class PltReader
     {
         byte[] output = new byte[plt.Width * plt.Height * 4];
 
+        // No vertical flip - texture coordinates handle orientation
         for (int i = 0; i < plt.Pixels.Length; i++)
         {
             var pixel = plt.Pixels[i];
