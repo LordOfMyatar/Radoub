@@ -191,6 +191,10 @@ public class SettingsService : INotifyPropertyChanged
             if (_loggingSettings.LogRetentionSessions != clamped)
             {
                 _loggingSettings.LogRetentionSessions = clamped;
+
+                // Sync to shared settings so other tools use this retention
+                RadoubSettings.Instance.SharedLogRetentionSessions = clamped;
+
                 OnPropertyChanged();
                 SaveSettings();
                 UnifiedLogger.LogSettings(LogLevel.INFO, $"Log retention set to {clamped} sessions");
@@ -207,6 +211,10 @@ public class SettingsService : INotifyPropertyChanged
             {
                 _loggingSettings.LogLevel = value;
                 _loggingSettings.ApplyToLogger();
+
+                // Sync to shared settings so other tools use this level
+                RadoubSettings.Instance.SharedLogLevel = value;
+
                 OnPropertyChanged();
                 SaveSettings();
             }

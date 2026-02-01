@@ -2,6 +2,7 @@ using Avalonia;
 using MerchantEditor.Services;
 using System;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace MerchantEditor;
@@ -33,12 +34,16 @@ sealed class Program
             SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
-        // Initialize unified logging
+        // Initialize unified logging - use shared settings if enabled
+        var sharedSettings = RadoubSettings.Instance;
+        var logLevel = sharedSettings.UseSharedLogging ? sharedSettings.SharedLogLevel : LogLevel.INFO;
+        var retainSessions = sharedSettings.UseSharedLogging ? sharedSettings.SharedLogRetentionSessions : 10;
+
         UnifiedLogger.Configure(new LoggerConfig
         {
             AppName = "Fence",
-            LogLevel = LogLevel.INFO,
-            RetainSessions = 10
+            LogLevel = logLevel,
+            RetainSessions = retainSessions
         });
 
         // Start GUI application

@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using DialogEditor.Services;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace DialogEditor;
@@ -119,12 +120,16 @@ sealed class Program
             SafeMode.ActivateSafeMode(clearParameterCache: true, clearPluginData: true);
         }
 
-        // Initialize unified logging (must happen before any logging calls)
+        // Initialize unified logging - use shared settings if enabled
+        var sharedSettings = RadoubSettings.Instance;
+        var logLevel = sharedSettings.UseSharedLogging ? sharedSettings.SharedLogLevel : LogLevel.INFO;
+        var retainSessions = sharedSettings.UseSharedLogging ? sharedSettings.SharedLogRetentionSessions : 10;
+
         UnifiedLogger.Configure(new LoggerConfig
         {
             AppName = "Parley",
-            LogLevel = LogLevel.INFO,
-            RetainSessions = 10
+            LogLevel = logLevel,
+            RetainSessions = retainSessions
         });
 
         // Start GUI application

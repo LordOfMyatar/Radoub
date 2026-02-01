@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Radoub.Formats.Common;
+using Radoub.Formats.Logging;
 
 namespace Radoub.Formats.Settings;
 
@@ -79,6 +80,11 @@ public class RadoubSettings : INotifyPropertyChanged
     // Theme settings (shared across all tools)
     private string _sharedThemeId = "";  // Empty = no shared theme (tools use their own)
     private bool _useSharedTheme = true;  // If true, tools prefer shared theme over tool-specific
+
+    // Logging settings (shared across all tools)
+    private LogLevel _sharedLogLevel = LogLevel.INFO;
+    private int _sharedLogRetentionSessions = 3;
+    private bool _useSharedLogging = true;  // If true, tools use shared logging settings
 
     // Tool paths - auto-populated when tools run, used for cross-tool integration
     private string _parleyPath = "";
@@ -328,6 +334,55 @@ public class RadoubSettings : INotifyPropertyChanged
     public bool HasSharedTheme => _useSharedTheme && !string.IsNullOrEmpty(_sharedThemeId);
 
     /// <summary>
+    /// Shared log level for all tools.
+    /// </summary>
+    public LogLevel SharedLogLevel
+    {
+        get => _sharedLogLevel;
+        set { if (SetProperty(ref _sharedLogLevel, value)) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Shared log retention sessions (1-10).
+    /// </summary>
+    public int SharedLogRetentionSessions
+    {
+        get => _sharedLogRetentionSessions;
+        set
+        {
+            var clamped = Math.Max(1, Math.Min(10, value));
+            if (SetProperty(ref _sharedLogRetentionSessions, clamped)) SaveSettings();
+        }
+    }
+
+    /// <summary>
+    /// If true, tools use shared logging settings instead of their own.
+    /// </summary>
+    public bool UseSharedLogging
+    {
+        get => _useSharedLogging;
+        set { if (SetProperty(ref _useSharedLogging, value)) SaveSettings(); }
+    }
+
+    /// <summary>
+    /// Check if shared logging is enabled.
+    /// </summary>
+    public bool HasSharedLogging => _useSharedLogging;
+
+    /// <summary>
+    /// Get a LoggingSettings instance from shared settings.
+    /// Tools can use this to initialize their logging.
+    /// </summary>
+    public LoggingSettings GetSharedLoggingSettings()
+    {
+        return new LoggingSettings
+        {
+            LogLevel = _sharedLogLevel,
+            LogRetentionSessions = _sharedLogRetentionSessions
+        };
+    }
+
+    /// <summary>
     /// Get the path to Radoub-level themes folder.
     /// Location: ~/Radoub/Themes/
     /// </summary>
@@ -540,6 +595,11 @@ public class RadoubSettings : INotifyPropertyChanged
                     _sharedThemeId = data.SharedThemeId ?? "";
                     _useSharedTheme = data.UseSharedTheme;
 
+                    // Logging settings
+                    _sharedLogLevel = data.SharedLogLevel;
+                    _sharedLogRetentionSessions = Math.Max(1, Math.Min(10, data.SharedLogRetentionSessions));
+                    _useSharedLogging = data.UseSharedLogging;
+
                     // Tool paths
                     _parleyPath = PathHelper.ExpandPath(data.ParleyPath ?? "");
                     _manifestPath = PathHelper.ExpandPath(data.ManifestPath ?? "");
@@ -580,6 +640,11 @@ public class RadoubSettings : INotifyPropertyChanged
                 // Theme settings
                 SharedThemeId = _sharedThemeId,
                 UseSharedTheme = _useSharedTheme,
+
+                // Logging settings
+                SharedLogLevel = _sharedLogLevel,
+                SharedLogRetentionSessions = _sharedLogRetentionSessions,
+                UseSharedLogging = _useSharedLogging,
 
                 // Tool paths
                 ParleyPath = PathHelper.ContractPath(_parleyPath),
@@ -629,6 +694,11 @@ public class RadoubSettings : INotifyPropertyChanged
         // Theme settings (shared across all tools)
         public string? SharedThemeId { get; set; }
         public bool UseSharedTheme { get; set; } = true;
+
+        // Logging settings (shared across all tools)
+        public LogLevel SharedLogLevel { get; set; } = LogLevel.INFO;
+        public int SharedLogRetentionSessions { get; set; } = 3;
+        public bool UseSharedLogging { get; set; } = true;
 
         // Tool paths for cross-tool discovery
         public string? ParleyPath { get; set; }
