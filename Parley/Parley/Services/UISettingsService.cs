@@ -35,6 +35,9 @@ namespace DialogEditor.Services
         // TreeView display settings (#903)
         private bool _treeViewWordWrap = false; // Default: OFF (traditional single-line display)
 
+        // TreeView dynamic width (#1158) - Runtime only, not persisted
+        private double _treeViewTextMaxWidth = 400; // Default fallback width
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
@@ -202,6 +205,26 @@ namespace DialogEditor.Services
                 {
                     SettingsChanged?.Invoke();
                     UnifiedLogger.LogUI(LogLevel.INFO, $"TreeView word wrap set to {value}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Dynamic max width for TreeView text when word wrap is enabled (#1158).
+        /// This is calculated at runtime based on the TreeView panel width.
+        /// Not persisted to settings - recalculated on each session.
+        /// </summary>
+        public double TreeViewTextMaxWidth
+        {
+            get => _treeViewTextMaxWidth;
+            set
+            {
+                // Minimum 200px to ensure readability
+                var clampedValue = Math.Max(200, value);
+                if (SetProperty(ref _treeViewTextMaxWidth, clampedValue))
+                {
+                    // Don't invoke SettingsChanged - this is runtime-only
+                    UnifiedLogger.LogUI(LogLevel.DEBUG, $"TreeView text max width updated to {clampedValue}");
                 }
             }
         }

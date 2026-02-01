@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [x] #152 - Dialog Validation: Warning for unsupported characters (emojis, etc.)
 - [x] #288 - Move status bar to top of window
-- [ ] #1158 - Word wrap should fit dialog panel width, not its own boundary
+- [x] #1158 - Word wrap should fit dialog panel width, not its own boundary
 
 ---
 
