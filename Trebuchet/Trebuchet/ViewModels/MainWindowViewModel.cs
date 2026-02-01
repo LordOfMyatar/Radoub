@@ -388,6 +388,13 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void ClearRecentModules()
+    {
+        SettingsService.Instance.ClearRecentModules();
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Cleared recent modules list");
+    }
+
+    [RelayCommand]
     private void OpenSettings()
     {
         if (_parentWindow == null) return;

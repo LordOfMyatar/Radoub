@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] #868 - Standardize browse button labeling across all tools
   - Capitalized "browse..." → "Browse..." in 7 browser windows (Radoub.UI + Parley)
   - Added ellipsis to quest browse buttons in Parley MainWindow
-- [ ] #1112 - Add Clear Recent Modules button (Trebuchet)
+- [x] #1112 - Add Clear Recent Modules button (Trebuchet)
 - [ ] #1019 - Expose comments field for UTC files (QM)
 
 **Removed from sprint:**

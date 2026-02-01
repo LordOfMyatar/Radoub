@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.7.1-alpha] - 2026-02-01
+**Branch**: `radoub/issue-1185` | **PR**: #1187
+
+### Feature: Clear Recent Modules (#1112)
+
+- Add "Clear" button next to Recent Modules heading
+- Clears all entries from the recent modules list
+
+---
+
 ## [1.7.0-alpha] - 2026-01-31
 **Branch**: `trebuchet/issue-1150` | **PR**: #1159
 
