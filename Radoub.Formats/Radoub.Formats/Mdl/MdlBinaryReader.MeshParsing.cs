@@ -134,7 +134,11 @@ public partial class MdlBinaryReader
 
         if (vertexCount > 0 && actualNormalsOffset != 0xFFFFFFFF && actualNormalsOffset != uint.MaxValue)
         {
-            mesh.Normals = ReadVertices(actualNormalsOffset, vertexCount);
+            // Apply same offset adjustment as vertices - normals array also has the avg normal header
+            var adjustedNormalsOffset = actualNormalsOffset + avgNormalSkip;
+            Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+                $"[MDL] Mesh '{mesh.Name}': Normals offset {actualNormalsOffset} + {avgNormalSkip} = {adjustedNormalsOffset}");
+            mesh.Normals = ReadVertices(adjustedNormalsOffset, vertexCount);
         }
 
         // Read texture coordinates - apply same average normal skip as vertices
