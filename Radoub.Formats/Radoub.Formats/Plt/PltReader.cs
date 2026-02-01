@@ -66,10 +66,16 @@ public static class PltReader
     {
         byte[] output = new byte[plt.Width * plt.Height * 4];
 
+        // Flip vertically for OpenGL: PLT row 0 = top, OpenGL expects row 0 = bottom
         for (int i = 0; i < plt.Pixels.Length; i++)
         {
             var pixel = plt.Pixels[i];
-            int destIndex = i * 4;
+
+            // Calculate flipped destination
+            int srcRow = i / plt.Width;
+            int col = i % plt.Width;
+            int dstRow = plt.Height - 1 - srcRow;
+            int destIndex = (dstRow * plt.Width + col) * 4;
 
             // Get the palette for this layer
             if (!palettes.TryGetValue(pixel.LayerId, out var palette))

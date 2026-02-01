@@ -10,6 +10,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.63-alpha] - 2026-02-01
+**Branch**: `quartermaster/issue-1171` | **PR**: #1172
+
+### Feature: Restart MDL Format Implementation (#1171)
+
+Restart MDL (model) format implementation from scratch for Quartermaster's appearance preview.
+
+#### Scope
+- Remove or archive current MDL implementation
+- Research MDL format specification thoroughly
+- Implement MDL ASCII reader with comprehensive validation
+- Implement MDL binary reader (if needed)
+- Add unit tests with known-good model files
+- Integrate with Quartermaster appearance preview
+
+---
+
 ## [0.1.62-alpha] - 2026-01-31
 **Branch**: `quartermaster/issue-1145` | **PR**: #1169
 
