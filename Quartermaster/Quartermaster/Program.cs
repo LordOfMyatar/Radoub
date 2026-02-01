@@ -2,6 +2,7 @@ using Avalonia;
 using Quartermaster.Services;
 using System;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace Quartermaster;
@@ -33,13 +34,20 @@ sealed class Program
             SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
-        // Initialize unified logging
+        // Initialize unified logging FIRST with defaults (before any code that might log)
         UnifiedLogger.Configure(new LoggerConfig
         {
             AppName = "Quartermaster",
-            LogLevel = LogLevel.DEBUG,
+            LogLevel = LogLevel.INFO,
             RetainSessions = 10
         });
+
+        // Then apply shared settings if enabled
+        var sharedSettings = RadoubSettings.Instance;
+        if (sharedSettings.UseSharedLogging)
+        {
+            UnifiedLogger.SetLogLevel(sharedSettings.SharedLogLevel);
+        }
 
         // Set up global exception handlers to catch crashes
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>

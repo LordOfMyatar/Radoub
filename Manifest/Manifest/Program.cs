@@ -2,6 +2,7 @@ using Avalonia;
 using Manifest.Services;
 using System;
 using Radoub.Formats.Logging;
+using Radoub.Formats.Settings;
 using Radoub.UI.Services;
 
 namespace Manifest;
@@ -36,13 +37,20 @@ sealed class Program
             SafeMode.ActivateSafeMode(clearParameterCache: false, clearPluginData: false);
         }
 
-        // Initialize unified logging
+        // Initialize unified logging FIRST with defaults (before any code that might log)
         UnifiedLogger.Configure(new LoggerConfig
         {
             AppName = "Manifest",
             LogLevel = LogLevel.INFO,
             RetainSessions = 10
         });
+
+        // Then apply shared settings if enabled
+        var sharedSettings = RadoubSettings.Instance;
+        if (sharedSettings.UseSharedLogging)
+        {
+            UnifiedLogger.SetLogLevel(sharedSettings.SharedLogLevel);
+        }
 
         // Start GUI application
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

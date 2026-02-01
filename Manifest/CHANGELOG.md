@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.14.2-alpha] - 2026-02-01
+**Branch**: `radoub/issue-1151` | **PR**: #1180
+
+### Sprint: Bug Fixes - Manifest & Logging (#1151)
+
+- [x] #1115 - Token preview sometimes doesn't show color
+  - Fixed property assignment order in UpdateTokenPreview() - config must be set before text
+- [x] #1114 - Duplicate theme list entries (already fixed in prior commit)
+
+---
+
 ## [0.14.1-alpha] - 2026-01-24
 **Branch**: `radoub/issue-1097` | **PR**: #1100
 

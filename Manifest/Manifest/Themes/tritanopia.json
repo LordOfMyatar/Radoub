@@ -2,7 +2,7 @@
   "manifest_version": "1.0",
   "plugin": {
     "id": "org.manifest.theme.tritanopia",
-    "name": "Tritanopia",
+    "name": "Tritanopia (Blue-Yellow Colorblind)",
     "version": "1.0.0",
     "author": "Radoub Team",
     "description": "Blue-yellow colorblind friendly theme (tritanopia)",

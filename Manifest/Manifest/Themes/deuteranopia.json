@@ -2,7 +2,7 @@
   "manifest_version": "1.0",
   "plugin": {
     "id": "org.manifest.theme.deuteranopia",
-    "name": "Deuteranopia",
+    "name": "Deuteranopia (Red-Green Colorblind)",
     "version": "1.0.0",
     "author": "Radoub Team",
     "description": "Red-green colorblind friendly theme (deuteranopia)",

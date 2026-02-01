@@ -2,7 +2,7 @@
   "manifest_version": "1.0",
   "plugin": {
     "id": "org.manifest.theme.protanopia",
-    "name": "Protanopia",
+    "name": "Protanopia (Red Colorblind)",
     "version": "1.0.0",
     "author": "Radoub Team",
     "description": "Red colorblind friendly theme (protanopia)",

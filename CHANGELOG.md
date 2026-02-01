@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.54] - 2026-02-01
+**Branch**: `radoub/issue-1151` | **PR**: #1180
+
+### Sprint: Bug Fixes - Manifest & Logging (#1151)
+
+- [x] #1113 - Logging not respecting Trebuchet settings
+  - Added SharedLogLevel, SharedLogRetentionSessions to RadoubSettings
+  - All tools read logging config from shared settings at startup
+  - Trebuchet syncs its logging settings to shared settings
+
+---
+
 ## [0.9.53] - 2026-01-31
 **Branch**: `radoub/issue-1142` | **PR**: #1163
 
