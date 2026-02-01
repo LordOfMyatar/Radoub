@@ -66,6 +66,20 @@ public static class PltReader
     {
         byte[] output = new byte[plt.Width * plt.Height * 4];
 
+        // Debug: count pixels per layer
+        var layerCounts = new Dictionary<int, int>();
+        for (int i = 0; i < plt.Pixels.Length; i++)
+        {
+            var layerId = plt.Pixels[i].LayerId;
+            layerCounts[layerId] = layerCounts.GetValueOrDefault(layerId, 0) + 1;
+        }
+
+        // Log layer distribution for diagnostic purposes
+        var layerInfo = string.Join(", ", layerCounts.OrderBy(kv => kv.Key)
+            .Select(kv => $"L{kv.Key}:{kv.Value}"));
+        Logging.UnifiedLogger.LogApplication(Logging.LogLevel.DEBUG,
+            $"[PLT] Render {plt.Width}x{plt.Height}: {layerInfo}");
+
         for (int i = 0; i < plt.Pixels.Length; i++)
         {
             var pixel = plt.Pixels[i];
