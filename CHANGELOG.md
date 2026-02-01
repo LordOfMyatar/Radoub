@@ -15,6 +15,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.55] - 2026-02-01
+**Branch**: `radoub/issue-1185` | **PR**: #TBD
+
+### Sprint: Mixed Quick Wins (#1185)
+
+- [ ] #868 - Standardize browse button labeling across all tools
+- [ ] #1114 - Duplicate theme list entries (Manifest)
+- [ ] #1112 - Add Clear Recent Modules button (Trebuchet)
+- [ ] #1019 - Expose comments field for UTC files (QM)
+- [ ] #874 - Document Ability Points Tracking limitation (QM)
+
+---
+
 ## [0.9.54] - 2026-02-01
 **Branch**: `radoub/issue-1151` | **PR**: #1180
 
