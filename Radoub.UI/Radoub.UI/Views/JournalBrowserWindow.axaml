@@ -85,7 +85,7 @@
                             IsVisible="False"
                             Click="OnResetLocationClick"/>
                     <Button x:Name="BrowseLocationButton"
-                            Content="browse..."
+                            Content="Browse..."
                             FontSize="11"
                             Padding="8,2"
                             Click="OnBrowseLocationClick"/>
