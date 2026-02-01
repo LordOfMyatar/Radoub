@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.14.2-alpha] - 2026-02-01
+**Branch**: `radoub/issue-1151` | **PR**: #TBD
+
+### Sprint: Bug Fixes - Manifest & Logging (#1151)
+
+- [ ] #1115 - Token preview sometimes doesn't show color
+- [ ] #1114 - Duplicate theme list entries
+
+---
+
 ## [0.14.1-alpha] - 2026-01-24
 **Branch**: `radoub/issue-1097` | **PR**: #1100
 
