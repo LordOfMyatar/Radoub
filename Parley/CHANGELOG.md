@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.128-alpha] - 2026-02-01
-**Branch**: `parley/issue-1177` | **PR**: #TBD
+**Branch**: `parley/issue-1177` | **PR**: #1179
 
 ### Sprint: UI Polish and Validation (#152, #288, #1158)
 
