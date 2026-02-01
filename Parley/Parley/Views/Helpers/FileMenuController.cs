@@ -238,6 +238,26 @@ namespace Parley.Views.Helpers
                 return;
             }
 
+            // #152: Check for unsupported characters (warn but don't block)
+            if (ViewModel.CurrentDialog != null)
+            {
+                var textValidation = TextValidator.ValidateDialog(ViewModel.CurrentDialog);
+                if (textValidation.HasWarnings)
+                {
+                    UnifiedLogger.LogApplication(LogLevel.WARN,
+                        $"Dialog contains {textValidation.TotalCharacterCount} unsupported character(s) in {textValidation.AffectedNodeCount} node(s)");
+
+                    // Log details for debugging
+                    foreach (var warning in textValidation.Warnings.Take(10))
+                    {
+                        UnifiedLogger.LogApplication(LogLevel.DEBUG, $"  {warning}");
+                    }
+
+                    // Show warning dialog (non-blocking, user can proceed)
+                    ShowUnsupportedCharactersWarning(textValidation);
+                }
+            }
+
             // Save any pending node changes
             _saveCurrentNodeProperties();
 
@@ -544,6 +564,63 @@ namespace Parley.Views.Helpers
                         new TextBlock
                         {
                             Text = "Duplicate parameter keys detected.\n\nFix the duplicate keys (shown with red borders) before saving.",
+                            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+                        },
+                        new Button
+                        {
+                            Content = "OK",
+                            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+                        }
+                    }
+                }
+            };
+
+            var okButton = ((StackPanel)msgBox.Content).Children.OfType<Button>().First();
+            okButton.Click += (s, args) => msgBox.Close();
+            msgBox.Show(_window);
+        }
+
+        /// <summary>
+        /// Show warning about unsupported characters in dialog text.
+        /// Non-blocking - save proceeds after user acknowledges.
+        /// Issue #152: Warn users about characters that won't render in NWN.
+        /// </summary>
+        private void ShowUnsupportedCharactersWarning(TextValidationResult validation)
+        {
+            var grouped = validation.GroupByNode();
+            var summaryText = $"Found {validation.TotalCharacterCount} unsupported character(s) in {validation.AffectedNodeCount} node(s).\n\n" +
+                              "These characters may not display correctly in Neverwinter Nights:\n\n";
+
+            // Show first few examples
+            var examples = validation.Warnings.Take(5).ToList();
+            foreach (var warning in examples)
+            {
+                summaryText += $"• {warning.NodeType}[{warning.NodeIndex}]: '{warning.Character.Character}' ({warning.Character.Description})\n";
+            }
+
+            if (validation.Warnings.Count > 5)
+            {
+                summaryText += $"\n...and {validation.Warnings.Count - 5} more.\n";
+            }
+
+            summaryText += "\nThe file will still be saved, but affected text may appear as boxes or ? in-game.";
+
+            var msgBox = new Window
+            {
+                Title = "⚠️ Unsupported Characters",
+                Width = 500,
+                MinHeight = 200,
+                SizeToContent = SizeToContent.Height,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Content = new StackPanel
+                {
+                    Margin = new Thickness(20),
+                    Spacing = 15,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = summaryText,
                             TextWrapping = Avalonia.Media.TextWrapping.Wrap
                         },
                         new Button

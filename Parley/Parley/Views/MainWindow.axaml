@@ -35,13 +35,13 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="30"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>  <!-- Status bar (#288: moved to top) -->
+            <RowDefinition Height="Auto"/>  <!-- Module info bar -->
             <RowDefinition Height="1*" MinHeight="200"/>
             <RowDefinition Height="5"/>
             <RowDefinition Height="3*" MinHeight="200"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto" MinHeight="0"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
@@ -150,8 +150,26 @@
             </MenuItem>
         </Menu>
 
+        <!-- Status Bar (#288: Moved to top of window, under menu) -->
+        <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="5,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"/>
+                <TextBlock Grid.Column="1" Text="{Binding LastSavedTime}" Foreground="{DynamicResource SystemAccentColor}" FontStyle="Italic" Margin="20,0,0,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding LoadedFileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="20,0,0,0"/>
+                <ProgressBar Grid.Column="3" Width="100" Height="16"
+                             IsIndeterminate="{Binding IsLoading}"
+                             IsVisible="{Binding IsLoading}" Margin="10,0,0,0"/>
+            </Grid>
+        </Border>
+
         <!-- Module Info Bar -->
-        <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="8,4">
+        <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,0,1" Padding="8,4">
             <StackPanel Orientation="Horizontal" Spacing="15">
                 <TextBlock x:Name="ModuleNameTextBlock"
                            Text="No module loaded"
@@ -167,9 +185,9 @@
             </StackPanel>
         </Border>
 
-<!-- Main Content Area (spans rows 3-5 for left/right layout) -->
+<!-- Main Content Area (spans rows 4-6 for left/right layout) -->
         <!-- Outer grid: Dialog Browser Panel | Main Content -->
-        <Grid Grid.Row="3" Grid.RowSpan="3" x:Name="OuterContentGrid">
+        <Grid Grid.Row="4" Grid.RowSpan="3" x:Name="OuterContentGrid">
             <Grid.ColumnDefinitions>
                 <!-- Dialog browser panel (#1143) - collapsible left panel -->
                 <ColumnDefinition Width="200" MinWidth="0"/>
@@ -936,23 +954,5 @@
             </Border>
             </Grid>  <!-- End MainContentGrid (inner) -->
         </Grid>  <!-- End OuterContentGrid -->
-
-        <!-- Status Bar -->
-        <Border Grid.Row="8" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0" Padding="5,2">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"/>
-                <TextBlock Grid.Column="1" Text="{Binding LastSavedTime}" Foreground="{DynamicResource SystemAccentColor}" FontStyle="Italic" Margin="20,0,0,0"/>
-                <TextBlock Grid.Column="2" Text="{Binding LoadedFileName}" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="20,0,0,0"/>
-                <ProgressBar Grid.Column="3" Width="100" Height="16"
-                             IsIndeterminate="{Binding IsLoading}"
-                             IsVisible="{Binding IsLoading}" Margin="10,0,0,0"/>
-            </Grid>
-        </Border>
     </Grid>
 </Window>

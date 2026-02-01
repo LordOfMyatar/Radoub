@@ -564,6 +564,62 @@ namespace DialogEditor.Views
 
             // Initialize NPC speaker visual preference ComboBoxes (Issue #16, #36)
             InitializeSpeakerVisualComboBoxes();
+
+            // #1158: Set up TreeView width tracking for word wrap
+            SetupTreeViewWidthTracking();
+        }
+
+        /// <summary>
+        /// Set up tracking of TreeView width for dynamic word wrap (#1158).
+        /// Updates UISettingsService.TreeViewTextMaxWidth when the panel resizes.
+        /// </summary>
+        private void SetupTreeViewWidthTracking()
+        {
+            var leftPaneTabControl = this.FindControl<TabControl>("LeftPaneTabControl");
+            if (leftPaneTabControl == null) return;
+
+            // Initial width calculation
+            UpdateTreeViewTextMaxWidth(leftPaneTabControl.Bounds.Width);
+
+            // Subscribe to size changes
+            leftPaneTabControl.PropertyChanged += (s, e) =>
+            {
+                if (e.Property.Name == nameof(leftPaneTabControl.Bounds))
+                {
+                    UpdateTreeViewTextMaxWidth(leftPaneTabControl.Bounds.Width);
+                }
+            };
+        }
+
+        /// <summary>
+        /// Calculate and update the maximum width for TreeView text (#1158).
+        /// Accounts for icons, speaker tags, indentation, and scrollbar.
+        /// </summary>
+        private void UpdateTreeViewTextMaxWidth(double containerWidth)
+        {
+            // Estimate space used by:
+            // - TreeView indentation (varies by depth, estimate ~100px for 4 levels)
+            // - Warning icon (~18px)
+            // - Node shape icon (~20px)
+            // - Speaker tag (~50px average)
+            // - Spacing (~20px)
+            // - Scrollbar (~20px)
+            // - Padding/margins (~20px)
+            const double fixedOverhead = 250;
+
+            var textWidth = containerWidth - fixedOverhead;
+            if (textWidth > 0)
+            {
+                var previousWidth = UISettingsService.Instance.TreeViewTextMaxWidth;
+                UISettingsService.Instance.TreeViewTextMaxWidth = textWidth;
+
+                // Only refresh if word wrap is enabled and width changed significantly
+                if (SettingsService.Instance.TreeViewWordWrap && Math.Abs(textWidth - previousWidth) > 10)
+                {
+                    // Refresh tree to apply new width
+                    _viewModel.RefreshTreeViewColors();
+                }
+            }
         }
 
         private void InitializeSpeakerVisualComboBoxes()

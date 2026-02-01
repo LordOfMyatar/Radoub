@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
+using DialogEditor.Services;
 
 namespace DialogEditor.Models
 {
@@ -48,8 +49,10 @@ namespace DialogEditor.Models
     }
 
     /// <summary>
-    /// Converts boolean to MaxWidth value for word wrap support (#903).
-    /// true = constrained width (parameter or default 400), false = double.PositiveInfinity (no limit)
+    /// Converts boolean to MaxWidth value for word wrap support (#903, #1158).
+    /// true = dynamic width from UISettingsService.TreeViewTextMaxWidth
+    /// false = double.PositiveInfinity (no limit)
+    /// Issue #1158: Now uses dynamic width that updates when the TreeView panel resizes.
     /// </summary>
     public class BoolToMaxWidthConverter : IValueConverter
     {
@@ -57,12 +60,8 @@ namespace DialogEditor.Models
         {
             if (value is bool boolValue && boolValue)
             {
-                // Parse parameter for custom width, default to 400
-                if (parameter is string paramStr && double.TryParse(paramStr, out double width))
-                {
-                    return width;
-                }
-                return 400.0;
+                // #1158: Use dynamic width from UISettingsService instead of fixed value
+                return UISettingsService.Instance.TreeViewTextMaxWidth;
             }
             return double.PositiveInfinity;
         }
