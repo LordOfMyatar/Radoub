@@ -21,10 +21,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Mixed Quick Wins (#1185)
 
 - [ ] #868 - Standardize browse button labeling across all tools
-- [ ] #1114 - Duplicate theme list entries (Manifest)
 - [ ] #1112 - Add Clear Recent Modules button (Trebuchet)
 - [ ] #1019 - Expose comments field for UTC files (QM)
-- [ ] #874 - Document Ability Points Tracking limitation (QM)
+
+**Removed from sprint:**
+- #1114 - Already completed
+- #874 - Blocked (Aurora doesn't track ability points reliably)
 
 ---
 
