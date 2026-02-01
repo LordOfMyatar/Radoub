@@ -10,6 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.128-alpha] - 2026-02-01
+**Branch**: `parley/issue-1177` | **PR**: #TBD
+
+### Sprint: UI Polish and Validation (#152, #288, #1158)
+
+- [ ] #152 - Dialog Validation: Warning for unsupported characters (emojis, etc.)
+- [ ] #288 - Move status bar to top of window
+- [ ] #1158 - Word wrap should fit dialog panel width, not its own boundary
+
+---
+
 ## [0.1.127-alpha] - 2026-01-31
 **Branch**: `parley/issue-1143` | **PR**: #1164
 
