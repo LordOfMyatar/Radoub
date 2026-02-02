@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.58] - 2026-02-01
-**Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #TBD
+**Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #1195
 
 ### Sprint: Parley & Radoub Testing (#1175, #1167, #1166)
 

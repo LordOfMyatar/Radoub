@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.129-alpha] - 2026-02-01
-**Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #TBD
+**Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #1195
 
 ### Sprint: Testing & Reliability (#1167, #1166)
 
