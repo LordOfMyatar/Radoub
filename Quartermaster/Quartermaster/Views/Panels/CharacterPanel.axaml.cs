@@ -43,7 +43,7 @@ public partial class CharacterPanel : UserControl
 
     // Conversation row visibility controls
     private TextBlock? _conversationLabel;
-    private Grid? _conversationRow;
+    private StackPanel? _conversationRow;
 
     // Soundset preview controls (#916)
     private ComboBox? _soundsetTypeComboBox;
@@ -100,7 +100,7 @@ public partial class CharacterPanel : UserControl
 
         // Conversation row visibility controls
         _conversationLabel = this.FindControl<TextBlock>("ConversationLabel");
-        _conversationRow = this.FindControl<Grid>("ConversationRow");
+        _conversationRow = this.FindControl<StackPanel>("ConversationRow");
 
         // Soundset preview controls (#916)
         _soundsetTypeComboBox = this.FindControl<ComboBox>("SoundsetTypeComboBox");
