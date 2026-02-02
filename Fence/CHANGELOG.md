@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.11-alpha] - 2026-02-01
+**Branch**: `fence/issue-1178` | **PR**: #TBD
+
+### Sprint: Final Polish (#1178)
+
+Closes Epic #555.
+
+- [ ] #1042 - UI Layout Polish: Consolidate panels and improve usability
+- [ ] #1073 - Infinity toggle UI polish
+- [ ] #1120 - Add unit tests for ItemResolutionService and other untested services
+- [ ] #564 - Real UTM file validation tests
+
+---
+
 ## [0.1.10-alpha] - 2026-01-31
 **Branch**: `fence/issue-1144` | **PR**: #1168
 
