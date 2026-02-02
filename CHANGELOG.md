@@ -20,9 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Parley & Radoub Testing (#1175, #1167, #1166)
 
-- [ ] #1175 - Apply avgNormalSkip fixes to MdlBinaryReader2
-- [ ] #1167 - Update Parley integration tests for new UI features
-- [ ] #1166 - Fix UI tests failing after DialogBrowserPanel integration
+- [x] #1175 - Apply avgNormalSkip fixes to MdlBinaryReader2
+- [x] #1167 - Update Parley integration tests for new UI features
+- [x] #1166 - Fix UI tests failing after DialogBrowserPanel integration
 
 ---
 
