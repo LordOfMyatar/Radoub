@@ -265,19 +265,28 @@ public class MdlBinaryReader2
         uint colorsOffset = reader.ReadUInt32();
 
         // === Read vertex positions from raw data ===
-        if (vertexCount > 0 && vertexOffset != 0xFFFFFFFF && _rawData.Length > 0)
+        // Detect and skip average normal header if present (12-byte header prepended to ALL raw data arrays)
+        uint originalVertexOffset = vertexOffset;
+        uint adjustedVertexOffset = DetectAndSkipAverageNormal(vertexOffset, vertexCount);
+        uint avgNormalSkip = adjustedVertexOffset - originalVertexOffset;  // Usually 0 or 12
+
+        if (vertexCount > 0 && adjustedVertexOffset != 0xFFFFFFFF && _rawData.Length > 0)
         {
-            mesh.Vertices = ReadVerticesFromRaw(vertexOffset, vertexCount);
+            mesh.Vertices = ReadVerticesFromRaw(adjustedVertexOffset, vertexCount);
             Log(LogLevel.INFO, $"Mesh '{mesh.Name}': Read {mesh.Vertices.Length} vertices, first: {mesh.Vertices[0]}");
         }
 
         // === Read normals from raw data ===
+        // Apply same offset adjustment as vertices - normals array also has the avg normal header
         if (vertexCount > 0 && normalsOffset != 0xFFFFFFFF && _rawData.Length > 0)
         {
-            mesh.Normals = ReadVerticesFromRaw(normalsOffset, vertexCount);
+            uint adjustedNormalsOffset = normalsOffset + avgNormalSkip;
+            Log(LogLevel.DEBUG, $"Mesh '{mesh.Name}': Normals offset {normalsOffset} + {avgNormalSkip} = {adjustedNormalsOffset}");
+            mesh.Normals = ReadVerticesFromRaw(adjustedNormalsOffset, vertexCount);
         }
 
         // === Read texture coordinates from raw data ===
+        // Apply same average normal skip as vertices - UV arrays also have the header
         if (textureCount > 0 && vertexCount > 0 && _rawData.Length > 0)
         {
             var texCoordsList = new List<Vector2[]>();
@@ -285,7 +294,9 @@ public class MdlBinaryReader2
             {
                 if (tvertOffsets[i] != 0xFFFFFFFF)
                 {
-                    var uvs = ReadTexCoordsFromRaw(tvertOffsets[i], vertexCount);
+                    uint adjustedTvertOffset = tvertOffsets[i] + avgNormalSkip;
+                    Log(LogLevel.DEBUG, $"Mesh '{mesh.Name}': UV[{i}] offset {tvertOffsets[i]} + {avgNormalSkip} = {adjustedTvertOffset}");
+                    var uvs = ReadTexCoordsFromRaw(adjustedTvertOffset, vertexCount);
                     texCoordsList.Add(uvs);
                     if (i == 0)
                         Log(LogLevel.INFO, $"Mesh '{mesh.Name}': Read {uvs.Length} UVs, first: {uvs[0]}");
@@ -382,6 +393,74 @@ public class MdlBinaryReader2
         }
 
         return faces;
+    }
+
+    /// <summary>
+    /// Detect and skip "average normal" header that some NWN body part MDL files have.
+    /// The average normal is a 12-byte header (3 floats) prepended to vertex data.
+    /// Detection cases:
+    /// 1. First vector is zero (0,0,0) - placeholder/padding header
+    /// 2. First vector is unit normal (~1.0 magnitude) AND either axis-aligned OR second vector is small
+    /// </summary>
+    private uint DetectAndSkipAverageNormal(uint vertexRawOffset, int vertexCount)
+    {
+        if (vertexCount <= 0 || vertexRawOffset == 0xFFFFFFFF || vertexRawOffset == uint.MaxValue ||
+            vertexRawOffset + 24 > _rawData.Length)
+        {
+            return vertexRawOffset;
+        }
+
+        float vx = BitConverter.ToSingle(_rawData, (int)vertexRawOffset);
+        float vy = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 4);
+        float vz = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 8);
+        float vMag = (float)Math.Sqrt(vx * vx + vy * vy + vz * vz);
+
+        float v2x = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 12);
+        float v2y = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 16);
+        float v2z = BitConverter.ToSingle(_rawData, (int)vertexRawOffset + 20);
+        float v2Mag = (float)Math.Sqrt(v2x * v2x + v2y * v2y + v2z * v2z);
+
+        Log(LogLevel.DEBUG,
+            $"AvgNormal check at offset {vertexRawOffset}: v1=({vx:F4},{vy:F4},{vz:F4}) mag={vMag:F4}, v2=({v2x:F4},{v2y:F4},{v2z:F4}) mag={v2Mag:F4}");
+
+        bool shouldSkip = false;
+        string skipReason = "";
+
+        // Case 1: First vector is zero - this is a placeholder/padding, skip it
+        // Zero vertex at origin would create triangles connecting to (0,0,0)
+        if (vMag < 0.0001f && v2Mag > 0.001f)
+        {
+            shouldSkip = true;
+            skipReason = "zero placeholder";
+        }
+        else
+        {
+            // Case 2: First vector is a unit normal (magnitude very close to 1.0)
+            bool isUnitNormal = vMag > 0.98f && vMag < 1.02f;
+
+            // Common average normal values are exactly (0,0,1) or (0,0,-1) pointing up/down
+            bool isAxisAlignedNormal = (Math.Abs(vx) < 0.001f && Math.Abs(vy) < 0.001f && Math.Abs(vz - 1.0f) < 0.01f) ||
+                                       (Math.Abs(vx) < 0.001f && Math.Abs(vy) < 0.001f && Math.Abs(vz + 1.0f) < 0.01f);
+
+            // Second vector (actual first vertex) should have small magnitude for body parts
+            // Body part vertices are typically within -0.5 to 0.5 range in local space
+            bool secondVectorSmall = v2Mag < 0.5f;
+
+            if (isUnitNormal && (isAxisAlignedNormal || secondVectorSmall))
+            {
+                shouldSkip = true;
+                skipReason = "unit normal header";
+            }
+        }
+
+        if (shouldSkip)
+        {
+            vertexRawOffset += 12;
+            Log(LogLevel.DEBUG,
+                $"Skipping {skipReason} ({vx:F4},{vy:F4},{vz:F4}), actual positions start at offset {vertexRawOffset}");
+        }
+
+        return vertexRawOffset;
     }
 
     private static Vector3 ReadVector3(BinaryReader reader)

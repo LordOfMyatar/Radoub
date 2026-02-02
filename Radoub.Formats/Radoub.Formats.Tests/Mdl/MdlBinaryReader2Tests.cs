@@ -41,7 +41,7 @@ public class MdlBinaryReader2Tests
         }
     }
 
-    [Fact(Skip = "MdlBinaryReader2 is experimental - use MdlBinaryReader for production")]
+    [Fact]
     public void ParsesHeadModelStructure()
     {
         // Skip if game data not available
