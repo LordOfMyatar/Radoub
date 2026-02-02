@@ -49,6 +49,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Fixed**: Semantic colors (success, warning, error, info) now map to ThemeSuccess/Warning/Error/Info resources
 - This fixes "Ready" button showing green in colorblind themes - now uses theme's `success` color (#006699 blue in deuteranopia)
 - **Fixed**: Button foreground now set to white when button_primary is defined (fixes black text on blue buttons in Parley dark mode)
+- **Fixed**: ComboBox foreground and placeholder text now uses theme text color (fixes dark gray text in dropdowns)
 
 ---
 

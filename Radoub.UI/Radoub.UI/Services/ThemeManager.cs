@@ -424,6 +424,29 @@ public class ThemeManager
             resources["RadioButtonForegroundPointerOver"] = textBrush;
             resources["RadioButtonForegroundPressed"] = textBrush;
             resources["RadioButtonForegroundDisabled"] = textBrush;
+
+            // ComboBox text colors - selected item and dropdown items
+            resources["ComboBoxForeground"] = textBrush;
+            resources["ComboBoxForegroundPointerOver"] = textBrush;
+            resources["ComboBoxForegroundPressed"] = textBrush;
+            resources["ComboBoxForegroundDisabled"] = textBrush;
+            resources["ComboBoxForegroundFocused"] = textBrush;
+            resources["ComboBoxForegroundFocusedPressed"] = textBrush;
+            resources["ComboBoxPlaceholderForeground"] = textBrush;
+            resources["ComboBoxPlaceholderForegroundPointerOver"] = textBrush;
+            resources["ComboBoxPlaceholderForegroundPressed"] = textBrush;
+            resources["ComboBoxPlaceholderForegroundDisabled"] = textBrush;
+            resources["ComboBoxPlaceholderForegroundFocused"] = textBrush;
+            resources["ComboBoxPlaceholderForegroundFocusedPressed"] = textBrush;
+            // ComboBox dropdown item foreground
+            resources["ComboBoxItemForeground"] = textBrush;
+            resources["ComboBoxItemForegroundPointerOver"] = textBrush;
+            resources["ComboBoxItemForegroundPressed"] = textBrush;
+            resources["ComboBoxItemForegroundDisabled"] = textBrush;
+            resources["ComboBoxItemForegroundSelected"] = textBrush;
+            resources["ComboBoxItemForegroundSelectedPointerOver"] = textBrush;
+            resources["ComboBoxItemForegroundSelectedPressed"] = textBrush;
+            resources["ComboBoxItemForegroundSelectedDisabled"] = textBrush;
         }
 
         // Menu flyout (dropdown) background - needs to match theme
