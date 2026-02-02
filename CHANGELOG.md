@@ -46,6 +46,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed button color mapping: `button_primary` now maps to standard ButtonBackground (buttons are blue in VSCode Dark)
 - Added `ButtonStyles.axaml` with `.secondary` class for cancel/dismiss buttons
 - Added `ThemeButtonSecondary` resource for explicit secondary button styling
+- **Fixed**: Semantic colors (success, warning, error, info) now map to ThemeSuccess/Warning/Error/Info resources
+- This fixes "Ready" button showing green in colorblind themes - now uses theme's `success` color (#006699 blue in deuteranopia)
 
 ---
 

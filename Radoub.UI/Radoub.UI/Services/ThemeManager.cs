@@ -578,6 +578,25 @@ public class ThemeManager
             resources["ThemeAutoTrimBorder"] = autoTrimBrush;
         }
 
+        // Semantic colors (#1089) - used by BrushManager for colorblind accessibility
+        // These map theme JSON colors to resources that BrushManager can look up
+        if (!string.IsNullOrEmpty(colors.Success))
+        {
+            resources["ThemeSuccess"] = new SolidColorBrush(Color.Parse(colors.Success));
+        }
+        if (!string.IsNullOrEmpty(colors.Warning))
+        {
+            resources["ThemeWarning"] = new SolidColorBrush(Color.Parse(colors.Warning));
+        }
+        if (!string.IsNullOrEmpty(colors.Error))
+        {
+            resources["ThemeError"] = new SolidColorBrush(Color.Parse(colors.Error));
+        }
+        if (!string.IsNullOrEmpty(colors.Info))
+        {
+            resources["ThemeInfo"] = new SolidColorBrush(Color.Parse(colors.Info));
+        }
+
         // Button colors - apply theme-defined button colors to Fluent theme resources (#1089)
         // button_primary = action buttons (Save, OK, Apply) - blue in most themes
         // button_secondary = neutral/cancel buttons - gray in most themes
