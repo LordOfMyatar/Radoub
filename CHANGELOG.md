@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.59] - 2026-02-02
+**Branch**: `radoub/issue-1154` | **PR**: #TBD
+
+### Sprint: Cross-Tool UI Consistency (#1154)
+
+- [ ] #1089 - Review theme consistency across all tools
+- [ ] #1088 - Standardize modal dialog styling across all tools
+- [ ] #823 - Inconsistent focus indicators across controls
+- [ ] #868 - Standardize browse button labeling across all tools
+
+---
+
 ## [0.9.58] - 2026-02-01
 **Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #1195
 
