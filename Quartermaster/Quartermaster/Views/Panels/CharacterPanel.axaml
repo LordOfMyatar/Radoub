@@ -135,7 +135,7 @@
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="5">
-                                <ComboBox x:Name="SoundsetTypeComboBox" Width="120" Height="28"
+                                <ComboBox x:Name="SoundsetTypeComboBox" MinWidth="120" Height="28"
                                           ToolTip.Tip="Select sound type to preview"
                                           AutomationProperties.AutomationId="SoundsetTypeComboBox">
                                     <ComboBox.ItemTemplate>

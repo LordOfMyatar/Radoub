@@ -118,7 +118,7 @@
                                  Checked="OnHighlightTypeChanged">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Skill Check" FontWeight="Bold" Foreground="#FF0000" Width="80"/>
-                            <ComboBox x:Name="SkillCheckComboBox" Width="150" Margin="10,0,0,0"
+                            <ComboBox x:Name="SkillCheckComboBox" MinWidth="150" Margin="10,0,0,0"
                                       SelectionChanged="OnSkillCheckChanged">
                                 <ComboBoxItem Content="Animal Empathy"/>
                                 <ComboBoxItem Content="Appraise"/>

@@ -684,7 +684,7 @@
                                                    ToolTip.Tip="Soundset info from creature lookup"/>
                                         <!-- Soundset preview controls -->
                                         <StackPanel x:Name="SoundsetPreviewPanel" Orientation="Horizontal" Margin="0,8,0,0" IsVisible="False">
-                                            <ComboBox x:Name="SoundsetTypeComboBox" Width="100" Height="24" FontSize="11"
+                                            <ComboBox x:Name="SoundsetTypeComboBox" MinWidth="100" Height="24" FontSize="11"
                                                       ToolTip.Tip="Select sound type to preview"/>
                                             <Button x:Name="SoundsetPlayButton" Content="Play" Width="40" Height="24" Margin="4,0,0,0"
                                                     FontSize="11" Click="OnSoundsetPlayClick"

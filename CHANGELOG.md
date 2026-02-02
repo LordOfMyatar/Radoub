@@ -33,7 +33,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - ScriptListManager.cs: count text emoji → Unicode
   - ParameterBrowserWindow.axaml.cs: 🔵 → ●, 📋 → ☰
   - MainWindow.Properties.cs: 💾 → removed (status message)
-- [ ] #934 - Review menus and buttons for text clipping
+- [x] #934 - Review menus and buttons for text clipping
+  - Changed fixed Width to MinWidth on ComboBoxes to prevent clipping:
+    - PortraitBrowserWindow: Gender filter 80 → MinWidth 90
+    - CharacterPanel (QM): Soundset type 120 → MinWidth 120
+    - MainWindow (Parley): Soundset type 100 → MinWidth 100
+    - TokenSelectorWindow (Radoub.UI + Parley): Skill check 150 → MinWidth 150
+    - MainWindow (Fence): Item type filter 200 → MinWidth 200
 
 ---
 

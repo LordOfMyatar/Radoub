@@ -455,7 +455,7 @@
                                 <!-- Type Filter -->
                                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
                                     <TextBlock Text="Type:" VerticalAlignment="Center"/>
-                                    <ComboBox x:Name="ItemTypeFilter" Width="200" SelectionChanged="OnTypeFilterChanged" AutomationProperties.AutomationId="ItemTypeFilter"/>
+                                    <ComboBox x:Name="ItemTypeFilter" MinWidth="200" SelectionChanged="OnTypeFilterChanged" AutomationProperties.AutomationId="ItemTypeFilter"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
