@@ -10,6 +10,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.129-alpha] - 2026-02-01
+**Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #TBD
+
+### Sprint: Testing & Reliability (#1167, #1166)
+
+- [ ] #1166 - Fix UI tests failing after DialogBrowserPanel integration
+- [ ] #1167 - Update integration tests for new UI features (DialogBrowserPanel)
+
+---
+
 ## [0.1.128-alpha] - 2026-02-01
 **Branch**: `parley/issue-1177` | **PR**: #1179
 
