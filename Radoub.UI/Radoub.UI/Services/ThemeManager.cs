@@ -242,7 +242,7 @@ public class ThemeManager
             // Apply custom colors AFTER theme variant loads
             if (theme.Colors != null)
             {
-                ApplyColors(app.Resources, theme.Colors);
+                ApplyColors(app.Resources, theme.Colors, theme.BaseTheme);
             }
 
             // Apply font sizes (with defaults if not specified in theme)
@@ -276,8 +276,13 @@ public class ThemeManager
     /// Apply color values to resource dictionary.
     /// Maps theme colors to Avalonia system resources.
     /// </summary>
-    private void ApplyColors(IResourceDictionary resources, ThemeColors colors)
+    /// <param name="resources">Resource dictionary to update</param>
+    /// <param name="colors">Theme color definitions</param>
+    /// <param name="baseTheme">Base theme variant ("Light" or "Dark")</param>
+    private void ApplyColors(IResourceDictionary resources, ThemeColors colors, string baseTheme)
     {
+        var isDarkTheme = baseTheme.Equals("Dark", StringComparison.OrdinalIgnoreCase);
+
         // Background colors - main window background AND control backgrounds
         if (!string.IsNullOrEmpty(colors.Background))
         {
@@ -648,8 +653,12 @@ public class ThemeManager
             resources["AccentButtonBackground"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPointerOver"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
+        }
 
-            // Button foreground - white for colored backgrounds
+        // Button foreground - always white in dark themes for visibility
+        // This applies regardless of whether button_primary is defined
+        if (isDarkTheme)
+        {
             var whiteBrush = new SolidColorBrush(Colors.White);
             resources["ButtonForeground"] = whiteBrush;
             resources["ButtonForegroundPointerOver"] = whiteBrush;

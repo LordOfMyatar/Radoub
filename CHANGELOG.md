@@ -48,7 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `ThemeButtonSecondary` resource for explicit secondary button styling
 - **Fixed**: Semantic colors (success, warning, error, info) now map to ThemeSuccess/Warning/Error/Info resources
 - This fixes "Ready" button showing green in colorblind themes - now uses theme's `success` color (#006699 blue in deuteranopia)
-- **Fixed**: Button foreground now set to white when button_primary is defined (fixes black text on blue buttons in Parley dark mode)
+- **Fixed**: Button foreground now set to white for ALL dark themes (not just when button_primary is defined)
 - **Fixed**: ComboBox foreground and placeholder text now uses theme text color (fixes dark gray text in dropdowns)
 - **Fixed**: ComboBox background now uses theme sidebar color (fixes white boxes in dark themes)
 - **Fixed**: ComboBox placeholder resource key corrected (`PlaceHolder` vs `Placeholder`) - fixes "Recent..." black text
