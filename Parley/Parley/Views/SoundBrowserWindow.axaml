@@ -93,7 +93,7 @@
                       Checked="OnOtherLocationToggled"
                       Unchecked="OnOtherLocationToggled"/>
             <Button x:Name="BrowseLocationButton"
-                    Content="browse..."
+                    Content="Browse..."
                     FontSize="11"
                     Padding="8,2"
                     IsEnabled="False"

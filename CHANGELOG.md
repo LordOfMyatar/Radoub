@@ -15,6 +15,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.55] - 2026-02-01
+**Branch**: `radoub/issue-1185` | **PR**: #1187
+
+### Sprint: Mixed Quick Wins (#1185)
+
+- [x] #868 - Standardize browse button labeling across all tools
+  - Capitalized "browse..." → "Browse..." in 7 browser windows (Radoub.UI + Parley)
+  - Added ellipsis to quest browse buttons in Parley MainWindow
+- [x] #1112 - Add Clear Recent Modules button (Trebuchet)
+- [x] #1019 - Expose comments field for UTC files (QM)
+  - Already implemented in Advanced panel (Sprint #1016)
+  - Comment field visible for UTC files, hidden for BIC files
+  - Supports multiline text with word wrap
+
+**Removed from sprint:**
+- #1114 - Already completed
+- #874 - Blocked (Aurora doesn't track ability points reliably)
+
+---
+
 ## [0.9.54] - 2026-02-01
 **Branch**: `radoub/issue-1151` | **PR**: #1180
 

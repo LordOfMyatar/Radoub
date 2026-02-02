@@ -223,11 +223,18 @@
                            IsVisible="{Binding !IsGameAvailable}"/>
 
                 <!-- Recent Modules Section -->
-                <TextBlock Text="Recent Modules"
-                           FontSize="{DynamicResource FontSizeLarge}"
-                           FontWeight="SemiBold"
-                           Margin="0,24,0,12"
-                           IsVisible="{Binding HasRecentModules}"/>
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,24,0,12"
+                            IsVisible="{Binding HasRecentModules}">
+                    <TextBlock Text="Recent Modules"
+                               FontSize="{DynamicResource FontSizeLarge}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                    <Button Content="Clear"
+                            Command="{Binding ClearRecentModulesCommand}"
+                            Padding="8,2"
+                            FontSize="12"
+                            ToolTip.Tip="Clear recent modules list"/>
+                </StackPanel>
 
                 <ItemsControl ItemsSource="{Binding RecentModules}"
                               IsVisible="{Binding HasRecentModules}">
