@@ -15,6 +15,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.56] - 2026-02-01
+**Branch**: `radoub/issue-1181` | **PR**: #1190
+
+### Sprint: UI Consistency Sweep (#1181)
+
+- [x] #868 - Standardize browse button labeling across all tools (completed in #1187)
+- [x] #867 - Browse buttons too far from fields on Classes/Advanced panels (completed in #1189)
+- [x] #863 - Replace remaining emoji icons with Unicode symbols
+  - ScriptBrowserWindow.axaml: 📦 → ☐, 🎮 → ○
+  - MainWindow.axaml: 💡 → ✦ (Suggest buttons)
+  - SettingsWindow.axaml: 💡 → ✦ (Easter egg hint)
+  - SoundBrowserWindow.axaml: 🎮/📦 → ○/☐ (legend)
+  - SoundBrowserWindow.axaml.cs: 📦/🎮 → ☐/○ (list items, labels)
+  - CreatureBrowserWindow.axaml: 📁 → ▢, 💾 → ◇ (source filters)
+  - IScriptBrowserContext.cs: DisplayName emoji → Unicode
+  - ScriptListManager.cs: count text emoji → Unicode
+  - ParameterBrowserWindow.axaml.cs: 🔵 → ●, 📋 → ☰
+  - MainWindow.Properties.cs: 💾 → removed (status message)
+- [x] #934 - Review menus and buttons for text clipping
+  - Changed fixed Width to MinWidth on ComboBoxes to prevent clipping:
+    - PortraitBrowserWindow: Gender filter 80 → MinWidth 90
+    - CharacterPanel (QM): Soundset type 120 → MinWidth 120
+    - MainWindow (Parley): Soundset type 100 → MinWidth 100
+    - TokenSelectorWindow (Radoub.UI + Parley): Skill check 150 → MinWidth 150
+    - MainWindow (Fence): Item type filter 200 → MinWidth 200
+
+---
+
 ## [0.9.55] - 2026-02-01
 **Branch**: `radoub/issue-1185` | **PR**: #1187
 

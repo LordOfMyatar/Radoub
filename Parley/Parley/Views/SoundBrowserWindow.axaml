@@ -131,10 +131,10 @@
                       Margin="15,0,0,0"
                       ToolTip.Tip="Disable on-selection format validation for HAK sounds (faster for large HAK collections)"/>
             <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="10">
-                <TextBlock Text="🎮 = BIF"
+                <TextBlock Text="○ = BIF"
                            FontSize="10"
                            VerticalAlignment="Center"/>
-                <TextBlock Text="📦 = HAK"
+                <TextBlock Text="☐ = HAK"
                            FontSize="10"
                            Foreground="LightBlue"
                            VerticalAlignment="Center"/>

@@ -431,12 +431,12 @@ namespace DialogEditor.Views
             if (sound.IsFromHak)
             {
                 var channelHint = sound.ChannelUnknown ? " [?ch]" : "";
-                return ($"📦 {baseName}{sourceInfo}{channelHint}", HakBrush);
+                return ($"☐ {baseName}{sourceInfo}{channelHint}", HakBrush);
             }
             if (sound.IsFromBif)
             {
                 var channelHint = sound.ChannelUnknown ? " [?ch]" : "";
-                return ($"🎮 {baseName}{sourceInfo}{channelHint}", ForegroundBrush);
+                return ($"○ {baseName}{sourceInfo}{channelHint}", ForegroundBrush);
             }
             return ($"{baseName}{sourceInfo}", ForegroundBrush);
         }
@@ -477,8 +477,8 @@ namespace DialogEditor.Views
             if (soundInfo != null)
             {
                 _selectedSound = soundInfo.FileName;
-                SelectedSoundLabel.Text = soundInfo.IsFromHak ? $"{soundInfo.FileName} 📦"
-                    : soundInfo.IsFromBif ? $"{soundInfo.FileName} 🎮"
+                SelectedSoundLabel.Text = soundInfo.IsFromHak ? $"{soundInfo.FileName} ☐"
+                    : soundInfo.IsFromBif ? $"{soundInfo.FileName} ○"
                     : soundInfo.FileName;
                 PlayButton.IsEnabled = true;
 
@@ -506,7 +506,7 @@ namespace DialogEditor.Views
                 {
                     if (skipValidation)
                     {
-                        FileCountLabel.Text = $"📦 From: {soundInfo.Source}";
+                        FileCountLabel.Text = $"☐ From: {soundInfo.Source}";
                         FileCountLabel.Foreground = HakBrush;
                     }
                     else
@@ -519,7 +519,7 @@ namespace DialogEditor.Views
                 {
                     if (skipValidation)
                     {
-                        FileCountLabel.Text = $"🎮 From: {soundInfo.Source}";
+                        FileCountLabel.Text = $"○ From: {soundInfo.Source}";
                         FileCountLabel.Foreground = ForegroundBrush;
                     }
                     else
@@ -552,7 +552,7 @@ namespace DialogEditor.Views
 
         private void DisplayValidationResult(ArchiveSoundValidationResult result)
         {
-            var sourceIcon = result.IsFromHak ? "📦" : "🎮";
+            var sourceIcon = result.IsFromHak ? "☐" : "○";
             var sourceInfo = $" ({sourceIcon} {result.Source})";
 
             if (result.ValidationUnavailable)

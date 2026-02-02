@@ -149,7 +149,7 @@ namespace DialogEditor.Views
                     var declValues = _declarations?.GetValuesForKey(selectedKey) ?? new List<string>();
                     declCount = declValues.Count;
 
-                    ValuesHeaderText.Text = $"Values for '{selectedKey}' (🔵 {cachedCount} recent, 📋 {declCount} declared)";
+                    ValuesHeaderText.Text = $"Values for '{selectedKey}' (● {cachedCount} recent, ☰ {declCount} declared)";
                 }
 
                 if (values.Count > 0)
@@ -238,13 +238,13 @@ namespace DialogEditor.Views
             // Add script declaration values first
             mergedValues.AddRange(declarationValues);
 
-            // Add cached values that aren't in declarations (mark with 🔵 to indicate cached-only)
+            // Add cached values that aren't in declarations (mark with ● to indicate cached-only)
             foreach (var cachedValue in cachedValues)
             {
                 if (!declarationValues.Contains(cachedValue, StringComparer.OrdinalIgnoreCase))
                 {
                     // Mark cached-only values with visual indicator
-                    mergedValues.Add($"🔵 {cachedValue}");
+                    mergedValues.Add($"● {cachedValue}");
                 }
             }
 
@@ -261,8 +261,8 @@ namespace DialogEditor.Views
         {
             if (ValuesList.SelectedItem is string selectedValue)
             {
-                // Strip the 🔵 marker if present (cached-only values)
-                _selectedValue = selectedValue.StartsWith("🔵 ") ? selectedValue.Substring(2) : selectedValue;
+                // Strip the ● marker if present (cached-only values)
+                _selectedValue = selectedValue.StartsWith("● ") ? selectedValue.Substring(2) : selectedValue;
                 CopyValueButton.IsEnabled = true;
                 AddParameterButton.IsEnabled = !string.IsNullOrEmpty(_selectedKey);
             }
@@ -536,7 +536,7 @@ namespace DialogEditor.Views
             var declValues = _declarations?.GetValuesForKey(_selectedKey) ?? new List<string>();
             declCount = declValues.Count;
 
-            ValuesHeaderText.Text = $"Values for '{_selectedKey}' (🔵 {cachedCount} cached, 📋 {declCount} declared)";
+            ValuesHeaderText.Text = $"Values for '{_selectedKey}' (● {cachedCount} cached, ☰ {declCount} declared)";
 
             // Update list
             if (values.Count > 0)

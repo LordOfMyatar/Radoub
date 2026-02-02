@@ -429,7 +429,7 @@ namespace DialogEditor.Views
                 try
                 {
                     // Phase 1 Step 4: Enhanced save status indicators
-                    _viewModel.StatusMessage = "💾 Auto-saving...";
+                    _viewModel.StatusMessage = "Auto-saving...";
                     UnifiedLogger.LogApplication(LogLevel.DEBUG, "Auto-save starting...");
 
                     // Issue #8: Check save result before showing success message

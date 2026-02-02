@@ -80,7 +80,7 @@
                 <TextBlock Text="Gender:" VerticalAlignment="Center"/>
                 <ComboBox x:Name="GenderFilterComboBox"
                           AutomationProperties.AutomationId="GenderFilterComboBox"
-                          Width="80"
+                          MinWidth="90"
                           SelectionChanged="OnFilterChanged"/>
             </StackPanel>
 
