@@ -23,10 +23,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - [x] #868 - Standardize browse button labeling across all tools (completed in #1187)
 - [x] #867 - Browse buttons too far from fields on Classes/Advanced panels (completed in #1189)
 - [x] #863 - Replace remaining emoji icons with Unicode symbols
-  - ScriptBrowserWindow: 📦 → ☐, 🎮 → ○
-  - MainWindow: 💡 → ✦ (Suggest buttons)
-  - SettingsWindow: 💡 → ✦ (Easter egg hint)
-  - SoundBrowserWindow: 🎮/📦 → ○/☐ (legend)
+  - ScriptBrowserWindow.axaml: 📦 → ☐, 🎮 → ○
+  - MainWindow.axaml: 💡 → ✦ (Suggest buttons)
+  - SettingsWindow.axaml: 💡 → ✦ (Easter egg hint)
+  - SoundBrowserWindow.axaml: 🎮/📦 → ○/☐ (legend)
+  - SoundBrowserWindow.axaml.cs: 📦/🎮 → ☐/○ (list items, labels)
+  - CreatureBrowserWindow.axaml: 📁 → ▢, 💾 → ◇ (source filters)
+  - IScriptBrowserContext.cs: DisplayName emoji → Unicode
+  - ScriptListManager.cs: count text emoji → Unicode
+  - ParameterBrowserWindow.axaml.cs: 🔵 → ●, 📋 → ☰
+  - MainWindow.Properties.cs: 💾 → removed (status message)
 - [ ] #934 - Review menus and buttons for text clipping
 
 ---

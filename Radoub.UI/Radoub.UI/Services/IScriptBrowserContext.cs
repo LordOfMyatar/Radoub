@@ -32,7 +32,7 @@ public class ScriptEntry
     /// </summary>
     public string? FilePath { get; set; }
 
-    public string DisplayName => IsBuiltIn ? $"🎮 {Name}" : IsFromHak ? $"📦 {Name}" : Name;
+    public string DisplayName => IsBuiltIn ? $"○ {Name}" : IsFromHak ? $"☐ {Name}" : Name;
 
     public override string ToString() => DisplayName;
 }

@@ -101,11 +101,11 @@ public static class ScriptListManager
         var countText = $"{result.ModuleCount} module";
         if (result.HakCount > 0)
         {
-            countText += $" + {result.HakCount} 📦 HAK";
+            countText += $" + {result.HakCount} ☐ HAK";
         }
         if (result.BuiltInCount > 0)
         {
-            countText += $" + {result.BuiltInCount} 🎮 built-in";
+            countText += $" + {result.BuiltInCount} ○ built-in";
         }
         return countText;
     }
