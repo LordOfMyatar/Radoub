@@ -10,6 +10,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.11-alpha] - 2026-02-01
+**Branch**: `fence/issue-1178` | **PR**: #1194
+
+### Sprint: Final Polish (#1178)
+
+Closes Epic #555.
+
+- [x] #1042 - UI Layout Polish: Consolidate panels and improve usability
+- [x] #1073 - Infinity toggle UI polish
+- [x] #1120 - Add unit tests for ItemResolutionService and other untested services
+- [x] #564 - Real UTM file validation tests
+
+#### Changed
+- **Infinity button**: Changed "∞ Selected" to "Make ∞" for clarity
+- **Top panel layout**: Moved Comment to bottom row, Max Buy Price and Limited Gold to Row 2 with scripts
+- **NewVar behavior**: Empty name field on create with auto-focus for immediate editing
+- **Save As**: Defaults to current module directory
+
+#### Added
+- **ItemResolutionService tests**: 18 tests covering caching, fallback data, batch resolution, price calculations
+- **UTM round-trip tests**: 85 tests covering all store fields with real file I/O validation
+- **UTM field tests**: Added Comment, PaletteID, and complete store round-trip tests to Radoub.Formats
+
+---
+
 ## [0.1.10-alpha] - 2026-01-31
 **Branch**: `fence/issue-1144` | **PR**: #1168
 

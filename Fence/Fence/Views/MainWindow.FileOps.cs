@@ -188,6 +188,17 @@ public partial class MainWindow
         if (_currentStore == null)
             return;
 
+        // Default to current module directory if available
+        IStorageFolder? suggestedFolder = null;
+        if (!string.IsNullOrEmpty(_currentFilePath))
+        {
+            var directory = Path.GetDirectoryName(_currentFilePath);
+            if (!string.IsNullOrEmpty(directory) && Directory.Exists(directory))
+            {
+                suggestedFolder = await StorageProvider.TryGetFolderFromPathAsync(directory);
+            }
+        }
+
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Save Store As",
@@ -196,7 +207,8 @@ public partial class MainWindow
             {
                 new FilePickerFileType("Store Files") { Patterns = new[] { "*.utm" } }
             },
-            SuggestedFileName = _currentStore.ResRef
+            SuggestedFileName = _currentStore.ResRef,
+            SuggestedStartLocation = suggestedFolder
         });
 
         if (file != null)

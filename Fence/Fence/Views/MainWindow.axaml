@@ -163,7 +163,7 @@
                     <TextBlock Grid.Row="1" Grid.Column="6" Text="Identify Price:" VerticalAlignment="Center" Margin="0,8,8,0"/>
                     <TextBox Grid.Row="1" Grid.Column="7" x:Name="IdentifyPriceBox" Margin="0,8,0,0" AutomationProperties.AutomationId="IdentifyPriceBox"/>
 
-                    <!-- Row 2: Scripts and Comment -->
+                    <!-- Row 2: Scripts and Store Options -->
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="OnOpenStore:" VerticalAlignment="Center" Margin="0,8,8,0"/>
                     <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
@@ -179,7 +179,7 @@
                                 ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearOpenScriptButton"/>
                     </Grid>
 
-                    <TextBlock Grid.Row="2" Grid.Column="3" Text="OnStoreClosed:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <TextBlock Grid.Row="2" Grid.Column="3" Text="OnStoreClosed:" VerticalAlignment="Center" Margin="8,8,8,0"/>
                     <Grid Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -194,19 +194,20 @@
                                 ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearClosedScriptButton"/>
                     </Grid>
 
-                    <TextBlock Grid.Row="2" Grid.Column="6" Text="Comment:" VerticalAlignment="Top" Margin="0,8,8,0"/>
-                    <TextBox Grid.Row="2" Grid.Column="7" Grid.ColumnSpan="4" x:Name="CommentBox"
-                             AcceptsReturn="True" TextWrapping="Wrap" Height="50" Margin="0,8,0,0"
-                             Watermark="Developer notes..."
-                             AutomationProperties.AutomationId="CommentBox"/>
-
-                    <!-- Row 3: Flags (without Buy Stolen - moved to Buy Restrictions) -->
-                    <WrapPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="11" Margin="0,8,0,0" Orientation="Horizontal">
+                    <!-- Max Buy Price and Limited Gold on same row as scripts -->
+                    <StackPanel Grid.Row="2" Grid.Column="6" Grid.ColumnSpan="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,8,0,0">
                         <CheckBox x:Name="MaxBuyPriceCheck" Content="Max Buy Price:" Margin="0,0,8,0" AutomationProperties.AutomationId="MaxBuyPriceCheck"/>
                         <TextBox x:Name="MaxBuyPriceBox" Width="80" IsEnabled="{Binding IsChecked, ElementName=MaxBuyPriceCheck}" AutomationProperties.AutomationId="MaxBuyPriceBox"/>
                         <CheckBox x:Name="LimitedGoldCheck" Content="Limited Gold:" Margin="16,0,8,0" AutomationProperties.AutomationId="LimitedGoldCheck"/>
                         <TextBox x:Name="StoreGoldBox" Width="80" IsEnabled="{Binding IsChecked, ElementName=LimitedGoldCheck}" AutomationProperties.AutomationId="StoreGoldBox"/>
-                    </WrapPanel>
+                    </StackPanel>
+
+                    <!-- Row 3: Comment (full width at bottom) -->
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Comment:" VerticalAlignment="Top" Margin="0,8,8,0"/>
+                    <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="10" x:Name="CommentBox"
+                             AcceptsReturn="True" TextWrapping="Wrap" Height="50" Margin="0,8,0,0"
+                             Watermark="Developer notes..."
+                             AutomationProperties.AutomationId="CommentBox"/>
                 </Grid>
             </Border>
 
@@ -373,7 +374,7 @@
                                 <Button Content="Select All" Click="OnSelectAllStoreItems" ToolTip.Tip="Select all items in the store" AutomationProperties.AutomationId="SelectAllStoreButton"/>
                                 <Button Content="Remove" Click="OnRemoveFromStore" ToolTip.Tip="Remove selected items from store" AutomationProperties.AutomationId="RemoveFromStoreButton"/>
                                 <Separator Width="1" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="4,2"/>
-                                <Button Content="∞ Selected" Click="OnSetInfinite" ToolTip.Tip="Set selected items to infinite stock" AutomationProperties.AutomationId="SetInfiniteButton"/>
+                                <Button Content="Make ∞" Click="OnSetInfinite" ToolTip.Tip="Set selected items to infinite stock" AutomationProperties.AutomationId="SetInfiniteButton"/>
                                 <Button Content="∞ All" Click="OnSetAllInfinite" ToolTip.Tip="Set ALL items to infinite stock" AutomationProperties.AutomationId="SetAllInfiniteButton"/>
                                 <Button Content="Clear ∞" Click="OnClearInfinite" ToolTip.Tip="Clear infinite flag on selected items" AutomationProperties.AutomationId="ClearInfiniteButton"/>
                             </StackPanel>

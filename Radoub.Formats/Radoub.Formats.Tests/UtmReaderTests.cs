@@ -256,6 +256,151 @@ public class UtmReaderTests
         }
     }
 
+    [Fact]
+    public void Read_UtmWithComment_ParsesComment()
+    {
+        var buffer = CreateUtmWithComment("This is a test comment for the store.");
+
+        var utm = UtmReader.Read(buffer);
+
+        Assert.Equal("This is a test comment for the store.", utm.Comment);
+    }
+
+    [Fact]
+    public void Read_UtmWithPaletteID_ParsesPaletteID()
+    {
+        var buffer = CreateUtmWithPaletteID(5);
+
+        var utm = UtmReader.Read(buffer);
+
+        Assert.Equal(5, utm.PaletteID);
+    }
+
+    [Fact]
+    public void RoundTrip_UtmWithComment_PreservesComment()
+    {
+        var original = CreateUtmWithComment("Module designer notes here");
+
+        var utm = UtmReader.Read(original);
+        var written = UtmWriter.Write(utm);
+        var utm2 = UtmReader.Read(written);
+
+        Assert.Equal(utm.Comment, utm2.Comment);
+    }
+
+    [Fact]
+    public void RoundTrip_UtmWithPaletteID_PreservesPaletteID()
+    {
+        var original = CreateUtmWithPaletteID(3);
+
+        var utm = UtmReader.Read(original);
+        var written = UtmWriter.Write(utm);
+        var utm2 = UtmReader.Read(written);
+
+        Assert.Equal(utm.PaletteID, utm2.PaletteID);
+    }
+
+    [Fact]
+    public void RoundTrip_CompleteUtm_PreservesAllFields()
+    {
+        // Create a UTM with all fields populated
+        var original = CreateCompleteUtm();
+
+        var utm = UtmReader.Read(original);
+        var written = UtmWriter.Write(utm);
+        var utm2 = UtmReader.Read(written);
+
+        // Identity
+        Assert.Equal(utm.ResRef, utm2.ResRef);
+        Assert.Equal(utm.Tag, utm2.Tag);
+        Assert.Equal(utm.LocName.GetDefault(), utm2.LocName.GetDefault());
+
+        // Pricing
+        Assert.Equal(utm.MarkDown, utm2.MarkDown);
+        Assert.Equal(utm.MarkUp, utm2.MarkUp);
+        Assert.Equal(utm.StoreGold, utm2.StoreGold);
+        Assert.Equal(utm.MaxBuyPrice, utm2.MaxBuyPrice);
+        Assert.Equal(utm.IdentifyPrice, utm2.IdentifyPrice);
+
+        // Black market
+        Assert.Equal(utm.BlackMarket, utm2.BlackMarket);
+        Assert.Equal(utm.BM_MarkDown, utm2.BM_MarkDown);
+
+        // Blueprint
+        Assert.Equal(utm.Comment, utm2.Comment);
+        Assert.Equal(utm.PaletteID, utm2.PaletteID);
+
+        // Scripts
+        Assert.Equal(utm.OnOpenStore, utm2.OnOpenStore);
+        Assert.Equal(utm.OnStoreClosed, utm2.OnStoreClosed);
+
+        // Inventory
+        Assert.Equal(utm.StoreList.Count, utm2.StoreList.Count);
+
+        // Restrictions
+        Assert.Equal(utm.WillOnlyBuy.Count, utm2.WillOnlyBuy.Count);
+        Assert.Equal(utm.WillNotBuy.Count, utm2.WillNotBuy.Count);
+
+        // Variables
+        Assert.Equal(utm.VarTable.Count, utm2.VarTable.Count);
+    }
+
+    [Theory]
+    [InlineData(-1)]    // Infinite gold
+    [InlineData(0)]     // No gold
+    [InlineData(10000)] // Normal gold
+    [InlineData(999999)] // Large gold reserve
+    public void RoundTrip_StoreGold_PreservesValue(int storeGold)
+    {
+        var utm = new UtmFile
+        {
+            ResRef = "test_store",
+            StoreGold = storeGold
+        };
+
+        var written = UtmWriter.Write(utm);
+        var utm2 = UtmReader.Read(written);
+
+        Assert.Equal(storeGold, utm2.StoreGold);
+    }
+
+    [Theory]
+    [InlineData(-1)]    // No max
+    [InlineData(0)]     // Zero max
+    [InlineData(5000)]  // Normal max
+    [InlineData(1000000)] // High max
+    public void RoundTrip_MaxBuyPrice_PreservesValue(int maxBuyPrice)
+    {
+        var utm = new UtmFile
+        {
+            ResRef = "test_store",
+            MaxBuyPrice = maxBuyPrice
+        };
+
+        var written = UtmWriter.Write(utm);
+        var utm2 = UtmReader.Read(written);
+
+        Assert.Equal(maxBuyPrice, utm2.MaxBuyPrice);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void RoundTrip_BlackMarket_PreservesValue(bool blackMarket)
+    {
+        var utm = new UtmFile
+        {
+            ResRef = "test_store",
+            BlackMarket = blackMarket,
+            BM_MarkDown = 15
+        };
+
+        var written = UtmWriter.Write(utm);
+        var utm2 = UtmReader.Read(written);
+
+        Assert.Equal(blackMarket, utm2.BlackMarket);
+    }
+
     #region Test Helpers
 
     private static byte[] CreateMinimalUtmFile()
@@ -605,6 +750,113 @@ public class UtmReaderTests
             Label = label,
             Value = value
         });
+    }
+
+    private static byte[] CreateUtmWithComment(string comment)
+    {
+        var gff = CreateGffFileWithType("UTM ");
+        var root = gff.RootStruct;
+
+        AddCResRefField(root, "ResRef", "test_store");
+        AddCExoStringField(root, "Comment", comment);
+
+        return GffWriter.Write(gff);
+    }
+
+    private static byte[] CreateUtmWithPaletteID(byte paletteId)
+    {
+        var gff = CreateGffFileWithType("UTM ");
+        var root = gff.RootStruct;
+
+        AddCResRefField(root, "ResRef", "test_store");
+        AddByteField(root, "ID", paletteId);
+
+        return GffWriter.Write(gff);
+    }
+
+    private static byte[] CreateCompleteUtm()
+    {
+        var gff = CreateGffFileWithType("UTM ");
+        var root = gff.RootStruct;
+
+        // Identity
+        AddCResRefField(root, "ResRef", "complete_store");
+        AddCExoStringField(root, "Tag", "COMPLETE_STORE");
+        var locName = new CExoLocString { StrRef = 0xFFFFFFFF };
+        locName.LocalizedStrings[0] = "Complete Test Store";
+        AddLocStringField(root, "LocName", locName);
+
+        // Pricing
+        AddIntField(root, "MarkDown", 60);
+        AddIntField(root, "MarkUp", 140);
+        AddIntField(root, "StoreGold", 10000);
+        AddIntField(root, "MaxBuyPrice", 5000);
+        AddIntField(root, "IdentifyPrice", 75);
+
+        // Black market
+        AddByteField(root, "BlackMarket", 1);
+        AddIntField(root, "BM_MarkDown", 20);
+
+        // Blueprint
+        AddCExoStringField(root, "Comment", "This is a complete test store with all fields");
+        AddByteField(root, "ID", 2);
+
+        // Scripts
+        AddCResRefField(root, "OnOpenStore", "store_open");
+        AddCResRefField(root, "OnStoreClosed", "store_close");
+
+        // StoreList with one panel and one item
+        var storeList = new GffList();
+        var weaponsPanel = new GffStruct { Type = (uint)StorePanels.Weapons };
+        var itemList = new GffList();
+
+        var item = new GffStruct { Type = 0 };
+        AddCResRefField(item, "InventoryRes", "nw_wswls001");
+        AddByteField(item, "Infinite", 1);
+        AddWordField(item, "Repos_PosX", 0xFFFF);
+        AddWordField(item, "Repos_PosY", 0xFFFF);
+        itemList.Elements.Add(item);
+        itemList.Count = 1;
+
+        weaponsPanel.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "ItemList",
+            Value = itemList
+        });
+        storeList.Elements.Add(weaponsPanel);
+        storeList.Count = 1;
+
+        root.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "StoreList",
+            Value = storeList
+        });
+
+        // WillOnlyBuy
+        AddBaseItemList(root, "WillOnlyBuy", new[] { 4, 5 });
+
+        // WillNotBuy
+        AddBaseItemList(root, "WillNotBuy", new[] { 49 });
+
+        // VarTable
+        var varTable = new GffList();
+        var intVar = new GffStruct { Type = 0 };
+        AddCExoStringField(intVar, "Name", "StoreLevel");
+        AddDwordField(intVar, "Type", 1);
+        AddIntField(intVar, "Value", 3);
+        varTable.Elements.Add(intVar);
+        varTable.Count = 1;
+
+        root.Fields.Add(new GffField
+        {
+            Type = GffField.List,
+            Label = "VarTable",
+            Value = varTable
+        });
+
+        return GffWriter.Write(gff);
     }
 
     #endregion

@@ -80,20 +80,10 @@ public partial class MainWindow
             return;
         }
 
-        // Generate a unique variable name
-        var baseName = "NewVar";
-        var counter = 1;
-        var name = baseName;
-
-        while (Variables.Any(v => v.Name == name))
-        {
-            name = $"{baseName}{counter}";
-            counter++;
-        }
-
+        // Create new variable with empty name - user will fill it in
         var newVar = new VariableViewModel
         {
-            Name = name,
+            Name = string.Empty,
             Type = VariableType.Int,
             IntValue = 0
         };
@@ -102,10 +92,18 @@ public partial class MainWindow
         Variables.Add(newVar);
         VariablesGrid.SelectedItem = newVar;
 
+        // Begin edit on the Name column so user can type immediately
+        // Use Dispatcher to ensure grid has processed the new item
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            VariablesGrid.ScrollIntoView(newVar, VariablesGrid.Columns[0]);
+            VariablesGrid.BeginEdit();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+
         _isDirty = true;
         UpdateTitle();
 
-        UnifiedLogger.LogApplication(LogLevel.INFO, $"Added new variable: {name}");
+        UnifiedLogger.LogApplication(LogLevel.INFO, "Added new variable (awaiting name)");
     }
 
     private void OnRemoveVariable(object? sender, RoutedEventArgs e)
