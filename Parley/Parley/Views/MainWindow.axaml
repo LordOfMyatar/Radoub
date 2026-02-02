@@ -198,6 +198,7 @@
 
             <!-- Dialog Browser Panel (#1143) -->
             <radoubControls:DialogBrowserPanel x:Name="DialogBrowserPanel"
+                                               AutomationProperties.AutomationId="DialogBrowserPanel"
                                                Grid.Column="0"
                                                Margin="5,5,0,5"/>
 
