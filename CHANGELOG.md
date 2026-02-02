@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.57] - 2026-02-01
-**Branch**: `radoub/issue-1184` | **PR**: #TBD
+**Branch**: `radoub/issue-1184` | **PR**: #1193
 
 ### Sprint: Infrastructure & Logging (#1184)
 
