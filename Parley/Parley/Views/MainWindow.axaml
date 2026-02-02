@@ -475,7 +475,7 @@
                                             x:Name="AddConditionsParamButton" Click="OnAddConditionsParamClick"
                                             TabIndex="13"
                                             Margin="0,0,5,0"/>
-                                    <Button Content="💡 Suggest"
+                                    <Button Content="✦ Suggest"
                                             x:Name="SuggestConditionsParamButton" Click="OnSuggestConditionsParamClick"
                                             TabIndex="14"
                                             Margin="0,0,10,0"
@@ -547,7 +547,7 @@
                                             x:Name="AddActionsParamButton" Click="OnAddActionsParamClick"
                                             TabIndex="23"
                                             Margin="0,0,5,0"/>
-                                    <Button Content="💡 Suggest"
+                                    <Button Content="✦ Suggest"
                                             x:Name="SuggestActionsParamButton" Click="OnSuggestActionsParamClick"
                                             TabIndex="24"
                                             Margin="0,0,10,0"

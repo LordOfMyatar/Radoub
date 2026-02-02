@@ -111,7 +111,7 @@
 
             <CheckBox Grid.Column="1"
                       x:Name="ShowHakCheckBox"
-                      Content="📦 Show HAK"
+                      Content="☐ Show HAK"
                       ToolTip.Tip="Show scripts from HAK files in module and user hak folder"
                       VerticalAlignment="Center"
                       IsChecked="False"
@@ -121,7 +121,7 @@
 
             <CheckBox Grid.Column="2"
                       x:Name="ShowBuiltInCheckBox"
-                      Content="🎮 Show built-in"
+                      Content="○ Show built-in"
                       ToolTip.Tip="Show built-in game scripts from base game (requires game path in Settings)"
                       VerticalAlignment="Center"
                       IsChecked="False"
