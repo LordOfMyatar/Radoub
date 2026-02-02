@@ -192,39 +192,6 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Logging Tab -->
-            <TabItem Header="Logging">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="10" Spacing="15">
-                        <!-- Log Level -->
-                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Log Level" FontWeight="Bold"/>
-                                <TextBlock Text="Set the minimum log level for messages to be recorded."
-                                          FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <ComboBox x:Name="LogLevelComboBox" SelectionChanged="OnLogLevelChanged"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Log Retention -->
-                        <Border BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Padding="10" CornerRadius="5">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Log Retention" FontWeight="Bold"/>
-                                <TextBlock Text="Number of recent sessions to keep (default: 3)"
-                                          FontSize="{DynamicResource FontSizeSmall}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <Slider x:Name="LogRetentionSlider" Grid.Column="0"
-                                           Minimum="1" Maximum="10" Value="3"
-                                           TickFrequency="1" IsSnapToTickEnabled="True"
-                                           ValueChanged="OnLogRetentionChanged"/>
-                                    <TextBlock x:Name="LogRetentionLabel" Grid.Column="1"
-                                              Text="3 sessions" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
         </TabControl>
 
         <!-- Action Buttons -->

@@ -50,13 +50,6 @@ public partial class SettingsWindow : Window
         // Load font family list
         LoadFontFamilyList();
 
-        // Load log level
-        LoadLogLevelList();
-
-        // Load log retention
-        LogRetentionSlider.Value = settings.LogRetentionSessions;
-        LogRetentionLabel.Text = settings.LogRetentionSessions.ToString();
-
         // Load spell check settings
         LoadSpellCheckSettings();
 
@@ -224,45 +217,6 @@ public partial class SettingsWindow : Window
                 // Invalid font family - use default
             }
         }
-    }
-
-    private void LoadLogLevelList()
-    {
-        LogLevelComboBox.Items.Clear();
-
-        foreach (LogLevel level in Enum.GetValues<LogLevel>())
-        {
-            var item = new ComboBoxItem
-            {
-                Content = level.ToString(),
-                Tag = level
-            };
-            LogLevelComboBox.Items.Add(item);
-
-            if (level == SettingsService.Instance.CurrentLogLevel)
-            {
-                LogLevelComboBox.SelectedItem = item;
-            }
-        }
-    }
-
-    private void OnLogLevelChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isLoading) return;
-
-        if (LogLevelComboBox.SelectedItem is ComboBoxItem item && item.Tag is LogLevel level)
-        {
-            SettingsService.Instance.CurrentLogLevel = level;
-        }
-    }
-
-    private void OnLogRetentionChanged(object? sender, Avalonia.Controls.Primitives.RangeBaseValueChangedEventArgs e)
-    {
-        if (_isLoading) return;
-
-        var value = (int)LogRetentionSlider.Value;
-        LogRetentionLabel.Text = value.ToString();
-        SettingsService.Instance.LogRetentionSessions = value;
     }
 
     private void OnCloseClick(object? sender, RoutedEventArgs e)

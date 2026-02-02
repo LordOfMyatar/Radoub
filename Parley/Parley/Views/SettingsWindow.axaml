@@ -320,35 +320,10 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Logging Tab -->
-            <TabItem Header="Logging">
+            <!-- Debug Tab -->
+            <TabItem Header="Debug">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="10,10,20,10" Spacing="15">
-                        <!-- Log Level -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Log Level" FontWeight="Bold"/>
-                                <ComboBox x:Name="LogLevelComboBox" SelectionChanged="OnLogLevelChanged"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Log Retention -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="Log Retention" FontWeight="Bold"/>
-                                <TextBlock Text="Number of recent sessions to keep (default: 3)"
-                                          FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <Slider x:Name="LogRetentionSlider" Grid.Column="0"
-                                           Minimum="1" Maximum="10" Value="3"
-                                           TickFrequency="1" IsSnapToTickEnabled="True"
-                                           ValueChanged="OnLogRetentionChanged"/>
-                                    <TextBlock x:Name="LogRetentionLabel" Grid.Column="1"
-                                              Text="3 sessions" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
                         <!-- Debug Panel Visibility -->
                         <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5">
                             <StackPanel Spacing="8">
@@ -360,6 +335,13 @@
                                 <TextBlock Text="Display the debug console tab in the main window"
                                           FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" Margin="25,0,0,0"/>
                             </StackPanel>
+                        </Border>
+
+                        <!-- Note about centralized logging -->
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="10" CornerRadius="5"
+                               Background="{DynamicResource ThemeSidebar}" Opacity="0.7">
+                            <TextBlock Text="Log level and retention are configured in Trebuchet (Radoub launcher) and apply to all tools."
+                                      TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>

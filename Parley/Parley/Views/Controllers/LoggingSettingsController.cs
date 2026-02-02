@@ -1,18 +1,16 @@
 using System;
-using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using DialogEditor.Services;
-using Radoub.Formats.Logging;
 
 namespace DialogEditor.Views.Controllers
 {
     /// <summary>
-    /// Controller for Logging settings section in SettingsWindow.
-    /// Handles: Log level, retention, debug panel visibility.
+    /// Controller for Debug settings section in SettingsWindow.
+    /// Handles: Debug panel visibility.
+    /// Note: Log level and retention are now centralized in Trebuchet (RadoubSettings).
     /// </summary>
     public class LoggingSettingsController
     {
@@ -29,26 +27,7 @@ namespace DialogEditor.Views.Controllers
         {
             var settings = SettingsService.Instance;
 
-            var logLevelComboBox = _window.FindControl<ComboBox>("LogLevelComboBox");
-            var logRetentionSlider = _window.FindControl<Slider>("LogRetentionSlider");
-            var logRetentionLabel = _window.FindControl<TextBlock>("LogRetentionLabel");
             var showDebugPanelCheckBox = _window.FindControl<CheckBox>("ShowDebugPanelCheckBox");
-
-            if (logLevelComboBox != null)
-            {
-                logLevelComboBox.ItemsSource = Enum.GetValues(typeof(LogLevel)).Cast<LogLevel>().ToList();
-                logLevelComboBox.SelectedItem = settings.CurrentLogLevel;
-            }
-
-            if (logRetentionSlider != null)
-            {
-                logRetentionSlider.Value = settings.LogRetentionSessions;
-            }
-
-            if (logRetentionLabel != null)
-            {
-                logRetentionLabel.Text = $"{settings.LogRetentionSessions} sessions";
-            }
 
             if (showDebugPanelCheckBox != null)
             {
@@ -60,38 +39,11 @@ namespace DialogEditor.Views.Controllers
         {
             var settings = SettingsService.Instance;
 
-            var logLevelComboBox = _window.FindControl<ComboBox>("LogLevelComboBox");
-            var logRetentionSlider = _window.FindControl<Slider>("LogRetentionSlider");
             var showDebugPanelCheckBox = _window.FindControl<CheckBox>("ShowDebugPanelCheckBox");
-
-            if (logLevelComboBox?.SelectedItem is LogLevel logLevel)
-            {
-                settings.CurrentLogLevel = logLevel;
-            }
-
-            if (logRetentionSlider != null)
-            {
-                settings.LogRetentionSessions = (int)logRetentionSlider.Value;
-            }
 
             if (showDebugPanelCheckBox != null)
             {
                 settings.DebugWindowVisible = showDebugPanelCheckBox.IsChecked ?? false;
-            }
-        }
-
-        public void OnLogLevelChanged(object? sender, SelectionChangedEventArgs e)
-        {
-            if (_isInitializing()) return;
-            // Log level change is handled in ApplySettings
-        }
-
-        public void OnLogRetentionChanged(object? sender, RangeBaseValueChangedEventArgs e)
-        {
-            var logRetentionLabel = _window.FindControl<TextBlock>("LogRetentionLabel");
-            if (logRetentionLabel != null && sender is Slider slider)
-            {
-                logRetentionLabel.Text = $"{(int)slider.Value} sessions";
             }
         }
 

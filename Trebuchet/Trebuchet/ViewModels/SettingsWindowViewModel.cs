@@ -101,7 +101,7 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     public ObservableCollection<string> AvailableLogLevels { get; } = new()
     {
-        "DEBUG", "INFO", "WARN", "ERROR"
+        "TRACE", "DEBUG", "INFO", "WARN", "ERROR"
     };
 
     public ObservableCollection<string> AvailableLanguages { get; } = new()
