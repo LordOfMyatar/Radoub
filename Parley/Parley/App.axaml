@@ -13,8 +13,9 @@
 
     <Application.Styles>
         <FluentTheme />
-        <!-- Shared focus styles for accessibility (#823) -->
+        <!-- Shared UI styles from Radoub.UI (#823, #1089) -->
         <StyleInclude Source="avares://Radoub.UI/Styles/FocusStyles.axaml"/>
+        <StyleInclude Source="avares://Radoub.UI/Styles/ButtonStyles.axaml"/>
 
         <!-- Theme-aware window background -->
         <Style Selector="Window">

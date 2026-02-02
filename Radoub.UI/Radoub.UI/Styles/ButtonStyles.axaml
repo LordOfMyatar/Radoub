@@ -1,0 +1,34 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+    Shared Button Styles for Radoub Tools (#1089)
+
+    Theme colors:
+    - button_primary → ButtonBackground (standard buttons = blue in VSCode Dark)
+    - button_secondary → ThemeButtonSecondary (cancel/dismiss buttons = gray)
+
+    Include in App.axaml with:
+    <StyleInclude Source="avares://Radoub.UI/Styles/ButtonStyles.axaml"/>
+
+    Usage:
+    <Button Content="Save"/>                  - Primary action (blue)
+    <Button Content="Cancel" Classes="secondary"/> - Secondary/cancel (gray)
+    -->
+
+    <!-- Secondary button style - for Cancel, Close, Dismiss buttons -->
+    <Style Selector="Button.secondary">
+        <Setter Property="Background" Value="{DynamicResource ThemeButtonSecondary}"/>
+    </Style>
+
+    <Style Selector="Button.secondary:pointerover">
+        <Setter Property="Background" Value="{DynamicResource ThemeButtonSecondary}"/>
+        <Setter Property="Opacity" Value="0.9"/>
+    </Style>
+
+    <Style Selector="Button.secondary:pressed">
+        <Setter Property="Background" Value="{DynamicResource ThemeButtonSecondary}"/>
+        <Setter Property="Opacity" Value="0.8"/>
+    </Style>
+
+</Styles>

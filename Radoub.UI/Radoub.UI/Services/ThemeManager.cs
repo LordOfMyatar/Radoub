@@ -352,6 +352,18 @@ public class ThemeManager
             resources["SystemControlBackgroundBaseLowBrush"] = sidebarBrush;
         }
 
+        // Title bar colors (#1089) - custom window title bars
+        if (!string.IsNullOrEmpty(colors.TitleBar))
+        {
+            var titleBarBrush = new SolidColorBrush(Color.Parse(colors.TitleBar));
+            resources["ThemeTitleBar"] = titleBarBrush;
+        }
+        if (!string.IsNullOrEmpty(colors.TitleBarForeground))
+        {
+            var titleBarFgBrush = new SolidColorBrush(Color.Parse(colors.TitleBarForeground));
+            resources["ThemeTitleBarForeground"] = titleBarFgBrush;
+        }
+
         // Text colors - controls need TextControlForeground
         if (!string.IsNullOrEmpty(colors.Text))
         {
@@ -566,27 +578,29 @@ public class ThemeManager
             resources["ThemeAutoTrimBorder"] = autoTrimBrush;
         }
 
-        // Button colors - apply theme-defined button colors to Fluent theme resources
-        // This ensures proper contrast in dark themes
+        // Button colors - apply theme-defined button colors to Fluent theme resources (#1089)
+        // button_primary = action buttons (Save, OK, Apply) - blue in most themes
+        // button_secondary = neutral/cancel buttons - gray in most themes
         if (!string.IsNullOrEmpty(colors.ButtonPrimary))
         {
             var btnPrimaryColor = Color.Parse(colors.ButtonPrimary);
             var btnPrimaryBrush = new SolidColorBrush(btnPrimaryColor);
 
-            // Primary button background (accent buttons)
+            // Standard button background - most buttons are action buttons
+            resources["ButtonBackground"] = btnPrimaryBrush;
+            resources["ButtonBackgroundDisabled"] = btnPrimaryBrush;
+            // Accent buttons use the same color
             resources["AccentButtonBackground"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPointerOver"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
         }
 
+        // Secondary button color is available as ThemeButtonSecondary for explicit use
+        // Cancel/dismiss buttons can use Classes="secondary" with matching style
         if (!string.IsNullOrEmpty(colors.ButtonSecondary))
         {
-            var btnSecondaryColor = Color.Parse(colors.ButtonSecondary);
-            var btnSecondaryBrush = new SolidColorBrush(btnSecondaryColor);
-
-            // Standard button backgrounds - use sidebar-based colors for better visibility
-            resources["ButtonBackground"] = btnSecondaryBrush;
-            resources["ButtonBackgroundDisabled"] = btnSecondaryBrush;
+            var btnSecondaryBrush = new SolidColorBrush(Color.Parse(colors.ButtonSecondary));
+            resources["ThemeButtonSecondary"] = btnSecondaryBrush;
         }
 
         if (!string.IsNullOrEmpty(colors.ButtonHover))

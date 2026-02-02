@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [x] #1088 - Standardize modal dialog styling across all tools
 - [x] #823 - Inconsistent focus indicators across controls
-- [ ] #1089 - Review theme consistency across all tools
+- [x] #1089 - Review theme consistency across all tools
 
 #### #1088 - Modal Dialog Styling
 - Added shared `DialogHelper` in `Radoub.UI/Services/DialogHelper.cs`
@@ -40,6 +40,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Uses SystemAccentColor for consistent focus ring appearance
 - All tools now include FocusStyles via StyleInclude
 - Documents focus-within pattern for custom container controls
+
+#### #1089 - Theme Consistency
+- Fixed ThemeManager to apply `title_bar` and `title_bar_foreground` from theme JSON
+- Fixed button color mapping: `button_primary` now maps to standard ButtonBackground (buttons are blue in VSCode Dark)
+- Added `ButtonStyles.axaml` with `.secondary` class for cancel/dismiss buttons
+- Added `ThemeButtonSecondary` resource for explicit secondary button styling
 
 ---
 
