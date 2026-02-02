@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.58] - 2026-02-01
+**Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #1195
+
+### Sprint: Parley & Radoub Testing (#1175, #1167, #1166)
+
+- [x] #1175 - Apply avgNormalSkip fixes to MdlBinaryReader2
+- [x] #1167 - Update Parley integration tests for new UI features
+- [x] #1166 - Fix UI tests failing after DialogBrowserPanel integration
+
+---
+
 ## [0.9.57] - 2026-02-01
 **Branch**: `radoub/issue-1184` | **PR**: #1193
 

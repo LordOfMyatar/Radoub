@@ -10,6 +10,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.129-alpha] - 2026-02-01
+**Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #1195
+
+### Sprint: Testing & Reliability (#1167, #1166)
+
+- [x] #1166 - Fix UI tests failing after DialogBrowserPanel integration
+  - Hide DialogBrowserPanel by default in tests to prevent layout issues
+  - Add AutomationIds to UI elements for reliable test automation
+- [x] #1167 - Reliability improvements for integration tests
+  - Add AutomationId to DialogBrowserPanel control
+  - Add explicit AutomationIds to buttons and text fields
+  - Note: New DialogBrowserPanel-specific tests deferred - F4 toggle is flaky
+
+---
+
 ## [0.1.128-alpha] - 2026-02-01
 **Branch**: `parley/issue-1177` | **PR**: #1179
 

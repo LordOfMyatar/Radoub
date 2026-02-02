@@ -75,10 +75,14 @@ public abstract class FlaUITestBase : IDisposable
         // Pre-seed Parley settings with test-friendly defaults
         // SideBySide layout is most stable for automated testing (no separate windows)
         // Enable HAK Files in Sound Browser to use our test HAK
+        // DialogBrowserPanelVisible: false - prevents panel from hiding tabs (#1166)
+        // WindowWidth: 1400 - ensure enough space for all tabs when panel is visible
         var parleySettings = @"{
   ""FlowchartLayout"": ""SideBySide"",
   ""FlowchartVisible"": false,
-  ""SoundBrowserIncludeHakFiles"": true
+  ""SoundBrowserIncludeHakFiles"": true,
+  ""DialogBrowserPanelVisible"": false,
+  ""WindowWidth"": 1400
 }";
         File.WriteAllText(Path.Combine(parleySettingsDir, "ParleySettings.json"), parleySettings);
 
@@ -490,6 +494,57 @@ public abstract class FlaUITestBase : IDisposable
         if (element == null) return false;
         var bounds = element.BoundingRectangle;
         return bounds.Width > 0 && bounds.Height > 0;
+    }
+
+    /// <summary>
+    /// Clicks a button by automation ID with focus safety and verification.
+    /// This is more reliable than raw element.Click() for flaky scenarios.
+    /// </summary>
+    /// <param name="automationId">The button's automation ID</param>
+    /// <param name="maxRetries">Maximum click attempts (default 3)</param>
+    /// <returns>True if click was successful, false otherwise</returns>
+    protected bool ClickButton(string automationId, int maxRetries = 3)
+    {
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            var button = FindElement(automationId, maxRetries: 2);
+            if (button == null)
+            {
+                Thread.Sleep(200);
+                continue;
+            }
+
+            try
+            {
+                // Ensure window is focused first
+                EnsureFocused();
+                Thread.Sleep(50);
+
+                // Scroll button into view if needed
+                button.Patterns.ScrollItem.PatternOrDefault?.ScrollIntoView();
+                Thread.Sleep(50);
+
+                // Try invoke pattern first (most reliable for buttons)
+                var invokePattern = button.Patterns.Invoke.PatternOrDefault;
+                if (invokePattern != null)
+                {
+                    invokePattern.Invoke();
+                    Thread.Sleep(100);
+                    return true;
+                }
+
+                // Fallback to click
+                button.Click();
+                Thread.Sleep(100);
+                return true;
+            }
+            catch
+            {
+                Thread.Sleep(200);
+            }
+        }
+
+        return false;
     }
 
     #endregion

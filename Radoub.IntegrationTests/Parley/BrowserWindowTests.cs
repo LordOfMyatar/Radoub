@@ -154,19 +154,20 @@ public class BrowserWindowTests : ParleyTestBase
         steps.Run("Find BrowseConditionalScriptButton", () =>
             FindElement("BrowseConditionalScriptButton") != null);
 
-        steps.Run("Click BrowseConditionalScriptButton", () =>
+        steps.Run("Click BrowseConditionalScriptButton and wait for browser", () =>
         {
-            var button = FindElement("BrowseConditionalScriptButton");
-            EnsureFocused(); // Ensure main window focus before clicking
-            button?.Click();
-            Thread.Sleep(800); // Wait for Script Browser to open
-            return true;
-        });
+            // Use focus-safe button click helper
+            if (!ClickButton("BrowseConditionalScriptButton"))
+                return false;
 
-        steps.Run("Script Browser window opens", () =>
-        {
-            var popup = FindPopupByTitle("Script Browser");
-            return popup != null;
+            // Wait for Script Browser window to open
+            for (int i = 0; i < 15; i++)
+            {
+                var popup = FindPopupByTitle("Script Browser", maxRetries: 1);
+                if (popup != null) return true;
+                Thread.Sleep(300);
+            }
+            return false;
         });
 
         steps.Run("Script Browser has list box", () =>
@@ -216,20 +217,15 @@ public class BrowserWindowTests : ParleyTestBase
         steps.Run("Find BrowseCreatureButton", () =>
             FindElement("BrowseCreatureButton") != null);
 
-        steps.Run("Click BrowseCreatureButton", () =>
+        steps.Run("Click BrowseCreatureButton and wait for picker", () =>
         {
-            var button = FindElement("BrowseCreatureButton");
-            EnsureFocused(); // Ensure main window focus before clicking
-            button?.Click();
-            Thread.Sleep(800); // Wait for Creature Picker to open
-            return true;
-        });
+            // Use focus-safe button click helper
+            if (!ClickButton("BrowseCreatureButton"))
+                return false;
 
-        steps.Run("Creature Picker window opens", () =>
-        {
-            // Try both title search and AutomationId search
-            // Avalonia popups may not appear in GetAllTopLevelWindows
-            for (int i = 0; i < 15; i++)
+            // Wait for Creature Picker window to open with extended retries
+            // Creature loading is async and can take time when tests compete for resources
+            for (int i = 0; i < 20; i++)
             {
                 var popup = FindPopupByTitle("Select Creature", maxRetries: 1);
                 if (popup != null) return true;
@@ -317,18 +313,14 @@ public class BrowserWindowTests : ParleyTestBase
             return true;
         });
 
-        steps.Run("Click BrowseCreatureButton", () =>
+        steps.Run("Click BrowseCreatureButton and wait for picker", () =>
         {
-            var button = FindElement("BrowseCreatureButton");
-            EnsureFocused();
-            button?.Click();
-            Thread.Sleep(1500); // Wait for Creature Picker to load creatures
-            return true;
-        });
+            // Use focus-safe button click helper
+            if (!ClickButton("BrowseCreatureButton"))
+                return false;
 
-        steps.Run("Creature Picker window opens", () =>
-        {
-            for (int i = 0; i < 15; i++)
+            // Wait for Creature Picker window to open with extended retries
+            for (int i = 0; i < 20; i++)
             {
                 var popup = FindPopupByTitle("Select Creature", maxRetries: 1);
                 if (popup != null) return true;

@@ -198,6 +198,7 @@
 
             <!-- Dialog Browser Panel (#1143) -->
             <radoubControls:DialogBrowserPanel x:Name="DialogBrowserPanel"
+                                               AutomationProperties.AutomationId="DialogBrowserPanel"
                                                Grid.Column="0"
                                                Margin="5,5,0,5"/>
 
@@ -236,11 +237,15 @@
                         <DockPanel>
                             <!-- Tree Control Buttons -->
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
-                                <Button Name="ExpandAllButton" Content="▼ Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
-                                <Button Name="CollapseAllButton" Content="▶ Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                                <Button Name="ExpandAllButton" AutomationProperties.AutomationId="ExpandAllButton"
+                                        Content="▼ Expand All" Click="OnExpandAllClick" Margin="0,0,5,0" Padding="8,2"/>
+                                <Button Name="CollapseAllButton" AutomationProperties.AutomationId="CollapseAllButton"
+                                        Content="▶ Collapse All" Click="OnCollapseAllClick" Margin="0,0,5,0" Padding="8,2"/>
                                 <Separator Width="1" Margin="5,0"/>
-                                <Button Name="AddNodeButton" Content="+ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
-                                <Button Name="DeleteNodeButton" Content="✖ Delete" Click="OnDeleteNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
+                                <Button Name="AddNodeButton" AutomationProperties.AutomationId="AddNodeButton"
+                                        Content="+ Node" Click="OnAddSmartNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Add Node (Ctrl+D)"/>
+                                <Button Name="DeleteNodeButton" AutomationProperties.AutomationId="DeleteNodeButton"
+                                        Content="✖ Delete" Click="OnDeleteNodeClick" Margin="0,0,5,0" Padding="8,2" ToolTip.Tip="Delete Node (Delete)"/>
                                 <Separator Width="1" Margin="5,0"/>
                                 <CheckBox x:Name="WordWrapCheckBox" Content="Word Wrap"
                                           IsChecked="{Binding Source={x:Static services:SettingsService.Instance}, Path=TreeViewWordWrap, Mode=TwoWay}"
@@ -253,7 +258,9 @@
                             <!-- DRAGON: DialogTreeView binding and event handlers connect to orphan handling, cut/copy/paste logic -->
                             <!-- DRAGON: Do not modify ItemsSource binding, SelectionChanged, or context menu Click handlers -->
                             <!-- Issue #450: Drag-drop support for node reordering/reparenting -->
-                            <TreeView x:Name="DialogTreeView" ItemsSource="{Binding DialogNodes}"
+                            <TreeView x:Name="DialogTreeView"
+                                      AutomationProperties.AutomationId="DialogTreeView"
+                                      ItemsSource="{Binding DialogNodes}"
                                       SelectedItem="{Binding SelectedTreeNode, Mode=TwoWay}"
                                       SelectionChanged="OnDialogTreeViewSelectionChanged"
                                       DoubleTapped="OnTreeViewItemDoubleTapped"
@@ -383,7 +390,9 @@
                                   SelectionChanged="OnRecentCreatureTagSelected">
                             <!-- Populated dynamically -->
                         </ComboBox>
-                        <Button x:Name="BrowseCreatureButton" Content="Browse..."
+                        <Button x:Name="BrowseCreatureButton"
+                                AutomationProperties.AutomationId="BrowseCreatureButton"
+                                Content="Browse..."
                                 TabIndex="32" Margin="0,0,10,4"
                                 MinWidth="50" Padding="4,0" Click="OnBrowseCreatureClick"/>
 
@@ -408,7 +417,9 @@
 
                     <!-- DRAGON: TextTextBox binding is critical - do not modify x:Name or LostFocus handler -->
                     <!-- Tab order: Ctrl+D lands here (1), then scripts, then back to speaker row -->
-                    <controls:SpellCheckTextBox x:Name="TextTextBox" AcceptsReturn="True"
+                    <controls:SpellCheckTextBox x:Name="TextTextBox"
+                            AutomationProperties.AutomationId="TextTextBox"
+                            AcceptsReturn="True"
                             TextWrapping="Wrap"
                             TabIndex="1"
                             MinHeight="80"
@@ -445,13 +456,17 @@
                                 <ColumnDefinition Width="5"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox x:Name="ScriptAppearsTextBox" Grid.Column="0" FontFamily="Consolas" TabIndex="10"
+                            <TextBox x:Name="ScriptAppearsTextBox"
+                                     AutomationProperties.AutomationId="ScriptAppearsTextBox"
+                                     Grid.Column="0" FontFamily="Consolas" TabIndex="10"
                                      TextWrapping="Wrap" GotFocus="OnFieldGotFocus" LostFocus="OnFieldLostFocus"/>
                             <Button x:Name="EditConditionalScriptButton" Grid.Column="2" Content="Edit Script"
                                     TabIndex="11"
                                     MinWidth="55" Padding="5,0" Click="OnEditConditionalScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
-                            <Button x:Name="BrowseConditionalScriptButton" Grid.Column="4" Content="Browse..."
+                            <Button x:Name="BrowseConditionalScriptButton"
+                                    AutomationProperties.AutomationId="BrowseConditionalScriptButton"
+                                    Grid.Column="4" Content="Browse..."
                                     TabIndex="12"
                                     MinWidth="55" Padding="5,0" Click="OnBrowseConditionalScriptClick"/>
                         </Grid>
@@ -523,7 +538,9 @@
                                     TabIndex="21"
                                     MinWidth="55" Padding="5,0" Click="OnEditActionScriptClick"
                                     ToolTip.Tip="Open script in external editor"/>
-                            <Button x:Name="BrowseActionScriptButton" Grid.Column="4" Content="Browse..."
+                            <Button x:Name="BrowseActionScriptButton"
+                                    AutomationProperties.AutomationId="BrowseActionScriptButton"
+                                    Grid.Column="4" Content="Browse..."
                                     TabIndex="22"
                                     MinWidth="55" Padding="5,0" Click="OnBrowseActionScriptClick"/>
                         </Grid>
@@ -842,6 +859,7 @@
                         <!-- Scrap Tree (#475: Hierarchical display for deleted node batches) -->
                         <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
                             <TreeView x:Name="ScrapTreeView"
+                                      AutomationProperties.AutomationId="ScrapTreeView"
                                       ItemsSource="{Binding ScrapEntries}"
                                       SelectedItem="{Binding SelectedScrapEntry, Mode=TwoWay}"
                                       Background="Transparent"
