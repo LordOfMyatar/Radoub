@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.11-alpha] - 2026-02-01
-**Branch**: `fence/issue-1178` | **PR**: #TBD
+**Branch**: `fence/issue-1178` | **PR**: #1194
 
 ### Sprint: Final Polish (#1178)
 
