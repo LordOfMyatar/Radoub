@@ -6,6 +6,7 @@ using MerchantEditor.Services;
 using MerchantEditor.ViewModels;
 using Radoub.Formats.Logging;
 using Radoub.Formats.Utm;
+using Radoub.UI.Services;
 using Radoub.UI.Views;
 using System;
 using System.IO;
@@ -506,43 +507,8 @@ public partial class MainWindow
     /// <summary>
     /// Shows a confirmation dialog and returns true if user confirms.
     /// </summary>
-    private async System.Threading.Tasks.Task<bool> ShowConfirmationDialogAsync(string title, string message)
-    {
-        var confirmed = false;
-        var dialog = new Window
-        {
-            Title = title,
-            Width = 400,
-            Height = 150,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
-
-        var okButton = new Button { Content = "OK", Width = 80 };
-        var cancelButton = new Button { Content = "Cancel", Width = 80, Margin = new Thickness(10, 0, 0, 0) };
-
-        okButton.Click += (s, e) => { confirmed = true; dialog.Close(); };
-        cancelButton.Click += (s, e) => dialog.Close();
-
-        dialog.Content = new StackPanel
-        {
-            Margin = new Thickness(20),
-            Spacing = 15,
-            Children =
-            {
-                new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap },
-                new StackPanel
-                {
-                    Orientation = Avalonia.Layout.Orientation.Horizontal,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                    Children = { okButton, cancelButton }
-                }
-            }
-        };
-
-        await dialog.ShowDialog(this);
-        return confirmed;
-    }
+    private System.Threading.Tasks.Task<bool> ShowConfirmationDialogAsync(string title, string message)
+        => DialogHelper.ShowOkCancelAsync(this, title, message);
 
     #endregion
 }

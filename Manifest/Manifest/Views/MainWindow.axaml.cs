@@ -17,6 +17,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Radoub.UI.Utils;
 using Radoub.UI.Views;
+using DialogHelper = Radoub.UI.Services.DialogHelper;
 
 namespace Manifest.Views;
 
@@ -207,43 +208,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private async Task<string> ShowUnsavedChangesDialog()
-    {
-        var dialog = new Window
-        {
-            Title = "Unsaved Changes",
-            Width = 350,
-            Height = 150,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
-
-        var result = "Cancel";
-
-        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
-        panel.Children.Add(new TextBlock { Text = "You have unsaved changes. What would you like to do?" });
-
-        var buttonPanel = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 10, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
-
-        var saveButton = new Button { Content = "Save" };
-        saveButton.Click += (s, e) => { result = "Save"; dialog.Close(); };
-
-        var discardButton = new Button { Content = "Discard" };
-        discardButton.Click += (s, e) => { result = "Discard"; dialog.Close(); };
-
-        var cancelButton = new Button { Content = "Cancel" };
-        cancelButton.Click += (s, e) => { result = "Cancel"; dialog.Close(); };
-
-        buttonPanel.Children.Add(saveButton);
-        buttonPanel.Children.Add(discardButton);
-        buttonPanel.Children.Add(cancelButton);
-        panel.Children.Add(buttonPanel);
-
-        dialog.Content = panel;
-        await dialog.ShowDialog(this);
-
-        return result;
-    }
+    private Task<string> ShowUnsavedChangesDialog()
+        => DialogHelper.ShowUnsavedChangesAsync(this);
 
     #region File Operations
 
@@ -369,7 +335,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             else
             {
                 UpdateStatus("No module.jrl found in selected folder");
-                await ShowErrorDialog("File Not Found", $"No module.jrl file found in:\n{UnifiedLogger.SanitizePath(modulePath)}");
+                ShowErrorDialog("File Not Found", $"No module.jrl file found in:\n{UnifiedLogger.SanitizePath(modulePath)}");
             }
         }
     }
@@ -404,7 +370,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             UnifiedLogger.LogJournal(LogLevel.ERROR, $"Failed to load journal: {ex.Message}");
             UpdateStatus($"Error loading file: {ex.Message}");
-            await ShowErrorDialog("Load Error", $"Failed to load journal file:\n{ex.Message}");
+            ShowErrorDialog("Load Error", $"Failed to load journal file:\n{ex.Message}");
         }
     }
 
@@ -445,7 +411,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             UnifiedLogger.LogJournal(LogLevel.ERROR, $"Failed to save journal: {ex.Message}");
             UpdateStatus($"Error saving file: {ex.Message}");
-            await ShowErrorDialog("Save Error", $"Failed to save journal file:\n{ex.Message}");
+            ShowErrorDialog("Save Error", $"Failed to save journal file:\n{ex.Message}");
         }
     }
 
@@ -522,7 +488,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             UnifiedLogger.LogJournal(LogLevel.ERROR, $"Failed to create journal: {ex.Message}");
             UpdateStatus($"Error creating file: {ex.Message}");
-            await ShowErrorDialog("Create Error", $"Failed to create journal file:\n{ex.Message}");
+            ShowErrorDialog("Create Error", $"Failed to create journal file:\n{ex.Message}");
         }
     }
 
@@ -1292,27 +1258,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private async Task ShowErrorDialog(string title, string message)
-    {
-        var dialog = new Window
-        {
-            Title = title,
-            Width = 400,
-            Height = 150,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            CanResize = false
-        };
-
-        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
-        panel.Children.Add(new TextBlock { Text = message, TextWrapping = Avalonia.Media.TextWrapping.Wrap });
-
-        var button = new Button { Content = "OK", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
-        button.Click += (s, e) => dialog.Close();
-        panel.Children.Add(button);
-
-        dialog.Content = panel;
-        await dialog.ShowDialog(this);
-    }
+    private void ShowErrorDialog(string title, string message)
+        => DialogHelper.ShowError(this, title, message);
 
     private void OnSettingsClick(object? sender, RoutedEventArgs e)
     {

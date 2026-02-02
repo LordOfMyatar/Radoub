@@ -14,6 +14,7 @@ using Radoub.Formats.Utc;
 using Radoub.UI.Controls;
 using Radoub.UI.Services;
 using Radoub.UI.ViewModels;
+using DialogHelper = Quartermaster.Views.Helpers.DialogHelper;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

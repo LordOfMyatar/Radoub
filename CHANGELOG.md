@@ -20,9 +20,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool UI Consistency (#1154)
 
-- [ ] #1088 - Standardize modal dialog styling across all tools
+- [x] #1088 - Standardize modal dialog styling across all tools
 - [ ] #823 - Inconsistent focus indicators across controls
 - [ ] #1089 - Review theme consistency across all tools
+
+#### #1088 - Modal Dialog Styling
+- Added shared `DialogHelper` in `Radoub.UI/Services/DialogHelper.cs`
+- Modal styling: ThemeSidebar background + ThemeBorder accent (2px)
+- Dialog types: Confirm (Yes/No), OkCancel, WarningConfirm, UnsavedChanges, SaveError, Message, Error
+- Supports "Don't ask again" callback for confirmation dialogs
+- Parley: Updated `DialogFactory` to delegate to shared implementation
+- Quartermaster: Updated `DialogHelper` to delegate to shared implementation
+- Manifest: Replaced inline dialogs with shared `DialogHelper`
+- Fence: Replaced inline confirmation dialog with shared `DialogHelper`
 
 ---
 
