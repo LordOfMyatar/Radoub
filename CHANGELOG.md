@@ -20,10 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Cross-Tool UI Consistency (#1154)
 
-- [ ] #1089 - Review theme consistency across all tools
 - [ ] #1088 - Standardize modal dialog styling across all tools
 - [ ] #823 - Inconsistent focus indicators across controls
-- [ ] #868 - Standardize browse button labeling across all tools
+- [ ] #1089 - Review theme consistency across all tools
 
 ---
 
