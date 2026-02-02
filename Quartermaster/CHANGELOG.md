@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: QM Cleanup (#1183)
 
-- [ ] #867 - Browse buttons too far from fields on Classes/Advanced panels
+- [x] #867 - Browse buttons positioned adjacent to fields (AdvancedPanel, CharacterPanel)
 - [ ] #820 - Skills legend may overflow on narrow screens
 - [ ] #1019 - Expose comments field for UTC files
 - [ ] #773 - Consolidate empty/padding item types in Type dropdown
