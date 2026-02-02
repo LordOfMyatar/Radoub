@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.56] - 2026-02-01
+**Branch**: `radoub/issue-1181` | **PR**: #TBD
+
+### Sprint: UI Consistency Sweep (#1181)
+
+- [ ] #868 - Standardize browse button labeling across all tools
+- [ ] #867 - Browse buttons too far from fields on Classes/Advanced panels (QM)
+- [ ] #863 - Replace remaining emoji icons with Unicode symbols
+- [ ] #934 - Review menus and buttons for text clipping
+
+---
+
 ## [0.9.55] - 2026-02-01
 **Branch**: `radoub/issue-1185` | **PR**: #1187
 
