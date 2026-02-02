@@ -21,7 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Sprint: Cross-Tool UI Consistency (#1154)
 
 - [x] #1088 - Standardize modal dialog styling across all tools
-- [ ] #823 - Inconsistent focus indicators across controls
+- [x] #823 - Inconsistent focus indicators across controls
 - [ ] #1089 - Review theme consistency across all tools
 
 #### #1088 - Modal Dialog Styling
@@ -33,6 +33,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Quartermaster: Updated `DialogHelper` to delegate to shared implementation
 - Manifest: Replaced inline dialogs with shared `DialogHelper`
 - Fence: Replaced inline confirmation dialog with shared `DialogHelper`
+
+#### #823 - Focus Indicators
+- Added shared `FocusStyles.axaml` in `Radoub.UI/Styles/`
+- Enhanced focus visibility for Button, TextBox, ComboBox, CheckBox, RadioButton, ListBoxItem, TreeViewItem, TabItem
+- Uses SystemAccentColor for consistent focus ring appearance
+- All tools now include FocusStyles via StyleInclude
+- Documents focus-within pattern for custom container controls
 
 ---
 
