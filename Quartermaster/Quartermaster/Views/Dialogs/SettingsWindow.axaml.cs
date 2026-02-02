@@ -53,7 +53,6 @@ public partial class SettingsWindow : Window
     {
         LoadResourcePathSettings();
         LoadUISettings();
-        LoadLoggingSettings();
     }
 
     #region Resource Paths
@@ -541,64 +540,6 @@ public partial class SettingsWindow : Window
                 UnifiedLogger.LogApplication(LogLevel.DEBUG, $"Invalid font family for preview: {ex.Message}");
             }
         }
-    }
-
-    #endregion
-
-    #region Logging Settings
-
-    private void LoadLoggingSettings()
-    {
-        var settings = SettingsService.Instance;
-
-        // Log Level
-        var logLevelComboBox = this.FindControl<ComboBox>("LogLevelComboBox");
-        if (logLevelComboBox != null)
-        {
-            logLevelComboBox.ItemsSource = Enum.GetValues(typeof(LogLevel)).Cast<LogLevel>().ToList();
-            logLevelComboBox.SelectedItem = settings.CurrentLogLevel;
-        }
-
-        // Log Retention
-        var logRetentionSlider = this.FindControl<Slider>("LogRetentionSlider");
-        var logRetentionLabel = this.FindControl<TextBlock>("LogRetentionLabel");
-        if (logRetentionSlider != null)
-        {
-            logRetentionSlider.Value = settings.LogRetentionSessions;
-            if (logRetentionLabel != null)
-            {
-                logRetentionLabel.Text = $"{settings.LogRetentionSessions} sessions";
-            }
-        }
-    }
-
-    private void OnLogLevelChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-
-        var comboBox = sender as ComboBox;
-        if (comboBox?.SelectedItem is LogLevel level)
-        {
-            SettingsService.Instance.CurrentLogLevel = level;
-            UnifiedLogger.LogApplication(LogLevel.INFO, $"Log level changed to: {level}");
-        }
-    }
-
-    private void OnLogRetentionChanged(object? sender, RangeBaseValueChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-
-        var slider = sender as Slider;
-        if (slider == null) return;
-
-        var retention = (int)slider.Value;
-        var logRetentionLabel = this.FindControl<TextBlock>("LogRetentionLabel");
-        if (logRetentionLabel != null)
-        {
-            logRetentionLabel.Text = $"{retention} sessions";
-        }
-
-        SettingsService.Instance.LogRetentionSessions = retention;
     }
 
     #endregion

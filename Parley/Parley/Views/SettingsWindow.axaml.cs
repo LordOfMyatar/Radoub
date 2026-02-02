@@ -331,13 +331,7 @@ namespace DialogEditor.Views
 
         #endregion
 
-        #region Logging Settings Handlers (delegated to controller)
-
-        private void OnLogLevelChanged(object? sender, SelectionChangedEventArgs e)
-            => _loggingSettingsController?.OnLogLevelChanged(sender, e);
-
-        private void OnLogRetentionChanged(object? sender, RangeBaseValueChangedEventArgs e)
-            => _loggingSettingsController?.OnLogRetentionChanged(sender, e);
+        #region Debug Settings Handlers (delegated to controller)
 
         private void OnShowDebugPanelChanged(object? sender, RoutedEventArgs e)
             => _loggingSettingsController?.OnShowDebugPanelChanged(sender, e);

@@ -20,8 +20,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Sprint: Infrastructure & Logging (#1184)
 
-- [ ] #935 - Implement auto-pruning for log files
-- [ ] #1072 - Add centralized log level control for all applications
+#### #935 - Log Auto-Pruning (Already Implemented)
+- All tools now use `SharedLogRetentionSessions` from RadoubSettings at startup
+- Pruning happens during `UnifiedLogger.Configure()` based on shared setting
+- Previously hardcoded `RetainSessions=10` replaced with shared config
+
+#### #1072 - Centralized Log Level Control
+- All tools now use `SharedLogLevel` from RadoubSettings at startup
+- Added TRACE level to Trebuchet's log level dropdown (needed for Parley debugging)
+- Removed redundant Logging tab from Quartermaster settings
+- Removed redundant Logging section from Manifest settings
+- Parley's Logging tab renamed to "Debug" - keeps debug panel toggle, removed log level/retention
+- All logging configuration now done via Trebuchet (central hub)
 
 **Removed from sprint:**
 - #863 - Already completed in #1190
