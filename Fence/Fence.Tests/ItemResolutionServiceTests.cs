@@ -91,6 +91,8 @@ public class ItemResolutionServiceTests
         var result2 = service.ResolveItem("test_item");
 
         // Assert
+        Assert.NotNull(result1);
+        Assert.NotNull(result2);
         Assert.NotSame(result1, result2); // Different instance after cache clear
         Assert.Equal(result1.ResRef, result2.ResRef); // Same data
     }
