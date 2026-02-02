@@ -346,6 +346,7 @@ public class ThemeManager
             resources["LayerFillColorAltBrush"] = sidebarBrush;
             resources["SystemControlBackgroundAltHighBrush"] = sidebarBrush;
             resources["SystemControlBackgroundChromeMediumBrush"] = sidebarBrush;
+            resources["SystemControlBackgroundChromeMediumLowBrush"] = sidebarBrush; // ListBox background
 
             // Table/list backgrounds - use sidebar color for consistency
             // This ensures contrast calculations in brush-contrast-test.html match actual rendering
@@ -432,12 +433,16 @@ public class ThemeManager
             resources["ComboBoxForegroundDisabled"] = textBrush;
             resources["ComboBoxForegroundFocused"] = textBrush;
             resources["ComboBoxForegroundFocusedPressed"] = textBrush;
-            resources["ComboBoxPlaceholderForeground"] = textBrush;
-            resources["ComboBoxPlaceholderForegroundPointerOver"] = textBrush;
-            resources["ComboBoxPlaceholderForegroundPressed"] = textBrush;
-            resources["ComboBoxPlaceholderForegroundDisabled"] = textBrush;
-            resources["ComboBoxPlaceholderForegroundFocused"] = textBrush;
-            resources["ComboBoxPlaceholderForegroundFocusedPressed"] = textBrush;
+            // ComboBox placeholder text (note: PlaceHolder with capital H)
+            resources["ComboBoxPlaceHolderForeground"] = textBrush;
+            resources["ComboBoxPlaceHolderForegroundFocusedPressed"] = textBrush;
+            // ComboBox dropdown arrow/glyph
+            resources["ComboBoxDropDownGlyphForeground"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundPointerOver"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundPressed"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundFocused"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundFocusedPressed"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundDisabled"] = textBrush;
             // ComboBox dropdown item foreground
             resources["ComboBoxItemForeground"] = textBrush;
             resources["ComboBoxItemForegroundPointerOver"] = textBrush;
