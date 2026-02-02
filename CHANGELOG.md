@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.9.56] - 2026-02-01
-**Branch**: `radoub/issue-1181` | **PR**: #TBD
+**Branch**: `radoub/issue-1181` | **PR**: #1190
 
 ### Sprint: UI Consistency Sweep (#1181)
 
