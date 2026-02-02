@@ -73,16 +73,16 @@
                             <TextBlock Grid.Row="3" Grid.Column="0" Text="Portrait:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="5">
-                                <ComboBox Grid.Column="0" x:Name="PortraitComboBox"
-                                          HorizontalAlignment="Stretch"
+                            <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                <ComboBox x:Name="PortraitComboBox"
+                                          Width="200"
                                           AutomationProperties.AutomationId="PortraitComboBox"/>
-                                <Button Grid.Column="1" x:Name="BrowsePortraitButton"
+                                <Button x:Name="BrowsePortraitButton"
                                         Content="..."
                                         Padding="8,4"
                                         ToolTip.Tip="Browse portraits"
                                         AutomationProperties.AutomationId="BrowsePortraitButton"/>
-                            </Grid>
+                            </StackPanel>
 
                             <!-- Portrait ID (row from portraits.2da) - UTC files use this -->
                             <TextBlock Grid.Row="4" Grid.Column="0" Text="Portrait ID:"
@@ -119,16 +119,16 @@
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Sound Set:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="5">
-                                <ComboBox Grid.Column="0" x:Name="SoundSetComboBox"
-                                          HorizontalAlignment="Stretch"
+                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                                <ComboBox x:Name="SoundSetComboBox"
+                                          Width="200"
                                           AutomationProperties.AutomationId="SoundSetComboBox"/>
-                                <Button Grid.Column="1" x:Name="BrowseSoundSetButton"
+                                <Button x:Name="BrowseSoundSetButton"
                                         Content="..."
                                         Padding="8,4"
                                         ToolTip.Tip="Browse soundsets"
                                         AutomationProperties.AutomationId="BrowseSoundSetButton"/>
-                            </Grid>
+                            </StackPanel>
 
                             <!-- Soundset preview (#916) -->
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Preview:"
@@ -154,25 +154,24 @@
                             <TextBlock Grid.Row="2" Grid.Column="0" x:Name="ConversationLabel" Text="Conversation:"
                                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                        VerticalAlignment="Center"/>
-                            <Grid Grid.Row="2" Grid.Column="1" x:Name="ConversationRow" ColumnDefinitions="*,Auto" ColumnSpacing="5">
-                                <TextBox Grid.Column="0" x:Name="ConversationTextBox"
+                            <StackPanel Grid.Row="2" Grid.Column="1" x:Name="ConversationRow" Orientation="Horizontal" Spacing="5">
+                                <TextBox x:Name="ConversationTextBox"
+                                         Width="200"
                                          FontFamily="Consolas, Courier New, monospace"
                                          MaxLength="16"
                                          Watermark="(none)"
                                          AutomationProperties.AutomationId="ConversationTextBox"/>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
-                                    <Button x:Name="BrowseConversationButton"
-                                            Content="..."
-                                            Padding="8,4"
-                                            ToolTip.Tip="Browse dialogs"
-                                            AutomationProperties.AutomationId="BrowseConversationButton"/>
-                                    <Button x:Name="ClearConversationButton"
-                                            Content="✕"
-                                            Padding="8,4"
-                                            ToolTip.Tip="Clear conversation"
-                                            AutomationProperties.AutomationId="ClearConversationButton"/>
-                                </StackPanel>
-                            </Grid>
+                                <Button x:Name="BrowseConversationButton"
+                                        Content="..."
+                                        Padding="8,4"
+                                        ToolTip.Tip="Browse dialogs"
+                                        AutomationProperties.AutomationId="BrowseConversationButton"/>
+                                <Button x:Name="ClearConversationButton"
+                                        Content="✕"
+                                        Padding="8,4"
+                                        ToolTip.Tip="Clear conversation"
+                                        AutomationProperties.AutomationId="ClearConversationButton"/>
+                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>

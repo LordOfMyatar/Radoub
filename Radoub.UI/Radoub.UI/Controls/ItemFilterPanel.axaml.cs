@@ -328,6 +328,15 @@ public partial class ItemFilterPanel : UserControl
             if (string.IsNullOrEmpty(label) || label == "****")
                 continue;
 
+            // Skip padding and special requirement entries (#773)
+            // These are BioWare placeholder entries that clutter the dropdown
+            var labelLower = label.ToLowerInvariant();
+            if (labelLower.StartsWith("padding") ||
+                labelLower.StartsWith("xp2specreq") ||
+                labelLower.StartsWith("blank") ||
+                labelLower == "invalid")
+                continue;
+
             // Get display name from TLK
             var nameStrRef = baseItems.GetValue(i, "Name");
             string displayName;
@@ -339,6 +348,10 @@ public partial class ItemFilterPanel : UserControl
             {
                 displayName = label;
             }
+
+            // Skip entries with no meaningful display name
+            if (string.IsNullOrWhiteSpace(displayName) || displayName == label && labelLower.Contains("padding"))
+                continue;
 
             ItemTypes.Add(new ItemTypeInfo(i, displayName, label));
         }

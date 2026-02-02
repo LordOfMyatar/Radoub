@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.64-alpha] - 2026-02-01
+**Branch**: `quartermaster/issue-1183` | **PR**: #1189
+
+### Sprint: QM Cleanup (#1183)
+
+- [x] #867 - Browse buttons positioned adjacent to fields (AdvancedPanel, CharacterPanel)
+- [x] #820 - Skills legend uses WrapPanel to handle narrow screens
+- [x] #1019 - Comment field already exposed in AdvancedPanel (verified)
+- [x] #773 - Filter padding/placeholder entries from item Type dropdown (Radoub.UI)
+
+---
+
 ## [0.1.63-alpha] - 2026-02-01
 **Branch**: `quartermaster/issue-1171` | **PR**: #1172
 
