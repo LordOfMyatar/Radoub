@@ -75,14 +75,14 @@
                           ToolTip.Tip="Hide skills this character cannot use (e.g., Perform for non-Bards)"
                           AutomationProperties.AutomationId="SkillsHideUnavailableCheck"/>
 
-                <!-- Legend -->
-                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="10" Margin="20,0,0,0">
-                    <StackPanel Orientation="Horizontal" Spacing="3">
+                <!-- Legend - uses WrapPanel to handle narrow screens -->
+                <WrapPanel Grid.Column="4" Orientation="Horizontal" Margin="20,0,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="3" Margin="0,0,10,0">
                         <TextBlock Text="●" Foreground="{DynamicResource ThemeInfo}" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
                         <TextBlock Text="Class" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="3">
+                    <StackPanel Orientation="Horizontal" Spacing="3" Margin="0,0,10,0">
                         <TextBlock Text="○" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"/>
                         <TextBlock Text="Cross-class" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
@@ -92,7 +92,7 @@
                         <TextBlock Text="Unavailable" FontSize="{DynamicResource FontSizeSmall}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                     </StackPanel>
-                </StackPanel>
+                </WrapPanel>
             </Grid>
 
             <!-- Skills List -->
