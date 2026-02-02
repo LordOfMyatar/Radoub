@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - [x] #867 - Browse buttons positioned adjacent to fields (AdvancedPanel, CharacterPanel)
 - [x] #820 - Skills legend uses WrapPanel to handle narrow screens
-- [ ] #1019 - Expose comments field for UTC files
+- [x] #1019 - Comment field already exposed in AdvancedPanel (verified)
 - [ ] #773 - Consolidate empty/padding item types in Type dropdown
 
 ---
