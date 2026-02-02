@@ -464,7 +464,15 @@ public class ThemeManager
             resources["FlyoutPresenterBackground"] = sidebarBrush;
             resources["FlyoutBorderThemeBrush"] = sidebarBrush;
 
-            // ComboBox dropdown background
+            // ComboBox control background (the box itself)
+            resources["ComboBoxBackground"] = sidebarBrush;
+            resources["ComboBoxBackgroundPointerOver"] = sidebarBrush;
+            resources["ComboBoxBackgroundPressed"] = sidebarBrush;
+            resources["ComboBoxBackgroundDisabled"] = sidebarBrush;
+            resources["ComboBoxBackgroundFocused"] = sidebarBrush;
+            resources["ComboBoxBackgroundFocusedPressed"] = sidebarBrush;
+
+            // ComboBox dropdown background (the popup list)
             resources["ComboBoxDropDownBackground"] = sidebarBrush;
             resources["ComboBoxDropDownBackgroundPointerOver"] = sidebarBrush;
             resources["ComboBoxDropDownBackgroundPressed"] = sidebarBrush;
