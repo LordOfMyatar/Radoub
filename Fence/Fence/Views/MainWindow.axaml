@@ -179,7 +179,7 @@
                                 ToolTip.Tip="Clear script" AutomationProperties.AutomationId="ClearOpenScriptButton"/>
                     </Grid>
 
-                    <TextBlock Grid.Row="2" Grid.Column="3" Text="OnStoreClosed:" VerticalAlignment="Center" Margin="0,8,8,0"/>
+                    <TextBlock Grid.Row="2" Grid.Column="3" Text="OnStoreClosed:" VerticalAlignment="Center" Margin="8,8,8,0"/>
                     <Grid Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" Margin="0,8,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -195,7 +195,7 @@
                     </Grid>
 
                     <!-- Max Buy Price and Limited Gold on same row as scripts -->
-                    <StackPanel Grid.Row="2" Grid.Column="6" Grid.ColumnSpan="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,8,0,0">
+                    <StackPanel Grid.Row="2" Grid.Column="6" Grid.ColumnSpan="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,8,0,0">
                         <CheckBox x:Name="MaxBuyPriceCheck" Content="Max Buy Price:" Margin="0,0,8,0" AutomationProperties.AutomationId="MaxBuyPriceCheck"/>
                         <TextBox x:Name="MaxBuyPriceBox" Width="80" IsEnabled="{Binding IsChecked, ElementName=MaxBuyPriceCheck}" AutomationProperties.AutomationId="MaxBuyPriceBox"/>
                         <CheckBox x:Name="LimitedGoldCheck" Content="Limited Gold:" Margin="16,0,8,0" AutomationProperties.AutomationId="LimitedGoldCheck"/>
