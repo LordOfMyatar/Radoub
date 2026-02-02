@@ -75,10 +75,14 @@ public abstract class FlaUITestBase : IDisposable
         // Pre-seed Parley settings with test-friendly defaults
         // SideBySide layout is most stable for automated testing (no separate windows)
         // Enable HAK Files in Sound Browser to use our test HAK
+        // DialogBrowserPanelVisible: false - prevents panel from hiding tabs (#1166)
+        // WindowWidth: 1400 - ensure enough space for all tabs when panel is visible
         var parleySettings = @"{
   ""FlowchartLayout"": ""SideBySide"",
   ""FlowchartVisible"": false,
-  ""SoundBrowserIncludeHakFiles"": true
+  ""SoundBrowserIncludeHakFiles"": true,
+  ""DialogBrowserPanelVisible"": false,
+  ""WindowWidth"": 1400
 }";
         File.WriteAllText(Path.Combine(parleySettingsDir, "ParleySettings.json"), parleySettings);
 
