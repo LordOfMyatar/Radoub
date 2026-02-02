@@ -15,6 +15,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.57] - 2026-02-01
+**Branch**: `radoub/issue-1184` | **PR**: #TBD
+
+### Sprint: Infrastructure & Logging (#1184)
+
+- [ ] #935 - Implement auto-pruning for log files
+- [ ] #1072 - Add centralized log level control for all applications
+
+**Removed from sprint:**
+- #863 - Already completed in #1190
+- #874 - Blocked (Aurora doesn't track ability points reliably)
+
+---
+
 ## [0.9.56] - 2026-02-01
 **Branch**: `radoub/issue-1181` | **PR**: #1190
 
