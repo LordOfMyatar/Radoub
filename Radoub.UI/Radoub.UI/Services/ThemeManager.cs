@@ -612,6 +612,15 @@ public class ThemeManager
             resources["AccentButtonBackground"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPointerOver"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
+
+            // Button foreground - white for colored backgrounds
+            var whiteBrush = new SolidColorBrush(Colors.White);
+            resources["ButtonForeground"] = whiteBrush;
+            resources["ButtonForegroundPointerOver"] = whiteBrush;
+            resources["ButtonForegroundPressed"] = whiteBrush;
+            resources["AccentButtonForeground"] = whiteBrush;
+            resources["AccentButtonForegroundPointerOver"] = whiteBrush;
+            resources["AccentButtonForegroundPressed"] = whiteBrush;
         }
 
         // Secondary button color is available as ThemeButtonSecondary for explicit use
