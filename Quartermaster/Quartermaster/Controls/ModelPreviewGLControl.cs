@@ -622,8 +622,10 @@ void main()
                 continue;
             }
 
-            // Calculate full world transform for this mesh node (includes parent hierarchy)
-            var worldTransform = GetWorldTransform(mesh);
+            // Get mesh position - use simple offset, NOT hierarchical transforms
+            // NWN models have vertices positioned relative to mesh node, with node position as offset
+            // Full hierarchical transforms break many models (beholder, beetles, etc.)
+            var nodePosition = mesh.Position;
 
             // Count NaN vertices - we'll skip them during rendering
             var nanVertexIndices = new HashSet<int>();
@@ -679,19 +681,19 @@ void main()
                     continue;
                 }
 
-                // Transform vertex position by full world transform (includes parent hierarchy)
-                var v = TransformPosition(mesh.Vertices[i], worldTransform);
+                // Simple position offset - just add node position to vertex
+                var v = mesh.Vertices[i] + nodePosition;
 
                 // Position
                 vertices.Add(v.X);
                 vertices.Add(v.Y);
                 vertices.Add(v.Z);
 
-                // Normal - use pre-computed normals from mesh if available, then transform
+                // Normal - use pre-computed normals from mesh if available
                 Vector3 normal;
                 if (hasNormals)
                 {
-                    normal = TransformNormal(mesh.Normals[i], worldTransform);
+                    normal = mesh.Normals[i];
                 }
                 else
                 {
@@ -710,8 +712,6 @@ void main()
                             break;
                         }
                     }
-                    // Transform the calculated normal as well
-                    normal = TransformNormal(normal, worldTransform);
                 }
                 vertices.Add(normal.X);
                 vertices.Add(normal.Y);
