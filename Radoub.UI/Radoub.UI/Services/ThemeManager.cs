@@ -359,6 +359,17 @@ public class ThemeManager
             resources["TextControlBackgroundPointerOver"] = sidebarBrush;
             resources["TextControlBackgroundFocused"] = sidebarBrush;
             resources["TextControlBackgroundDisabled"] = sidebarBrush;
+
+            // CheckBox box background - unchecked state uses sidebar for visibility
+            resources["CheckBoxCheckBackgroundFillUnchecked"] = sidebarBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedPointerOver"] = sidebarBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedPressed"] = sidebarBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedDisabled"] = sidebarBrush;
+            // Indeterminate state also uses sidebar
+            resources["CheckBoxCheckBackgroundFillIndeterminate"] = sidebarBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminatePointerOver"] = sidebarBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminatePressed"] = sidebarBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminateDisabled"] = sidebarBrush;
         }
 
         // Title bar colors (#1089) - custom window title bars
@@ -562,6 +573,17 @@ public class ThemeManager
             resources["TextControlBorderBrushPointerOver"] = borderBrush;
             resources["TextControlBorderBrushFocused"] = borderBrush;
             resources["TextControlBorderBrushDisabled"] = borderBrush;
+
+            // CheckBox box border - makes the checkbox square visible
+            resources["CheckBoxCheckBackgroundStrokeUnchecked"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeUncheckedPointerOver"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeUncheckedPressed"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeUncheckedDisabled"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeCheckedPointerOver"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeIndeterminate"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeIndeterminatePointerOver"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeIndeterminatePressed"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeIndeterminateDisabled"] = borderBrush;
         }
 
         // Expander styling - use sidebar for header background, background for content
