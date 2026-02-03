@@ -58,6 +58,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Fixed**: TextBox border brushes now use theme border color (makes text inputs distinguishable)
 - **Fixed**: Muted/secondary text (status bar paths, hints) now uses 70% opacity text color instead of border color for better readability
 - **Fixed**: CheckBox square now visible with sidebar background + border color (was invisible in dark themes)
+- **Self-describing themes**: Added explicit `text_muted`, `input_background`, `button_text` properties to theme schema
+- ThemeManager now uses explicit theme values instead of computed/hardcoded colors
+- Updated all 40 theme JSON files across all 5 tools with new properties
+- Manifest: Added sidebar backgrounds to Journal Structure and Properties panels, removed emoji from Delete button
 
 ---
 
