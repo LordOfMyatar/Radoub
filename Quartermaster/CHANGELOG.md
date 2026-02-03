@@ -17,10 +17,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Investigation and fixes for static appearance models (animals, bandits, dragons) that don't render correctly in the 3D preview. This is expected to be multi-PR work.
 
-#### Phase 1: Scoping
-- [ ] Identify categories of static models (dragons, humanoids, animals)
-- [ ] Document what's broken for each category
-- [ ] Determine root causes
+#### Phase 1: Scoping (Complete)
+
+**Findings:**
+
+1. **MODELTYPE Categories** (from appearance.2da):
+   - `P` (Part-based): 23 appearances - player races with composable body parts ✅ Working
+   - `F` (Full): 258 appearances - humanoids, undead, some monsters
+   - `L` (Large): 38 appearances - giants, golems, minotaurs
+   - `S` (Static): Dragons, elementals, beholders, misc creatures
+   - Others: `FT`, `FW`, `FWT`, `LWT`, `s` (placeholders)
+
+2. **Root Cause Identified**: ModelPreviewGLControl only applies position offset to vertices, ignoring:
+   - Node rotation (Quaternion) - critical for wings, limbs
+   - Node scale factor
+   - Hierarchical parent transforms
+
+3. **Evidence from Dragon Model** (c_DrgRed):
+   - Wing nodes have rotations like `rot=(41.5°, 0.0°, -0.0°)` → `rot=(-62.5°)` → `rot=(-83.5°)`
+   - These rotations are REQUIRED to position wings correctly
+   - Currently all meshes render at origin, causing "Kuato effect"
+
+4. **Models Load Successfully**: All tested models parse correctly with meshes
+   - Problem is transform application during rendering, not loading
+
+#### Next Steps (Future PRs)
+- [ ] Implement hierarchical transform calculation in UpdateMeshBuffers
+- [ ] Apply rotation (quaternion) and scale to vertices
+- [ ] Calculate world transform by walking parent chain
+- [ ] Test with dragon, bugbear, and other static models
 
 ---
 
