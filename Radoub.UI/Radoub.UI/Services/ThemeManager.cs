@@ -379,9 +379,19 @@ public class ThemeManager
             var textColor = Color.Parse(colors.Text);
             var textBrush = new SolidColorBrush(textColor);
 
+            // Create a muted text color (70% opacity) for secondary/status text
+            // In dark themes, muted text should still be readable (lighter gray, not dark gray)
+            var mutedTextColor = Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B);
+            var mutedTextBrush = new SolidColorBrush(mutedTextColor);
+
             resources["SystemBaseHighColor"] = textColor;
             resources["SystemBaseMediumHighColor"] = textColor;
             resources["SystemBaseMediumColor"] = textColor;
+            resources["SystemBaseMediumLowColor"] = mutedTextColor; // Muted text, not border
+
+            // Muted/secondary text foreground - status bar paths, hints, etc.
+            resources["SystemControlForegroundBaseMediumLowBrush"] = mutedTextBrush;
+            resources["SystemControlForegroundBaseLowBrush"] = mutedTextBrush;
 
             // TextBox and other control foregrounds
             resources["TextControlForeground"] = textBrush;
@@ -540,8 +550,8 @@ public class ThemeManager
             resources["SystemChromeDisabledLowColor"] = borderColor;
             resources["SystemChromeDisabledHighColor"] = borderColor;
 
-            resources["SystemControlForegroundBaseMediumLowBrush"] = borderBrush;
-            resources["SystemControlForegroundBaseLowBrush"] = borderBrush;
+            // Note: SystemControlForegroundBaseMediumLowBrush is set in Text section (muted text)
+            // Border colors are for borders, not text
 
             // Expander border styling
             resources["ExpanderHeaderBorderBrush"] = borderBrush;

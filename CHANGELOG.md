@@ -56,6 +56,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Fixed**: Added `Classes="secondary"` to Cancel buttons in CreaturePicker, ScriptBrowser, SoundBrowser dialogs
 - **Fixed**: TextBox controls now use sidebar background + border color for visibility against main background
 - **Fixed**: TextBox border brushes now use theme border color (makes text inputs distinguishable)
+- **Fixed**: Muted/secondary text (status bar paths, hints) now uses 70% opacity text color instead of border color for better readability
 
 ---
 
