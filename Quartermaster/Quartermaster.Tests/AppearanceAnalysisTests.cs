@@ -364,10 +364,9 @@ public class AppearanceAnalysisTests
         // Models with known issues (use exact names from appearance.2da RACE column)
         var testModels = new[]
         {
-            "c_behold",        // Parts laying around
-            "c_cmbtdummy",     // Disconnected
-            "c_goblinA",       // Working well (control case)
-            "c_bear",          // Bear - working (not c_bearblk)
+            "c_troll",         // Troll - missing legs (rotation issue?)
+            "c_gnomefm",       // Gnome female - big forearms
+            "c_duergarf",      // Duergar fighter - helmet on face
         };
 
         foreach (var modelName in testModels)
@@ -418,7 +417,10 @@ public class AppearanceAnalysisTests
                     var meshPosDist = mesh.Position.Length();
                     var pattern = vertCenterDist < 0.5f ? "LOCAL" : (meshPosDist < 0.1f ? "WORLD" : "MIXED");
 
-                    _output.WriteLine($"  Mesh '{mesh.Name}': nodePos={mesh.Position:F2}, vertCenter={vertCenter:F2} ({pattern})");
+                    // Check for rotation
+                    var hasRot = mesh.Orientation != System.Numerics.Quaternion.Identity;
+                    var rotInfo = hasRot ? $" ROT={mesh.Orientation}" : "";
+                    _output.WriteLine($"  Mesh '{mesh.Name}': nodePos={mesh.Position:F2}, vertCenter={vertCenter:F2} ({pattern}){rotInfo}");
                     _output.WriteLine($"    {verts.Length} verts, {mesh.Faces.Length} faces, type={mesh.GetType().Name}, parentDepth={parentChain.Count}");
                     _output.WriteLine($"    Chain: {string.Join(" <- ", parentChain)}");
                 }

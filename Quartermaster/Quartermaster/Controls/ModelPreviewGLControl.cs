@@ -622,10 +622,20 @@ void main()
                 continue;
             }
 
-            // Get mesh position - use simple offset, NOT hierarchical transforms
-            // NWN models have vertices positioned relative to mesh node, with node position as offset
-            // Full hierarchical transforms break many models (beholder, beetles, etc.)
-            var nodePosition = mesh.Position;
+            // Accumulate position offsets from parent chain (no rotation/scale - just translations)
+            // This handles hierarchical models like beetle legs attached to body
+            var worldPosition = Vector3.Zero;
+            MdlNode? current = mesh;
+            while (current != null)
+            {
+                worldPosition += current.Position;
+                current = current.Parent;
+            }
+
+            // Apply mesh's own rotation to vertices (but NOT parent rotations)
+            // This fixes meshes like troll legs that have 180° rotation
+            var meshRotation = mesh.Orientation;
+            var hasMeshRotation = meshRotation != Quaternion.Identity;
 
             // Count NaN vertices - we'll skip them during rendering
             var nanVertexIndices = new HashSet<int>();
@@ -681,19 +691,32 @@ void main()
                     continue;
                 }
 
-                // Simple position offset - just add node position to vertex
-                var v = mesh.Vertices[i] + nodePosition;
+                // Get vertex in local mesh space
+                var localVertex = mesh.Vertices[i];
+
+                // Apply mesh's own rotation if present (fixes troll legs, etc.)
+                if (hasMeshRotation)
+                {
+                    localVertex = Vector3.Transform(localVertex, meshRotation);
+                }
+
+                // Then apply world position offset
+                var v = localVertex + worldPosition;
 
                 // Position
                 vertices.Add(v.X);
                 vertices.Add(v.Y);
                 vertices.Add(v.Z);
 
-                // Normal - use pre-computed normals from mesh if available
+                // Normal - use pre-computed normals from mesh if available, then rotate
                 Vector3 normal;
                 if (hasNormals)
                 {
                     normal = mesh.Normals[i];
+                    if (hasMeshRotation)
+                    {
+                        normal = Vector3.Transform(normal, meshRotation);
+                    }
                 }
                 else
                 {
