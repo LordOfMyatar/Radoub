@@ -10,6 +10,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.65-alpha] - 2026-02-02
+**Branch**: `quartermaster/issue-1174` | **PR**: #1200
+
+### Bug: Static appearance creatures render incorrectly (#1174)
+
+Investigation and fixes for static appearance models (animals, bandits, dragons) that don't render correctly in the 3D preview. This is expected to be multi-PR work.
+
+#### Changes
+
+**Transform Improvements (ModelPreviewGLControl.cs):**
+- Accumulate position offsets from entire parent chain (fixes beetle legs)
+- Apply mesh's own rotation to vertices and normals (fixes troll legs)
+- Filter NaN vertices from skin nodes (parsing artifact)
+- Skip faces that reference NaN vertices
+
+**Models That Now Render Better:**
+- ✅ Beholder - mostly renders correctly (eyestalks attached)
+- ✅ Troll - legs now visible (had 180° rotation)
+- ✅ Beetles - legs attached to body
+- ✅ Polar bear - renders well
+- ✅ Most humanoids, constructs, bears, cats
+
+**Known Remaining Issues:**
+- ❌ Fairy - midsection renders horizontal instead of vertical
+- ❌ Dragon - feet and some wing parts broken
+- ❌ Some models appear red (satyr, beholder mouth) - texture/material issue
+- ❌ Ettin - still upside down
+
+**Root Cause Analysis:**
+NWN models use inconsistent transform conventions - some meshes have vertices in LOCAL space (centered at origin), some in WORLD space (already offset). The current approach improves many models but cannot fix all without model-type-specific handling.
+
+**Diagnostic Tests Added:**
+- `AppearanceAnalysisTests.DebugProblematicModels()` - analyze mesh transforms
+- `AppearanceAnalysisTests.AnalyzeSkinNodes()` - inspect bone weight data
+- `AppearanceAnalysisTests.AnalyzeModelHierarchy()` - print node hierarchy
+
+---
+
 ## [0.1.64-alpha] - 2026-02-01
 **Branch**: `quartermaster/issue-1183` | **PR**: #1189
 

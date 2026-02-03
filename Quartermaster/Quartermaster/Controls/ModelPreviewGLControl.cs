@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Avalonia;
 using Avalonia.OpenGL;
@@ -279,6 +280,68 @@ void main()
 
         _cameraTarget = (_model.BoundingMin + _model.BoundingMax) * 0.5f;
         _modelRadius = _model.Radius > 0 ? _model.Radius : 1.0f;
+    }
+
+    /// <summary>
+    /// Calculate the world transform matrix for a node by walking up the parent chain.
+    /// Combines position, rotation (quaternion), and scale from each ancestor.
+    ///
+    /// Transform order for each node: Scale first, then Rotate, then Translate (SRT)
+    /// This means vertices are scaled, rotated, then positioned.
+    ///
+    /// For hierarchical transforms: Parent * Child
+    /// So a vertex transforms as: RootTransform * ... * ParentTransform * NodeTransform * vertex
+    /// </summary>
+    private static Matrix4x4 GetWorldTransform(MdlNode node)
+    {
+        // Build transform chain from leaf to root, then apply root-to-leaf
+        var transforms = new List<Matrix4x4>();
+        var current = node;
+
+        while (current != null)
+        {
+            // Build local transform: Scale, then Rotate, then Translate
+            // In matrix terms: T * R * S (applied right-to-left to vertex)
+            var scale = Matrix4x4.CreateScale(current.Scale);
+            var rotation = Matrix4x4.CreateFromQuaternion(current.Orientation);
+            var translation = Matrix4x4.CreateTranslation(current.Position);
+
+            // Local transform = T * R * S (vertex is scaled, rotated, then translated)
+            var localTransform = translation * rotation * scale;
+            transforms.Add(localTransform);
+
+            current = current.Parent;
+        }
+
+        // Apply transforms from root to leaf: Root * ... * Parent * Node
+        // We collected leaf-to-root, so reverse and multiply
+        var worldTransform = Matrix4x4.Identity;
+        for (int i = transforms.Count - 1; i >= 0; i--)
+        {
+            worldTransform = worldTransform * transforms[i];
+        }
+
+        return worldTransform;
+    }
+
+    /// <summary>
+    /// Transform a position vector by a matrix.
+    /// </summary>
+    private static Vector3 TransformPosition(Vector3 position, Matrix4x4 matrix)
+    {
+        return Vector3.Transform(position, matrix);
+    }
+
+    /// <summary>
+    /// Transform a normal vector by a matrix (ignores translation, handles non-uniform scale).
+    /// </summary>
+    private static Vector3 TransformNormal(Vector3 normal, Matrix4x4 matrix)
+    {
+        // For normals, we need the inverse transpose of the upper-left 3x3
+        // For uniform scale and rotation only, we can simplify to just the rotation part
+        // Extract rotation/scale portion and transform
+        var transformed = Vector3.TransformNormal(normal, matrix);
+        return Vector3.Normalize(transformed);
     }
 
     protected override void OnOpenGlInit(GlInterface gl)
@@ -559,7 +622,36 @@ void main()
                 continue;
             }
 
-            var nodePosition = mesh.Position;
+            // Accumulate position offsets from parent chain (no rotation/scale - just translations)
+            // This handles hierarchical models like beetle legs attached to body
+            var worldPosition = Vector3.Zero;
+            MdlNode? current = mesh;
+            while (current != null)
+            {
+                worldPosition += current.Position;
+                current = current.Parent;
+            }
+
+            // Apply mesh's own rotation to vertices (but NOT parent rotations)
+            // This fixes meshes like troll legs that have 180° rotation
+            var meshRotation = mesh.Orientation;
+            var hasMeshRotation = meshRotation != Quaternion.Identity;
+
+            // Count NaN vertices - we'll skip them during rendering
+            var nanVertexIndices = new HashSet<int>();
+            for (int i = 0; i < mesh.Vertices.Length; i++)
+            {
+                var v = mesh.Vertices[i];
+                if (float.IsNaN(v.X) || float.IsNaN(v.Y) || float.IsNaN(v.Z))
+                {
+                    nanVertexIndices.Add(i);
+                }
+            }
+            if (nanVertexIndices.Count > 0)
+            {
+                UnifiedLogger.LogApplication(LogLevel.DEBUG,
+                    $"  Mesh {meshIndex} '{mesh.Name}': {nanVertexIndices.Count} NaN vertices will be skipped");
+            }
             var hasUVs = mesh.TextureCoords.Length > 0 && mesh.TextureCoords[0].Length == mesh.Vertices.Length;
             var hasNormals = mesh.Normals.Length == mesh.Vertices.Length;
 
@@ -577,7 +669,7 @@ void main()
             if (mesh.Name?.ToLowerInvariant().Contains("head") == true)
             {
                 UnifiedLogger.LogApplication(LogLevel.DEBUG,
-                    $"  HEAD MESH '{mesh.Name}': pos={nodePosition}, verts={mesh.Vertices.Length}, " +
+                    $"  HEAD MESH '{mesh.Name}': worldTransform has rotation={mesh.Orientation != Quaternion.Identity}, verts={mesh.Vertices.Length}, " +
                     $"faces={mesh.Faces.Length}, hasUVs={hasUVs}, hasNormals={hasNormals}");
             }
 
@@ -591,18 +683,40 @@ void main()
             // Add vertices (position, normal, texcoord)
             for (int i = 0; i < mesh.Vertices.Length; i++)
             {
-                var v = mesh.Vertices[i] + nodePosition;
+                // For NaN vertices, output a zero vertex (won't be rendered due to face filtering)
+                if (nanVertexIndices.Contains(i))
+                {
+                    // 8 floats per vertex: position(3), normal(3), texcoord(2)
+                    for (int j = 0; j < 8; j++) vertices.Add(0);
+                    continue;
+                }
+
+                // Get vertex in local mesh space
+                var localVertex = mesh.Vertices[i];
+
+                // Apply mesh's own rotation if present (fixes troll legs, etc.)
+                if (hasMeshRotation)
+                {
+                    localVertex = Vector3.Transform(localVertex, meshRotation);
+                }
+
+                // Then apply world position offset
+                var v = localVertex + worldPosition;
 
                 // Position
                 vertices.Add(v.X);
                 vertices.Add(v.Y);
                 vertices.Add(v.Z);
 
-                // Normal - use pre-computed normals from mesh if available
+                // Normal - use pre-computed normals from mesh if available, then rotate
                 Vector3 normal;
                 if (hasNormals)
                 {
                     normal = mesh.Normals[i];
+                    if (hasMeshRotation)
+                    {
+                        normal = Vector3.Transform(normal, meshRotation);
+                    }
                 }
                 else
                 {
@@ -640,13 +754,19 @@ void main()
                 }
             }
 
-            // Add indices
+            // Add indices (skip faces that reference NaN vertices)
             int meshIndexStart = indices.Count;
             foreach (var face in mesh.Faces)
             {
                 if (face.VertexIndex0 >= mesh.Vertices.Length ||
                     face.VertexIndex1 >= mesh.Vertices.Length ||
                     face.VertexIndex2 >= mesh.Vertices.Length)
+                    continue;
+
+                // Skip faces that reference NaN vertices
+                if (nanVertexIndices.Contains(face.VertexIndex0) ||
+                    nanVertexIndices.Contains(face.VertexIndex1) ||
+                    nanVertexIndices.Contains(face.VertexIndex2))
                     continue;
 
                 indices.Add(baseVertex + (uint)face.VertexIndex0);
