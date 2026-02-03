@@ -338,6 +338,154 @@ public class AppearanceAnalysisTests
     }
 
     /// <summary>
+    /// Debug specific models that have issues to understand parent chain.
+    /// Key insight: NWN models can have two patterns:
+    /// 1. Vertices in LOCAL space: vertex center near origin, node position provides offset
+    /// 2. Vertices in WORLD space: vertex center IS the world position, node position near zero
+    /// </summary>
+    [Fact]
+    public void DebugProblematicModels()
+    {
+        if (!RadoubSettings.Instance.HasGamePaths)
+        {
+            _output.WriteLine("SKIP: No game paths configured");
+            return;
+        }
+
+        using var gameData = new GameDataService();
+        if (!gameData.IsConfigured)
+        {
+            _output.WriteLine("SKIP: GameDataService not configured");
+            return;
+        }
+
+        var modelService = new Services.ModelService(gameData);
+
+        // Models with known issues (use exact names from appearance.2da RACE column)
+        var testModels = new[]
+        {
+            "c_behold",        // Parts laying around
+            "c_cmbtdummy",     // Disconnected
+            "c_goblinA",       // Working well (control case)
+            "c_bear",          // Bear - working (not c_bearblk)
+        };
+
+        foreach (var modelName in testModels)
+        {
+            _output.WriteLine($"\n=== {modelName} ===");
+            var model = modelService.LoadModel(modelName);
+            if (model == null)
+            {
+                _output.WriteLine("  NOT FOUND");
+                continue;
+            }
+
+            _output.WriteLine($"  Meshes: {model.GetMeshNodes().Count()}");
+            _output.WriteLine($"  Nodes: {model.EnumerateAllNodes().Count()}");
+
+            // Check parent chain and positions for each mesh (only ones with actual vertices)
+            foreach (var mesh in model.GetMeshNodes().Where(m => m.Vertices.Length > 2).Take(15))
+            {
+                var parentChain = new List<string>();
+                var current = mesh.Parent;
+                while (current != null)
+                {
+                    parentChain.Add($"{current.Name}(pos={current.Position})");
+                    current = current.Parent;
+                }
+
+                // Calculate vertex bounds
+                var verts = mesh.Vertices;
+                var nanCount = verts.Count(v => float.IsNaN(v.X) || float.IsNaN(v.Y) || float.IsNaN(v.Z));
+                if (nanCount > 0)
+                {
+                    _output.WriteLine($"  Mesh '{mesh.Name}': {verts.Length} verts, {nanCount} NaN, faces={mesh.Faces.Length}, type={mesh.GetType().Name}");
+                    _output.WriteLine($"    Chain: {string.Join(" <- ", parentChain)}");
+                }
+                else if (verts.Length > 0)
+                {
+                    var minX = verts.Min(v => v.X);
+                    var maxX = verts.Max(v => v.X);
+                    var minY = verts.Min(v => v.Y);
+                    var maxY = verts.Max(v => v.Y);
+                    var minZ = verts.Min(v => v.Z);
+                    var maxZ = verts.Max(v => v.Z);
+                    var vertCenter = new System.Numerics.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+                    var vertSpread = new System.Numerics.Vector3(maxX - minX, maxY - minY, maxZ - minZ);
+
+                    // Check if vertices are centered around origin (local space) or offset (world space)
+                    var vertCenterDist = vertCenter.Length();
+                    var meshPosDist = mesh.Position.Length();
+                    var pattern = vertCenterDist < 0.5f ? "LOCAL" : (meshPosDist < 0.1f ? "WORLD" : "MIXED");
+
+                    _output.WriteLine($"  Mesh '{mesh.Name}': nodePos={mesh.Position:F2}, vertCenter={vertCenter:F2} ({pattern})");
+                    _output.WriteLine($"    {verts.Length} verts, {mesh.Faces.Length} faces, type={mesh.GetType().Name}, parentDepth={parentChain.Count}");
+                    _output.WriteLine($"    Chain: {string.Join(" <- ", parentChain)}");
+                }
+            }
+            if (model.GetMeshNodes().Count() > 15)
+            {
+                _output.WriteLine($"  ... and {model.GetMeshNodes().Count() - 15} more meshes");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Analyze skin nodes to understand bone/weight data for skeletal meshes.
+    /// </summary>
+    [Fact]
+    public void AnalyzeSkinNodes()
+    {
+        if (!RadoubSettings.Instance.HasGamePaths)
+        {
+            _output.WriteLine("SKIP: No game paths configured");
+            return;
+        }
+
+        using var gameData = new GameDataService();
+        if (!gameData.IsConfigured)
+        {
+            _output.WriteLine("SKIP: GameDataService not configured");
+            return;
+        }
+
+        var modelService = new Services.ModelService(gameData);
+
+        var model = modelService.LoadModel("c_behold");
+        if (model == null)
+        {
+            _output.WriteLine("c_behold not found");
+            return;
+        }
+
+        foreach (var mesh in model.GetMeshNodes().OfType<Radoub.Formats.Mdl.MdlSkinNode>().Take(3))
+        {
+            _output.WriteLine($"\n=== Skin Mesh: {mesh.Name} ===");
+            _output.WriteLine($"  Vertices: {mesh.Vertices.Length}");
+            _output.WriteLine($"  Faces: {mesh.Faces.Length}");
+            _output.WriteLine($"  BoneNames: {mesh.BoneNodeNames.Length} [{string.Join(", ", mesh.BoneNodeNames.Take(5))}]");
+            _output.WriteLine($"  BoneQuats: {mesh.BoneQuaternions.Length}");
+            _output.WriteLine($"  BoneTrans: {mesh.BoneTranslations.Length}");
+            _output.WriteLine($"  BoneWeights: {mesh.BoneWeights.Length}");
+
+            // Show first few vertices
+            for (int i = 0; i < Math.Min(5, mesh.Vertices.Length); i++)
+            {
+                var v = mesh.Vertices[i];
+                var hasNaN = float.IsNaN(v.X) || float.IsNaN(v.Y) || float.IsNaN(v.Z);
+                _output.WriteLine($"    v[{i}] = {v} {(hasNaN ? "*** NaN ***" : "")}");
+            }
+
+            // Show bone weights for first vertex
+            if (mesh.BoneWeights.Length > 0)
+            {
+                var w = mesh.BoneWeights[0];
+                _output.WriteLine($"  BoneWeight[0]: bones=[{w.Bone0}, {w.Bone1}, {w.Bone2}, {w.Bone3}] weights=[{w.Weight0}, {w.Weight1}, {w.Weight2}, {w.Weight3}]");
+            }
+        }
+    }
+
+    /// <summary>
     /// Test loading a few specific models to see what fails.
     /// </summary>
     [Fact]
