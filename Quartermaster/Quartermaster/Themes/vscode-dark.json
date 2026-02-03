@@ -18,8 +18,10 @@
     "background": "#1E1E1E",
     "sidebar": "#252526",
     "text": "#CCCCCC",
+    "text_muted": "#808080",
     "selection": "#264F78",
     "border": "#3C3C3C",
+    "input_background": "#5A5A5A",
     "accent": "#0078D4",
     "error": "#F48771",
     "warning": "#CCA700",
@@ -30,7 +32,8 @@
     "title_bar_foreground": "#CCCCCC",
     "button_primary": "#0078D4",
     "button_secondary": "#3C3C3C",
-    "button_hover": "#1F9CF0"
+    "button_hover": "#1F9CF0",
+    "button_text": "#FFFFFF"
   },
   "fonts": {
     "primary": "$Default",

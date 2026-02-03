@@ -50,7 +50,7 @@
                 <Separator Width="1" Margin="5,0" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
                 <Button Content="+ Category" Click="OnAddCategoryClick" ToolTip.Tip="Add Category (Ctrl+Shift+N)" IsEnabled="{Binding HasFile}" Padding="8,4"/>
                 <Button Content="+ Entry" Click="OnAddEntryClick" ToolTip.Tip="Add Entry (Ctrl+E)" IsEnabled="{Binding CanAddEntry}" Padding="8,4"/>
-                <Button Content="✖ Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Delete)" IsEnabled="{Binding HasSelection}" Padding="8,4"/>
+                <Button Content="Delete" Click="OnDeleteClick" ToolTip.Tip="Delete Selected (Delete)" IsEnabled="{Binding HasSelection}" Padding="8,4"/>
             </StackPanel>
         </Border>
 
@@ -79,7 +79,8 @@
             </Grid.ColumnDefinitions>
 
             <!-- Left Panel: Tree View -->
-            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5">
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5"
+                    Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Journal Structure" FontWeight="Bold" Margin="5"/>
                     <TreeView x:Name="JournalTree" SelectionChanged="OnTreeSelectionChanged" Padding="0,0,0,20">
@@ -100,7 +101,8 @@
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"/>
 
             <!-- Right Panel: Property Editor -->
-            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5">
+            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Margin="5"
+                    Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Properties" FontWeight="Bold" Margin="5"/>
                     <ScrollViewer>

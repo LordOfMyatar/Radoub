@@ -18,8 +18,10 @@
     "background": "#FAFAFA",
     "sidebar": "#F3F3F3",
     "text": "#242424",
+    "text_muted": "#757575",
     "selection": "#0078D4",
     "border": "#E1E1E1",
+    "input_background": "#FFFFFF",
     "accent": "#0078D4",
     "error": "#C42B1C",
     "warning": "#9D5D00",
@@ -32,7 +34,8 @@
     "title_bar_foreground": "#242424",
     "button_primary": "#0078D4",
     "button_secondary": "#F3F3F3",
-    "button_hover": "#106EBE"
+    "button_hover": "#106EBE",
+    "button_text": "#FFFFFF"
   },
   "fonts": {
     "primary": "Segoe UI Variable",

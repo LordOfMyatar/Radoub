@@ -360,16 +360,6 @@ public class ThemeManager
             resources["TextControlBackgroundFocused"] = sidebarBrush;
             resources["TextControlBackgroundDisabled"] = sidebarBrush;
 
-            // CheckBox box background - unchecked state uses sidebar for visibility
-            resources["CheckBoxCheckBackgroundFillUnchecked"] = sidebarBrush;
-            resources["CheckBoxCheckBackgroundFillUncheckedPointerOver"] = sidebarBrush;
-            resources["CheckBoxCheckBackgroundFillUncheckedPressed"] = sidebarBrush;
-            resources["CheckBoxCheckBackgroundFillUncheckedDisabled"] = sidebarBrush;
-            // Indeterminate state also uses sidebar
-            resources["CheckBoxCheckBackgroundFillIndeterminate"] = sidebarBrush;
-            resources["CheckBoxCheckBackgroundFillIndeterminatePointerOver"] = sidebarBrush;
-            resources["CheckBoxCheckBackgroundFillIndeterminatePressed"] = sidebarBrush;
-            resources["CheckBoxCheckBackgroundFillIndeterminateDisabled"] = sidebarBrush;
         }
 
         // Title bar colors (#1089) - custom window title bars
@@ -392,17 +382,21 @@ public class ThemeManager
 
             // Create a muted text color (70% opacity) for secondary/status text
             // In dark themes, muted text should still be readable (lighter gray, not dark gray)
-            var mutedTextColor = Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B);
+            // Muted text - use explicit text_muted from theme, fallback to 70% opacity of text
+            var mutedTextColor = !string.IsNullOrEmpty(colors.TextMuted)
+                ? Color.Parse(colors.TextMuted)
+                : Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B);
             var mutedTextBrush = new SolidColorBrush(mutedTextColor);
 
             resources["SystemBaseHighColor"] = textColor;
             resources["SystemBaseMediumHighColor"] = textColor;
             resources["SystemBaseMediumColor"] = textColor;
-            resources["SystemBaseMediumLowColor"] = mutedTextColor; // Muted text, not border
+            resources["SystemBaseMediumLowColor"] = mutedTextColor;
 
-            // Muted/secondary text foreground - status bar paths, hints, etc.
+            // Muted/secondary text foreground - status bar paths, hints, placeholders, etc.
             resources["SystemControlForegroundBaseMediumLowBrush"] = mutedTextBrush;
             resources["SystemControlForegroundBaseLowBrush"] = mutedTextBrush;
+            resources["ThemeTextMuted"] = mutedTextBrush;
 
             // TextBox and other control foregrounds
             resources["TextControlForeground"] = textBrush;
@@ -584,6 +578,27 @@ public class ThemeManager
             resources["CheckBoxCheckBackgroundStrokeIndeterminatePointerOver"] = borderBrush;
             resources["CheckBoxCheckBackgroundStrokeIndeterminatePressed"] = borderBrush;
             resources["CheckBoxCheckBackgroundStrokeIndeterminateDisabled"] = borderBrush;
+
+        }
+
+        // Input background - checkbox fill, text input backgrounds
+        // Uses explicit input_background from theme, falls back to border color if not defined
+        if (!string.IsNullOrEmpty(colors.InputBackground) || !string.IsNullOrEmpty(colors.Border))
+        {
+            var inputBgColor = !string.IsNullOrEmpty(colors.InputBackground)
+                ? Color.Parse(colors.InputBackground)
+                : Color.Parse(colors.Border!);
+            var inputBgBrush = new SolidColorBrush(inputBgColor);
+
+            // CheckBox box fill
+            resources["CheckBoxCheckBackgroundFillUnchecked"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedPointerOver"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedPressed"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedDisabled"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminate"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminatePointerOver"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminatePressed"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminateDisabled"] = inputBgBrush;
         }
 
         // Expander styling - use sidebar for header background, background for content
@@ -696,17 +711,16 @@ public class ThemeManager
             resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
         }
 
-        // Button foreground - always white in dark themes for visibility
-        // This applies regardless of whether button_primary is defined
-        if (isDarkTheme)
+        // Button foreground - use explicit button_text from theme
+        if (!string.IsNullOrEmpty(colors.ButtonText))
         {
-            var whiteBrush = new SolidColorBrush(Colors.White);
-            resources["ButtonForeground"] = whiteBrush;
-            resources["ButtonForegroundPointerOver"] = whiteBrush;
-            resources["ButtonForegroundPressed"] = whiteBrush;
-            resources["AccentButtonForeground"] = whiteBrush;
-            resources["AccentButtonForegroundPointerOver"] = whiteBrush;
-            resources["AccentButtonForegroundPressed"] = whiteBrush;
+            var btnTextBrush = new SolidColorBrush(Color.Parse(colors.ButtonText));
+            resources["ButtonForeground"] = btnTextBrush;
+            resources["ButtonForegroundPointerOver"] = btnTextBrush;
+            resources["ButtonForegroundPressed"] = btnTextBrush;
+            resources["AccentButtonForeground"] = btnTextBrush;
+            resources["AccentButtonForegroundPointerOver"] = btnTextBrush;
+            resources["AccentButtonForegroundPressed"] = btnTextBrush;
         }
 
         // Secondary button color is available as ThemeButtonSecondary for explicit use
