@@ -17,35 +17,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 Investigation and fixes for static appearance models (animals, bandits, dragons) that don't render correctly in the 3D preview. This is expected to be multi-PR work.
 
-#### Phase 1: Scoping (Complete)
+#### Changes
 
-**Findings:**
+**Transform Improvements (ModelPreviewGLControl.cs):**
+- Accumulate position offsets from entire parent chain (fixes beetle legs)
+- Apply mesh's own rotation to vertices and normals (fixes troll legs)
+- Filter NaN vertices from skin nodes (parsing artifact)
+- Skip faces that reference NaN vertices
 
-1. **MODELTYPE Categories** (from appearance.2da):
-   - `P` (Part-based): 23 appearances - player races with composable body parts ✅ Working
-   - `F` (Full): 258 appearances - humanoids, undead, some monsters
-   - `L` (Large): 38 appearances - giants, golems, minotaurs
-   - `S` (Static): Dragons, elementals, beholders, misc creatures
-   - Others: `FT`, `FW`, `FWT`, `LWT`, `s` (placeholders)
+**Models That Now Render Better:**
+- ✅ Beholder - mostly renders correctly (eyestalks attached)
+- ✅ Troll - legs now visible (had 180° rotation)
+- ✅ Beetles - legs attached to body
+- ✅ Polar bear - renders well
+- ✅ Most humanoids, constructs, bears, cats
 
-2. **Root Cause Identified**: ModelPreviewGLControl only applies position offset to vertices, ignoring:
-   - Node rotation (Quaternion) - critical for wings, limbs
-   - Node scale factor
-   - Hierarchical parent transforms
+**Known Remaining Issues:**
+- ❌ Fairy - midsection renders horizontal instead of vertical
+- ❌ Dragon - feet and some wing parts broken
+- ❌ Some models appear red (satyr, beholder mouth) - texture/material issue
+- ❌ Ettin - still upside down
 
-3. **Evidence from Dragon Model** (c_DrgRed):
-   - Wing nodes have rotations like `rot=(41.5°, 0.0°, -0.0°)` → `rot=(-62.5°)` → `rot=(-83.5°)`
-   - These rotations are REQUIRED to position wings correctly
-   - Currently all meshes render at origin, causing "Kuato effect"
+**Root Cause Analysis:**
+NWN models use inconsistent transform conventions - some meshes have vertices in LOCAL space (centered at origin), some in WORLD space (already offset). The current approach improves many models but cannot fix all without model-type-specific handling.
 
-4. **Models Load Successfully**: All tested models parse correctly with meshes
-   - Problem is transform application during rendering, not loading
-
-#### Next Steps (Future PRs)
-- [ ] Implement hierarchical transform calculation in UpdateMeshBuffers
-- [ ] Apply rotation (quaternion) and scale to vertices
-- [ ] Calculate world transform by walking parent chain
-- [ ] Test with dragon, bugbear, and other static models
+**Diagnostic Tests Added:**
+- `AppearanceAnalysisTests.DebugProblematicModels()` - analyze mesh transforms
+- `AppearanceAnalysisTests.AnalyzeSkinNodes()` - inspect bone weight data
+- `AppearanceAnalysisTests.AnalyzeModelHierarchy()` - print node hierarchy
 
 ---
 
