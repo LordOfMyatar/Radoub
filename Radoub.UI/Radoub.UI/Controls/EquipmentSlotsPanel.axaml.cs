@@ -313,7 +313,7 @@ public class EquipmentSlotControl : TemplatedControl
             _potentialDrag = Slot.HasItem;
 
             SlotClicked?.Invoke(this, Slot);
-            e.Handled = true;
+            // Don't set e.Handled = true - it prevents DoubleTapped from firing
         }
     }
 

@@ -105,18 +105,20 @@ public partial class MainWindow
     {
         foreach (var paletteItem in items)
         {
-            if (paletteItem.Item == null)
+            // Load UtiFile on demand if not already loaded (cache-loaded palette items)
+            var utiFile = paletteItem.Item ?? LoadItemFromResRef(paletteItem.ResRef, paletteItem.Source);
+            if (utiFile == null)
             {
-                UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot add item to backpack: Item data is null for {paletteItem.ResRef}");
+                UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot add item to backpack: Failed to load {paletteItem.ResRef}");
                 continue;
             }
 
             var nextPos = GetNextBackpackPosition();
 
             var backpackItem = _itemViewModelFactory.CreateBackpackItem(
-                paletteItem.Item,
+                utiFile,
                 nextPos.x, nextPos.y,
-                isDropable: true,
+                isDropable: false,  // Default to not droppable for game balance
                 isPickpocketable: false,
                 paletteItem.Source);
             SetupLazyIconLoading(backpackItem);
@@ -128,6 +130,30 @@ public partial class MainWindow
         MarkDirty();
     }
 
+    /// <summary>
+    /// Load a UtiFile from game data by ResRef.
+    /// </summary>
+    private UtiFile? LoadItemFromResRef(string resRef, GameResourceSource source)
+    {
+        if (string.IsNullOrEmpty(resRef))
+            return null;
+
+        try
+        {
+            var utiData = _gameDataService.FindResource(resRef, ResourceTypes.Uti);
+            if (utiData != null)
+            {
+                return UtiReader.Read(utiData);
+            }
+        }
+        catch (Exception ex)
+        {
+            UnifiedLogger.LogInventory(LogLevel.WARN, $"Failed to load item {resRef}: {ex.Message}");
+        }
+
+        return null;
+    }
+
     private (ushort x, ushort y) GetNextBackpackPosition()
     {
         const int GridWidth = 6;
@@ -137,37 +163,63 @@ public partial class MainWindow
 
     /// <summary>
     /// Handles equip items request from palette.
+    /// Only considers standard equipment slots (not creature natural slots like Claws/Skin).
     /// </summary>
     private void OnEquipItemsRequested(object? sender, ItemViewModel[] items)
     {
+        UnifiedLogger.LogInventory(LogLevel.INFO, $"OnEquipItemsRequested: {items.Length} items selected");
+
         var validator = new Radoub.UI.Services.EquipmentSlotValidator(_gameDataService);
 
-        foreach (var item in items)
+        // Only consider standard slots (not natural/creature slots) when equipping from palette
+        // Natural slots (Claw1-3, Skin) are creature-only and should be edited directly
+        var standardSlots = _equipmentSlots.Where(s => s.IsStandard).ToList();
+
+        foreach (var paletteItem in items)
         {
-            var validSlotsBitmask = validator.GetEquipableSlots(item.BaseItem);
+            UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                $"Processing item: {paletteItem.Name} (BaseItem={paletteItem.BaseItem}, ResRef={paletteItem.ResRef})");
+
+            var validSlotsBitmask = validator.GetEquipableSlots(paletteItem.BaseItem);
 
             if (validSlotsBitmask == null || validSlotsBitmask == 0)
             {
                 UnifiedLogger.LogInventory(LogLevel.WARN,
-                    $"Cannot equip {item.Name}: no valid equipment slots for base item {item.BaseItem}");
+                    $"Cannot equip {paletteItem.Name}: no valid equipment slots for base item {paletteItem.BaseItem} (EquipableSlots={validSlotsBitmask?.ToString() ?? "null"})");
                 continue;
             }
 
-            EquipmentSlotViewModel? targetSlot = null;
-            foreach (var slot in _equipmentSlots)
+            // Mask out creature-only slots (Claw1=0x4000, Claw2=0x8000, Claw3=0x10000, Skin=0x20000)
+            const int StandardSlotsMask = 0x3FFF; // Bits 0-13 only
+            var standardSlotsBitmask = validSlotsBitmask.Value & StandardSlotsMask;
+
+            if (standardSlotsBitmask == 0)
             {
-                if ((validSlotsBitmask.Value & slot.SlotFlag) != 0 && !slot.HasItem)
+                UnifiedLogger.LogInventory(LogLevel.WARN,
+                    $"Cannot equip {paletteItem.Name}: item has no standard equipment slots (creature-only item?)");
+                continue;
+            }
+
+            UnifiedLogger.LogInventory(LogLevel.DEBUG,
+                $"Valid standard slots bitmask for {paletteItem.Name}: 0x{standardSlotsBitmask:X}");
+
+            // Find first empty matching standard slot
+            EquipmentSlotViewModel? targetSlot = null;
+            foreach (var slot in standardSlots)
+            {
+                if ((standardSlotsBitmask & slot.SlotFlag) != 0 && !slot.HasItem)
                 {
                     targetSlot = slot;
                     break;
                 }
             }
 
+            // If no empty slot, find first matching slot (will replace)
             if (targetSlot == null)
             {
-                foreach (var slot in _equipmentSlots)
+                foreach (var slot in standardSlots)
                 {
-                    if ((validSlotsBitmask.Value & slot.SlotFlag) != 0)
+                    if ((standardSlotsBitmask & slot.SlotFlag) != 0)
                     {
                         targetSlot = slot;
                         break;
@@ -175,11 +227,25 @@ public partial class MainWindow
                 }
             }
 
-            if (targetSlot != null)
+            if (targetSlot == null)
             {
-                targetSlot.EquippedItem = item;
-                UnifiedLogger.LogInventory(LogLevel.INFO, $"Equipped {item.Name} to {targetSlot.Name}");
+                UnifiedLogger.LogInventory(LogLevel.WARN,
+                    $"Cannot equip {paletteItem.Name}: no matching standard slot found for bitmask 0x{standardSlotsBitmask:X}");
+                continue;
             }
+
+            // Load UtiFile on demand if not already loaded (cache-loaded palette items)
+            var utiFile = paletteItem.Item ?? LoadItemFromResRef(paletteItem.ResRef, paletteItem.Source);
+            if (utiFile == null)
+            {
+                UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot equip {paletteItem.Name}: Failed to load item data");
+                continue;
+            }
+
+            var equippedItem = _itemViewModelFactory.Create(utiFile, paletteItem.Source);
+            SetupLazyIconLoading(equippedItem);
+            targetSlot.EquippedItem = equippedItem;
+            UnifiedLogger.LogInventory(LogLevel.INFO, $"Equipped {equippedItem.Name} to {targetSlot.Name} (slot flag 0x{targetSlot.SlotFlag:X})");
         }
 
         _inventoryModified = true;
@@ -194,17 +260,20 @@ public partial class MainWindow
         if (!slot.HasItem || slot.EquippedItem == null) return;
 
         var item = slot.EquippedItem;
-        if (item.Item == null)
+
+        // Load UtiFile on demand if not already loaded
+        var utiFile = item.Item ?? LoadItemFromResRef(item.ResRef, item.Source);
+        if (utiFile == null)
         {
-            UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot unequip: Item data is null for {item.ResRef}");
+            UnifiedLogger.LogInventory(LogLevel.WARN, $"Cannot unequip: Failed to load item data for {item.ResRef}");
             return;
         }
 
         var nextPos = GetNextBackpackPosition();
         var backpackItem = _itemViewModelFactory.CreateBackpackItem(
-            item.Item,
+            utiFile,
             nextPos.x, nextPos.y,
-            isDropable: true,
+            isDropable: false,  // Default to not droppable for game balance
             isPickpocketable: false,
             item.Source);
         SetupLazyIconLoading(backpackItem);

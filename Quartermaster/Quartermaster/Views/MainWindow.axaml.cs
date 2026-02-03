@@ -176,7 +176,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             if (slot.HasItem)
             {
-                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Equipment slot double-clicked: {slot.Name} - {slot.EquippedItem?.Name}");
+                UnifiedLogger.LogUI(LogLevel.DEBUG, $"Equipment slot double-clicked: {slot.Name} - unequipping {slot.EquippedItem?.Name}");
+                UnequipToBackpack(slot);
             }
         };
         InventoryPanelContent.EquipmentSlotItemDropped += (s, e) =>

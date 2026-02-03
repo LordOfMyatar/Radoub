@@ -10,6 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.66-alpha] - 2026-02-02
+**Branch**: `quartermaster/issue-1206` | **PR**: #1207
+
+### Feature: Roundtrip Read/Write (#1206)
+
+Complete the read-write implementation for all creature fields. Currently inventory is read-only while spells, feats, and levels are writable.
+
+---
+
 ## [0.1.65-alpha] - 2026-02-02
 **Branch**: `quartermaster/issue-1174` | **PR**: #1200
 

@@ -24,6 +24,9 @@ public partial class AppearancePanel
         if (_phenotypeComboBox != null)
             _phenotypeComboBox.SelectionChanged += OnPhenotypeSelectionChanged;
 
+        // Body part combo events
+        WireBodyPartComboEvents();
+
         // Color value changed events
         if (_skinColorNumeric != null)
             _skinColorNumeric.ValueChanged += OnColorValueChanged;
@@ -112,6 +115,100 @@ public partial class AppearancePanel
         }
     }
 
+    private void WireBodyPartComboEvents()
+    {
+        // Central body parts
+        if (_headComboBox != null) _headComboBox.SelectionChanged += OnHeadSelectionChanged;
+        if (_neckComboBox != null) _neckComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_torsoComboBox != null) _torsoComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_pelvisComboBox != null) _pelvisComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_beltComboBox != null) _beltComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_tailComboBox != null) _tailComboBox.SelectionChanged += OnTailSelectionChanged;
+        if (_wingsComboBox != null) _wingsComboBox.SelectionChanged += OnWingsSelectionChanged;
+
+        // Limbs - left
+        if (_lShoulComboBox != null) _lShoulComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_lBicepComboBox != null) _lBicepComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_lFArmComboBox != null) _lFArmComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_lHandComboBox != null) _lHandComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_lThighComboBox != null) _lThighComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_lShinComboBox != null) _lShinComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_lFootComboBox != null) _lFootComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+
+        // Limbs - right
+        if (_rShoulComboBox != null) _rShoulComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_rBicepComboBox != null) _rBicepComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_rFArmComboBox != null) _rFArmComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_rHandComboBox != null) _rHandComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_rThighComboBox != null) _rThighComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_rShinComboBox != null) _rShinComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+        if (_rFootComboBox != null) _rFootComboBox.SelectionChanged += OnBodyPartSelectionChanged;
+    }
+
+    private void OnHeadSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        if (_headComboBox?.SelectedItem is ComboBoxItem item && item.Tag is byte value)
+        {
+            _currentCreature.AppearanceHead = value;
+            UpdateModelPreview();
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnTailSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        if (_tailComboBox?.SelectedItem is ComboBoxItem item && item.Tag is byte value)
+        {
+            _currentCreature.Tail = value;
+            UpdateModelPreview();
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnWingsSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        if (_wingsComboBox?.SelectedItem is ComboBoxItem item && item.Tag is byte value)
+        {
+            _currentCreature.Wings = value;
+            UpdateModelPreview();
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void OnBodyPartSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoading || _currentCreature == null) return;
+        if (sender is not ComboBox combo || combo.SelectedItem is not ComboBoxItem item || item.Tag is not byte value)
+            return;
+
+        // Map combo to creature property
+        if (sender == _neckComboBox) _currentCreature.BodyPart_Neck = value;
+        else if (sender == _torsoComboBox) _currentCreature.BodyPart_Torso = value;
+        else if (sender == _pelvisComboBox) _currentCreature.BodyPart_Pelvis = value;
+        else if (sender == _beltComboBox) _currentCreature.BodyPart_Belt = value;
+        else if (sender == _lShoulComboBox) _currentCreature.BodyPart_LShoul = value;
+        else if (sender == _rShoulComboBox) _currentCreature.BodyPart_RShoul = value;
+        else if (sender == _lBicepComboBox) _currentCreature.BodyPart_LBicep = value;
+        else if (sender == _rBicepComboBox) _currentCreature.BodyPart_RBicep = value;
+        else if (sender == _lFArmComboBox) _currentCreature.BodyPart_LFArm = value;
+        else if (sender == _rFArmComboBox) _currentCreature.BodyPart_RFArm = value;
+        else if (sender == _lHandComboBox) _currentCreature.BodyPart_LHand = value;
+        else if (sender == _rHandComboBox) _currentCreature.BodyPart_RHand = value;
+        else if (sender == _lThighComboBox) _currentCreature.BodyPart_LThigh = value;
+        else if (sender == _rThighComboBox) _currentCreature.BodyPart_RThigh = value;
+        else if (sender == _lShinComboBox) _currentCreature.BodyPart_LShin = value;
+        else if (sender == _rShinComboBox) _currentCreature.BodyPart_RShin = value;
+        else if (sender == _lFootComboBox) _currentCreature.BodyPart_LFoot = value;
+        else if (sender == _rFootComboBox) _currentCreature.BodyPart_RFoot = value;
+        else return; // Unknown combo, don't fire event
+
+        UpdateModelPreview();
+        AppearanceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private void OnColorValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
     {
         if (_isLoading || _currentCreature == null || !e.NewValue.HasValue) return;
@@ -152,6 +249,7 @@ public partial class AppearancePanel
             if (_currentCreature != null) _currentCreature.Color_Skin = newIndex;
             if (_skinColorNumeric != null) _skinColorNumeric.Value = newIndex;
             UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, newIndex);
+            UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         });
     }
@@ -163,6 +261,7 @@ public partial class AppearancePanel
             if (_currentCreature != null) _currentCreature.Color_Hair = newIndex;
             if (_hairColorNumeric != null) _hairColorNumeric.Value = newIndex;
             UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, newIndex);
+            UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         });
     }
@@ -174,6 +273,7 @@ public partial class AppearancePanel
             if (_currentCreature != null) _currentCreature.Color_Tattoo1 = newIndex;
             if (_tattoo1ColorNumeric != null) _tattoo1ColorNumeric.Value = newIndex;
             UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, newIndex);
+            UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         });
     }
@@ -185,6 +285,7 @@ public partial class AppearancePanel
             if (_currentCreature != null) _currentCreature.Color_Tattoo2 = newIndex;
             if (_tattoo2ColorNumeric != null) _tattoo2ColorNumeric.Value = newIndex;
             UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, newIndex);
+            UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         });
     }
