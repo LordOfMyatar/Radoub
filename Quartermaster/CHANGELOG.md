@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.65-alpha] - 2026-02-02
+**Branch**: `quartermaster/issue-1174` | **PR**: #TBD
+
+### Bug: Static appearance creatures render incorrectly (#1174)
+
+Investigation and fixes for static appearance models (animals, bandits, dragons) that don't render correctly in the 3D preview. This is expected to be multi-PR work.
+
+#### Phase 1: Scoping
+- [ ] Identify categories of static models (dragons, humanoids, animals)
+- [ ] Document what's broken for each category
+- [ ] Determine root causes
+
+---
+
 ## [0.1.64-alpha] - 2026-02-01
 **Branch**: `quartermaster/issue-1183` | **PR**: #1189
 
