@@ -296,17 +296,21 @@ public class AppearanceService
     public List<(byte Id, string Name)> GetAllWings()
     {
         var wings = new List<(byte Id, string Name)> { (0, "None") };
+        int consecutiveEmpty = 0;
 
-        for (int i = 1; i < 50; i++)
+        for (int i = 1; i < 255; i++)
         {
             var label = _gameDataService.Get2DAValue("wingmodel", i, "LABEL");
             if (string.IsNullOrEmpty(label) || label == "****")
             {
-                if (wings.Count > 5)
+                consecutiveEmpty++;
+                // Stop after 10 consecutive empty rows (likely end of valid data)
+                if (consecutiveEmpty > 10)
                     break;
                 continue;
             }
 
+            consecutiveEmpty = 0;
             wings.Add(((byte)i, label));
         }
 
@@ -319,17 +323,21 @@ public class AppearanceService
     public List<(byte Id, string Name)> GetAllTails()
     {
         var tails = new List<(byte Id, string Name)> { (0, "None") };
+        int consecutiveEmpty = 0;
 
-        for (int i = 1; i < 50; i++)
+        for (int i = 1; i < 255; i++)
         {
             var label = _gameDataService.Get2DAValue("tailmodel", i, "LABEL");
             if (string.IsNullOrEmpty(label) || label == "****")
             {
-                if (tails.Count > 5)
+                consecutiveEmpty++;
+                // Stop after 10 consecutive empty rows (likely end of valid data)
+                if (consecutiveEmpty > 10)
                     break;
                 continue;
             }
 
+            consecutiveEmpty = 0;
             tails.Add(((byte)i, label));
         }
 

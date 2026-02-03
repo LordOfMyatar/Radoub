@@ -249,6 +249,7 @@ public partial class AppearancePanel
             if (_currentCreature != null) _currentCreature.Color_Skin = newIndex;
             if (_skinColorNumeric != null) _skinColorNumeric.Value = newIndex;
             UpdateColorSwatch(_skinColorSwatch, PaletteColorService.Palettes.Skin, newIndex);
+            UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         });
     }
@@ -260,6 +261,7 @@ public partial class AppearancePanel
             if (_currentCreature != null) _currentCreature.Color_Hair = newIndex;
             if (_hairColorNumeric != null) _hairColorNumeric.Value = newIndex;
             UpdateColorSwatch(_hairColorSwatch, PaletteColorService.Palettes.Hair, newIndex);
+            UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         });
     }
@@ -271,6 +273,7 @@ public partial class AppearancePanel
             if (_currentCreature != null) _currentCreature.Color_Tattoo1 = newIndex;
             if (_tattoo1ColorNumeric != null) _tattoo1ColorNumeric.Value = newIndex;
             UpdateColorSwatch(_tattoo1ColorSwatch, PaletteColorService.Palettes.Tattoo1, newIndex);
+            UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         });
     }
@@ -282,6 +285,7 @@ public partial class AppearancePanel
             if (_currentCreature != null) _currentCreature.Color_Tattoo2 = newIndex;
             if (_tattoo2ColorNumeric != null) _tattoo2ColorNumeric.Value = newIndex;
             UpdateColorSwatch(_tattoo2ColorSwatch, PaletteColorService.Palettes.Tattoo2, newIndex);
+            UpdateModelPreview();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);
         });
     }
