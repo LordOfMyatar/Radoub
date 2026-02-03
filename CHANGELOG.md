@@ -62,6 +62,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - ThemeManager now uses explicit theme values instead of computed/hardcoded colors
 - Updated all 40 theme JSON files across all 5 tools with new properties
 - Manifest: Added sidebar backgrounds to Journal Structure and Properties panels, removed emoji from Delete button
+- **Fixed**: Added missing Trebuchet theme resources: `ThemeBackgroundAlt`, `ThemeBorderBrush`, `ThemeAccentBrush`, `ThemeAccentForeground`, `ThemeInfoBrush`
 
 ---
 

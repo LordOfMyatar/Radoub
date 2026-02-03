@@ -360,6 +360,8 @@ public class ThemeManager
             resources["TextControlBackgroundFocused"] = sidebarBrush;
             resources["TextControlBackgroundDisabled"] = sidebarBrush;
 
+            // App-level sidebar/alt background for cards, panels (Trebuchet)
+            resources["ThemeBackgroundAlt"] = sidebarBrush;
         }
 
         // Title bar colors (#1089) - custom window title bars
@@ -529,6 +531,9 @@ public class ThemeManager
             resources["SystemAccentColorDark3"] = accentColor;
 
             resources["SystemControlHighlightAccentBrush"] = accentBrush;
+
+            // App-level accent brush (Trebuchet header bars)
+            resources["ThemeAccentBrush"] = accentBrush;
         }
 
         // Selection color
@@ -579,6 +584,8 @@ public class ThemeManager
             resources["CheckBoxCheckBackgroundStrokeIndeterminatePressed"] = borderBrush;
             resources["CheckBoxCheckBackgroundStrokeIndeterminateDisabled"] = borderBrush;
 
+            // App-level border brush (Trebuchet)
+            resources["ThemeBorderBrush"] = borderBrush;
         }
 
         // Input background - checkbox fill, text input backgrounds
@@ -691,7 +698,9 @@ public class ThemeManager
         }
         if (!string.IsNullOrEmpty(colors.Info))
         {
-            resources["ThemeInfo"] = new SolidColorBrush(Color.Parse(colors.Info));
+            var infoBrush = new SolidColorBrush(Color.Parse(colors.Info));
+            resources["ThemeInfo"] = infoBrush;
+            resources["ThemeInfoBrush"] = infoBrush; // Alias for Trebuchet
         }
 
         // Button colors - apply theme-defined button colors to Fluent theme resources (#1089)
@@ -721,6 +730,9 @@ public class ThemeManager
             resources["AccentButtonForeground"] = btnTextBrush;
             resources["AccentButtonForegroundPointerOver"] = btnTextBrush;
             resources["AccentButtonForegroundPressed"] = btnTextBrush;
+
+            // App-level foreground for accent backgrounds (Trebuchet header text)
+            resources["ThemeAccentForeground"] = btnTextBrush;
         }
 
         // Secondary button color is available as ThemeButtonSecondary for explicit use
