@@ -54,6 +54,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Fixed**: ComboBox placeholder resource key corrected (`PlaceHolder` vs `Placeholder`) - fixes "Recent..." black text
 - **Fixed**: ListBox background uses `SystemControlBackgroundChromeMediumLowBrush` - fixes white background in creature/script/sound pickers
 - **Fixed**: Added `Classes="secondary"` to Cancel buttons in CreaturePicker, ScriptBrowser, SoundBrowser dialogs
+- **Fixed**: TextBox controls now use sidebar background + border color for visibility against main background
+- **Fixed**: TextBox border brushes now use theme border color (makes text inputs distinguishable)
 
 ---
 

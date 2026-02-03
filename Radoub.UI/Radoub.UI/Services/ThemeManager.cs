@@ -305,11 +305,7 @@ public class ThemeManager
             resources["SubtleFillColorSecondary"] = bgBrush;
             resources["SubtleFillColorSecondaryBrush"] = bgBrush;
 
-            // TextBox, CheckBox, and other control backgrounds
-            resources["TextControlBackground"] = bgBrush;
-            resources["TextControlBackgroundPointerOver"] = bgBrush;
-            resources["TextControlBackgroundFocused"] = bgBrush;
-            resources["TextControlBackgroundDisabled"] = bgBrush;
+            // CheckBox and other general control backgrounds (NOT TextBox - see sidebar section)
             resources["ControlFillColorDefaultBrush"] = bgBrush;
             resources["ControlFillColorSecondaryBrush"] = bgBrush;
             resources["ControlFillColorTertiaryBrush"] = bgBrush;
@@ -356,6 +352,13 @@ public class ThemeManager
             // Table/list backgrounds - use sidebar color for consistency
             // This ensures contrast calculations in brush-contrast-test.html match actual rendering
             resources["SystemControlBackgroundBaseLowBrush"] = sidebarBrush;
+
+            // TextBox backgrounds - use sidebar for subtle contrast against main background
+            // This makes text inputs visible/distinguishable from the window background
+            resources["TextControlBackground"] = sidebarBrush;
+            resources["TextControlBackgroundPointerOver"] = sidebarBrush;
+            resources["TextControlBackgroundFocused"] = sidebarBrush;
+            resources["TextControlBackgroundDisabled"] = sidebarBrush;
         }
 
         // Title bar colors (#1089) - custom window title bars
@@ -543,6 +546,12 @@ public class ThemeManager
             // Expander border styling
             resources["ExpanderHeaderBorderBrush"] = borderBrush;
             resources["ExpanderContentBorderBrush"] = borderBrush;
+
+            // TextBox border styling - makes text inputs visible against background
+            resources["TextControlBorderBrush"] = borderBrush;
+            resources["TextControlBorderBrushPointerOver"] = borderBrush;
+            resources["TextControlBorderBrushFocused"] = borderBrush;
+            resources["TextControlBorderBrushDisabled"] = borderBrush;
         }
 
         // Expander styling - use sidebar for header background, background for content
