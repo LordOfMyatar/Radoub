@@ -98,6 +98,9 @@ public class ThemeColors
     [JsonPropertyName("text")]
     public string? Text { get; set; }
 
+    [JsonPropertyName("text_muted")]
+    public string? TextMuted { get; set; }
+
     [JsonPropertyName("selection")]
     public string? Selection { get; set; }
 
@@ -106,6 +109,9 @@ public class ThemeColors
 
     [JsonPropertyName("accent")]
     public string? Accent { get; set; }
+
+    [JsonPropertyName("input_background")]
+    public string? InputBackground { get; set; }
 
     // Status colors (used by all tools)
     [JsonPropertyName("error")]
@@ -149,6 +155,9 @@ public class ThemeColors
 
     [JsonPropertyName("button_hover")]
     public string? ButtonHover { get; set; }
+
+    [JsonPropertyName("button_text")]
+    public string? ButtonText { get; set; }
 
     // Edit mode border colors (Parley)
     [JsonPropertyName("edit_mode_border")]

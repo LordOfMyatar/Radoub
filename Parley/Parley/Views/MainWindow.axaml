@@ -233,7 +233,8 @@
                         Grid.Row="0" Grid.Column="0" Margin="5">
                 <!-- Dialog Tree Tab -->
                 <TabItem Header="Dialog Tree" AutomationProperties.AutomationId="DialogTreeTab">
-                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5"
+                            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
                         <DockPanel>
                             <!-- Tree Control Buttons -->
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,5">
@@ -857,7 +858,8 @@
                         </StackPanel>
 
                         <!-- Scrap Tree (#475: Hierarchical display for deleted node batches) -->
-                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5">
+                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1" Padding="5"
+                                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
                             <TreeView x:Name="ScrapTreeView"
                                       AutomationProperties.AutomationId="ScrapTreeView"
                                       ItemsSource="{Binding ScrapEntries}"

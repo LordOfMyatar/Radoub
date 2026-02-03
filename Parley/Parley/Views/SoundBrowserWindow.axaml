@@ -241,7 +241,8 @@
             <Button Content="Cancel"
                     Width="80"
                     Click="OnCancelClick"
-                    IsCancel="True"/>
+                    IsCancel="True"
+                    Classes="secondary"/>
         </StackPanel>
         </Grid>
     </Grid>

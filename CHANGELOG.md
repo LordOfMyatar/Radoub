@@ -15,6 +15,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.9.59] - 2026-02-02
+**Branch**: `radoub/issue-1154` | **PR**: #1196
+
+### Sprint: Cross-Tool UI Consistency (#1154)
+
+- [x] #1088 - Standardize modal dialog styling across all tools
+- [x] #823 - Inconsistent focus indicators across controls
+- [x] #1089 - Review theme consistency across all tools
+
+#### #1088 - Modal Dialog Styling
+- Added shared `DialogHelper` in `Radoub.UI/Services/DialogHelper.cs`
+- Modal styling: ThemeSidebar background + ThemeBorder accent (2px)
+- Dialog types: Confirm (Yes/No), OkCancel, WarningConfirm, UnsavedChanges, SaveError, Message, Error
+- Supports "Don't ask again" callback for confirmation dialogs
+- Parley: Updated `DialogFactory` to delegate to shared implementation
+- Quartermaster: Updated `DialogHelper` to delegate to shared implementation
+- Manifest: Replaced inline dialogs with shared `DialogHelper`
+- Fence: Replaced inline confirmation dialog with shared `DialogHelper`
+
+#### #823 - Focus Indicators
+- Added shared `FocusStyles.axaml` in `Radoub.UI/Styles/`
+- Enhanced focus visibility for Button, TextBox, ComboBox, CheckBox, RadioButton, ListBoxItem, TreeViewItem, TabItem
+- Uses SystemAccentColor for consistent focus ring appearance
+- All tools now include FocusStyles via StyleInclude
+- Documents focus-within pattern for custom container controls
+
+#### #1089 - Theme Consistency
+- Fixed ThemeManager to apply `title_bar` and `title_bar_foreground` from theme JSON
+- Fixed button color mapping: `button_primary` now maps to standard ButtonBackground (buttons are blue in VSCode Dark)
+- Added `ButtonStyles.axaml` with `.secondary` class for cancel/dismiss buttons
+- Added `ThemeButtonSecondary` resource for explicit secondary button styling
+- **Fixed**: Semantic colors (success, warning, error, info) now map to ThemeSuccess/Warning/Error/Info resources
+- This fixes "Ready" button showing green in colorblind themes - now uses theme's `success` color (#006699 blue in deuteranopia)
+- **Fixed**: Button foreground now set to white for ALL dark themes (not just when button_primary is defined)
+- **Fixed**: ComboBox foreground and placeholder text now uses theme text color (fixes dark gray text in dropdowns)
+- **Fixed**: ComboBox background now uses theme sidebar color (fixes white boxes in dark themes)
+- **Fixed**: ComboBox placeholder resource key corrected (`PlaceHolder` vs `Placeholder`) - fixes "Recent..." black text
+- **Fixed**: ListBox background uses `SystemControlBackgroundChromeMediumLowBrush` - fixes white background in creature/script/sound pickers
+- **Fixed**: Added `Classes="secondary"` to Cancel buttons in CreaturePicker, ScriptBrowser, SoundBrowser dialogs
+- **Fixed**: TextBox controls now use sidebar background + border color for visibility against main background
+- **Fixed**: TextBox border brushes now use theme border color (makes text inputs distinguishable)
+- **Fixed**: Muted/secondary text (status bar paths, hints) now uses 70% opacity text color instead of border color for better readability
+- **Fixed**: CheckBox square now visible with sidebar background + border color (was invisible in dark themes)
+- **Self-describing themes**: Added explicit `text_muted`, `input_background`, `button_text` properties to theme schema
+- ThemeManager now uses explicit theme values instead of computed/hardcoded colors
+- Updated all 40 theme JSON files across all 5 tools with new properties
+- Manifest: Added sidebar backgrounds to Journal Structure and Properties panels, removed emoji from Delete button
+- **Fixed**: Added missing Trebuchet theme resources: `ThemeBackgroundAlt`, `ThemeBorderBrush`, `ThemeAccentBrush`, `ThemeAccentForeground`, `ThemeInfoBrush`
+
+---
+
 ## [0.9.58] - 2026-02-01
 **Branch**: `radoub/sprint-1175-1166-1167` | **PR**: #1195
 

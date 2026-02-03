@@ -7,7 +7,9 @@
         <FluentTheme />
         <!-- DataGrid requires explicit style inclusion -->
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
-        <!-- Radoub.UI control themes are loaded via MergedDictionaries below -->
+        <!-- Shared UI styles from Radoub.UI (#823, #1089) -->
+        <StyleInclude Source="avares://Radoub.UI/Styles/FocusStyles.axaml"/>
+        <StyleInclude Source="avares://Radoub.UI/Styles/ButtonStyles.axaml"/>
 
         <!-- Theme-aware window background -->
         <Style Selector="Window">

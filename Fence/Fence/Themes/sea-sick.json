@@ -19,8 +19,10 @@
     "background": "#FF00FF",
     "sidebar": "#00FF00",
     "text": "#FFFF00",
+    "text_muted": "#0000FF",
     "selection": "#FF6600",
     "border": "#00FFFF",
+    "input_background": "#FF6600",
     "accent": "#FF0099",
     "error": "#00FF00",
     "warning": "#0000FF",
@@ -31,7 +33,8 @@
     "title_bar_foreground": "#00FF00",
     "button_primary": "#FF6600",
     "button_secondary": "#00FF00",
-    "button_hover": "#FF0099"
+    "button_hover": "#FF0099",
+    "button_text": "#00FF00"
   },
   "fonts": {
     "primary": "Comic Sans MS",

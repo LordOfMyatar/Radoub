@@ -1,0 +1,76 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+    Shared Focus Styles for Radoub Tools (#823)
+
+    These styles enhance focus visibility for keyboard navigation.
+    Include in App.axaml with:
+    <StyleInclude Source="avares://Radoub.UI/Styles/FocusStyles.axaml"/>
+
+    The Fluent theme already provides focus indicators, but these styles
+    ensure consistent, high-visibility focus rings across all tools.
+    -->
+
+    <!-- Button: Enhanced focus ring using border -->
+    <Style Selector="Button:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <!-- TextBox: Focus ring on the control -->
+    <Style Selector="TextBox:focus">
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+    </Style>
+
+    <!-- ComboBox: Focus ring -->
+    <Style Selector="ComboBox:focus">
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+    </Style>
+
+    <!-- CheckBox: Focus ring around the checkbox area -->
+    <Style Selector="CheckBox:focus-visible /template/ Border#RootBorder">
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <!-- RadioButton: Focus ring -->
+    <Style Selector="RadioButton:focus-visible /template/ Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <!-- ListBoxItem: Enhanced selected+focused state -->
+    <Style Selector="ListBoxItem:selected:focus">
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+        <Setter Property="Foreground" Value="White"/>
+    </Style>
+
+    <!-- TreeViewItem: Enhanced selected+focused state -->
+    <Style Selector="TreeViewItem:selected:focus /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColor}"/>
+    </Style>
+
+    <!-- TabItem: Focus indicator -->
+    <Style Selector="TabItem:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,2"/>
+    </Style>
+
+    <!--
+    Focus-within pattern for custom container controls.
+    Apply to UserControl that needs to show focus state:
+
+    <UserControl.Styles>
+        <Style Selector="UserControl:focus-within Border#FocusBorder">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+        <Style Selector="UserControl:not(:focus-within) Border#FocusBorder">
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
+    </UserControl.Styles>
+    -->
+
+</Styles>

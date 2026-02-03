@@ -242,7 +242,7 @@ public class ThemeManager
             // Apply custom colors AFTER theme variant loads
             if (theme.Colors != null)
             {
-                ApplyColors(app.Resources, theme.Colors);
+                ApplyColors(app.Resources, theme.Colors, theme.BaseTheme);
             }
 
             // Apply font sizes (with defaults if not specified in theme)
@@ -276,8 +276,13 @@ public class ThemeManager
     /// Apply color values to resource dictionary.
     /// Maps theme colors to Avalonia system resources.
     /// </summary>
-    private void ApplyColors(IResourceDictionary resources, ThemeColors colors)
+    /// <param name="resources">Resource dictionary to update</param>
+    /// <param name="colors">Theme color definitions</param>
+    /// <param name="baseTheme">Base theme variant ("Light" or "Dark")</param>
+    private void ApplyColors(IResourceDictionary resources, ThemeColors colors, string baseTheme)
     {
+        var isDarkTheme = baseTheme.Equals("Dark", StringComparison.OrdinalIgnoreCase);
+
         // Background colors - main window background AND control backgrounds
         if (!string.IsNullOrEmpty(colors.Background))
         {
@@ -300,11 +305,7 @@ public class ThemeManager
             resources["SubtleFillColorSecondary"] = bgBrush;
             resources["SubtleFillColorSecondaryBrush"] = bgBrush;
 
-            // TextBox, CheckBox, and other control backgrounds
-            resources["TextControlBackground"] = bgBrush;
-            resources["TextControlBackgroundPointerOver"] = bgBrush;
-            resources["TextControlBackgroundFocused"] = bgBrush;
-            resources["TextControlBackgroundDisabled"] = bgBrush;
+            // CheckBox and other general control backgrounds (NOT TextBox - see sidebar section)
             resources["ControlFillColorDefaultBrush"] = bgBrush;
             resources["ControlFillColorSecondaryBrush"] = bgBrush;
             resources["ControlFillColorTertiaryBrush"] = bgBrush;
@@ -346,10 +347,33 @@ public class ThemeManager
             resources["LayerFillColorAltBrush"] = sidebarBrush;
             resources["SystemControlBackgroundAltHighBrush"] = sidebarBrush;
             resources["SystemControlBackgroundChromeMediumBrush"] = sidebarBrush;
+            resources["SystemControlBackgroundChromeMediumLowBrush"] = sidebarBrush; // ListBox background
 
             // Table/list backgrounds - use sidebar color for consistency
             // This ensures contrast calculations in brush-contrast-test.html match actual rendering
             resources["SystemControlBackgroundBaseLowBrush"] = sidebarBrush;
+
+            // TextBox backgrounds - use sidebar for subtle contrast against main background
+            // This makes text inputs visible/distinguishable from the window background
+            resources["TextControlBackground"] = sidebarBrush;
+            resources["TextControlBackgroundPointerOver"] = sidebarBrush;
+            resources["TextControlBackgroundFocused"] = sidebarBrush;
+            resources["TextControlBackgroundDisabled"] = sidebarBrush;
+
+            // App-level sidebar/alt background for cards, panels (Trebuchet)
+            resources["ThemeBackgroundAlt"] = sidebarBrush;
+        }
+
+        // Title bar colors (#1089) - custom window title bars
+        if (!string.IsNullOrEmpty(colors.TitleBar))
+        {
+            var titleBarBrush = new SolidColorBrush(Color.Parse(colors.TitleBar));
+            resources["ThemeTitleBar"] = titleBarBrush;
+        }
+        if (!string.IsNullOrEmpty(colors.TitleBarForeground))
+        {
+            var titleBarFgBrush = new SolidColorBrush(Color.Parse(colors.TitleBarForeground));
+            resources["ThemeTitleBarForeground"] = titleBarFgBrush;
         }
 
         // Text colors - controls need TextControlForeground
@@ -358,9 +382,23 @@ public class ThemeManager
             var textColor = Color.Parse(colors.Text);
             var textBrush = new SolidColorBrush(textColor);
 
+            // Create a muted text color (70% opacity) for secondary/status text
+            // In dark themes, muted text should still be readable (lighter gray, not dark gray)
+            // Muted text - use explicit text_muted from theme, fallback to 70% opacity of text
+            var mutedTextColor = !string.IsNullOrEmpty(colors.TextMuted)
+                ? Color.Parse(colors.TextMuted)
+                : Color.FromArgb((byte)(textColor.A * 0.7), textColor.R, textColor.G, textColor.B);
+            var mutedTextBrush = new SolidColorBrush(mutedTextColor);
+
             resources["SystemBaseHighColor"] = textColor;
             resources["SystemBaseMediumHighColor"] = textColor;
             resources["SystemBaseMediumColor"] = textColor;
+            resources["SystemBaseMediumLowColor"] = mutedTextColor;
+
+            // Muted/secondary text foreground - status bar paths, hints, placeholders, etc.
+            resources["SystemControlForegroundBaseMediumLowBrush"] = mutedTextBrush;
+            resources["SystemControlForegroundBaseLowBrush"] = mutedTextBrush;
+            resources["ThemeTextMuted"] = mutedTextBrush;
 
             // TextBox and other control foregrounds
             resources["TextControlForeground"] = textBrush;
@@ -412,6 +450,33 @@ public class ThemeManager
             resources["RadioButtonForegroundPointerOver"] = textBrush;
             resources["RadioButtonForegroundPressed"] = textBrush;
             resources["RadioButtonForegroundDisabled"] = textBrush;
+
+            // ComboBox text colors - selected item and dropdown items
+            resources["ComboBoxForeground"] = textBrush;
+            resources["ComboBoxForegroundPointerOver"] = textBrush;
+            resources["ComboBoxForegroundPressed"] = textBrush;
+            resources["ComboBoxForegroundDisabled"] = textBrush;
+            resources["ComboBoxForegroundFocused"] = textBrush;
+            resources["ComboBoxForegroundFocusedPressed"] = textBrush;
+            // ComboBox placeholder text (note: PlaceHolder with capital H)
+            resources["ComboBoxPlaceHolderForeground"] = textBrush;
+            resources["ComboBoxPlaceHolderForegroundFocusedPressed"] = textBrush;
+            // ComboBox dropdown arrow/glyph
+            resources["ComboBoxDropDownGlyphForeground"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundPointerOver"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundPressed"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundFocused"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundFocusedPressed"] = textBrush;
+            resources["ComboBoxDropDownGlyphForegroundDisabled"] = textBrush;
+            // ComboBox dropdown item foreground
+            resources["ComboBoxItemForeground"] = textBrush;
+            resources["ComboBoxItemForegroundPointerOver"] = textBrush;
+            resources["ComboBoxItemForegroundPressed"] = textBrush;
+            resources["ComboBoxItemForegroundDisabled"] = textBrush;
+            resources["ComboBoxItemForegroundSelected"] = textBrush;
+            resources["ComboBoxItemForegroundSelectedPointerOver"] = textBrush;
+            resources["ComboBoxItemForegroundSelectedPressed"] = textBrush;
+            resources["ComboBoxItemForegroundSelectedDisabled"] = textBrush;
         }
 
         // Menu flyout (dropdown) background - needs to match theme
@@ -429,7 +494,15 @@ public class ThemeManager
             resources["FlyoutPresenterBackground"] = sidebarBrush;
             resources["FlyoutBorderThemeBrush"] = sidebarBrush;
 
-            // ComboBox dropdown background
+            // ComboBox control background (the box itself)
+            resources["ComboBoxBackground"] = sidebarBrush;
+            resources["ComboBoxBackgroundPointerOver"] = sidebarBrush;
+            resources["ComboBoxBackgroundPressed"] = sidebarBrush;
+            resources["ComboBoxBackgroundDisabled"] = sidebarBrush;
+            resources["ComboBoxBackgroundFocused"] = sidebarBrush;
+            resources["ComboBoxBackgroundFocusedPressed"] = sidebarBrush;
+
+            // ComboBox dropdown background (the popup list)
             resources["ComboBoxDropDownBackground"] = sidebarBrush;
             resources["ComboBoxDropDownBackgroundPointerOver"] = sidebarBrush;
             resources["ComboBoxDropDownBackgroundPressed"] = sidebarBrush;
@@ -458,6 +531,9 @@ public class ThemeManager
             resources["SystemAccentColorDark3"] = accentColor;
 
             resources["SystemControlHighlightAccentBrush"] = accentBrush;
+
+            // App-level accent brush (Trebuchet header bars)
+            resources["ThemeAccentBrush"] = accentBrush;
         }
 
         // Selection color
@@ -484,12 +560,52 @@ public class ThemeManager
             resources["SystemChromeDisabledLowColor"] = borderColor;
             resources["SystemChromeDisabledHighColor"] = borderColor;
 
-            resources["SystemControlForegroundBaseMediumLowBrush"] = borderBrush;
-            resources["SystemControlForegroundBaseLowBrush"] = borderBrush;
+            // Note: SystemControlForegroundBaseMediumLowBrush is set in Text section (muted text)
+            // Border colors are for borders, not text
 
             // Expander border styling
             resources["ExpanderHeaderBorderBrush"] = borderBrush;
             resources["ExpanderContentBorderBrush"] = borderBrush;
+
+            // TextBox border styling - makes text inputs visible against background
+            resources["TextControlBorderBrush"] = borderBrush;
+            resources["TextControlBorderBrushPointerOver"] = borderBrush;
+            resources["TextControlBorderBrushFocused"] = borderBrush;
+            resources["TextControlBorderBrushDisabled"] = borderBrush;
+
+            // CheckBox box border - makes the checkbox square visible
+            resources["CheckBoxCheckBackgroundStrokeUnchecked"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeUncheckedPointerOver"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeUncheckedPressed"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeUncheckedDisabled"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeCheckedPointerOver"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeIndeterminate"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeIndeterminatePointerOver"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeIndeterminatePressed"] = borderBrush;
+            resources["CheckBoxCheckBackgroundStrokeIndeterminateDisabled"] = borderBrush;
+
+            // App-level border brush (Trebuchet)
+            resources["ThemeBorderBrush"] = borderBrush;
+        }
+
+        // Input background - checkbox fill, text input backgrounds
+        // Uses explicit input_background from theme, falls back to border color if not defined
+        if (!string.IsNullOrEmpty(colors.InputBackground) || !string.IsNullOrEmpty(colors.Border))
+        {
+            var inputBgColor = !string.IsNullOrEmpty(colors.InputBackground)
+                ? Color.Parse(colors.InputBackground)
+                : Color.Parse(colors.Border!);
+            var inputBgBrush = new SolidColorBrush(inputBgColor);
+
+            // CheckBox box fill
+            resources["CheckBoxCheckBackgroundFillUnchecked"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedPointerOver"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedPressed"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillUncheckedDisabled"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminate"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminatePointerOver"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminatePressed"] = inputBgBrush;
+            resources["CheckBoxCheckBackgroundFillIndeterminateDisabled"] = inputBgBrush;
         }
 
         // Expander styling - use sidebar for header background, background for content
@@ -566,27 +682,65 @@ public class ThemeManager
             resources["ThemeAutoTrimBorder"] = autoTrimBrush;
         }
 
-        // Button colors - apply theme-defined button colors to Fluent theme resources
-        // This ensures proper contrast in dark themes
+        // Semantic colors (#1089) - used by BrushManager for colorblind accessibility
+        // These map theme JSON colors to resources that BrushManager can look up
+        if (!string.IsNullOrEmpty(colors.Success))
+        {
+            resources["ThemeSuccess"] = new SolidColorBrush(Color.Parse(colors.Success));
+        }
+        if (!string.IsNullOrEmpty(colors.Warning))
+        {
+            resources["ThemeWarning"] = new SolidColorBrush(Color.Parse(colors.Warning));
+        }
+        if (!string.IsNullOrEmpty(colors.Error))
+        {
+            resources["ThemeError"] = new SolidColorBrush(Color.Parse(colors.Error));
+        }
+        if (!string.IsNullOrEmpty(colors.Info))
+        {
+            var infoBrush = new SolidColorBrush(Color.Parse(colors.Info));
+            resources["ThemeInfo"] = infoBrush;
+            resources["ThemeInfoBrush"] = infoBrush; // Alias for Trebuchet
+        }
+
+        // Button colors - apply theme-defined button colors to Fluent theme resources (#1089)
+        // button_primary = action buttons (Save, OK, Apply) - blue in most themes
+        // button_secondary = neutral/cancel buttons - gray in most themes
         if (!string.IsNullOrEmpty(colors.ButtonPrimary))
         {
             var btnPrimaryColor = Color.Parse(colors.ButtonPrimary);
             var btnPrimaryBrush = new SolidColorBrush(btnPrimaryColor);
 
-            // Primary button background (accent buttons)
+            // Standard button background - most buttons are action buttons
+            resources["ButtonBackground"] = btnPrimaryBrush;
+            resources["ButtonBackgroundDisabled"] = btnPrimaryBrush;
+            // Accent buttons use the same color
             resources["AccentButtonBackground"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPointerOver"] = btnPrimaryBrush;
             resources["AccentButtonBackgroundPressed"] = btnPrimaryBrush;
         }
 
+        // Button foreground - use explicit button_text from theme
+        if (!string.IsNullOrEmpty(colors.ButtonText))
+        {
+            var btnTextBrush = new SolidColorBrush(Color.Parse(colors.ButtonText));
+            resources["ButtonForeground"] = btnTextBrush;
+            resources["ButtonForegroundPointerOver"] = btnTextBrush;
+            resources["ButtonForegroundPressed"] = btnTextBrush;
+            resources["AccentButtonForeground"] = btnTextBrush;
+            resources["AccentButtonForegroundPointerOver"] = btnTextBrush;
+            resources["AccentButtonForegroundPressed"] = btnTextBrush;
+
+            // App-level foreground for accent backgrounds (Trebuchet header text)
+            resources["ThemeAccentForeground"] = btnTextBrush;
+        }
+
+        // Secondary button color is available as ThemeButtonSecondary for explicit use
+        // Cancel/dismiss buttons can use Classes="secondary" with matching style
         if (!string.IsNullOrEmpty(colors.ButtonSecondary))
         {
-            var btnSecondaryColor = Color.Parse(colors.ButtonSecondary);
-            var btnSecondaryBrush = new SolidColorBrush(btnSecondaryColor);
-
-            // Standard button backgrounds - use sidebar-based colors for better visibility
-            resources["ButtonBackground"] = btnSecondaryBrush;
-            resources["ButtonBackgroundDisabled"] = btnSecondaryBrush;
+            var btnSecondaryBrush = new SolidColorBrush(Color.Parse(colors.ButtonSecondary));
+            resources["ThemeButtonSecondary"] = btnSecondaryBrush;
         }
 
         if (!string.IsNullOrEmpty(colors.ButtonHover))
