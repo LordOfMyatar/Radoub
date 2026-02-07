@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [0.1.146-alpha] - 2026-02-07
-**Branch**: `parley/issue-1236` | **PR**: #TBD
+**Branch**: `parley/issue-1236` | **PR**: #1264
 
 ### Sprint 4.3: Add Integration Tests for Property Panel (#1236)
 
